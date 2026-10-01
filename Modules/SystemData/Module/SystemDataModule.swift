@@ -40,6 +40,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "deleteVersions":
             progress(ActionProgress(message: "Stopping revisiond and deleting the version history…"))
             return await Self.deleteVersions(context.privileged)
+        case "purgeContainerCaches":
+            progress(ActionProgress(message: "Asking macOS to clear app container caches…"))
+            return Self.purgeContainerCaches()
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purgeAssets()
@@ -55,6 +58,7 @@ public struct SystemDataModule: MacSpaceModule {
             if snapshot.reports.totalBytes > 0 { details += Self.cleanReports(snapshot.reports).details }
             progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
             if (snapshot.purgeableAssetsBytes ?? 0) > 0 { details += Self.purgeAssets().details }
+            if (snapshot.purgeableContainerCachesBytes ?? 0) > 0 { details += Self.purgeContainerCaches().details }
             if let before, let after = DataVolume.freeBytes(), after > before { freed = after - before }
             return .succeeded("Freed \(ByteFormat.string(freed)), measured on the volume.", details: details)
         default:
@@ -97,6 +101,18 @@ public struct SystemDataModule: MacSpaceModule {
         let message = measured.map { "Deleted the version history. The volume gained \(ByteFormat.string($0)); the store shrank by \(ByteFormat.string(stored))." }
             ?? "Deleted the version history; the store shrank by \(ByteFormat.string(stored))."
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details)
+    }
+
+    static func purgeContainerCaches() -> ActionResult {
+        let result: CacheDeletePurgeResult
+        if let cli = ToolLocator.cli() {
+            result = CacheDeleteClient.purgeInSubprocess(executable: cli, service: CacheDeleteService.appContainerCaches)
+        } else {
+            result = CacheDeleteClient().purge(services: [CacheDeleteService.appContainerCaches])
+        }
+        if let error = result.error { return .failed(error) }
+        return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)) of app container caches, measured on the volume.",
+                          details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(String(format: "%.1f", result.elapsedSeconds ?? 0)) s."])
     }
 
     static func purgeAssets() -> ActionResult {

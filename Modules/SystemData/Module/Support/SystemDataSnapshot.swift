@@ -8,6 +8,8 @@ struct SystemDataSnapshot: Sendable {
     var report: SystemDataReport
     /// Bytes mobileassetd would delete under disk pressure; nil when CacheDelete is unavailable or not validated.
     var purgeableAssetsBytes: UInt64?
+    /// Bytes macOS would purge from apps' container caches; nil when CacheDelete is unavailable or not validated.
+    var purgeableContainerCachesBytes: UInt64?
     var reports: CleanupPlan
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
@@ -84,21 +86,25 @@ actor SystemDataStore {
 
     static func liveSnapshot() -> SystemDataSnapshot {
         let report = SystemDataInspector().inspect()
+        let purgeable = livePurgeable()
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return SystemDataSnapshot(report: report, purgeableAssetsBytes: livePurgeableAssets(), reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
+        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable.assets, purgeableContainerCachesBytes: purgeable.containers, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
     }
 
-    /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much is purgeable.
-    static func livePurgeableAssets() -> UInt64? {
+    /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks what is purgeable.
+    static func livePurgeable() -> (assets: UInt64?, containers: UInt64?) {
         let client = CacheDeleteClient()
+        let all: [String: UInt64]?
         if let cli = ToolLocator.cli() {
             client.ensureValidated(executable: cli)
-            guard client.support == .validated else { return nil }
-            return CacheDeleteClient.purgeableInSubprocess(executable: cli)
+            guard client.support == .validated else { return (nil, nil) }
+            all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli)
+        } else {
+            // Without the bundled tool (a development run) only builds checked by hand are queried in this process.
+            all = client.support == .validated ? client.purgeableByService() : nil
         }
-        // Without the bundled tool (a development run) only builds checked by hand are queried in this process.
-        return client.support == .validated ? client.purgeableByService()?[CacheDeleteService.mobileAsset] : nil
+        return (all?[CacheDeleteService.mobileAsset], all?[CacheDeleteService.appContainerCaches])
     }
 }

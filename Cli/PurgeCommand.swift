@@ -36,17 +36,25 @@ enum PurgeCommand {
             for (service, bytes) in all.sorted(by: { $0.value > $1.value }) { print("\(ByteFormat.string(bytes))  \(service)") }
             exit(0)
         }
-        let purgeable = client.purgeableByService()?[CacheDeleteService.mobileAsset]
+        var service = CacheDeleteService.mobileAsset
+        if let index = arguments.firstIndex(of: "--service"), arguments.indices.contains(index + 1) {
+            service = arguments[index + 1]
+            guard CacheDeleteService.purgeable.contains(service) else {
+                print("error: \(service) is not a service MACSPACE purges.")
+                exit(64)
+            }
+        }
+        let purgeable = client.purgeableByService()?[service]
         guard arguments.contains("--execute") else {
             if json { emit(["purgeableBytes": purgeable]) }
-            print("Unused system assets macOS would delete when space runs low: \(ByteFormat.string(purgeable ?? 0))")
-            print("Dry run; pass --execute to ask macOS (CacheDelete, mobileassetd only) to delete them now.")
+            print("What macOS would delete when space runs low (\(service)): \(ByteFormat.string(purgeable ?? 0))")
+            print("Dry run; pass --execute to ask macOS (CacheDelete, this service only) to delete it now.")
             exit(0)
         }
-        let result = client.purge(services: [CacheDeleteService.mobileAsset])
+        let result = client.purge(services: [service])
         if json { emit(result) }
         if let error = result.error { print("error: \(error)") }
-        print("mobileassetd reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(result.elapsedSeconds.map { String(format: "%.1f s", $0) } ?? "?").")
+        print("\(service) reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(result.elapsedSeconds.map { String(format: "%.1f s", $0) } ?? "?").")
         print("Data volume free: \(ByteFormat.string(result.freeBytesBefore ?? 0)) -> \(ByteFormat.string(result.freeBytesAfter ?? 0)) (+\(ByteFormat.string(result.freedBytes ?? 0)))")
         exit(result.error == nil ? 0 : 1)
     }

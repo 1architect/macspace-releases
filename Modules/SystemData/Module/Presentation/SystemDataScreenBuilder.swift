@@ -62,7 +62,7 @@ enum SystemDataScreenBuilder {
     static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
             .compactMap(\.expectedReclaimBytes).reduce(0, +)
-        return caches + (snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
+        return caches + (snapshot.purgeableAssetsBytes ?? 0) + (snapshot.purgeableContainerCachesBytes ?? 0) + snapshot.reports.totalBytes
     }
 
     static func summary(_ snapshot: SystemDataSnapshot) -> ScreenWidget {
@@ -113,12 +113,19 @@ enum SystemDataScreenBuilder {
                             actions: [Action(id: "purgeAssets", title: "Remove", confirmation: Confirmation(
                                 title: "Remove unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Remove"))]))
         }
+        if let containers = snapshot.purgeableContainerCachesBytes, containers >= 50_000_000 {
+            rows.append(Row(id: "container-caches", title: "App container caches",
+                            subtitle: "Caches inside apps' sandbox folders. macOS clears these itself when space runs low; this does it now. Apps rebuild what they need.",
+                            trailing: ByteFormat.string(containers), badge: Badge("Safe", tone: .positive), symbol: "shippingbox",
+                            actions: [Action(id: "purgeContainerCaches", title: "Clear", confirmation: Confirmation(
+                                title: "Clear app container caches?", message: "macOS deletes the caches it considers purgeable in apps' containers, about \(ByteFormat.string(containers)). Apps may be slower the first time they run afterwards.", confirmTitle: "Clear"))]))
+        }
         var widgets: [ScreenWidget] = [.list(ListWidget(id: "free-list", emptyMessage: "Nothing safe to clean right now.", rows: rows))]
         let total = freeableBytes(snapshot)
         if rows.count > 1 && total > 0 {
             widgets.append(.button(ButtonWidget(id: "free-all", action: Action(
                 id: "cleanAll", title: "Free all (\(ByteFormat.string(total)))", symbol: "sparkles", role: .prominent,
-                confirmation: Confirmation(title: "Free everything listed?", message: "Deletes the system caches, old reports and unused system assets above. None of it holds your files.", confirmTitle: "Free all")),
+                confirmation: Confirmation(title: "Free everything listed?", message: "Deletes the system caches, old reports, unused system assets and app container caches above. None of it holds your files.", confirmTitle: "Free all")),
                 footnote: "The space actually freed is measured on the volume afterwards.")))
         }
         return .section(SectionWidget(id: "free", title: "Free now", subtitle: "MACSPACE can do these without you opening another app.", widgets: widgets))

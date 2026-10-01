@@ -63,6 +63,19 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(usage.footnote?.contains("not counted") == true)
     }
 
+    func testContainerCachesAreOfferedWhenMacOSReportsEnoughAndCountTowardFreeAll() throws {
+        var snap = snapshot(items: [])
+        snap.purgeableContainerCachesBytes = 1_150_000_000
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_150_000_000)
+        guard case let .section(section) = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        let row = try XCTUnwrap(list.rows.first { $0.id == "container-caches" })
+        XCTAssertEqual(row.actions.first?.id, "purgeContainerCaches")
+        XCTAssertNotNil(row.actions.first?.confirmation)
+        snap.purgeableContainerCachesBytes = 10_000_000
+        guard case let .section(small) = SystemDataScreenBuilder.freeNow(snap), case let .list(smallList) = small.widgets[0] else { return XCTFail() }
+        XCTAssertFalse(smallList.rows.contains { $0.id == "container-caches" }, "a trivial amount is not offered")
+    }
+
     func testFreeNowOffersOnlySafeItemsAndAFreeAllButton() throws {
         let snap = snapshot(items: [
             item("small", kind: .appCache, bytes: 100, cleanup: .deleteWhenNotRunning, reclaim: 100),

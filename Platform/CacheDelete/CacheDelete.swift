@@ -9,6 +9,10 @@ import Foundation
 /// including the 3B model) in 4.6 s, as a normal user (`results/ai-orphan-subscriptions-2026-09-30/`).
 public enum CacheDeleteService {
     public static let mobileAsset = "com.apple.mobileassetd.cache-delete"
+    /// Caches inside apps' sandbox containers (1.15 GB purgeable on 26B5091g); macOS purges them itself when space runs low.
+    public static let appContainerCaches = "com.apple.cache_delete_app_container_caches"
+    /// The only services MACSPACE asks to purge.
+    public static let purgeable: Set<String> = [mobileAsset, appContainerCaches]
 }
 
 /// Whether MACSPACE may call CacheDelete on this system. The purge uses a private function whose signature was taken
@@ -264,17 +268,24 @@ public struct CacheDeleteClient {
         return (object["purgeableBytes"] as? NSNumber)?.uint64Value
     }
 
-    /// Runs the mobileassetd purge in `executable`; a crash is reported as an error result.
-    public static func purgeInSubprocess(executable: URL, allowUnverified: Bool = false,
+    /// Per-service purgeable bytes, asked in `executable`. nil on any failure.
+    public static func purgeableByServiceInSubprocess(executable: URL, allowUnverified: Bool = false) -> [String: UInt64]? {
+        let output = runSubprocess(executable, ["purge-assets", "--all-services", "--json"] + (allowUnverified ? ["--allow-unverified"] : []))
+        guard output.status == 0, let object = try? JSONSerialization.jsonObject(with: output.data) as? [String: Any] else { return nil }
+        return object.compactMapValues { ($0 as? NSNumber)?.uint64Value }
+    }
+
+    /// Runs the purge of one service (mobileassetd by default) in `executable`; a crash is reported as an error result.
+    public static func purgeInSubprocess(executable: URL, allowUnverified: Bool = false, service: String = CacheDeleteService.mobileAsset,
                                          freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
-        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json"] + (allowUnverified ? ["--allow-unverified"] : []))
+        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service] + (allowUnverified ? ["--allow-unverified"] : []))
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         if let result = try? decoder.decode(CacheDeletePurgeResult.self, from: output.data) { return result }
         let reason = output.signal.map { "the purge process crashed (signal \($0)); CacheDelete's private interface may have changed" }
             ?? "the purge process exited with status \(output.status) and no result"
-        return CacheDeletePurgeResult(services: [CacheDeleteService.mobileAsset], purgedBytes: nil, freeBytesBefore: before,
+        return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before,
                                       freeBytesAfter: freeSpace(), elapsedSeconds: nil, error: reason.prefix(1).uppercased() + reason.dropFirst() + ".")
     }
 
