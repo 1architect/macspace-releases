@@ -14,8 +14,7 @@ enum SystemDataScreenBuilder {
 
     static let groups: [Group] = [
         Group(id: "versions", title: "Document versions", kinds: [.documentVersions]),
-        Group(id: "appdata", title: "App data and media", kinds: [.appContainer]),
-        Group(id: "cloud", title: "Cloud copies", kinds: [.cloudStorage]),
+        Group(id: "appdata", title: "Apple app data", kinds: [.appContainer]),
         Group(id: "caches", title: "Caches", kinds: [.appCache, .userSystemCache, .toolCache]),
         Group(id: "support", title: "App support files", kinds: [.appSupport]),
         Group(id: "leftovers", title: "Leftovers", kinds: [.partialDownload, .restoreImage, .virtualMachine, .orphanedHome, .trash, .stagedUpdate]),
@@ -28,9 +27,16 @@ enum SystemDataScreenBuilder {
     /// measured) and swap, which sits on the VM volume. Counting them here overstated System Data by about 3.5 GB.
     static let countedElsewhere: Set<SystemDataKind> = [.developerTools, .virtualMemory]
 
+    /// Whether System Settings files the item under another category: cloud copies under Documents, and third-party apps' containers
+    /// under Applications (measured on 26B5091g: Documents 6.7 GB ≈ Documents + Desktop + Downloads + cloud copies 6.4 GB; Applications
+    /// 28.48 GB = 19.04 GB of bundles + about 9.4 GB of app data). Apple's own containers stay in System Data.
+    static func countedByAnotherCategory(_ item: SystemDataItem) -> Bool {
+        item.kind == .cloudStorage || (item.kind == .appContainer && item.cleanup.kind == .review)
+    }
+
     /// Items that count toward the bar. Code-signing clones share storage with their apps, so they are left out.
     static func measured(_ report: SystemDataReport) -> [SystemDataItem] {
-        report.items.filter { $0.kind != .codeSignClone && !countedElsewhere.contains($0.kind) && ($0.bytes ?? 0) > 0 }
+        report.items.filter { $0.kind != .codeSignClone && !countedElsewhere.contains($0.kind) && !countedByAnotherCategory($0) && ($0.bytes ?? 0) > 0 }
     }
 
     static func usage(_ snapshot: SystemDataSnapshot) -> UsageBar {
@@ -44,6 +50,8 @@ enum SystemDataScreenBuilder {
         var footnote = "Measured on this Mac's Data volume."
         if clones > 0 { footnote += " \(ByteFormat.string(clones)) of code-signing copies share space with their apps and are not counted." }
         let elsewhere = snapshot.report.items.filter { countedElsewhere.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)
+        let otherCategory = snapshot.report.items.filter(countedByAnotherCategory).compactMap(\.bytes).reduce(0, +)
+        if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies and apps' own data are not counted: System Settings lists them under Documents and Applications." }
         if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
         if !snapshot.report.unreadable.isEmpty { footnote += " \(snapshot.report.unreadable.count) location(s) could not be measured." }
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)

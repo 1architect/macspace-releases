@@ -50,6 +50,19 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(Set(try ids(purgeable: nil)), ["assets:system", "system:swap"], "without a purge button the assets row explains itself")
     }
 
+    func testCloudCopiesAndThirdPartyAppDataAreLeftOutOfTheBar() {
+        let report = snapshot(items: [
+            item("cloud", kind: .cloudStorage, bytes: 2_000),
+            item("whatsapp", kind: .appContainer, bytes: 9_000, cleanup: .review),
+            item("apple-container", kind: .appContainer, bytes: 500, cleanup: .managedByMacOS),
+            item("versions", kind: .documentVersions, bytes: 100, cleanup: .managedByMacOS),
+        ])
+        let usage = SystemDataScreenBuilder.usage(report)
+        XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata"])
+        XCTAssertEqual(usage.segments.last?.bytes, 500)
+        XCTAssertTrue(usage.footnote?.contains("not counted") == true)
+    }
+
     func testFreeNowOffersOnlySafeItemsAndAFreeAllButton() throws {
         let snap = snapshot(items: [
             item("small", kind: .appCache, bytes: 100, cleanup: .deleteWhenNotRunning, reclaim: 100),
