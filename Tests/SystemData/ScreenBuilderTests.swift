@@ -42,7 +42,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
                      item("system:swap", kind: .virtualMemory, bytes: 2_000, cleanup: .managedByMacOS)]
         func ids(purgeable: UInt64?) throws -> [String] {
             let snap = snapshot(items: items, purgeable: purgeable)
-            guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.managedSection(snap.report, assetsInFreeNow: SystemDataScreenBuilder.freeNowHasAssets(snap))),
+            guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.managedSection(snap.report, assetsListed: SystemDataScreenBuilder.freeNowHasAssets(snap))),
                   case let .list(list) = section.widgets[0] else { return [] }
             return list.rows.map(\.id)
         }

@@ -7,6 +7,8 @@ struct SystemDataSnapshot: Sendable {
     /// Bytes mobileassetd would delete under disk pressure; nil when CacheDelete is unavailable or not validated.
     var purgeableAssetsBytes: UInt64?
     var reports: CleanupPlan
+    /// What fills the system assets, grouped by the setting that releases it.
+    var assetFamilies: [AssetFamily] = []
     var takenAt: Date
 }
 
@@ -41,7 +43,7 @@ actor SystemDataStore {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return SystemDataSnapshot(report: report, purgeableAssetsBytes: livePurgeableAssets(), reports: reports, takenAt: Date())
+        return SystemDataSnapshot(report: report, purgeableAssetsBytes: livePurgeableAssets(), reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
     }
 
     /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much is purgeable.

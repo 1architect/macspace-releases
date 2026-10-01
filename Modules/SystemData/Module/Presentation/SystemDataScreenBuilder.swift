@@ -70,8 +70,9 @@ enum SystemDataScreenBuilder {
         widgets.append(freeNow(snapshot))
         let manual = manualSection(report)
         if let manual { widgets.append(manual) }
+        if let assets = assetsSection(snapshot) { widgets.append(assets) }
         if let review = reviewSection(report) { widgets.append(review) }
-        if let managed = managedSection(report, assetsInFreeNow: freeNowHasAssets(snapshot)) { widgets.append(managed) }
+        if let managed = managedSection(report, assetsListed: freeNowHasAssets(snapshot) || !snapshot.assetFamilies.isEmpty) { widgets.append(managed) }
         return Screen(title: "System Data", subtitle: "What fills System Data, and what you can safely free.", widgets: widgets)
     }
 
@@ -133,13 +134,27 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "review-list", rows: Array(rows)))], isCollapsible: true, startsCollapsed: true))
     }
 
+    /// What the system assets are, who keeps them, and the setting that releases each group.
+    static func assetsSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        guard !snapshot.assetFamilies.isEmpty else { return nil }
+        let rows = snapshot.assetFamilies.map { family -> Row in
+            var notes: [String] = ["Includes: " + family.assets.prefix(6).joined(separator: ", ") + (family.assets.count > 6 ? " and \(family.assets.count - 6) more." : ".")]
+            if !family.steps.isEmpty && !family.verified { notes.append("Menu names can differ between macOS versions.") }
+            return Row(id: "assets:\(family.id)", title: family.title, subtitle: family.heldBy, trailing: ByteFormat.string(family.bytes),
+                       badge: family.steps.isEmpty ? Badge("No setting") : Badge("Setting", tone: .caution), symbol: "square.stack.3d.down.right",
+                       detail: notes.joined(separator: " "), steps: family.steps)
+        }
+        return .section(SectionWidget(id: "assets", title: "System assets", subtitle: "Downloads macOS keeps while a feature uses them. Change the setting, restart, then remove unused assets.",
+                                      widgets: [.list(ListWidget(id: "assets-list", rows: rows))], isCollapsible: true, startsCollapsed: false))
+    }
+
     static let assetsThreshold: UInt64 = 50_000_000
 
     static func freeNowHasAssets(_ snapshot: SystemDataSnapshot) -> Bool { (snapshot.purgeableAssetsBytes ?? 0) >= assetsThreshold }
 
     /// What fills System Data but cannot be reduced here. Anything with a button lives in "Free now" instead.
-    static func managedSection(_ report: SystemDataReport, assetsInFreeNow: Bool = false) -> ScreenWidget? {
-        let handledElsewhere: Set<String> = assetsInFreeNow ? ["reports:diagnostic", "assets:system"] : ["reports:diagnostic"]
+    static func managedSection(_ report: SystemDataReport, assetsListed: Bool = false) -> ScreenWidget? {
+        let handledElsewhere: Set<String> = assetsListed ? ["reports:diagnostic", "assets:system"] : ["reports:diagnostic"]
         let items = report.items.filter { $0.cleanup.kind == .managedByMacOS || $0.cleanup.kind == .command }
             .filter { ($0.bytes ?? 0) > 0 && !handledElsewhere.contains($0.id) }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         guard !items.isEmpty else { return nil }
