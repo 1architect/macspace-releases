@@ -55,6 +55,21 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    func testHostAnnouncesWhenAModuleBecomesReadySoListsRedraw() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let host = try makeHost(modules: [(Fixtures.manifest(), "A")], directory: directory)
+        var changes = 0
+        let watch = host.objectWillChange.sink { changes += 1 }
+        await host.reload()
+        let afterLoad = changes
+        XCTAssertEqual(host.activeHandles.count, 1)
+        await host.setEnabled(false, module: "com.test.fake")
+        XCTAssertGreaterThan(changes, afterLoad, "switching a module off redraws the lists")
+        XCTAssertGreaterThanOrEqual(afterLoad, 2, "the handles appearing and a handle turning ready are separate announcements")
+        watch.cancel()
+    }
+
     func testStartLoadsOnceNoMatterHowManyAsk() async throws {
         final class Count: @unchecked Sendable { var loads = 0; let lock = NSLock(); func bump() { lock.lock(); loads += 1; lock.unlock() } }
         let count = Count()

@@ -1,6 +1,7 @@
 import Foundation
 import MacSpaceSdk
 import MacSpacePlatform
+import Combine
 import SwiftUI
 
 /// Finds the installed modules and keeps them in step with the user's settings.
@@ -41,6 +42,16 @@ public final class ModuleHost: ObservableObject {
 
     private var checkedHelper = false
     private var startTask: Task<Void, Never>?
+    private var stateObservers: [AnyCancellable] = []
+
+    /// `activeHandles` depends on each handle's state, which changes after the handles are created (off → ready). The views that list
+    /// the active modules observe the host, so a module becoming ready must announce itself through the host too; without this the
+    /// dashboard and sidebar stayed empty until something else (opening Settings) redrew them.
+    private func observeStates() {
+        stateObservers = handles.map { handle in
+            handle.$state.dropFirst().removeDuplicates().sink { [weak self] _ in self?.objectWillChange.send() }
+        }
+    }
 
     /// Loads the modules once, whoever asks first: the app at launch, the window, or the menu bar item. Later callers wait for the same
     /// load instead of starting another.
@@ -64,6 +75,7 @@ public final class ModuleHost: ObservableObject {
             return ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
         }
         // Modules load side by side: a slow scan in one must not hold back the others, and each page appears as soon as it is ready.
+        observeStates()
         let loading = handles.map { handle in Task { await handle.activate() } }
         for task in loading { await task.value }
         applySchedule()
