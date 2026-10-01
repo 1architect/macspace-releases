@@ -26,7 +26,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MACSPACE"
-mkdir -p Build/Tools && cp "$BIN/MacSpaceCli" Build/Tools/macspace
+cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/libMacSpaceSdk.dylib" "$BIN/libMacSpacePlatform.dylib" "$APP/Contents/Frameworks/"
 
 # Drop the build machine's rpaths and point everything at the app's Frameworks folder.
@@ -37,7 +37,7 @@ reroot() { # file, new rpath
   install_name_tool -add_rpath "$2" "$1"
 }
 reroot "$APP/Contents/MacOS/MACSPACE" "@executable_path/../Frameworks"
-reroot Build/Tools/macspace "@executable_path/../MACSPACE.app/Contents/Frameworks"
+reroot "$APP/Contents/MacOS/MacSpaceCli" "@executable_path/../Frameworks"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do
   install_name_tool -id "@rpath/$(basename "$lib")" "$lib"
   reroot "$lib" "@loader_path"
@@ -64,6 +64,7 @@ else
 fi
 for lib in "$APP"/Contents/Frameworks/*.dylib; do codesign "${FLAGS[@]}" "$lib"; done
 for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
+codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP"
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"

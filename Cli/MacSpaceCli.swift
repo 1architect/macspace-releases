@@ -3,19 +3,19 @@ import MacSpaceApp
 import MacSpacePlatform
 import MacSpaceSdk
 
-struct EmptyOptions: OptionStore {
-    func bool(_ id: String) -> Bool { false }
-    func string(_ id: String) -> String { "" }
-    func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
-}
-
 /// `macspace modules` lists the modules the app would load. More commands arrive with the modules.
 @main
 struct MacSpaceCli {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
+        if arguments.first == "purge-assets" { PurgeCommand.run(Array(arguments.dropFirst())) }
+        if arguments.first == "screen" { await ScreenCommand.run(Array(arguments.dropFirst())) }
         guard arguments.first == "modules" else {
-            print("usage: macspace modules [--dir <folder>] [--load]")
+            print("""
+            usage: MacSpaceCli modules [--dir <folder>] [--load]
+                   MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
+                   MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]
+            """)
             exit(arguments.isEmpty ? 0 : 64)
         }
         let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }

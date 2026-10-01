@@ -23,6 +23,7 @@ let package = Package(
         .executableTarget(name: "MacSpaceCli", dependencies: ["MacSpaceApp", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Cli"),
         .testTarget(name: "SdkTests", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Sdk"),
         .testTarget(name: "AppTests", dependencies: ["MacSpaceApp", .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/App"),
+        .testTarget(name: "CleaningTests", dependencies: ["MacSpaceCleaning", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Cleaning"),
         .testTarget(name: "PlatformTests", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Tests/Platform"),
     ]
 )

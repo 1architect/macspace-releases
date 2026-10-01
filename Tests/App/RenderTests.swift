@@ -46,6 +46,23 @@ final class RenderTests: XCTestCase {
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
+    /// Renders a screen saved with `MacSpaceCli screen <module>` (MACSPACE_SCREEN_JSON) to MACSPACE_SNAPSHOT_DIR/screen.png.
+    func testRendersASavedScreen() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let file = env["MACSPACE_SCREEN_JSON"], let directory = env["MACSPACE_SNAPSHOT_DIR"] else { throw XCTSkip("no saved screen") }
+        let screen = try JSONDecoder().decode(Screen.self, from: Data(contentsOf: URL(fileURLWithPath: file)))
+        let view = VStack(alignment: .leading, spacing: 14) {
+            Text(screen.title).font(.largeTitle.weight(.bold))
+            ForEach(screen.widgets) { WidgetView(widget: $0) { _, _ in } }
+        }
+        .padding(20).frame(width: 760).background(Color(nsColor: .windowBackgroundColor))
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        let bitmap = try XCTUnwrap(renderer.cgImage)
+        try XCTUnwrap(NSBitmapImageRep(cgImage: bitmap).representation(using: .png, properties: [:]))
+            .write(to: URL(fileURLWithPath: directory).appendingPathComponent("screen.png"))
+    }
+
     func testEveryWidgetTypeRenders() throws {
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
