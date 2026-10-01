@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacSpaceCleaning
+@testable import MacSpaceSystemData
 
 final class DiagnosticReportCleanerTests: XCTestCase {
     func testPlansOnlyOldRegularReportFilesAndDeletesThem() throws {

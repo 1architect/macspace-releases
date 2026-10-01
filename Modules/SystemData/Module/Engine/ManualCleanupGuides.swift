@@ -105,10 +105,10 @@ public enum ManualCleanupGuides {
         return rules.first { rule in rule.tokens.contains { haystack.contains($0) } }?.guide
     }
 
-    /// One line per app for what only the user can clean (items MACSPACE cleans itself are left out), largest first.
+    /// One line per app for what only the user can clean (items MACSPACE cleans itself and app caches are left out), largest first.
     public static func summaries(for items: [SystemDataItem]) -> [ManualCleanupSummary] {
         var byApp: [String: (bytes: UInt64?, ids: [String], guide: ManualCleanupGuide)] = [:]
-        for item in items where item.cleanup.kind != .deleteWhenNotRunning {
+        for item in items where item.cleanup.kind != .deleteWhenNotRunning && item.kind != .appCache {
             guard let guide = item.guide else { continue }
             var entry = byApp[guide.app] ?? (nil, [], guide)
             if let bytes = item.bytes { entry.bytes = (entry.bytes ?? 0) + bytes }

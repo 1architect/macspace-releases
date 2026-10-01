@@ -1,8 +1,8 @@
 import Foundation
 import MacSpacePlatform
 
-/// Everything the Cleaning screens are built from, measured once and shared by the dashboard tile and the page.
-struct CleaningSnapshot: Sendable {
+/// Everything the System Data screens are built from, measured once and shared by the dashboard tile and the page.
+struct SystemDataSnapshot: Sendable {
     var report: SystemDataReport
     /// Bytes mobileassetd would delete under disk pressure; nil when CacheDelete is unavailable or not validated.
     var purgeableAssetsBytes: UInt64?
@@ -11,18 +11,18 @@ struct CleaningSnapshot: Sendable {
 }
 
 /// Builds snapshots off the main thread and lets concurrent callers share one scan.
-actor CleaningStore {
-    typealias Builder = @Sendable () -> CleaningSnapshot
+actor SystemDataStore {
+    typealias Builder = @Sendable () -> SystemDataSnapshot
 
-    private var cached: CleaningSnapshot?
-    private var inflight: Task<CleaningSnapshot, Never>?
+    private var cached: SystemDataSnapshot?
+    private var inflight: Task<SystemDataSnapshot, Never>?
     private let builder: Builder
 
-    init(builder: @escaping Builder = CleaningStore.liveSnapshot) {
+    init(builder: @escaping Builder = SystemDataStore.liveSnapshot) {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 120, now: Date = Date()) async -> CleaningSnapshot {
+    func snapshot(maxAge: TimeInterval = 120, now: Date = Date()) async -> SystemDataSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
         if let inflight { return await inflight.value }
         let builder = self.builder
@@ -36,12 +36,12 @@ actor CleaningStore {
 
     func invalidate() { cached = nil }
 
-    static func liveSnapshot() -> CleaningSnapshot {
+    static func liveSnapshot() -> SystemDataSnapshot {
         let report = SystemDataInspector().inspect()
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return CleaningSnapshot(report: report, purgeableAssetsBytes: livePurgeableAssets(), reports: reports, takenAt: Date())
+        return SystemDataSnapshot(report: report, purgeableAssetsBytes: livePurgeableAssets(), reports: reports, takenAt: Date())
     }
 
     /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much is purgeable.

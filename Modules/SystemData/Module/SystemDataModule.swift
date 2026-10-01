@@ -2,23 +2,23 @@ import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
 
-@objc(MacSpaceCleaningEntry)
-public final class CleaningEntry: MacSpaceModuleEntry, @unchecked Sendable {
-    public override func makeModule() -> any MacSpaceModule { CleaningModule() }
+@objc(MacSpaceSystemDataEntry)
+public final class SystemDataEntry: MacSpaceModuleEntry, @unchecked Sendable {
+    public override func makeModule() -> any MacSpaceModule { SystemDataModule() }
 }
 
 /// System Data: what fills it, what is safe to free, and guided manual cleanup for what only another app can remove.
-public struct CleaningModule: MacSpaceModule {
-    private let store = CleaningStore()
+public struct SystemDataModule: MacSpaceModule {
+    private let store = SystemDataStore()
 
     public init() {}
 
     public func summary(context: ModuleContext) async -> ScreenWidget {
-        ScreenBuilder.summary(await store.snapshot())
+        SystemDataScreenBuilder.summary(await store.snapshot())
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        ScreenBuilder.screen(await store.snapshot())
+        SystemDataScreenBuilder.screen(await store.snapshot())
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -42,7 +42,7 @@ public struct CleaningModule: MacSpaceModule {
             var freed: UInt64 = 0
             let before = DataVolume.freeBytes()
             let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
-            progress(ActionProgress(fraction: 0.1, message: "Cleaning caches…"))
+            progress(ActionProgress(fraction: 0.1, message: "Cleaning system caches…"))
             let caches = Self.clean(cleanable)
             details += caches.details
             progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))

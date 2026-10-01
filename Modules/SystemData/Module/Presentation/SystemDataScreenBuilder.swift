@@ -3,7 +3,7 @@ import MacSpacePlatform
 import MacSpaceSdk
 
 /// Turns a snapshot into the widgets the app draws. Pure, so it can be tested without scanning a Mac.
-enum ScreenBuilder {
+enum SystemDataScreenBuilder {
     /// What the usage bar groups System Data into. Tones are series colors in this order.
     struct Group {
         let id: String
@@ -28,7 +28,7 @@ enum ScreenBuilder {
         report.items.filter { $0.kind != .codeSignClone && ($0.bytes ?? 0) > 0 }
     }
 
-    static func usage(_ snapshot: CleaningSnapshot) -> UsageBar {
+    static func usage(_ snapshot: SystemDataSnapshot) -> UsageBar {
         let items = measured(snapshot.report)
         var segments: [UsageSegment] = []
         for (index, group) in groups.enumerated() {
@@ -44,13 +44,13 @@ enum ScreenBuilder {
 
     /// Bytes MACSPACE can free right now without the user doing anything in another app. Caches of apps that are open
     /// are left out: they cannot be cleaned until the app quits.
-    static func freeableBytes(_ snapshot: CleaningSnapshot) -> UInt64 {
+    static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
             .compactMap(\.expectedReclaimBytes).reduce(0, +)
         return caches + (snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
     }
 
-    static func summary(_ snapshot: CleaningSnapshot) -> ScreenWidget {
+    static func summary(_ snapshot: SystemDataSnapshot) -> ScreenWidget {
         var usage = usage(snapshot)
         usage.title = "System Data"
         let freeable = freeableBytes(snapshot)
@@ -58,7 +58,7 @@ enum ScreenBuilder {
         return .usage(usage)
     }
 
-    static func screen(_ snapshot: CleaningSnapshot) -> Screen {
+    static func screen(_ snapshot: SystemDataSnapshot) -> Screen {
         let report = snapshot.report
         var widgets: [ScreenWidget] = []
 
@@ -72,12 +72,12 @@ enum ScreenBuilder {
         if let manual { widgets.append(manual) }
         if let review = reviewSection(report) { widgets.append(review) }
         if let managed = managedSection(report) { widgets.append(managed) }
-        return Screen(title: "Cleaning", subtitle: "What fills System Data, and what you can safely free.", widgets: widgets)
+        return Screen(title: "System Data", subtitle: "What fills System Data, and what you can safely free.", widgets: widgets)
     }
 
     // MARK: Sections
 
-    static func freeNow(_ snapshot: CleaningSnapshot) -> ScreenWidget {
+    static func freeNow(_ snapshot: SystemDataSnapshot) -> ScreenWidget {
         let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && ($0.expectedReclaimBytes ?? 0) > 0 }
             .sorted { ($0.expectedReclaimBytes ?? 0) > ($1.expectedReclaimBytes ?? 0) }
         var rows = cleanable.map { item -> Row in
@@ -104,7 +104,7 @@ enum ScreenBuilder {
         if rows.count > 1 && total > 0 {
             widgets.append(.button(ButtonWidget(id: "free-all", action: Action(
                 id: "cleanAll", title: "Free all (\(ByteFormat.string(total)))", symbol: "sparkles", role: .prominent,
-                confirmation: Confirmation(title: "Free everything listed?", message: "Deletes the caches, old reports and unused system assets above. None of it holds your files.", confirmTitle: "Free all")),
+                confirmation: Confirmation(title: "Free everything listed?", message: "Deletes the system caches, old reports and unused system assets above. None of it holds your files.", confirmTitle: "Free all")),
                 footnote: "The space actually freed is measured on the volume afterwards.")))
         }
         return .section(SectionWidget(id: "free", title: "Free now", subtitle: "MACSPACE can do these without you opening another app.", widgets: widgets))

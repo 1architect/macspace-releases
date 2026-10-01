@@ -4,7 +4,7 @@ import MacSpacePlatform
 import AppKit
 #endif
 
-public enum CleaningSchema {
+public enum SystemDataSchema {
     public static let version = 1
 }
 
@@ -256,6 +256,8 @@ public struct SystemDataInspector {
         }
         // Apple's own caches belong to background daemons that are always running, which the app check cannot see.
         let appleManaged = SystemDataCleanup(kind: .managedByMacOS, description: "Apple system cache used by background services; macOS manages it.", command: nil)
+        // Third-party app caches are listed because they fill System Data, but cleaning them is not this module's job.
+        let appCacheReview = SystemDataCleanup(kind: .review, description: "A cache of this app. Cleaning app caches is outside System Data cleanup; the app rebuilds it.", command: nil)
         func isAppleCache(_ name: String) -> Bool { name.hasPrefix("com.apple.") || Self.appleCacheNames.contains(name) }
 
         // Code-signing clones and the per-user system cache.
@@ -280,7 +282,7 @@ public struct SystemDataInspector {
             let name = (path as NSString).lastPathComponent
             let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
             add("appcache:\(name)", "App cache: \(name)", .appCache, paths: [path], owners: [owner],
-                cleanup: isAppleCache(name) ? appleManaged : deleteWhenClosed(owner), notes: name.hasSuffix(".ShipIt") ? ["An app updater's download cache."] : [],
+                cleanup: isAppleCache(name) ? appleManaged : appCacheReview, notes: name.hasSuffix(".ShipIt") ? ["An app updater's download cache."] : [],
                 minimum: Self.minimumItemBytes)
         }
         for path in children((home as NSString).appendingPathComponent(".cache")) {
@@ -420,7 +422,7 @@ public struct SystemDataInspector {
         if !unreadable.isEmpty { warnings.append("\(unreadable.count) location(s) need Full Disk Access or root to measure.") }
         let measured = items.compactMap(\.bytes).reduce(0, +)
         let cleanable = items.filter { $0.cleanup.kind == .deleteWhenNotRunning }.compactMap(\.expectedReclaimBytes).reduce(0, +)
-        return SystemDataReport(schemaVersion: CleaningSchema.version, generatedAt: now, volumes: volumeUsage, items: items,
+        return SystemDataReport(schemaVersion: SystemDataSchema.version, generatedAt: now, volumes: volumeUsage, items: items,
                                 measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
                                 unreadable: unreadable, warnings: warnings)
     }
@@ -486,7 +488,7 @@ public struct SystemDataCleaner {
 
     /// The directories cleanable items may live in.
     public static func allowedRoots(_ locations: SystemDataLocations) -> [String] {
-        var roots = [locations.home.appendingPathComponent("Library/Caches").path]
+        var roots: [String] = []
         if let userDir = locations.userSystemDirectory {
             roots.append(userDir.appendingPathComponent("X").path)
             roots.append(userDir.appendingPathComponent("C").path)

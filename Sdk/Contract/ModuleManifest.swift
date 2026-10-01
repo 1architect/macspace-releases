@@ -8,7 +8,7 @@ public enum SdkVersion {
 /// `Manifest.json` inside a module bundle. The app reads it before running any module code, so the module list, the
 /// permission requests and the settings page work for modules that are off or incompatible.
 public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
-    /// Reverse-DNS identifier, e.g. `com.macspace.cleaning`.
+    /// Reverse-DNS identifier, e.g. `com.macspace.system-data`.
     public var id: String
     public var name: String
     public var summary: String

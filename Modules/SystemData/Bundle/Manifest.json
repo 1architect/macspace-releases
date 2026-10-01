@@ -1,6 +1,6 @@
 {
-  "id": "com.macspace.cleaning",
-  "name": "Cleaning",
+  "id": "com.macspace.system-data",
+  "name": "System Data",
   "summary": "See what fills System Data and free what is safe to remove.",
   "version": "0.1.0",
   "sdkVersion": 1,

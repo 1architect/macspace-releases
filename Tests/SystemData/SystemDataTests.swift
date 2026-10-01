@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacSpaceCleaning
+@testable import MacSpaceSystemData
 import MacSpacePlatform
 
 final class SystemDataTests: XCTestCase {
@@ -44,7 +44,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(byID["clone:com.example.Big"]?.expectedReclaimBytes, 0)
         XCTAssertEqual(byID["clone:com.example.Big"]?.inUse, true)
         XCTAssertEqual(byID["usercache:clang"]?.cleanup.kind, .deleteWhenNotRunning)
-        XCTAssertEqual(byID["appcache:com.example.Tool"]?.cleanup.kind, .deleteWhenNotRunning)
+        XCTAssertEqual(byID["appcache:com.example.Tool"]?.cleanup.kind, .review, "third-party app caches are outside System Data cleanup")
         XCTAssertEqual(byID["appcache:com.apple.Safari"]?.cleanup.kind, .managedByMacOS, "Apple daemon caches are never offered")
         XCTAssertNil(byID["appcache:tiny"], "below the listing threshold")
         XCTAssertNil(byID["appcache:.DS_Store"])
@@ -52,8 +52,8 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(byID["developer:commandLineTools"]?.cleanup.kind, .review, "small fixed items are still shown")
         XCTAssertTrue(report.unreadable.isEmpty, "single files are not unreadable folders")
         XCTAssertEqual(report.volumes.first?.name, "Data")
-        XCTAssertGreaterThanOrEqual(report.cleanableBytes, 125_000_000, "clang + app cache, not the clone")
-        XCTAssertLessThan(report.cleanableBytes, 185_000_000)
+        XCTAssertGreaterThanOrEqual(report.cleanableBytes, 55_000_000, "only the system cache, not the clone or app caches")
+        XCTAssertLessThan(report.cleanableBytes, 100_000_000)
     }
 
     func testUnreadableChildrenAreReportedOncePerParent() throws {
@@ -97,7 +97,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(apps.first, "WhatsApp", "largest first")
         XCTAssertEqual(report.manualCleanup.first?.itemIDs.count, 2, "both WhatsApp containers in one line")
         XCTAssertTrue(apps.contains("OneDrive"))
-        XCTAssertFalse(apps.contains("Claude"), "MACSPACE cleans the updater cache itself, so it is not a manual step")
+        XCTAssertFalse(apps.contains("Claude"), "an updater cache is an app cache, not a manual step")
         XCTAssertFalse(report.manualCleanup.first!.guide.steps.isEmpty)
     }
 
@@ -113,7 +113,7 @@ final class SystemDataTests: XCTestCase {
             .clean(items, allowedRoots: SystemDataCleaner.allowedRoots(locations))
         XCTAssertEqual(blocked.results.first { $0.itemID == "clone:com.example.Big" }?.deleted, false, "clones are not cleanable")
         XCTAssertEqual(blocked.results.first { $0.itemID == "appsupport:BigApp" }?.deleted, false, "review items are never deleted")
-        XCTAssertEqual(blocked.results.first { $0.itemID == "appcache:com.example.Tool" }?.deleted, true)
+        XCTAssertEqual(blocked.results.first { $0.itemID == "appcache:com.example.Tool" }?.deleted, false, "app caches are not cleaned by this module")
         XCTAssertTrue(fm.fileExists(atPath: root.appendingPathComponent("folders/X/com.example.Big.code_sign_clone").path))
 
         try file("folders/C/clang/ModuleCache/a.pcm", mb: 60)
