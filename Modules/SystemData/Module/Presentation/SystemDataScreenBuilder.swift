@@ -70,7 +70,7 @@ enum SystemDataScreenBuilder {
 
         if !report.unreadable.isEmpty {
             widgets.append(.banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured",
-                                          message: "Grant Full Disk Access in Settings to include them. The numbers below are a lower bound.")))
+                                          message: "Could not read: \(unreadableList(report.unreadable)). Full Disk Access covers most; places only root can read need the helper. The numbers below are a lower bound.")))
         }
         widgets.append(.usage(usage(snapshot)))
         widgets.append(freeNow(snapshot))
@@ -152,6 +152,13 @@ enum SystemDataScreenBuilder {
         }
         return .section(SectionWidget(id: "assets", title: "System assets", subtitle: "Downloads macOS keeps while a feature uses them. Change the setting, restart, then remove unused assets.",
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))], isCollapsible: true, startsCollapsed: false))
+    }
+
+    /// Up to four locations, home folder shortened, so the user can see what is missing.
+    static func unreadableList(_ paths: [String]) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let shown = paths.prefix(4).map { $0.hasPrefix(home) ? "~" + $0.dropFirst(home.count) : $0 }
+        return shown.joined(separator: ", ") + (paths.count > 4 ? " and \(paths.count - 4) more" : "")
     }
 
     static let assetsThreshold: UInt64 = 50_000_000
