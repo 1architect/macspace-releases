@@ -65,10 +65,12 @@ public protocol PrivilegedOperationHandler: Sendable {
     func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data
 }
 
-public enum PrivilegedHelperError: Error, Equatable, CustomStringConvertible {
+public enum PrivilegedHelperError: LocalizedError, Equatable, CustomStringConvertible {
     case connection(String)
     case malformedResponse
     case helper(String)
+
+    public var errorDescription: String? { description }
 
     public var description: String {
         switch self {

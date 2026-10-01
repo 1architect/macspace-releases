@@ -232,10 +232,13 @@ public struct CacheDeleteClient {
         guard let symbol = symbol(purgeSymbol) else { return (false, nil) }
         let done = DispatchSemaphore(value: 0)
         let box = ResultBox()
-        _ = unsafeBitCast(symbol, to: Purge.self)(info as CFDictionary) { result in
+        // An explicit block value is an escaping closure: some services (app container caches) keep the callback and answer after
+        // the call returns, and a trailing closure would trap with "non-escaping closure has escaped" (seen on 26B5091g).
+        let callback: Callback = { result in
             box.value = result as? [String: Any]
             done.signal()
-        }?.takeRetainedValue()
+        }
+        _ = unsafeBitCast(symbol, to: Purge.self)(info as CFDictionary, callback)?.takeRetainedValue()
         let answered = done.wait(timeout: .now() + timeout) == .success
         return (answered, box.value)
     }

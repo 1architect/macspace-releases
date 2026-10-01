@@ -96,4 +96,23 @@ final class LazyChannelTests: XCTestCase {
         XCTAssertNotEqual(HelperFingerprint.of(path: file.path), first, "replacing the binary changes its fingerprint")
         XCTAssertNil(HelperFingerprint.of(path: "/nonexistent"))
     }
+
+    func testAFailedConnectionIsReplacedByANewOneOnTheNextTry() async throws {
+        final class Flaky: PrivilegedChannel, @unchecked Sendable {
+            let fails: Bool
+            init(fails: Bool) { self.fails = fails }
+            func perform(operation: String, arguments: [String: String]) async throws -> Data {
+                if fails { throw PrivilegedHelperError.connection("invalidated") }
+                return Data("ok".utf8)
+            }
+        }
+        final class Made: @unchecked Sendable { var count = 0 }
+        let made = Made()
+        let channel = LazyPrivilegedChannel(status: { .enabled }, makeClient: { made.count += 1; return Flaky(fails: made.count == 1) })
+        let data = try await channel.perform(operation: "x", arguments: [:])
+        XCTAssertEqual(String(decoding: data, as: UTF8.self), "ok", "the retry used a fresh connection")
+        XCTAssertEqual(made.count, 2)
+        _ = try await channel.perform(operation: "x", arguments: [:])
+        XCTAssertEqual(made.count, 2, "a working connection is kept")
+    }
 }
