@@ -1,0 +1,15 @@
+{
+  "id": "com.macspace.cleaning",
+  "name": "Cleaning",
+  "summary": "See what fills System Data and free what is safe to remove.",
+  "version": "0.1.0",
+  "sdkVersion": 1,
+  "symbol": "externaldrive.badge.checkmark",
+  "minimumMacOS": "27.0",
+  "order": 10,
+  "permissions": [
+    "fullDiskAccess"
+  ],
+  "options": [],
+  "backgroundTasks": []
+}

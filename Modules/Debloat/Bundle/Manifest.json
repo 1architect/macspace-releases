@@ -1,0 +1,15 @@
+{
+  "id": "com.macspace.debloat",
+  "name": "Debloat",
+  "summary": "Turn off analytics, ads, and other background data collection that macOS lets you control.",
+  "version": "0.1.0",
+  "sdkVersion": 1,
+  "symbol": "shield.lefthalf.filled",
+  "minimumMacOS": "27.0",
+  "order": 30,
+  "permissions": [
+    "configurationProfile"
+  ],
+  "options": [],
+  "backgroundTasks": []
+}

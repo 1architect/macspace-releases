@@ -1,0 +1,50 @@
+import Foundation
+import MacSpaceApp
+import MacSpacePlatform
+import MacSpaceSdk
+
+struct EmptyOptions: OptionStore {
+    func bool(_ id: String) -> Bool { false }
+    func string(_ id: String) -> String { "" }
+    func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
+}
+
+/// `macspace modules` lists the modules the app would load. More commands arrive with the modules.
+@main
+struct MacSpaceCli {
+    static func main() async {
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        guard arguments.first == "modules" else {
+            print("usage: macspace modules [--dir <folder>] [--load]")
+            exit(arguments.isEmpty ? 0 : 64)
+        }
+        let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }
+            ?? ModuleHost.defaultModulesDirectoryForCli()
+        let found = ModuleScanner.scan(directory: directory)
+        for module in found.modules {
+            let status: String
+            switch module.compatibility {
+            case .compatible: status = "ok"
+            case let .incompatible(reason): status = "incompatible: \(reason)"
+            }
+            print("\(module.manifest.id)  \(module.manifest.version)  \(module.manifest.name)  [\(status)]")
+        }
+        for problem in found.problems { print("\(problem.bundleName): \(problem.reason)") }
+        // --load runs each module's code: a smoke test that the bundles load and answer.
+        if arguments.contains("--load") {
+            var failed = false
+            for descriptor in found.modules where descriptor.compatibility == .compatible {
+                do {
+                    let module = try ModuleLoader.load(descriptor)
+                    let title = await module.screen(context: ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(),
+                                                                            permissions: LivePermissionChecker())).title
+                    print("loaded \(descriptor.id): screen \"\(title)\"")
+                } catch {
+                    failed = true
+                    print("failed \(descriptor.id): \(error.localizedDescription)")
+                }
+            }
+            exit(failed ? 1 : 0)
+        }
+    }
+}
