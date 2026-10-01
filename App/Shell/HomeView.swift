@@ -9,7 +9,6 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("MACSPACE").font(.largeTitle.weight(.bold))
                 if host.activeHandles.isEmpty {
                     ContentUnavailableView {
                         Label("No modules are on", systemImage: "puzzlepiece.extension")
