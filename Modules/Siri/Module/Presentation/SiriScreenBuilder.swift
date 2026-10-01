@@ -34,7 +34,14 @@ enum SiriScreenBuilder {
         }
     }
 
+    /// macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release there.
+    static func virtualMachineBanner() -> Banner {
+        Banner(id: "status", severity: .info, title: "This is a virtual machine",
+               message: "macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.")
+    }
+
     static func summary(_ snapshot: SiriSnapshot) -> ScreenWidget {
+        if snapshot.isVirtualMachine { return .banner(virtualMachineBanner()) }
         var banner = statusBanner(snapshot)
         if snapshot.status.state == .atRisk {
             banner.action = Action(id: "toggle", title: "Switch off", role: .prominent, parameters: ["id": "ai", "value": "false"],
@@ -53,6 +60,9 @@ enum SiriScreenBuilder {
     }
 
     static func screen(_ snapshot: SiriSnapshot) -> Screen {
+        if snapshot.isVirtualMachine {
+            return Screen(title: "Siri & Apple Intelligence", subtitle: "Switch Apple Intelligence off and reclaim the space its models take.", widgets: [.banner(virtualMachineBanner())])
+        }
         var widgets: [ScreenWidget] = [.banner(statusBanner(snapshot)), .toggles(switchList(snapshot))]
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
         widgets.append(modelsSection(snapshot))

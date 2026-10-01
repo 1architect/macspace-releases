@@ -46,5 +46,23 @@ public enum PrivilegedHelperInstaller {
         return false
     }
 
+    /// Why macOS reports the helper as "not found", worded for the Settings page. The usual cause is a quarantined app: macOS runs it
+    /// from a randomized, read-only copy (App Translocation) and the helper cannot be registered from there.
+    public static func notFoundReason(bundlePath: String, quarantined: Bool, containsLaunchDaemon: Bool) -> String {
+        if !containsLaunchDaemon { return "This build of MacSpace does not contain the helper." }
+        if bundlePath.contains("/AppTranslocation/") || quarantined {
+            return "macOS is treating MacSpace as a downloaded app, so the helper cannot be installed. In Terminal run: xattr -dr com.apple.quarantine /Applications/MacSpace.app, then reopen MacSpace. (A notarized release does not need this.)"
+        }
+        if !(bundlePath.hasPrefix("/Applications/") || bundlePath.contains("/Applications/")) { return "Move MacSpace to the Applications folder, then reopen it." }
+        return "macOS does not recognise the helper. In Terminal run: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints."
+    }
+
+    public static func notFoundReason(bundle: Bundle = .main) -> String {
+        let path = bundle.bundlePath
+        let quarantined = getxattr(path, "com.apple.quarantine", nil, 0, 0, XATTR_NOFOLLOW) >= 0
+        let plist = bundle.bundleURL.appendingPathComponent("Contents/Library/LaunchDaemons/\(PrivilegedHelperConstants.launchDaemonPlistName)").path
+        return notFoundReason(bundlePath: path, quarantined: quarantined, containsLaunchDaemon: FileManager.default.fileExists(atPath: plist))
+    }
+
     public static func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
 }

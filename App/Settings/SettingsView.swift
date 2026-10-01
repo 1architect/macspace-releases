@@ -150,7 +150,7 @@ private struct PermissionRow: View {
                 }
             case .unknown:
                 if permission == .privilegedHelper {
-                    Text("Move MacSpace to the Applications folder, then reopen it.").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                    Text(PrivilegedHelperInstaller.notFoundReason()).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading).frame(maxWidth: 360, alignment: .leading).textSelection(.enabled)
                 } else {
                     Text("Unknown").foregroundStyle(.secondary)
                 }

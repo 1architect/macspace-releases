@@ -26,6 +26,7 @@ public struct SiriModule: MacSpaceModule {
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         defer { Task { await store.invalidate() } }
+        if Machine.isVirtualMachine { return .failed("Apple Intelligence does not exist in a virtual machine; nothing was changed.") }
         switch request.actionID {
         case "toggle":
             return Self.setAvailability(available: request.parameters["value"] == "true")

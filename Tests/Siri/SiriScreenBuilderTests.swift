@@ -29,6 +29,17 @@ final class SiriScreenBuilderTests: XCTestCase {
         AppleIntelligenceAccount(guid: "G-\(name ?? "gone")", name: name, isCurrentUser: false, useCases: ["x_isIFPEnabled_true_language_pt"])
     }
 
+    func testVirtualMachineShowsOneExplanationAndNoControls() {
+        var snap = snapshot(.unknown)
+        snap.isVirtualMachine = true
+        let screen = SiriScreenBuilder.screen(snap)
+        XCTAssertEqual(screen.widgets.count, 1)
+        guard case let .banner(banner) = screen.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(banner.title, "This is a virtual machine")
+        guard case let .banner(tile) = SiriScreenBuilder.summary(snap) else { return XCTFail() }
+        XCTAssertNil(tile.action, "nothing to switch off in a virtual machine")
+    }
+
     func testBannerAndSwitchFollowTheState() {
         XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.protected)).severity, .success)
         XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.releasing)).severity, .info)

@@ -115,4 +115,24 @@ final class LazyChannelTests: XCTestCase {
         _ = try await channel.perform(operation: "x", arguments: [:])
         XCTAssertEqual(made.count, 2, "a working connection is kept")
     }
+
+    func testNotFoundReasonNamesTheLikelyCause() {
+        let quarantined = PrivilegedHelperInstaller.notFoundReason(bundlePath: "/Applications/MacSpace.app", quarantined: true, containsLaunchDaemon: true)
+        XCTAssertTrue(quarantined.contains("xattr -dr com.apple.quarantine"))
+        let translocated = PrivilegedHelperInstaller.notFoundReason(bundlePath: "/private/var/folders/x/AppTranslocation/ABC/d/MacSpace.app", quarantined: false, containsLaunchDaemon: true)
+        XCTAssertTrue(translocated.contains("xattr -dr com.apple.quarantine"))
+        XCTAssertTrue(PrivilegedHelperInstaller.notFoundReason(bundlePath: "/Users/x/Downloads/MacSpace.app", quarantined: false, containsLaunchDaemon: true).contains("Applications folder"))
+        XCTAssertTrue(PrivilegedHelperInstaller.notFoundReason(bundlePath: "/Applications/MacSpace.app", quarantined: false, containsLaunchDaemon: false).contains("does not contain the helper"))
+        XCTAssertTrue(PrivilegedHelperInstaller.notFoundReason(bundlePath: "/Applications/MacSpace.app", quarantined: false, containsLaunchDaemon: true).contains("helper --register"))
+    }
+
+    func testMachineKnowsWhetherItIsAVirtualMachine() {
+        XCTAssertEqual(Machine.isVirtualMachine, sysctlValue("kern.hv_vmm_present") == 1)
+    }
+
+    private func sysctlValue(_ name: String) -> Int32 {
+        var value: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        return sysctlbyname(name, &value, &size, nil, 0) == 0 ? value : 0
+    }
 }

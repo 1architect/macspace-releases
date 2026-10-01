@@ -14,6 +14,8 @@ struct SiriSnapshot: Sendable {
     var watch: AppleIntelligenceWatchRecord?
     var cliPath: String
     var takenAt: Date
+    /// Running inside a virtual machine, where Apple Intelligence does not exist.
+    var isVirtualMachine = false
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -46,6 +48,12 @@ actor SiriStore {
     func invalidate() { cached = nil }
 
     static func liveSnapshot() -> SiriSnapshot {
+        var snapshot = liveSnapshotOnThisMac()
+        snapshot.isVirtualMachine = Machine.isVirtualMachine
+        return snapshot
+    }
+
+    private static func liveSnapshotOnThisMac() -> SiriSnapshot {
         let guardian = AppleIntelligenceLanguageGuard()
         let environment = LiveSiriLanguageEnvironment()
         let status = guardian.status()
