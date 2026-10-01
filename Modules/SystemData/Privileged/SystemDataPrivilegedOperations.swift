@@ -25,12 +25,14 @@ public enum RootMeasuredLocations {
 
 public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
     public static let measure = "systemdata.measure"
+    public static let deleteVersions = "systemdata.versions.delete"
 
     public init() {}
 
-    public var operations: Set<String> { [Self.measure] }
+    public var operations: Set<String> { [Self.measure, Self.deleteVersions] }
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
+        if operation == Self.deleteVersions { return try JSONEncoder().encode(VersionStoreCleaner().execute()) }
         guard operation == Self.measure else { throw PrivilegedOperationError("Unknown operation \(operation).") }
         let requested = (arguments["paths"] ?? "").split(separator: "\n").map(String.init)
         let sizer = FileTreeSizer()

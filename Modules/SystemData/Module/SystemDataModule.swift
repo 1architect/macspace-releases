@@ -1,6 +1,7 @@
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
+import MacSpaceSystemDataPrivileged
 
 @objc(MacSpaceSystemDataEntry)
 public final class SystemDataEntry: MacSpaceModuleEntry, @unchecked Sendable {
@@ -36,6 +37,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "cleanReports":
             progress(ActionProgress(message: "Deleting old reports…"))
             return Self.cleanReports(snapshot.reports)
+        case "deleteVersions":
+            progress(ActionProgress(message: "Stopping revisiond and deleting the version history…"))
+            return await Self.deleteVersions(context.privileged)
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purgeAssets()
@@ -76,6 +80,23 @@ public struct SystemDataModule: MacSpaceModule {
         let result = DiagnosticReportCleaner(directories: []).execute(plan)
         let details = result.failed.map { "Could not delete \($0.key): \($0.value)" }
         return .succeeded("Deleted \(result.deleted.count) report(s), \(ByteFormat.string(result.freedBytes)).", details: details)
+    }
+
+    /// Deletes the Versions store through the helper. The freed space is measured on the volume, as for every other cleanup.
+    static func deleteVersions(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed("The helper is not installed. Install it in Settings, then try again.") }
+        let before = DataVolume.freeBytes()
+        let result: VersionStoreResult
+        do { result = try await channel.perform(VersionStoreResult.self, operation: SystemDataPrivilegedOperations.deleteVersions) }
+        catch { return .failed("The helper could not delete the version history: \(error.localizedDescription)") }
+        guard result.executed else { return .failed(result.error ?? "Nothing was deleted.") }
+        let measured = measuredFreed(before, DataVolume.freeBytes())
+        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
+        var details = ["Removed \(result.removedEntries) item(s) from the store; it went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
+        if let error = result.error { details.append(error) }
+        let message = measured.map { "Deleted the version history. The volume gained \(ByteFormat.string($0)); the store shrank by \(ByteFormat.string(stored))." }
+            ?? "Deleted the version history; the store shrank by \(ByteFormat.string(stored))."
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details)
     }
 
     static func purgeAssets() -> ActionResult {

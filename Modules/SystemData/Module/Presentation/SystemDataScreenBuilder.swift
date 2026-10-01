@@ -82,6 +82,7 @@ enum SystemDataScreenBuilder {
         widgets.append(freeNow(snapshot))
         let manual = manualSection(report)
         if let manual { widgets.append(manual) }
+        if let versions = versionsSection(snapshot) { widgets.append(versions) }
         if let assets = assetsSection(snapshot) { widgets.append(assets) }
         if let review = reviewSection(report) { widgets.append(review) }
         if let managed = managedSection(report, assetsListed: freeNowHasAssets(snapshot) || !snapshot.assetFamilies.isEmpty) { widgets.append(managed) }
@@ -146,6 +147,22 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "review-list", rows: Array(rows)))], isCollapsible: true, startsCollapsed: true))
     }
 
+    /// The saved history behind File > Revert To > Browse All Versions. Deleting it is irreversible, so it sits apart from "Free now".
+    static func versionsSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        guard let item = snapshot.report.items.first(where: { $0.id == "versions:documents" }), let bytes = item.bytes, bytes > 0 else { return nil }
+        let size = ByteFormat.string(bytes)
+        let row = Row(id: "versions", title: "Document version history", subtitle: "Saved earlier versions of documents (File → Revert To → Browse All Versions).",
+                      trailing: size, badge: Badge("Cannot be undone", tone: .critical), symbol: "clock.arrow.circlepath",
+                      detail: "Deleting it removes the earlier versions of every document. The documents themselves stay. Versions share blocks with their documents, so the space freed can be less than \(size); MACSPACE measures what the volume gains. Save your documents and quit apps that edit them first.",
+                      actions: [Action(id: "deleteVersions", title: "Delete…", role: .destructive,
+                                       confirmation: Confirmation(title: "Delete all version history?",
+                                                                  message: "This permanently removes the earlier versions of every document on this Mac (\(size) stored). You will no longer be able to revert documents to earlier states. The documents themselves are not touched.\n\nSave and close your documents first. MACSPACE stops the macOS versions service, deletes the store and starts the service again.",
+                                                                  confirmTitle: "Delete version history"),
+                                       requires: [.privilegedHelper])])
+        return .section(SectionWidget(id: "versions", title: "Version history", subtitle: "Irreversible. Use it only if you never revert documents.",
+                                      widgets: [.list(ListWidget(id: "versions-list", rows: [row]))], isCollapsible: true, startsCollapsed: false))
+    }
+
     /// What the system assets are, who keeps them, and the setting that releases each group.
     static func assetsSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         guard !snapshot.assetFamilies.isEmpty else { return nil }
@@ -189,7 +206,7 @@ enum SystemDataScreenBuilder {
 
     /// What fills System Data but cannot be reduced here. Anything with a button lives in "Free now" instead.
     static func managedSection(_ report: SystemDataReport, assetsListed: Bool = false) -> ScreenWidget? {
-        let handledElsewhere: Set<String> = assetsListed ? ["reports:diagnostic", "assets:system"] : ["reports:diagnostic"]
+        let handledElsewhere: Set<String> = assetsListed ? ["reports:diagnostic", "assets:system", "versions:documents"] : ["reports:diagnostic", "versions:documents"]
         let items = report.items.filter { $0.cleanup.kind == .managedByMacOS || $0.cleanup.kind == .command }
             .filter { ($0.bytes ?? 0) > 0 && !handledElsewhere.contains($0.id) }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         guard !items.isEmpty else { return nil }

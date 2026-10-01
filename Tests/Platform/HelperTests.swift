@@ -82,4 +82,18 @@ final class LazyChannelTests: XCTestCase {
         XCTAssertEqual(PrivilegedHelperInstaller.permissionStatus(.notRegistered), .missing)
         XCTAssertEqual(PrivilegedHelperInstaller.permissionStatus(.notFound), .unknown, "a development build without the bundled plist")
     }
+
+    func testPingReportsWhichBinaryTheHelperStartedFromSoAnUpdateCanBeNoticed() throws {
+        let service = PrivilegedHelperService(handlers: [], launchFingerprint: "100.5-2048")
+        let ping = service.handle(HelperRequest(operation: PrivilegedHelperService.pingOperation), clientUID: 501)
+        XCTAssertEqual(String(decoding: try XCTUnwrap(ping.payload), as: UTF8.self), "100.5-2048")
+
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("fp-\(UUID().uuidString)")
+        try Data(count: 10).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let first = try XCTUnwrap(HelperFingerprint.of(path: file.path))
+        try Data(count: 20).write(to: file)
+        XCTAssertNotEqual(HelperFingerprint.of(path: file.path), first, "replacing the binary changes its fingerprint")
+        XCTAssertNil(HelperFingerprint.of(path: "/nonexistent"))
+    }
 }

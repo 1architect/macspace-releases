@@ -39,8 +39,14 @@ public final class ModuleHost: ObservableObject {
         self.loader = loader
     }
 
+    private var checkedHelper = false
+
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {
+        if !checkedHelper, let privileged {
+            checkedHelper = true
+            await PrivilegedHelperInstaller.restartIfStale(channel: privileged)
+        }
         guard let modulesDirectory else { handles = []; problems = []; return }
         let found = ModuleScanner.scan(directory: modulesDirectory)
         problems = found.problems
