@@ -29,6 +29,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MACSPACE"
+cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"

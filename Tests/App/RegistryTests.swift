@@ -150,3 +150,19 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(options.bool("unknown"))
     }
 }
+
+final class GeneralSettingsTests: XCTestCase {
+    func testMenuBarIsOnByDefaultAndFollowsTheUsersChoice() {
+        let defaults = Fixtures.defaults()
+        XCTAssertTrue(GeneralSettings.showsInMenuBar(defaults))
+        defaults.set(false, forKey: GeneralSettings.showInMenuBarKey)
+        XCTAssertFalse(GeneralSettings.showsInMenuBar(defaults))
+    }
+
+    func testMenuBarHeadlinesComeFromModuleSummaries() {
+        XCTAssertEqual(MenuBarContent.headline(.banner(Banner(id: "b", severity: .info, title: "3 of 14 protections are on"))), "3 of 14 protections are on")
+        XCTAssertEqual(MenuBarContent.headline(.usage(UsageBar(id: "u", title: "System Data", segments: [], footnote: "1 GB can be freed now."))),
+                       "System Data: 1 GB can be freed now.")
+        XCTAssertNil(MenuBarContent.headline(nil))
+    }
+}

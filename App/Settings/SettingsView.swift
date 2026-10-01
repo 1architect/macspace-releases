@@ -8,6 +8,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            GeneralSettingsSection()
             Section("Modules") {
                 ForEach(host.handles) { handle in
                     ModuleToggleRow(host: host, handle: handle)
