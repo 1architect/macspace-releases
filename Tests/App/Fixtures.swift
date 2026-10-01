@@ -70,3 +70,16 @@ enum Fixtures {
         return url
     }
 }
+
+/// Answers after a delay, to show that modules load side by side.
+struct SlowModule: MacSpaceModule {
+    var delay: Double
+    init() { delay = 0 }
+    init(delay: Double) { self.delay = delay }
+    func summary(context: ModuleContext) async -> ScreenWidget { .text(TextWidget(id: "s", text: "s")) }
+    func screen(context: ModuleContext) async -> Screen {
+        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        return Screen(title: "Slow", widgets: [])
+    }
+    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("ok") }
+}

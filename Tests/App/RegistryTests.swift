@@ -55,6 +55,23 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    func testModulesLoadSideBySide() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for (id, name, order) in [("com.test.slow", "Slow", 1), ("com.test.fast", "Fast", 2)] {
+            try Fixtures.writeBundle(Fixtures.manifest(id: id, order: order), name: name, into: directory)
+        }
+        let host = ModuleHost(modulesDirectory: directory, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
+                              loader: { descriptor in SlowModule(delay: descriptor.id == "com.test.slow" ? 1.0 : 0) })
+        let start = Date()
+        let loading = Task { await host.reload() }
+        try await Task.sleep(nanoseconds: 400_000_000)
+        let fast = try XCTUnwrap(host.handles.first { $0.id == "com.test.fast" })
+        XCTAssertNotNil(fast.screen, "the fast module is shown while the slow one is still scanning")
+        await loading.value
+        XCTAssertLessThan(Date().timeIntervalSince(start), 1.8, "total time is the slowest module, not the sum")
+    }
+
     func testIncompatibleModulesAreNeverLoaded() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

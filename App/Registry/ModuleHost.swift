@@ -49,7 +49,9 @@ public final class ModuleHost: ObservableObject {
             if let known = existing[descriptor.id], known.descriptor == descriptor { return known }
             return ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
         }
-        for handle in handles { await handle.activate() }
+        // Modules load side by side: a slow scan in one must not hold back the others, and each page appears as soon as it is ready.
+        let loading = handles.map { handle in Task { await handle.activate() } }
+        for task in loading { await task.value }
         applySchedule()
     }
 
