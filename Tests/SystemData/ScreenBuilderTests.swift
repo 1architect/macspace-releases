@@ -56,10 +56,14 @@ final class SystemDataScreenBuilderTests: XCTestCase {
             item("whatsapp", kind: .appContainer, bytes: 9_000, cleanup: .review),
             item("apple-container", kind: .appContainer, bytes: 500, cleanup: .managedByMacOS),
             item("versions", kind: .documentVersions, bytes: 100, cleanup: .managedByMacOS),
+            item("ipsw", kind: .restoreImage, bytes: 25_000),
+            item("part", kind: .partialDownload, bytes: 4_000),
+            item("vm", kind: .virtualMachine, bytes: 7_000),
+            item("orphan", kind: .orphanedHome, bytes: 300),
         ])
         let usage = SystemDataScreenBuilder.usage(report)
-        XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata"])
-        XCTAssertEqual(usage.segments.last?.bytes, 500)
+        XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata", "leftovers"], "downloads and virtual machines are Documents in Settings")
+        XCTAssertEqual(usage.segments.last?.bytes, 300)
         XCTAssertTrue(usage.footnote?.contains("not counted") == true)
     }
 

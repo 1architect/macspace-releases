@@ -17,7 +17,7 @@ enum SystemDataScreenBuilder {
         Group(id: "appdata", title: "Apple app data", kinds: [.appContainer]),
         Group(id: "caches", title: "Caches", kinds: [.appCache, .userSystemCache, .toolCache]),
         Group(id: "support", title: "App support files", kinds: [.appSupport]),
-        Group(id: "leftovers", title: "Leftovers", kinds: [.partialDownload, .restoreImage, .virtualMachine, .orphanedHome, .trash, .stagedUpdate]),
+        Group(id: "leftovers", title: "Leftovers", kinds: [.orphanedHome, .trash, .stagedUpdate]),
         Group(id: "developer", title: "Homebrew and packages", kinds: [.packageManager]),
         Group(id: "macos", title: "Managed by macOS",
               kinds: [.logs, .symbolCache, .spotlightIndex, .spotlightMetadata, .systemAssets, .snapshot, .diagnosticReports]),
@@ -27,11 +27,17 @@ enum SystemDataScreenBuilder {
     /// measured) and swap, which sits on the VM volume. Counting them here overstated System Data by about 3.5 GB.
     static let countedElsewhere: Set<SystemDataKind> = [.developerTools, .virtualMemory]
 
-    /// Whether System Settings files the item under another category: cloud copies under Documents, and third-party apps' containers
-    /// under Applications (measured on 26B5091g: Documents 6.7 GB ≈ Documents + Desktop + Downloads + cloud copies 6.4 GB; Applications
-    /// 28.48 GB = 19.04 GB of bundles + about 9.4 GB of app data). Apple's own containers stay in System Data.
+    /// Whether System Settings files the item under another category: cloud copies, unfinished downloads, restore images and virtual
+    /// machines under Documents, and third-party apps' containers under Applications. Measured on 26B5091g: Documents 6.7 GB ≈
+    /// Documents + Desktop + Downloads + cloud copies; Applications 28.48 GB = 19.04 GB of bundles + about 9.4 GB of app data; a 25 GB
+    /// restore image in Downloads showed up in System Data until Spotlight indexed it, then moved to Documents (+21.91 GB there, −21.91 GB
+    /// in System Data, used space unchanged). Apple's own containers stay in System Data.
     static func countedByAnotherCategory(_ item: SystemDataItem) -> Bool {
-        item.kind == .cloudStorage || (item.kind == .appContainer && item.cleanup.kind == .review)
+        switch item.kind {
+        case .cloudStorage, .partialDownload, .restoreImage, .virtualMachine: return true
+        case .appContainer: return item.cleanup.kind == .review
+        default: return false
+        }
     }
 
     /// Items that count toward the bar. Code-signing clones share storage with their apps, so they are left out.
@@ -51,7 +57,7 @@ enum SystemDataScreenBuilder {
         if clones > 0 { footnote += " \(ByteFormat.string(clones)) of code-signing copies share space with their apps and are not counted." }
         let elsewhere = snapshot.report.items.filter { countedElsewhere.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)
         let otherCategory = snapshot.report.items.filter(countedByAnotherCategory).compactMap(\.bytes).reduce(0, +)
-        if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies and apps' own data are not counted: System Settings lists them under Documents and Applications." }
+        if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies, downloads, virtual machines and apps' own data are not counted: System Settings lists them under Documents and Applications." }
         if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
         if !snapshot.report.unreadable.isEmpty { footnote += " \(snapshot.report.unreadable.count) location(s) could not be measured." }
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
