@@ -13,6 +13,8 @@ CONFIG=${CONFIG:-release}
 VERSION=${VERSION:-0.1.0}
 BUILD=${BUILD:-1}
 SIGN_IDENTITY=${SIGN_IDENTITY:--}
+# Public half of the Sparkle update key. Without it the built app never checks for updates.
+SPARKLE_PUBLIC_KEY=${SPARKLE_PUBLIC_KEY:-}
 # The team that signs the app; the helper accepts only clients signed by it. Not a secret (it is in every signed binary).
 TEAM_ID=${TEAM_ID:-$(printf '%s' "$SIGN_IDENTITY" | sed -n 's/.*(\([A-Z0-9]\{10\}\)).*/\1/p')}
 TEAM_ID=${TEAM_ID:-UNSIGNED}
@@ -27,7 +29,7 @@ APP=Build/MACSPACE.app
 rm -rf Build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources"
 
-sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" App/Resources/Info.plist > "$APP/Contents/Info.plist"
+sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MACSPACE"
 cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
@@ -35,6 +37,7 @@ cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
 sed "s/__TEAM_ID__/$TEAM_ID/" Packaging/com.macspace.helper.plist > "$APP/Contents/Library/LaunchDaemons/com.macspace.helper.plist"
 cp "$BIN/libMacSpaceSdk.dylib" "$BIN/libMacSpacePlatform.dylib" "$APP/Contents/Frameworks/"
+cp -R "$BIN/Sparkle.framework" "$APP/Contents/Frameworks/"
 
 # Drop the build machine's rpaths and point everything at the app's Frameworks folder.
 reroot() { # file, new rpath
@@ -70,6 +73,12 @@ if [ "$SIGN_IDENTITY" = "-" ]; then
 else
   FLAGS=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
 fi
+# Sparkle ships helpers that must be signed first, inside out, with the same identity (see Sparkle's documentation).
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+for item in "$SPARKLE"/XPCServices/*.xpc "$SPARKLE/Autoupdate" "$SPARKLE/Updater.app"; do
+  [ -e "$item" ] && codesign "${FLAGS[@]}" "$item"
+done
+codesign "${FLAGS[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do codesign "${FLAGS[@]}" "$lib"; done
 for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
 codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"

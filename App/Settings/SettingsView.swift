@@ -5,10 +5,11 @@ import SwiftUI
 /// Modules on/off, then each module's options, background tasks and the permissions it needs.
 struct SettingsView: View {
     @ObservedObject var host: ModuleHost
+    @ObservedObject var updates: UpdateController
 
     var body: some View {
         Form {
-            GeneralSettingsSection()
+            GeneralSettingsSection(updates: updates)
             Section("Modules") {
                 ForEach(host.handles) { handle in
                     ModuleToggleRow(host: host, handle: handle)

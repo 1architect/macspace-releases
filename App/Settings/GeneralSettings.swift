@@ -11,6 +11,7 @@ public enum GeneralSettings {
 }
 
 struct GeneralSettingsSection: View {
+    @ObservedObject var updates: UpdateController
     @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -22,6 +23,12 @@ struct GeneralSettingsSection: View {
                     Text("Show in the menu bar")
                     Text("Keeps MACSPACE running when you close the window, so background tasks keep working.").font(.caption).foregroundStyle(.secondary)
                 }
+            }
+            if updates.isAvailable {
+                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
+                Button("Check for Updates Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
+            } else {
+                Text("Updates are not available in this build.").font(.caption).foregroundStyle(.secondary)
             }
             Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
                 VStack(alignment: .leading, spacing: 2) {

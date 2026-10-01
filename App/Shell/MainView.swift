@@ -10,10 +10,12 @@ public enum Destination: Hashable {
 /// The window: a sidebar of the active modules, the home dashboard, and Settings.
 public struct MainView: View {
     @ObservedObject var host: ModuleHost
+    @ObservedObject var updates: UpdateController
     @State private var selection: Destination? = .home
 
-    public init(host: ModuleHost) {
+    public init(host: ModuleHost, updates: UpdateController) {
         self.host = host
+        self.updates = updates
     }
 
     public var body: some View {
@@ -35,7 +37,7 @@ public struct MainView: View {
             case .home: HomeView(host: host) { selection = .module($0) }
             case let .module(id):
                 if let handle = host.handle(for: id) { ScreenView(handle: handle) } else { ContentUnavailableView("Module not found", systemImage: "questionmark.folder") }
-            case .settings: SettingsView(host: host)
+            case .settings: SettingsView(host: host, updates: updates)
             }
         }
         .frame(minWidth: 860, minHeight: 560)

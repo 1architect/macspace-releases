@@ -166,3 +166,27 @@ final class GeneralSettingsTests: XCTestCase {
         XCTAssertNil(MenuBarContent.headline(nil))
     }
 }
+
+@MainActor
+final class UpdateControllerTests: XCTestCase {
+    private func bundle(key: String?) throws -> Bundle {
+        let directory = try Fixtures.temporaryDirectory().appendingPathComponent("T.bundle")
+        let contents = directory.appendingPathComponent("Contents")
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        var plist: [String: Any] = ["CFBundleIdentifier": "com.test.updates"]
+        if let key { plist["SUPublicEDKey"] = key }
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: contents.appendingPathComponent("Info.plist"))
+        return try XCTUnwrap(Bundle(url: directory))
+    }
+
+    func testOnlyABuildWithARealKeyChecksForUpdates() throws {
+        XCTAssertFalse(UpdateController.isConfigured(try bundle(key: nil)))
+        XCTAssertFalse(UpdateController.isConfigured(try bundle(key: "")))
+        XCTAssertFalse(UpdateController.isConfigured(try bundle(key: "__SPARKLE_PUBLIC_KEY__")), "an unfilled template is not a key")
+        XCTAssertTrue(UpdateController.isConfigured(try bundle(key: "bRZJ3Zw4p8e8mxC+3xnP0aQe7oPD7rJ1Vz4nR0kQw1o=")))
+        let controller = UpdateController(bundle: try bundle(key: nil))
+        XCTAssertFalse(controller.isAvailable)
+        XCTAssertFalse(controller.canCheck)
+        controller.checkForUpdates() // must be a no-op, not a crash
+    }
+}

@@ -14,5 +14,7 @@
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSHighResolutionCapable</key><true/>
+    <key>SUFeedURL</key><string>https://github.com/1architect/macspace-releases/releases/latest/download/appcast.xml</string>
+    <key>SUPublicEDKey</key><string>__SPARKLE_PUBLIC_KEY__</string>
 </dict>
 </plist>
