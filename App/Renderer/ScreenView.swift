@@ -38,7 +38,7 @@ struct ScreenView: View {
             }
             Spacer()
             if handle.isBusy { ProgressView().controlSize(.small) }
-            Button { Task { await handle.refresh() } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
+            Button { Task { await handle.refresh(reload: true) } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
                 .disabled(handle.isBusy)
         }
     }

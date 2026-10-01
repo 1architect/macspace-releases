@@ -95,6 +95,20 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.lastResult?.outcome, .failed)
     }
 
+    func testRefreshButtonMakesTheModuleForgetItsCache() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let calls = Calls()
+        let host = try makeHost(modules: [(Fixtures.manifest(), "A")], calls: calls, directory: directory)
+        await host.reload()
+        let handle = try XCTUnwrap(host.handles.first)
+        XCTAssertFalse(calls.all.contains("invalidate"), "loading uses the cache")
+        await handle.refresh(reload: true)
+        XCTAssertEqual(calls.all.filter { $0 == "invalidate" }.count, 1)
+        await handle.refresh()
+        XCTAssertEqual(calls.all.filter { $0 == "invalidate" }.count, 1, "a plain refresh keeps the cache")
+    }
+
     func testMissingPermissionsStopAnActionBeforeTheModuleIsCalled() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

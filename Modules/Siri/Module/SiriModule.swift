@@ -14,6 +14,8 @@ public struct SiriModule: MacSpaceModule {
 
     public init() {}
 
+    public func invalidate() async { await store.invalidate() }
+
     public func summary(context: ModuleContext) async -> ScreenWidget {
         SiriScreenBuilder.summary(await store.snapshot())
     }

@@ -78,10 +78,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         lastResult = nil
     }
 
-    public func refresh() async {
+    /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
+    public func refresh(reload: Bool = false) async {
         guard state == .ready, let module else { return }
         let context = context()
         isBusy = true
+        if reload { await module.invalidate() }
         async let nextSummary = module.summary(context: context)
         async let nextScreen = module.screen(context: context)
         let (newSummary, newScreen) = await (nextSummary, nextScreen)

@@ -92,9 +92,14 @@ public protocol MacSpaceModule: Sendable {
 
     /// Runs a task declared in the manifest's `backgroundTasks`.
     func runBackgroundTask(_ id: String, context: ModuleContext) async
+
+    /// The user pressed Refresh: drop anything cached so the next `summary` and `screen` read the system again.
+    func invalidate() async
 }
 
 public extension MacSpaceModule {
+    func invalidate() async {}
+
     func runBackgroundTask(_ id: String, context: ModuleContext) async {}
 }
 
