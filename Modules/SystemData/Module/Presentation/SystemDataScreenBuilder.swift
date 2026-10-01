@@ -18,14 +18,18 @@ enum SystemDataScreenBuilder {
         Group(id: "caches", title: "Caches", kinds: [.appCache, .userSystemCache, .toolCache]),
         Group(id: "support", title: "App support files", kinds: [.appSupport]),
         Group(id: "leftovers", title: "Leftovers", kinds: [.partialDownload, .restoreImage, .virtualMachine, .orphanedHome, .trash, .stagedUpdate]),
-        Group(id: "developer", title: "Developer tools", kinds: [.developerTools, .packageManager]),
+        Group(id: "developer", title: "Homebrew and packages", kinds: [.packageManager]),
         Group(id: "macos", title: "Managed by macOS",
-              kinds: [.logs, .virtualMemory, .symbolCache, .spotlightIndex, .spotlightMetadata, .systemAssets, .snapshot, .diagnosticReports]),
+              kinds: [.logs, .symbolCache, .spotlightIndex, .spotlightMetadata, .systemAssets, .snapshot, .diagnosticReports]),
     ]
+
+    /// Kinds System Settings lists in other categories: the Command Line Tools under Developer (1.42 GB there against 1.31-1.41 GB
+    /// measured) and swap, which sits on the VM volume. Counting them here overstated System Data by about 3.5 GB.
+    static let countedElsewhere: Set<SystemDataKind> = [.developerTools, .virtualMemory]
 
     /// Items that count toward the bar. Code-signing clones share storage with their apps, so they are left out.
     static func measured(_ report: SystemDataReport) -> [SystemDataItem] {
-        report.items.filter { $0.kind != .codeSignClone && ($0.bytes ?? 0) > 0 }
+        report.items.filter { $0.kind != .codeSignClone && !countedElsewhere.contains($0.kind) && ($0.bytes ?? 0) > 0 }
     }
 
     static func usage(_ snapshot: SystemDataSnapshot) -> UsageBar {
@@ -38,6 +42,8 @@ enum SystemDataScreenBuilder {
         let clones = snapshot.report.items.filter { $0.kind == .codeSignClone }.compactMap(\.bytes).reduce(0, +)
         var footnote = "Measured on this Mac's Data volume."
         if clones > 0 { footnote += " \(ByteFormat.string(clones)) of code-signing copies share space with their apps and are not counted." }
+        let elsewhere = snapshot.report.items.filter { countedElsewhere.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)
+        if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
         if !snapshot.report.unreadable.isEmpty { footnote += " \(snapshot.report.unreadable.count) location(s) could not be measured." }
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
     }
