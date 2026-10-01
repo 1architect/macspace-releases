@@ -306,21 +306,21 @@ public struct SystemDataInspector {
                 cleanup: SystemDataCleanup(kind: .review, description: "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.", command: nil))
         }
         add("packages:homebrew", "Homebrew", .packageManager, paths: [system["homebrew"], system["usrLocal"]].compactMap { $0 },
-            cleanup: SystemDataCleanup(kind: .command, description: "Installed packages; `brew cleanup` removes old versions and downloads.", command: "brew cleanup"))
+            cleanup: SystemDataCleanup(kind: .command, description: "Installed packages. Running `brew cleanup` in Terminal removes old versions and downloads; most of this size is the packages themselves.", command: nil))
         add("logs:unified", "Unified system log", .logs, paths: [system["unifiedLog"], system["uuidtext"]].compactMap { $0 },
             cleanup: managed("Rotated by logd; deleting it removes the logs needed for troubleshooting."))
         if let path = system["systemReports"] {
             add("reports:diagnostic", "Diagnostic and crash reports", .diagnosticReports,
                 paths: [path, (home as NSString).appendingPathComponent("Library/Logs/DiagnosticReports")],
-                cleanup: SystemDataCleanup(kind: .command, description: "Old reports can be deleted.", command: "macspace privacy clean-reports"))
+                cleanup: SystemDataCleanup(kind: .command, description: "Old reports are deleted from Free now.", command: nil))
         }
         if let path = system["systemAssets"] {
             add("assets:system", "System assets (MobileAsset)", .systemAssets, paths: [path],
-                cleanup: SystemDataCleanup(kind: .command, description: "Per-asset detail and supported removals.", command: "macspace storage"))
+                cleanup: SystemDataCleanup(kind: .command, description: "Unused assets are removed from Free now when macOS reports any; the rest is in use.", command: nil))
         }
         if let path = system["spotlight"] {
             add("index:spotlight", "Spotlight index", .spotlightIndex, paths: [path],
-                cleanup: SystemDataCleanup(kind: .command, description: "Rebuilt by Spotlight; turning indexing off removes it.", command: "macspace privacy apply diagnostics.spotlight-indexing"))
+                cleanup: SystemDataCleanup(kind: .command, description: "Rebuilt by Spotlight; macOS manages it.", command: nil))
         }
         if let path = system["documentRevisions"] {
             add("versions:documents", "Document version history (Versions / Auto Save)", .documentVersions, paths: [path],

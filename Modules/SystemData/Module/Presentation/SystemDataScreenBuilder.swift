@@ -71,7 +71,7 @@ enum SystemDataScreenBuilder {
         let manual = manualSection(report)
         if let manual { widgets.append(manual) }
         if let review = reviewSection(report) { widgets.append(review) }
-        if let managed = managedSection(report) { widgets.append(managed) }
+        if let managed = managedSection(report, assetsInFreeNow: freeNowHasAssets(snapshot)) { widgets.append(managed) }
         return Screen(title: "System Data", subtitle: "What fills System Data, and what you can safely free.", widgets: widgets)
     }
 
@@ -93,7 +93,7 @@ enum SystemDataScreenBuilder {
                             actions: [Action(id: "cleanReports", title: "Clean", confirmation: Confirmation(
                                 title: "Delete old reports?", message: "This permanently deletes \(snapshot.reports.candidates.count) report file(s).", confirmTitle: "Delete"))]))
         }
-        if let assets = snapshot.purgeableAssetsBytes, assets >= 50_000_000 {
+        if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
             rows.append(Row(id: "assets", title: "Unused system assets", subtitle: "Downloads macOS no longer needs, such as Apple Intelligence models released by the off-switch. macOS deletes them only when the disk is nearly full; this does it now. Anything needed again is downloaded again.",
                             trailing: ByteFormat.string(assets), badge: Badge("Safe", tone: .positive), symbol: "square.stack.3d.down.right",
                             actions: [Action(id: "purgeAssets", title: "Remove", confirmation: Confirmation(
@@ -133,15 +133,21 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "review-list", rows: Array(rows)))], isCollapsible: true, startsCollapsed: true))
     }
 
-    static func managedSection(_ report: SystemDataReport) -> ScreenWidget? {
+    static let assetsThreshold: UInt64 = 50_000_000
+
+    static func freeNowHasAssets(_ snapshot: SystemDataSnapshot) -> Bool { (snapshot.purgeableAssetsBytes ?? 0) >= assetsThreshold }
+
+    /// What fills System Data but cannot be reduced here. Anything with a button lives in "Free now" instead.
+    static func managedSection(_ report: SystemDataReport, assetsInFreeNow: Bool = false) -> ScreenWidget? {
+        let handledElsewhere: Set<String> = assetsInFreeNow ? ["reports:diagnostic", "assets:system"] : ["reports:diagnostic"]
         let items = report.items.filter { $0.cleanup.kind == .managedByMacOS || $0.cleanup.kind == .command }
-            .filter { ($0.bytes ?? 0) > 0 }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
+            .filter { ($0.bytes ?? 0) > 0 && !handledElsewhere.contains($0.id) }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         guard !items.isEmpty else { return nil }
         let rows = items.map { item in
             Row(id: item.id, title: item.title, trailing: item.kind == .codeSignClone ? "~0 (shared)" : ByteFormat.string(item.bytes ?? 0),
                 badge: Badge("macOS"), symbol: "gearshape", detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
         }
-        return .section(SectionWidget(id: "managed", title: "Managed by macOS", subtitle: "Leave these alone; macOS reclaims them itself.",
+        return .section(SectionWidget(id: "managed", title: "Why System Data is large", subtitle: "These are in use or managed by macOS, so MACSPACE cannot reduce them. They are listed so the total adds up.",
                                       widgets: [.list(ListWidget(id: "managed-list", rows: rows))], isCollapsible: true, startsCollapsed: true))
     }
 }

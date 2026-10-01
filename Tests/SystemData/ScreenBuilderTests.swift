@@ -36,6 +36,20 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(usage.footnote?.contains("1 location(s)") == true)
     }
 
+    func testExplanationListLeavesOutWhatFreeNowAlreadyHandles() throws {
+        let items = [item("reports:diagnostic", kind: .diagnosticReports, bytes: 5_000, cleanup: .command),
+                     item("assets:system", kind: .systemAssets, bytes: 9_000, cleanup: .command),
+                     item("system:swap", kind: .virtualMemory, bytes: 2_000, cleanup: .managedByMacOS)]
+        func ids(purgeable: UInt64?) throws -> [String] {
+            let snap = snapshot(items: items, purgeable: purgeable)
+            guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.managedSection(snap.report, assetsInFreeNow: SystemDataScreenBuilder.freeNowHasAssets(snap))),
+                  case let .list(list) = section.widgets[0] else { return [] }
+            return list.rows.map(\.id)
+        }
+        XCTAssertEqual(try ids(purgeable: 200_000_000), ["system:swap"])
+        XCTAssertEqual(Set(try ids(purgeable: nil)), ["assets:system", "system:swap"], "without a purge button the assets row explains itself")
+    }
+
     func testFreeNowOffersOnlySafeItemsAndAFreeAllButton() throws {
         let snap = snapshot(items: [
             item("small", kind: .appCache, bytes: 100, cleanup: .deleteWhenNotRunning, reclaim: 100),
