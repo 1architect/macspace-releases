@@ -1,5 +1,6 @@
 import Foundation
 import MacSpacePlatform
+import MacSpaceSdk
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -177,6 +178,10 @@ public struct SystemDataInspector {
 
     public static func liveAccountExists(_ uid: uid_t) -> Bool { getpwuid(uid) != nil }
 
+    /// Without Full Disk Access, reading other apps' data or the user's Downloads and cloud folders makes macOS ask once per app or
+    /// folder, and the scan waits on every prompt. Those places are skipped and reported as unmeasured instead.
+    public var hasFullDiskAccess: Bool = LivePermissionChecker.probeFullDiskAccess() != .missing
+
     /// Other accounts' home folders can be measured only as root (the helper); injectable for tests.
     public var canReadOtherHomes: Bool = geteuid() == 0
 
@@ -201,22 +206,19 @@ public struct SystemDataInspector {
         var unreadable: [String] = []
 
         // Listed children (containers, caches) that cannot be read are reported once, as their parent folder.
-        var reportIndividually = true
         var smallBytes: [SystemDataKind: UInt64] = [:]
-        func size(_ path: String) -> (bytes: UInt64?, readable: Bool) {
+        func measure(_ path: String, individually: Bool) -> SizeMeasurement {
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return (nil, false) }
+            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return SizeMeasurement(bytes: nil) }
             guard isDirectory.boolValue else {
                 let bytes = (try? fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber)?.uint64Value
-                return (bytes, bytes != nil)
+                return SizeMeasurement(bytes: bytes, readable: bytes != nil)
             }
             guard (try? fileManager.contentsOfDirectory(atPath: path)) != nil else {
-                let entry = reportIndividually ? path : (path as NSString).deletingLastPathComponent
-                if !unreadable.contains(entry) { unreadable.append(entry) }
-                return (nil, false)
+                return SizeMeasurement(bytes: nil, unreadableEntry: individually ? path : (path as NSString).deletingLastPathComponent)
             }
             let measured = sizer.size(at: URL(fileURLWithPath: path))
-            return (measured?.allocatedBytesEstimate ?? measured?.logicalBytes, true)
+            return SizeMeasurement(bytes: measured?.allocatedBytesEstimate ?? measured?.logicalBytes, readable: true)
         }
         func children(_ directory: String) -> [String] {
             ((try? fileManager.contentsOfDirectory(atPath: directory)) ?? []).sorted().map { (directory as NSString).appendingPathComponent($0) }
@@ -229,32 +231,57 @@ public struct SystemDataInspector {
                 }
             }
         }
+        // Entries are registered first and measured together afterwards, in parallel: sizing is disk-bound and independent per path.
+        struct Pending {
+            var id: String, title: String, kind: SystemDataKind, paths: [String], owners: [String]
+            var cleanup: SystemDataCleanup, notes: [String], minimum: UInt64, expectedReclaim: UInt64?, measurable: Bool
+        }
+        var pending: [Pending] = []
         func add(_ id: String, _ title: String, _ kind: SystemDataKind, paths: [String], owners: [String] = [],
                  cleanup: SystemDataCleanup, notes: [String] = [], minimum: UInt64 = 0, expectedReclaim: UInt64? = nil,
                  measurable: Bool = true) {
-            var total: UInt64 = 0
-            var readable = false
-            var measured = false
-            reportIndividually = minimum == 0
-            // A folder whose subfolders this process cannot read would be undercounted silently; report it unmeasured.
-            if !measurable { unreadable.append(contentsOf: paths.filter { !unreadable.contains($0) }) }
-            for path in paths where measurable {
-                let result = size(path)
-                if let bytes = result.bytes { total += bytes; measured = true }
-                readable = readable || result.readable
+            pending.append(Pending(id: id, title: title, kind: kind, paths: paths, owners: owners, cleanup: cleanup, notes: notes,
+                                   minimum: minimum, expectedReclaim: expectedReclaim, measurable: measurable))
+        }
+        func finish() {
+            var jobs: [(entry: Int, path: String)] = []
+            for (index, entry) in pending.enumerated() where entry.measurable {
+                for path in entry.paths { jobs.append((index, path)) }
             }
-            guard paths.contains(where: fileManager.fileExists(atPath:)) else { return }
-            // Listed entries (minimum > 0) are shown only when measurable and large enough.
-            if minimum > 0, !measured || total < minimum {
-                // Not listed, but System Settings counts it, so it stays in the totals.
-                if measured, total > 0 { smallBytes[kind, default: 0] += total }
-                return
+            let results = MeasurementResults(count: jobs.count)
+            DispatchQueue.concurrentPerform(iterations: jobs.count) { index in
+                let job = jobs[index]
+                results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
             }
-            var item = SystemDataItem(id: id, title: title, kind: kind, paths: paths, bytes: measured ? total : nil, readable: readable,
-                                      owners: owners, inUse: isRunning(owners), cleanup: cleanup, notes: notes)
-            item.expectedReclaimBytes = expectedReclaim ?? (cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
-            item.guide = ManualCleanupGuides.guide(for: item)
-            items.append(item)
+            var next = 0
+            for entry in pending {
+                var total: UInt64 = 0
+                var readable = false
+                var measured = false
+                // A folder whose subfolders this process cannot read would be undercounted silently; report it unmeasured.
+                if !entry.measurable { unreadable.append(contentsOf: entry.paths.filter { !unreadable.contains($0) }) }
+                if entry.measurable {
+                    for _ in entry.paths {
+                        let result = results.get(next)
+                        next += 1
+                        if let entryPath = result.unreadableEntry, !unreadable.contains(entryPath) { unreadable.append(entryPath) }
+                        if let bytes = result.bytes { total += bytes; measured = true }
+                        readable = readable || result.readable
+                    }
+                }
+                guard entry.paths.contains(where: fileManager.fileExists(atPath:)) else { continue }
+                // Listed entries (minimum > 0) are shown only when measurable and large enough.
+                if entry.minimum > 0, !measured || total < entry.minimum {
+                    // Not listed, but System Settings counts it, so it stays in the totals.
+                    if measured, total > 0 { smallBytes[entry.kind, default: 0] += total }
+                    continue
+                }
+                var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
+                                          readable: readable, owners: entry.owners, inUse: isRunning(entry.owners), cleanup: entry.cleanup, notes: entry.notes)
+                item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
+                item.guide = ManualCleanupGuides.guide(for: item)
+                items.append(item)
+            }
         }
         let deleteWhenClosed = { (what: String) in
             SystemDataCleanup(kind: .deleteWhenNotRunning, description: "Safe to delete while \(what) is not running; it is recreated when needed.", command: nil)
@@ -346,6 +373,7 @@ public struct SystemDataInspector {
             cleanup: managed("Battery and energy history used by System Settings > Battery."))
         let library = (home as NSString).appendingPathComponent("Library")
         for folder in ["Group Containers", "Containers"] {
+            guard hasFullDiskAccess else { unreadable.append((library as NSString).appendingPathComponent(folder)); continue }
             for path in children((library as NSString).appendingPathComponent(folder)) {
                 let name = (path as NSString).lastPathComponent
                 let apple = name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.")
@@ -359,7 +387,8 @@ public struct SystemDataInspector {
             cleanup: managed("Data of Apple background services."))
         add("metadata:spotlight", "Per-user Spotlight metadata", .spotlightMetadata, paths: [(library as NSString).appendingPathComponent("Metadata")],
             cleanup: managed("CoreSpotlight indexes for apps' searchable content."))
-        for path in children((library as NSString).appendingPathComponent("CloudStorage")) {
+        if !hasFullDiskAccess { unreadable.append((library as NSString).appendingPathComponent("CloudStorage")) }
+        for path in children((library as NSString).appendingPathComponent("CloudStorage")) where hasFullDiskAccess {
             let name = (path as NSString).lastPathComponent
             add("cloud:\(name)", "Cloud storage: \(name)", .cloudStorage, paths: [path], owners: [name],
                 cleanup: SystemDataCleanup(kind: .review, description: "Local copies of cloud files; use \"Remove Download\" / \"Free Up Space\" in Finder to keep them online-only.", command: nil),
@@ -378,7 +407,8 @@ public struct SystemDataInspector {
             }
         }
         let review = { (description: String) in SystemDataCleanup(kind: .review, description: description, command: nil) }
-        scan((home as NSString).appendingPathComponent("Downloads"), depth: 2) { path in
+        if !hasFullDiskAccess { unreadable.append((home as NSString).appendingPathComponent("Downloads")) }
+        if hasFullDiskAccess { scan((home as NSString).appendingPathComponent("Downloads"), depth: 2) { path in
             let name = (path as NSString).lastPathComponent
             if let suffix = Self.partialDownloadSuffixes.first(where: { name.hasSuffix($0) }) {
                 let owner = suffix == ".prlupd-part" ? "Parallels Desktop" : (suffix == ".crdownload" ? "Google Chrome" : (suffix == ".download" ? "Safari" : "the downloading app"))
@@ -391,8 +421,9 @@ public struct SystemDataInspector {
                     cleanup: review("A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted."),
                     minimum: 500 * 1_000_000)
             }
-        }
-        for folder in ["Parallels", "Virtual Machines.localized", "Library/Containers/com.utmapp.UTM/Data/Documents"] {
+        } }
+        for folder in ["Parallels", "Virtual Machines.localized", "Library/Containers/com.utmapp.UTM/Data/Documents"]
+        where hasFullDiskAccess || !folder.hasPrefix("Library/Containers") {
             scan((home as NSString).appendingPathComponent(folder), depth: 1) { path in
                 let name = (path as NSString).lastPathComponent
                 guard Self.virtualMachineSuffixes.contains(where: { name.hasSuffix($0) }) else { return }
@@ -421,6 +452,7 @@ public struct SystemDataInspector {
         add("trash:user", "Trash", .trash, paths: [(home as NSString).appendingPathComponent(".Trash")],
             cleanup: SystemDataCleanup(kind: .review, description: "Empty the Trash in Finder; macOS can also do it automatically after 30 days.", command: nil))
 
+        finish()
         for (kind, bytes) in smallBytes.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             items.append(SystemDataItem(id: "small:\(kind.rawValue)", title: "Smaller items", kind: kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
                                         cleanup: SystemDataCleanup(kind: .review, description: "Many small entries, each below the listing size.", command: nil), notes: []))
@@ -504,4 +536,21 @@ public struct SystemDataCleaner {
         }
         return roots.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
     }
+}
+
+struct SizeMeasurement {
+    var bytes: UInt64?
+    var readable = false
+    var unreadableEntry: String?
+}
+
+/// Collects parallel measurements; each index is written once.
+final class MeasurementResults: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [SizeMeasurement]
+
+    init(count: Int) { values = Array(repeating: SizeMeasurement(bytes: nil), count: count) }
+
+    func set(_ index: Int, _ value: SizeMeasurement) { lock.lock(); values[index] = value; lock.unlock() }
+    func get(_ index: Int) -> SizeMeasurement { lock.lock(); defer { lock.unlock() }; return values[index] }
 }

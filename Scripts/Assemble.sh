@@ -1,7 +1,10 @@
 #!/bin/bash
 # Builds Build/MACSPACE.app from the Swift package: the app, its shared libraries and one bundle per module.
 #
-#   Scripts/Assemble.sh                      debug-friendly build, ad-hoc signed (runs on this Mac only)
+#   Scripts/Assemble.sh                      local build, signed with the first Developer ID / Apple Development identity found
+#                                            (ad-hoc without one). A stable identity keeps Full Disk Access across rebuilds:
+#                                            macOS ties the permission to the signature, and an ad-hoc signature changes every build.
+#   SIGN_IDENTITY=- Scripts/Assemble.sh      force an ad-hoc signature
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
 #
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
@@ -12,7 +15,12 @@ cd "$(dirname "$0")/.."
 CONFIG=${CONFIG:-release}
 VERSION=${VERSION:-0.1.0}
 BUILD=${BUILD:-1}
-SIGN_IDENTITY=${SIGN_IDENTITY:--}
+AUTO_IDENTITY=0
+if [ -z "${SIGN_IDENTITY+x}" ]; then
+  SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "((Developer ID Application|Apple Development):.*)"$/\1/p' | head -1 || true)
+  SIGN_IDENTITY=${SIGN_IDENTITY:--}
+  [ "$SIGN_IDENTITY" = "-" ] || AUTO_IDENTITY=1
+fi
 # Public half of the Sparkle update key. Without it the built app never checks for updates.
 SPARKLE_PUBLIC_KEY=${SPARKLE_PUBLIC_KEY:-}
 # The team that signs the app; the helper accepts only clients signed by it. Not a secret (it is in every signed binary).
@@ -71,7 +79,9 @@ done
 if [ "$SIGN_IDENTITY" = "-" ]; then
   FLAGS=(--force --sign -)
 else
-  FLAGS=(--force --options runtime --timestamp --sign "$SIGN_IDENTITY")
+  # A local build needs no secure timestamp (that is a network call and only notarization requires it).
+  if [ "$AUTO_IDENTITY" = 1 ]; then STAMP=--timestamp=none; else STAMP=--timestamp; fi
+  FLAGS=(--force --options runtime "$STAMP" --sign "$SIGN_IDENTITY")
 fi
 # Sparkle ships helpers that must be signed first, inside out, with the same identity (see Sparkle's documentation).
 SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"

@@ -24,8 +24,28 @@ final class SystemDataTests: XCTestCase {
                             systemPaths: ["commandLineTools": root.appendingPathComponent("clt").path])
     }
 
-    private func inspector(running: [RunningApp] = []) -> SystemDataInspector {
-        SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] })
+    private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true) -> SystemDataInspector {
+        var inspector = SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] })
+        inspector.hasFullDiskAccess = fullDiskAccess
+        return inspector
+    }
+
+    func testWithoutFullDiskAccessProtectedFoldersAreSkippedAndReported() throws {
+        try file("home/Library/Containers/net.whatsapp.WhatsApp/Data/cache", mb: 110)
+        try file("home/Library/CloudStorage/OneDrive-X/big.pdf", mb: 120)
+        try file("home/Downloads/x.ipsw", mb: 600)
+        try file("home/Library/Application Support/BigApp/data", mb: 120)
+        let report = inspector(fullDiskAccess: false).inspect()
+        let ids = Set(report.items.map(\.id))
+        XCTAssertFalse(ids.contains("container:net.whatsapp.WhatsApp"))
+        XCTAssertFalse(ids.contains("cloud:OneDrive-X"))
+        XCTAssertFalse(ids.contains("ipsw:x.ipsw"))
+        XCTAssertTrue(ids.contains("appsupport:BigApp"), "unprotected places are still measured")
+        for name in ["Library/Containers", "Library/CloudStorage", "Downloads"] {
+            XCTAssertTrue(report.unreadable.contains(root.appendingPathComponent("home/\(name)").path), name)
+        }
+        let withAccess = Set(inspector().inspect().items.map(\.id))
+        XCTAssertTrue(withAccess.isSuperset(of: ["container:net.whatsapp.WhatsApp", "cloud:OneDrive-X", "ipsw:x.ipsw"]))
     }
 
     func testClassifiesClonesCachesAndAppleCaches() throws {
