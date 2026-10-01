@@ -41,6 +41,6 @@ public struct MainView: View {
             }
         }
         .frame(minWidth: 860, minHeight: 560)
-        .task { await host.reload() }
+        .task { await host.start() }
     }
 }

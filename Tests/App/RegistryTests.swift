@@ -55,6 +55,23 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    func testStartLoadsOnceNoMatterHowManyAsk() async throws {
+        final class Count: @unchecked Sendable { var loads = 0; let lock = NSLock(); func bump() { lock.lock(); loads += 1; lock.unlock() } }
+        let count = Count()
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "A", into: directory)
+        let host = ModuleHost(modulesDirectory: directory, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
+                              loader: { _ in count.bump(); return SlowModule(delay: 0.2) })
+        async let launch: Void = host.start()
+        async let window: Void = host.start()
+        _ = await (launch, window)
+        XCTAssertEqual(count.loads, 1, "the app at launch and the window share one load")
+        XCTAssertEqual(host.activeHandles.count, 1)
+        await host.start()
+        XCTAssertEqual(count.loads, 1)
+    }
+
     func testModulesLoadSideBySide() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

@@ -40,6 +40,14 @@ public final class ModuleHost: ObservableObject {
     }
 
     private var checkedHelper = false
+    private var startTask: Task<Void, Never>?
+
+    /// Loads the modules once, whoever asks first: the app at launch, the window, or the menu bar item. Later callers wait for the same
+    /// load instead of starting another.
+    public func start() async {
+        if startTask == nil { startTask = Task { await self.reload() } }
+        await startTask?.value
+    }
 
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {
