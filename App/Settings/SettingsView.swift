@@ -116,6 +116,11 @@ private struct PermissionRow: View {
             case .missing:
                 if permission == .fullDiskAccess {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
+                } else if permission == .privilegedHelper {
+                    Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
+                        if PrivilegedHelperInstaller.status != .requiresApproval { try? PrivilegedHelperInstaller.register() }
+                        if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
+                    }
                 } else {
                     Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)
                 }

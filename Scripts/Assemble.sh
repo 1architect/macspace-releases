@@ -13,6 +13,9 @@ CONFIG=${CONFIG:-release}
 VERSION=${VERSION:-0.1.0}
 BUILD=${BUILD:-1}
 SIGN_IDENTITY=${SIGN_IDENTITY:--}
+# The team that signs the app; the helper accepts only clients signed by it. Not a secret (it is in every signed binary).
+TEAM_ID=${TEAM_ID:-$(printf '%s' "$SIGN_IDENTITY" | sed -n 's/.*(\([A-Z0-9]\{10\}\)).*/\1/p')}
+TEAM_ID=${TEAM_ID:-UNSIGNED}
 if [ -z "${DEVELOPER_DIR:-}" ] && [ -d /Applications/Xcode-beta.app ] && ! xcode-select -p 2>/dev/null | grep -q Xcode; then
   export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 fi
@@ -27,6 +30,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MACSPACE"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
+cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
+mkdir -p "$APP/Contents/Library/LaunchDaemons"
+sed "s/__TEAM_ID__/$TEAM_ID/" Packaging/com.macspace.helper.plist > "$APP/Contents/Library/LaunchDaemons/com.macspace.helper.plist"
 cp "$BIN/libMacSpaceSdk.dylib" "$BIN/libMacSpacePlatform.dylib" "$APP/Contents/Frameworks/"
 
 # Drop the build machine's rpaths and point everything at the app's Frameworks folder.
@@ -38,6 +44,7 @@ reroot() { # file, new rpath
 }
 reroot "$APP/Contents/MacOS/MACSPACE" "@executable_path/../Frameworks"
 reroot "$APP/Contents/MacOS/MacSpaceCli" "@executable_path/../Frameworks"
+reroot "$APP/Contents/MacOS/MacSpaceHelper" "@executable_path/../Frameworks"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do
   install_name_tool -id "@rpath/$(basename "$lib")" "$lib"
   reroot "$lib" "@loader_path"
@@ -65,6 +72,7 @@ fi
 for lib in "$APP"/Contents/Frameworks/*.dylib; do codesign "${FLAGS[@]}" "$lib"; done
 for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
 codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
+codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP"
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
