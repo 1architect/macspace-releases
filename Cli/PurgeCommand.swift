@@ -29,6 +29,13 @@ enum PurgeCommand {
             exit(1)
         }
 
+        if arguments.contains("--all-services") {
+            // Read-only: what every CacheDelete service says it could purge, urgency 1.
+            let all = client.purgeableByService() ?? [:]
+            if json { emit(all) }
+            for (service, bytes) in all.sorted(by: { $0.value > $1.value }) { print("\(ByteFormat.string(bytes))  \(service)") }
+            exit(0)
+        }
         let purgeable = client.purgeableByService()?[CacheDeleteService.mobileAsset]
         guard arguments.contains("--execute") else {
             if json { emit(["purgeableBytes": purgeable]) }
