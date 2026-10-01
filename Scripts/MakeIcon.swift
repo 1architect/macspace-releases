@@ -33,7 +33,7 @@ func render(_ size: Int) -> Data {
 }
 
 let fileManager = FileManager.default
-let iconset = fileManager.temporaryDirectory.appendingPathComponent("MACSPACE.iconset")
+let iconset = fileManager.temporaryDirectory.appendingPathComponent("MacSpace.iconset")
 try? fileManager.removeItem(at: iconset)
 try fileManager.createDirectory(at: iconset, withIntermediateDirectories: true)
 for base in [16, 32, 128, 256, 512] {

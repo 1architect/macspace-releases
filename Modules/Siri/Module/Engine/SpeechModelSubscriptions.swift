@@ -3,7 +3,7 @@ import MacSpaceSiriPrivileged
 
 /// Which services subscribe to each Siri speech-recognition model, read from the UAF subscription database.
 /// A model stays installed while any subscription names it, so this — not the Siri or dictation settings — says
-/// whether it can be released. The database is world-readable; MACSPACE opens it read-only (`immutable=1`).
+/// whether it can be released. The database is world-readable; MacSpace opens it read-only (`immutable=1`).
 public struct SpeechModelSubscriptions: Codable, Equatable, Sendable {
     public struct Subscriber: Codable, Equatable, Hashable, Sendable {
         /// Subscribing client, e.g. `com.apple.siri.embeddedspeech`.

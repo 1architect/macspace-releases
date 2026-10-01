@@ -40,7 +40,7 @@ enum PurgeCommand {
         if let index = arguments.firstIndex(of: "--service"), arguments.indices.contains(index + 1) {
             service = arguments[index + 1]
             guard CacheDeleteService.purgeable.contains(service) else {
-                print("error: \(service) is not a service MACSPACE purges.")
+                print("error: \(service) is not a service MacSpace purges.")
                 exit(64)
             }
         }

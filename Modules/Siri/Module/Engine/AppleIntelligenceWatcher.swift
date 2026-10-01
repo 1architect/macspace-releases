@@ -55,10 +55,10 @@ public struct AppleIntelligenceWatcher: Sendable {
             case .atRisk:
                 let languages = "Siri \(status.inputs.siriLanguage ?? "?"), system \(status.inputs.systemLanguage ?? "?")"
                 alert = .init(severity: .warning, title: "Apple Intelligence protection lost",
-                              message: "Apple Intelligence is eligible again (\(languages)); macOS may download the ~12 GB model. Switch Apple Intelligence off again in MACSPACE.")
+                              message: "Apple Intelligence is eligible again (\(languages)); macOS may download the ~12 GB model. Switch Apple Intelligence off again in MacSpace.")
             case .unknown:
                 alert = .init(severity: .warning, title: "Apple Intelligence protection unknown",
-                              message: "MACSPACE could not read eligibility or asset state; the method may have changed after a macOS update. Open MACSPACE to check.")
+                              message: "MacSpace could not read eligibility or asset state; the method may have changed after a macOS update. Open MacSpace to check.")
             case .releasing where now.timeIntervalSince(since) >= releaseGrace:
                 alert = .init(severity: .warning, title: "Apple Intelligence model not released",
                               message: "Apple Intelligence is off, but the 3B model is still selected or installed after \(Int(releaseGrace / 60)) minutes.")
@@ -78,8 +78,8 @@ public struct AppleIntelligenceWatcher: Sendable {
 
 /// File-backed state, log and notification handling for the watcher.
 public struct AppleIntelligenceWatchStore {
-    public static let supportDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/MACSPACE")
-    public static let logDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/MACSPACE")
+    public static let supportDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/MacSpace")
+    public static let logDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/MacSpace")
     public static let maximumLogBytes = 512 * 1024
 
     public let stateURL: URL

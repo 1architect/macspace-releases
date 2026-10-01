@@ -22,7 +22,7 @@ public final class LazyPrivilegedChannel: PrivilegedChannel, @unchecked Sendable
         case .requiresApproval:
             throw PrivilegedHelperError.connection("the helper is installed but not approved yet; enable it in System Settings > General > Login Items & Extensions")
         case .notRegistered, .notFound:
-            throw PrivilegedHelperError.connection("the helper is not installed; install it from MACSPACE Settings")
+            throw PrivilegedHelperError.connection("the helper is not installed; install it from MacSpace Settings")
         @unknown default:
             throw PrivilegedHelperError.connection("the helper's state is unknown")
         }

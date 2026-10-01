@@ -43,7 +43,7 @@ public protocol DebloatSystem: AnyObject {
     func startService(_ service: LaunchdServiceSetting) throws -> Bool
     /// The flag value libfeatureflags reports to processes now (computed at boot); nil if unreadable.
     func liveFeatureFlag(domain: String, feature: String) -> Bool?
-    /// Writes the MACSPACE configuration profile and opens it for approval; returns a description for the user.
+    /// Writes the MacSpace configuration profile and opens it for approval; returns a description for the user.
     func stageProfile(_ profile: Data) throws -> String
     /// Labels whose launchd overrides survive with SIP enabled (`RemovableServices` in launchd's rootless
     /// policy); nil if the policy cannot be read.
@@ -401,7 +401,7 @@ public final class LiveDebloatSystem: DebloatSystem {
     }
 
     private var profileURL: URL? {
-        targetUser?.home.appendingPathComponent("Library/Application Support/MACSPACE/Profiles/\(ConfigurationProfileBuilder.fileName)")
+        targetUser?.home.appendingPathComponent("Library/Application Support/MacSpace/Profiles/\(ConfigurationProfileBuilder.fileName)")
     }
 
     public func stageProfile(_ profile: Data) throws -> String {

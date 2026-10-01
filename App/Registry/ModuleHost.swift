@@ -26,7 +26,7 @@ public final class ModuleHost: ObservableObject {
     /// The folder of a built app next to the command-line tool, for `macspace modules`.
     public nonisolated static func defaultModulesDirectoryForCli() -> URL {
         if let override = ProcessInfo.processInfo.environment["MACSPACE_MODULES_DIR"] { return URL(fileURLWithPath: override, isDirectory: true) }
-        return URL(fileURLWithPath: "/Applications/MACSPACE.app/Contents/PlugIns", isDirectory: true)
+        return URL(fileURLWithPath: "/Applications/MacSpace.app/Contents/PlugIns", isDirectory: true)
     }
 
     public init(modulesDirectory: URL? = ModuleHost.defaultModulesDirectory(), settings: SettingsStore = SettingsStore(),

@@ -77,7 +77,7 @@ public struct ModuleContext: Sendable {
     }
 }
 
-/// A feature area of MACSPACE. It describes what the user sees (`Screen`) and does what the user asks (`perform`);
+/// A feature area of MacSpace. It describes what the user sees (`Screen`) and does what the user asks (`perform`);
 /// the app owns all drawing, navigation and settings. Calls arrive off the main thread and may take seconds.
 public protocol MacSpaceModule: Sendable {
     init()

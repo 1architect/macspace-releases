@@ -74,8 +74,8 @@ public enum PrivilegedHelperError: LocalizedError, Equatable, CustomStringConver
 
     public var description: String {
         switch self {
-        case let .connection(message): return "Could not reach the MACSPACE helper: \(message)"
-        case .malformedResponse: return "The MACSPACE helper sent an unreadable response."
+        case let .connection(message): return "Could not reach the MacSpace helper: \(message)"
+        case .malformedResponse: return "The MacSpace helper sent an unreadable response."
         case let .helper(message): return message
         }
     }

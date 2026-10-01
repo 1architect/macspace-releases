@@ -1,13 +1,13 @@
 import Foundation
 
-/// Steps the user takes inside a third-party app (or a macOS screen) to shrink data MACSPACE must not delete itself:
+/// Steps the user takes inside a third-party app (or a macOS screen) to shrink data MacSpace must not delete itself:
 /// message media, cloud-file copies, app caches with their own "clear" button.
 public struct ManualCleanupGuide: Codable, Equatable, Sendable {
     public let app: String
     /// What the steps remove.
     public let frees: String
     public let steps: [String]
-    /// Whether MACSPACE checked these steps against a real version of the app. Menu labels change between versions,
+    /// Whether MacSpace checked these steps against a real version of the app. Menu labels change between versions,
     /// so the UI should word unverified guides as "usually".
     public let verified: Bool
 }
@@ -105,7 +105,7 @@ public enum ManualCleanupGuides {
         return rules.first { rule in rule.tokens.contains { haystack.contains($0) } }?.guide
     }
 
-    /// One line per app for what only the user can clean (items MACSPACE cleans itself and app caches are left out), largest first.
+    /// One line per app for what only the user can clean (items MacSpace cleans itself and app caches are left out), largest first.
     public static func summaries(for items: [SystemDataItem]) -> [ManualCleanupSummary] {
         var byApp: [String: (bytes: UInt64?, ids: [String], guide: ManualCleanupGuide)] = [:]
         for item in items where item.cleanup.kind != .deleteWhenNotRunning && item.kind != .appCache {

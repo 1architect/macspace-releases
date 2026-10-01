@@ -70,12 +70,12 @@ enum DebloatScreenBuilder {
 
     static func confirmation(_ control: DebloatControl, turningOn: Bool, verified: Bool) -> Confirmation {
         if !turningOn {
-            return Confirmation(title: "Turn \(control.title) back on?", message: "MACSPACE restores the values it saved before it changed them.", confirmTitle: "Turn on")
+            return Confirmation(title: "Turn \(control.title) back on?", message: "MacSpace restores the values it saved before it changed them.", confirmTitle: "Turn on")
         }
         var message = control.summary
         if !control.breaks.isEmpty { message += "\n\nStops working while off: " + control.breaks.joined(separator: "; ") + "." }
         if let restart = restartText(control.restart) { message += "\n\n" + restart }
-        if control.mechanism == .configurationProfile { message += "\n\nmacOS asks you to approve the MACSPACE profile in System Settings before this takes effect." }
+        if control.mechanism == .configurationProfile { message += "\n\nmacOS asks you to approve the MacSpace profile in System Settings before this takes effect." }
         if !verified { message += "\n\nThis was not verified on your macOS version; it may have no effect." }
         return Confirmation(title: "Turn off \(control.title)?", message: message, confirmTitle: "Turn off")
     }
@@ -88,7 +88,7 @@ enum DebloatScreenBuilder {
         var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id, "unverified": verified ? "false" : "true"],
                             confirmation: confirmation(control, turningOn: !on, verified: verified))
         if needsHelper(control) { action.requires = [.privilegedHelper] }
-        // The switch shows the feature, as in the other modules: on = the feature runs, off = MACSPACE switched it off.
+        // The switch shows the feature, as in the other modules: on = the feature runs, off = MacSpace switched it off.
         return ToggleRow(id: control.id, title: control.title, subtitle: control.summary, isOn: !on, isEnabled: !blocked,
                          badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
                          detail: detail(control, status), action: action)
@@ -120,7 +120,7 @@ enum DebloatScreenBuilder {
         }
         if !counts.awaiting.isEmpty {
             return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.awaiting.count) waiting for your approval",
-                                  message: "Approve the MACSPACE profile in System Settings > General > Device Management."))
+                                  message: "Approve the MacSpace profile in System Settings > General > Device Management."))
         }
         return .banner(Banner(id: "summary", severity: counts.on > 0 ? .success : .info, title: "\(counts.on) of \(counts.total) switched off",
                               message: counts.on == counts.total ? "Everything available is switched off." : "\(recommended(snapshot).count) more can be switched off and are verified on your macOS."))
@@ -130,7 +130,7 @@ enum DebloatScreenBuilder {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
         if !counts.awaiting.isEmpty {
-            widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MACSPACE profile",
+            widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
                                           message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) take effect once you approve it in System Settings > General > Device Management.",
                                           action: Action(id: "openProfiles", title: "Open System Settings", role: .prominent))))
         }
@@ -149,7 +149,7 @@ enum DebloatScreenBuilder {
                                            message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Some features they switch off are listed on each row.",
                                            confirmTitle: "Switch off"),
                 requires: [.privilegedHelper]),
-                footnote: "Everything MACSPACE changes is written to an undo journal, so you can turn any of it off again.")))
+                footnote: "Everything MacSpace changes is written to an undo journal, so you can turn any of it off again.")))
         }
         for category in categoryOrder {
             let controls = snapshot.controls.filter { $0.category == category }
@@ -158,6 +158,6 @@ enum DebloatScreenBuilder {
         }
         let env = snapshot.environment
         widgets.append(.text(TextWidget(id: "env", text: "macOS \(env.productVersion ?? "?") (\(env.build ?? "?")). Settings marked verified were measured on this build; others follow Apple's documented settings but their effect is not measured here.", style: .caption)))
-        return Screen(title: "Debloat", subtitle: "Switch off analytics, ads and background data collection macOS lets you control. A switch shows the feature: on = it runs, off = MACSPACE switched it off.", widgets: widgets)
+        return Screen(title: "Debloat", subtitle: "Switch off analytics, ads and background data collection macOS lets you control. A switch shows the feature: on = it runs, off = MacSpace switched it off.", widgets: widgets)
     }
 }

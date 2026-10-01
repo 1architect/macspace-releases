@@ -79,7 +79,7 @@ public struct DebloatModule: MacSpaceModule {
         let verb = action == .apply ? "on" : "off"
         if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Nothing was changed.", details: details, refresh: true) }
         if approval {
-            return ActionResult(outcome: .needsAttention, message: "Approve the MACSPACE profile to finish.",
+            return ActionResult(outcome: .needsAttention, message: "Approve the MacSpace profile to finish.",
                                 details: ["Open System Settings > General > Device Management and approve it."] + details, restartRequired: restart)
         }
         return ActionResult(outcome: .succeeded, message: "Turned \(changed) protection(s) \(verb).", details: details, restartRequired: restart)

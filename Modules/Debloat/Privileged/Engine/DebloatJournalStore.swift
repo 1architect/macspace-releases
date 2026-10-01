@@ -13,10 +13,10 @@ public extension DebloatJournalStoring {
 /// user's Application Support, root-scoped changes in /Library/Application Support (world-readable).
 public final class DebloatJournalStore: DebloatJournalStoring {
     public static let fileName = "debloat-journal.json"
-    public static let systemURL = URL(fileURLWithPath: "/Library/Application Support/MACSPACE").appendingPathComponent(fileName)
+    public static let systemURL = URL(fileURLWithPath: "/Library/Application Support/MacSpace").appendingPathComponent(fileName)
 
     public static func userURL(home: URL) -> URL {
-        home.appendingPathComponent("Library/Application Support/MACSPACE").appendingPathComponent(fileName)
+        home.appendingPathComponent("Library/Application Support/MacSpace").appendingPathComponent(fileName)
     }
 
     public let userURL: URL?

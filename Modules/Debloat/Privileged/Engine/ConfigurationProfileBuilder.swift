@@ -1,15 +1,15 @@
 import Foundation
 import CryptoKit
 
-/// Builds the single "MACSPACE policies" configuration profile from managed-preference settings.
+/// Builds the single "MacSpace policies" configuration profile from managed-preference settings.
 ///
 /// There is one profile with a fixed identifier: installing a new version replaces the old one, so applying or
 /// reverting a control regenerates the profile from every control still applied. Payload UUIDs are derived
 /// from their identifiers, so the same content always produces the same profile.
 public enum ConfigurationProfileBuilder {
     public static let identifier = "com.macspace.policies"
-    public static let displayName = "MACSPACE policies"
-    public static let fileName = "MACSPACE-policies.mobileconfig"
+    public static let displayName = "MacSpace policies"
+    public static let fileName = "MacSpace-policies.mobileconfig"
 
     public static func build(_ settings: [ManagedPreferenceSetting]) throws -> Data {
         var byType: [String: [String: Any]] = [:]
@@ -28,9 +28,9 @@ public enum ConfigurationProfileBuilder {
         }
         let profile: [String: Any] = [
             "PayloadDisplayName": displayName,
-            "PayloadDescription": "Privacy policies chosen in MACSPACE: \(settings.map { "\($0.payloadType) \($0.key)" }.sorted().joined(separator: ", ")). Remove this profile to undo them.",
+            "PayloadDescription": "Privacy policies chosen in MacSpace: \(settings.map { "\($0.payloadType) \($0.key)" }.sorted().joined(separator: ", ")). Remove this profile to undo them.",
             "PayloadIdentifier": identifier,
-            "PayloadOrganization": "MACSPACE",
+            "PayloadOrganization": "MacSpace",
             "PayloadScope": "System",
             "PayloadRemovalDisallowed": false,
             "PayloadType": "Configuration",

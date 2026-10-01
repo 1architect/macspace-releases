@@ -1,7 +1,7 @@
 import ServiceManagement
 import SwiftUI
 
-/// App-wide choices: whether MACSPACE lives in the menu bar and opens at login, which lets modules keep watching with the window closed.
+/// App-wide choices: whether MacSpace lives in the menu bar and opens at login, which lets modules keep watching with the window closed.
 public enum GeneralSettings {
     public static let showInMenuBarKey = "showInMenuBar"
 
@@ -21,7 +21,7 @@ struct GeneralSettingsSection: View {
             Toggle(isOn: $showInMenuBar) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Show in the menu bar")
-                    Text("Keeps MACSPACE running when you close the window, so background tasks keep working.").font(.caption).foregroundStyle(.secondary)
+                    Text("Keeps MacSpace running when you close the window, so background tasks keep working.").font(.caption).foregroundStyle(.secondary)
                 }
             }
             if updates.isAvailable {
@@ -34,7 +34,7 @@ struct GeneralSettingsSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Open at login")
                     if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
-                    else { Text("Starts MACSPACE when you log in.").font(.caption).foregroundStyle(.secondary) }
+                    else { Text("Starts MacSpace when you log in.").font(.caption).foregroundStyle(.secondary) }
                 }
             }
         }

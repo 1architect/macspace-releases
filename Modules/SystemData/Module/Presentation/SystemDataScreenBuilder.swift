@@ -57,7 +57,7 @@ enum SystemDataScreenBuilder {
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
     }
 
-    /// Bytes MACSPACE can free right now without the user doing anything in another app. Caches of apps that are open
+    /// Bytes MacSpace can free right now without the user doing anything in another app. Caches of apps that are open
     /// are left out: they cannot be cleaned until the app quits.
     static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
@@ -121,7 +121,7 @@ enum SystemDataScreenBuilder {
                 confirmation: Confirmation(title: "Free everything listed?", message: "Deletes the system caches, old reports, unused system assets above. None of it holds your files.", confirmTitle: "Free all")),
                 footnote: "The space actually freed is measured on the volume afterwards.")))
         }
-        return .section(SectionWidget(id: "free", title: "Free now", subtitle: "MACSPACE can do these without you opening another app.", widgets: widgets))
+        return .section(SectionWidget(id: "free", title: "Free now", subtitle: "MacSpace can do these without you opening another app.", widgets: widgets))
     }
 
     static func manualSection(_ report: SystemDataReport) -> ScreenWidget? {
@@ -153,10 +153,10 @@ enum SystemDataScreenBuilder {
         let size = ByteFormat.string(bytes)
         let row = Row(id: "versions", title: "Document version history", subtitle: "Saved earlier versions of documents (File → Revert To → Browse All Versions).",
                       trailing: size, badge: Badge("Cannot be undone", tone: .critical), symbol: "clock.arrow.circlepath",
-                      detail: "Deleting it removes the earlier versions of every document. The documents themselves stay. Versions share blocks with their documents, so the space freed can be less than \(size); MACSPACE measures what the volume gains. Save your documents and quit apps that edit them first.",
+                      detail: "Deleting it removes the earlier versions of every document. The documents themselves stay. Versions share blocks with their documents, so the space freed can be less than \(size); MacSpace measures what the volume gains. Save your documents and quit apps that edit them first.",
                       actions: [Action(id: "deleteVersions", title: "Delete…", role: .destructive,
                                        confirmation: Confirmation(title: "Delete all version history?",
-                                                                  message: "This permanently removes the earlier versions of every document on this Mac (\(size) stored). You will no longer be able to revert documents to earlier states. The documents themselves are not touched.\n\nSave and close your documents first. MACSPACE stops the macOS versions service, deletes the store and starts the service again.",
+                                                                  message: "This permanently removes the earlier versions of every document on this Mac (\(size) stored). You will no longer be able to revert documents to earlier states. The documents themselves are not touched.\n\nSave and close your documents first. MacSpace stops the macOS versions service, deletes the store and starts the service again.",
                                                                   confirmTitle: "Delete version history"),
                                        requires: [.privilegedHelper])])
         return .section(SectionWidget(id: "versions", title: "Version history", subtitle: "Irreversible. Use it only if you never revert documents.",
@@ -185,7 +185,7 @@ enum SystemDataScreenBuilder {
         var parts: [String] = []
         if !other.isEmpty { parts.append("Could not read: \(unreadableList(other)). Full Disk Access covers these.") }
         if !rootOnly.isEmpty {
-            parts.append(snapshot.helperError.map { "The helper could not be reached (\($0)), so these were not measured: \(unreadableList(rootOnly)). Reopen MACSPACE; if it persists, remove and install the helper again in Settings." }
+            parts.append(snapshot.helperError.map { "The helper could not be reached (\($0)), so these were not measured: \(unreadableList(rootOnly)). Reopen MacSpace; if it persists, remove and install the helper again in Settings." }
                 ?? (snapshot.helperTried
                 ? "macOS did not let even the helper read: \(unreadableList(rootOnly))."
                 : "Only root can read: \(unreadableList(rootOnly)). Turn on the helper in Settings to include them; Full Disk Access does not cover them."))
@@ -215,7 +215,7 @@ enum SystemDataScreenBuilder {
             Row(id: item.id, title: item.title, trailing: item.kind == .codeSignClone ? "~0 (shared)" : ByteFormat.string(item.bytes ?? 0),
                 badge: Badge("macOS"), symbol: "gearshape", detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
         }
-        return .section(SectionWidget(id: "managed", title: "Why System Data is large", subtitle: "These are in use or managed by macOS, so MACSPACE cannot reduce them. They are listed so the total adds up.",
+        return .section(SectionWidget(id: "managed", title: "Why System Data is large", subtitle: "These are in use or managed by macOS, so MacSpace cannot reduce them. They are listed so the total adds up.",
                                       widgets: [.list(ListWidget(id: "managed-list", rows: rows))], isCollapsible: true, startsCollapsed: true))
     }
 }

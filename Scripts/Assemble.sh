@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds Build/MACSPACE.app from the Swift package: the app, its shared libraries and one bundle per module.
+# Builds Build/MacSpace.app from the Swift package: the app, its shared libraries and one bundle per module.
 #
 #   Scripts/Assemble.sh                      local build, signed with the first Developer ID / Apple Development identity found
 #                                            (ad-hoc without one). A stable identity keeps Full Disk Access across rebuilds:
@@ -33,12 +33,12 @@ fi
 swift build -c "$CONFIG"
 BIN=$(swift build -c "$CONFIG" --show-bin-path)
 
-APP=Build/MACSPACE.app
+APP=Build/MacSpace.app
 rm -rf Build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources"
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
-cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MACSPACE"
+cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MacSpace"
 cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
@@ -54,7 +54,7 @@ reroot() { # file, new rpath
   done
   install_name_tool -add_rpath "$2" "$1"
 }
-reroot "$APP/Contents/MacOS/MACSPACE" "@executable_path/../Frameworks"
+reroot "$APP/Contents/MacOS/MacSpace" "@executable_path/../Frameworks"
 reroot "$APP/Contents/MacOS/MacSpaceCli" "@executable_path/../Frameworks"
 reroot "$APP/Contents/MacOS/MacSpaceHelper" "@executable_path/../Frameworks"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do
@@ -99,9 +99,9 @@ codesign --verify --deep --strict "$APP"
 # "not found". INSTALL=1 copies the build to ~/Applications.
 if [ "${INSTALL:-0}" = 1 ]; then
   mkdir -p "$HOME/Applications"
-  pkill -x MACSPACE 2>/dev/null || true
-  rm -rf "$HOME/Applications/MACSPACE.app"
-  ditto "$APP" "$HOME/Applications/MACSPACE.app"
-  echo "Installed $HOME/Applications/MACSPACE.app"
+  pkill -i -x MacSpace 2>/dev/null || true
+  rm -rf "$HOME/Applications/MacSpace.app"
+  ditto "$APP" "$HOME/Applications/MacSpace.app"
+  echo "Installed $HOME/Applications/MacSpace.app"
 fi
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"

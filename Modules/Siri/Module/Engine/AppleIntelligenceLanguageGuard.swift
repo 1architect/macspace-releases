@@ -25,7 +25,7 @@ public enum AppleIntelligenceGuardState: String, Codable, Sendable {
 }
 
 public enum AppleIntelligenceIneligibilitySource: String, Codable, Sendable {
-    /// The Siri and system base languages differ (the MACSPACE method).
+    /// The Siri and system base languages differ (the MacSpace method).
     case languageMismatch = "language-mismatch"
     /// Ineligible although the languages share a base language (unsupported language/region, or a region-variant mismatch).
     case other
@@ -73,7 +73,7 @@ public struct AppleIntelligenceGuardStatus: Codable, Sendable, Equatable {
     public let reasons: [String]
 }
 
-/// The user's Siri settings before MACSPACE changed them, restored by `enable`.
+/// The user's Siri settings before MacSpace changed them, restored by `enable`.
 public struct SavedSiriSettings: Codable, Sendable, Equatable {
     public let siriLanguage: String
     /// Binary property list of the "Output Voice" dictionary, restored verbatim.
@@ -397,7 +397,7 @@ public struct AppleIntelligenceLanguageGuard {
 /// Live system implementation. Reads use CFPreferences and world-readable files; writes use the CP112 method.
 public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
     public static let savedSettingsURL = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Application Support/MACSPACE/ai-guard-saved-siri-settings.json")
+        .appendingPathComponent("Library/Application Support/MacSpace/ai-guard-saved-siri-settings.json")
     private let fileManager: FileManager
     private let savedURL: URL
 

@@ -28,7 +28,7 @@ struct MacSpaceMain: App {
     @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
 
     var body: some Scene {
-        Window("MACSPACE", id: "main") {
+        Window("MacSpace", id: "main") {
             MainView(host: host, updates: updates)
         }
         .windowResizability(.contentMinSize)
@@ -38,7 +38,7 @@ struct MacSpaceMain: App {
             }
         }
 
-        MenuBarExtra("MACSPACE", systemImage: "checkmark.shield", isInserted: $showInMenuBar) {
+        MenuBarExtra("MacSpace", systemImage: "checkmark.shield", isInserted: $showInMenuBar) {
             MenuBarContent(host: host)
         }
     }

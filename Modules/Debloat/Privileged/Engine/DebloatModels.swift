@@ -3,7 +3,7 @@ import Foundation
 /// Debloat product model: a catalog of controls, each made of primitive settings (a preference key or a
 /// launchd override), an optional effect check.
 ///
-/// The JSON produced from these types is the contract for the MACSPACE app. Bump `DebloatSchema.version`
+/// The JSON produced from these types is the contract for the MacSpace app. Bump `DebloatSchema.version`
 /// on any incompatible change.
 public enum DebloatSchema {
     public static let version = 1
@@ -143,7 +143,7 @@ public struct PreferenceSetting: Codable, Equatable, Sendable {
     public let domain: String
     public let key: String
     public let desired: PlistValue
-    /// The value restored when MACSPACE has no journal entry for this key. nil means the macOS default is not
+    /// The value restored when MacSpace has no journal entry for this key. nil means the macOS default is not
     /// known (for example, chosen in Setup Assistant), so revert needs a journal entry.
     public let fallback: SettingValue?
 
@@ -519,9 +519,9 @@ public enum ControlState: String, Codable, Sendable {
     case stock
     /// Some settings are debloated and some are not.
     case partial
-    /// MACSPACE applied the control, but a setting has since returned to another value (e.g. after an OS update).
+    /// MacSpace applied the control, but a setting has since returned to another value (e.g. after an OS update).
     case drifted
-    /// MACSPACE generated a configuration profile for it that the user has not approved (or has since removed).
+    /// MacSpace generated a configuration profile for it that the user has not approved (or has since removed).
     case awaitingApproval
     /// None of the control's settings exist on this build.
     case unavailable
@@ -550,7 +550,7 @@ public struct ControlStatus: Codable, Equatable, Sendable {
     public let effect: EffectStatus?
     public let settings: [SettingStatus]
     public let validatedOnThisBuild: Bool
-    /// When MACSPACE last applied the control and it has not been reverted since.
+    /// When MacSpace last applied the control and it has not been reverted since.
     public let appliedAt: Date?
 }
 
@@ -621,7 +621,7 @@ public struct ControlChangeResult: Codable, Equatable, Sendable {
 
 // MARK: - Journal
 
-/// One setting change made by MACSPACE, recorded before the change is made so it can be undone.
+/// One setting change made by MacSpace, recorded before the change is made so it can be undone.
 public struct JournalEntry: Codable, Equatable, Sendable, Identifiable {
     public let id: UUID
     public let at: Date

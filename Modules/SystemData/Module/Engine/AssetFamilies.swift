@@ -3,7 +3,7 @@ import MacSpacePlatform
 
 /// Groups the downloads in `/System/Library/AssetsV2` by what they are for, and says which setting releases each group.
 /// macOS keeps an asset while something subscribes to it and deletes it only after the subscription goes, so the only safe lever
-/// is the setting behind the subscription; MACSPACE does not edit Apple's subscription database for a live account.
+/// is the setting behind the subscription; MacSpace does not edit Apple's subscription database for a live account.
 /// Measured on 26B5091g: `results/assetsv2-inventory-2026-10-01/`.
 public struct AssetFamily: Codable, Equatable, Sendable, Identifiable {
     public let id: String

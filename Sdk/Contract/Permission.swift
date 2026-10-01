@@ -7,7 +7,7 @@ public enum Permission: String, Codable, CaseIterable, Sendable {
     case fullDiskAccess
     /// The privileged helper (a launch daemon the user approves once) for steps that need root.
     case privilegedHelper
-    /// The MACSPACE configuration profile, which the user approves in System Settings.
+    /// The MacSpace configuration profile, which the user approves in System Settings.
     case configurationProfile
 
     public var title: String {
@@ -20,7 +20,7 @@ public enum Permission: String, Codable, CaseIterable, Sendable {
 
     public var detail: String {
         switch self {
-        case .fullDiskAccess: return "Lets MACSPACE read protected system locations to measure them."
+        case .fullDiskAccess: return "Lets MacSpace read protected system locations to measure them."
         case .privilegedHelper: return "A background service you approve once, for the few steps that need administrator rights."
         case .configurationProfile: return "A profile you approve in System Settings that enforces the privacy policies you choose."
         }

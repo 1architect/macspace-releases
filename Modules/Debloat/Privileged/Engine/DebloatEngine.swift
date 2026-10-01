@@ -14,7 +14,7 @@ public enum DebloatEngineError: Error, Equatable, CustomStringConvertible {
 public struct DebloatPlanOptions: Sendable {
     /// Allow applying controls without evidence for the running build.
     public var allowUnverified: Bool
-    /// On revert, restore the catalog fallback for settings MACSPACE never changed. By default MACSPACE only
+    /// On revert, restore the catalog fallback for settings MacSpace never changed. By default MacSpace only
     /// undoes its own changes.
     public var restoreFallbacks: Bool
     /// Also stop (apply) or load (revert) the affected launchd services now, instead of waiting for the
@@ -193,7 +193,7 @@ public final class DebloatEngine {
             }
             guard applied else { return EffectStatus(state: .notMeasured, detail: "\(notApplied) (\(lastText)).") }
             guard let appliedAt else {
-                return EffectStatus(state: .notMeasured, detail: "Applied outside MACSPACE, so there is no reference time (\(lastText)).")
+                return EffectStatus(state: .notMeasured, detail: "Applied outside MacSpace, so there is no reference time (\(lastText)).")
             }
             // SubmitDiagInfo logs its opt-in decision on every run. That is the authoritative signal:
             // LastFullSubmissionSuccess also advances on opt-out runs that upload nothing but a ~480-byte check-in
@@ -319,12 +319,12 @@ public final class DebloatEngine {
                 } else if options.restoreFallbacks {
                     target = current ?? .absent
                     if blocker == nil {
-                        blocker = "The original value is unknown (not changed by MACSPACE and no known macOS default); restore it in System Settings."
+                        blocker = "The original value is unknown (not changed by MacSpace and no known macOS default); restore it in System Settings."
                     }
                 } else {
                     target = current ?? .absent
                     leaveAsIs = true
-                    warning = "Not changed by MACSPACE; left as is (pass --restore-defaults to reset it)."
+                    warning = "Not changed by MacSpace; left as is (pass --restore-defaults to reset it)."
                 }
             }
             if leaveAsIs {
@@ -458,7 +458,7 @@ public final class DebloatEngine {
         return (StepResult(settingID: id, outcome: .pendingApproval, detail: nil), entry.id)
     }
 
-    /// Regenerates the MACSPACE profile from every managed setting still applied according to the journal, and
+    /// Regenerates the MacSpace profile from every managed setting still applied according to the journal, and
     /// hands it to the user. If staging fails, this plan's journal entries are removed again.
     private func stageProfile(_ results: [StepResult], stagedEntries: [UUID], privilege: DebloatPrivilege) -> [StepResult] {
         let applied = journal.load(privilege).outstanding.filter { $0.setting.kind == .managedPreference }
@@ -469,7 +469,7 @@ public final class DebloatEngine {
         let detail: String
         var failed: String?
         if settings.isEmpty {
-            detail = "No MACSPACE policies remain; remove \"\(ConfigurationProfileBuilder.displayName)\" in System Settings > General > Device Management (or run `sudo profiles remove -identifier \(ConfigurationProfileBuilder.identifier)`)."
+            detail = "No MacSpace policies remain; remove \"\(ConfigurationProfileBuilder.displayName)\" in System Settings > General > Device Management (or run `sudo profiles remove -identifier \(ConfigurationProfileBuilder.identifier)`)."
         } else {
             do {
                 detail = try system.stageProfile(ConfigurationProfileBuilder.build(settings))

@@ -22,7 +22,7 @@ final class SiriScreenBuilderTests: XCTestCase {
                           purgeable: UInt64? = nil, blockers: [String] = []) -> SiriSnapshot {
         SiriSnapshot(status: status(state, languagesMatch: match), disablePlan: .success(plan()),
                      accounts: accounts.map { AppleIntelligenceAccountsReport(accounts: $0) }, purgeableAssetsBytes: purgeable,
-                     releaseBlockers: blockers, watch: nil, cliPath: "/Applications/MACSPACE.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
+                     releaseBlockers: blockers, watch: nil, cliPath: "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
     }
 
     private func other(_ name: String?) -> AppleIntelligenceAccount {

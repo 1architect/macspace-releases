@@ -32,7 +32,7 @@ enum OrphanCommand {
         if let error = result.error { print("error: \(error)"); exit(1) }
         if result.executed {
             print("Removed \(result.plan.rowCount) row(s); backup: \(result.backupPath ?? "?"); integrity: \(result.integrity ?? "?").")
-            print("Restart the Mac, then use \"Release and delete leftover models\" in MACSPACE.")
+            print("Restart the Mac, then use \"Release and delete leftover models\" in MacSpace.")
         } else {
             print("Dry run. Run again with sudo and --execute to remove these rows (the database is backed up first).")
         }

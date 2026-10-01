@@ -68,7 +68,7 @@ public struct AppleIntelligenceModelRelease {
             return ["The system or Siri language could not be read."]
         }
         if AppleIntelligenceLanguageGuard.baseLanguage(siri) == AppleIntelligenceLanguageGuard.baseLanguage(system) {
-            blockers.append("Apple Intelligence is not switched off in this account (Siri language \(siri) matches the system language); switch it off in MACSPACE first.")
+            blockers.append("Apple Intelligence is not switched off in this account (Siri language \(siri) matches the system language); switch it off in MacSpace first.")
         }
         let elsewhere = accounts()?.enabledElsewhere ?? []
         let existing = elsewhere.compactMap(\.name)
@@ -76,7 +76,7 @@ public struct AppleIntelligenceModelRelease {
             blockers.append("Apple Intelligence is on in \(existing.joined(separator: ", ")); those accounts keep the models. Switch it off there or delete the accounts.")
         }
         if elsewhere.contains(where: { $0.name == nil }) {
-            blockers.append("Deleted accounts still subscribe to the models. Remove their leftovers in MACSPACE (Siri & Apple Intelligence), restart, then try again.")
+            blockers.append("Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again.")
         }
         return blockers
     }
@@ -142,7 +142,7 @@ public struct AppleIntelligenceModelRelease {
 
         // 2. Make it unavailable again: the transition releases the models' locks.
         do { try restore() } catch {
-            return finish("Could not restore the Siri language \(original): \(error). Apple Intelligence may still be available; switch Apple Intelligence off again in MACSPACE.")
+            return finish("Could not restore the Siri language \(original): \(error). Apple Intelligence may still be available; switch Apple Intelligence off again in MacSpace.")
         }
         log("unavailable", "Siri language \(target) → \(original).")
         if waitFor(eligible: false, timeout: timing.ineligibleTimeout) == false {

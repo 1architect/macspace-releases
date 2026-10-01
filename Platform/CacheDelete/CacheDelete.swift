@@ -11,11 +11,11 @@ public enum CacheDeleteService {
     public static let mobileAsset = "com.apple.mobileassetd.cache-delete"
     /// Caches inside apps' sandbox containers (1.15 GB purgeable on 26B5091g); macOS purges them itself when space runs low.
     public static let appContainerCaches = "com.apple.cache_delete_app_container_caches"
-    /// The only services MACSPACE asks to purge.
+    /// The only services MacSpace asks to purge.
     public static let purgeable: Set<String> = [mobileAsset, appContainerCaches]
 }
 
-/// Whether MACSPACE may call CacheDelete on this system. The purge uses a private function whose signature was taken
+/// Whether MacSpace may call CacheDelete on this system. The purge uses a private function whose signature was taken
 /// from disassembly; a wrong signature crashes the calling process (seen as SIGBUS while probing on 26B5091g).
 public enum CacheDeleteSupport: String, Codable, Sendable {
     /// Signatures checked on this build (a passed self-test, or a build validated by hand).
@@ -61,7 +61,7 @@ public struct CacheDeleteValidationStore: Sendable {
     public init(url: URL) { self.url = url }
 
     public static let standard = CacheDeleteValidationStore(url: FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Application Support/MACSPACE/cachedelete-validation.json"))
+        .appendingPathComponent("Library/Application Support/MacSpace/cachedelete-validation.json"))
 
     public func load() -> [String: CacheDeleteSelfTest] {
         guard let data = try? Data(contentsOf: url) else { return [:] }

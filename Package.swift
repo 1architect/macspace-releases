@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MACSPACE",
+    name: "MacSpace",
     platforms: [.macOS("27.0")],
     products: [
         .library(name: "SystemData", type: .dynamic, targets: ["MacSpaceSystemData"]),

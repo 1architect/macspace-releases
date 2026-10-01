@@ -46,7 +46,7 @@ public struct OrphanSubscriptionResult: Codable, Equatable, Sendable {
 }
 
 public struct OrphanSubscriptionCleaner {
-    public static let backupDirectory = URL(fileURLWithPath: "/Library/Application Support/MACSPACE/backups")
+    public static let backupDirectory = URL(fileURLWithPath: "/Library/Application Support/MacSpace/backups")
 
     let databasePath: String
     let existingGUIDs: () -> Set<String>
@@ -125,7 +125,7 @@ public struct OrphanSubscriptionCleaner {
         }
         if let refusal = plan.refusal { return result(plan, error: refusal) }
         if plan.isEmpty { return OrphanSubscriptionResult(plan: plan, executed: false, backupPath: nil, remainingRows: 0, integrity: nil, error: nil, restartRequired: false) }
-        guard isRoot() else { return result(plan, error: "Removing subscriptions requires root (the MACSPACE helper or sudo).") }
+        guard isRoot() else { return result(plan, error: "Removing subscriptions requires root (the MacSpace helper or sudo).") }
         let guids = plan.accounts.map(\.guid)
         guard guids.allSatisfy(Self.isGUID) else { return result(plan, error: "Unexpected account identifier; nothing was removed.") }
 

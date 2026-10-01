@@ -27,7 +27,7 @@
     {
       "id": "watch",
       "title": "Watch Apple Intelligence in the background",
-      "detail": "Checks every 15 minutes while MACSPACE is open and tells you if the off-switch stops working.",
+      "detail": "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.",
       "defaultEnabled": false,
       "intervalSeconds": 900
     }

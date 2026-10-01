@@ -30,7 +30,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
     func testToggleStateBadgeAndConfirmationFollowTheControlState() {
         let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated, validated: true,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
-        XCTAssertFalse(on.isOn, "the switch shows the feature, which MACSPACE switched off")
+        XCTAssertFalse(on.isOn, "the switch shows the feature, which MacSpace switched off")
         XCTAssertEqual(on.badge?.text, "Verified off")
         XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on", "flipping it back restores the feature")
 
@@ -44,7 +44,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(unverified.badge?.text, "Not verified on this macOS")
         XCTAssertEqual(unverified.action.parameters["unverified"], "true")
         XCTAssertTrue(unverified.action.confirmation?.message.contains("not verified") == true)
-        XCTAssertTrue(unverified.action.confirmation?.message.contains("approve the MACSPACE profile") == true)
+        XCTAssertTrue(unverified.action.confirmation?.message.contains("approve the MacSpace profile") == true)
     }
 
     func testStatesThatNeedAttentionAreVisible() {

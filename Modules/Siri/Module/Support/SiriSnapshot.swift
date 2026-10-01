@@ -68,6 +68,6 @@ actor SiriStore {
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
         return SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                             releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
-                            cliPath: cli?.path ?? "/Applications/MACSPACE.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
+                            cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
     }
 }

@@ -52,9 +52,9 @@ public enum SystemDataKind: String, Codable, Sendable {
 
 public struct SystemDataCleanup: Codable, Equatable, Sendable {
     public enum Kind: String, Codable, Sendable {
-        /// MACSPACE can delete it while the owning app is not running; macOS or the app recreates what it needs.
+        /// MacSpace can delete it while the owning app is not running; macOS or the app recreates what it needs.
         case deleteWhenNotRunning
-        /// Handled by another MACSPACE command or a supported tool (`command`).
+        /// Handled by another MacSpace command or a supported tool (`command`).
         case command
         /// Managed by macOS; leave it.
         case managedByMacOS
@@ -83,7 +83,7 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     public let notes: [String]
     /// What cleaning is expected to free. For APFS clones this is ~0 even though `bytes` is large.
     public var expectedReclaimBytes: UInt64? = nil
-    /// Steps the user takes in the owning app when MACSPACE cannot clean it.
+    /// Steps the user takes in the owning app when MacSpace cannot clean it.
     public var guide: ManualCleanupGuide? = nil
 }
 
@@ -93,7 +93,7 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     public let volumes: [VolumeUsage]
     public var items: [SystemDataItem]
     public var measuredBytes: UInt64
-    /// Expected reclaim of the items MACSPACE can clean (not their `du` size).
+    /// Expected reclaim of the items MacSpace can clean (not their `du` size).
     public let cleanableBytes: UInt64
     /// Data only the owning app can clean, with steps, one entry per app.
     public let manualCleanup: [ManualCleanupSummary]

@@ -4,7 +4,7 @@ import MacSpacePlatform
 import MacSpaceSiriPrivileged
 import MacSpaceSystemDataPrivileged
 
-/// The MACSPACE privileged helper: a launch daemon the app registers with `SMAppService`. It serves `com.macspace.helper`
+/// The MacSpace privileged helper: a launch daemon the app registers with `SMAppService`. It serves `com.macspace.helper`
 /// and runs only the named operations contributed by the modules' Privileged libraries, for clients that satisfy the
 /// code-signing requirement in its launchd plist (which the app's signature covers).
 @main

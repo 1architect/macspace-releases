@@ -9,7 +9,7 @@ import Foundation
 /// - `breaks` names every feature known to depend on what the control switches off.
 public enum DebloatCatalog {
     static let diagnosticsFile = "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory"
-    static let policyNote = "Restriction key from ManagedConfiguration's defaultSettings.plist on 26B5091g, not marked supervised-only. Measured on 26B5091g without MDM: macOS forces it once the MACSPACE policies profile is approved; the behavioral effect is unmeasured."
+    static let policyNote = "Restriction key from ManagedConfiguration's defaultSettings.plist on 26B5091g, not marked supervised-only. Measured on 26B5091g without MDM: macOS forces it once the MacSpace policies profile is approved; the behavioral effect is unmeasured."
     static let flagNote = "Feature-flag overrides are read at boot: the change applies after a reboot. Survival across OS updates is unmeasured."
     static let bootClearedNote = "With SIP enabled on 26B5091g, launchd cleared this override at boot and again at login (\"Clearing enabled state\") and refused bootout (error 150); owner-enforced overrides such as Siri.agent survive."
 

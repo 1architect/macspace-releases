@@ -30,7 +30,7 @@ enum SiriScreenBuilder {
                           message: "macOS may download its on-device model (about 12 GB). Switch it off below.")
         case .unknown:
             return Banner(id: "status", severity: .info, title: "Cannot read the Apple Intelligence state",
-                          message: "Grant Full Disk Access in Settings so MACSPACE can verify the switch.")
+                          message: "Grant Full Disk Access in Settings so MacSpace can verify the switch.")
         }
     }
 
