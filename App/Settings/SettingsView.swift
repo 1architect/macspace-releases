@@ -133,7 +133,12 @@ private struct PermissionRow: View {
                 } else {
                     Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)
                 }
-            case .unknown: Text("Unknown").foregroundStyle(.secondary)
+            case .unknown:
+                if permission == .privilegedHelper {
+                    Text("Move MACSPACE to the Applications folder, then reopen it.").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                } else {
+                    Text("Unknown").foregroundStyle(.secondary)
+                }
             }
         }
     }

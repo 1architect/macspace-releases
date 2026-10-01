@@ -95,4 +95,13 @@ codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP"
+# The helper daemon can only be registered from an app that sits in an Applications folder: from Build/ macOS reports it as
+# "not found". INSTALL=1 copies the build to ~/Applications.
+if [ "${INSTALL:-0}" = 1 ]; then
+  mkdir -p "$HOME/Applications"
+  pkill -x MACSPACE 2>/dev/null || true
+  rm -rf "$HOME/Applications/MACSPACE.app"
+  ditto "$APP" "$HOME/Applications/MACSPACE.app"
+  echo "Installed $HOME/Applications/MACSPACE.app"
+fi
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
