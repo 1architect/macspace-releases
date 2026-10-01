@@ -215,7 +215,7 @@ public struct SystemDataInspector {
                 return SizeMeasurement(bytes: bytes, readable: bytes != nil)
             }
             guard (try? fileManager.contentsOfDirectory(atPath: path)) != nil else {
-                return SizeMeasurement(bytes: nil, unreadableEntry: individually ? path : (path as NSString).deletingLastPathComponent)
+                return SizeMeasurement(bytes: nil, unreadableEntry: path)
             }
             let measured = sizer.size(at: URL(fileURLWithPath: path))
             return SizeMeasurement(bytes: measured?.allocatedBytesEstimate ?? measured?.logicalBytes, readable: true)

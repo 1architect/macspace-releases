@@ -14,6 +14,8 @@ struct SystemDataSnapshot: Sendable {
     var takenAt: Date
     /// The helper was asked to measure the places only root can read.
     var helperTried = false
+    /// Why the helper could not measure (it was not reachable), when that is the reason.
+    var helperError: String?
 }
 
 /// Measures the root-only locations through the helper and folds the sizes into the report.
@@ -22,10 +24,15 @@ enum RootMeasurements {
         let wanted = snapshot.report.unreadable.filter(RootMeasuredLocations.allowed.contains)
         var result = snapshot
         result.helperTried = true
-        guard !wanted.isEmpty,
-              let data = try? await channel.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": wanted.joined(separator: "\n")]),
-              let response = try? JSONDecoder().decode(RootMeasurementResponse.self, from: data), !response.sizes.isEmpty else { return result }
-        return merge(response.sizes, into: result)
+        guard !wanted.isEmpty else { return result }
+        do {
+            let data = try await channel.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": wanted.joined(separator: "\n")])
+            let response = try JSONDecoder().decode(RootMeasurementResponse.self, from: data)
+            return response.sizes.isEmpty ? result : merge(response.sizes, into: result)
+        } catch {
+            result.helperError = error.localizedDescription
+            return result
+        }
     }
 
     static func merge(_ sizes: [String: UInt64], into snapshot: SystemDataSnapshot) -> SystemDataSnapshot {

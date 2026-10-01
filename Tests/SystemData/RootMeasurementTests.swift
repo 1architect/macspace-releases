@@ -41,5 +41,8 @@ final class RootMeasurementTests: XCTestCase {
         XCTAssertTrue(first.contains("Turn on the helper") && first.contains("Full Disk Access covers these"))
         snap.helperTried = true
         XCTAssertTrue(try message(snap).contains("did not let even the helper"))
+        snap.helperError = "Couldn’t communicate with a helper application."
+        let unreachable = try message(snap)
+        XCTAssertTrue(unreachable.contains("could not be reached") && !unreachable.contains("did not let even"))
     }
 }

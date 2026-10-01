@@ -76,7 +76,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertLessThan(report.cleanableBytes, 100_000_000)
     }
 
-    func testUnreadableChildrenAreReportedOncePerParent() throws {
+    func testUnreadableChildrenAreNamedIndividually() throws {
         for name in ["com.example.A", "com.example.B"] {
             let dir = root.appendingPathComponent("home/Library/Containers/\(name)")
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -88,7 +88,7 @@ final class SystemDataTests: XCTestCase {
             }
         }
         let report = inspector().inspect()
-        XCTAssertEqual(report.unreadable, [root.appendingPathComponent("home/Library/Containers").path])
+        XCTAssertEqual(Set(report.unreadable), Set(["com.example.A", "com.example.B"].map { root.appendingPathComponent("home/Library/Containers/\($0)").path }), "the exact places are named")
     }
 
     func testFindsUnfinishedDownloadsRestoreImagesAndVirtualMachines() throws {

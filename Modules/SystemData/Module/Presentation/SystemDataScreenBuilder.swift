@@ -185,9 +185,10 @@ enum SystemDataScreenBuilder {
         var parts: [String] = []
         if !other.isEmpty { parts.append("Could not read: \(unreadableList(other)). Full Disk Access covers these.") }
         if !rootOnly.isEmpty {
-            parts.append(snapshot.helperTried
+            parts.append(snapshot.helperError.map { "The helper could not be reached (\($0)), so these were not measured: \(unreadableList(rootOnly)). Reopen MACSPACE; if it persists, remove and install the helper again in Settings." }
+                ?? (snapshot.helperTried
                 ? "macOS did not let even the helper read: \(unreadableList(rootOnly))."
-                : "Only root can read: \(unreadableList(rootOnly)). Turn on the helper in Settings to include them; Full Disk Access does not cover them.")
+                : "Only root can read: \(unreadableList(rootOnly)). Turn on the helper in Settings to include them; Full Disk Access does not cover them."))
         }
         parts.append("The numbers below are a lower bound.")
         return .banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured", message: parts.joined(separator: " ")))

@@ -25,16 +25,16 @@ public enum PrivilegedHelperInstaller {
 
     public static func unregister() async throws { try await service.unregister() }
 
-    /// After an app update the old helper process keeps running until it is restarted, so it would not know new operations. The
-    /// helper reports the fingerprint of the binary it started from; when that differs from the binary in this app, the helper
-    /// is unregistered and registered again, which starts the new one. Returns whether it was restarted.
+    /// After an app update the old helper process keeps running until it is restarted, so it would not know new operations, and a
+    /// replaced app can leave the job unloaded so that nothing answers at all. The helper reports the fingerprint of the binary it
+    /// started from; when that differs from the binary in this app, or the helper does not answer, it is unregistered and
+    /// registered again, which loads the current one. Returns whether it was re-registered.
     @discardableResult
     public static func restartIfStale(channel: any PrivilegedChannel, bundle: Bundle = .main) async -> Bool {
         guard status == .enabled, let helperPath = bundle.executableURL?.deletingLastPathComponent().appendingPathComponent("MacSpaceHelper").path,
-              let onDisk = HelperFingerprint.of(path: helperPath),
-              let data = try? await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:]) else { return false }
-        let running = String(decoding: data, as: UTF8.self)
-        guard running != onDisk else { return false }
+              let onDisk = HelperFingerprint.of(path: helperPath) else { return false }
+        if let data = try? await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:]),
+           String(decoding: data, as: UTF8.self) == onDisk { return false }
         do { try await unregister() } catch { return false }
         // Registering straight after unregistering can fail while launchd is still removing the job: retry briefly.
         for attempt in 0..<6 {
