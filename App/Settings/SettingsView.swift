@@ -105,23 +105,30 @@ private struct ModuleSettingsSection: View {
 private struct PermissionRow: View {
     let permission: Permission
     let status: PermissionStatus
+    @State private var helperError: String?
+    @State private var helperStatus: PermissionStatus?
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(permission.title)
                 Text(permission.detail).font(.caption).foregroundStyle(.secondary)
+                if let helperError { Text(helperError).font(.caption).foregroundStyle(.red) }
             }
             Spacer()
-            switch status {
+            switch (permission == .privilegedHelper ? helperStatus : nil) ?? status {
             case .granted: Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green).labelStyle(.titleAndIcon)
             case .missing:
                 if permission == .fullDiskAccess {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
                 } else if permission == .privilegedHelper {
                     Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
-                        if PrivilegedHelperInstaller.status != .requiresApproval { try? PrivilegedHelperInstaller.register() }
+                        helperError = nil
+                        if PrivilegedHelperInstaller.status != .requiresApproval {
+                            do { try PrivilegedHelperInstaller.register() } catch { helperError = "Could not install the helper: \(error.localizedDescription)" }
+                        }
                         if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
+                        helperStatus = PrivilegedHelperInstaller.permissionStatus()
                     }
                 } else {
                     Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)

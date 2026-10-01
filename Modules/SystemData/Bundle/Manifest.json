@@ -8,7 +8,8 @@
   "minimumMacOS": "27.0",
   "order": 10,
   "permissions": [
-    "fullDiskAccess"
+    "fullDiskAccess",
+    "privilegedHelper"
   ],
   "options": [],
   "backgroundTasks": []
