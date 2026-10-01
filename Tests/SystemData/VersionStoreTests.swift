@@ -9,10 +9,16 @@ final class VersionStoreTests: XCTestCase {
         var calls: [[String]] = []
         var failBootout = false
         var failBootstrap = false
+        var pids: [String] = ["4242"]
         func run(_ executable: String, _ arguments: [String]) throws -> CommandResult {
-            lock.lock(); calls.append(arguments); lock.unlock()
+            lock.lock(); defer { lock.unlock() }
+            calls.append(arguments)
+            if executable.hasSuffix("pgrep") {
+                let out = pids.isEmpty ? "" : pids.removeFirst() + "\n"
+                return CommandResult(stdout: Data(out.utf8), stderr: Data(), exitCode: out.isEmpty ? 1 : 0)
+            }
             let fail = (arguments.first == "bootout" && failBootout) || (arguments.first == "bootstrap" && failBootstrap)
-            return CommandResult(stdout: Data(), stderr: Data(), exitCode: fail ? 1 : 0)
+            return CommandResult(stdout: Data(), stderr: Data(fail ? "Boot-out failed: 1: Operation not permitted".utf8 : "".utf8), exitCode: fail ? 1 : 0)
         }
     }
 
@@ -28,7 +34,7 @@ final class VersionStoreTests: XCTestCase {
         let root = try store()
         defer { try? FileManager.default.removeItem(at: root) }
         let runner = FakeRunner()
-        let result = VersionStoreCleaner(storePath: root.path, runner: runner).execute()
+        let result = VersionStoreCleaner(storePath: root.path, runner: runner, sleep: { _ in }).execute()
         XCTAssertTrue(result.executed)
         XCTAssertNil(result.error)
         XCTAssertEqual(result.removedEntries, 2)
@@ -44,10 +50,26 @@ final class VersionStoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let runner = FakeRunner()
         runner.failBootout = true
-        let result = VersionStoreCleaner(storePath: root.path, runner: runner).execute()
+        runner.pids = []
+        let result = VersionStoreCleaner(storePath: root.path, runner: runner, sleep: { _ in }).execute()
         XCTAssertFalse(result.executed)
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path).count, 2)
-        XCTAssertEqual(runner.calls.count, 1)
+        XCTAssertTrue(result.error?.contains("Operation not permitted") == true, "the reason is shown")
+    }
+
+    func testFreezesTheRunningDaemonWhenMacOSWillNotUnloadIt() throws {
+        let root = try store()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let runner = FakeRunner()
+        runner.failBootout = true
+        runner.pids = ["4242", "4242", "9999"]   // found, still the old one right after the kill, then the new one
+        let result = VersionStoreCleaner(storePath: root.path, runner: runner, sleep: { _ in }).execute()
+        XCTAssertTrue(result.executed)
+        XCTAssertNil(result.error)
+        XCTAssertEqual(result.removedEntries, 2)
+        XCTAssertTrue(result.daemonRestarted)
+        let order = runner.calls.map { $0.joined(separator: " ") }
+        XCTAssertEqual(order.filter { $0.hasPrefix("-STOP") || $0.hasPrefix("-KILL") }, ["-STOP 4242", "-KILL 4242"], "frozen before deleting, killed after")
     }
 
     func testFallsBackToKickstartAndReportsAFailedRestart() throws {
@@ -55,7 +77,7 @@ final class VersionStoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let runner = FakeRunner()
         runner.failBootstrap = true
-        let result = VersionStoreCleaner(storePath: root.path, runner: runner).execute()
+        let result = VersionStoreCleaner(storePath: root.path, runner: runner, sleep: { _ in }).execute()
         XCTAssertEqual(runner.calls.map { $0.first }, ["bootout", "bootstrap", "kickstart"])
         XCTAssertTrue(result.daemonRestarted, "kickstart succeeded")
     }
