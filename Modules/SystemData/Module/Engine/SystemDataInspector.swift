@@ -73,8 +73,8 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     public let kind: SystemDataKind
     public let paths: [String]
     /// Allocated-size estimate. APFS clones and shared extents make this an upper bound on what deleting frees.
-    public let bytes: UInt64?
-    public let readable: Bool
+    public var bytes: UInt64?
+    public var readable: Bool
     /// Apps whose running instance blocks cleanup (bundle identifiers or names).
     public let owners: [String]
     /// Whether an owner is running now.
@@ -91,15 +91,15 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let generatedAt: Date
     public let volumes: [VolumeUsage]
-    public let items: [SystemDataItem]
-    public let measuredBytes: UInt64
+    public var items: [SystemDataItem]
+    public var measuredBytes: UInt64
     /// Expected reclaim of the items MACSPACE can clean (not their `du` size).
     public let cleanableBytes: UInt64
     /// Data only the owning app can clean, with steps, one entry per app.
     public let manualCleanup: [ManualCleanupSummary]
     /// Locations that exist but this process cannot read (Full Disk Access or root needed).
-    public let unreadable: [String]
-    public let warnings: [String]
+    public var unreadable: [String]
+    public var warnings: [String]
 }
 
 public struct RunningApp: Equatable, Sendable {

@@ -14,15 +14,15 @@ public struct SystemDataModule: MacSpaceModule {
     public init() {}
 
     public func summary(context: ModuleContext) async -> ScreenWidget {
-        SystemDataScreenBuilder.summary(await store.snapshot())
+        SystemDataScreenBuilder.summary(await store.snapshot(privileged: context.privileged))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SystemDataScreenBuilder.screen(await store.snapshot())
+        SystemDataScreenBuilder.screen(await store.snapshot(privileged: context.privileged))
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let snapshot = await store.snapshot(maxAge: 600)
+        let snapshot = await store.snapshot(maxAge: 600, privileged: context.privileged)
         defer { Task { await store.invalidate() } }
         switch request.actionID {
         case "clean":

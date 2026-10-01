@@ -1,5 +1,7 @@
 import Foundation
 import MacSpacePlatform
+import MacSpaceSdk
+import MacSpaceSystemDataPrivileged
 
 /// Everything the System Data screens are built from, measured once and shared by the dashboard tile and the page.
 struct SystemDataSnapshot: Sendable {
@@ -10,6 +12,37 @@ struct SystemDataSnapshot: Sendable {
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
     var takenAt: Date
+    /// The helper was asked to measure the places only root can read.
+    var helperTried = false
+}
+
+/// Measures the root-only locations through the helper and folds the sizes into the report.
+enum RootMeasurements {
+    static func apply(to snapshot: SystemDataSnapshot, channel: any PrivilegedChannel) async -> SystemDataSnapshot {
+        let wanted = snapshot.report.unreadable.filter(RootMeasuredLocations.allowed.contains)
+        var result = snapshot
+        result.helperTried = true
+        guard !wanted.isEmpty,
+              let data = try? await channel.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": wanted.joined(separator: "\n")]),
+              let response = try? JSONDecoder().decode(RootMeasurementResponse.self, from: data), !response.sizes.isEmpty else { return result }
+        return merge(response.sizes, into: result)
+    }
+
+    static func merge(_ sizes: [String: UInt64], into snapshot: SystemDataSnapshot) -> SystemDataSnapshot {
+        var result = snapshot
+        var report = snapshot.report
+        for index in report.items.indices where report.items[index].bytes == nil {
+            let known = report.items[index].paths.compactMap { sizes[$0] }
+            guard !known.isEmpty else { continue }
+            report.items[index].bytes = known.reduce(0, +)
+            report.items[index].readable = true
+        }
+        report.unreadable = report.unreadable.filter { sizes[$0] == nil }
+        report.warnings = report.unreadable.isEmpty ? [] : report.warnings
+        report.measuredBytes = report.items.compactMap(\.bytes).reduce(0, +)
+        result.report = report
+        return result
+    }
 }
 
 /// Builds snapshots off the main thread and lets concurrent callers share one scan.
@@ -24,11 +57,15 @@ actor SystemDataStore {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 120, now: Date = Date()) async -> SystemDataSnapshot {
-        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
+    func snapshot(maxAge: TimeInterval = 120, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
+        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil { return cached }
         if let inflight { return await inflight.value }
         let builder = self.builder
-        let task = Task.detached(priority: .utility) { builder() }
+        let task = Task.detached(priority: .utility) { () -> SystemDataSnapshot in
+            let scanned = builder()
+            guard let privileged else { return scanned }
+            return await RootMeasurements.apply(to: scanned, channel: privileged)
+        }
         inflight = task
         let fresh = await task.value
         cached = fresh

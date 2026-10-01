@@ -1,6 +1,7 @@
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
+import MacSpaceSystemDataPrivileged
 
 /// Turns a snapshot into the widgets the app draws. Pure, so it can be tested without scanning a Mac.
 enum SystemDataScreenBuilder {
@@ -68,10 +69,7 @@ enum SystemDataScreenBuilder {
         let report = snapshot.report
         var widgets: [ScreenWidget] = []
 
-        if !report.unreadable.isEmpty {
-            widgets.append(.banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured",
-                                          message: "Could not read: \(unreadableList(report.unreadable)). Full Disk Access covers most; places only root can read need the helper. The numbers below are a lower bound.")))
-        }
+        if !report.unreadable.isEmpty { widgets.append(partialBanner(snapshot)) }
         widgets.append(.usage(usage(snapshot)))
         widgets.append(freeNow(snapshot))
         let manual = manualSection(report)
@@ -152,6 +150,22 @@ enum SystemDataScreenBuilder {
         }
         return .section(SectionWidget(id: "assets", title: "System assets", subtitle: "Downloads macOS keeps while a feature uses them. Change the setting, restart, then remove unused assets.",
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))], isCollapsible: true, startsCollapsed: false))
+    }
+
+    /// Says why places were not measured: root-only places need the helper, and the rest need Full Disk Access.
+    static func partialBanner(_ snapshot: SystemDataSnapshot) -> ScreenWidget {
+        let paths = snapshot.report.unreadable
+        let rootOnly = paths.filter(RootMeasuredLocations.allowed.contains)
+        let other = paths.filter { !RootMeasuredLocations.allowed.contains($0) }
+        var parts: [String] = []
+        if !other.isEmpty { parts.append("Could not read: \(unreadableList(other)). Full Disk Access covers these.") }
+        if !rootOnly.isEmpty {
+            parts.append(snapshot.helperTried
+                ? "macOS did not let even the helper read: \(unreadableList(rootOnly))."
+                : "Only root can read: \(unreadableList(rootOnly)). Turn on the helper in Settings to include them; Full Disk Access does not cover them.")
+        }
+        parts.append("The numbers below are a lower bound.")
+        return .banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured", message: parts.joined(separator: " ")))
     }
 
     /// Up to four locations, home folder shortened, so the user can see what is missing.

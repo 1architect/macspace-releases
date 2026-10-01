@@ -2,6 +2,7 @@ import Foundation
 import MacSpaceDebloatPrivileged
 import MacSpacePlatform
 import MacSpaceSiriPrivileged
+import MacSpaceSystemDataPrivileged
 
 /// The MACSPACE privileged helper: a launch daemon the app registers with `SMAppService`. It serves `com.macspace.helper`
 /// and runs only the named operations contributed by the modules' Privileged libraries, for clients that satisfy the
@@ -15,7 +16,7 @@ struct MacSpaceHelper {
             FileHandle.standardError.write(Data("MacSpaceHelper: refusing to start without --client-requirement <code signing requirement>\n".utf8))
             exit(78) // EX_CONFIG
         }
-        let service = PrivilegedHelperService(handlers: [SiriPrivilegedOperations(), DebloatPrivilegedOperations()])
+        let service = PrivilegedHelperService(handlers: [SiriPrivilegedOperations(), DebloatPrivilegedOperations(), SystemDataPrivilegedOperations()])
         let delegate = PrivilegedHelperListenerDelegate(service: service, clientRequirement: arguments[index + 1])
         let listener = NSXPCListener(machServiceName: PrivilegedHelperConstants.machServiceName)
         listener.delegate = delegate
