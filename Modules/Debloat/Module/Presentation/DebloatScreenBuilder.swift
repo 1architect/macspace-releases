@@ -35,15 +35,15 @@ enum DebloatScreenBuilder {
         switch status.state {
         case .debloated:
             switch status.effect?.state {
-            case .effective?: return Badge("Verified working", tone: .positive)
+            case .effective?: return Badge("Verified off", tone: .positive)
             case .ineffective?: return Badge("Not working", tone: .critical)
             case .pending?: return Badge("After restart", tone: .caution)
             case .notControllable?: return Badge("Cannot take effect here", tone: .critical)
-            default: return Badge("On", tone: .positive)
+            default: return Badge("Off", tone: .positive)
             }
         case .awaitingApproval: return Badge("Waiting for approval", tone: .caution)
         case .drifted: return Badge("Undone by macOS", tone: .critical)
-        case .partial: return Badge("Partly on", tone: .caution)
+        case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
         case .unknown: return Badge("Cannot read")
         case .stock: return status.validatedOnThisBuild ? Badge("Recommended", tone: .accent) : Badge("Not verified on this macOS")
@@ -61,7 +61,7 @@ enum DebloatScreenBuilder {
 
     static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
         var lines: [String] = []
-        if !control.breaks.isEmpty { lines.append("Stops working while this is on: " + control.breaks.joined(separator: "; ") + ".") }
+        if !control.breaks.isEmpty { lines.append("Stops working while this is off: " + control.breaks.joined(separator: "; ") + ".") }
         if let restart = restartText(control.restart) { lines.append(restart) }
         if let effect = status?.effect?.detail, !effect.isEmpty { lines.append(effect) }
         lines.append(contentsOf: control.notes)
@@ -70,14 +70,14 @@ enum DebloatScreenBuilder {
 
     static func confirmation(_ control: DebloatControl, turningOn: Bool, verified: Bool) -> Confirmation {
         if !turningOn {
-            return Confirmation(title: "Turn off \(control.title)?", message: "MACSPACE restores the values it saved before it changed them.", confirmTitle: "Turn off")
+            return Confirmation(title: "Turn \(control.title) back on?", message: "MACSPACE restores the values it saved before it changed them.", confirmTitle: "Turn on")
         }
         var message = control.summary
-        if !control.breaks.isEmpty { message += "\n\nStops working: " + control.breaks.joined(separator: "; ") + "." }
+        if !control.breaks.isEmpty { message += "\n\nStops working while off: " + control.breaks.joined(separator: "; ") + "." }
         if let restart = restartText(control.restart) { message += "\n\n" + restart }
         if control.mechanism == .configurationProfile { message += "\n\nmacOS asks you to approve the MACSPACE profile in System Settings before this takes effect." }
         if !verified { message += "\n\nThis was not verified on your macOS version; it may have no effect." }
-        return Confirmation(title: "Turn on \(control.title)?", message: message, confirmTitle: "Turn on")
+        return Confirmation(title: "Turn off \(control.title)?", message: message, confirmTitle: "Turn off")
     }
 
     static func row(_ control: DebloatControl, _ snapshot: DebloatSnapshot) -> ToggleRow {
@@ -88,7 +88,8 @@ enum DebloatScreenBuilder {
         var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id, "unverified": verified ? "false" : "true"],
                             confirmation: confirmation(control, turningOn: !on, verified: verified))
         if needsHelper(control) { action.requires = [.privilegedHelper] }
-        return ToggleRow(id: control.id, title: control.title, subtitle: control.summary, isOn: on, isEnabled: !blocked,
+        // The switch shows the feature, as in the other modules: on = the feature runs, off = MACSPACE switched it off.
+        return ToggleRow(id: control.id, title: control.title, subtitle: control.summary, isOn: !on, isEnabled: !blocked,
                          badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
                          detail: detail(control, status), action: action)
     }
@@ -114,15 +115,15 @@ enum DebloatScreenBuilder {
     static func summary(_ snapshot: DebloatSnapshot) -> ScreenWidget {
         let counts = counts(snapshot)
         if !counts.drifted.isEmpty {
-            return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.drifted.count) protection(s) were undone",
+            return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.drifted.count) feature(s) switched back on by macOS",
                                   message: counts.drifted.map(\.title).joined(separator: ", ")))
         }
         if !counts.awaiting.isEmpty {
             return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.awaiting.count) waiting for your approval",
                                   message: "Approve the MACSPACE profile in System Settings > General > Device Management."))
         }
-        return .banner(Banner(id: "summary", severity: counts.on > 0 ? .success : .info, title: "\(counts.on) of \(counts.total) protections are on",
-                              message: counts.on == counts.total ? "Everything available is on." : "\(recommended(snapshot).count) more are verified on your macOS."))
+        return .banner(Banner(id: "summary", severity: counts.on > 0 ? .success : .info, title: "\(counts.on) of \(counts.total) switched off",
+                              message: counts.on == counts.total ? "Everything available is switched off." : "\(recommended(snapshot).count) more can be switched off and are verified on your macOS."))
     }
 
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
@@ -134,19 +135,19 @@ enum DebloatScreenBuilder {
                                           action: Action(id: "openProfiles", title: "Open System Settings", role: .prominent))))
         }
         if !counts.drifted.isEmpty {
-            widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) protection(s) were undone",
-                                          message: "macOS or an update changed them back: \(counts.drifted.map(\.title).joined(separator: ", ")).",
+            widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) feature(s) switched back on by macOS",
+                                          message: "macOS or an update turned them back on: \(counts.drifted.map(\.title).joined(separator: ", ")).",
                                           action: Action(id: "reapply", title: "Re-apply", role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")],
                                                          requires: [.privilegedHelper]))))
         }
         let recommended = recommended(snapshot)
         if !recommended.isEmpty {
             widgets.append(.button(ButtonWidget(id: "recommended", action: Action(
-                id: "applyRecommended", title: "Turn on the \(recommended.count) verified protections", symbol: "checkmark.shield", role: .prominent,
+                id: "applyRecommended", title: "Switch off the \(recommended.count) verified features", symbol: "checkmark.shield", role: .prominent,
                 parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                confirmation: Confirmation(title: "Turn on the verified protections?",
+                confirmation: Confirmation(title: "Switch off the verified features?",
                                            message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Some features they switch off are listed on each row.",
-                                           confirmTitle: "Turn on"),
+                                           confirmTitle: "Switch off"),
                 requires: [.privilegedHelper]),
                 footnote: "Everything MACSPACE changes is written to an undo journal, so you can turn any of it off again.")))
         }
@@ -156,7 +157,7 @@ enum DebloatScreenBuilder {
             widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category), rows: controls.map { row($0, snapshot) })))
         }
         let env = snapshot.environment
-        widgets.append(.text(TextWidget(id: "env", text: "macOS \(env.productVersion ?? "?") (\(env.build ?? "?")). Protections marked verified were measured on this build; others follow Apple's documented settings but their effect is not measured here.", style: .caption)))
-        return Screen(title: "Debloat", subtitle: "Turn off analytics, ads and background data collection macOS lets you control.", widgets: widgets)
+        widgets.append(.text(TextWidget(id: "env", text: "macOS \(env.productVersion ?? "?") (\(env.build ?? "?")). Settings marked verified were measured on this build; others follow Apple's documented settings but their effect is not measured here.", style: .caption)))
+        return Screen(title: "Debloat", subtitle: "Switch off analytics, ads and background data collection macOS lets you control. A switch shows the feature: on = it runs, off = MACSPACE switched it off.", widgets: widgets)
     }
 }

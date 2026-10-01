@@ -28,7 +28,7 @@ public struct DebloatModule: MacSpaceModule {
         switch request.actionID {
         case "toggle":
             guard let id = request.parameters["id"] else { return .failed("No control was named.") }
-            let apply = request.parameters["value"] == "true"
+            let apply = Self.appliesProtection(switchValue: request.parameters["value"])
             return await Self.change(apply ? .apply : .revert, [id], unverified: request.parameters["unverified"] == "true", context: context, progress: progress)
         case "applyRecommended", "reapply":
             let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
@@ -41,10 +41,13 @@ public struct DebloatModule: MacSpaceModule {
         }
     }
 
+    /// The switch shows the feature: switching it off applies the protection, switching it on restores the original.
+    static func appliesProtection(switchValue: String?) -> Bool { switchValue == "false" }
+
     static func change(_ action: ChangeAction, _ ids: [String], unverified: Bool, context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed("No controls were selected.") }
-        progress(ActionProgress(message: action == .apply ? "Turning on…" : "Turning off…"))
+        progress(ActionProgress(message: action == .apply ? "Switching off…" : "Switching back on…"))
         let coordinator = DebloatCoordinator(engine: DebloatStore.liveEngine(), channel: context.privileged)
         do {
             let results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions(allowUnverified: unverified))

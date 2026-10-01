@@ -30,14 +30,14 @@ final class DebloatScreenBuilderTests: XCTestCase {
     func testToggleStateBadgeAndConfirmationFollowTheControlState() {
         let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated, validated: true,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
-        XCTAssertTrue(on.isOn)
-        XCTAssertEqual(on.badge?.text, "Verified working")
-        XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn off", "an applied control is turned off")
+        XCTAssertFalse(on.isOn, "the switch shows the feature, which MACSPACE switched off")
+        XCTAssertEqual(on.badge?.text, "Verified off")
+        XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on", "flipping it back restores the feature")
 
         let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock, validated: true)]))
-        XCTAssertFalse(off.isOn)
+        XCTAssertTrue(off.isOn, "the feature still runs")
         XCTAssertEqual(off.badge?.text, "Recommended")
-        XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn on")
+        XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn off")
         XCTAssertEqual(off.action.parameters["unverified"], "false")
 
         let unverified = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
@@ -57,7 +57,13 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .pending, detail: "")), "After restart")
         XCTAssertEqual(badge(.unavailable), "Not on this macOS")
         let waiting = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .awaitingApproval)]))
-        XCTAssertTrue(waiting.isOn, "applied, waiting only for the user's approval")
+        XCTAssertFalse(waiting.isOn, "applied, waiting only for the user's approval")
+    }
+
+    func testSwitchingTheFeatureOffAppliesTheProtection() {
+        XCTAssertTrue(DebloatModule.appliesProtection(switchValue: "false"))
+        XCTAssertFalse(DebloatModule.appliesProtection(switchValue: "true"))
+        XCTAssertFalse(DebloatModule.appliesProtection(switchValue: nil))
     }
 
     func testControlsThatCannotWorkHereAreDisabled() {
@@ -89,9 +95,9 @@ final class DebloatScreenBuilderTests: XCTestCase {
         guard case let .banner(none) = DebloatScreenBuilder.summary(snapshot([])),
               case let .banner(drift) = DebloatScreenBuilder.summary(snapshot([status(verifiedControl.id, .drifted)])),
               case let .banner(all) = DebloatScreenBuilder.summary(snapshot(DebloatCatalog.controls.map { status($0.id, .debloated) })) else { return XCTFail() }
-        XCTAssertEqual(none.title, "0 of 14 protections are on")
+        XCTAssertEqual(none.title, "0 of 14 switched off")
         XCTAssertEqual(drift.severity, .warning)
-        XCTAssertEqual(all.title, "14 of 14 protections are on")
+        XCTAssertEqual(all.title, "14 of 14 switched off")
         XCTAssertEqual(all.severity, .success)
     }
 

@@ -16,7 +16,7 @@ public enum DebloatCatalog {
     public static let controls: [DebloatControl] = [
         DebloatControl(
             id: "telemetry.diagnostics-policy",
-            title: "Diagnostics policy (profile)",
+            title: "Share analytics with Apple",
             summary: "Force diagnostics submission off with a configuration profile (SubmitDiagInfo AutoSubmit and the allowDiagnosticSubmission restriction).",
             category: .telemetry, mechanism: .configurationProfile, risk: .low, restart: .none,
             settings: [
@@ -33,7 +33,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "ads.personalized-ads-policy",
-            title: "Personalized ads policy (profile)",
+            title: "Personalized ads",
             summary: "Force personalized ads off with a configuration profile (allowApplePersonalizedAdvertising restriction).",
             category: .advertising, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
             settings: [.managed("com.apple.applicationaccess", "allowApplePersonalizedAdvertising", desired: .bool(false))],
@@ -42,7 +42,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "siri.siri-ai-flag",
-            title: "Siri AI (feature flag)",
+            title: "Siri AI",
             summary: "Turn off the IntelligenceFlow/Campo feature flag so launchd never loads Siri AI.app; classic Spotlight takes its place.",
             category: .siri, mechanism: .featureFlag, risk: .medium, restart: .reboot,
             settings: [.flag("IntelligenceFlow", "Campo")],
@@ -57,7 +57,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "ai.visual-intelligence",
-            title: "Visual Intelligence service",
+            title: "Visual Intelligence",
             summary: "Turn off the Tamale/DaemonEnabled feature flag so launchd never loads visualintelligenced.",
             category: .appleIntelligence, mechanism: .featureFlag, risk: .medium, restart: .reboot,
             settings: [.flag("Tamale", "DaemonEnabled")],
@@ -72,7 +72,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "ai.generative-indexing",
-            title: "Generative indexing (hybridsearchd)",
+            title: "Generative search indexing",
             summary: "Turn off the GenerativeLearningPlatform platform-daemon, observation-indexing and Mail-indexing flags so launchd never loads hybridsearchd.",
             category: .appleIntelligence, mechanism: .featureFlag, risk: .high, restart: .reboot,
             settings: [
@@ -91,7 +91,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "diagnostics.tailspin",
-            title: "tailspin trace buffer",
+            title: "Hang tracing (tailspin)",
             summary: "Stop tailspin, which keeps a 100 MB kernel trace buffer and samples every process every 10 ms so hang reports can look back ~20 s.",
             category: .diagnostics, mechanism: .systemTool, risk: .low, restart: .none,
             settings: [.tool(.tailspin)],
@@ -128,7 +128,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "ads.advertising-identifier-policy",
-            title: "Advertising identifier policy (profile)",
+            title: "Advertising identifier",
             summary: "Force the advertising identifier off with the allowIdentifierForAdvertising restriction.",
             category: .advertising, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
             settings: [.managed("com.apple.applicationaccess", "allowIdentifierForAdvertising", desired: .bool(false))],
@@ -136,7 +136,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "telemetry.siri-server-logging-policy",
-            title: "Siri server logging policy (profile)",
+            title: "Siri server-side logging",
             summary: "Disallow Siri server-side logging (allowSiriServerLogging restriction).",
             category: .telemetry, mechanism: .configurationProfile, risk: .low, restart: .none,
             settings: [.managed("com.apple.applicationaccess", "allowSiriServerLogging", desired: .bool(false))],
@@ -144,7 +144,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "telemetry.on-device-speech-policy",
-            title: "On-device dictation and translation (profile)",
+            title: "Dictation and translation on Apple servers",
             summary: "Force dictation and translation to run on device only, so audio and text are not sent to Apple's servers.",
             category: .telemetry, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
             settings: [
@@ -156,7 +156,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "suggestions.spotlight-internet-policy",
-            title: "Spotlight internet results (profile)",
+            title: "Spotlight internet results",
             summary: "Stop Spotlight from sending queries to Apple for internet results and suggestions (allowSpotlightInternetResults).",
             category: .suggestions, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
             settings: [.managed("com.apple.applicationaccess", "allowSpotlightInternetResults", desired: .bool(false))],
@@ -165,7 +165,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "ai.features-policy",
-            title: "Apple Intelligence features (profile)",
+            title: "Apple Intelligence features",
             summary: "Disable Writing Tools, Genmoji, Image Playground, Image Wand, summaries, smart replies, ChatGPT integration and Apple Intelligence reports.",
             category: .appleIntelligence, mechanism: .configurationProfile, risk: .medium, restart: .appRelaunch,
             settings: [
@@ -190,7 +190,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "apps.game-center-policy",
-            title: "Game Center (profile)",
+            title: "Game Center",
             summary: "Disable Game Center with the allowGameCenter restriction.",
             category: .appServices, mechanism: .configurationProfile, risk: .medium, restart: .logout,
             settings: [.managed("com.apple.applicationaccess", "allowGameCenter", desired: .bool(false))],
@@ -199,7 +199,7 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "apps.news-policy",
-            title: "News (profile)",
+            title: "Apple News",
             summary: "Disable Apple News and its widgets with the allowNews and allowNewsToday restrictions.",
             category: .appServices, mechanism: .configurationProfile, risk: .low, restart: .logout,
             settings: [
