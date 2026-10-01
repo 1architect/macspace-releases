@@ -17,6 +17,12 @@ struct MacSpaceCli {
                 do { try PrivilegedHelperInstaller.register(); print("registered; status now \(PrivilegedHelperInstaller.status.rawValue)") }
                 catch { print("register failed: \(error)") }
             }
+            if arguments.contains("--ping") {
+                do {
+                    let data = try await LazyPrivilegedChannel().perform(operation: PrivilegedHelperService.pingOperation, arguments: [:])
+                    print("ping ok; helper started from binary \(String(decoding: data, as: UTF8.self)); on disk \(HelperFingerprint.of(path: Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/MacSpaceHelper").path) ?? "?")")
+                } catch { print("ping failed: \(error)") }
+            }
             exit(0)
         }
         if arguments.first == "screen" { await ScreenCommand.run(Array(arguments.dropFirst())) }
@@ -25,7 +31,7 @@ struct MacSpaceCli {
             usage: MacSpaceCli modules [--dir <folder>] [--load]
                    MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
                    MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
-                   MacSpaceCli helper [--register]
+                   MacSpaceCli helper [--register] [--ping]
                    MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]
             """)
             exit(arguments.isEmpty ? 0 : 64)
