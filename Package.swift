@@ -15,15 +15,17 @@ let package = Package(
     targets: [
         // Modules: each builds as a dynamic library and ships as a bundle in the app's PlugIns folder.
         .target(name: "MacSpaceCleaning", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Cleaning/Module"),
-        .target(name: "MacSpaceSiri", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Siri/Module"),
+        .target(name: "MacSpaceSiriPrivileged", path: "Modules/Siri/Privileged"),
+        .target(name: "MacSpaceSiri", dependencies: ["MacSpaceSiriPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Siri/Module"),
         .target(name: "MacSpaceDebloat", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Debloat/Module"),
         // The app: shell, module registry, renderer, settings, scheduler.
         .target(name: "MacSpaceApp", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "App", exclude: ["Resources", "Main"]),
         .executableTarget(name: "MacSpaceMain", dependencies: ["MacSpaceApp"], path: "App/Main"),
-        .executableTarget(name: "MacSpaceCli", dependencies: ["MacSpaceApp", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Cli"),
+        .executableTarget(name: "MacSpaceCli", dependencies: ["MacSpaceApp", "MacSpaceSiriPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Cli"),
         .testTarget(name: "SdkTests", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Sdk"),
         .testTarget(name: "AppTests", dependencies: ["MacSpaceApp", .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/App"),
         .testTarget(name: "CleaningTests", dependencies: ["MacSpaceCleaning", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Cleaning"),
+        .testTarget(name: "SiriTests", dependencies: ["MacSpaceSiri", "MacSpaceSiriPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Siri"),
         .testTarget(name: "PlatformTests", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Tests/Platform"),
     ]
 )

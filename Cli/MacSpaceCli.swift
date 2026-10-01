@@ -9,10 +9,12 @@ struct MacSpaceCli {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         if arguments.first == "purge-assets" { PurgeCommand.run(Array(arguments.dropFirst())) }
+        if arguments.first == "orphan-subscriptions" { OrphanCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "screen" { await ScreenCommand.run(Array(arguments.dropFirst())) }
         guard arguments.first == "modules" else {
             print("""
             usage: MacSpaceCli modules [--dir <folder>] [--load]
+                   MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
                    MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
                    MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]
             """)

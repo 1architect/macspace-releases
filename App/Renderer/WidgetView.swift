@@ -192,6 +192,19 @@ struct ToggleListView: View {
     let list: ToggleList
     let handler: ActionHandler
     @State private var expanded: Set<String> = []
+    @State private var pending: PendingToggle?
+
+    /// A flip waiting for the user to confirm it.
+    struct PendingToggle: Identifiable {
+        let id = UUID()
+        let action: Action
+        let value: Bool
+    }
+
+    private func flip(_ row: ToggleRow, to value: Bool) {
+        if row.action.confirmation != nil { pending = PendingToggle(action: row.action, value: value) }
+        else { handler(row.action, ["value": value ? "true" : "false"]) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -212,7 +225,7 @@ struct ToggleListView: View {
                             }
                             .buttonStyle(.borderless)
                         }
-                        Toggle("", isOn: Binding(get: { row.isOn }, set: { handler(row.action, ["value": $0 ? "true" : "false"]) }))
+                        Toggle("", isOn: Binding(get: { row.isOn }, set: { flip(row, to: $0) }))
                             .labelsHidden()
                             .toggleStyle(.switch)
                             .disabled(!row.isEnabled)
@@ -223,6 +236,13 @@ struct ToggleListView: View {
                 }
             }
             if let footnote = list.footnote { Text(footnote).font(.caption).foregroundStyle(.secondary).padding(.top, 8) }
+        }
+        .confirmationDialog(pending?.action.confirmation?.title ?? "", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
+                            titleVisibility: .visible, presenting: pending) { toggle in
+            Button(toggle.action.confirmation?.confirmTitle ?? "OK") { handler(toggle.action, ["value": toggle.value ? "true" : "false"]) }
+            Button("Cancel", role: .cancel) {}
+        } message: { toggle in
+            Text(toggle.action.confirmation?.message ?? "")
         }
     }
 

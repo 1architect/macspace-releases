@@ -10,6 +10,25 @@
   "permissions": [
     "fullDiskAccess"
   ],
-  "options": [],
-  "backgroundTasks": []
+  "options": [
+    {
+      "id": "notify",
+      "title": "Notify me when protection changes",
+      "detail": "Shows a notification if macOS makes Apple Intelligence available again.",
+      "kind": {
+        "toggle": {
+          "defaultValue": true
+        }
+      }
+    }
+  ],
+  "backgroundTasks": [
+    {
+      "id": "watch",
+      "title": "Watch Apple Intelligence in the background",
+      "detail": "Checks every 15 minutes while MACSPACE is open and tells you if the off-switch stops working.",
+      "defaultEnabled": false,
+      "intervalSeconds": 900
+    }
+  ]
 }
