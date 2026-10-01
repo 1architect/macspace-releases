@@ -2,12 +2,33 @@ import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
 
-/// Modules on/off, then each module's options, background tasks and the permissions it needs.
+/// One page, in this order: General, the module switches, the permissions the active modules need (each listed once), then the
+/// options and background tasks of each module that has any. Sections are built directly in this view: wrapping them in custom
+/// views inside a ForEach made them render inside the previous card.
 struct SettingsView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
+    /// Bumped to redraw after an option changes or the app becomes active again (permissions may have been granted meanwhile).
+    @State private var tick = 0
+
+    private var activeHandles: [ModuleHandle] { host.handles.filter { $0.isEnabled && $0.state != .off } }
+    private var moduleOptions: [ModuleHandle] { activeHandles.filter { !$0.manifest.options.isEmpty || !$0.manifest.backgroundTasks.isEmpty } }
+
+    /// Permissions of the active modules, each once, with the modules that use it.
+    private var permissions: [(permission: Permission, usedBy: [String])] {
+        var order: [Permission] = []
+        var users: [Permission: [String]] = [:]
+        for handle in activeHandles {
+            for permission in handle.manifest.permissions {
+                if users[permission] == nil { order.append(permission) }
+                users[permission, default: []].append(handle.manifest.name)
+            }
+        }
+        return order.map { ($0, users[$0] ?? []) }
+    }
 
     var body: some View {
+        let _ = tick
         Form {
             GeneralSettingsSection(updates: updates)
             Section("Modules") {
@@ -16,8 +37,29 @@ struct SettingsView: View {
                 }
                 if host.handles.isEmpty { Text("No modules were found.").foregroundStyle(.secondary) }
             }
-            ForEach(host.handles.filter { $0.isEnabled && $0.state != .off }) { handle in
-                ModuleSettingsSection(host: host, handle: handle)
+            if !permissions.isEmpty {
+                Section("Permissions") {
+                    ForEach(permissions, id: \.permission) { entry in
+                        PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission), usedBy: entry.usedBy)
+                    }
+                }
+            }
+            ForEach(moduleOptions) { handle in
+                Section(handle.manifest.name) {
+                    ForEach(handle.manifest.options) { option in
+                        optionRow(handle, option)
+                    }
+                    ForEach(handle.manifest.backgroundTasks) { task in
+                        let options = host.settings.optionStore(for: handle.manifest)
+                        Toggle(isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
+                                             set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(task.title)
+                                if let detail = task.detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
+                            }
+                        }
+                    }
+                }
             }
             if !host.problems.isEmpty {
                 Section("Modules that could not be used") {
@@ -32,6 +74,27 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Settings")
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in tick += 1 }
+    }
+
+    @ViewBuilder
+    private func optionRow(_ handle: ModuleHandle, _ option: OptionDefinition) -> some View {
+        let options = host.settings.optionStore(for: handle.manifest)
+        switch option.kind {
+        case .toggle:
+            Toggle(isOn: Binding(get: { options.bool(option.id) },
+                                 set: { host.settings.setOption(.bool($0), option.id, module: handle.id); tick += 1 })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                    if let detail = option.detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
+                }
+            }
+        case let .choice(choices, _):
+            Picker(option.title, selection: Binding(get: { options.string(option.id) },
+                                                    set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
+                ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
+            }
+        }
     }
 }
 
@@ -52,59 +115,10 @@ private struct ModuleToggleRow: View {
     }
 }
 
-private struct ModuleSettingsSection: View {
-    @ObservedObject var host: ModuleHost
-    @ObservedObject var handle: ModuleHandle
-    @State private var refresh = 0
-
-    var body: some View {
-        let manifest = handle.manifest
-        let options = host.settings.optionStore(for: manifest)
-        if !manifest.options.isEmpty || !manifest.backgroundTasks.isEmpty || !manifest.permissions.isEmpty {
-            Section(manifest.name) {
-                ForEach(manifest.options) { option in
-                    optionRow(option, options: options)
-                }
-                ForEach(manifest.backgroundTasks) { task in
-                    Toggle(isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
-                                         set: { host.setBackgroundTask($0, task.id, module: handle.id); refresh += 1 })) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(task.title)
-                            if let detail = task.detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
-                        }
-                    }
-                }
-                ForEach(manifest.permissions, id: \.self) { permission in
-                    PermissionRow(permission: permission, status: host.permissions.status(of: permission))
-                }
-            }
-            .id(refresh)
-        }
-    }
-
-    @ViewBuilder
-    private func optionRow(_ option: OptionDefinition, options: any OptionStore) -> some View {
-        switch option.kind {
-        case .toggle:
-            Toggle(isOn: Binding(get: { options.bool(option.id) },
-                                 set: { host.settings.setOption(.bool($0), option.id, module: handle.id); refresh += 1 })) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(option.title)
-                    if let detail = option.detail { Text(detail).font(.caption).foregroundStyle(.secondary) }
-                }
-            }
-        case let .choice(choices, _):
-            Picker(option.title, selection: Binding(get: { options.string(option.id) },
-                                                    set: { host.settings.setOption(.string($0), option.id, module: handle.id); refresh += 1 })) {
-                ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
-            }
-        }
-    }
-}
-
 private struct PermissionRow: View {
     let permission: Permission
     let status: PermissionStatus
+    var usedBy: [String] = []
     @State private var helperError: String?
     @State private var helperStatus: PermissionStatus?
 
@@ -113,6 +127,7 @@ private struct PermissionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(permission.title)
                 Text(permission.detail).font(.caption).foregroundStyle(.secondary)
+                if !usedBy.isEmpty { Text("Used by \(usedBy.joined(separator: ", "))").font(.caption2).foregroundStyle(.tertiary) }
                 if let helperError { Text(helperError).font(.caption).foregroundStyle(.red) }
             }
             Spacer()
