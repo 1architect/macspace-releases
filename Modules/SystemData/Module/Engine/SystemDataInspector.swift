@@ -202,6 +202,7 @@ public struct SystemDataInspector {
 
         // Listed children (containers, caches) that cannot be read are reported once, as their parent folder.
         var reportIndividually = true
+        var smallBytes: [SystemDataKind: UInt64] = [:]
         func size(_ path: String) -> (bytes: UInt64?, readable: Bool) {
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return (nil, false) }
@@ -244,7 +245,11 @@ public struct SystemDataInspector {
             }
             guard paths.contains(where: fileManager.fileExists(atPath:)) else { return }
             // Listed entries (minimum > 0) are shown only when measurable and large enough.
-            if minimum > 0, !measured || total < minimum { return }
+            if minimum > 0, !measured || total < minimum {
+                // Not listed, but System Settings counts it, so it stays in the totals.
+                if measured, total > 0 { smallBytes[kind, default: 0] += total }
+                return
+            }
             var item = SystemDataItem(id: id, title: title, kind: kind, paths: paths, bytes: measured ? total : nil, readable: readable,
                                       owners: owners, inUse: isRunning(owners), cleanup: cleanup, notes: notes)
             item.expectedReclaimBytes = expectedReclaim ?? (cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
@@ -416,6 +421,10 @@ public struct SystemDataInspector {
         add("trash:user", "Trash", .trash, paths: [(home as NSString).appendingPathComponent(".Trash")],
             cleanup: SystemDataCleanup(kind: .review, description: "Empty the Trash in Finder; macOS can also do it automatically after 30 days.", command: nil))
 
+        for (kind, bytes) in smallBytes.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
+            items.append(SystemDataItem(id: "small:\(kind.rawValue)", title: "Smaller items", kind: kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
+                                        cleanup: SystemDataCleanup(kind: .review, description: "Many small entries, each below the listing size.", command: nil), notes: []))
+        }
         items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         let volumeUsage = volumes()
         var warnings: [String] = []

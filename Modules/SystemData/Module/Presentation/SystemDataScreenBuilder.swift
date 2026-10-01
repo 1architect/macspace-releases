@@ -126,7 +126,7 @@ enum SystemDataScreenBuilder {
     /// Large items with no guide and no safe cleanup: shown so nothing hides in the total.
     static func reviewSection(_ report: SystemDataReport) -> ScreenWidget? {
         let guided = Set(report.manualCleanup.flatMap(\.itemIDs))
-        let items = report.items.filter { $0.cleanup.kind == .review && !guided.contains($0.id) && ($0.bytes ?? 0) > 0 }
+        let items = report.items.filter { $0.cleanup.kind == .review && !guided.contains($0.id) && !$0.id.hasPrefix("small:") && ($0.bytes ?? 0) > 0 }
             .sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }.prefix(8)
         guard !items.isEmpty else { return nil }
         let rows = items.map { Row(id: $0.id, title: $0.title, trailing: ByteFormat.string($0.bytes ?? 0), badge: Badge("Review"), symbol: "magnifyingglass", detail: $0.cleanup.description) }
