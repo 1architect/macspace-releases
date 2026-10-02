@@ -158,6 +158,9 @@ struct DesignSettingsSection: View {
                 ForEach(PaletteScheme.allCases) { Text($0.title).tag($0) }
             }
             .help("Also in the Design menu: ⌥⌘1 to ⌥⌘5.")
+            Toggle("Tile lift and tilt", isOn: $settings.tilt)
+            Toggle("Hover shade", isOn: $settings.hoverShade)
+            Toggle("Window shadow", isOn: $settings.windowShadow)
         }
     }
 }
