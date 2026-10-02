@@ -11,6 +11,7 @@ A modular macOS 27 utility. One app shows widgets that **modules** describe; eac
 |---|---|
 | **System Data** | Explains what fills System Data, frees what is safe (system caches, old reports, unused system assets), deletes the document version history on request, and guides the manual cleanup macOS and other apps own. |
 | **Siri & Apple Intelligence** | An off-switch for Apple Intelligence, a background watcher, and release of the models macOS keeps afterwards. Does nothing in a virtual machine. |
+| **Other System Files** | What macOS counts as purgeable, per purge service, and freeing the files apps marked purgeable now instead of when the disk is nearly full. |
 | **Debloat** | Fourteen switches for analytics, ads and background data collection macOS lets you control. |
 
 Third-party plug-ins are out of scope. The app is built with SwiftPM only (no Xcode project) and requires macOS 27.

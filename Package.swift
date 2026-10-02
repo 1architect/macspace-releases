@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "SystemData", type: .dynamic, targets: ["MacSpaceSystemData"]),
         .library(name: "Siri", type: .dynamic, targets: ["MacSpaceSiri"]),
         .library(name: "Debloat", type: .dynamic, targets: ["MacSpaceDebloat"]),
+        .library(name: "OtherSystemFiles", type: .dynamic, targets: ["MacSpaceOtherSystemFiles"]),
         .executable(name: "MacSpaceMain", targets: ["MacSpaceMain"]),
         .executable(name: "MacSpaceCli", targets: ["MacSpaceCli"]),
         .executable(name: "MacSpaceHelper", targets: ["MacSpaceHelper"]),
@@ -21,6 +22,7 @@ let package = Package(
         .target(name: "MacSpaceSiri", dependencies: ["MacSpaceSiriPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Siri/Module"),
         .target(name: "MacSpaceDebloatPrivileged", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Debloat/Privileged"),
         .target(name: "MacSpaceDebloat", dependencies: ["MacSpaceDebloatPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/Debloat/Module"),
+        .target(name: "MacSpaceOtherSystemFiles", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/OtherSystemFiles/Module"),
         // The app: shell, module registry, renderer, settings, scheduler.
         .target(name: "MacSpaceApp", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "Sparkle", package: "Sparkle")], path: "App", exclude: ["Resources", "Main"]),
         .executableTarget(name: "MacSpaceMain", dependencies: ["MacSpaceApp"], path: "App/Main"),
@@ -31,6 +33,7 @@ let package = Package(
         .testTarget(name: "SystemDataTests", dependencies: ["MacSpaceSystemData", "MacSpaceSystemDataPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/SystemData"),
         .testTarget(name: "SiriTests", dependencies: ["MacSpaceSiri", "MacSpaceSiriPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Siri"),
         .testTarget(name: "DebloatTests", dependencies: ["MacSpaceDebloat", "MacSpaceDebloatPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Debloat"),
+        .testTarget(name: "OtherSystemFilesTests", dependencies: ["MacSpaceOtherSystemFiles", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/OtherSystemFiles"),
         .testTarget(name: "PlatformTests", dependencies: [.product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Platform"),
     ]
 )

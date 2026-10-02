@@ -50,9 +50,6 @@ public struct SystemDataModule: MacSpaceModule {
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purgeAssets()
-        case "purgeFiles":
-            progress(ActionProgress(message: "Asking macOS to remove the files apps marked purgeable…"))
-            return Self.purgeFiles()
         case "cleanAll":
             var details: [String] = []
             var freed: UInt64 = 0
@@ -65,8 +62,6 @@ public struct SystemDataModule: MacSpaceModule {
             if snapshot.reports.totalBytes > 0 { details += Self.cleanReports(snapshot.reports).details }
             progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
             if (snapshot.purgeableAssetsBytes ?? 0) > 0 { details += Self.purgeAssets().details }
-            progress(ActionProgress(fraction: 0.85, message: "Removing files apps marked purgeable…"))
-            if (snapshot.purgeableFilesBytes ?? 0) > 0 { details += Self.purgeFiles().details }
             if let before, let after = DataVolume.freeBytes(), after > before { freed = after - before }
             return .succeeded("Freed \(ByteFormat.string(freed)), measured on the volume.", details: details)
         default:
@@ -135,20 +130,6 @@ public struct SystemDataModule: MacSpaceModule {
         if let error = result.error { return .failed(error) }
         return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)) of unused system assets, measured on the volume.",
                           details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(String(format: "%.1f", result.elapsedSeconds ?? 0)) s."])
-    }
-
-    /// Apple's own purge of the files apps marked purgeable, run now instead of when the disk is nearly full.
-    static func purgeFiles() -> ActionResult {
-        let service = CacheDeleteService.fsPurgeableData, urgency = CacheDeleteService.fsPurgeableDataUrgency
-        let result: CacheDeletePurgeResult
-        if let cli = ToolLocator.cli() {
-            result = CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: urgency)
-        } else {
-            result = CacheDeleteClient().purge(services: [service], urgency: urgency)
-        }
-        if let error = result.error { return .failed(error) }
-        return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)) of purgeable app files, measured on the volume.",
-                          details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) of purgeable files removed in \(String(format: "%.1f", result.elapsedSeconds ?? 0)) s."])
     }
 
     static func measuredFreed(_ before: UInt64?, _ after: UInt64?) -> UInt64? {

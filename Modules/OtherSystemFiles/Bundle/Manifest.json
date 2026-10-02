@@ -1,0 +1,14 @@
+{
+  "id": "com.macspace.other-system-files",
+  "name": "Other System Files",
+  "summary": "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full.",
+  "version": "0.1.0",
+  "sdkVersion": 2,
+  "symbol": "arrow.down.circle.dotted",
+  "minimumMacOS": "27.0",
+  "order": 15,
+  "permissions": [],
+  "options": [],
+  "backgroundTasks": [],
+  "tileTint": "violet"
+}
