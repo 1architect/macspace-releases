@@ -13,6 +13,7 @@ struct MacSpaceCli {
         if arguments.first == "helper" {
             // Diagnostics for the privileged helper: `helper` prints the status, `helper --register` tries to register it.
             print("status: \(PrivilegedHelperInstaller.status.rawValue) (0 not registered, 1 enabled, 2 requires approval, 3 not found)")
+            if PrivilegedHelperInstaller.status == .notFound { print("why: \(PrivilegedHelperInstaller.notFoundReason())") }
             if arguments.contains("--register") {
                 do { try PrivilegedHelperInstaller.register(); print("registered; status now \(PrivilegedHelperInstaller.status.rawValue)") }
                 catch { print("register failed: \(error)") }
