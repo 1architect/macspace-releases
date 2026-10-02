@@ -138,6 +138,7 @@ public struct SystemDataLocations: Sendable {
         "spotlight": "/System/Volumes/Data/.Spotlight-V100",
         "documentRevisions": "/System/Volumes/Data/.DocumentRevisions-V100",
         "installData": "/System/Volumes/Data/macOS Install Data",
+        "systemVersion": "/System/Library/CoreServices/SystemVersion.plist",
         "symbolCache": "/System/Library/Caches/com.apple.coresymbolicationd",
         "powerlog": "/private/var/db/powerlog",
         "swap": "/private/var/vm",
@@ -281,7 +282,8 @@ public struct SystemDataInspector {
                 var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
                                           readable: readable, owners: entry.owners, inUse: isRunning(entry.owners), cleanup: entry.cleanup, notes: entry.notes)
                 item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
-                item.guide = ManualCleanupGuides.guide(for: item)
+                // A leftover of a finished update has no manual step: there is no update to install.
+                item.guide = entry.id == "update:staged" && entry.cleanup.kind == .managedByMacOS ? nil : ManualCleanupGuides.guide(for: item)
                 items.append(item)
             }
         }
@@ -362,8 +364,16 @@ public struct SystemDataInspector {
                 notes: ["Versions share blocks with their documents where possible, so its real cost can be lower than its size."])
         }
         if let path = system["installData"] {
-            add("update:staged", "Staged macOS update", .stagedUpdate, paths: [path],
-                cleanup: managed("A downloaded update that macOS installs or removes; check System Settings > General > Software Update."))
+            // Staged data older than the installed system belongs to an update that is long finished, not to one that is waiting.
+            func modified(_ path: String?) -> Date? { path.flatMap { try? fileManager.attributesOfItem(atPath: $0)[.modificationDate] as? Date } }
+            let leftover = modified(path).flatMap { staged in modified(system["systemVersion"]).map { staged < $0 } } ?? false
+            if leftover {
+                add("update:staged", "Leftover macOS update files", .stagedUpdate, paths: [path],
+                    cleanup: managed("Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone."))
+            } else {
+                add("update:staged", "Staged macOS update", .stagedUpdate, paths: [path],
+                    cleanup: SystemDataCleanup(kind: .review, description: "A downloaded update that macOS installs or removes; check System Settings > General > Software Update.", command: nil))
+            }
         }
         if let path = system["symbolCache"] {
             add("cache:symbolication", "Symbolication cache (coresymbolicationd)", .symbolCache, paths: [path],

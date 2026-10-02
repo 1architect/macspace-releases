@@ -76,6 +76,29 @@ final class SystemDataTests: XCTestCase {
         XCTAssertLessThan(report.cleanableBytes, 100_000_000)
     }
 
+    func testStagedUpdateDataOlderThanTheInstalledSystemIsALeftoverNotAWaitingUpdate() throws {
+        try file("installdata/UpdateBundle/pkg", mb: 60)
+        try file("system/SystemVersion.plist", mb: 0)
+        func inspect(stagedModified: Date, systemModified: Date) throws -> SystemDataItem {
+            try fm.setAttributes([.modificationDate: stagedModified], ofItemAtPath: root.appendingPathComponent("installdata").path)
+            try fm.setAttributes([.modificationDate: systemModified], ofItemAtPath: root.appendingPathComponent("system/SystemVersion.plist").path)
+            let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil,
+                                                systemPaths: ["installData": root.appendingPathComponent("installdata").path,
+                                                              "systemVersion": root.appendingPathComponent("system/SystemVersion.plist").path])
+            var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] })
+            inspector.hasFullDiskAccess = true
+            return try XCTUnwrap(inspector.inspect().items.first { $0.id == "update:staged" })
+        }
+        let old = Date(timeIntervalSinceNow: -90 * 86_400), recent = Date(timeIntervalSinceNow: -5 * 86_400)
+        let leftover = try inspect(stagedModified: old, systemModified: recent)
+        XCTAssertEqual(leftover.title, "Leftover macOS update files")
+        XCTAssertNil(leftover.guide, "there is no update to install")
+        XCTAssertEqual(leftover.cleanup.kind, .managedByMacOS)
+        let waiting = try inspect(stagedModified: recent, systemModified: old)
+        XCTAssertEqual(waiting.title, "Staged macOS update")
+        XCTAssertEqual(waiting.guide?.app, "macOS update")
+    }
+
     func testUnreadableChildrenAreNamedIndividually() throws {
         for name in ["com.example.A", "com.example.B"] {
             let dir = root.appendingPathComponent("home/Library/Containers/\(name)")

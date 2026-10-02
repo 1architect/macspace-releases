@@ -95,7 +95,8 @@ public enum ManualCleanupGuides {
             verified: false)),
         Rule(tokens: ["update:staged", "macos install data"], guide: ManualCleanupGuide(
             app: "macOS update", frees: "The downloaded update package.",
-            steps: ["System Settings → General → Software Update: install the waiting update. macOS removes the package afterwards."],
+            steps: ["System Settings → General → Software Update: install the waiting update. macOS removes the package afterwards.",
+                    "If Software Update shows nothing waiting, these are leftovers of an earlier update; macOS removes them when it decides to."],
             verified: false)),
     ]
 
