@@ -90,6 +90,7 @@ enum SystemDataScreenBuilder {
         let manual = manualSection(report)
         if let manual { widgets.append(manual) }
         if let versions = versionsSection(snapshot) { widgets.append(versions) }
+        if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         if let assets = assetsSection(snapshot) { widgets.append(assets) }
         if let review = reviewSection(report) { widgets.append(review) }
         if let managed = managedSection(report, assetsListed: freeNowHasAssets(snapshot) || !snapshot.assetFamilies.isEmpty) { widgets.append(managed) }
@@ -152,6 +153,24 @@ enum SystemDataScreenBuilder {
         let rows = items.map { Row(id: $0.id, title: $0.title, trailing: ByteFormat.string($0.bytes ?? 0), badge: Badge("Review"), symbol: "magnifyingglass", detail: $0.cleanup.description) }
         return .section(SectionWidget(id: "review", title: "Worth a look", subtitle: "These belong to apps or to you.",
                                       widgets: [.list(ListWidget(id: "review-list", rows: Array(rows)))], isCollapsible: true, startsCollapsed: true))
+    }
+
+    /// Files of an update that is already installed; shown only when the scan recognised them as a leftover (see the inspector).
+    static func leftoverUpdateSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        guard let item = snapshot.report.items.first(where: { $0.id == "update:staged" && $0.kind == .stagedUpdate && $0.cleanup.kind == .managedByMacOS }),
+              let bytes = item.bytes, bytes > 0 else { return nil }
+        let size = ByteFormat.string(bytes)
+        let row = Row(id: "leftover-update", title: "Leftover macOS update files",
+                      subtitle: "Files of an earlier update that is already installed. No update is waiting.",
+                      trailing: size, badge: Badge("Safe", tone: .positive), symbol: "arrow.down.app",
+                      detail: "macOS did not remove these after the update. A protected part of the folder stays; MacSpace deletes the rest.",
+                      actions: [Action(id: "deleteStagedUpdate", title: "Delete", role: .destructive,
+                                       confirmation: Confirmation(title: "Delete the leftover update files?",
+                                                                  message: "This deletes about \(size) of files from an update that is already installed. If you ever need that update again, macOS downloads it again. A protected part of the folder stays.",
+                                                                  confirmTitle: "Delete"),
+                                       requires: [.privilegedHelper])])
+        return .section(SectionWidget(id: "leftover-update", title: "Leftover update files", subtitle: "Left behind by an update that finished earlier.",
+                                      widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
     }
 
     /// The saved history behind File > Revert To > Browse All Versions. Deleting it is irreversible, so it sits apart from "Free now".
@@ -235,7 +254,7 @@ enum SystemDataScreenBuilder {
 
     /// What fills System Data but cannot be reduced here. Anything with a button lives in "Free now" instead.
     static func managedSection(_ report: SystemDataReport, assetsListed: Bool = false) -> ScreenWidget? {
-        let handledElsewhere: Set<String> = assetsListed ? ["reports:diagnostic", "assets:system", "versions:documents"] : ["reports:diagnostic", "versions:documents"]
+        let handledElsewhere: Set<String> = assetsListed ? ["reports:diagnostic", "assets:system", "versions:documents", "update:staged"] : ["reports:diagnostic", "versions:documents", "update:staged"]
         let items = report.items.filter { $0.cleanup.kind == .managedByMacOS || $0.cleanup.kind == .command }
             .filter { ($0.bytes ?? 0) > 0 && !handledElsewhere.contains($0.id) }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         guard !items.isEmpty else { return nil }

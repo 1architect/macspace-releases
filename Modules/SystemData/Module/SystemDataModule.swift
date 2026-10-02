@@ -41,6 +41,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
             return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then press Refresh.", refresh: false)
+        case "deleteStagedUpdate":
+            progress(ActionProgress(message: "Deleting the leftover update files…"))
+            return await Self.deleteStagedUpdate(context.privileged)
         case "deleteVersions":
             progress(ActionProgress(message: "Stopping revisiond and deleting the version history…"))
             return await Self.deleteVersions(context.privileged)
@@ -101,6 +104,20 @@ public struct SystemDataModule: MacSpaceModule {
         let message = measured.map { "Deleted the version history. The volume gained \(ByteFormat.string($0)); the store shrank by \(ByteFormat.string(stored))." }
             ?? "Deleted the version history; the store shrank by \(ByteFormat.string(stored))."
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details)
+    }
+
+    /// Deletes the files of an update that is already installed, through the helper (which checks they are really a leftover).
+    static func deleteStagedUpdate(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed("The helper is not installed. Install it in Settings, then try again.") }
+        let before = DataVolume.freeBytes()
+        let result: StagedUpdateResult
+        do { result = try await channel.perform(StagedUpdateResult.self, operation: SystemDataPrivilegedOperations.deleteStagedUpdate) }
+        catch { return .failed("The helper could not delete the files: \(error.localizedDescription)") }
+        guard result.executed else { return .failed(result.error ?? "Nothing was deleted.") }
+        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
+        let message = measuredFreed(before, DataVolume.freeBytes()).map { "Deleted the leftover update files. The volume gained \(ByteFormat.string($0)); the folder shrank by \(ByteFormat.string(stored))." }
+            ?? "Deleted the leftover update files; the folder shrank by \(ByteFormat.string(stored))."
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [])
     }
 
     static func purgeAssets() -> ActionResult {

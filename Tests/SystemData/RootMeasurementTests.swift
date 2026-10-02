@@ -18,7 +18,7 @@ final class RootMeasurementTests: XCTestCase {
 
     func testHelperOperationSizesOnlyKnownLocations() throws {
         let handler = SystemDataPrivilegedOperations()
-        XCTAssertEqual(handler.operations, ["systemdata.measure", "systemdata.versions.delete"])
+        XCTAssertEqual(handler.operations, ["systemdata.measure", "systemdata.staged-update.delete", "systemdata.versions.delete"])
         let data = try handler.handle("systemdata.measure", arguments: ["paths": "/etc\n/Users\n/nonexistent"], caller: PrivilegedCaller(uid: 501))
         XCTAssertEqual(try JSONDecoder().decode(RootMeasurementResponse.self, from: data).sizes, [:], "paths outside the fixed list are never sized")
         XCTAssertThrowsError(try handler.handle("other", arguments: [:], caller: PrivilegedCaller(uid: 501)))
