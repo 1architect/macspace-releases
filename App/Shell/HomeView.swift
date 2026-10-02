@@ -241,7 +241,9 @@ struct HomeView: View {
     }
 }
 
-/// A tile on the dashboard. It lifts and tilts toward the pointer and sinks when pressed; its chart answers the pointer too.
+/// A tile on the dashboard. It lifts and tilts toward the pointer and sinks when pressed; its chart answers the pointer too. A glass
+/// tile tilts without turning in 3D: under a 3D rotation, glass redraws what it shows late, and part of the tile stayed dark after the
+/// pointer left. It leans toward the pointer instead, with a light that follows it.
 struct DashboardTileView: View {
     let tile: DashboardTile
     @ObservedObject var host: ModuleHost
@@ -258,13 +260,19 @@ struct DashboardTileView: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
         let hovering = pointer != nil
-        // Glass tiles stay flat: tilted or lifted, glass redraws what it shows late, and part of the tile stayed dark after the pointer
-        // left. They answer the pointer with a shade instead.
-        let moves = design.tilt && !design.glass
-        let lifted = hovering && moves
-        let tilt = reduceMotion || !moves ? UnitPoint.center : (pointer ?? .center)
+        let lifted = hovering && design.lift
+        let tilt = reduceMotion || !design.tilt ? UnitPoint.center : (pointer ?? .center)
+        let turns = !design.glass
         Button(action: open) {
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize, pointer: pointer)
+                .overlay {
+                    if design.glass, design.tilt, let pointer {
+                        RadialGradient(colors: [.white.opacity(design.isLight ? 0.22 : 0.12), .clear],
+                                       center: pointer, startRadius: 0, endRadius: max(size.width, size.height) * 0.7)
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+                }
                 .clipShape(shape)
                 .contentShape(shape)
         }
@@ -279,11 +287,13 @@ struct DashboardTileView: View {
                 pointer = nil
             }
         }
-        .rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-        .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+        .rotation3DEffect(.degrees(turns ? (tilt.x - 0.5) * 5 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+        .rotation3DEffect(.degrees(turns ? (0.5 - tilt.y) * 5 : 0), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+        .offset(x: turns ? 0 : (tilt.x - 0.5) * 4, y: turns ? 0 : (tilt.y - 0.5) * 4)
         .scaleEffect(lifted && tile.opens ? 1.018 : 1)
         // Glass is see-through, so a deeper shadow would show inside the tile, offset from its edge.
-        .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
+        .shadow(color: .black.opacity(lifted && !design.glass ? 0.22 : 0.07), radius: lifted && !design.glass ? 14 : 5,
+                y: lifted && !design.glass ? 8 : 2)
         .animation(Theme.hover, value: hovering)
         .animation(.interactiveSpring(duration: 0.25), value: pointer)
         .onChange(of: isHidden) { _, hidden in if hidden { pointer = nil } }

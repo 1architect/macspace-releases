@@ -78,7 +78,8 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
 struct Design: Equatable {
     var scheme: PaletteScheme = .deep
     var glass = false
-    /// Temporary, for finding what lags on hover: tiles lift and tilt toward the pointer; glass is shaded under the pointer.
+    /// Temporary, for finding what lags on hover: tiles lift, and tilt toward the pointer; glass is shaded under the pointer.
+    var lift = true
     var tilt = true
     var hoverShade = true
 
@@ -105,6 +106,7 @@ public final class DesignSettings: ObservableObject {
 
     @Published public var scheme: PaletteScheme { didSet { defaults.set(scheme.rawValue, forKey: "design.palette") } }
     @Published public var glass: Bool { didSet { defaults.set(glass, forKey: "design.glass") } }
+    @Published public var lift: Bool { didSet { defaults.set(lift, forKey: "design.lift") } }
     @Published public var tilt: Bool { didSet { defaults.set(tilt, forKey: "design.tilt") } }
     @Published public var hoverShade: Bool { didSet { defaults.set(hoverShade, forKey: "design.hoverShade") } }
     @Published public var windowShadow: Bool { didSet { defaults.set(windowShadow, forKey: "design.windowShadow") } }
@@ -113,12 +115,13 @@ public final class DesignSettings: ObservableObject {
         self.defaults = defaults
         scheme = PaletteScheme(rawValue: defaults.string(forKey: "design.palette") ?? "") ?? .deep
         glass = defaults.bool(forKey: "design.glass")
+        lift = defaults.object(forKey: "design.lift") as? Bool ?? true
         tilt = defaults.object(forKey: "design.tilt") as? Bool ?? true
         hoverShade = defaults.object(forKey: "design.hoverShade") as? Bool ?? true
         windowShadow = defaults.object(forKey: "design.windowShadow") as? Bool ?? true
     }
 
-    var design: Design { Design(scheme: scheme, glass: glass, tilt: tilt, hoverShade: hoverShade) }
+    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -132,7 +135,8 @@ public struct DesignCommands: Commands {
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])
             Divider()
-            Toggle("Tile Lift & Tilt", isOn: $settings.tilt)
+            Toggle("Tile Lift", isOn: $settings.lift)
+            Toggle("Tile Tilt", isOn: $settings.tilt)
             Toggle("Hover Shade", isOn: $settings.hoverShade)
             Toggle("Window Shadow", isOn: $settings.windowShadow)
             Divider()
@@ -158,7 +162,8 @@ struct DesignSettingsSection: View {
                 ForEach(PaletteScheme.allCases) { Text($0.title).tag($0) }
             }
             .help("Also in the Design menu: ⌥⌘1 to ⌥⌘5.")
-            Toggle("Tile lift and tilt", isOn: $settings.tilt)
+            Toggle("Tile lift", isOn: $settings.lift)
+            Toggle("Tile tilt", isOn: $settings.tilt)
             Toggle("Hover shade", isOn: $settings.hoverShade)
             Toggle("Window shadow", isOn: $settings.windowShadow)
         }
