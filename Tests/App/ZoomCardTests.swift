@@ -39,6 +39,29 @@ final class BentoTests: XCTestCase {
         ])
     }
 
+    func testTheFeaturedModuleTakesTwoByTwoAndSixTilesFillThreeRows() {
+        // Storage, the featured module, then the other three modules and Settings.
+        let one = Bento.Size(width: 1, height: 1), large = Bento.Size(width: 2, height: 2)
+        let placements = Bento.pack(sizes: [one, large, one, one, one, one], columns: 3)
+        XCTAssertEqual(placements, [
+            .init(row: 0, column: 0, span: 1), .init(row: 0, column: 1, span: 2, height: 2),
+            .init(row: 1, column: 0, span: 1), .init(row: 2, column: 0, span: 1),
+            .init(row: 2, column: 1, span: 1), .init(row: 2, column: 2, span: 1),
+        ])
+        XCTAssertEqual(Bento.rows(placements), 3)
+        let size = CGSize(width: 314, height: 314)
+        XCTAssertEqual(Bento.frame(placements[1], columns: 3, rows: 3, in: size, spacing: 7), CGRect(x: 107, y: 0, width: 207, height: 207))
+    }
+
+    func testTheModuleThatCanFreeTheMostIsFeatured() {
+        XCTAssertEqual(HomeView.featured([(id: "data", reclaimable: 135_000_000, wide: true), (id: "other", reclaimable: 4_000_000_000, wide: false),
+                                          (id: "debloat", reclaimable: nil, wide: false)]), "other")
+        XCTAssertEqual(HomeView.featured([(id: "debloat", reclaimable: nil, wide: false), (id: "data", reclaimable: 0, wide: true)]), "data",
+                       "with nothing to free, the wide module")
+        XCTAssertEqual(HomeView.featured([(id: "debloat", reclaimable: nil, wide: false)]), "debloat")
+        XCTAssertNil(HomeView.featured([]))
+    }
+
     func testTheLastTileOfAShortRowStretchesToTheEdge() {
         let placements = Bento.pack(spans: [1, 2, 1, 1], columns: 3)
         XCTAssertEqual(placements[3], .init(row: 1, column: 1, span: 2))

@@ -61,7 +61,7 @@ enum SiriScreenBuilder {
         else { detail = "no models left on disk" }
         let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: purge.map { min(Double($0) / 12_000_000_000, 1) },
                                         meterIsActionable: purge != nil)
-        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) to purge", graphic: graphic) }
+        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) to purge", graphic: graphic, reclaimableBytes: purge) }
         switch snapshot.status.state {
         case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
         case .releasing: return Tile(title: "siri & AI", status: "removing the model", graphic: graphic)

@@ -4,7 +4,8 @@ import Foundation
 /// own deep color (`ModuleManifest.tileTint`) and keeps one warm color, amber, for what the user can act on. The tile grows into the
 /// module's page when the user opens it.
 public struct Tile: Codable, Equatable, Sendable {
-    /// How many columns of the dashboard grid a tile takes; declared in the manifest (`tileSize`).
+    /// Declared in the manifest (`tileSize`). The dashboard gives the large tile to the module that can free the most
+    /// (`reclaimableBytes`); while none can, to the module that asks for a wide tile.
     public enum Size: String, Codable, Sendable {
         case small
         case wide
@@ -18,12 +19,15 @@ public struct Tile: Codable, Equatable, Sendable {
     public var needsAttention: Bool
     /// The chart behind the caption.
     public var graphic: TileGraphic?
+    /// Bytes the module can free right now, if it frees space. The dashboard gives the module with the most the large tile.
+    public var reclaimableBytes: UInt64?
 
-    public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil) {
+    public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil) {
         self.title = title
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
+        self.reclaimableBytes = reclaimableBytes
     }
 }
 

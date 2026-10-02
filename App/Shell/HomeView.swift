@@ -160,7 +160,7 @@ enum CaptionSize {
 /// One entry of the dashboard.
 struct DashboardTile: Identifiable {
     let destination: Destination
-    let span: Int
+    let size: Bento.Size
     let tint: TileTint
 
     var id: Destination { destination }
@@ -181,26 +181,37 @@ struct HomeView: View {
 
     static let minimumRowHeight: CGFloat = 120
 
-    /// The disk is violet and Settings slate; each module brings its own color, else takes the next free one.
+    /// The disk is violet and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
+    /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
     static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
-        var tiles = [DashboardTile(destination: .storage, span: 1, tint: .violet)]
+        let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
+        var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .violet)]
         let spare: [TileTint] = [.blue, .teal, .graphite]
         var next = 0
-        for handle in handles {
+        let ordered = handles.filter { $0.id == large } + handles.filter { $0.id != large }
+        for handle in ordered {
             var tint = handle.manifest.tileTint
             if tint == nil { tint = spare[next % spare.count]; next += 1 }
-            tiles.append(DashboardTile(destination: .module(handle.id), span: handle.manifest.tileSize == .wide ? 2 : 1, tint: tint ?? .blue))
+            let size = handle.id == large ? Bento.Size(width: 2, height: 2) : Bento.Size(width: 1, height: 1)
+            tiles.append(DashboardTile(destination: .module(handle.id), size: size, tint: tint ?? .blue))
         }
-        tiles.append(DashboardTile(destination: .settings, span: 1, tint: .slate))
+        tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate))
         return tiles
+    }
+
+    /// The module that gets the large tile: the one that can free the most; while none can free anything, the one whose manifest asks
+    /// for a wide tile, else the first.
+    nonisolated static func featured(_ modules: [(id: String, reclaimable: UInt64?, wide: Bool)]) -> String? {
+        if let most = modules.filter({ ($0.reclaimable ?? 0) > 0 }).max(by: { ($0.reclaimable ?? 0) < ($1.reclaimable ?? 0) }) { return most.id }
+        return (modules.first { $0.wide } ?? modules.first)?.id
     }
 
     var body: some View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
         GeometryReader { proxy in
             let columns = Bento.columns(for: proxy.size.width)
-            let placements = Bento.pack(spans: tiles.map(\.span), columns: columns)
+            let placements = Bento.pack(sizes: tiles.map(\.size), columns: columns)
             let rows = Bento.rows(placements)
             let needed = CGFloat(rows) * Self.minimumRowHeight + CGFloat(max(rows - 1, 0)) * Theme.spacing
             let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, needed))
@@ -228,6 +239,7 @@ struct HomeView: View {
                 // The gaps between tiles are glass too: dragging there moves the window.
                 .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
                 .animation(Theme.layout, value: tiles.map(\.id))
+                .animation(Theme.layout, value: tiles.map(\.size))
                 .animation(Theme.layout, value: columns)
             }
             .scrollDisabled(needed <= proxy.size.height)

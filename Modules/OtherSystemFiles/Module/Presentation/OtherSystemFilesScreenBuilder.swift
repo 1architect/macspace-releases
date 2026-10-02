@@ -11,7 +11,7 @@ enum OtherSystemFilesScreenBuilder {
         guard snapshot.services != nil else { return Tile(title: "other system files", status: "unavailable") }
         let freeable = snapshot.freeableBytes
         return Tile(title: "other system files", status: freeable >= threshold ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to free",
-                    graphic: .blocks(segments(snapshot)))
+                    graphic: .blocks(segments(snapshot)), reclaimableBytes: freeable >= threshold ? freeable : nil)
     }
 
     /// What macOS counts as purgeable, largest first; what MacSpace frees in the caution tone.

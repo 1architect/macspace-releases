@@ -78,7 +78,8 @@ enum SystemDataScreenBuilder {
     static func tile(_ snapshot: SystemDataSnapshot) -> Tile {
         let freeable = freeableBytes(snapshot)
         return Tile(title: "system data", status: freeable >= worthARow ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to clean",
-                    needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)))
+                    needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
+                    reclaimableBytes: freeable >= worthARow ? freeable : nil)
     }
 
     /// What fills System Data as blocks, largest first, with what Clean frees split out as its own block in the caution tone (taken out

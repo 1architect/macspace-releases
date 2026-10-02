@@ -294,21 +294,34 @@ struct GaugeView: View {
     private static let sweep = 0.75
 
     var body: some View {
-        let palette = design.palette(tint)
-        let used = min(max(value, 0), 1) * Self.sweep * drawn
-        let more = min(max(extra, 0), 1 - min(value, 1)) * Self.sweep * drawn
-        ZStack {
-            Surface(shape: ArcBand(from: 0, to: Self.sweep, width: 9, round: true), color: palette.step(1))
-            Surface(shape: ArcBand(from: used, to: used + more, width: 9, round: false), color: palette.step(3))
-            Surface(shape: ArcBand(from: 0, to: used, width: 9, round: true), color: palette.step(5))
-            // Glass is not drawn inside a rotated view, so the arc is placed by its angles instead of rotating the gauge.
-            VStack(spacing: 1) {
-                Text(label).font(.system(size: 24, weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
-                Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
-            }
+        GeometryReader { proxy in
+            gauge(side: min(proxy.size.width, proxy.size.height))
+                .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .animation(Theme.value, value: value)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
+    }
+
+    /// The ring and the text scale with the gauge, so a short tile gets a small gauge rather than text spilling out of it; the
+    /// sublabel goes when there is no room for it.
+    private func gauge(side: CGFloat) -> some View {
+        let palette = design.palette(tint)
+        let used = min(max(value, 0), 1) * Self.sweep * drawn
+        let more = min(max(extra, 0), 1 - min(value, 1)) * Self.sweep * drawn
+        let band = min(9, max(4, side * 0.07))
+        return ZStack {
+            Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
+            Surface(shape: ArcBand(from: used, to: used + more, width: band, round: false), color: palette.step(3))
+            Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
+            // Glass is not drawn inside a rotated view, so the arc is placed by its angles instead of rotating the gauge.
+            VStack(spacing: 1) {
+                Text(label).font(.system(size: min(24, side * 0.2), weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
+                if side >= 90 { Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft) }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(maxWidth: side - 2 * band - 8)
+        }
     }
 }
 
