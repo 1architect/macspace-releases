@@ -29,9 +29,12 @@ enum PurgeCommand {
             exit(1)
         }
 
+        // Urgency 1 (default) is what a service gives up most readily; higher asks for more.
+        let urgency = arguments.firstIndex(of: "--urgency").flatMap { arguments.indices.contains($0 + 1) ? Int(arguments[$0 + 1]) : nil }.map { min(max($0, 1), 4) } ?? 1
+
         if arguments.contains("--all-services") {
-            // Read-only: what every CacheDelete service says it could purge, urgency 1.
-            let all = client.purgeableByService() ?? [:]
+            // Read-only: what every CacheDelete service says it could purge at that urgency.
+            let all = client.purgeableByService(urgency: urgency) ?? [:]
             if json { emit(all) }
             for (service, bytes) in all.sorted(by: { $0.value > $1.value }) { print("\(ByteFormat.string(bytes))  \(service)") }
             exit(0)
@@ -51,8 +54,6 @@ enum PurgeCommand {
             print("Dry run; pass --execute to ask macOS (CacheDelete, this service only) to delete it now.")
             exit(0)
         }
-        // Experiment aid: urgency 1 (default) is what a service gives up most readily; higher asks for more.
-        let urgency = arguments.firstIndex(of: "--urgency").flatMap { arguments.indices.contains($0 + 1) ? Int(arguments[$0 + 1]) : nil }.map { min(max($0, 1), 4) } ?? 1
         let result = client.purge(services: [service], urgency: urgency)
         if json { emit(result) }
         if let error = result.error { print("error: \(error)") }
