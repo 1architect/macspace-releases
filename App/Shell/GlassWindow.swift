@@ -4,10 +4,20 @@ import SwiftUI
 /// Finishes the window the plain window style gives: clear behind the glass, a shadow that follows the glass, and resizable from
 /// its edges.
 struct GlassWindowConfigurator: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { ConfiguringView() }
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    /// Temporary switch: macOS draws the shadow from the window's content, and it shows through translucent glass.
+    var shadow = true
+
+    func makeNSView(context: Context) -> ConfiguringView { ConfiguringView() }
+    func updateNSView(_ nsView: ConfiguringView, context: Context) {
+        nsView.wantsWindowShadow = shadow
+        guard let window = nsView.window, window.hasShadow != shadow else { return }
+        window.hasShadow = shadow
+        window.invalidateShadow()
+    }
 
     final class ConfiguringView: NSView {
+        var wantsWindowShadow = true
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard let window else { return }
@@ -15,7 +25,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.styleMask.insert(.resizable)
             window.isOpaque = false
             window.backgroundColor = .clear
-            window.hasShadow = true
+            window.hasShadow = wantsWindowShadow
             window.isMovableByWindowBackground = true
             window.invalidateShadow()
         }

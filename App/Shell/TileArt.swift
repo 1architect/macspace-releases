@@ -51,7 +51,7 @@ struct Surface<S: Shape>: View {
         if design.glass {
             shape.fill(color.opacity(0.7))
                 .glassEffect(.regular, in: shape)
-                .overlay { HoverShade(shape: shape, on: highlighted) }
+                .overlay { HoverShade(shape: shape, on: highlighted && design.hoverShade) }
         } else {
             shape.fill(color)
                 .brightness(highlighted ? 0.08 : 0)

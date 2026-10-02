@@ -66,7 +66,7 @@ struct TileFace: View {
             }
             if info.loading { Shimmer() }
             // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late.
-            if design.glass {
+            if design.glass && design.hoverShade {
                 HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: pointer != nil, amount: Theme.tileHoverShade)
             }
         }
@@ -259,7 +259,7 @@ struct DashboardTileView: View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
         let hovering = pointer != nil
         let lifted = hovering && !design.glass
-        let tilt = reduceMotion ? UnitPoint.center : (pointer ?? .center)
+        let tilt = reduceMotion || !design.tilt ? UnitPoint.center : (pointer ?? .center)
         Button(action: open) {
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize, pointer: pointer)
                 .clipShape(shape)
@@ -278,7 +278,7 @@ struct DashboardTileView: View {
         }
         .rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
         .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
-        .scaleEffect(hovering && tile.opens ? 1.018 : 1)
+        .scaleEffect(hovering && tile.opens && design.tilt ? 1.018 : 1)
         // Glass is see-through, so a deeper shadow shows inside the tile, offset from its edge; glass darkens its color instead.
         .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
         .animation(Theme.hover, value: hovering)

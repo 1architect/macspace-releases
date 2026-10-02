@@ -75,7 +75,7 @@ public struct MainView: View {
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        .background(GlassWindowConfigurator())
+        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }

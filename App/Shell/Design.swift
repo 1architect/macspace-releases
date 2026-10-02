@@ -78,6 +78,9 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
 struct Design: Equatable {
     var scheme: PaletteScheme = .deep
     var glass = false
+    /// Temporary, for finding what lags on hover: tiles lift and tilt toward the pointer; glass is shaded under the pointer.
+    var tilt = true
+    var hoverShade = true
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -102,17 +105,23 @@ public final class DesignSettings: ObservableObject {
 
     @Published public var scheme: PaletteScheme { didSet { defaults.set(scheme.rawValue, forKey: "design.palette") } }
     @Published public var glass: Bool { didSet { defaults.set(glass, forKey: "design.glass") } }
+    @Published public var tilt: Bool { didSet { defaults.set(tilt, forKey: "design.tilt") } }
+    @Published public var hoverShade: Bool { didSet { defaults.set(hoverShade, forKey: "design.hoverShade") } }
+    @Published public var windowShadow: Bool { didSet { defaults.set(windowShadow, forKey: "design.windowShadow") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         scheme = PaletteScheme(rawValue: defaults.string(forKey: "design.palette") ?? "") ?? .deep
         glass = defaults.bool(forKey: "design.glass")
+        tilt = defaults.object(forKey: "design.tilt") as? Bool ?? true
+        hoverShade = defaults.object(forKey: "design.hoverShade") as? Bool ?? true
+        windowShadow = defaults.object(forKey: "design.windowShadow") as? Bool ?? true
     }
 
-    var design: Design { Design(scheme: scheme, glass: glass) }
+    var design: Design { Design(scheme: scheme, glass: glass, tilt: tilt, hoverShade: hoverShade) }
 }
 
-/// The temporary Design menu: Liquid Glass on or off (⌥⌘G) and the palettes (⌥⌘1…5).
+/// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
 public struct DesignCommands: Commands {
     @ObservedObject private var settings = DesignSettings.shared
 
@@ -122,6 +131,10 @@ public struct DesignCommands: Commands {
         CommandMenu("Design") {
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])
+            Divider()
+            Toggle("Tile Lift & Tilt", isOn: $settings.tilt)
+            Toggle("Hover Shade", isOn: $settings.hoverShade)
+            Toggle("Window Shadow", isOn: $settings.windowShadow)
             Divider()
             Picker("Palette", selection: $settings.scheme) {
                 ForEach(Array(PaletteScheme.allCases.enumerated()), id: \.element) { index, scheme in
