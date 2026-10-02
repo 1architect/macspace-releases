@@ -243,7 +243,7 @@ struct HomeView: View {
 
 /// A tile on the dashboard. It lifts and tilts toward the pointer and sinks when pressed; its chart answers the pointer too. A glass
 /// tile tilts without turning in 3D: under a 3D rotation, glass redraws what it shows late, and part of the tile stayed dark after the
-/// pointer left. It leans toward the pointer instead, with a light that follows it.
+/// pointer left. It leans toward the pointer instead.
 struct DashboardTileView: View {
     let tile: DashboardTile
     @ObservedObject var host: ModuleHost
@@ -265,14 +265,6 @@ struct DashboardTileView: View {
         let turns = !design.glass
         Button(action: open) {
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize, pointer: pointer)
-                .overlay {
-                    if design.glass, design.tilt, let pointer {
-                        RadialGradient(colors: [.white.opacity(design.isLight ? 0.22 : 0.12), .clear],
-                                       center: pointer, startRadius: 0, endRadius: max(size.width, size.height) * 0.7)
-                            .allowsHitTesting(false)
-                            .transition(.opacity)
-                    }
-                }
                 .clipShape(shape)
                 .contentShape(shape)
         }
