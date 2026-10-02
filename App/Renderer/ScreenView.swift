@@ -61,6 +61,9 @@ enum PageInsets {
     /// Where the corner buttons and the title end.
     static let headerBottom: CGFloat = 50
     static let side: CGFloat = 30
+    /// How far a grouped form indents its section headers from the edge of its groups (to line up with the text in the rows). The page's
+    /// hero sits in the first header.
+    static let formHeaderIndent: CGFloat = 10
     /// The band at the bottom that belongs to the main action, when the page has one; content never shows in it.
     static let footer: CGFloat = 58
     /// How tall the fade is where content leaves the page.
@@ -102,10 +105,15 @@ struct HeroBlocks: View {
     let tint: TileTint
     @Environment(\.design) private var design
 
+    static let gap: CGFloat = 3
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            BlocksView(segments: usage.segments, tint: tint)
+            // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
+            // itself. The legend stays lined up with the headers and the rows' text.
+            BlocksView(segments: usage.segments, tint: tint, gap: Self.gap)
                 .frame(height: 150)
+                .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
                 ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
                     HStack(spacing: 6) {
