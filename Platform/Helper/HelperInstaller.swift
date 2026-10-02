@@ -1,3 +1,4 @@
+import CoreServices
 import Foundation
 import MacSpaceSdk
 import ServiceManagement
@@ -20,8 +21,17 @@ public enum PrivilegedHelperInstaller {
         }
     }
 
+    /// Tells Launch Services about this app. A copy that arrived without Launch Services noticing (a shared folder, a VM, a manual
+    /// copy) leaves the helper "not found" and registering fails; once the app is registered, the status becomes "requires approval".
+    public static func registerAppWithLaunchServices(bundle: Bundle = .main) {
+        _ = LSRegisterURL(bundle.bundleURL as CFURL, true)
+    }
+
     /// Registers the daemon. `.requiresApproval` afterwards means the user must enable it in Login Items.
-    public static func register() throws { try service.register() }
+    public static func register() throws {
+        if status == .notFound { registerAppWithLaunchServices() }
+        try service.register()
+    }
 
     public static func unregister() async throws { try await service.unregister() }
 
@@ -54,7 +64,7 @@ public enum PrivilegedHelperInstaller {
             return "macOS is treating MacSpace as a downloaded app, so the helper cannot be installed. In Terminal run: xattr -dr com.apple.quarantine /Applications/MacSpace.app, then reopen MacSpace. (A notarized release does not need this.)"
         }
         if !(bundlePath.hasPrefix("/Applications/") || bundlePath.contains("/Applications/")) { return "Move MacSpace to the Applications folder, then reopen it." }
-        return "macOS does not recognise the helper. In Terminal run: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints."
+        return "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints."
     }
 
     public static func notFoundReason(bundle: Bundle = .main) -> String {

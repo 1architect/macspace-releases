@@ -137,24 +137,35 @@ private struct PermissionRow: View {
                 if permission == .fullDiskAccess {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
                 } else if permission == .privilegedHelper {
-                    Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
-                        helperError = nil
-                        if PrivilegedHelperInstaller.status != .requiresApproval {
-                            do { try PrivilegedHelperInstaller.register() } catch { helperError = "Could not install the helper: \(error.localizedDescription)" }
-                        }
-                        if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
-                        helperStatus = PrivilegedHelperInstaller.permissionStatus()
-                    }
+                    helperButton
                 } else {
                     Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)
                 }
             case .unknown:
                 if permission == .privilegedHelper {
-                    Text(PrivilegedHelperInstaller.notFoundReason()).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading).frame(maxWidth: 360, alignment: .leading).textSelection(.enabled)
+                    VStack(alignment: .trailing, spacing: 6) {
+                        helperButton
+                        Text(PrivilegedHelperInstaller.notFoundReason()).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading).frame(maxWidth: 360, alignment: .leading).textSelection(.enabled)
+                    }
                 } else {
                     Text("Unknown").foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    /// Installs the helper (Launch Services first, so a hand-copied app is found), then sends the user to the one switch that approves it.
+    private var helperButton: some View {
+        Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
+            helperError = nil
+            if PrivilegedHelperInstaller.status != .requiresApproval {
+                // Registering reports an error while it waits for the user's approval; that is not a failure.
+                do { try PrivilegedHelperInstaller.register() } catch {
+                    if PrivilegedHelperInstaller.status != .requiresApproval { helperError = "Could not install the helper: \(error.localizedDescription)" }
+                }
+            }
+            if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
+            helperStatus = PrivilegedHelperInstaller.permissionStatus()
         }
     }
 }

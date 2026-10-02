@@ -1,5 +1,6 @@
 import AppKit
 import MacSpaceApp
+import MacSpacePlatform
 import SwiftUI
 
 /// Closing the last window quits the app unless it lives in the menu bar, where it keeps running modules' background tasks.
@@ -12,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Modules load as soon as the app starts, not when the window first appears: the window can open behind other apps or not at all
     /// (menu bar only), and nothing should wait for a click.
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // An app copied in by hand may be unknown to Launch Services, which makes the helper "not found" instead of "needs approval".
+        if PrivilegedHelperInstaller.status == .notFound { PrivilegedHelperInstaller.registerAppWithLaunchServices() }
         Task { @MainActor in await AppModel.host.start() }
     }
 
