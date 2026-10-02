@@ -2,8 +2,9 @@ import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
-/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color, and it answers
-/// the pointer as glass does, darkening its own color while the pointer is over it.
+/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color, darkening its own
+/// color while the pointer is over it. The glass is not interactive: the system's pointer response lags behind the pointer and ignores
+/// the tile's tilt and lift, and the tile answers hover and press itself.
 struct TileBackdrop: View {
     let tint: TileTint
     var highlighted = false
@@ -17,7 +18,7 @@ struct TileBackdrop: View {
             let color = highlighted ? palette.base.mix(with: .black, by: Theme.highlightDarkening) : palette.base
             shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
                 .animation(Theme.highlight, value: highlighted)
-                .glassEffect(.regular.interactive(), in: shape)
+                .glassEffect(.regular, in: shape)
         } else {
             palette.base
                 .overlay {
