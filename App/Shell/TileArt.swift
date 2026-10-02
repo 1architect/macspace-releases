@@ -2,12 +2,11 @@ import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
-/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color, darkening its own
-/// color while the pointer is over it. The glass is not interactive: the system's pointer response lags behind the pointer and ignores
-/// the tile's tilt and lift, and the tile answers hover and press itself.
+/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color. The glass is not
+/// interactive: the system's pointer response lags behind the pointer and ignores the tile's tilt and lift, and the tile answers hover
+/// and press itself.
 struct TileBackdrop: View {
     let tint: TileTint
-    var highlighted = false
     @Environment(\.design) private var design
 
     var body: some View {
@@ -15,9 +14,7 @@ struct TileBackdrop: View {
         if design.glass {
             // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
             let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-            let color = highlighted ? palette.base.mix(with: .black, by: Theme.highlightDarkening) : palette.base
-            shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
-                .animation(Theme.highlight, value: highlighted)
+            shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
                 .glassEffect(.regular, in: shape)
         } else {
             palette.base
@@ -28,8 +25,22 @@ struct TileBackdrop: View {
     }
 }
 
+/// The darkening of glass under the pointer. It lies on top of the glass, in the glass's shape: glass adapts slowly to what it sees
+/// behind it, so anything that changes behind or inside it on hover lingers after the pointer has left.
+struct HoverShade<S: Shape>: View {
+    let shape: S
+    let on: Bool
+    var amount = Theme.highlightDarkening
+
+    var body: some View {
+        shape.fill(.black.opacity(on ? amount : 0))
+            .animation(Theme.highlight, value: on)
+            .allowsHitTesting(false)
+    }
+}
+
 /// A chart element's surface: flat color, or Liquid Glass tinted with that color when glass is on. Highlighted, flat color lightens
-/// and glass darkens its own color: an effect laid over glass does not follow the glass's edge.
+/// and glass is shaded.
 struct Surface<S: Shape>: View {
     let shape: S
     let color: Color
@@ -38,9 +49,9 @@ struct Surface<S: Shape>: View {
 
     var body: some View {
         if design.glass {
-            shape.fill((highlighted ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7))
-                .animation(Theme.highlight, value: highlighted)
+            shape.fill(color.opacity(0.7))
                 .glassEffect(.regular, in: shape)
+                .overlay { HoverShade(shape: shape, on: highlighted) }
         } else {
             shape.fill(color)
                 .brightness(highlighted ? 0.08 : 0)

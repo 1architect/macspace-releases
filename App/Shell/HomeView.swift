@@ -57,7 +57,7 @@ struct TileFace: View {
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
-            TileBackdrop(tint: tint, highlighted: pointer != nil)
+            TileBackdrop(tint: tint)
             if let graphic = info.graphic {
                 GeometryReader { proxy in
                     chart(graphic, in: proxy.size)
@@ -65,6 +65,10 @@ struct TileFace: View {
                 .opacity(chartOpacity)
             }
             if info.loading { Shimmer() }
+            // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late.
+            if design.glass {
+                HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: pointer != nil, amount: Theme.tileHoverShade)
+            }
         }
         .overlay {
             if case let .state(on, alarming, _, _, _)? = info.graphic, on && alarming {

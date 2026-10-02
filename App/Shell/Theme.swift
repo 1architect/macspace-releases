@@ -27,8 +27,9 @@ enum Theme {
     static let hover = Animation.spring(duration: 0.35, bounce: 0.3)
     /// A color answering the pointer: quick and without bounce, so it lets go as soon as the pointer leaves.
     static let highlight = Animation.easeOut(duration: 0.12)
-    /// How much glass under the pointer darkens its color.
-    static let highlightDarkening = 0.22
+    /// How dark the shade over glass under the pointer is: a chart element, and a whole tile.
+    static let highlightDarkening = 0.18
+    static let tileHoverShade = 0.1
     static let press = Animation.spring(duration: 0.22, bounce: 0.2)
     static let layout = Animation.spring(duration: 0.55, bounce: 0.18)
     static let value = Animation.smooth(duration: 0.9)
