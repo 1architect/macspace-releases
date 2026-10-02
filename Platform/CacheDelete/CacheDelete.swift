@@ -13,6 +13,15 @@ public enum CacheDeleteService {
     public static let appContainerCaches = "com.apple.cache_delete_app_container_caches"
     /// The only services MacSpace asks to purge.
     public static let purgeable: Set<String> = [mobileAsset, appContainerCaches]
+    /// Files apps marked purgeable (APFS); 4.89 GB at urgency 3, 339 MB at urgency 1-2, on the development Mac (2026-10-02).
+    public static let fsPurgeableData = "com.apple.fspurgeable_data"
+    /// Documents marked purgeable; 633 MB at urgency 3 on the development Mac.
+    public static let fsPurgeableDocument = "com.apple.fspurgeable_document"
+    /// Quick Look thumbnails; 330 MB at urgency 3 on the development Mac.
+    public static let quickLookThumbnails = "com.apple.quicklook.ThumbnailsAgent.CacheDelete"
+    /// Services under measurement: purged only from the CLI with `--experiment`, never from the app, until a measured purge shows
+    /// what they free and what they take away.
+    public static let experimental: Set<String> = [fsPurgeableData, fsPurgeableDocument, quickLookThumbnails]
 }
 
 /// Whether MacSpace may call CacheDelete on this system. The purge uses a private function whose signature was taken
@@ -215,6 +224,12 @@ public struct CacheDeleteClient {
     public func purgeableByService(volume: String = dataVolume, urgency: Int = 1) -> [String: UInt64]? {
         guard refusal == nil else { return nil }
         return Self.rawQuery(volume: volume, urgency: urgency).map(Self.parseItemized)
+    }
+
+    /// The whole answer of the query, for research. Read-only; nil when refused.
+    public func rawPurgeable(volume: String = dataVolume, urgency: Int = 1) -> [String: Any]? {
+        guard refusal == nil else { return nil }
+        return Self.rawQuery(volume: volume, urgency: urgency)
     }
 
     static func rawQuery(volume: String, urgency: Int, services: [String]? = nil) -> [String: Any]? {

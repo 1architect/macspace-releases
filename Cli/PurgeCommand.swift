@@ -2,6 +2,8 @@ import Foundation
 import MacSpacePlatform
 
 /// `MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]`
+/// `MacSpaceCli purge-assets --all-services [--urgency 1-4] [--raw]`
+/// `MacSpaceCli purge-assets --service <id> --experiment [--urgency 1-4] [--execute]` for a service still being measured
 ///
 /// The only place the private CacheDelete calls run in a normal flow, so that a changed interface crashes this
 /// throwaway process and not the app. The app starts it as a child (`CacheDeleteClient.validate/purgeInSubprocess`).
@@ -32,6 +34,18 @@ enum PurgeCommand {
         // Urgency 1 (default) is what a service gives up most readily; higher asks for more.
         let urgency = arguments.firstIndex(of: "--urgency").flatMap { arguments.indices.contains($0 + 1) ? Int(arguments[$0 + 1]) : nil }.map { min(max($0, 1), 4) } ?? 1
 
+        if arguments.contains("--all-services"), arguments.contains("--raw") {
+            // Read-only: the query's whole answer, to see what a service reports beyond its total.
+            let raw = client.rawPurgeable(urgency: urgency) ?? [:]
+            if JSONSerialization.isValidJSONObject(raw),
+               let data = try? JSONSerialization.data(withJSONObject: raw, options: [.prettyPrinted, .sortedKeys]) {
+                FileHandle.standardOutput.write(data)
+                print()
+            } else {
+                print(raw as NSDictionary)
+            }
+            exit(0)
+        }
         if arguments.contains("--all-services") {
             // Read-only: what every CacheDelete service says it could purge at that urgency.
             let all = client.purgeableByService(urgency: urgency) ?? [:]
@@ -42,12 +56,16 @@ enum PurgeCommand {
         var service = CacheDeleteService.mobileAsset
         if let index = arguments.firstIndex(of: "--service"), arguments.indices.contains(index + 1) {
             service = arguments[index + 1]
-            guard CacheDeleteService.purgeable.contains(service) else {
-                print("error: \(service) is not a service MacSpace purges.")
+            let allowed = CacheDeleteService.purgeable.contains(service)
+                || (CacheDeleteService.experimental.contains(service) && arguments.contains("--experiment"))
+            guard allowed else {
+                print(CacheDeleteService.experimental.contains(service)
+                      ? "error: \(service) is still being measured; pass --experiment to purge it from the CLI."
+                      : "error: \(service) is not a service MacSpace purges.")
                 exit(64)
             }
         }
-        let purgeable = client.purgeableByService()?[service]
+        let purgeable = client.purgeableByService(urgency: urgency)?[service]
         guard arguments.contains("--execute") else {
             if json { emit(["purgeableBytes": purgeable]) }
             print("What macOS would delete when space runs low (\(service)): \(ByteFormat.string(purgeable ?? 0))")
