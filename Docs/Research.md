@@ -81,8 +81,13 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
   minus free: 7.03 GB. Asked per service, CacheDelete reports about 1.5 GB at urgency 1-2 and 7.02 GB at urgency 3, so the tile's number
   is the urgency-3 total: `fspurgeable_data` 4.89 GB, app container caches 1.15 GB, `fspurgeable_document` 633 MB, Quick Look
   thumbnails 330 MB, Spotlight 13 MB, MobileAsset 4.4 MB. At urgency 4 MobileAsset reports 12.41 GB, assets still in use; not a
-  candidate. No local Time Machine snapshots. What a purge of each urgency-3 service frees is not measured yet
-  (`purge-assets --service <id> --experiment --urgency 3 --execute`).
+  candidate. No local Time Machine snapshots. The query's whole answer agrees: `CACHE_DELETE_TOTAL_AVAILABLE` 7 025 163 817 bytes,
+  of which `CACHE_DELETE_TOTAL_FSPURGEABLE` 5 522 636 800 (`fspurgeable_data` plus `fspurgeable_document`). Both fspurgeable services
+  belong to `deleted_helper`; the answer names no files or apps.
+- **Measured – purging at urgency 3 (2026-10-02, development Mac, as a normal user, from the CLI with `--experiment`).**
+  `fspurgeable_data` reported 4.66 GB removed and the Data volume's free space rose by 4.66 GB (97.55 → 102.21 GB). Quick Look
+  thumbnails reported 330 MB purgeable but removed nothing. Which apps' files went is not known, nor how fast they come back.
+  `fspurgeable_document` not tried.
 
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
