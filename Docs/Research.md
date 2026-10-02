@@ -77,6 +77,12 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
 - **Measured – container caches are not worth offering.** The service `com.apple.cache_delete_app_container_caches` reports
   1.15 GB purgeable and keeps reporting it. Purging freed 2.1 MB at urgency 1, 2.1 MB at 2, 95.7 MB at 3 and nothing at 4 (volume free
   space measured each time). It is not in the app.
+- **Measured – what "purgeable" on the disk tile is (2026-10-02, development Mac).** The tile shows available-for-important-use
+  minus free: 7.03 GB. Asked per service, CacheDelete reports about 1.5 GB at urgency 1-2 and 7.02 GB at urgency 3, so the tile's number
+  is the urgency-3 total: `fspurgeable_data` 4.89 GB, app container caches 1.15 GB, `fspurgeable_document` 633 MB, Quick Look
+  thumbnails 330 MB, Spotlight 13 MB, MobileAsset 4.4 MB. At urgency 4 MobileAsset reports 12.41 GB, assets still in use; not a
+  candidate. No local Time Machine snapshots. What a purge of each urgency-3 service frees is not measured yet
+  (`purge-assets --service <id> --experiment --urgency 3 --execute`).
 
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
