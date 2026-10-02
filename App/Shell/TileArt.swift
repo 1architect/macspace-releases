@@ -325,6 +325,44 @@ struct GaugeView: View {
     }
 }
 
+/// The gauge for a short tile: the share written large beside the close button, and a bar across the tile filled to it, with the
+/// lighter part right after.
+struct BarGaugeView: View {
+    let value: Double
+    let extra: Double
+    let label: String
+    let sublabel: String
+    let tint: TileTint
+    @Environment(\.design) private var design
+    @State private var drawn: Double = 0
+
+    var body: some View {
+        let palette = design.palette(tint)
+        let used = min(max(value, 0), 1) * drawn
+        let more = min(max(extra, 0), 1 - min(max(value, 0), 1)) * drawn
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(label).font(.system(size: 28, weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
+                Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            // Clear of the close button in the tile's top-left corner.
+            .padding(.leading, GlassCircleButton.margin + GlassCircleButton.diameter + 10 - 15)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Surface(shape: Capsule(), color: palette.step(1))
+                    Surface(shape: Capsule(), color: palette.step(3)).frame(width: proxy.size.width * (used + more))
+                    Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
+                }
+            }
+            .frame(height: 10)
+        }
+        .animation(Theme.value, value: value)
+        .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
+    }
+}
+
 /// A band along a circle, from `from` to `to` (fractions of a turn, clockwise from `start`), as a filled shape so it can be glass.
 /// The default start, 135°, is the lower left: a gauge opening at the bottom.
 struct ArcBand: Shape {

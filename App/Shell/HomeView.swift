@@ -141,11 +141,18 @@ struct TileFace: View {
                 .padding(.leading, 14)
                 .padding(.top, 16)
         case let .gauge(value, extra, label, sublabel):
-            // Clear of the window's close button, which sits in this tile's top-left corner.
-            let side = max(min(size.width * 0.56, size.height - Self.captionBand - 34), 40)
-            GaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint)
-                .frame(width: side, height: side)
-                .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
+            // Clear of the window's close button, which sits in this tile's top-left corner. A ring needs height; a short tile gets a
+            // bar across it instead.
+            let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
+            if side >= 100 {
+                GaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint)
+                    .frame(width: side, height: side)
+                    .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
+            } else {
+                BarGaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint)
+                    .frame(width: max(size.width - 30, 0), alignment: .leading)
+                    .offset(x: 15, y: 9)
+            }
         }
     }
 }
@@ -201,7 +208,8 @@ struct HomeView: View {
     }
 
     /// The module that gets the large tile: the one that can free the most; while none can free anything, the one whose manifest asks
-    /// for a wide tile, else the first.
+    /// for a wide tile, else the first. The dashboard redraws when a module's figure arrives (`ModuleHost.reclaimable`), and the tiles
+    /// glide and resize into the new layout.
     nonisolated static func featured(_ modules: [(id: String, reclaimable: UInt64?, wide: Bool)]) -> String? {
         if let most = modules.filter({ ($0.reclaimable ?? 0) > 0 }).max(by: { ($0.reclaimable ?? 0) < ($1.reclaimable ?? 0) }) { return most.id }
         return (modules.first { $0.wide } ?? modules.first)?.id

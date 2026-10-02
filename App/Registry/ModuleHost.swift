@@ -11,6 +11,9 @@ public final class ModuleHost: ObservableObject {
     @Published public private(set) var problems: [ModuleProblem] = []
     /// The modules folder has been read, so `dashboardHandles` is final even if the modules are still loading.
     @Published public private(set) var hasScanned = false
+    /// What each module's tile says it can free, by module id. The dashboard gives the large tile to the most, so it must redraw when a
+    /// module's figure arrives or changes; it does not observe each handle.
+    @Published public private(set) var reclaimable: [String: UInt64] = [:]
 
     public let settings: SettingsStore
     public let permissions: any PermissionChecker
@@ -45,6 +48,7 @@ public final class ModuleHost: ObservableObject {
     private var checkedHelper = false
     private var startTask: Task<Void, Never>?
     private var stateObservers: [AnyCancellable] = []
+    private var tileObservers: [AnyCancellable] = []
 
     /// `activeHandles` depends on each handle's state, which changes after the handles are created (off → ready). The views that list
     /// the active modules observe the host, so a module becoming ready must announce itself through the host too; without this the
@@ -52,6 +56,17 @@ public final class ModuleHost: ObservableObject {
     private func observeStates() {
         stateObservers = handles.map { handle in
             handle.$state.dropFirst().removeDuplicates().sink { [weak self] _ in self?.objectWillChange.send() }
+        }
+        reclaimable = reclaimable.filter { id, _ in handles.contains { $0.id == id } }
+        tileObservers = handles.map { handle in
+            let id = handle.id
+            // Handles publish their tiles on the main actor.
+            return handle.$tile.map { $0?.reclaimableBytes }.removeDuplicates().sink { [weak self] bytes in
+                MainActor.assumeIsolated {
+                    guard let self, self.reclaimable[id] != bytes else { return }
+                    self.reclaimable[id] = bytes
+                }
+            }
         }
     }
 
