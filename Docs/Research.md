@@ -85,6 +85,14 @@ and has no SIP flag. `launchctl bootout system/com.apple.revisiond` is refused. 
 (`kill -STOP`), delete the folder's contents (not the folder), then kill it so launchd restarts a fresh one that builds an empty
 store. The documents themselves are untouched; the earlier versions of every document are gone for good.
 
+### Leftover macOS update files (`/System/Volumes/Data/macOS Install Data`)
+
+**Measured.** 1.27 GB dated 15 August on a system installed in September, with `softwareupdate --list` reporting nothing new: files of
+an update that had long finished. `UpdateBundle` is root-owned with no SIP flag, so the helper deletes it; the `Locked Files`
+subfolder carries the SIP `restricted` flag and stays. The helper only deletes when the folder is older than the installed system's
+`SystemVersion.plist`. Deletion worked on the development Mac (confirmed by the maintainer; the freed amount was not recorded).
+Telling the user to "install the waiting update" for such files was wrong, and the row now says that no update is waiting.
+
 ### Other
 
 - **Homebrew (2.9 GB):** most of it is the installed packages. `brew cleanup` removes only old versions and downloads. **Inferred.**
