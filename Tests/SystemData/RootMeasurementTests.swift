@@ -31,18 +31,26 @@ final class RootMeasurementTests: XCTestCase {
         XCTAssertEqual(merged.report.measuredBytes, 3_000_000_000)
     }
 
-    func testBannerSeparatesRootOnlyPlacesFromFullDiskAccessOnes() throws {
-        func message(_ snap: SystemDataSnapshot) throws -> String {
-            guard case let .banner(banner) = SystemDataScreenBuilder.partialBanner(snap) else { throw XCTSkip("no banner") }
-            return banner.message ?? ""
+    func testBannerSaysWhatTheUserCanDoAboutEachPlace() throws {
+        func message(_ snap: SystemDataSnapshot) -> String? {
+            guard case let .banner(banner)? = SystemDataScreenBuilder.partialBanner(snap) else { return nil }
+            return banner.message
         }
         var snap = snapshot(unreadable: [spotlight, "/Users/x/Library/Containers"])
-        let first = try message(snap)
-        XCTAssertTrue(first.contains("Turn on the helper") && first.contains("Full Disk Access covers these"))
+        snap.report.fullDiskAccess = false
+        let first = try XCTUnwrap(message(snap))
+        XCTAssertTrue(first.contains("Turn on the helper") && first.contains("needs Full Disk Access"))
+
+        snap.report.fullDiskAccess = true
+        let withAccess = try XCTUnwrap(message(snap))
+        XCTAssertTrue(withAccess.contains("Turn on the helper") && !withAccess.contains("Containers"), "with access only the helper step remains")
+
         snap.helperTried = true
-        XCTAssertTrue(try message(snap).contains("did not let even the helper"))
+        XCTAssertNil(message(snap), "the helper ran and macOS still keeps the place closed: nothing the user can fix, so no warning")
+        XCTAssertEqual(SystemDataScreenBuilder.quietlySkipped(snap), 2)
+
         snap.helperError = "Couldn’t communicate with a helper application."
-        let unreachable = try message(snap)
-        XCTAssertTrue(unreachable.contains("could not be reached") && !unreachable.contains("did not let even"))
+        let unreachable = try XCTUnwrap(message(snap))
+        XCTAssertTrue(unreachable.contains("could not be reached"))
     }
 }

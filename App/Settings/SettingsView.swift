@@ -73,6 +73,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollEdgeEffectHidden(true, for: .top)
         .navigationTitle("Settings")
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in tick += 1 }
     }

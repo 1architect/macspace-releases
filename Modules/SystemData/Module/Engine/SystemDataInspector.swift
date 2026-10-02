@@ -100,6 +100,8 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     /// Locations that exist but this process cannot read (Full Disk Access or root needed).
     public var unreadable: [String]
     public var warnings: [String]
+    /// Whether Full Disk Access was granted during the scan; decides whether an unreadable place is something the user can fix.
+    public var fullDiskAccess: Bool = true
 }
 
 public struct RunningApp: Equatable, Sendable {
@@ -463,9 +465,11 @@ public struct SystemDataInspector {
         if !unreadable.isEmpty { warnings.append("\(unreadable.count) location(s) need Full Disk Access or root to measure.") }
         let measured = items.compactMap(\.bytes).reduce(0, +)
         let cleanable = items.filter { $0.cleanup.kind == .deleteWhenNotRunning }.compactMap(\.expectedReclaimBytes).reduce(0, +)
-        return SystemDataReport(schemaVersion: SystemDataSchema.version, generatedAt: now, volumes: volumeUsage, items: items,
-                                measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
-                                unreadable: unreadable, warnings: warnings)
+        var report = SystemDataReport(schemaVersion: SystemDataSchema.version, generatedAt: now, volumes: volumeUsage, items: items,
+                                      measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
+                                      unreadable: unreadable, warnings: warnings)
+        report.fullDiskAccess = hasFullDiskAccess
+        return report
     }
 }
 

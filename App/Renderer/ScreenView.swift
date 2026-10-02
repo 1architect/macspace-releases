@@ -2,19 +2,31 @@ import MacSpaceSdk
 import SwiftUI
 
 /// A module's full page: header, progress and result of the last action, then the module's widgets.
+/// While the page opens out of a dashboard tile (`zoom`), the widget the tile turns into and the title are shown by the zoom itself;
+/// the page brings in the rest one after another.
 struct ScreenView: View {
     @ObservedObject var handle: ModuleHandle
+    var zoom: ScreenZoom?
+
+    private func part(_ part: ZoomReveal.Part) -> ZoomReveal {
+        ZoomReveal(part: part, progress: zoom?.progress ?? 1, reveal: zoom?.reveal ?? 1)
+    }
 
     var body: some View {
+        let heroIndex = zoom == nil ? nil : handle.screen.flatMap { ZoomMath.heroIndex(in: $0, summary: handle.summary) }
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 header
                 if let progress = handle.progress { ProgressCard(progress: progress) }
                 if let result = handle.lastResult { ResultBanner(result: result) { handle.dismissResult() } }
                 if let screen = handle.screen {
-                    ForEach(screen.widgets) { widget in
+                    ForEach(Array(screen.widgets.enumerated()), id: \.element.id) { index, widget in
                         WidgetView(widget: widget) { action, extra in
                             Task { await handle.perform(action, extraParameters: extra) }
+                        }
+                        .modifier(part(index == heroIndex ? .hero : .stagger(index + 1)))
+                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(ZoomSpace.name)) } action: { frame in
+                            if index == heroIndex { zoom?.frames.hero = frame }
                         }
                     }
                 } else {
@@ -25,6 +37,7 @@ struct ScreenView: View {
             .frame(maxWidth: 900, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        .scrollEdgeEffectHidden(true, for: .top)
         .disabled(handle.isBusy && handle.progress != nil)
     }
 
@@ -32,14 +45,17 @@ struct ScreenView: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(handle.screen?.title ?? handle.manifest.name).font(.largeTitle.weight(.bold))
+                    .modifier(part(.title))
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(ZoomSpace.name)) } action: { zoom?.frames.title = $0 }
                 if let subtitle = handle.screen?.subtitle ?? Optional(handle.manifest.summary) {
-                    Text(subtitle).foregroundStyle(.secondary)
+                    Text(subtitle).foregroundStyle(.secondary).modifier(part(.stagger(0)))
                 }
             }
             Spacer()
             if handle.isBusy { ProgressView().controlSize(.small) }
             Button { Task { await handle.refresh(reload: true) } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
                 .disabled(handle.isBusy)
+                .modifier(part(.stagger(0)))
         }
     }
 }

@@ -129,6 +129,9 @@ enum DebloatScreenBuilder {
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
+        // The dashboard tile shows the summary banner and the page opens out of it, so the page starts with the same banner. When macOS
+        // undid something or an approval is pending, the banners below already say so and take that place.
+        if counts.awaiting.isEmpty && counts.drifted.isEmpty { widgets.append(summary(snapshot)) }
         if !counts.awaiting.isEmpty {
             widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
                                           message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) take effect once you approve it in System Settings > General > Device Management.",

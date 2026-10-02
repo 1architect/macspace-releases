@@ -91,6 +91,13 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertFalse(clean.widgets.contains { $0.id == "approval" || $0.id == "drifted" || $0.id == "recommended" })
     }
 
+    func testThePageOpensWithTheTilesSummaryBanner() {
+        let clean = DebloatScreenBuilder.screen(snapshot([]))
+        XCTAssertEqual(clean.widgets.first, DebloatScreenBuilder.summary(snapshot([])), "the tile grows into this banner")
+        let undone = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .drifted)]))
+        XCTAssertEqual(undone.widgets.first?.id, "drifted", "a banner that says it with an action takes the place of the summary")
+    }
+
     func testSummaryTile() {
         guard case let .banner(none) = DebloatScreenBuilder.summary(snapshot([])),
               case let .banner(drift) = DebloatScreenBuilder.summary(snapshot([status(verifiedControl.id, .drifted)])),

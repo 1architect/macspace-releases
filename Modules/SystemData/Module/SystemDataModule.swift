@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
@@ -37,6 +38,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "cleanReports":
             progress(ActionProgress(message: "Deleting old reports…"))
             return Self.cleanReports(snapshot.reports)
+        case "openFullDiskAccess":
+            NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
+            return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then press Refresh.", refresh: false)
         case "deleteVersions":
             progress(ActionProgress(message: "Stopping revisiond and deleting the version history…"))
             return await Self.deleteVersions(context.privileged)

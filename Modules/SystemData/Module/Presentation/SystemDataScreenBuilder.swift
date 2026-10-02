@@ -59,7 +59,8 @@ enum SystemDataScreenBuilder {
         let otherCategory = snapshot.report.items.filter(countedByAnotherCategory).compactMap(\.bytes).reduce(0, +)
         if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies, downloads, virtual machines and apps' own data are not counted: System Settings lists them under Documents and Applications." }
         if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
-        if !snapshot.report.unreadable.isEmpty { footnote += " \(snapshot.report.unreadable.count) location(s) could not be measured." }
+        let skipped = quietlySkipped(snapshot)
+        if skipped > 0 { footnote += " \(skipped) place(s) macOS keeps private were skipped." }
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
     }
 
@@ -83,7 +84,7 @@ enum SystemDataScreenBuilder {
         let report = snapshot.report
         var widgets: [ScreenWidget] = []
 
-        if !report.unreadable.isEmpty { widgets.append(partialBanner(snapshot)) }
+        if let banner = partialBanner(snapshot) { widgets.append(banner) }
         widgets.append(.usage(usage(snapshot)))
         widgets.append(freeNow(snapshot))
         let manual = manualSection(report)
@@ -183,21 +184,42 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))], isCollapsible: true, startsCollapsed: false))
     }
 
-    /// Says why places were not measured: root-only places need the helper, and the rest need Full Disk Access.
-    static func partialBanner(_ snapshot: SystemDataSnapshot) -> ScreenWidget {
+    /// Unreadable places the user can do something about: all of them without Full Disk Access, and the root-only ones until the helper
+    /// has measured them or been reached. What macOS keeps closed even to Full Disk Access and the helper (some Apple containers, for
+    /// example) is not something to warn about: no customer can fix it, so it only shows as a quiet note under the bar.
+    static func actionableUnreadable(_ snapshot: SystemDataSnapshot) -> (fullDiskAccess: [String], helper: [String], helperUnreachable: [String]) {
         let paths = snapshot.report.unreadable
         let rootOnly = paths.filter(RootMeasuredLocations.allowed.contains)
         let other = paths.filter { !RootMeasuredLocations.allowed.contains($0) }
+        let fda = snapshot.report.fullDiskAccess ? [] : other
+        if snapshot.helperError != nil { return (fda, [], rootOnly) }
+        return (fda, snapshot.helperTried ? [] : rootOnly, [])
+    }
+
+    /// How many unreadable places stay silent because nothing can be done about them.
+    static func quietlySkipped(_ snapshot: SystemDataSnapshot) -> Int {
+        let actionable = actionableUnreadable(snapshot)
+        return snapshot.report.unreadable.count - actionable.fullDiskAccess.count - actionable.helper.count - actionable.helperUnreachable.count
+    }
+
+    /// nil when there is nothing the user can fix.
+    static func partialBanner(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        let actionable = actionableUnreadable(snapshot)
         var parts: [String] = []
-        if !other.isEmpty { parts.append("Could not read: \(unreadableList(other)). Full Disk Access covers these.") }
-        if !rootOnly.isEmpty {
-            parts.append(snapshot.helperError.map { "The helper could not be reached (\($0)), so these were not measured: \(unreadableList(rootOnly)). Reopen MacSpace; if it persists, remove and install the helper again in Settings." }
-                ?? (snapshot.helperTried
-                ? "macOS did not let even the helper read: \(unreadableList(rootOnly))."
-                : "Only root can read: \(unreadableList(rootOnly)). Turn on the helper in Settings to include them; Full Disk Access does not cover them."))
+        var action: Action?
+        if !actionable.fullDiskAccess.isEmpty {
+            parts.append("MacSpace needs Full Disk Access to include: \(unreadableList(actionable.fullDiskAccess)).")
+            action = Action(id: "openFullDiskAccess", title: "Open Full Disk Access", role: .prominent)
         }
-        parts.append("The numbers below are a lower bound.")
-        return .banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured", message: parts.joined(separator: " ")))
+        if !actionable.helper.isEmpty {
+            parts.append("Turn on the helper in Settings to include: \(unreadableList(actionable.helper)). Full Disk Access does not cover them.")
+        }
+        if !actionable.helperUnreachable.isEmpty {
+            parts.append("The helper could not be reached, so these were not measured: \(unreadableList(actionable.helperUnreachable)). Reopen MacSpace; if it persists, remove and install the helper again in Settings.")
+        }
+        guard !parts.isEmpty else { return nil }
+        parts.append("The numbers below are a lower bound until then.")
+        return .banner(Banner(id: "partial", severity: .info, title: "Some locations were not measured", message: parts.joined(separator: " "), action: action))
     }
 
     /// Up to four locations, home folder shortened, so the user can see what is missing.

@@ -33,7 +33,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(usage.segments.map(\.id), ["versions", "caches"])
         XCTAssertEqual(usage.segments.map(\.bytes), [6_000, 1_500])
         XCTAssertTrue(usage.footnote?.contains("code-signing copies") == true)
-        XCTAssertTrue(usage.footnote?.contains("1 location(s)") == true)
+        XCTAssertTrue(usage.footnote?.contains("1 place(s) macOS keeps private were skipped") == true)
     }
 
     func testExplanationListLeavesOutWhatFreeNowAlreadyHandles() throws {
@@ -111,12 +111,30 @@ final class SystemDataScreenBuilderTests: XCTestCase {
     func testScreenShowsAPartialBannerAndCollapsesTheRest() {
         let items = [item("cache", kind: .appCache, bytes: 900, cleanup: .deleteWhenNotRunning, reclaim: 900),
                      item("review", kind: .appSupport, bytes: 700), item("logs", kind: .logs, bytes: 300, cleanup: .managedByMacOS)]
-        let screen = SystemDataScreenBuilder.screen(snapshot(items: items, unreadable: ["/p"]))
+        var withoutAccess = snapshot(items: items, unreadable: ["/p"])
+        withoutAccess.report.fullDiskAccess = false
+        let screen = SystemDataScreenBuilder.screen(withoutAccess)
         XCTAssertEqual(screen.widgets.map(\.id), ["partial", "usage", "free", "review", "managed"])
         for case let .section(section) in screen.widgets where ["review", "managed"].contains(section.id) {
             XCTAssertTrue(section.isCollapsible && section.startsCollapsed)
         }
         XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "usage", "no banner when everything was measured")
+    }
+
+    func testPlacesNoCustomerCanFixAreNotAWarning() {
+        // Full Disk Access is on; one Apple container stays closed to every app. That is not a banner, only a quiet note.
+        let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900)], unreadable: ["/Users/x/Library/Group Containers/group.com.apple.Safari.SandboxBroker"])
+        XCTAssertNil(SystemDataScreenBuilder.partialBanner(snap))
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).widgets.first?.id, "usage")
+        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("1 place(s) macOS keeps private were skipped") == true)
+        XCTAssertFalse(SystemDataScreenBuilder.usage(snap).footnote?.contains("could not") == true)
+
+        // Without Full Disk Access the same place is something the user can fix.
+        var needsAccess = snap
+        needsAccess.report.fullDiskAccess = false
+        guard case let .banner(banner) = SystemDataScreenBuilder.partialBanner(needsAccess) else { return XCTFail("expected a banner") }
+        XCTAssertEqual(banner.action?.id, "openFullDiskAccess")
+        XCTAssertTrue(banner.message?.contains("Full Disk Access") == true)
     }
 
     func testSummaryStatesWhatCanBeFreed() {
