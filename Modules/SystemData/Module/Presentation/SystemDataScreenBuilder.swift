@@ -60,7 +60,7 @@ enum SystemDataScreenBuilder {
         if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies, downloads, virtual machines and apps' own data are not counted: System Settings lists them under Documents and Applications." }
         if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
         let skipped = quietlySkipped(snapshot)
-        if skipped > 0 { footnote += " \(skipped) place(s) macOS keeps private were skipped." }
+        if skipped > 0 { footnote += skipped == 1 ? " 1 place macOS keeps private was skipped." : " \(skipped) places macOS keeps private were skipped." }
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
     }
 

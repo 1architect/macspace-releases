@@ -33,7 +33,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(usage.segments.map(\.id), ["versions", "caches"])
         XCTAssertEqual(usage.segments.map(\.bytes), [6_000, 1_500])
         XCTAssertTrue(usage.footnote?.contains("code-signing copies") == true)
-        XCTAssertTrue(usage.footnote?.contains("1 place(s) macOS keeps private were skipped") == true)
+        XCTAssertTrue(usage.footnote?.contains("1 place macOS keeps private was skipped") == true)
     }
 
     func testExplanationListLeavesOutWhatFreeNowAlreadyHandles() throws {
@@ -126,7 +126,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900)], unreadable: ["/Users/x/Library/Group Containers/group.com.apple.Safari.SandboxBroker"])
         XCTAssertNil(SystemDataScreenBuilder.partialBanner(snap))
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).widgets.first?.id, "usage")
-        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("1 place(s) macOS keeps private were skipped") == true)
+        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("1 place macOS keeps private was skipped") == true)
         XCTAssertFalse(SystemDataScreenBuilder.usage(snap).footnote?.contains("could not") == true)
 
         // Without Full Disk Access the same place is something the user can fix.
