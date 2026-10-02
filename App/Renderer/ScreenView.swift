@@ -17,33 +17,29 @@ struct ScreenView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                if let screen = handle.screen {
+        Group {
+            if let screen = handle.screen {
+                WidgetForm(widgets: screen.widgets, handler: { action, extra in Task { await handle.perform(action, extraParameters: extra) } },
+                           showsTop: screen.hero != nil) {
                     if let hero = screen.hero {
                         HeroBlocks(usage: hero, tint: tint)
-                            .padding(.bottom, 8)
-                            .modifier(ZoomReveal(index: 1, reveal: reveal))
+                            .padding(.bottom, 4)
+                            .textCase(nil)
+                            .foregroundStyle(.primary)
                     }
-                    ForEach(Array(screen.widgets.enumerated()), id: \.element.id) { index, widget in
-                        WidgetView(widget: widget) { action, extra in
-                            Task { await handle.perform(action, extraParameters: extra) }
-                        }
-                        .modifier(ZoomReveal(index: index + 2, reveal: reveal))
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                } else {
-                    PageSkeleton().modifier(ZoomReveal(index: 1, reveal: reveal))
                 }
+                .contentMargins(.top, PageInsets.top - 20, for: .scrollContent)
+                .contentMargins(.bottom, PageInsets.bottom(hasFooter: hasFooter) - 10, for: .scrollContent)
+                .contentMargins(.horizontal, 10, for: .scrollContent)
+                .animation(Theme.layout, value: screen.widgets.map(\.id))
+            } else {
+                PageSkeleton()
+                    .padding(.top, PageInsets.top)
+                    .padding(.horizontal, PageInsets.side)
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
-            .animation(Theme.layout, value: handle.screen?.widgets.map(\.id))
-            .padding(.top, PageInsets.top)
-            .padding(.horizontal, PageInsets.side)
-            .padding(.bottom, PageInsets.bottom(hasFooter: hasFooter))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Empty space on the page moves the window, as the glass does on the dashboard.
-            .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
         }
+        .modifier(ZoomReveal(index: 1, reveal: reveal))
         .scrollIndicators(.never)
         .scrollEdgeEffectHidden(true, for: .all)
         .mask(PageFade(hasFooter: hasFooter))

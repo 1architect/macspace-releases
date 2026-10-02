@@ -152,6 +152,6 @@ enum SiriScreenBuilder {
             widget = .steps(StepsWidget(id: "blockers", title: "Before the models can be released", steps: snapshot.releaseBlockers))
         }
         return .section(SectionWidget(id: "models", title: "Models still installed?", subtitle: "If macOS keeps them after the switch is off, release them, then Purge.",
-                                      widgets: [widget], isCollapsible: true, startsCollapsed: true))
+                                      widgets: [widget]))
     }
 }

@@ -17,29 +17,25 @@ struct GeneralSettingsSection: View {
     @State private var loginError: String?
 
     var body: some View {
-        FormBlock(title: "General") {
-            FormToggleRow(title: "Show in the menu bar", help: "Keeps MacSpace running when you close the window, so background tasks keep working.",
-                          isOn: $showInMenuBar)
-            FormDivider()
-            FormToggleRow(title: "Open at login", help: "Starts MacSpace when you log in.",
-                          status: loginError.map { [($0, Color.red)] } ?? [],
-                          isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin))
-            FormDivider()
+        Section("General") {
+            Toggle("Show in the menu bar", isOn: $showInMenuBar)
+                .help("Keeps MacSpace running when you close the window, so background tasks keep working.")
+            Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Open at login")
+                    if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+                }
+            }
+            .help("Starts MacSpace when you log in.")
             if updates.isAvailable {
-                FormToggleRow(title: "Check for updates automatically",
-                              isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
-                FormDivider()
-                FormRow {
+                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
+                HStack {
                     Text("Updates")
                     Spacer()
-                    ActionPill(title: "Check Now", enabled: updates.canCheck) { updates.checkForUpdates() }
+                    Button("Check Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
                 }
             } else {
-                FormRow {
-                    Text("Updates")
-                    Spacer()
-                    Text("Not in this build").foregroundStyle(.secondary)
-                }
+                LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
             }
         }
     }

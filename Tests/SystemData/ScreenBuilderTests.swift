@@ -44,7 +44,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
                      item("tiny", kind: .logs, bytes: 1_000, cleanup: .managedByMacOS)]
         guard case let .section(section)? = SystemDataScreenBuilder.otherSection(snapshot(items: items)), case let .list(list) = section.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.map(\.id), ["logs", "app"], "reports are under Free now, swap is counted by Settings elsewhere, tiny items are noise")
-        XCTAssertTrue(section.isCollapsible && section.startsCollapsed)
+        XCTAssertFalse(section.isCollapsible, "a plain list, like In other apps")
     }
 
     func testCloudCopiesAndThirdPartyAppDataAreLeftOutOfTheBar() {

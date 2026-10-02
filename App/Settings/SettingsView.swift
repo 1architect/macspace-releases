@@ -3,8 +3,9 @@ import MacSpacePlatform
 import SwiftUI
 
 /// One page, in this order: General, Design, the module switches, the permissions the active modules need (each listed once), then
-/// the options and background tasks of each module that has any. Built from the same groups and rows as the module pages, so headers,
-/// colors and switches are the same everywhere.
+/// the options and background tasks of each module that has any. A system grouped form, as the module pages are: it keeps its look
+/// whatever the palette and glass settings. Descriptions are tooltips. Sections are built directly in this view: wrapping them in
+/// custom views inside a ForEach made them render inside the previous card.
 struct SettingsView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
@@ -30,60 +31,50 @@ struct SettingsView: View {
 
     var body: some View {
         let _ = tick
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                GeneralSettingsSection(updates: updates)
-                DesignSettingsSection()
-                FormBlock(title: "Modules") {
-                    ForEach(Array(host.handles.enumerated()), id: \.element.id) { index, handle in
-                        if index > 0 { FormDivider() }
-                        ModuleToggleRow(host: host, handle: handle)
-                    }
-                    if host.handles.isEmpty { FormRow { Text("No modules were found.").foregroundStyle(.secondary) } }
+        Form {
+            GeneralSettingsSection(updates: updates)
+            DesignSettingsSection()
+            Section("Modules") {
+                ForEach(host.handles) { handle in
+                    ModuleToggleRow(host: host, handle: handle)
                 }
-                if !permissions.isEmpty {
-                    FormBlock(title: "Permissions") {
-                        ForEach(Array(permissions.enumerated()), id: \.element.permission) { index, entry in
-                            if index > 0 { FormDivider() }
-                            PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission), usedBy: entry.usedBy)
-                        }
-                    }
-                }
-                ForEach(moduleOptions) { handle in
-                    FormBlock(title: handle.manifest.name) {
-                        ForEach(Array(handle.manifest.options.enumerated()), id: \.element.id) { index, option in
-                            if index > 0 { FormDivider() }
-                            optionRow(handle, option)
-                        }
-                        ForEach(Array(handle.manifest.backgroundTasks.enumerated()), id: \.element.id) { index, task in
-                            if index > 0 || !handle.manifest.options.isEmpty { FormDivider() }
-                            let options = host.settings.optionStore(for: handle.manifest)
-                            FormToggleRow(title: task.title, help: task.detail,
-                                          isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
-                                                        set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 }))
-                        }
-                    }
-                }
-                if !host.problems.isEmpty {
-                    FormBlock(title: "Modules that could not be used") {
-                        ForEach(Array(host.problems.enumerated()), id: \.element.id) { index, problem in
-                            if index > 0 { FormDivider() }
-                            FormRow(help: problem.reason) {
-                                Text(problem.bundleName)
-                                Spacer()
-                                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                            }
-                        }
+                if host.handles.isEmpty { Text("No modules were found.").foregroundStyle(.secondary) }
+            }
+            if !permissions.isEmpty {
+                Section("Permissions") {
+                    ForEach(permissions, id: \.permission) { entry in
+                        PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission), usedBy: entry.usedBy)
                     }
                 }
             }
-            .padding(.top, PageInsets.top)
-            .padding(.horizontal, PageInsets.side)
-            .padding(.bottom, PageInsets.bottom(hasFooter: false))
-            .frame(maxWidth: .infinity, alignment: .leading)
+            ForEach(moduleOptions) { handle in
+                Section(handle.manifest.name) {
+                    ForEach(handle.manifest.options) { option in
+                        optionRow(handle, option)
+                    }
+                    ForEach(handle.manifest.backgroundTasks) { task in
+                        let options = host.settings.optionStore(for: handle.manifest)
+                        Toggle(task.title, isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
+                                                         set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 }))
+                            .help(task.detail ?? "")
+                    }
+                }
+            }
+            if !host.problems.isEmpty {
+                Section("Modules that could not be used") {
+                    ForEach(host.problems) { problem in
+                        LabeledContent(problem.bundleName) { Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange) }
+                            .help(problem.reason)
+                    }
+                }
+            }
         }
-        .scrollIndicators(.never)
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
         .scrollEdgeEffectHidden(true, for: .all)
+        .contentMargins(.top, PageInsets.top - 20, for: .scrollContent)
+        .contentMargins(.bottom, PageInsets.bottom(hasFooter: false) - 10, for: .scrollContent)
+        .contentMargins(.horizontal, 10, for: .scrollContent)
         .mask(PageFade(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in tick += 1 }
@@ -94,20 +85,15 @@ struct SettingsView: View {
         let options = host.settings.optionStore(for: handle.manifest)
         switch option.kind {
         case .toggle:
-            FormToggleRow(title: option.title, help: option.detail,
-                          isOn: Binding(get: { options.bool(option.id) },
-                                        set: { host.settings.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
+            Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
+                                               set: { host.settings.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
+                .help(option.detail ?? "")
         case let .choice(choices, _):
-            FormRow(help: option.detail) {
-                Text(option.title)
-                Spacer(minLength: 8)
-                Picker(option.title, selection: Binding(get: { options.string(option.id) },
-                                                        set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
-                    ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
-                }
-                .labelsHidden()
-                .fixedSize()
+            Picker(option.title, selection: Binding(get: { options.string(option.id) },
+                                                    set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
+                ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
             }
+            .help(option.detail ?? "")
         }
     }
 }
@@ -118,12 +104,15 @@ private struct ModuleToggleRow: View {
 
     var body: some View {
         let incompatible: String? = { if case let .incompatible(reason) = handle.state { return reason } else { return nil } }()
-        var status: [(text: String, color: Color)] = []
-        if let incompatible { status.append((incompatible, .orange)) }
-        if case let .failed(reason) = handle.state { status.append((reason, .red)) }
-        return FormToggleRow(title: handle.manifest.name, symbol: handle.manifest.symbol, help: handle.manifest.summary, status: status,
-                             isOn: Binding(get: { handle.isEnabled }, set: { value in Task { await host.setEnabled(value, module: handle.id) } }))
-            .disabled(incompatible != nil)
+        Toggle(isOn: Binding(get: { handle.isEnabled }, set: { value in Task { await host.setEnabled(value, module: handle.id) } })) {
+            VStack(alignment: .leading, spacing: 2) {
+                Label(handle.manifest.name, systemImage: handle.manifest.symbol)
+                if let incompatible { Text(incompatible).font(.caption).foregroundStyle(.orange) }
+                if case let .failed(reason) = handle.state { Text(reason).font(.caption).foregroundStyle(.red) }
+            }
+        }
+        .help(handle.manifest.summary)
+        .disabled(incompatible != nil)
     }
 }
 
@@ -135,18 +124,18 @@ private struct PermissionRow: View {
     @State private var helperStatus: PermissionStatus?
 
     var body: some View {
-        FormRow(help: Tooltip.join(permission.detail, usedBy.isEmpty ? nil : "Used by \(usedBy.joined(separator: ", ")).")) {
+        HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(permission.title)
                 if let helperError { Text(helperError).font(.caption).foregroundStyle(.red) }
             }
-            Spacer(minLength: 8)
+            .help(Tooltip.join(permission.detail, usedBy.isEmpty ? nil : "Used by \(usedBy.joined(separator: ", ")).") ?? "")
+            Spacer()
             switch (permission == .privilegedHelper ? helperStatus : nil) ?? status {
-            case .granted:
-                Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green).labelStyle(.titleAndIcon)
+            case .granted: Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green).labelStyle(.titleAndIcon)
             case .missing:
                 if permission == .fullDiskAccess {
-                    ActionPill(title: "Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
+                    Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
                 } else if permission == .privilegedHelper {
                     helperButton
                 } else {
@@ -164,7 +153,7 @@ private struct PermissionRow: View {
 
     /// Installs the helper (Launch Services first, so a hand-copied app is found), then sends the user to the one switch that approves it.
     private var helperButton: some View {
-        ActionPill(title: PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
+        Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
             helperError = nil
             if PrivilegedHelperInstaller.status != .requiresApproval {
                 // Registering reports an error while it waits for the user's approval; that is not a failure.
@@ -175,18 +164,5 @@ private struct PermissionRow: View {
             if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
             helperStatus = PrivilegedHelperInstaller.permissionStatus()
         }
-    }
-}
-
-/// A row button in the pages' style, for Settings actions that are not module actions.
-struct ActionPill: View {
-    let title: String
-    var enabled = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(title, action: action)
-            .buttonStyle(PillButtonStyle(prominent: false, compact: true))
-            .disabled(!enabled)
     }
 }

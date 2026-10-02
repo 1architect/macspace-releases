@@ -16,7 +16,7 @@ struct ActionButton: View {
         } label: {
             if let symbol = action.symbol { Label(action.title, systemImage: symbol) } else { Text(action.title) }
         }
-        .buttonStyle(PillButtonStyle(prominent: action.role == .prominent, destructive: action.role == .destructive, compact: compact))
+        .modifier(ActionButtonLook(role: action.role, compact: compact))
         .confirmationDialog(action.confirmation?.title ?? "", isPresented: $confirming, titleVisibility: .visible) {
             if let confirmation = action.confirmation {
                 Button(confirmation.confirmTitle, role: action.role == .destructive ? .destructive : nil) { handler(action, [:]) }
@@ -24,6 +24,20 @@ struct ActionButton: View {
             }
         } message: {
             Text(action.confirmation?.message ?? "")
+        }
+    }
+}
+
+/// Buttons in rows are the system's, as in Settings; the page's main action is the pill.
+private struct ActionButtonLook: ViewModifier {
+    let role: ActionRole
+    let compact: Bool
+
+    func body(content: Content) -> some View {
+        if compact {
+            content.buttonStyle(.bordered).controlSize(.small)
+        } else {
+            content.buttonStyle(PillButtonStyle(prominent: role == .prominent, destructive: role == .destructive))
         }
     }
 }

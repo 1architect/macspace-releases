@@ -183,7 +183,7 @@ enum SystemDataScreenBuilder {
                 detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
         }
         return .section(SectionWidget(id: "other", title: "Everything else", subtitle: "Used by apps or by macOS. MacSpace leaves it alone.",
-                                      widgets: [.list(ListWidget(id: "other-list", rows: Array(rows)))], isCollapsible: true, startsCollapsed: true))
+                                      widgets: [.list(ListWidget(id: "other-list", rows: Array(rows)))]))
     }
 
 
@@ -218,7 +218,7 @@ enum SystemDataScreenBuilder {
                                                                   confirmTitle: "Delete version history"),
                                        requires: [.privilegedHelper])])
         return .section(SectionWidget(id: "versions", title: "Version history", subtitle: "Irreversible. Use it only if you never revert documents.",
-                                      widgets: [.list(ListWidget(id: "versions-list", rows: [row]))], isCollapsible: true, startsCollapsed: true))
+                                      widgets: [.list(ListWidget(id: "versions-list", rows: [row]))]))
     }
 
     /// System downloads the user can release by changing a setting. Families with no setting are not something to act on, so they
@@ -231,7 +231,7 @@ enum SystemDataScreenBuilder {
                 symbol: "square.stack.3d.down.right", detail: family.verified ? nil : "Menu names can differ between macOS versions.", steps: family.steps)
         }
         return .section(SectionWidget(id: "assets", title: "Downloads you can turn off", subtitle: "Change the setting, restart, then Clean.",
-                                      widgets: [.list(ListWidget(id: "assets-list", rows: rows))], isCollapsible: true, startsCollapsed: true))
+                                      widgets: [.list(ListWidget(id: "assets-list", rows: rows))]))
     }
 
     /// Unreadable places the user can do something about: all of them without Full Disk Access, and the root-only ones until the helper

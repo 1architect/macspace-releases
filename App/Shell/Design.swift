@@ -138,18 +138,13 @@ struct DesignSettingsSection: View {
     @ObservedObject var settings = DesignSettings.shared
 
     var body: some View {
-        FormBlock(title: "Design (temporary)") {
-            FormToggleRow(title: "Liquid Glass tiles", help: "Also in the Design menu: ⌥⌘G.", isOn: $settings.glass)
-            FormDivider()
-            FormRow(help: "Also in the Design menu: ⌥⌘1 to ⌥⌘5.") {
-                Text("Palette")
-                Spacer(minLength: 8)
-                Picker("Palette", selection: $settings.scheme) {
-                    ForEach(PaletteScheme.allCases) { Text($0.title).tag($0) }
-                }
-                .labelsHidden()
-                .fixedSize()
+        Section("Design (temporary)") {
+            Toggle("Liquid Glass tiles", isOn: $settings.glass)
+                .help("Also in the Design menu: ⌥⌘G.")
+            Picker("Palette", selection: $settings.scheme) {
+                ForEach(PaletteScheme.allCases) { Text($0.title).tag($0) }
             }
+            .help("Also in the Design menu: ⌥⌘1 to ⌥⌘5.")
         }
     }
 }
