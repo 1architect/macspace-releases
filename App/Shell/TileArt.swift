@@ -3,9 +3,10 @@ import MacSpaceSdk
 import SwiftUI
 
 /// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color, and it answers
-/// the pointer as glass does.
+/// the pointer as glass does, darkening its own color while the pointer is over it.
 struct TileBackdrop: View {
     let tint: TileTint
+    var highlighted = false
     @Environment(\.design) private var design
 
     var body: some View {
@@ -13,7 +14,9 @@ struct TileBackdrop: View {
         if design.glass {
             // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
             let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-            shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
+            let color = highlighted ? palette.base.mix(with: .black, by: Theme.highlightDarkening) : palette.base
+            shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
+                .animation(Theme.highlight, value: highlighted)
                 .glassEffect(.regular.interactive(), in: shape)
         } else {
             palette.base
@@ -24,17 +27,23 @@ struct TileBackdrop: View {
     }
 }
 
-/// A chart element's surface: flat color, or Liquid Glass tinted with that color when glass is on.
+/// A chart element's surface: flat color, or Liquid Glass tinted with that color when glass is on. Highlighted, flat color lightens
+/// and glass darkens its own color: an effect laid over glass does not follow the glass's edge.
 struct Surface<S: Shape>: View {
     let shape: S
     let color: Color
+    var highlighted = false
     @Environment(\.design) private var design
 
     var body: some View {
         if design.glass {
-            shape.fill(color.opacity(0.7)).glassEffect(.regular, in: shape)
+            shape.fill((highlighted ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7))
+                .animation(Theme.highlight, value: highlighted)
+                .glassEffect(.regular, in: shape)
         } else {
             shape.fill(color)
+                .brightness(highlighted ? 0.08 : 0)
+                .animation(Theme.highlight, value: highlighted)
         }
     }
 }
@@ -126,11 +135,14 @@ struct BlocksView: View {
                 ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                     let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
                     let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                    Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill)
-                        .brightness(hovered == segment.id ? 0.08 : 0)
+                    Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+                            // Glass has its own edge; an outline would sit inside it.
+                            if !design.glass {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+                                    .animation(Theme.highlight, value: hovered)
+                            }
                         }
                         .overlay(alignment: .topLeading) {
                             if labels, rect.width > 74, rect.height > 34 {
@@ -151,7 +163,6 @@ struct BlocksView: View {
                 }
             }
             .animation(Theme.layout, value: segments)
-            .animation(Theme.hover, value: hovered)
         }
         .onAppear { appeared = true }
     }

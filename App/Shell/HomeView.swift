@@ -57,7 +57,7 @@ struct TileFace: View {
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
-            TileBackdrop(tint: tint)
+            TileBackdrop(tint: tint, highlighted: pointer != nil)
             if let graphic = info.graphic {
                 GeometryReader { proxy in
                     chart(graphic, in: proxy.size)
@@ -248,11 +248,13 @@ struct DashboardTileView: View {
     let open: () -> Void
     @State private var pointer: UnitPoint?
     @State private var size = CGSize.zero
+    @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
         let hovering = pointer != nil
+        let lifted = hovering && !design.glass
         let tilt = reduceMotion ? UnitPoint.center : (pointer ?? .center)
         Button(action: open) {
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize, pointer: pointer)
@@ -273,7 +275,8 @@ struct DashboardTileView: View {
         .rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
         .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
         .scaleEffect(hovering && tile.opens ? 1.018 : 1)
-        .shadow(color: .black.opacity(hovering ? 0.22 : 0.07), radius: hovering ? 14 : 5, y: hovering ? 8 : 2)
+        // Glass is see-through, so a deeper shadow shows inside the tile, offset from its edge; glass darkens its color instead.
+        .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
         .animation(Theme.hover, value: hovering)
         .animation(.interactiveSpring(duration: 0.25), value: pointer)
         .onChange(of: isHidden) { _, hidden in if hidden { pointer = nil } }
