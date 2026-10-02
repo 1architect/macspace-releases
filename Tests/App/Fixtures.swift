@@ -20,8 +20,8 @@ struct FakeModule: MacSpaceModule {
     init() {}
     init(calls: Calls) { self.calls = calls }
 
-    func summary(context: ModuleContext) async -> ScreenWidget {
-        .text(TextWidget(id: "summary", text: "summary"))
+    func tile(context: ModuleContext) async -> Tile {
+        Tile(title: "fake", status: "summary")
     }
 
     func screen(context: ModuleContext) async -> Screen {
@@ -76,7 +76,7 @@ struct SlowModule: MacSpaceModule {
     var delay: Double
     init() { delay = 0 }
     init(delay: Double) { self.delay = delay }
-    func summary(context: ModuleContext) async -> ScreenWidget { .text(TextWidget(id: "s", text: "s")) }
+    func tile(context: ModuleContext) async -> Tile { Tile(title: "slow", status: "s") }
     func screen(context: ModuleContext) async -> Screen {
         try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         return Screen(title: "Slow", widgets: [])

@@ -102,6 +102,6 @@ final class VersionStoreTests: XCTestCase {
         XCTAssertEqual(action.requires, [.privilegedHelper])
         snap.report.items = []
         XCTAssertNil(SystemDataScreenBuilder.versionsSection(snap))
-        XCTAssertNil(SystemDataScreenBuilder.managedSection(SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []), purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date()).report), "the managed list does not repeat it")
+        XCTAssertNil(SystemDataScreenBuilder.otherSection(SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []), purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date())), "the other list does not repeat it")
     }
 }

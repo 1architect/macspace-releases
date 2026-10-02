@@ -34,8 +34,12 @@ struct MacSpaceMain: App {
         Window("MacSpace", id: "main") {
             MainView(host: host, updates: updates)
         }
+        .windowStyle(.plain)
+        .windowBackgroundDragBehavior(.enabled)
+        .defaultSize(width: 700, height: 490)
         .windowResizability(.contentMinSize)
         .commands {
+            DesignCommands()
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updates.checkForUpdates() }.disabled(!updates.canCheck)
             }

@@ -29,24 +29,24 @@ enum DebloatScreenBuilder {
         control.settings.contains { $0.privilege == .root }
     }
 
+    /// Only what is unusual gets a badge; a switch that is simply on or off says enough by itself.
     static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
         guard let status else { return nil }
         if cannotTakeEffect { return Badge("Cannot take effect here", tone: .critical) }
         switch status.state {
         case .debloated:
             switch status.effect?.state {
-            case .effective?: return Badge("Verified off", tone: .positive)
             case .ineffective?: return Badge("Not working", tone: .critical)
             case .pending?: return Badge("After restart", tone: .caution)
             case .notControllable?: return Badge("Cannot take effect here", tone: .critical)
-            default: return Badge("Off", tone: .positive)
+            default: return nil
             }
         case .awaitingApproval: return Badge("Waiting for approval", tone: .caution)
         case .drifted: return Badge("Undone by macOS", tone: .critical)
         case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
         case .unknown: return Badge("Cannot read")
-        case .stock: return status.validatedOnThisBuild ? Badge("Recommended", tone: .accent) : Badge("Not verified on this macOS")
+        case .stock: return status.validatedOnThisBuild ? nil : Badge("Unverified")
         }
     }
 
@@ -60,7 +60,9 @@ enum DebloatScreenBuilder {
     }
 
     static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
-        var lines: [String] = []
+        var lines: [String] = [control.summary]
+        if status?.effect?.state == .effective { lines.append("Measured off on this Mac.") }
+        if status?.state == .stock && status?.validatedOnThisBuild == false { lines.append("Not verified on this macOS version; it may have no effect.") }
         if !control.breaks.isEmpty { lines.append("Stops working while this is off: " + control.breaks.joined(separator: "; ") + ".") }
         if let restart = restartText(control.restart) { lines.append(restart) }
         if let effect = status?.effect?.detail, !effect.isEmpty { lines.append(effect) }
@@ -89,7 +91,7 @@ enum DebloatScreenBuilder {
                             confirmation: confirmation(control, turningOn: !on, verified: verified))
         if needsHelper(control) { action.requires = [.privilegedHelper] }
         // The switch shows the feature, as in the other modules: on = the feature runs, off = MacSpace switched it off.
-        return ToggleRow(id: control.id, title: control.title, subtitle: control.summary, isOn: !on, isEnabled: !blocked,
+        return ToggleRow(id: control.id, title: control.title, isOn: !on, isEnabled: !blocked,
                          badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
                          detail: detail(control, status), action: action)
     }
@@ -112,26 +114,42 @@ enum DebloatScreenBuilder {
         }
     }
 
-    static func summary(_ snapshot: DebloatSnapshot) -> ScreenWidget {
+    static func tile(_ snapshot: DebloatSnapshot) -> Tile {
         let counts = counts(snapshot)
-        if !counts.drifted.isEmpty {
-            return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.drifted.count) feature(s) switched back on by macOS",
-                                  message: counts.drifted.map(\.title).joined(separator: ", ")))
-        }
-        if !counts.awaiting.isEmpty {
-            return .banner(Banner(id: "summary", severity: .warning, title: "\(counts.awaiting.count) waiting for your approval",
-                                  message: "Approve the MacSpace profile in System Settings > General > Device Management."))
-        }
-        return .banner(Banner(id: "summary", severity: counts.on > 0 ? .success : .info, title: "\(counts.on) of \(counts.total) switched off",
-                              message: counts.on == counts.total ? "Everything available is switched off." : "\(recommended(snapshot).count) more can be switched off and are verified on your macOS."))
+        let graphic = TileGraphic.dots(dots(snapshot))
+        if !counts.drifted.isEmpty { return Tile(title: "debloat", status: "\(counts.drifted.count) undone by macOS", needsAttention: true, graphic: graphic) }
+        if !counts.awaiting.isEmpty { return Tile(title: "debloat", status: "\(counts.awaiting.count) awaiting approval", needsAttention: true, graphic: graphic) }
+        return Tile(title: "debloat", status: "\(counts.on)/\(counts.total) switched off", graphic: graphic)
+    }
+
+    /// One dot per control that can take effect here, in page order: done when switched off, attention when macOS undid it.
+    static func dots(_ snapshot: DebloatSnapshot) -> [TileDot] {
+        categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category } }
+            .filter { snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
+            .map { control in
+                switch snapshot.status(control.id)?.state {
+                case .debloated?: return .done
+                case .drifted?: return .attention
+                default: return .open
+                }
+            }
+    }
+
+    /// Switches off every feature verified on this macOS build that is still on. nil when there is none.
+    static func switchOffRecommended(_ snapshot: DebloatSnapshot) -> Action? {
+        let recommended = recommended(snapshot)
+        guard !recommended.isEmpty else { return nil }
+        return Action(id: "applyRecommended", title: "Switch off \(recommended.count) verified", symbol: "checkmark.shield", role: .prominent,
+                      parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
+                      confirmation: Confirmation(title: "Switch off the verified features?",
+                                                 message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Everything is written to an undo journal, so you can turn any of it back on.",
+                                                 confirmTitle: "Switch off"),
+                      requires: [.privilegedHelper])
     }
 
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
-        // The dashboard tile shows the summary banner and the page opens out of it, so the page starts with the same banner. When macOS
-        // undid something or an approval is pending, the banners below already say so and take that place.
-        if counts.awaiting.isEmpty && counts.drifted.isEmpty { widgets.append(summary(snapshot)) }
         if !counts.awaiting.isEmpty {
             widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
                                           message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) take effect once you approve it in System Settings > General > Device Management.",
@@ -143,24 +161,13 @@ enum DebloatScreenBuilder {
                                           action: Action(id: "reapply", title: "Re-apply", role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")],
                                                          requires: [.privilegedHelper]))))
         }
-        let recommended = recommended(snapshot)
-        if !recommended.isEmpty {
-            widgets.append(.button(ButtonWidget(id: "recommended", action: Action(
-                id: "applyRecommended", title: "Switch off the \(recommended.count) verified features", symbol: "checkmark.shield", role: .prominent,
-                parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                confirmation: Confirmation(title: "Switch off the verified features?",
-                                           message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Some features they switch off are listed on each row.",
-                                           confirmTitle: "Switch off"),
-                requires: [.privilegedHelper]),
-                footnote: "Everything MacSpace changes is written to an undo journal, so you can turn any of it off again.")))
-        }
         for category in categoryOrder {
             let controls = snapshot.controls.filter { $0.category == category }
             guard !controls.isEmpty else { continue }
-            widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category), rows: controls.map { row($0, snapshot) })))
+            widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category),
+                                               footnote: "A switch shows whether the feature runs. Hover a row for what it changes.",
+                                               rows: controls.map { row($0, snapshot) })))
         }
-        let env = snapshot.environment
-        widgets.append(.text(TextWidget(id: "env", text: "macOS \(env.productVersion ?? "?") (\(env.build ?? "?")). Settings marked verified were measured on this build; others follow Apple's documented settings but their effect is not measured here.", style: .caption)))
-        return Screen(title: "Debloat", subtitle: "Switch off analytics, ads and background data collection macOS lets you control. A switch shows the feature: on = it runs, off = MacSpace switched it off.", widgets: widgets)
+        return Screen(title: "Debloat", primary: switchOffRecommended(snapshot), widgets: widgets)
     }
 }

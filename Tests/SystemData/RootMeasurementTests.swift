@@ -34,12 +34,12 @@ final class RootMeasurementTests: XCTestCase {
     func testBannerSaysWhatTheUserCanDoAboutEachPlace() throws {
         func message(_ snap: SystemDataSnapshot) -> String? {
             guard case let .banner(banner)? = SystemDataScreenBuilder.partialBanner(snap) else { return nil }
-            return banner.message
+            return banner.title + " " + (banner.message ?? "")
         }
         var snap = snapshot(unreadable: [spotlight, "/Users/x/Library/Containers"])
         snap.report.fullDiskAccess = false
         let first = try XCTUnwrap(message(snap))
-        XCTAssertTrue(first.contains("Turn on the helper") && first.contains("needs Full Disk Access"))
+        XCTAssertTrue(first.contains("Full Disk Access"), "one step at a time: Full Disk Access first")
 
         snap.report.fullDiskAccess = true
         let withAccess = try XCTUnwrap(message(snap))
@@ -51,6 +51,6 @@ final class RootMeasurementTests: XCTestCase {
 
         snap.helperError = "Couldn’t communicate with a helper application."
         let unreachable = try XCTUnwrap(message(snap))
-        XCTAssertTrue(unreachable.contains("could not be reached"))
+        XCTAssertTrue(unreachable.contains("did not answer"))
     }
 }

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
@@ -16,8 +17,8 @@ public struct SiriModule: MacSpaceModule {
 
     public func invalidate() async { await store.invalidate() }
 
-    public func summary(context: ModuleContext) async -> ScreenWidget {
-        SiriScreenBuilder.summary(await store.snapshot())
+    public func tile(context: ModuleContext) async -> Tile {
+        SiriScreenBuilder.tile(await store.snapshot())
     }
 
     public func screen(context: ModuleContext) async -> Screen {
@@ -33,6 +34,9 @@ public struct SiriModule: MacSpaceModule {
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purge()
+        case "openFullDiskAccess":
+            NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
+            return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then come back.", refresh: false)
         case "releaseModels":
             return await Task.detached(priority: .userInitiated) { Self.release(progress: progress) }.value
         default:

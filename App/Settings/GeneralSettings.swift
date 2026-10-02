@@ -17,29 +17,29 @@ struct GeneralSettingsSection: View {
     @State private var loginError: String?
 
     var body: some View {
-        Section("General") {
-            Toggle(isOn: $showInMenuBar) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show in the menu bar")
-                    Text("Keeps MacSpace running when you close the window, so background tasks keep working.").font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Open at login")
-                    if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
-                    else { Text("Starts MacSpace when you log in.").font(.caption).foregroundStyle(.secondary) }
-                }
-            }
+        FormBlock(title: "General") {
+            FormToggleRow(title: "Show in the menu bar", help: "Keeps MacSpace running when you close the window, so background tasks keep working.",
+                          isOn: $showInMenuBar)
+            FormDivider()
+            FormToggleRow(title: "Open at login", help: "Starts MacSpace when you log in.",
+                          status: loginError.map { [($0, Color.red)] } ?? [],
+                          isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin))
+            FormDivider()
             if updates.isAvailable {
-                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
-                HStack {
+                FormToggleRow(title: "Check for updates automatically",
+                              isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
+                FormDivider()
+                FormRow {
                     Text("Updates")
                     Spacer()
-                    Button("Check Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
+                    ActionPill(title: "Check Now", enabled: updates.canCheck) { updates.checkForUpdates() }
                 }
             } else {
-                LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
+                FormRow {
+                    Text("Updates")
+                    Spacer()
+                    Text("Not in this build").foregroundStyle(.secondary)
+                }
             }
         }
     }

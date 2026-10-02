@@ -43,7 +43,73 @@ final class RenderTests: XCTestCase {
         }
         .padding(20)
         .frame(width: 760)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(TileBackdrop(tint: .blue))
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func write(_ view: some View, _ name: String) throws {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        let bitmap = try XCTUnwrap(renderer.cgImage)
+        guard let directory = ProcessInfo.processInfo.environment["MACSPACE_SNAPSHOT_DIR"] else { return }
+        try XCTUnwrap(NSBitmapImageRep(cgImage: bitmap).representation(using: .png, properties: [:]))
+            .write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
+    }
+
+    /// The sketched dashboard: the bento grid with every kind of tile, on a stand-in for the glass (which needs a real window).
+    func testDashboardRenders() throws {
+        let blocks = [UsageSegment(id: "m", label: "Managed by macOS", bytes: 15_500, tone: .series(0)),
+                      UsageSegment(id: "s", label: "App support files", bytes: 7_700, tone: .series(1)),
+                      UsageSegment(id: "a", label: "Apple app data", bytes: 4_700, tone: .series(2)),
+                      UsageSegment(id: "h", label: "Homebrew", bytes: 2_900, tone: .series(3)),
+                      UsageSegment(id: "c", label: "Caches", bytes: 700, tone: .series(4)),
+                      UsageSegment(id: "f", label: "Can be freed", bytes: 415, tone: .caution)]
+        let dots: [TileDot] = Array(repeating: .done, count: 11) + [.open, .open, .attention]
+        let tiles: [(TileTint, TileInfo, Int)] = [
+            (.violet, TileInfo(title: "147 GB used", status: "4.7 GB purgeable", graphic: .gauge(value: 0.3, extra: 0.01, label: "30%", sublabel: "of 494 GB")), 1),
+            (.blue, TileInfo(title: "system data", status: "415 MB can be freed", graphic: .blocks(blocks)), 2),
+            (.graphite, TileInfo(title: "siri & AI", status: "AI is on", needsAttention: true,
+                                 graphic: .state(on: true, alarming: true, detail: "macOS may download its model", meter: nil, meterIsActionable: false)), 1),
+            (.teal, TileInfo(title: "debloat", status: "1 undone by macOS", needsAttention: true, graphic: .dots(dots)), 1),
+            (.slate, TileInfo.settings, 1),
+        ]
+        let size = CGSize(width: Theme.defaultSize.width - 2 * Theme.frame, height: Theme.defaultSize.height - 2 * Theme.frame)
+        let placements = Bento.pack(spans: tiles.map(\.2), columns: Bento.columns(for: size.width))
+        let rows = Bento.rows(placements)
+        let view = ZStack(alignment: .topLeading) {
+            ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
+                let frame = Bento.frame(placements[index], columns: 3, rows: rows, in: size)
+                ZStack(alignment: .bottomTrailing) {
+                    TileFace(tint: tile.0, info: tile.1)
+                    TileCaption(title: tile.1.title, status: tile.1.status, size: CaptionSize.tile(height: frame.height)).padding(CaptionSize.tilePadding)
+                }
+                .frame(width: frame.width, height: frame.height)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous))
+                .offset(x: frame.minX, y: frame.minY)
+            }
+            GlassCircleButton(symbol: "xmark", help: "Close") {}.padding(GlassCircleButton.margin)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .padding(Theme.frame)
+        .background(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous).fill(Color(red: 0.86, green: 0.82, blue: 0.78)))
+        try write(view, "dashboard.png")
+    }
+
+    /// A page: the tile grown to fill the glass, widgets on its deep color.
+    func testPageRenders() throws {
+        let view = ZStack(alignment: .topLeading) {
+            TileFace(tint: .teal, info: TileInfo(title: "debloat", status: "0/14 switched off"), progress: 1)
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(Self.sample.widgets.prefix(5)) { WidgetView(widget: $0) { _, _ in } }
+            }
+            .padding(.top, PageInsets.top).padding(.horizontal, PageInsets.side)
+            .frame(maxWidth: 760, alignment: .leading)
+            GlassCircleButton(symbol: "chevron.left", help: "Back") {}.padding(GlassCircleButton.margin)
+        }
+        .frame(width: 678, height: 640, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous))
+        .environment(\.colorScheme, .dark)
+        try write(view, "page.png")
     }
 
     /// Renders a screen saved with `MacSpaceCli screen <module>` (MACSPACE_SCREEN_JSON) to MACSPACE_SNAPSHOT_DIR/screen.png.

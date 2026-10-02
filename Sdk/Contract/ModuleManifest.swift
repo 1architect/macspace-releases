@@ -2,7 +2,7 @@ import Foundation
 
 /// Version of the module contract. A module built for another version is shown as incompatible and not loaded.
 public enum SdkVersion {
-    public static let current = 1
+    public static let current = 2
 }
 
 /// `Manifest.json` inside a module bundle. The app reads it before running any module code, so the module list, the
@@ -23,10 +23,16 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
     public var permissions: [Permission]
     public var options: [OptionDefinition]
     public var backgroundTasks: [BackgroundTaskDefinition]
+    /// How many columns the module's tile takes on the dashboard. Declared here, not in the tile, so the dashboard has its final layout
+    /// before any module has answered. Small when absent.
+    public var tileSize: Tile.Size?
+    /// The deep color of the module's tile and page. The app picks one when absent.
+    public var tileTint: TileTint?
 
     public init(id: String, name: String, summary: String, version: String, sdkVersion: Int = SdkVersion.current,
                 symbol: String, minimumMacOS: String? = nil, order: Int = 100, permissions: [Permission] = [],
-                options: [OptionDefinition] = [], backgroundTasks: [BackgroundTaskDefinition] = []) {
+                options: [OptionDefinition] = [], backgroundTasks: [BackgroundTaskDefinition] = [], tileSize: Tile.Size? = nil,
+                tileTint: TileTint? = nil) {
         self.id = id
         self.name = name
         self.summary = summary
@@ -38,5 +44,7 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
         self.permissions = permissions
         self.options = options
         self.backgroundTasks = backgroundTasks
+        self.tileSize = tileSize
+        self.tileTint = tileTint
     }
 }

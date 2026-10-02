@@ -82,8 +82,8 @@ public struct ModuleContext: Sendable {
 public protocol MacSpaceModule: Sendable {
     init()
 
-    /// The tile on the home dashboard: usually a usage bar, a banner or a short list.
-    func summary(context: ModuleContext) async -> ScreenWidget
+    /// The module's tile on the dashboard.
+    func tile(context: ModuleContext) async -> Tile
 
     /// The module's full page.
     func screen(context: ModuleContext) async -> Screen
@@ -93,7 +93,7 @@ public protocol MacSpaceModule: Sendable {
     /// Runs a task declared in the manifest's `backgroundTasks`.
     func runBackgroundTask(_ id: String, context: ModuleContext) async
 
-    /// The user pressed Refresh: drop anything cached so the next `summary` and `screen` read the system again.
+    /// The user pressed Refresh: drop anything cached so the next `tile` and `screen` read the system again.
     func invalidate() async
 }
 

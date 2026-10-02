@@ -31,17 +31,18 @@ final class DebloatScreenBuilderTests: XCTestCase {
         let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated, validated: true,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
         XCTAssertFalse(on.isOn, "the switch shows the feature, which MacSpace switched off")
-        XCTAssertEqual(on.badge?.text, "Verified off")
+        XCTAssertNil(on.badge, "working as intended needs no badge")
+        XCTAssertTrue(on.detail?.contains("Measured off") == true)
         XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on", "flipping it back restores the feature")
 
         let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock, validated: true)]))
         XCTAssertTrue(off.isOn, "the feature still runs")
-        XCTAssertEqual(off.badge?.text, "Recommended")
+        XCTAssertNil(off.badge)
         XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn off")
         XCTAssertEqual(off.action.parameters["unverified"], "false")
 
         let unverified = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
-        XCTAssertEqual(unverified.badge?.text, "Not verified on this macOS")
+        XCTAssertEqual(unverified.badge?.text, "Unverified")
         XCTAssertEqual(unverified.action.parameters["unverified"], "true")
         XCTAssertTrue(unverified.action.confirmation?.message.contains("not verified") == true)
         XCTAssertTrue(unverified.action.confirmation?.message.contains("approve the MacSpace profile") == true)
@@ -82,30 +83,31 @@ final class DebloatScreenBuilderTests: XCTestCase {
             status(verifiedControl.id, .stock, validated: true), status(helperControl.id, .stock, validated: true),
             status(profileControl.id, .awaitingApproval), status("ads.advertising-identifier-policy", .drifted),
         ]))
-        XCTAssertEqual(screen.widgets.map(\.id).prefix(4), ["approval", "drifted", "recommended", "cat:telemetry"])
-        guard case let .button(button) = screen.widgets[2] else { return XCTFail() }
-        XCTAssertEqual(Set(button.action.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id])
-        XCTAssertNotNil(button.action.confirmation)
+        XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
+        let primary = try? XCTUnwrap(screen.primary)
+        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id])
+        XCTAssertNotNil(primary?.confirmation)
 
         let clean = DebloatScreenBuilder.screen(snapshot([]))
-        XCTAssertFalse(clean.widgets.contains { $0.id == "approval" || $0.id == "drifted" || $0.id == "recommended" })
+        XCTAssertFalse(clean.widgets.contains { $0.id == "approval" || $0.id == "drifted" })
     }
 
-    func testThePageOpensWithTheTilesSummaryBanner() {
-        let clean = DebloatScreenBuilder.screen(snapshot([]))
-        XCTAssertEqual(clean.widgets.first, DebloatScreenBuilder.summary(snapshot([])), "the tile grows into this banner")
+    func testThePageOpensWithWhatNeedsTheUser() {
         let undone = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .drifted)]))
-        XCTAssertEqual(undone.widgets.first?.id, "drifted", "a banner that says it with an action takes the place of the summary")
+        XCTAssertEqual(undone.widgets.first?.id, "drifted")
     }
 
-    func testSummaryTile() {
-        guard case let .banner(none) = DebloatScreenBuilder.summary(snapshot([])),
-              case let .banner(drift) = DebloatScreenBuilder.summary(snapshot([status(verifiedControl.id, .drifted)])),
-              case let .banner(all) = DebloatScreenBuilder.summary(snapshot(DebloatCatalog.controls.map { status($0.id, .debloated) })) else { return XCTFail() }
-        XCTAssertEqual(none.title, "0 of 14 switched off")
-        XCTAssertEqual(drift.severity, .warning)
-        XCTAssertEqual(all.title, "14 of 14 switched off")
-        XCTAssertEqual(all.severity, .success)
+    func testTile() {
+        let none = DebloatScreenBuilder.tile(snapshot([]))
+        XCTAssertEqual(none.status, "0/14 switched off")
+        XCTAssertFalse(none.needsAttention)
+        let drift = DebloatScreenBuilder.tile(snapshot([status(verifiedControl.id, .drifted)]))
+        XCTAssertEqual(drift.status, "1 undone by macOS")
+        XCTAssertTrue(drift.needsAttention)
+        guard case let .dots(dots)? = drift.graphic else { return XCTFail() }
+        XCTAssertEqual(dots.count, 14)
+        XCTAssertEqual(dots.filter { $0 == .attention }.count, 1, "the undone control is the amber dot")
+        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(DebloatCatalog.controls.map { status($0.id, .debloated) })).status, "14/14 switched off")
     }
 
     func testSummarizingResultsMentionsApprovalRestartAndFailures() {

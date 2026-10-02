@@ -36,18 +36,15 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(usage.footnote?.contains("1 place macOS keeps private was skipped") == true)
     }
 
-    func testExplanationListLeavesOutWhatFreeNowAlreadyHandles() throws {
-        let items = [item("reports:diagnostic", kind: .diagnosticReports, bytes: 5_000, cleanup: .command),
-                     item("assets:system", kind: .systemAssets, bytes: 9_000, cleanup: .command),
-                     item("system:swap", kind: .virtualMemory, bytes: 2_000, cleanup: .managedByMacOS)]
-        func ids(purgeable: UInt64?) throws -> [String] {
-            let snap = snapshot(items: items, purgeable: purgeable)
-            guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.managedSection(snap.report, assetsListed: SystemDataScreenBuilder.freeNowHasAssets(snap))),
-                  case let .list(list) = section.widgets[0] else { return [] }
-            return list.rows.map(\.id)
-        }
-        XCTAssertEqual(try ids(purgeable: 200_000_000), ["system:swap"])
-        XCTAssertEqual(Set(try ids(purgeable: nil)), ["assets:system", "system:swap"], "without a purge button the assets row explains itself")
+    func testEverythingElseListsWhatMacSpaceLeavesAloneOnce() throws {
+        let items = [item("reports:diagnostic", kind: .diagnosticReports, bytes: 500_000_000, cleanup: .command),
+                     item("system:swap", kind: .virtualMemory, bytes: 2_000_000_000, cleanup: .managedByMacOS),
+                     item("logs", kind: .logs, bytes: 900_000_000, cleanup: .managedByMacOS),
+                     item("app", kind: .appSupport, bytes: 700_000_000),
+                     item("tiny", kind: .logs, bytes: 1_000, cleanup: .managedByMacOS)]
+        guard case let .section(section)? = SystemDataScreenBuilder.otherSection(snapshot(items: items)), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), ["logs", "app"], "reports are under Free now, swap is counted by Settings elsewhere, tiny items are noise")
+        XCTAssertTrue(section.isCollapsible && section.startsCollapsed)
     }
 
     func testCloudCopiesAndThirdPartyAppDataAreLeftOutOfTheBar() {
@@ -67,65 +64,63 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(usage.footnote?.contains("not counted") == true)
     }
 
-    func testFreeNowOffersOnlySafeItemsAndAFreeAllButton() throws {
+    func testFreeNowOffersOnlySafeItemsAndCleanIsThePagesMainAction() throws {
         let snap = snapshot(items: [
-            item("small", kind: .appCache, bytes: 100, cleanup: .deleteWhenNotRunning, reclaim: 100),
-            item("big", kind: .appCache, bytes: 900, cleanup: .deleteWhenNotRunning, reclaim: 900),
-            item("open", kind: .appCache, bytes: 500, cleanup: .deleteWhenNotRunning, reclaim: 500, inUse: true, owners: ["Chrome"]),
-            item("zero", kind: .appCache, bytes: 50, cleanup: .deleteWhenNotRunning, reclaim: 0),
-        ], purgeable: 12_000_000_000, reports: 4_000)
-        guard case let .section(section) = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.id), ["big", "open", "small", "reports", "assets"], "largest first, zero-reclaim items hidden")
+            item("small", kind: .appCache, bytes: 100_000_000, cleanup: .deleteWhenNotRunning, reclaim: 100_000_000),
+            item("big", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
+            item("open", kind: .appCache, bytes: 500_000_000, cleanup: .deleteWhenNotRunning, reclaim: 500_000_000, inUse: true, owners: ["Chrome"]),
+            item("crumbs", kind: .appCache, bytes: 5_000, cleanup: .deleteWhenNotRunning, reclaim: 5_000),
+        ], purgeable: 12_000_000_000, reports: 4_000_000)
+        guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), ["big", "open", "small", "reports", "assets"], "largest first, crumbs hidden")
         XCTAssertEqual(list.rows[0].actions.map(\.id), ["clean"])
         XCTAssertTrue(list.rows[1].actions.isEmpty, "an item whose app is open cannot be cleaned")
         XCTAssertEqual(list.rows[1].badge?.text, "App is open")
+        XCTAssertNil(list.rows[0].badge, "an ordinary row needs no badge")
         XCTAssertNotNil(list.rows[3].actions[0].confirmation, "deleting reports asks first")
         XCTAssertNotNil(list.rows[4].actions[0].confirmation)
-        guard case let .button(button) = section.widgets[1] else { return XCTFail("expected a free-all button") }
-        XCTAssertEqual(button.action.id, "cleanAll")
-        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000 + 12_000_000_000 + 4_000, "the open app's 500 bytes are not counted")
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).primary?.id, "cleanAll")
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_005_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
     }
 
-    func testNothingToFreeShowsAnEmptyMessageAndNoButton() throws {
-        guard case let .section(section) = SystemDataScreenBuilder.freeNow(snapshot(items: [])), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertTrue(list.rows.isEmpty)
-        XCTAssertNotNil(list.emptyMessage)
-        XCTAssertEqual(section.widgets.count, 1)
+    func testNothingToFreeShowsNoSectionAndNoMainAction() throws {
+        XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [])))
+        XCTAssertNil(SystemDataScreenBuilder.screen(snapshot(items: [])).primary)
+        XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [], reports: 837)), "a few bytes of reports are not worth a row")
     }
 
     func testPurgeRowNeedsAMeaningfulAmount() throws {
-        guard case let .section(section) = SystemDataScreenBuilder.freeNow(snapshot(items: [], purgeable: 1_000_000)), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertTrue(list.rows.isEmpty, "1 MB is not worth a button")
+        XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [], purgeable: 1_000_000)), "1 MB is not worth a button")
     }
 
-    func testManualSectionCarriesTheGuideSteps() throws {
+    func testManualSectionCarriesTheGuideStepsAndOnlyMeasuredLargeEntries() throws {
         let guide = ManualCleanupGuide(app: "WhatsApp", frees: "media", steps: ["Open Storage", "Delete"], verified: false)
-        let snap = snapshot(items: [], manual: [ManualCleanupSummary(app: "WhatsApp", bytes: 4_700, itemIDs: ["container:wa"], guide: guide),
-                                                ManualCleanupSummary(app: "Unmeasured", bytes: nil, itemIDs: [], guide: guide)])
+        let snap = snapshot(items: [], manual: [ManualCleanupSummary(app: "WhatsApp", bytes: 4_700_000_000, itemIDs: ["container:wa"], guide: guide),
+                                                ManualCleanupSummary(app: "Unmeasured", bytes: nil, itemIDs: [], guide: guide),
+                                                ManualCleanupSummary(app: "Empty", bytes: 0, itemIDs: [], guide: guide)])
         guard case let .section(section)? = SystemDataScreenBuilder.manualSection(snap.report), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.title), ["WhatsApp"])
         XCTAssertEqual(list.rows[0].steps, ["Open Storage", "Delete"])
-        XCTAssertEqual(list.rows[1].trailing, "not measured")
         XCTAssertNil(SystemDataScreenBuilder.manualSection(snapshot(items: []).report))
     }
 
     func testScreenShowsAPartialBannerAndCollapsesTheRest() {
-        let items = [item("cache", kind: .appCache, bytes: 900, cleanup: .deleteWhenNotRunning, reclaim: 900),
-                     item("review", kind: .appSupport, bytes: 700), item("logs", kind: .logs, bytes: 300, cleanup: .managedByMacOS)]
+        let items = [item("cache", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
+                     item("review", kind: .appSupport, bytes: 700_000_000), item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS)]
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
         let screen = SystemDataScreenBuilder.screen(withoutAccess)
-        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "usage", "free", "review", "managed"])
-        for case let .section(section) in screen.widgets where ["review", "managed"].contains(section.id) {
-            XCTAssertTrue(section.isCollapsible && section.startsCollapsed)
-        }
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "usage", "no banner when everything was measured")
+        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "other"])
+        XCTAssertEqual(screen.hero?.segments.isEmpty, false, "the bar is the page's hero")
+        XCTAssertNil(screen.hero?.footnote)
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "free", "no banner when everything was measured")
     }
 
     func testPlacesNoCustomerCanFixAreNotAWarning() {
         // Full Disk Access is on; one Apple container stays closed to every app. That is not a banner, only a quiet note.
         let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900)], unreadable: ["/Users/x/Library/Group Containers/group.com.apple.Safari.SandboxBroker"])
         XCTAssertNil(SystemDataScreenBuilder.partialBanner(snap))
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).widgets.first?.id, "usage")
+        XCTAssertNotEqual(SystemDataScreenBuilder.screen(snap).widgets.first?.id, "partial")
         XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("1 place macOS keeps private was skipped") == true)
         XCTAssertFalse(SystemDataScreenBuilder.usage(snap).footnote?.contains("could not") == true)
 
@@ -134,15 +129,20 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         needsAccess.report.fullDiskAccess = false
         guard case let .banner(banner) = SystemDataScreenBuilder.partialBanner(needsAccess) else { return XCTFail("expected a banner") }
         XCTAssertEqual(banner.action?.id, "openFullDiskAccess")
-        XCTAssertTrue(banner.message?.contains("Full Disk Access") == true)
+        XCTAssertTrue(banner.title.contains("Full Disk Access"))
     }
 
-    func testSummaryStatesWhatCanBeFreed() {
-        guard case let .usage(usage) = SystemDataScreenBuilder.summary(snapshot(items: [item("c", kind: .appCache, bytes: 900, cleanup: .deleteWhenNotRunning, reclaim: 900)])) else { return XCTFail() }
-        XCTAssertEqual(usage.title, "System Data")
-        XCTAssertTrue(usage.footnote?.contains("can be freed now") == true)
-        guard case let .usage(none) = SystemDataScreenBuilder.summary(snapshot(items: [])) else { return XCTFail() }
-        XCTAssertEqual(none.footnote, "Nothing safe to clean right now.")
+    func testTileStatesWhatCanBeFreedAndSplitsItOutOfTheCaches() {
+        let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 600_000_000),
+                                    item("l", kind: .logs, bytes: 2_000_000_000, cleanup: .managedByMacOS)])
+        let tile = SystemDataScreenBuilder.tile(snap)
+        XCTAssertTrue(tile.status.hasSuffix("can be freed"))
+        guard case let .blocks(blocks)? = tile.graphic else { return XCTFail() }
+        XCTAssertEqual(blocks.map(\.id), ["macos", "freeable", "caches"], "largest first")
+        XCTAssertEqual(blocks.first { $0.id == "freeable" }?.tone, .caution)
+        XCTAssertEqual(blocks.first { $0.id == "caches" }?.bytes, 300_000_000, "the freeable part is taken out of the caches")
+        XCTAssertEqual(blocks.reduce(0) { $0 + $1.bytes }, 2_900_000_000, "the total stays the same")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snapshot(items: [])).status, "nothing to clean")
     }
 }
 

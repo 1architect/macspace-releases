@@ -17,8 +17,8 @@ public struct DebloatModule: MacSpaceModule {
 
     public func invalidate() async { await store.invalidate() }
 
-    public func summary(context: ModuleContext) async -> ScreenWidget {
-        DebloatScreenBuilder.summary(await store.snapshot())
+    public func tile(context: ModuleContext) async -> Tile {
+        DebloatScreenBuilder.tile(await store.snapshot())
     }
 
     public func screen(context: ModuleContext) async -> Screen {

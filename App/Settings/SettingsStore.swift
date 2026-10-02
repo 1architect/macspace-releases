@@ -20,6 +20,17 @@ public final class SettingsStore: @unchecked Sendable {
         defaults.set(enabled, forKey: Self.key(id, "enabled"))
     }
 
+    // MARK: Last tile
+
+    /// The tile a module showed last time, so the dashboard has something true to show while the module reads the Mac again.
+    public func lastTile(module id: String) -> Tile? {
+        defaults.data(forKey: Self.key(id, "lastTile")).flatMap { try? JSONDecoder().decode(Tile.self, from: $0) }
+    }
+
+    public func setLastTile(_ tile: Tile, module id: String) {
+        if let data = try? JSONEncoder().encode(tile) { defaults.set(data, forKey: Self.key(id, "lastTile")) }
+    }
+
     // MARK: Options and background tasks
 
     public func optionStore(for manifest: ModuleManifest) -> any OptionStore {

@@ -20,7 +20,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     @Published public private(set) var state: State
     @Published public private(set) var screen: Screen?
-    @Published public private(set) var summary: ScreenWidget?
+    @Published public private(set) var tile: Tile?
+    /// The tile is last session's, shown until the module has read the Mac again.
+    @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
@@ -42,6 +44,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             state = .incompatible(reason)
         } else {
             state = .off
+            tile = settings.lastTile(module: descriptor.id)
+            tileIsStale = tile != nil
         }
     }
 
@@ -55,7 +59,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         manifest.permissions.filter { permissions.status(of: $0) == .missing }
     }
 
-    /// Loads the module (once) when it is enabled and compatible, then fetches its summary and screen.
+    /// Loads the module (once) when it is enabled and compatible, then fetches its tile and screen.
     public func activate() async {
         if case .incompatible = state { return }
         guard isEnabled else { deactivate(); return }
@@ -74,7 +78,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if case .incompatible = state { return }
         state = .off
         screen = nil
-        summary = nil
+        tile = nil
+        tileIsStale = false
         lastResult = nil
     }
 
@@ -84,10 +89,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let context = context()
         isBusy = true
         if reload { await module.invalidate() }
-        async let nextSummary = module.summary(context: context)
+        async let nextTile = module.tile(context: context)
         async let nextScreen = module.screen(context: context)
-        let (newSummary, newScreen) = await (nextSummary, nextScreen)
-        summary = newSummary
+        let (newTile, newScreen) = await (nextTile, nextScreen)
+        tile = newTile
+        tileIsStale = false
+        settings.setLastTile(newTile, module: id)
         screen = newScreen
         isBusy = false
     }

@@ -16,8 +16,7 @@ struct ActionButton: View {
         } label: {
             if let symbol = action.symbol { Label(action.title, systemImage: symbol) } else { Text(action.title) }
         }
-        .modifier(ProminenceModifier(role: action.role))
-        .controlSize(compact ? .small : .regular)
+        .buttonStyle(PillButtonStyle(prominent: action.role == .prominent, destructive: action.role == .destructive, compact: compact))
         .confirmationDialog(action.confirmation?.title ?? "", isPresented: $confirming, titleVisibility: .visible) {
             if let confirmation = action.confirmation {
                 Button(confirmation.confirmTitle, role: action.role == .destructive ? .destructive : nil) { handler(action, [:]) }
@@ -26,13 +25,5 @@ struct ActionButton: View {
         } message: {
             Text(action.confirmation?.message ?? "")
         }
-    }
-}
-
-private struct ProminenceModifier: ViewModifier {
-    let role: ActionRole
-
-    func body(content: Content) -> some View {
-        if role == .prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
     }
 }

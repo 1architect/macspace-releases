@@ -3,12 +3,12 @@ import MacSpaceApp
 import MacSpacePlatform
 import MacSpaceSdk
 
-/// `MacSpaceCli screen <module-id> [--dir <folder>] [--summary]` prints the screen (or dashboard tile) a module produces,
+/// `MacSpaceCli screen <module-id> [--dir <folder>] [--tile]` prints the screen (or dashboard tile) a module produces,
 /// as JSON, using this Mac's real state. For development and for checking what the app would draw.
 enum ScreenCommand {
     static func run(_ arguments: [String]) async -> Never {
         guard let id = arguments.first(where: { !$0.hasPrefix("--") && !$0.contains("/") }) else {
-            FileHandle.standardError.write(Data("usage: MacSpaceCli screen <module-id> [--dir <folder>] [--summary]\n".utf8))
+            FileHandle.standardError.write(Data("usage: MacSpaceCli screen <module-id> [--dir <folder>] [--tile]\n".utf8))
             exit(64)
         }
         let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }
@@ -22,7 +22,7 @@ enum ScreenCommand {
             let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker())
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            let data = arguments.contains("--summary") ? try encoder.encode(await module.summary(context: context))
+            let data = arguments.contains("--tile") ? try encoder.encode(await module.tile(context: context))
                                                        : try encoder.encode(await module.screen(context: context))
             FileHandle.standardOutput.write(data)
             print()

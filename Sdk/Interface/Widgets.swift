@@ -62,14 +62,22 @@ public struct Action: Codable, Equatable, Sendable {
     }
 }
 
+/// A module's page. The app draws it on the module's tile, grown to fill the window: the tile's title and status stay in the corner,
+/// so the page needs no header.
 public struct Screen: Codable, Equatable, Sendable {
     public var title: String
     public var subtitle: String?
+    /// The big bar at the top of the page, drawn without a card.
+    public var hero: UsageBar?
+    /// The page's one main action, pinned at the bottom (the "Clean" pill). Every other action sits next to what it acts on.
+    public var primary: Action?
     public var widgets: [ScreenWidget]
 
-    public init(title: String, subtitle: String? = nil, widgets: [ScreenWidget]) {
+    public init(title: String, subtitle: String? = nil, hero: UsageBar? = nil, primary: Action? = nil, widgets: [ScreenWidget]) {
         self.title = title
         self.subtitle = subtitle
+        self.hero = hero
+        self.primary = primary
         self.widgets = widgets
     }
 }

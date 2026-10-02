@@ -17,8 +17,8 @@ public struct SystemDataModule: MacSpaceModule {
 
     public func invalidate() async { await store.invalidate() }
 
-    public func summary(context: ModuleContext) async -> ScreenWidget {
-        SystemDataScreenBuilder.summary(await store.snapshot(privileged: context.privileged))
+    public func tile(context: ModuleContext) async -> Tile {
+        SystemDataScreenBuilder.tile(await store.snapshot(privileged: context.privileged))
     }
 
     public func screen(context: ModuleContext) async -> Screen {

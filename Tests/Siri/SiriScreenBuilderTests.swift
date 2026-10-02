@@ -36,15 +36,15 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(screen.widgets.count, 1)
         guard case let .banner(banner) = screen.widgets[0] else { return XCTFail() }
         XCTAssertEqual(banner.title, "This is a virtual machine")
-        guard case let .banner(tile) = SiriScreenBuilder.summary(snap) else { return XCTFail() }
-        XCTAssertNil(tile.action, "nothing to switch off in a virtual machine")
+        XCTAssertEqual(SiriScreenBuilder.tile(snap).status, "not in a virtual machine")
     }
 
     func testBannerAndSwitchFollowTheState() {
-        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.protected)).severity, .success)
-        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.releasing)).severity, .info)
-        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.atRisk)).severity, .warning)
-        XCTAssertTrue(SiriScreenBuilder.statusBanner(snapshot(.unknown)).message?.contains("Full Disk Access") == true)
+        XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.protected)), "nothing to do, so no banner")
+        XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.releasing)))
+        XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.atRisk)), "the switch itself says it is on")
+        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.unknown))?.action?.id, "openFullDiskAccess")
+        XCTAssertTrue(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows[0].subtitle?.hasPrefix("On.") == true)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows[0].isOn, true)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.protected)).rows[0].isOn, false)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.unknown, match: true)).rows[0].isOn, true, "unknown falls back to the language match")
@@ -59,16 +59,20 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on")
     }
 
-    func testSummaryOffersTheSwitchOnlyWhenAppleIntelligenceIsOn() {
-        guard case let .banner(on) = SiriScreenBuilder.summary(snapshot(.atRisk)), case let .banner(off) = SiriScreenBuilder.summary(snapshot(.protected)) else { return XCTFail() }
-        XCTAssertEqual(on.action?.parameters, ["id": "ai", "value": "false"])
-        XCTAssertNil(off.action)
+    func testTileFlagsAppleIntelligenceWhenItIsOn() {
+        let on = SiriScreenBuilder.tile(snapshot(.atRisk))
+        XCTAssertEqual(on.status, "AI is on")
+        XCTAssertTrue(on.needsAttention)
+        let off = SiriScreenBuilder.tile(snapshot(.protected))
+        XCTAssertEqual(off.status, "AI is off")
+        XCTAssertFalse(off.needsAttention)
+        XCTAssertTrue(SiriScreenBuilder.tile(snapshot(.protected, accounts: [other("tester")])).needsAttention, "another account keeps the models")
     }
 
     func testOtherAccountsExplainWhatToDo() throws {
         let snap = snapshot(.protected, accounts: [other("tester"), other(nil)])
-        XCTAssertEqual(SiriScreenBuilder.statusBanner(snap).severity, .warning)
-        XCTAssertTrue(SiriScreenBuilder.statusBanner(snap).title.contains("still installed"))
+        XCTAssertEqual(SiriScreenBuilder.statusBanner(snap)?.severity, .warning)
+        XCTAssertTrue(SiriScreenBuilder.statusBanner(snap)?.title.contains("Still installed") == true)
         guard case let .section(section)? = SiriScreenBuilder.accountsSection(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.count, 2)
         XCTAssertTrue(list.rows[0].steps[0].contains("Log in as tester"))
@@ -77,22 +81,23 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(SiriScreenBuilder.accountsSection(snapshot(.protected, accounts: nil)))
     }
 
-    func testModelsSectionShowsPurgeOrReleaseOrWhatBlocksThem() throws {
+    func testPurgeIsTheMainActionAndModelsSectionOffersReleaseOrWhatBlocksIt() throws {
         func widgets(_ snap: SiriSnapshot) -> [ScreenWidget] {
-            guard case let .section(section) = SiriScreenBuilder.modelsSection(snap) else { return [] }
+            guard case let .section(section)? = SiriScreenBuilder.modelsSection(snap) else { return [] }
             return section.widgets
         }
-        let ready = widgets(snapshot(.protected, purgeable: 12_000_000_000))
-        guard case let .button(purge) = ready[0], case let .button(release) = ready[1] else { return XCTFail() }
-        XCTAssertEqual(purge.action.id, "purgeAssets")
-        XCTAssertNotNil(purge.action.confirmation)
+        let ready = snapshot(.protected, purgeable: 12_000_000_000)
+        let purge = try XCTUnwrap(SiriScreenBuilder.screen(ready).primary)
+        XCTAssertEqual(purge.id, "purgeAssets")
+        XCTAssertNotNil(purge.confirmation)
+        guard case let .button(release)? = widgets(ready).first else { return XCTFail() }
         XCTAssertEqual(release.action.id, "releaseModels")
         XCTAssertNotNil(release.action.confirmation, "the release flips the Siri language for a minute, so it asks first")
 
-        let blocked = widgets(snapshot(.protected, blockers: ["Apple Intelligence is on in tester."]))
-        guard case .text = blocked[0], case let .steps(steps) = blocked[1] else { return XCTFail() }
+        guard case let .steps(steps)? = widgets(snapshot(.protected, blockers: ["Apple Intelligence is on in tester."])).first else { return XCTFail() }
         XCTAssertEqual(steps.steps, ["Apple Intelligence is on in tester."])
-        guard case .text = widgets(snapshot(.protected, purgeable: 1_000))[0] else { return XCTFail("a few KB is not worth a button") }
+        XCTAssertNil(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary, "a few KB is not worth a button")
+        XCTAssertNil(SiriScreenBuilder.modelsSection(snapshot(.atRisk)), "nothing to release while Apple Intelligence is on")
     }
 
     func testScreenContainsEverySectionInOrder() {

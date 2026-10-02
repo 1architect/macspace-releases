@@ -41,7 +41,7 @@ final class AssetFamilyTests: XCTestCase {
         XCTAssertEqual(AssetFamilyScanner(root: "/nonexistent-\(UUID().uuidString)").scan(), [])
     }
 
-    func testScreenListsFamiliesAndDropsTheDuplicateManagedRow() throws {
+    func testScreenListsOnlyFamiliesWithASetting() throws {
         let family = AssetFamily(id: "siri-voices", title: "Siri voices", assets: ["a"], bytes: 300_000_000, heldBy: "Siri", steps: ["Do this"], verified: false)
         let none = AssetFamily(id: "photos-models", title: "Photos models", assets: ["b"], bytes: 800_000_000, heldBy: "Catalog", steps: [], verified: false)
         var snap = SystemDataSnapshot(
@@ -51,9 +51,8 @@ final class AssetFamilyTests: XCTestCase {
             takenAt: Date())
         snap.assetFamilies = [none, family]
         guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.assetsSection(snap)), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.title), ["Photos models", "Siri voices"])
-        XCTAssertEqual(list.rows[1].steps, ["Do this"])
-        XCTAssertEqual(list.rows[0].badge?.text, "No setting")
+        XCTAssertEqual(list.rows.map(\.title), ["Siri voices"], "a download with no setting is nothing the user can act on")
+        XCTAssertEqual(list.rows[0].steps, ["Do this"])
         XCTAssertNil(SystemDataScreenBuilder.assetsSection(SystemDataSnapshot(report: snap.report, purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date())))
     }
 }

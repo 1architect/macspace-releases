@@ -9,6 +9,8 @@ import SwiftUI
 public final class ModuleHost: ObservableObject {
     @Published public private(set) var handles: [ModuleHandle] = []
     @Published public private(set) var problems: [ModuleProblem] = []
+    /// The modules folder has been read, so `dashboardHandles` is final even if the modules are still loading.
+    @Published public private(set) var hasScanned = false
 
     public let settings: SettingsStore
     public let permissions: any PermissionChecker
@@ -62,11 +64,8 @@ public final class ModuleHost: ObservableObject {
 
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {
-        if !checkedHelper, let privileged {
-            checkedHelper = true
-            await PrivilegedHelperInstaller.restartIfStale(channel: privileged)
-        }
-        guard let modulesDirectory else { handles = []; problems = []; return }
+        guard let modulesDirectory else { handles = []; problems = []; hasScanned = true; return }
+        // The modules are listed first, so the dashboard can lay out its tiles before anything slow happens.
         let found = ModuleScanner.scan(directory: modulesDirectory)
         problems = found.problems
         let existing = Dictionary(uniqueKeysWithValues: handles.map { ($0.id, $0) })
@@ -74,8 +73,13 @@ public final class ModuleHost: ObservableObject {
             if let known = existing[descriptor.id], known.descriptor == descriptor { return known }
             return ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
         }
-        // Modules load side by side: a slow scan in one must not hold back the others, and each page appears as soon as it is ready.
         observeStates()
+        hasScanned = true
+        if !checkedHelper, let privileged {
+            checkedHelper = true
+            await PrivilegedHelperInstaller.restartIfStale(channel: privileged)
+        }
+        // Modules load side by side: a slow scan in one must not hold back the others, and each page appears as soon as it is ready.
         let loading = handles.map { handle in Task { await handle.activate() } }
         for task in loading { await task.value }
         applySchedule()
@@ -95,6 +99,9 @@ public final class ModuleHost: ObservableObject {
     public func handle(for id: String) -> ModuleHandle? { handles.first { $0.id == id } }
 
     public var activeHandles: [ModuleHandle] { handles.filter { $0.state == .ready } }
+
+    /// The modules the dashboard shows: the ready ones and those that are switched on and still loading.
+    public var dashboardHandles: [ModuleHandle] { handles.filter { $0.state == .ready || ($0.state == .off && $0.isEnabled) } }
 
     func applySchedule() { scheduler.apply(handles: handles) }
 }

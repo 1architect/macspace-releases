@@ -2,7 +2,9 @@ import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
 
-/// Draws one widget. All widgets share the same card look, so modules cannot break the app's design.
+/// Draws one widget on a page. Everything follows the grouped look of Settings: a bold header above a rounded group, one row per
+/// item with its control on the right, hairlines between rows. Descriptions (subtitles, details, footnotes) are tooltips, not text
+/// on the page; only steps to follow stay visible, in rows that open.
 struct WidgetView: View {
     let widget: ScreenWidget
     let handler: ActionHandler
@@ -10,28 +12,169 @@ struct WidgetView: View {
     var body: some View {
         switch widget {
         case let .banner(banner): BannerView(banner: banner, handler: handler)
-        case let .usage(usage): Card { UsageBarView(usage: usage) }
-        case let .chart(chart): Card { BarChartView(chart: chart) }
-        case let .list(list): Card { ListWidgetView(list: list, handler: handler) }
-        case let .toggles(toggles): Card { ToggleListView(list: toggles, handler: handler) }
+        case let .usage(usage): FormBlock(title: usage.title, help: usage.footnote) { UsageBarView(usage: usage).padding(12) }
+        case let .chart(chart): FormBlock(title: chart.title) { BarChartView(chart: chart).padding(12) }
+        case let .list(list): ListWidgetView(list: list, handler: handler)
+        case let .toggles(toggles): ToggleListView(list: toggles, handler: handler)
         case let .button(button): ButtonWidgetView(button: button, handler: handler)
-        case let .steps(steps): Card { StepsView(steps: steps) }
+        case let .steps(steps): StepsView(steps: steps)
         case let .text(text): TextWidgetView(text: text)
         case let .section(section): SectionView(section: section, handler: handler)
         }
     }
 }
 
+// MARK: Form parts
+
+/// The rounded group rows sit in, as in Settings: a faint panel, or Liquid Glass when glass is on.
+struct FormGroup<Content: View>: View {
+    @ViewBuilder var content: Content
+    @Environment(\.design) private var design
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) { content }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if design.glass { Color.clear.glassEffect(.regular, in: shape) } else { shape.fill(.primary.opacity(0.055)) }
+            }
+    }
+}
+
+/// The bold header above a group. Its description is the tooltip.
+struct FormHeader<Trailing: View>: View {
+    let title: String
+    var help: String?
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).font(.system(size: 13, weight: .semibold))
+            Spacer(minLength: 8)
+            trailing
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
+        .contentShape(Rectangle())
+        .help(help ?? "")
+    }
+}
+
+extension FormHeader where Trailing == EmptyView {
+    init(title: String, help: String? = nil) {
+        self.init(title: title, help: help) { EmptyView() }
+    }
+}
+
+/// A header (when there is a title) and a group holding `content`.
+struct FormBlock<Content: View>: View {
+    var title: String?
+    var help: String?
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let title, !title.isEmpty { FormHeader(title: title, help: help) }
+            FormGroup { content }
+        }
+    }
+}
+
+/// One row of a group: at least the height of a Settings row, its parts on one line.
+struct FormRow<Content: View>: View {
+    var help: String?
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        HStack(spacing: 10) { content }
+            .frame(minHeight: 22)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .help(help ?? "")
+    }
+}
+
+/// The one switch every page and Settings use, so they are the same size and color everywhere.
+struct FormSwitch: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle("", isOn: $isOn)
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+    }
+}
+
+/// A row with a title (and optional symbol) and a switch on the right. `status` lines stay visible (errors, why it is off); the
+/// description is the tooltip.
+struct FormToggleRow: View {
+    let title: String
+    var symbol: String?
+    var help: String?
+    var status: [(text: String, color: Color)] = []
+    @Binding var isOn: Bool
+
+    var body: some View {
+        FormRow(help: help) {
+            if let symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).lineLimit(1)
+                ForEach(Array(status.enumerated()), id: \.offset) { _, line in
+                    Text(line.text).font(.caption).foregroundStyle(line.color)
+                }
+            }
+            Spacer(minLength: 8)
+            FormSwitch(isOn: $isOn)
+        }
+    }
+}
+
+/// The hairline between rows, inset like Settings.
+struct FormDivider: View {
+    var body: some View {
+        Rectangle().fill(.primary.opacity(0.1)).frame(height: 0.5).padding(.leading, 10)
+    }
+}
+
+/// Joins the parts of a description into one tooltip.
+enum Tooltip {
+    static func join(_ parts: String?...) -> String? {
+        let text = parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n\n")
+        return text.isEmpty ? nil : text
+    }
+}
+
+/// Kept for the few places that want a plain padded group (progress).
 struct Card<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        content
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+        FormGroup { content.padding(12) }
     }
 }
+
+extension View {
+    /// The group everything on a page sits in.
+    func glassCard() -> some View { modifier(PageCard()) }
+}
+
+private struct PageCard: ViewModifier {
+    @Environment(\.design) private var design
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        if design.glass {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content.background(.primary.opacity(0.055), in: shape)
+        }
+    }
+}
+
+// MARK: Widgets
 
 struct BadgeView: View {
     let badge: Badge
@@ -41,28 +184,30 @@ struct BadgeView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(Palette.color(badge.tone))
-            .background(Palette.color(badge.tone).opacity(0.15), in: Capsule())
+            .foregroundStyle(.white)
+            .background(Palette.color(badge.tone).opacity(badge.tone == .neutral ? 0.3 : 0.55), in: Capsule())
     }
 }
 
+/// A notice: icon, title and action in one row. Its message is what the notice says, so it stays visible.
 struct BannerView: View {
     let banner: Banner
     let handler: ActionHandler
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(banner.title).font(.headline)
-                if let message = banner.message { Text(message).font(.subheadline).foregroundStyle(.secondary) }
+        FormGroup {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(banner.title).font(.system(size: 13, weight: .semibold))
+                    if let message = banner.message { Text(message).font(.caption).foregroundStyle(.secondary) }
+                }
+                Spacer(minLength: 8)
+                if let action = banner.action { ActionButton(action: action, compact: true, handler: handler) }
             }
-            Spacer(minLength: 8)
-            if let action = banner.action { ActionButton(action: action, compact: true, handler: handler) }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.color(banner.severity).opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -75,7 +220,6 @@ struct UsageBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(usage.title).font(.headline)
             GeometryReader { proxy in
                 HStack(spacing: 1) {
                     ForEach(usage.segments) { segment in
@@ -86,10 +230,10 @@ struct UsageBarView: View {
                     Spacer(minLength: 0)
                 }
                 .frame(width: proxy.size.width, alignment: .leading)
-                .background(.quaternary)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .background(.primary.opacity(0.14))
+                .clipShape(Capsule())
             }
-            .frame(height: 12)
+            .frame(height: 14)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)], alignment: .leading, spacing: 6) {
                 ForEach(usage.segments) { segment in
                     HStack(spacing: 6) {
@@ -99,7 +243,6 @@ struct UsageBarView: View {
                     }
                 }
             }
-            if let footnote = usage.footnote { Text(footnote).font(.caption).foregroundStyle(.secondary) }
         }
     }
 }
@@ -110,7 +253,6 @@ struct BarChartView: View {
     var body: some View {
         let maximum = max(chart.bars.map(\.value).max() ?? 0, .leastNonzeroMagnitude)
         VStack(alignment: .leading, spacing: 8) {
-            Text(chart.title).font(.headline)
             ForEach(chart.bars) { bar in
                 HStack(spacing: 10) {
                     Text(bar.label).font(.callout).frame(width: 150, alignment: .leading).lineLimit(1)
@@ -131,58 +273,58 @@ struct ListWidgetView: View {
     let handler: ActionHandler
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let title = list.title { Text(title).font(.headline).padding(.bottom, 8) }
+        FormBlock(title: list.title) {
             if list.rows.isEmpty, let empty = list.emptyMessage {
-                Text(empty).font(.callout).foregroundStyle(.secondary)
+                FormRow { Text(empty).foregroundStyle(.secondary) }
             }
             ForEach(Array(list.rows.enumerated()), id: \.element.id) { index, row in
-                if index > 0 { Divider().padding(.vertical, 6) }
+                if index > 0 { FormDivider() }
                 RowView(row: row, handler: handler)
             }
         }
     }
 }
 
+/// A list row: symbol, title, badge, value and actions. Its subtitle and detail are the tooltip; when it has steps, it opens to show
+/// them.
 struct RowView: View {
     let row: Row
     let handler: ActionHandler
     @State private var expanded = false
 
-    private var expandable: Bool { row.detail != nil || !row.steps.isEmpty }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 20) }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title).font(.body)
-                    if let subtitle = row.subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
-                }
-                Spacer(minLength: 8)
+        VStack(alignment: .leading, spacing: 0) {
+            FormRow(help: Tooltip.join(row.subtitle, row.detail)) {
+                if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
+                Text(row.title).lineLimit(1)
                 if let badge = row.badge { BadgeView(badge: badge) }
-                if let trailing = row.trailing { Text(trailing).font(.callout.monospacedDigit()).foregroundStyle(.secondary) }
+                Spacer(minLength: 8)
+                if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
                 ForEach(Array(row.actions.enumerated()), id: \.offset) { _, action in
                     ActionButton(action: action, compact: true, handler: handler)
                 }
-                if expandable {
-                    Button { withAnimation { expanded.toggle() } } label: {
-                        Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                    }
-                    .buttonStyle(.borderless)
+                if !row.steps.isEmpty {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
                 }
             }
+            .onTapGesture { if !row.steps.isEmpty { withAnimation(Theme.hover) { expanded.toggle() } } }
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
-                    if let detail = row.detail { Text(detail).font(.callout).foregroundStyle(.secondary) }
                     ForEach(Array(row.steps.enumerated()), id: \.offset) { index, step in
                         HStack(alignment: .top, spacing: 8) {
-                            Text("\(index + 1).").font(.callout.monospacedDigit()).foregroundStyle(.secondary)
-                            Text(step).font(.callout)
+                            Text("\(index + 1).").monospacedDigit().foregroundStyle(.secondary)
+                            Text(step)
                         }
+                        .font(.callout)
                     }
                 }
-                .padding(.leading, row.symbol == nil ? 0 : 30)
+                .padding(.leading, row.symbol == nil ? 10 : 38)
+                .padding(.trailing, 10)
+                .padding(.bottom, 10)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
@@ -191,7 +333,6 @@ struct RowView: View {
 struct ToggleListView: View {
     let list: ToggleList
     let handler: ActionHandler
-    @State private var expanded: Set<String> = []
     @State private var pending: PendingToggle?
 
     /// A flip waiting for the user to confirm it.
@@ -207,35 +348,17 @@ struct ToggleListView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let title = list.title { Text(title).font(.headline).padding(.bottom, 8) }
+        FormBlock(title: list.title, help: list.footnote) {
             ForEach(Array(list.rows.enumerated()), id: \.element.id) { index, row in
-                if index > 0 { Divider().padding(.vertical, 6) }
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 10) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(row.title)
-                            if let subtitle = row.subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
-                        }
-                        Spacer(minLength: 8)
-                        if let badge = row.badge { BadgeView(badge: badge) }
-                        if row.detail != nil {
-                            Button { withAnimation { toggleExpanded(row.id) } } label: {
-                                Image(systemName: expanded.contains(row.id) ? "chevron.up" : "chevron.down")
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                        Toggle("", isOn: Binding(get: { row.isOn }, set: { flip(row, to: $0) }))
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .disabled(!row.isEnabled)
-                    }
-                    if expanded.contains(row.id), let detail = row.detail {
-                        Text(detail).font(.callout).foregroundStyle(.secondary)
-                    }
+                if index > 0 { FormDivider() }
+                FormRow(help: Tooltip.join(row.subtitle, row.detail)) {
+                    Text(row.title).lineLimit(1)
+                    if let badge = row.badge { BadgeView(badge: badge) }
+                    Spacer(minLength: 8)
+                    FormSwitch(isOn: Binding(get: { row.isOn }, set: { flip(row, to: $0) }))
+                        .disabled(!row.isEnabled)
                 }
             }
-            if let footnote = list.footnote { Text(footnote).font(.caption).foregroundStyle(.secondary).padding(.top, 8) }
         }
         .confirmationDialog(pending?.action.confirmation?.title ?? "", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
                             titleVisibility: .visible, presenting: pending) { toggle in
@@ -245,22 +368,29 @@ struct ToggleListView: View {
             Text(toggle.action.confirmation?.message ?? "")
         }
     }
-
-    private func toggleExpanded(_ id: String) {
-        if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
-    }
 }
 
+/// A button on its own: a row with the button on the right; its footnote is the tooltip.
 struct ButtonWidgetView: View {
     let button: ButtonWidget
     let handler: ActionHandler
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ActionButton(action: button.action, handler: handler)
-            if let footnote = button.footnote { Text(footnote).font(.caption).foregroundStyle(.secondary) }
+        FormGroup {
+            FormRow(help: button.footnote) {
+                if let symbol = button.action.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
+                Text(button.action.title).lineLimit(1)
+                Spacer(minLength: 8)
+                ActionButton(action: Action(id: button.action.id, title: actionTitle, role: button.action.role, parameters: button.action.parameters,
+                                            confirmation: button.action.confirmation, requires: button.action.requires),
+                             compact: true, handler: handler)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The row names the action; the button says the verb.
+    private var actionTitle: String {
+        button.action.title.split(separator: " ").first.map(String.init) ?? button.action.title
     }
 }
 
@@ -268,12 +398,13 @@ struct StepsView: View {
     let steps: StepsWidget
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(steps.title).font(.headline)
+        FormBlock(title: steps.title) {
             ForEach(Array(steps.steps.enumerated()), id: \.offset) { index, step in
-                HStack(alignment: .top, spacing: 8) {
-                    Text("\(index + 1).").font(.callout.monospacedDigit()).foregroundStyle(.secondary)
-                    Text(step).font(.callout)
+                if index > 0 { FormDivider() }
+                FormRow {
+                    Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary).frame(width: 18)
+                    Text(step)
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -287,11 +418,12 @@ struct TextWidgetView: View {
         switch text.style {
         case .title: Text(text.text).font(.title2.weight(.semibold))
         case .body: Text(text.text).font(.body)
-        case .caption: Text(text.text).font(.caption).foregroundStyle(.secondary)
+        case .caption: Text(text.text).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
         }
     }
 }
 
+/// A titled part of a page: the header (its subtitle the tooltip, a chevron when it folds), then its widgets.
 struct SectionView: View {
     let section: SectionWidget
     let handler: ActionHandler
@@ -304,18 +436,16 @@ struct SectionView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(section.title).font(.title3.weight(.semibold))
-                    if let subtitle = section.subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
-                }
-                Spacer()
+        VStack(alignment: .leading, spacing: 6) {
+            FormHeader(title: section.title, help: section.subtitle) {
                 if section.isCollapsible {
-                    Button { withAnimation { collapsed.toggle() } } label: { Image(systemName: collapsed ? "chevron.down" : "chevron.up") }
-                        .buttonStyle(.borderless)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(collapsed ? 0 : 90))
                 }
             }
+            .onTapGesture { if section.isCollapsible { withAnimation(Theme.hover) { collapsed.toggle() } } }
             if !collapsed {
                 ForEach(section.widgets) { WidgetView(widget: $0, handler: handler) }
             }

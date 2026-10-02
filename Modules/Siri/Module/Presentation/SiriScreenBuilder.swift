@@ -13,24 +13,29 @@ enum SiriScreenBuilder {
         }
     }
 
-    static func statusBanner(_ snapshot: SiriSnapshot) -> Banner {
+    /// What the state means, for the switch's subtitle.
+    static func stateLine(_ snapshot: SiriSnapshot) -> String {
+        switch snapshot.status.state {
+        case .protected: return "Off. Its model is not installed."
+        case .releasing: return "Off. macOS is removing its model, which usually takes a few minutes."
+        case .atRisk: return "On. macOS may download its model (about 12 GB)."
+        case .unknown: return "MacSpace cannot read the state without Full Disk Access."
+        }
+    }
+
+    /// A banner only when the user has something to do.
+    static func statusBanner(_ snapshot: SiriSnapshot) -> Banner? {
         let elsewhere = snapshot.accounts?.enabledElsewhere ?? []
         switch snapshot.status.state {
-        case .protected:
-            if !elsewhere.isEmpty {
-                return Banner(id: "status", severity: .warning, title: "Off here, but still installed",
-                              message: "Apple Intelligence is on in \(elsewhere.map(\.label).joined(separator: ", ")). Its models are shared by every account, so they stay on this Mac.")
-            }
-            return Banner(id: "status", severity: .success, title: "Apple Intelligence is off", message: "It is unavailable in this account and its model is not installed.")
-        case .releasing:
-            return Banner(id: "status", severity: .info, title: "Apple Intelligence is off; macOS is removing its model",
-                          message: "This usually takes a few minutes. Remove leftovers below if it lingers.")
-        case .atRisk:
-            return Banner(id: "status", severity: .warning, title: "Apple Intelligence is on",
-                          message: "macOS may download its on-device model (about 12 GB). Switch it off below.")
+        case .protected where !elsewhere.isEmpty:
+            return Banner(id: "status", severity: .warning, title: "Still installed for another account",
+                          message: "Apple Intelligence is on in \(elsewhere.map(\.label).joined(separator: ", ")). Its models are shared, so they stay on this Mac.")
         case .unknown:
-            return Banner(id: "status", severity: .info, title: "Cannot read the Apple Intelligence state",
-                          message: "Grant Full Disk Access in Settings so MacSpace can verify the switch.")
+            return Banner(id: "status", severity: .info, title: "Allow Full Disk Access",
+                          message: "MacSpace needs it to read and verify the switch.",
+                          action: Action(id: "openFullDiskAccess", title: "Allow", role: .prominent))
+        default:
+            return nil
         }
     }
 
@@ -40,15 +45,32 @@ enum SiriScreenBuilder {
                message: "macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.")
     }
 
-    static func summary(_ snapshot: SiriSnapshot) -> ScreenWidget {
-        if snapshot.isVirtualMachine { return .banner(virtualMachineBanner()) }
-        var banner = statusBanner(snapshot)
-        if snapshot.status.state == .atRisk {
-            banner.action = Action(id: "toggle", title: "Switch off", role: .prominent, parameters: ["id": "ai", "value": "false"],
-                                   confirmation: disableConfirmation(snapshot), requires: [.fullDiskAccess])
+    /// The tile shows the switch itself: off and quiet while Apple Intelligence stays off, glowing while it is on. What can be purged
+    /// is the meter, against the ~12 GB the on-device model takes.
+    static func tile(_ snapshot: SiriSnapshot) -> Tile {
+        if snapshot.isVirtualMachine {
+            return Tile(title: "siri & AI", status: "not in a virtual machine", graphic: .state(on: false, alarming: false, detail: "not available here", meter: nil, meterIsActionable: false))
         }
-        return .banner(banner)
+        let elsewhere = !(snapshot.accounts?.enabledElsewhere ?? []).isEmpty
+        let purge = snapshot.purgeableAssetsBytes.flatMap { $0 >= purgeThreshold ? $0 : nil }
+        let on = snapshot.status.state == .atRisk
+        let detail: String
+        if let purge { detail = "\(ByteFormat.string(purge)) of models can be purged" }
+        else if on { detail = "macOS may download its model (about 12 GB)" }
+        else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
+        else { detail = "no models left on disk" }
+        let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: purge.map { min(Double($0) / 12_000_000_000, 1) },
+                                        meterIsActionable: purge != nil)
+        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) to purge", graphic: graphic) }
+        switch snapshot.status.state {
+        case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
+        case .releasing: return Tile(title: "siri & AI", status: "removing the model", graphic: graphic)
+        case .atRisk: return Tile(title: "siri & AI", status: "AI is on", needsAttention: true, graphic: graphic)
+        case .unknown: return Tile(title: "siri & AI", status: "state unknown", graphic: graphic)
+        }
     }
+
+    static let purgeThreshold: UInt64 = 50_000_000
 
     static func disableConfirmation(_ snapshot: SiriSnapshot) -> Confirmation {
         var message = "Siri's language will differ from your system language, which makes Apple Intelligence unavailable. macOS then removes its model."
@@ -61,15 +83,20 @@ enum SiriScreenBuilder {
 
     static func screen(_ snapshot: SiriSnapshot) -> Screen {
         if snapshot.isVirtualMachine {
-            return Screen(title: "Siri & Apple Intelligence", subtitle: "Switch Apple Intelligence off and reclaim the space its models take.", widgets: [.banner(virtualMachineBanner())])
+            return Screen(title: "Siri & Apple Intelligence", widgets: [.banner(virtualMachineBanner())])
         }
-        var widgets: [ScreenWidget] = [.banner(statusBanner(snapshot)), .toggles(switchList(snapshot))]
+        var widgets: [ScreenWidget] = []
+        if let banner = statusBanner(snapshot) { widgets.append(.banner(banner)) }
+        widgets.append(.toggles(switchList(snapshot)))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
-        widgets.append(modelsSection(snapshot))
-        if let watch = snapshot.watch {
-            widgets.append(.text(TextWidget(id: "watch", text: "Last background check: \(watch.state.rawValue), \(watch.lastChecked.formatted(date: .abbreviated, time: .shortened)).", style: .caption)))
-        }
-        return Screen(title: "Siri & Apple Intelligence", subtitle: "Switch Apple Intelligence off and reclaim the space its models take.", widgets: widgets)
+        if let models = modelsSection(snapshot) { widgets.append(models) }
+        return Screen(title: "Siri & Apple Intelligence", primary: purge(snapshot), widgets: widgets)
+    }
+
+    static func purge(_ snapshot: SiriSnapshot) -> Action? {
+        guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold else { return nil }
+        return Action(id: "purgeAssets", title: "Purge \(ByteFormat.string(bytes))", symbol: "trash", role: .prominent,
+                      confirmation: Confirmation(title: "Remove unused system assets?", message: "macOS deletes the downloads it no longer needs, about \(ByteFormat.string(bytes)), including Apple Intelligence models it has released. Anything needed again is downloaded again.", confirmTitle: "Remove"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {
@@ -86,10 +113,11 @@ enum SiriScreenBuilder {
             ? disableConfirmation(snapshot)
             : Confirmation(title: "Turn Apple Intelligence back on?", message: "Siri's language returns to your system language. macOS may download the on-device model (about 12 GB).", confirmTitle: "Turn on")
         let state = snapshot.status.state
-        return ToggleList(id: "switch", title: "Apple Intelligence", footnote: "Applies to this account on this Mac. Whether the Siri language syncs through iCloud is unverified.", rows: [
-            ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: subtitle, isOn: available, isEnabled: enabled,
-                      badge: state == .protected ? Badge("Verified off", tone: .positive) : (state == .atRisk ? Badge("On", tone: .caution) : nil),
-                      detail: snapshot.status.reasons.joined(separator: " "),
+        let detail = ([subtitle, "Applies to this account on this Mac. Whether the Siri language syncs through iCloud is unverified."] + snapshot.status.reasons).joined(separator: " ")
+        return ToggleList(id: "switch", rows: [
+            ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
+                      badge: state == .atRisk ? Badge("On", tone: .caution) : nil,
+                      detail: detail,
                       action: Action(id: "toggle", title: "Apple Intelligence", parameters: ["id": "ai"], confirmation: confirmation, requires: [.fullDiskAccess])),
         ])
     }
@@ -111,25 +139,19 @@ enum SiriScreenBuilder {
                                       widgets: [.list(ListWidget(id: "accounts-list", rows: rows))]))
     }
 
-    static func modelsSection(_ snapshot: SiriSnapshot) -> ScreenWidget {
-        var widgets: [ScreenWidget] = []
-        if let bytes = snapshot.purgeableAssetsBytes, bytes >= 50_000_000 {
-            widgets.append(.button(ButtonWidget(id: "purge", action: Action(
-                id: "purgeAssets", title: "Remove unused assets (\(ByteFormat.string(bytes)))", symbol: "trash", role: .prominent,
-                confirmation: Confirmation(title: "Remove unused system assets?", message: "macOS deletes the downloads it no longer needs, about \(ByteFormat.string(bytes)). Anything needed again is downloaded again.", confirmTitle: "Remove")),
-                footnote: "Apple Intelligence models that macOS has released show up here.")))
-        } else {
-            widgets.append(.text(TextWidget(id: "no-purge", text: "No unused system assets are waiting to be deleted.", style: .caption)))
-        }
+    /// For models that stay installed although Apple Intelligence is off. Only offered while it is off.
+    static func modelsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {
+        guard snapshot.status.state == .protected || snapshot.status.state == .releasing else { return nil }
+        let widget: ScreenWidget
         if snapshot.releaseBlockers.isEmpty {
-            widgets.append(.button(ButtonWidget(id: "release", action: Action(
-                id: "releaseModels", title: "Release and delete leftover models", symbol: "arrow.triangle.2.circlepath",
+            widget = .button(ButtonWidget(id: "release", action: Action(
+                id: "releaseModels", title: "Release leftover models", symbol: "arrow.triangle.2.circlepath",
                 confirmation: Confirmation(title: "Release the models?", message: "For about a minute Apple Intelligence is briefly available and Siri's language changes; both are restored afterwards. Then macOS deletes the models it no longer needs.", confirmTitle: "Release"),
-                requires: [.fullDiskAccess]),
-                footnote: "Use this when models stay installed although Apple Intelligence is off.")))
+                requires: [.fullDiskAccess])))
         } else {
-            widgets.append(.steps(StepsWidget(id: "blockers", title: "Before the models can be released", steps: snapshot.releaseBlockers)))
+            widget = .steps(StepsWidget(id: "blockers", title: "Before the models can be released", steps: snapshot.releaseBlockers))
         }
-        return .section(SectionWidget(id: "models", title: "Leftover models", subtitle: "Space macOS keeps after Apple Intelligence is switched off.", widgets: widgets))
+        return .section(SectionWidget(id: "models", title: "Models still installed?", subtitle: "If macOS keeps them after the switch is off, release them, then Purge.",
+                                      widgets: [widget], isCollapsible: true, startsCollapsed: true))
     }
 }
