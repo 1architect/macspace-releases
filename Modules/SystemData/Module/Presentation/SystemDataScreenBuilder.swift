@@ -69,7 +69,7 @@ enum SystemDataScreenBuilder {
     static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
             .compactMap(\.expectedReclaimBytes).reduce(0, +)
-        return caches + (snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
+        return caches + (snapshot.purgeableAssetsBytes ?? 0) + (snapshot.purgeableFilesBytes ?? 0) + snapshot.reports.totalBytes
     }
 
     /// What a cleanup must reach to be worth a row: smaller amounts are noise.
@@ -117,7 +117,7 @@ enum SystemDataScreenBuilder {
         guard total >= worthARow else { return nil }
         return Action(id: "cleanAll", title: "Clean \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
                       confirmation: Confirmation(title: "Clean \(ByteFormat.string(total))?",
-                                                 message: "Deletes the caches, old reports and unused system assets listed under Free now. None of it holds your files, and macOS recreates what it needs.",
+                                                 message: "Deletes the caches, old reports, unused system assets and purgeable app files listed under Free now. None of it holds your documents, and macOS and apps recreate or download again what they need.",
                                                  confirmTitle: "Clean"))
     }
 
@@ -144,6 +144,12 @@ enum SystemDataScreenBuilder {
                             detail: "Downloads macOS no longer needs, such as Apple Intelligence models released by the off-switch. macOS deletes them only when the disk is nearly full; this does it now. Anything needed again is downloaded again.",
                             actions: [Action(id: "purgeAssets", title: "Remove", confirmation: Confirmation(
                                 title: "Remove unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Remove"))]))
+        }
+        if let files = snapshot.purgeableFilesBytes, files >= assetsThreshold {
+            rows.append(Row(id: "purgeable-files", title: "Purgeable app files", trailing: ByteFormat.string(files), symbol: "arrow.down.circle.dotted",
+                            detail: "Caches and downloads apps told macOS it may delete; macOS counts them as purgeable and deletes them only when the disk is nearly full. This does it now. Apps download again what they need.",
+                            actions: [Action(id: "purgeFiles", title: "Remove", confirmation: Confirmation(
+                                title: "Remove purgeable app files?", message: "macOS deletes the files apps marked purgeable, about \(ByteFormat.string(files)). Apps download again what they need.", confirmTitle: "Remove"))]))
         }
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: "Free now", widgets: [.list(ListWidget(id: "free-list", rows: rows))]))

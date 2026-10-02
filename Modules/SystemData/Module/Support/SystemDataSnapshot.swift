@@ -11,6 +11,8 @@ struct SystemDataSnapshot: Sendable {
     var reports: CleanupPlan
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
+    /// Bytes of files apps marked purgeable (CacheDelete's fspurgeable_data at urgency 3); nil when CacheDelete is unavailable.
+    var purgeableFilesBytes: UInt64? = nil
     var takenAt: Date
     /// The helper was asked to measure the places only root can read.
     var helperTried = false
@@ -85,25 +87,27 @@ actor SystemDataStore {
     static func liveSnapshot() -> SystemDataSnapshot {
         let report = SystemDataInspector().inspect()
         let purgeable = livePurgeable()
+        let files = livePurgeable(service: CacheDeleteService.fsPurgeableData, urgency: CacheDeleteService.fsPurgeableDataUrgency)
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
+        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(),
+                                  purgeableFilesBytes: files, takenAt: Date())
     }
 
-    /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much is purgeable.
-    /// Only mobileassetd's figure is used: the app-container-caches service also reports a figure (1.15 GB on 26B5091g), but
-    /// purging it removed under 100 MB at any urgency, so it is not offered.
-    static func livePurgeable() -> UInt64? {
+    /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much `service` could purge.
+    /// Only mobileassetd's and fspurgeable_data's figures are used: the app-container-caches service also reports a figure (1.15 GB on
+    /// 26B5091g), but purging it removed under 100 MB at any urgency, so it is not offered; Quick Look thumbnails removed nothing.
+    static func livePurgeable(service: String = CacheDeleteService.mobileAsset, urgency: Int = 1) -> UInt64? {
         let client = CacheDeleteClient()
         let all: [String: UInt64]?
         if let cli = ToolLocator.cli() {
             client.ensureValidated(executable: cli)
             guard client.support == .validated else { return nil }
-            all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli)
+            all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency)
         } else {
-            all = client.support == .validated ? client.purgeableByService() : nil
+            all = client.support == .validated ? client.purgeableByService(urgency: urgency) : nil
         }
-        return all?[CacheDeleteService.mobileAsset]
+        return all?[service]
     }
 }

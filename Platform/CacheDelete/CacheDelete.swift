@@ -11,17 +11,19 @@ public enum CacheDeleteService {
     public static let mobileAsset = "com.apple.mobileassetd.cache-delete"
     /// Caches inside apps' sandbox containers (1.15 GB purgeable on 26B5091g); macOS purges them itself when space runs low.
     public static let appContainerCaches = "com.apple.cache_delete_app_container_caches"
-    /// The only services MacSpace asks to purge.
-    public static let purgeable: Set<String> = [mobileAsset, appContainerCaches]
-    /// Files apps marked purgeable (APFS); 4.89 GB at urgency 3, 339 MB at urgency 1-2, on the development Mac (2026-10-02).
+    /// Files apps marked purgeable (APFS); 4.89 GB at urgency 3, 339 MB at urgency 1-2, on the development Mac (2026-10-02). Purging
+    /// it at urgency 3 freed 4.66 GB, measured on the volume, as a normal user. Asked at `fsPurgeableDataUrgency`.
     public static let fsPurgeableData = "com.apple.fspurgeable_data"
+    public static let fsPurgeableDataUrgency = 3
+    /// The only services MacSpace asks to purge.
+    public static let purgeable: Set<String> = [mobileAsset, appContainerCaches, fsPurgeableData]
     /// Documents marked purgeable; 633 MB at urgency 3 on the development Mac.
     public static let fsPurgeableDocument = "com.apple.fspurgeable_document"
     /// Quick Look thumbnails; 330 MB at urgency 3 on the development Mac.
     public static let quickLookThumbnails = "com.apple.quicklook.ThumbnailsAgent.CacheDelete"
     /// Services under measurement: purged only from the CLI with `--experiment`, never from the app, until a measured purge shows
     /// what they free and what they take away.
-    public static let experimental: Set<String> = [fsPurgeableData, fsPurgeableDocument, quickLookThumbnails]
+    public static let experimental: Set<String> = [fsPurgeableDocument, quickLookThumbnails]
 }
 
 /// Whether MacSpace may call CacheDelete on this system. The purge uses a private function whose signature was taken
@@ -287,17 +289,18 @@ public struct CacheDeleteClient {
     }
 
     /// Per-service purgeable bytes, asked in `executable`. nil on any failure.
-    public static func purgeableByServiceInSubprocess(executable: URL, allowUnverified: Bool = false) -> [String: UInt64]? {
-        let output = runSubprocess(executable, ["purge-assets", "--all-services", "--json"] + (allowUnverified ? ["--allow-unverified"] : []))
+    public static func purgeableByServiceInSubprocess(executable: URL, allowUnverified: Bool = false, urgency: Int = 1) -> [String: UInt64]? {
+        let output = runSubprocess(executable, ["purge-assets", "--all-services", "--json", "--urgency", "\(urgency)"] + (allowUnverified ? ["--allow-unverified"] : []))
         guard output.status == 0, let object = try? JSONSerialization.jsonObject(with: output.data) as? [String: Any] else { return nil }
         return object.compactMapValues { ($0 as? NSNumber)?.uint64Value }
     }
 
     /// Runs the purge of one service (mobileassetd by default) in `executable`; a crash is reported as an error result.
     public static func purgeInSubprocess(executable: URL, allowUnverified: Bool = false, service: String = CacheDeleteService.mobileAsset,
-                                         freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
+                                         urgency: Int = 1, freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
-        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service] + (allowUnverified ? ["--allow-unverified"] : []))
+        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service, "--urgency", "\(urgency)"]
+                                   + (allowUnverified ? ["--allow-unverified"] : []))
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         if let result = try? decoder.decode(CacheDeletePurgeResult.self, from: output.data) { return result }

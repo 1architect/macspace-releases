@@ -93,6 +93,20 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [], purgeable: 1_000_000)), "1 MB is not worth a button")
     }
 
+    func testPurgeableAppFilesGetARowAndCountTowardClean() throws {
+        var snap = snapshot(items: [], purgeable: 12_000_000_000)
+        snap.purgeableFilesBytes = 4_660_000_000
+        guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), ["assets", "purgeable-files"])
+        XCTAssertEqual(list.rows[1].actions.map(\.id), ["purgeFiles"])
+        XCTAssertNotNil(list.rows[1].actions[0].confirmation, "removing purgeable files asks first")
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 12_000_000_000 + 4_660_000_000)
+
+        snap.purgeableFilesBytes = 1_000_000
+        guard case let .section(small)? = SystemDataScreenBuilder.freeNow(snap), case let .list(smallList) = small.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(smallList.rows.map(\.id), ["assets"], "1 MB of purgeable files is not worth a button")
+    }
+
     func testManualSectionCarriesTheGuideStepsAndOnlyMeasuredLargeEntries() throws {
         let guide = ManualCleanupGuide(app: "WhatsApp", frees: "media", steps: ["Open Storage", "Delete"], verified: false)
         let snap = snapshot(items: [], manual: [ManualCleanupSummary(app: "WhatsApp", bytes: 4_700_000_000, itemIDs: ["container:wa"], guide: guide),

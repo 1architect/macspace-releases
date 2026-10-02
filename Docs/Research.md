@@ -87,7 +87,8 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
 - **Measured – purging at urgency 3 (2026-10-02, development Mac, as a normal user, from the CLI with `--experiment`).**
   `fspurgeable_data` reported 4.66 GB removed and the Data volume's free space rose by 4.66 GB (97.55 → 102.21 GB). Quick Look
   thumbnails reported 330 MB purgeable but removed nothing. Which apps' files went is not known, nor how fast they come back.
-  `fspurgeable_document` not tried.
+  `fspurgeable_document` not tried. System Data now offers the `fspurgeable_data` purge as "Purgeable app files" under Free now, and
+  Clean includes it; the other two stay CLI-only (`--experiment`).
 
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
