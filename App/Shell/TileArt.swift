@@ -271,7 +271,7 @@ struct BlocksView: View {
                 .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 5)
-                .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .topLeading)).animation(.smooth(duration: 0.25)))
+                .transition(.opacity.combined(with: .scale(scale: 0.86, anchor: .topLeading)).animation(Theme.layout))
             }
         }
         .frame(width: max(rect.width, 0), height: max(rect.height, 0), alignment: .topLeading)
@@ -456,7 +456,7 @@ struct GaugeView: View {
                 Text(label).font(.system(size: min(24, side * 0.2), weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
                 if side >= 90 {
                     Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
-                        .transition(.opacity.animation(.smooth(duration: 0.25)))
+                        .transition(.opacity.combined(with: .scale(scale: 0.86)).animation(Theme.layout))
                 }
             }
             .lineLimit(1)

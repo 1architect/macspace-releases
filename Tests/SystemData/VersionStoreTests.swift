@@ -97,6 +97,9 @@ final class VersionStoreTests: XCTestCase {
         guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.freeNow(snap)), case let .list(list) = section.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.map(\.id), ["versions"], "listed under Free now")
         XCTAssertNil(SystemDataScreenBuilder.cleanAll(snap), "Clean never deletes version history")
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 6_000_000_000, "but it counts as space that can be freed")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).reclaimableBytes, 6_000_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.blocks(snap).map(\.id), ["freeable"], "taken out of the versions block")
         let action = try XCTUnwrap(list.rows.first?.actions.first)
         XCTAssertEqual(action.id, "deleteVersions")
         XCTAssertEqual(action.role, .destructive)

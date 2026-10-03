@@ -61,9 +61,10 @@ struct TileFace: View {
 
     /// Room left under the chart for the caption.
     static let captionBand: CGFloat = 62
-    /// How what comes and goes with the tile's size (resizing the window) comes and goes. The animation goes with the transition, not on
-    /// the view: an animation on the view would also animate every frame of the live resize, and the tiles would trail the window.
-    static let resizeTransition = AnyTransition.opacity.combined(with: .scale(scale: 0.92)).animation(.smooth(duration: 0.3))
+    /// How what comes and goes with the tile's size (resizing the window) comes and goes: as the tiles do when the window opens. The
+    /// animation goes with the transition, not on the view: an animation on the view would also animate every frame of the live
+    /// resize, and the tiles would trail the window.
+    static let resizeTransition = AnyTransition.opacity.combined(with: .scale(scale: 0.86)).animation(Theme.layout)
 
     /// Where a blocks chart sits in a tile of `size`.
     static func chartArea(in size: CGSize) -> CGRect {
@@ -160,7 +161,7 @@ struct TileFace: View {
             // Clear of the window's close button, which sits in this tile's top-left corner. A ring needs height; a short tile gets a
             // bar across it instead, centered in the room between the close button and the caption (the caption says the figures).
             let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
-            // Resizing the window across the threshold swaps one for the other: they cross-fade, and the new one draws in.
+            // Resizing the window across the threshold swaps one for the other: one shrinks away as the other grows in and draws in.
             if side >= 100 {
                 GaugeView(value: value, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
                     .frame(width: side, height: side)
@@ -211,6 +212,11 @@ struct HomeView: View {
     /// their places are still laid out and recorded for the zoom back.
     var dormant = false
     @State private var appeared = false
+    /// Resizing the window changed how the tiles are arranged: they leave as when the window closes, the grid takes the new
+    /// arrangement, and they come in again as when it opens. Until then the old arrangement stays drawn (`shownArrangement`).
+    @State private var relayout = false
+    @State private var shownArrangement: Arrangement?
+    @State private var relayoutTask: Task<Void, Never>?
     /// The tile under the pointer, and where on it in coarse steps. Held here, not in each tile, because a tile's ground and its face
     /// are drawn in different layers and both lift and lean with it.
     @State private var pointerTile: Destination?
@@ -222,6 +228,27 @@ struct HomeView: View {
     static func depopulateDuration(tiles: Int) -> Double { 0.26 + Double(max(tiles - 1, 0)) * Theme.depopulateStagger }
 
     static let minimumRowHeight: CGFloat = 120
+
+    /// How the tiles are arranged in the glass: the number of columns, and whether they scroll because they do not fit.
+    struct Arrangement: Equatable {
+        var columns: Int
+        var scrolls: Bool
+    }
+
+    private struct Resize: Equatable {
+        var arrangement: Arrangement
+        var sizes: [Bento.Size]
+    }
+
+    static func arrangement(for size: CGSize, sizes: [Bento.Size]) -> Arrangement {
+        let columns = Bento.columns(for: size.width)
+        let rows = Bento.rows(Bento.pack(sizes: sizes, columns: columns))
+        return Arrangement(columns: columns, scrolls: needed(rows: rows) > size.height)
+    }
+
+    static func needed(rows: Int) -> CGFloat {
+        CGFloat(rows) * minimumRowHeight + CGFloat(max(rows - 1, 0)) * Theme.spacing
+    }
 
     /// The disk is violet and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
@@ -280,14 +307,13 @@ struct HomeView: View {
         .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
         .animation(Theme.layout, value: tiles.map(\.id))
         .animation(Theme.layout, value: tiles.map(\.size))
-        .animation(Theme.layout, value: columns)
     }
 
     /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
     /// its place, the lift and lean (or tilt) under the pointer, and hiding under the zoom.
     private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect) -> TilePlacement {
         let moves = pointerTile == tile.destination
-        return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
+        return TilePlacement(shown: appeared && !closing && !relayout, closing: closing || relayout, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
                              turns: !design.glass, reduceMotion: reduceMotion,
@@ -306,35 +332,65 @@ struct HomeView: View {
         }
     }
 
+    /// The arrangement the window's new size calls for differs from the one drawn: the tiles leave, then come back in the new one.
+    /// Resizing on through more changes only pushes their return back. With a page open, or while the window opens or closes, the
+    /// grid simply follows.
+    private func rearrange(from old: Arrangement, tiles count: Int) {
+        relayoutTask?.cancel()
+        guard appeared, !closing, !dormant, hiddenTile == nil else {
+            shownArrangement = nil
+            relayout = false
+            return
+        }
+        if shownArrangement == nil { shownArrangement = old }
+        relayout = true
+        relayoutTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.depopulateDuration(tiles: count)))
+            guard !Task.isCancelled else { return }
+            // The new places are taken while the tiles are out of sight, without sliding there.
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { shownArrangement = nil }
+            try? await Task.sleep(for: .milliseconds(16))
+            guard !Task.isCancelled else { return }
+            relayout = false
+        }
+    }
+
     var body: some View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
+        let sizes = tiles.map(\.size)
         GeometryReader { proxy in
-            let columns = Bento.columns(for: proxy.size.width)
-            let placements = Bento.pack(sizes: tiles.map(\.size), columns: columns)
+            let wanted = Self.arrangement(for: proxy.size, sizes: sizes)
+            let arrangement = shownArrangement ?? wanted
+            let columns = arrangement.columns
+            let placements = Bento.pack(sizes: sizes, columns: columns)
             let rows = Bento.rows(placements)
-            let needed = CGFloat(rows) * Self.minimumRowHeight + CGFloat(max(rows - 1, 0)) * Theme.spacing
-            let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, needed))
+            let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, Self.needed(rows: rows)))
             // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the hover
             // lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
             let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
-            // Crossing the size where the tiles stop fitting swaps the plain grid for a scrolling one, which draws its tiles anew: the
-            // two cross-fade instead of the tiles blinking out and back.
-            if needed <= proxy.size.height {
-                // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to
-                // every frame the window draws.
-                let _ = (frames.scrollOffset = 0)
-                grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
-                    .transition(.opacity.animation(.smooth(duration: 0.3)))
-            } else {
-                ScrollView {
+            Group {
+                if !arrangement.scrolls {
+                    // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to
+                    // every frame the window draws.
+                    let _ = (frames.scrollOffset = 0)
                     grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
+                } else {
+                    ScrollView {
+                        grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
+                    }
+                    .scrollIndicators(.never)
+                    .scrollEdgeEffectHidden(true, for: .all)
+                    // A lifted tile may reach into the glass frame; the scroll view must not cut it.
+                    .scrollClipDisabled()
+                    .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
                 }
-                .transition(.opacity.animation(.smooth(duration: 0.3)))
-                .scrollIndicators(.never)
-                .scrollEdgeEffectHidden(true, for: .all)
-                // A lifted tile may reach into the glass frame; the scroll view must not cut it.
-                .scrollClipDisabled()
-                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
+            }
+            // Only a new size re-arranges this way: a module switched on or off, or a new featured tile, keeps the tiles gliding to
+            // their new places (`grid`).
+            .onChange(of: Resize(arrangement: wanted, sizes: sizes)) { old, new in
+                if old.sizes == new.sizes { rearrange(from: old.arrangement, tiles: tiles.count) }
             }
         }
         // Each time the window opens, once the tiles are known: a moment later, so the change animates instead of landing in the
@@ -344,7 +400,12 @@ struct HomeView: View {
             try? await Task.sleep(for: .milliseconds(30))
             appeared = true
         }
-        .onDisappear { appeared = false }
+        .onDisappear {
+            appeared = false
+            relayoutTask?.cancel()
+            relayout = false
+            shownArrangement = nil
+        }
     }
 }
 

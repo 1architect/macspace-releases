@@ -64,12 +64,24 @@ enum SystemDataScreenBuilder {
         return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
     }
 
-    /// Bytes MacSpace can free right now without the user doing anything in another app. Caches of apps that are open
-    /// are left out: they cannot be cleaned until the app quits.
-    static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+    /// Bytes Clean frees: caches, old reports and unused system assets. Caches of apps that are open are left out: they cannot be
+    /// cleaned until the app quits.
+    static func cleanBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
             .compactMap(\.expectedReclaimBytes).reduce(0, +)
         return caches + (snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
+    }
+
+    /// Document version history when it is offered under Free now (its own Delete button, not Clean).
+    static func versionHistoryBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        guard versionsRow(snapshot) != nil else { return 0 }
+        return snapshot.report.items.first { $0.id == "versions:documents" }?.bytes ?? 0
+    }
+
+    /// Bytes MacSpace can free right now without the user doing anything in another app: what Clean frees and the version history.
+    /// This is the tile's figure and its "can be freed" block.
+    static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        cleanBytes(snapshot) + versionHistoryBytes(snapshot)
     }
 
     /// What a cleanup must reach to be worth a row: smaller amounts are noise.
@@ -82,16 +94,19 @@ enum SystemDataScreenBuilder {
                     reclaimableBytes: freeable >= worthARow ? freeable : nil)
     }
 
-    /// What fills System Data as blocks, largest first, with what Clean frees split out as its own block in the caution tone (taken out
-    /// of the caches it mostly comes from, so the total stays the same).
+    /// What fills System Data as blocks, largest first, with what can be freed split out as its own block in the caution tone (what
+    /// Clean frees taken out of the caches it mostly comes from, the version history out of its own block, so the total stays the same).
     static func blocks(_ snapshot: SystemDataSnapshot) -> [UsageSegment] {
         var segments = usage(snapshot).segments
         let freeable = freeableBytes(snapshot)
         if freeable >= worthARow {
-            if let caches = segments.firstIndex(where: { $0.id == "caches" }) {
-                segments[caches].bytes -= min(freeable, segments[caches].bytes)
-                if segments[caches].bytes == 0 { segments.remove(at: caches) }
+            func take(_ bytes: UInt64, from id: String) {
+                guard let index = segments.firstIndex(where: { $0.id == id }) else { return }
+                segments[index].bytes -= min(bytes, segments[index].bytes)
+                if segments[index].bytes == 0 { segments.remove(at: index) }
             }
+            take(cleanBytes(snapshot), from: "caches")
+            take(versionHistoryBytes(snapshot), from: "versions")
             segments.append(UsageSegment(id: "freeable", label: "Can be freed", bytes: freeable, tone: .caution))
         }
         return segments.sorted { $0.bytes > $1.bytes }
@@ -114,7 +129,7 @@ enum SystemDataScreenBuilder {
     }
 
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
-        let total = freeableBytes(snapshot)
+        let total = cleanBytes(snapshot)
         guard total >= worthARow else { return nil }
         var message = "Deletes the caches, old reports and unused system assets listed under Free now. None of it holds your files, and macOS recreates what it needs."
         if versionsRow(snapshot) != nil { message += " Document version history is not deleted: it has its own Delete button." }
