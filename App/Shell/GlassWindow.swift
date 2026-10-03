@@ -130,13 +130,20 @@ final class ShadowWindow: NSWindow {
     /// Takes the shape of the main window's glass, which sits inside its frame by the resize band.
     func follow(_ main: NSWindow) {
         let glass = main.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
-        let frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
+        var frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
+        // Never under the menu bar: with the window against it (tiled to half the screen, or filling it) the shadow showed as a dark
+        // band between the two and darkened the menu bar. The shadow stops where the window could reach, and a window at the top
+        // casts none upward.
+        if let screen = main.screen ?? NSScreen.main {
+            let top = max(min(frame.maxY, screen.visibleFrame.maxY - Theme.resizeMargin), glass.maxY)
+            frame.size.height = top - frame.minY
+        }
         let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor
         if frame != self.frame { setFrame(frame, display: false) }
         // A move only places the window again; the shadow is drawn anew only for a new size.
         guard redraw else { return }
         let bounds = CGRect(origin: .zero, size: frame.size)
-        let inner = bounds.insetBy(dx: Self.margin, dy: Self.margin)
+        let inner = CGRect(x: glass.minX - frame.minX, y: glass.minY - frame.minY, width: glass.width, height: glass.height)
         let radius = min(Theme.windowRadius, inner.width / 2, inner.height / 2)
         let shape = CGPath(roundedRect: inner, cornerWidth: radius, cornerHeight: radius, transform: nil)
         let outside = CGMutablePath()
