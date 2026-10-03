@@ -285,10 +285,13 @@ struct HomeView: View {
     /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
     /// its place, the lift and lean (or tilt) under the pointer, and hiding under the zoom.
     private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect) -> TilePlacement {
-        let hovered = pointerTile == tile.destination
+        // Glass tiles stay where they are under the pointer and only darken: the glass container draws the glass apart from the
+        // faces, and while a tile lifted or leaned its glass edge trailed behind its face, showing as a band along the tile. It also
+        // spares the glass a redraw on every frame of the movement. Flat tiles still lift and tilt.
+        let moves = pointerTile == tile.destination && !design.glass
         return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
-                             lifted: hovered && design.lift && tile.opens,
-                             lean: hovered && design.tilt && !reduceMotion ? lean : .center,
+                             lifted: moves && design.lift && tile.opens,
+                             lean: moves && design.tilt && !reduceMotion ? lean : .center,
                              turns: !design.glass, reduceMotion: reduceMotion, hidden: hiddenTile == tile.destination)
     }
 
