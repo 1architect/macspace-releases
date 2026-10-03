@@ -135,13 +135,39 @@ enum DebloatScreenBuilder {
             }
     }
 
+    /// The page's main button, which does what the switches most need: while a verified feature still runs, it switches them all off;
+    /// once they are all off, it turns back on everything MacSpace switched off. nil when neither applies.
+    static func primary(_ snapshot: DebloatSnapshot) -> Action? {
+        switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
+    }
+
+    /// Controls MacSpace switched off, whose saved values it can restore (including those macOS partly undid or waiting for approval).
+    static func switchedOff(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
+        snapshot.controls.filter { control in
+            guard let state = snapshot.status(control.id)?.state else { return false }
+            return state == .debloated || state == .awaitingApproval || state == .drifted
+        }
+    }
+
+    /// Turns back on every feature MacSpace switched off. nil when there is none.
+    static func turnAllBackOn(_ snapshot: DebloatSnapshot) -> Action? {
+        let controls = switchedOff(snapshot)
+        guard !controls.isEmpty else { return nil }
+        return Action(id: "restoreAll", title: "Turn all back on", symbol: "arrow.uturn.backward", role: .prominent,
+                      parameters: ["ids": controls.map(\.id).joined(separator: ",")],
+                      confirmation: Confirmation(title: "Turn all \(controls.count) features back on?",
+                                                 message: controls.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nMacSpace restores the values it saved before it changed them.",
+                                                 confirmTitle: "Turn on"),
+                      requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
+    }
+
     /// Switches off every feature verified on this macOS build that is still on. nil when there is none.
     static func switchOffRecommended(_ snapshot: DebloatSnapshot) -> Action? {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
-        return Action(id: "applyRecommended", title: "Switch off \(recommended.count) verified", symbol: "checkmark.shield", role: .prominent,
+        return Action(id: "applyRecommended", title: "Switch all off", symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Switch off the verified features?",
+                      confirmation: Confirmation(title: "Switch off \(recommended.count) verified features?",
                                                  message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Everything is written to an undo journal, so you can turn any of it back on.",
                                                  confirmTitle: "Switch off"),
                       requires: [.privilegedHelper])
@@ -168,6 +194,6 @@ enum DebloatScreenBuilder {
                                                footnote: "A switch shows whether the feature runs. Hover a row for what it changes.",
                                                rows: controls.map { row($0, snapshot) })))
         }
-        return Screen(title: "Debloat", primary: switchOffRecommended(snapshot), widgets: widgets)
+        return Screen(title: "Debloat", primary: primary(snapshot), widgets: widgets)
     }
 }

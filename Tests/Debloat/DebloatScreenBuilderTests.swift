@@ -92,6 +92,23 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertFalse(clean.widgets.contains { $0.id == "approval" || $0.id == "drifted" })
     }
 
+    func testTheMainButtonSwitchesAllOffThenTurnsAllBackOn() throws {
+        let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock, validated: true), status(helperControl.id, .debloated)]))
+        XCTAssertEqual(running.primary?.id, "applyRecommended", "a verified feature still runs")
+        XCTAssertEqual(running.primary?.role, .prominent)
+
+        let allOff = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .debloated, validated: true), status(helperControl.id, .debloated),
+                                                           status(profileControl.id, .awaitingApproval)]))
+        let restore = try XCTUnwrap(allOff.primary)
+        XCTAssertEqual(restore.id, "restoreAll")
+        XCTAssertEqual(restore.role, .prominent)
+        XCTAssertEqual(Set(restore.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id, profileControl.id])
+        XCTAssertEqual(restore.requires, [.privilegedHelper], "a root control is among them")
+        XCTAssertNotNil(restore.confirmation)
+
+        XCTAssertNil(DebloatScreenBuilder.screen(snapshot([])).primary, "nothing verified to switch off and nothing to restore")
+    }
+
     func testThePageOpensWithWhatNeedsTheUser() {
         let undone = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .drifted)]))
         XCTAssertEqual(undone.widgets.first?.id, "drifted")

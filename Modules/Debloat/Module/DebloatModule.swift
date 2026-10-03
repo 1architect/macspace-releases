@@ -35,6 +35,9 @@ public struct DebloatModule: MacSpaceModule {
         case "applyRecommended", "reapply":
             let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
             return await Self.change(.apply, ids, unverified: false, context: context, progress: progress)
+        case "restoreAll":
+            let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
+            return await Self.change(.revert, ids, unverified: false, context: context, progress: progress)
         case "openProfiles":
             if let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") { NSWorkspace.shared.open(url) }
             return ActionResult(outcome: .succeeded, message: "Opened System Settings.", refresh: false)
