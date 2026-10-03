@@ -398,10 +398,9 @@ struct GlowEdge: View {
 
 // MARK: Gauge
 
-/// An arc filled to a share, a lighter part right after it, and the share written in the middle. It draws in when it appears.
+/// An arc filled to a share, and the share written in the middle. It draws in when it appears.
 struct GaugeView: View {
     let value: Double
-    let extra: Double
     let label: String
     let sublabel: String
     let tint: TileTint
@@ -441,14 +440,12 @@ struct GaugeView: View {
     private func gauge(side: CGFloat) -> some View {
         let palette = design.palette(tint)
         let used = min(max(value, 0), 1) * Self.sweep * drawn
-        let more = min(max(extra, 0), 1 - min(value, 1)) * Self.sweep * drawn
         let band = min(9, max(4, side * 0.07))
         return ZStack {
             // Only the arcs in the glass container: it draws only glass, and the share written inside it was lost.
             GlassGroup {
                 ZStack {
                     Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
-                    Surface(shape: ArcBand(from: used, to: used + more, width: band, round: false), color: palette.step(3))
                     Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
                 }
             }
@@ -464,13 +461,11 @@ struct GaugeView: View {
     }
 }
 
-/// The gauge for a short tile: the share written large beside the close button, and a bar across the tile filled to it, with the
-/// lighter part right after.
+/// The gauge for a short tile: a bar across the tile filled to the share. The share and the disk's size are left to the caption.
 struct BarGaugeView: View {
+    static let height: CGFloat = 10
+
     let value: Double
-    let extra: Double
-    let label: String
-    let sublabel: String
     let tint: TileTint
     var loading = false
     @Environment(\.design) private var design
@@ -480,40 +475,28 @@ struct BarGaugeView: View {
     var body: some View {
         let palette = design.palette(tint)
         let used = min(max(value, 0), 1) * drawn
-        let more = min(max(extra, 0), 1 - min(max(value, 0), 1)) * drawn
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(label).font(.system(size: 28, weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
-                Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            // Clear of the close button in the tile's top-left corner.
-            .padding(.leading, GlassCircleButton.margin + GlassCircleButton.diameter + 10 - 15)
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    GlassGroup {
-                        ZStack(alignment: .leading) {
-                            Surface(shape: Capsule(), color: palette.step(1))
-                            Surface(shape: Capsule(), color: palette.step(3)).frame(width: proxy.size.width * (used + more))
-                            Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
-                        }
-                    }
-                    // While loading, a light runs along the bar.
-                    if loading && !reduceMotion {
-                        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
-                            let runner = 0.22
-                            let from = LoadingWave.position(context.date) * (1 + runner) - runner
-                            Surface(shape: Capsule(), color: palette.step(5))
-                                .frame(width: proxy.size.width * (min(from + runner, 1) - max(from, 0)))
-                                .offset(x: proxy.size.width * max(from, 0))
-                        }
-                        .transition(.opacity)
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                GlassGroup {
+                    ZStack(alignment: .leading) {
+                        Surface(shape: Capsule(), color: palette.step(1))
+                        Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
                     }
                 }
+                // While loading, a light runs along the bar.
+                if loading && !reduceMotion {
+                    TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                        let runner = 0.22
+                        let from = LoadingWave.position(context.date) * (1 + runner) - runner
+                        Surface(shape: Capsule(), color: palette.step(5))
+                            .frame(width: proxy.size.width * (min(from + runner, 1) - max(from, 0)))
+                            .offset(x: proxy.size.width * max(from, 0))
+                    }
+                    .transition(.opacity)
+                }
             }
-            .frame(height: 10)
         }
+        .frame(height: Self.height)
         .animation(.smooth(duration: 0.4), value: loading)
         .animation(Theme.value, value: value)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }

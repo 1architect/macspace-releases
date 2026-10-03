@@ -66,7 +66,7 @@ final class RenderTests: XCTestCase {
                       UsageSegment(id: "f", label: "Can be freed", bytes: 415, tone: .caution)]
         let dots: [TileDot] = Array(repeating: .done, count: 11) + [.open, .open, .attention]
         let tiles: [(TileTint, TileInfo, Int)] = [
-            (.violet, TileInfo(title: "147 GB used", status: "4.7 GB purgeable", graphic: .gauge(value: 0.3, extra: 0.01, label: "30%", sublabel: "of 494 GB")), 1),
+            (.violet, TileInfo(title: "147 GB used", status: "4.7 GB purgeable", graphic: .gauge(value: 0.3, label: "30%", sublabel: "of 494 GB")), 1),
             (.blue, TileInfo(title: "system data", status: "415 MB can be freed", graphic: .blocks(blocks)), 2),
             (.graphite, TileInfo(title: "siri & AI", status: "AI is on", needsAttention: true,
                                  graphic: .state(on: true, alarming: true, detail: "macOS may download its model", meter: nil, meterIsActionable: false)), 1),

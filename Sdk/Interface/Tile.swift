@@ -41,8 +41,8 @@ public enum TileGraphic: Codable, Equatable, Sendable {
     /// A feature that should stay off: whether it is on, one line of detail, and an optional meter (0...1). `alarming` makes an on
     /// state glow; `meterIsActionable` draws the meter in the action color.
     case state(on: Bool, alarming: Bool, detail: String, meter: Double?, meterIsActionable: Bool)
-    /// An arc filled to `value` (0...1), `extra` drawn as a lighter part right after it, with a big label in the middle.
-    case gauge(value: Double, extra: Double, label: String, sublabel: String)
+    /// An arc filled to `value` (0...1), with a big label in the middle. A short tile draws a bar instead, without the labels.
+    case gauge(value: Double, label: String, sublabel: String)
 }
 
 public enum TileDot: String, Codable, Sendable {

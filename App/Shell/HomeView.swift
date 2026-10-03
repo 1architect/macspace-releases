@@ -21,15 +21,15 @@ struct TileInfo: Equatable {
         }
     }
 
-    /// The disk: an arc filled as far as the disk is used, what macOS can purge by itself as the lighter part after it.
+    /// The disk: an arc filled as far as the disk is used. What macOS can purge by itself is not drawn: at a few gigabytes it was a
+    /// sliver too thin to see.
     @MainActor
     init(_ storage: StorageOverview) {
         let status = storage.status
         // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
-        var graphic = TileGraphic.gauge(value: 0, extra: 0, label: "", sublabel: "")
+        var graphic = TileGraphic.gauge(value: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
-            graphic = .gauge(value: used, extra: storage.purgeableFraction ?? 0, label: "\(Int((used * 100).rounded()))%",
-                             sublabel: "of \(ByteFormat.string(total))")
+            graphic = .gauge(value: used, label: "\(Int((used * 100).rounded()))%", sublabel: "of \(ByteFormat.string(total))")
         }
         self.init(title: status.title, status: status.detail, graphic: graphic, loading: !storage.isLoaded)
     }
@@ -152,18 +152,19 @@ struct TileFace: View {
                 .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
                 .padding(.leading, 14)
                 .padding(.top, 16)
-        case let .gauge(value, extra, label, sublabel):
+        case let .gauge(value, label, sublabel):
             // Clear of the window's close button, which sits in this tile's top-left corner. A ring needs height; a short tile gets a
-            // bar across it instead.
+            // bar across it instead, centered in the room between the close button and the caption (the caption says the figures).
             let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
             if side >= 100 {
-                GaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
+                GaugeView(value: value, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
                     .frame(width: side, height: side)
                     .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
             } else {
-                BarGaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
-                    .frame(width: max(size.width - 30, 0), alignment: .leading)
-                    .offset(x: 15, y: 9)
+                let top = GlassCircleButton.margin + GlassCircleButton.diameter
+                BarGaugeView(value: value, tint: tint, loading: info.loading)
+                    .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
+                    .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
             }
         }
     }

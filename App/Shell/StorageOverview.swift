@@ -20,12 +20,6 @@ final class StorageOverview: ObservableObject {
         return Double(usedBytes) / Double(totalBytes)
     }
 
-    /// The purgeable files, as a share of the disk.
-    var purgeableFraction: Double? {
-        guard let purgeableBytes, let totalBytes, totalBytes > 0 else { return nil }
-        return Double(purgeableBytes) / Double(totalBytes)
-    }
-
     var status: (title: String, detail: String) {
         guard let usedBytes else { return ("disk", "reading…") }
         let used = "\(ByteFormat.string(usedBytes)) used"
