@@ -191,7 +191,6 @@ struct HomeView: View {
     /// The window is closing: the tiles leave.
     var closing = false
     @State private var appeared = false
-    @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How long the tiles take to leave, for the window to wait before it goes.
@@ -257,8 +256,6 @@ struct HomeView: View {
                     }
                 }
                 .frame(width: size.width, height: size.height, alignment: .topLeading)
-                // The tiles' glass drawn together in one pass, not each tile sampling the window glass on its own.
-                .glassGrouped(design.groupTileGlass)
                 // The gaps between tiles are glass too: dragging there moves the window.
                 .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
                 .animation(Theme.layout, value: tiles.map(\.id))

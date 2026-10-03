@@ -71,12 +71,6 @@ struct GlassGroup<Content: View>: View {
 }
 
 extension View {
-    /// The view inside a `GlassGroup` when `on`.
-    @ViewBuilder
-    func glassGrouped(_ on: Bool) -> some View {
-        if on { GlassGroup { self } } else { self }
-    }
-
     /// The pointer tilt of a flat tile. Glass tiles get none at all, not a turn of 0°: a 3D effect puts the tile in a projection layer
     /// even when it does not turn, and glass under it is drawn the expensive way.
     @ViewBuilder
