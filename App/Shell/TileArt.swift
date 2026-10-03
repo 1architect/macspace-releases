@@ -71,7 +71,7 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
             if let corners = Self.corners(of: shape) {
                 GlassPane(corners: corners, color: color, opacity: 0.7 * strength, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
             } else {
-                // A shape AppKit's glass cannot take (the gauge's arcs) stays SwiftUI's glass.
+                // A shape AppKit's glass cannot take stays SwiftUI's glass.
                 shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
                     .animation(Theme.highlight, value: dark)
                     .glassEffect(.regular, in: shape)
@@ -439,75 +439,7 @@ struct GlowEdge: View {
 
 // MARK: Gauge
 
-/// An arc filled to a share, and the share written in the middle. It draws in when it appears.
-struct GaugeView: View {
-    let value: Double
-    let label: String
-    let sublabel: String
-    let tint: TileTint
-    var loading = false
-    @Environment(\.design) private var design
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var drawn: Double = 0
-
-    private static let sweep = 0.75
-    /// The length of the light that runs along the track while loading, as a share of the track.
-    private static let runner = 0.16
-
-    var body: some View {
-        GeometryReader { proxy in
-            let side = min(proxy.size.width, proxy.size.height)
-            let band = min(9, max(4, side * 0.07))
-            gauge(side: side)
-                .overlay {
-                    if loading && !reduceMotion {
-                        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
-                            let from = LoadingWave.position(context.date) * (1 + Self.runner) - Self.runner
-                            // Plain color, not glass: the arcs' glass is SwiftUI's, which a shape changing every frame made flicker.
-                            ArcBand(from: max(from, 0) * Self.sweep, to: min(from + Self.runner, 1) * Self.sweep, width: band, round: true)
-                                .fill(design.palette(tint).step(5))
-                        }
-                        .transition(.opacity)
-                    }
-                }
-                .frame(width: proxy.size.width, height: proxy.size.height)
-        }
-        .animation(.smooth(duration: 0.4), value: loading)
-        .animation(Theme.value, value: value)
-        .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
-    }
-
-    /// The ring and the text scale with the gauge, so a short tile gets a small gauge rather than text spilling out of it; the
-    /// sublabel goes when there is no room for it.
-    private func gauge(side: CGFloat) -> some View {
-        let palette = design.palette(tint)
-        let used = min(max(value, 0), 1) * Self.sweep * drawn
-        let band = min(9, max(4, side * 0.07))
-        return ZStack {
-            // Only the arcs in the glass container: it draws only glass, and the share written inside it was lost. Arcs are the one
-            // shape AppKit's glass cannot take, so they are SwiftUI's glass.
-            GlassEffectContainer(spacing: 0) {
-                ZStack {
-                    Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
-                    Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
-                }
-            }
-            // Glass is not drawn inside a rotated view, so the arc is placed by its angles instead of rotating the gauge.
-            VStack(spacing: 1) {
-                Text(label).font(.system(size: min(24, side * 0.2), weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
-                if side >= 90 {
-                    Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
-                        .transition(.opacity.combined(with: .scale(scale: 0.86)).animation(Theme.layout))
-                }
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(maxWidth: side - 2 * band - 8)
-        }
-    }
-}
-
-/// The gauge for a short tile: a bar across the tile filled to the share. The share and the disk's size are left to the caption.
+/// The disk's gauge: a bar across the tile filled to the share. The share and the disk's size are left to the caption.
 struct BarGaugeView: View {
     static let height: CGFloat = 10
 
@@ -543,29 +475,6 @@ struct BarGaugeView: View {
         .animation(.smooth(duration: 0.4), value: loading)
         .animation(Theme.value, value: value)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
-    }
-}
-
-/// A band along a circle, from `from` to `to` (fractions of a turn, clockwise from `start`), as a filled shape so it can be glass.
-/// The default start, 135°, is the lower left: a gauge opening at the bottom.
-struct ArcBand: Shape {
-    var from: Double
-    var to: Double
-    let width: CGFloat
-    let round: Bool
-    var start: Double = 135
-
-    var animatableData: AnimatablePair<Double, Double> {
-        get { AnimatablePair(from, to) }
-        set { from = newValue.first; to = newValue.second }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        guard to > from else { return Path() }
-        let radius = min(rect.width, rect.height) / 2 - width / 2
-        var arc = Path()
-        arc.addArc(center: CGPoint(x: rect.midX, y: rect.midY), radius: max(radius, 0), startAngle: .degrees(start + from * 360), endAngle: .degrees(start + to * 360), clockwise: false)
-        return arc.strokedPath(StrokeStyle(lineWidth: width, lineCap: round ? .round : .butt))
     }
 }
 

@@ -191,23 +191,13 @@ struct TileFace: View {
                 .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
                 .padding(.leading, 14)
                 .padding(.top, 16)
-        case let .gauge(value, label, sublabel):
-            // Clear of the window's close button, which sits in this tile's top-left corner. A ring needs height; a short tile gets a
-            // bar across it instead, centered in the room between the close button and the caption (the caption says the figures).
-            let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
-            // Resizing the window across the threshold swaps one for the other: one shrinks away as the other grows in and draws in.
-            if side >= 100 {
-                GaugeView(value: value, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
-                    .frame(width: side, height: side)
-                    .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
-                    .transition(Self.resizeTransition)
-            } else {
-                let top = GlassCircleButton.margin + GlassCircleButton.diameter
-                BarGaugeView(value: value, tint: tint, loading: info.loading)
-                    .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
-                    .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
-                    .transition(Self.resizeTransition)
-            }
+        case let .gauge(value, _, _):
+            // A bar across the tile, centered in the room between the window's close button, in this tile's top-left corner, and
+            // the caption, which says the figures.
+            let top = GlassCircleButton.margin + GlassCircleButton.diameter
+            BarGaugeView(value: value, tint: tint, loading: info.loading)
+                .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
+                .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
         }
     }
 }
