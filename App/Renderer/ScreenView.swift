@@ -80,21 +80,34 @@ enum PageInsets {
 
 /// A page's scroll area: below the corner buttons and the title, and above the main action when the page has one. It is cut off with
 /// a plain rectangular clip. A gradient mask used to fade the content out at both ends, but it made every scroll frame draw the whole
-/// page offscreen and blend it through the mask. The temporary Page Edge Fade switch turns on the system's own scroll edge fade instead.
+/// page offscreen and blend it through the mask.
+///
+/// The temporary Page Edge Fade switch turns on the system's own scroll edge fade instead. The system only draws it where a bar lies
+/// over the scroll view, so with it on the page scrolls under the title and the main action, each covered by an empty bar of its height
+/// that carries the fade, instead of stopping short of them.
 struct PageScrollArea: ViewModifier {
     let hasFooter: Bool
     @Environment(\.design) private var design
 
     func body(content: Content) -> some View {
-        content
-            .contentMargins(.top, 0, for: .scrollContent)
-            .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
-            .contentMargins(.horizontal, 10, for: .scrollContent)
-            .scrollEdgeEffectStyle(.soft, for: .all)
-            .scrollEdgeEffectHidden(!design.pageEdgeFade, for: .all)
-            .padding(.top, PageInsets.scrollTop)
-            .padding(.bottom, hasFooter ? PageInsets.footer : 0)
-            .clipped()
+        if design.pageEdgeFade {
+            content
+                .contentMargins(.top, 0, for: .scrollContent)
+                .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.horizontal, 10, for: .scrollContent)
+                .safeAreaBar(edge: .top, spacing: 0) { Color.clear.frame(height: PageInsets.scrollTop) }
+                .safeAreaBar(edge: .bottom, spacing: 0) { Color.clear.frame(height: hasFooter ? PageInsets.footer : 0) }
+                .scrollEdgeEffectStyle(.soft, for: .all)
+        } else {
+            content
+                .contentMargins(.top, 0, for: .scrollContent)
+                .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.horizontal, 10, for: .scrollContent)
+                .scrollEdgeEffectHidden(true, for: .all)
+                .padding(.top, PageInsets.scrollTop)
+                .padding(.bottom, hasFooter ? PageInsets.footer : 0)
+                .clipped()
+        }
     }
 }
 
