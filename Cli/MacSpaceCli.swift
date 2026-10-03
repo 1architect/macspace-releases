@@ -11,9 +11,14 @@ struct MacSpaceCli {
         if arguments.first == "purge-assets" { PurgeCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "orphan-subscriptions" { OrphanCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "helper" {
-            // Diagnostics for the privileged helper: `helper` prints the status, `helper --register` tries to register it.
+            // Diagnostics for the privileged helper: `helper` prints the status, `helper --register` tries to register it and
+            // `helper --unregister` removes the registration made from this copy of the app.
             print("status: \(PrivilegedHelperInstaller.status.rawValue) (0 not registered, 1 enabled, 2 requires approval, 3 not found)")
             if PrivilegedHelperInstaller.status == .notFound { print("why: \(PrivilegedHelperInstaller.notFoundReason())") }
+            if arguments.contains("--unregister") {
+                do { try await PrivilegedHelperInstaller.unregister(); print("unregistered; status now \(PrivilegedHelperInstaller.status.rawValue)") }
+                catch { print("unregister failed: \(error)") }
+            }
             if arguments.contains("--register") {
                 do { try PrivilegedHelperInstaller.register(); print("registered; status now \(PrivilegedHelperInstaller.status.rawValue)") }
                 catch { print("register failed: \(error)") }
@@ -32,7 +37,7 @@ struct MacSpaceCli {
             usage: MacSpaceCli modules [--dir <folder>] [--load]
                    MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
                    MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
-                   MacSpaceCli helper [--register] [--ping]
+                   MacSpaceCli helper [--unregister] [--register] [--ping]
                    MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]
             """)
             exit(arguments.isEmpty ? 0 : 64)

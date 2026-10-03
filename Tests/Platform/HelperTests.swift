@@ -135,4 +135,11 @@ final class LazyChannelTests: XCTestCase {
         var size = MemoryLayout<Int32>.size
         return sysctlbyname(name, &value, &size, nil, 0) == 0 ? value : 0
     }
+
+    func testHelperIsInstalledOnlyFromAnApplicationsFolder() {
+        XCTAssertTrue(PrivilegedHelperInstaller.isInApplicationsFolder("/Applications/MacSpace.app"))
+        XCTAssertTrue(PrivilegedHelperInstaller.isInApplicationsFolder("/Users/me/Applications/MacSpace.app"))
+        XCTAssertFalse(PrivilegedHelperInstaller.isInApplicationsFolder("/Users/me/Developer/macspace-releases/Build/MacSpace.app"),
+                       "a helper registered from the build folder stayed tied to a copy every build replaces")
+    }
 }

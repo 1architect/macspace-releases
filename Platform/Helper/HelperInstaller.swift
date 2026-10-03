@@ -27,8 +27,23 @@ public enum PrivilegedHelperInstaller {
         _ = LSRegisterURL(bundle.bundleURL as CFURL, true)
     }
 
-    /// Registers the daemon. `.requiresApproval` afterwards means the user must enable it in Login Items.
-    public static func register() throws {
+    public struct NotInApplicationsError: LocalizedError {
+        public let path: String
+        public var errorDescription: String? {
+            "MacSpace runs from \(path). Install the helper from the copy in an Applications folder: macOS ties the helper to the copy it was installed from, and a build folder is replaced by every build."
+        }
+    }
+
+    /// Whether the app sits in an Applications folder (/Applications or ~/Applications), the only place the helper is installed from.
+    public static func isInApplicationsFolder(_ path: String) -> Bool {
+        path.hasPrefix("/Applications/") || path.contains("/Applications/")
+    }
+
+    /// Registers the daemon. `.requiresApproval` afterwards means the user must enable it in Login Items. Refused from a copy outside
+    /// an Applications folder: registered from the build folder, the helper stayed tied to that copy, every build replaced it, and
+    /// installing from the real copy failed with "Codesigning failure loading plist" (-67056).
+    public static func register(bundle: Bundle = .main) throws {
+        guard isInApplicationsFolder(bundle.bundlePath) else { throw NotInApplicationsError(path: bundle.bundlePath) }
         if status == .notFound { registerAppWithLaunchServices() }
         try service.register()
     }
@@ -63,7 +78,7 @@ public enum PrivilegedHelperInstaller {
         if bundlePath.contains("/AppTranslocation/") || quarantined {
             return "macOS is treating MacSpace as a downloaded app, so the helper cannot be installed. In Terminal run: xattr -dr com.apple.quarantine /Applications/MacSpace.app, then reopen MacSpace. (A notarized release does not need this.)"
         }
-        if !(bundlePath.hasPrefix("/Applications/") || bundlePath.contains("/Applications/")) { return "Move MacSpace to the Applications folder, then reopen it." }
+        if !isInApplicationsFolder(bundlePath) { return "Move MacSpace to the Applications folder, then reopen it." }
         return "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints."
     }
 
