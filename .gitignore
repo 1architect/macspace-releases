@@ -6,3 +6,28 @@ DerivedData/
 Build/
 *.app
 *.dmg
+
+# Signing and release secrets never belong in this public repository. They live in the maintainer's keychain or in the
+# private release repository (Docs/Handoff.md).
+# Certificates, keys and provisioning profiles
+*.p12
+*.pfx
+*.cer
+*.certSigningRequest
+*.pem
+*.key
+*.p8
+*.mobileprovision
+*.provisionprofile
+# Sparkle's private EdDSA key and any exported copy of it
+*sparkle*private*
+*Sparkle*Private*
+*_ed_key*
+# Environment files with credentials
+.env
+.env.*
+*.env
+# notarytool output, which can name the Apple ID
+notarization-log*.json
+notary-log*.json
+*.notarization.json
