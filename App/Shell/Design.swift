@@ -87,6 +87,8 @@ struct Design: Equatable {
     /// Temporary, for measuring GPU use: the window clipped to its rounded corners; tiles following the pointer.
     var clipWindow = true
     var trackPointer = true
+    /// Temporary, for measuring GPU use: the window itself is glass over the desktop, or a solid color.
+    var windowGlass = true
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -118,6 +120,7 @@ public final class DesignSettings: ObservableObject {
     @Published public var glassElements: Bool { didSet { defaults.set(glassElements, forKey: "design.glassElements") } }
     @Published public var clipWindow: Bool { didSet { defaults.set(clipWindow, forKey: "design.clipWindow") } }
     @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
+    @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -130,10 +133,12 @@ public final class DesignSettings: ObservableObject {
         glassElements = defaults.object(forKey: "design.glassElements") as? Bool ?? true
         clipWindow = defaults.object(forKey: "design.clipWindow") as? Bool ?? true
         trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
+        windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
-                                  clipWindow: clipWindow, trackPointer: trackPointer) }
+                                  clipWindow: clipWindow, trackPointer: trackPointer,
+                                  windowGlass: windowGlass) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -149,6 +154,7 @@ public struct DesignCommands: Commands {
             Toggle("Glass Chart Elements", isOn: $settings.glassElements)
             Toggle("Clip Window Corners", isOn: $settings.clipWindow)
             Toggle("Track Pointer", isOn: $settings.trackPointer)
+            Toggle("Window Glass", isOn: $settings.windowGlass)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -184,6 +190,7 @@ struct DesignSettingsSection: View {
             Toggle("Glass chart elements", isOn: $settings.glassElements)
             Toggle("Clip window corners", isOn: $settings.clipWindow)
             Toggle("Track pointer", isOn: $settings.trackPointer)
+            Toggle("Window glass", isOn: $settings.windowGlass)
         }
     }
 }

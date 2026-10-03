@@ -234,6 +234,36 @@ struct HomeView: View {
         return (modules.first { $0.wide } ?? modules.first)?.id
     }
 
+    /// The tiles at their places in a grid of `size`.
+    private func grid(_ tiles: [DashboardTile], placements: [Bento.Placement], columns: Int, rows: Int, size: CGSize) -> some View {
+        ZStack(alignment: .topLeading) {
+            if !dormant {
+                ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
+                    let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
+                    let shown = appeared && !closing
+                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
+                                      isHidden: hiddenTile == tile.destination) {
+                        open(tile.destination)
+                    }
+                    .frame(width: frame.width, height: frame.height)
+                    .scaleEffect(shown || reduceMotion ? 1 : 0.86)
+                    .opacity(shown ? 1 : 0)
+                    .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
+                                       : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
+                    .offset(x: frame.minX, y: frame.minY)
+                    .opacity(hiddenTile == tile.destination ? 0 : 1)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                }
+            }
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        // The gaps between tiles are glass too: dragging there moves the window.
+        .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
+        .animation(Theme.layout, value: tiles.map(\.id))
+        .animation(Theme.layout, value: tiles.map(\.size))
+        .animation(Theme.layout, value: columns)
+    }
+
     var body: some View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
         GeometryReader { proxy in
@@ -242,43 +272,24 @@ struct HomeView: View {
             let rows = Bento.rows(placements)
             let needed = CGFloat(rows) * Self.minimumRowHeight + CGFloat(max(rows - 1, 0)) * Theme.spacing
             let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, needed))
-            ScrollView {
-                // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the
-                // hover lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
-                let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
-                ZStack(alignment: .topLeading) {
-                    if !dormant {
-                        ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
-                            let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                            let shown = appeared && !closing
-                            DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
-                                              isHidden: hiddenTile == tile.destination) {
-                                open(tile.destination)
-                            }
-                            .frame(width: frame.width, height: frame.height)
-                            .scaleEffect(shown || reduceMotion ? 1 : 0.86)
-                            .opacity(shown ? 1 : 0)
-                            .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
-                                               : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-                            .offset(x: frame.minX, y: frame.minY)
-                            .opacity(hiddenTile == tile.destination ? 0 : 1)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                        }
-                    }
+            // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the hover
+            // lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
+            let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
+            if needed <= proxy.size.height {
+                // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to
+                // every frame the window draws.
+                let _ = (frames.scrollOffset = 0)
+                grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
+            } else {
+                ScrollView {
+                    grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
                 }
-                .frame(width: size.width, height: size.height, alignment: .topLeading)
-                // The gaps between tiles are glass too: dragging there moves the window.
-                .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
-                .animation(Theme.layout, value: tiles.map(\.id))
-                .animation(Theme.layout, value: tiles.map(\.size))
-                .animation(Theme.layout, value: columns)
+                .scrollIndicators(.never)
+                .scrollEdgeEffectHidden(true, for: .all)
+                // A lifted tile may reach into the glass frame; the scroll view must not cut it.
+                .scrollClipDisabled()
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
             }
-            .scrollDisabled(needed <= proxy.size.height)
-            .scrollIndicators(.never)
-            .scrollEdgeEffectHidden(true, for: .all)
-            // A lifted tile may reach into the glass frame; the scroll view must not cut it.
-            .scrollClipDisabled()
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
         }
         // Each time the window opens, once the tiles are known: a moment later, so the change animates instead of landing in the
         // first frame.

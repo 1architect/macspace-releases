@@ -63,10 +63,18 @@ enum KeyableWindow {
 
 /// The glass the tiles sit on. It blurs what is behind the window, and is the window's only edge.
 struct GlassBackdrop: View {
+    @Environment(\.design) private var design
+
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
-        Color.clear
-            .glassEffect(.clear, in: shape)
-            .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
+        Group {
+            if design.windowGlass {
+                Color.clear.glassEffect(.clear, in: shape)
+            } else {
+                // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
+                shape.fill(Color(white: design.isLight ? 0.92 : 0.13))
+            }
+        }
+        .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
     }
 }
