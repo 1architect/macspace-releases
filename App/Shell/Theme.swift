@@ -127,7 +127,7 @@ struct PillButtonStyle: ButtonStyle {
 }
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
-/// light dark tint, 36 points, a white symbol that turns while busy. Under the pointer it grows a little and lightens; pressed, it
+/// light dark tint, 36 points, a white symbol, loading dots while busy. Under the pointer it grows a little and lightens; pressed, it
 /// shrinks and the symbol dims. Used for close/back and Refresh in the top-left corner.
 struct GlassCircleButton: View {
     static let diameter: CGFloat = 36
@@ -138,14 +138,37 @@ struct GlassCircleButton: View {
     var busy = false
     let action: () -> Void
 
+    /// Each symbol's height. The symbol is drawn to its own outline, not as text: as text it kept room below for a baseline and sat
+    /// low in the circle.
+    private static func glyphHeight(_ symbol: String) -> CGFloat {
+        switch symbol {
+        case "xmark": return 12
+        case "chevron.left": return 14
+        default: return 16
+        }
+    }
+
     var body: some View {
         Button(action: action) {
-            // Busy, the symbol itself turns, in the same white: the system spinner drew grey on the clear glass, whatever its tint.
-            SpinningSymbol(symbol: symbol, spinning: busy)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: Self.diameter, height: Self.diameter)
-                .contentShape(Circle())
+            ZStack {
+                // Busy, the symbol makes way for the loading dots, in the same white: the system spinner drew grey on the clear glass.
+                if busy {
+                    LoadingDots()
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                } else {
+                    Image(systemName: symbol)
+                        .resizable()
+                        .scaledToFit()
+                        .fontWeight(.medium)
+                        .frame(height: Self.glyphHeight(symbol))
+                        .contentTransition(.symbolEffect(.replace))
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(width: Self.diameter, height: Self.diameter)
+            .contentShape(Circle())
+            .animation(Theme.press, value: busy)
         }
         .buttonStyle(GlassCircleStyle(diameter: Self.diameter))
         .disabled(busy)
@@ -154,82 +177,21 @@ struct GlassCircleButton: View {
     }
 }
 
-/// A symbol that turns while `spinning`. It gathers speed instead of jumping to it, turns at an even pace (the system's rotate effect
-/// eased in and out of every turn, so it went in jerks), and when it stops it slows down from the speed it had to upright, instead of
-/// snapping back. The whole movement is worked out from the clock, so speed never jumps. With Reduce Motion it dims while busy instead.
-struct SpinningSymbol: View {
-    let symbol: String
-    let spinning: Bool
+/// Three white dots pulsing one after another, as the charts do while they load: what a busy round button shows in place of its
+/// symbol. With Reduce Motion they stay dimmed instead.
+struct LoadingDots: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var motion = Motion.rest
-
-    enum Motion: Equatable {
-        case rest
-        /// Speeding up from `from` degrees and 0, then turning evenly.
-        case spinning(since: Date, from: Double)
-        /// Slowing from `from` degrees at `speed` degrees a second to a stop at `to`, a whole number of turns, in `duration`.
-        case settling(since: Date, from: Double, speed: Double, to: Double, duration: Double)
-    }
-
-    /// Seconds per turn at full speed, and how quickly it gets there.
-    nonisolated static let turn = 0.85
-    nonisolated static let rampUp = 0.22
-
-    nonisolated static func speed(after elapsed: TimeInterval) -> Double {
-        360 / turn * (1 - exp(-max(elapsed, 0) / rampUp))
-    }
-
-    nonisolated static func angle(_ motion: Motion, at date: Date) -> Double {
-        switch motion {
-        case .rest:
-            return 0
-        case let .spinning(since, from):
-            let t = max(date.timeIntervalSince(since), 0)
-            return from + 360 / turn * (t - rampUp * (1 - exp(-t / rampUp)))
-        case let .settling(since, from, speed, to, duration):
-            // A curve that leaves at `speed` and arrives at `to` with none (cubic Hermite); it never passes `to`.
-            let s = min(max(date.timeIntervalSince(since) / duration, 0), 1)
-            let s2 = s * s, s3 = s2 * s
-            return (2 * s3 - 3 * s2 + 1) * from + (s3 - 2 * s2 + s) * duration * speed + (-2 * s3 + 3 * s2) * to
-        }
-    }
-
-    /// Where a spin that is going at `speed` from `angle` comes to rest, and how long it takes: the next upright position at least a
-    /// fifth of a second's travel ahead, reached in 0.35 to 0.8 seconds.
-    nonisolated static func settle(from angle: Double, speed: Double) -> (to: Double, duration: Double) {
-        let to = ((angle + max(speed * 0.2, 30)) / 360).rounded(.up) * 360
-        let duration = speed > 0 ? min(max(2 * (to - angle) / speed, 0.35), 0.8) : 0.8
-        return (to, duration)
-    }
 
     var body: some View {
-        TimelineView(.animation(paused: motion == .rest)) { context in
-            Image(systemName: symbol)
-                .rotationEffect(.degrees(Self.angle(motion, at: context.date)))
-        }
-        .opacity(reduceMotion && spinning ? 0.5 : 1)
-        .animation(.smooth(duration: 0.3), value: spinning)
-        .onChange(of: spinning, initial: true) { _, now in
-            guard !reduceMotion else { motion = .rest; return }
-            let date = Date()
-            switch (now, motion) {
-            case (true, .rest):
-                motion = .spinning(since: date, from: 0)
-            case (true, .settling):
-                motion = .spinning(since: date, from: Self.angle(motion, at: date).truncatingRemainder(dividingBy: 360))
-            case let (false, .spinning(since, _)):
-                let angle = Self.angle(motion, at: date)
-                let speed = Self.speed(after: date.timeIntervalSince(since))
-                let end = Self.settle(from: angle, speed: speed)
-                let settling = Motion.settling(since: date, from: angle, speed: speed, to: end.to, duration: end.duration)
-                motion = settling
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(end.duration))
-                    // Upright again: a whole number of turns is the same as none, and the clock can stop.
-                    if motion == settling { motion = .rest }
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+            HStack(spacing: 3.5) {
+                ForEach(0..<3, id: \.self) { index in
+                    let wave = LoadingWave.opacity(context.date, index: index, count: 3, loading: true, reduceMotion: reduceMotion)
+                    Circle()
+                        .frame(width: 4.5, height: 4.5)
+                        .scaleEffect(0.75 + 0.25 * wave)
+                        .opacity(wave)
                 }
-            default:
-                break
             }
         }
     }
