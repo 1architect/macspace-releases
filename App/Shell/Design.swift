@@ -82,6 +82,8 @@ struct Design: Equatable {
     var lift = true
     var tilt = true
     var hoverShade = true
+    /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass too, or flat color on the glass tiles.
+    var glassElements = true
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -110,6 +112,7 @@ public final class DesignSettings: ObservableObject {
     @Published public var tilt: Bool { didSet { defaults.set(tilt, forKey: "design.tilt") } }
     @Published public var hoverShade: Bool { didSet { defaults.set(hoverShade, forKey: "design.hoverShade") } }
     @Published public var windowShadow: Bool { didSet { defaults.set(windowShadow, forKey: "design.windowShadow") } }
+    @Published public var glassElements: Bool { didSet { defaults.set(glassElements, forKey: "design.glassElements") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -119,9 +122,10 @@ public final class DesignSettings: ObservableObject {
         tilt = defaults.object(forKey: "design.tilt") as? Bool ?? true
         hoverShade = defaults.object(forKey: "design.hoverShade") as? Bool ?? true
         windowShadow = defaults.object(forKey: "design.windowShadow") as? Bool ?? true
+        glassElements = defaults.object(forKey: "design.glassElements") as? Bool ?? true
     }
 
-    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade) }
+    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -134,6 +138,7 @@ public struct DesignCommands: Commands {
         CommandMenu("Design") {
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])
+            Toggle("Glass Chart Elements", isOn: $settings.glassElements)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -166,6 +171,7 @@ struct DesignSettingsSection: View {
             Toggle("Tile tilt", isOn: $settings.tilt)
             Toggle("Hover shade", isOn: $settings.hoverShade)
             Toggle("Window shadow", isOn: $settings.windowShadow)
+            Toggle("Glass chart elements", isOn: $settings.glassElements)
         }
     }
 }

@@ -111,7 +111,7 @@ struct HeroBlocks: View {
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
-            BlocksView(segments: usage.segments, tint: tint, gap: Self.gap)
+            GlassGroup { BlocksView(segments: usage.segments, tint: tint, gap: Self.gap) }
                 .frame(height: 150)
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {

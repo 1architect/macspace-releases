@@ -48,7 +48,7 @@ struct Surface<S: Shape>: View {
     @Environment(\.design) private var design
 
     var body: some View {
-        if design.glass {
+        if design.glass && design.glassElements {
             shape.fill(color.opacity(0.7))
                 .glassEffect(.regular, in: shape)
                 .overlay { HoverShade(shape: shape, on: highlighted && design.hoverShade) }
@@ -57,6 +57,16 @@ struct Surface<S: Shape>: View {
                 .brightness(highlighted ? 0.08 : 0)
                 .animation(Theme.highlight, value: highlighted)
         }
+    }
+}
+
+/// Draws the glass elements inside it together, in one pass, as Apple recommends for groups of glass; drawn one by one, each element
+/// sampled and blurred what is behind it separately. Spacing 0: elements a few points apart (the blocks) must not melt into each other.
+struct GlassGroup<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        GlassEffectContainer(spacing: 0) { content }
     }
 }
 
@@ -471,17 +481,21 @@ struct ArcBand: Shape {
 struct AttentionMark: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.design) private var design
+    @State private var pulsing = false
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
-            let phase = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.8) / 1.8
-            Image(systemName: "exclamationmark")
-                .font(.system(size: 10, weight: .heavy))
-                .foregroundStyle(design.actionDeep)
-                .frame(width: 19, height: 19)
-                .background(Circle().fill(design.action))
-                .background(Circle().stroke(design.action, lineWidth: 1.5).scaleEffect(1 + phase * 0.9).opacity(1 - phase))
-        }
-        .accessibilityLabel("Needs attention")
+        // One pulse, then a rest, repeated by the animation itself: the view is not redrawn every frame by a timeline, and the window
+        // (all glass) is not recomposited between pulses.
+        Image(systemName: "exclamationmark")
+            .font(.system(size: 10, weight: .heavy))
+            .foregroundStyle(design.actionDeep)
+            .frame(width: 19, height: 19)
+            .background(Circle().fill(design.action))
+            .background(Circle().stroke(design.action, lineWidth: 1.5).scaleEffect(pulsing ? 1.9 : 1).opacity(pulsing ? 0 : 1))
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeOut(duration: 1.8).delay(1.6).repeatForever(autoreverses: false)) { pulsing = true }
+            }
+            .accessibilityLabel("Needs attention")
     }
 }

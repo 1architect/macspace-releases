@@ -61,8 +61,10 @@ struct TileFace: View {
             TileBackdrop(tint: tint)
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
             if let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
-                GeometryReader { proxy in
-                    chart(graphic, in: proxy.size)
+                GlassGroup {
+                    GeometryReader { proxy in
+                        chart(graphic, in: proxy.size)
+                    }
                 }
                 .opacity(chartOpacity)
             }

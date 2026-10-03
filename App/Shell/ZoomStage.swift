@@ -49,7 +49,8 @@ struct ZoomReveal: ViewModifier, @preconcurrency Animatable {
     func body(content: Content) -> some View {
         let start = 0.07 * CGFloat(min(max(index, 0), 6))
         let t = ZoomMath.ramp(reveal, start, start + 0.55)
-        return content.opacity(t).offset(y: (1 - t) * 16).blur(radius: (1 - t) * 4)
+        // No blur: blurring a page full of glass is one of the most expensive things the window can draw.
+        return content.opacity(t).offset(y: (1 - t) * 16)
     }
 }
 
@@ -80,7 +81,7 @@ struct ZoomCard<Content: View>: View, @preconcurrency Animatable {
     }
 }
 
-/// Sends the dashboard back while a tile grows over it: the other tiles recede, blur and fade, so the growing card reads as coming
+/// Sends the dashboard back while a tile grows over it: the other tiles recede and fade, so the growing card reads as coming
 /// forward.
 struct ZoomFade: ViewModifier, @preconcurrency Animatable {
     var progress: CGFloat
@@ -92,8 +93,8 @@ struct ZoomFade: ViewModifier, @preconcurrency Animatable {
 
     func body(content: Content) -> some View {
         content
+            // No blur: the dashboard is all glass, and blurring it on top is very expensive to draw.
             .scaleEffect(1 - 0.06 * progress)
-            .blur(radius: 8 * progress)
             .opacity(1 - ZoomMath.ramp(progress, 0.05, 0.6))
     }
 }
