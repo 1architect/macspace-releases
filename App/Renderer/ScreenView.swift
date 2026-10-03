@@ -94,16 +94,48 @@ struct HeroBlocks: View {
     let usage: UsageBar
     let tint: TileTint
     @Environment(\.design) private var design
+    /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
+    @State private var hovered: String?
+    @State private var blocksSize = CGSize.zero
 
     static let gap: CGFloat = 3
 
     var body: some View {
+        let palette = design.palette(tint)
+        let segments = usage.segments
+        let hoveredSegment = hovered.flatMap { id in segments.first { $0.id == id } }
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
-            GlassGroup { BlocksView(segments: usage.segments, tint: tint, gap: Self.gap) }
+            GlassGroup { BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap) }
                 .frame(height: 150)
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
+                .onContinuousHover { phase in
+                    switch phase {
+                    case let .active(location):
+                        let id = BlocksView.segment(at: location, in: blocksSize, segments: segments)?.id
+                        if id != hovered { hovered = id }
+                    case .ended:
+                        if hovered != nil { hovered = nil }
+                    }
+                }
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
+            // What the pointer is on, or what amber means: the same line as under the tile's blocks.
+            HStack(spacing: 6) {
+                if let hoveredSegment {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(BlockColor.fill(hoveredSegment, rank: segments.firstIndex(of: hoveredSegment) ?? 0, tint: tint, design: design))
+                        .frame(width: 9, height: 9)
+                    Text("\(hoveredSegment.label) · \(ByteFormat.string(hoveredSegment.bytes))")
+                } else if segments.contains(where: { $0.tone == .caution }) {
+                    RoundedRectangle(cornerRadius: 2).fill(design.action).frame(width: 9, height: 9)
+                    Text("can be freed")
+                }
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(palette.soft)
+            .frame(height: 14, alignment: .leading)
+            .animation(Theme.hover, value: hovered)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
                 ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
                     HStack(spacing: 6) {

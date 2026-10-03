@@ -67,9 +67,11 @@ struct Surface<S: Shape>: View {
 
     var body: some View {
         if design.glass && design.glassElements {
-            shape.fill(color.opacity(0.7))
+            // Darkened inside the glass. A shade laid over it was lost once the chart's glass was drawn in a glass container.
+            let dark = highlighted && design.hoverShade
+            shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7))
+                .animation(Theme.highlight, value: dark)
                 .glassEffect(.regular, in: shape)
-                .overlay { HoverShade(shape: shape, on: highlighted && design.hoverShade) }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
             shape.fill(color)
