@@ -15,6 +15,8 @@
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
 # supplied by the release pipeline; nothing secret lives in this repository.
 set -euo pipefail
+# A failed step leaves Build/MacSpace.app half made (unsigned, say): say so, so it is not copied and run.
+trap 'echo "error: the build failed at line $LINENO; Build/MacSpace.app is incomplete, do not copy it" >&2' ERR
 cd "$(dirname "$0")/.."
 
 CONFIG=${CONFIG:-release}
@@ -27,6 +29,15 @@ if [ -z "${SIGN_IDENTITY+x}" ]; then
   SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "((Developer ID Application|Apple Development):.*)"$/\1/p' | head -1 || true)
   SIGN_IDENTITY=${SIGN_IDENTITY:--}
   [ "$SIGN_IDENTITY" = "-" ] || AUTO_IDENTITY=1
+fi
+# codesign is given the certificate's SHA-1 hash, not its name: with two certificates of the same name in the keychain (a renewed
+# or re-imported Developer ID), signing by name failed as "ambiguous" at the first item, and the app was left half signed.
+SIGN_KEY=$SIGN_IDENTITY
+if [ "$SIGN_IDENTITY" != "-" ] && ! printf '%s' "$SIGN_IDENTITY" | grep -qE '^[0-9A-Fa-f]{40}$'; then
+  HASH=$(security find-identity -v -p codesigning 2>/dev/null | awk -v name="$SIGN_IDENTITY" '
+    { line = $0; sub(/^ *[0-9]+\) /, "", line); hash = substr(line, 1, 40); rest = substr(line, 43); sub(/"$/, "", rest)
+      if (rest == name) { print hash; exit } }' || true)
+  [ -n "$HASH" ] && SIGN_KEY=$HASH
 fi
 # Public half of the Sparkle update key. Without it the built app never checks for updates.
 SPARKLE_PUBLIC_KEY=${SPARKLE_PUBLIC_KEY:-}
@@ -114,7 +125,7 @@ if [ "$SIGN_IDENTITY" = "-" ]; then
 else
   # A local build needs no secure timestamp (that is a network call and only notarization requires it).
   if [ "$AUTO_IDENTITY" = 1 ] && [ -z "${NOTARY_PROFILE:-}" ]; then STAMP=--timestamp=none; else STAMP=--timestamp; fi
-  FLAGS=(--force --options runtime "$STAMP" --sign "$SIGN_IDENTITY")
+  FLAGS=(--force --options runtime "$STAMP" --sign "$SIGN_KEY")
 fi
 # Sparkle ships helpers that must be signed first, inside out, with the same identity (see Sparkle's documentation).
 SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
@@ -127,7 +138,7 @@ for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
 codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
-codesign --verify --deep --strict "$APP"
+codesign --verify --deep --strict "$APP" || { echo "error: the signed app does not verify; do not copy Build/MacSpace.app" >&2; exit 1; }
 
 # Notarization: Gatekeeper opens a Developer ID app copied from elsewhere only once Apple has notarized it. The ticket is stapled to
 # the app, so it also opens offline.
