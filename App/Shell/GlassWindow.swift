@@ -1,34 +1,137 @@
 import AppKit
 import SwiftUI
 
-/// Finishes the window the plain window style gives: clear behind the glass, a shadow that follows the glass, and resizable from
-/// its edges.
+/// Finishes the window the plain window style gives: clear behind the glass, a shadow around the glass, and resizable from its edges.
+///
+/// The shadow is not the window's own. macOS works out the shadow of a transparent window from its content and did so again on every
+/// frame anything in the window changed: about 15 points of GPU while the mouse moved over the tiles or a page scrolled. It is drawn
+/// instead by a separate click-through window behind this one (`ShadowWindow`), which only redraws when the window is resized.
 struct GlassWindowConfigurator: NSViewRepresentable {
-    /// Temporary switch: macOS draws the shadow from the window's content, and it shows through translucent glass.
+    /// Whether the shadow shows: off while the window opens and closes, and with the temporary Window Shadow switch off.
     var shadow = true
 
     func makeNSView(context: Context) -> ConfiguringView { ConfiguringView() }
     func updateNSView(_ nsView: ConfiguringView, context: Context) {
-        nsView.wantsWindowShadow = shadow
-        guard let window = nsView.window, window.hasShadow != shadow else { return }
-        window.hasShadow = shadow
-        window.invalidateShadow()
+        nsView.wantsShadow = shadow
     }
 
     final class ConfiguringView: NSView {
-        var wantsWindowShadow = true
+        var wantsShadow = true {
+            didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
+        }
+        private var shadowWindow: ShadowWindow?
+        private var observers: [NSObjectProtocol] = []
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
+            tearDownShadow()
             guard let window else { return }
             KeyableWindow.adopt(window)
             window.styleMask.insert(.resizable)
             window.isOpaque = false
             window.backgroundColor = .clear
-            window.hasShadow = wantsWindowShadow
+            window.hasShadow = false
             window.isMovableByWindowBackground = true
             window.invalidateShadow()
+
+            let shadow = ShadowWindow()
+            shadow.follow(window)
+            window.addChildWindow(shadow, ordered: .below)
+            shadowWindow = shadow
+            showShadow(animated: false)
+            // A child window moves with its parent by itself; it has to be told about a new size.
+            for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
+                observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        guard let self, let window = self.window else { return }
+                        self.shadowWindow?.follow(window)
+                    }
+                })
+            }
         }
+
+        private func showShadow(animated: Bool) {
+            guard let shadowWindow else { return }
+            let alpha: CGFloat = wantsShadow ? 1 : 0
+            if animated {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = wantsShadow ? 0.3 : 0.15
+                    shadowWindow.animator().alphaValue = alpha
+                }
+            } else {
+                shadowWindow.alphaValue = alpha
+            }
+        }
+
+        private func tearDownShadow() {
+            for observer in observers { NotificationCenter.default.removeObserver(observer) }
+            observers = []
+            if let shadowWindow {
+                shadowWindow.parent?.removeChildWindow(shadowWindow)
+                shadowWindow.orderOut(nil)
+            }
+            shadowWindow = nil
+        }
+    }
+}
+
+/// A click-through window just larger than the main window, drawing a soft shadow around the main window's rounded shape and
+/// nothing under it (the glass would show a shadow behind it). Its layers only change when the main window is resized, so the shadow
+/// is drawn once instead of on every frame.
+final class ShadowWindow: NSWindow {
+    /// Room around the main window for the shadow to spread into.
+    static let margin: CGFloat = 60
+    private let container = CALayer()
+    private let caster = CALayer()
+    private let cutout = CAShapeLayer()
+
+    init() {
+        super.init(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = false
+        ignoresMouseEvents = true
+        isReleasedWhenClosed = false
+        animationBehavior = .none
+        let view = NSView()
+        view.wantsLayer = true
+        contentView = view
+        caster.shadowColor = NSColor.black.cgColor
+        caster.shadowOpacity = 0.38
+        caster.shadowRadius = 22
+        caster.shadowOffset = CGSize(width: 0, height: -10)
+        cutout.fillRule = .evenOdd
+        container.mask = cutout
+        container.addSublayer(caster)
+        view.layer?.addSublayer(container)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    /// Takes the main window's place and shape.
+    func follow(_ main: NSWindow) {
+        let frame = main.frame.insetBy(dx: -Self.margin, dy: -Self.margin)
+        setFrame(frame, display: false)
+        let bounds = CGRect(origin: .zero, size: frame.size)
+        let inner = bounds.insetBy(dx: Self.margin, dy: Self.margin)
+        let radius = min(Theme.windowRadius, inner.width / 2, inner.height / 2)
+        let shape = CGPath(roundedRect: inner, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        let outside = CGMutablePath()
+        outside.addRect(bounds)
+        outside.addPath(shape)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        container.frame = bounds
+        container.contentsScale = backingScaleFactor
+        caster.frame = bounds
+        caster.contentsScale = backingScaleFactor
+        caster.shadowPath = shape
+        cutout.frame = bounds
+        cutout.path = outside
+        CATransaction.commit()
     }
 }
 

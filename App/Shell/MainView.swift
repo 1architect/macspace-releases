@@ -84,8 +84,8 @@ public struct MainView: View {
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        // Off while closing: macOS draws the shadow from the window's content and would leave it full size behind the shrinking glass.
-        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && !windowClosing))
+        // The shadow comes in once the glass has grown in, and leaves before the glass shrinks away when the window closes.
+        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && windowShown && !windowClosing))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
