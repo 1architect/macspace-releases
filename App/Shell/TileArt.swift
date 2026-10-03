@@ -217,36 +217,22 @@ struct BlocksView: View {
         GeometryReader { proxy in
             let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: proxy.size))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+                // Two layers moved alike: the blocks, whose glass is drawn together in a glass container, and their names over them. The
+                // container draws only glass, so names inside it were lost.
                 ZStack(alignment: .topLeading) {
+                    GlassGroup {
+                        ZStack(alignment: .topLeading) {
+                            ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                                let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
+                                let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
+                                placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id),
+                                       index: index, rect: rect, date: context.date)
+                            }
+                        }
+                    }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                         let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
-                        let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                        Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id)
-                            .overlay {
-                                // Glass has its own edge; an outline would sit inside it.
-                                if !design.glass {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
-                                        .animation(Theme.highlight, value: hovered)
-                                }
-                            }
-                            .overlay(alignment: .topLeading) {
-                                if labels, rect.width > 74, rect.height > 34 {
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
-                                        Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).contentTransition(.numericText())
-                                    }
-                                    .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 5)
-                                }
-                            }
-                            .frame(width: max(rect.width, 0), height: max(rect.height, 0))
-                            .offset(x: rect.minX, y: rect.minY)
-                            .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
-                            .opacity(appeared ? 1 : 0)
-                            .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
-                            .opacity(LoadingWave.opacity(context.date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion))
+                        placed(overlay(segment, index: index, rect: rect), index: index, rect: rect, date: context.date)
                     }
                 }
             }
@@ -254,6 +240,40 @@ struct BlocksView: View {
             .animation(.smooth(duration: 0.4), value: loading)
         }
         .onAppear { appeared = true }
+    }
+
+    /// A block's place, its coming in, and its loading pulse; the same for the block and for its name.
+    private func placed(_ view: some View, index: Int, rect: CGRect, date: Date) -> some View {
+        view
+            .frame(width: max(rect.width, 0), height: max(rect.height, 0))
+            .offset(x: rect.minX, y: rect.minY)
+            .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
+            .opacity(appeared ? 1 : 0)
+            .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
+            .opacity(LoadingWave.opacity(date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion))
+    }
+
+    /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
+    /// own edge; an outline would sit inside it).
+    private func overlay(_ segment: UsageSegment, index: Int, rect: CGRect) -> some View {
+        ZStack(alignment: .topLeading) {
+            if !design.glass {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+                    .animation(Theme.highlight, value: hovered)
+            }
+            if labels, rect.width > 74, rect.height > 34 {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).contentTransition(.numericText())
+                }
+                .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 5)
+            }
+        }
+        .frame(width: max(rect.width, 0), height: max(rect.height, 0), alignment: .topLeading)
+        .allowsHitTesting(false)
     }
 
     /// The block under a point, for hover.
@@ -327,9 +347,11 @@ struct StateView: View {
         let palette = design.palette(tint)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 9) {
-                ZStack(alignment: on ? .trailing : .leading) {
-                    Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1))
-                    Surface(shape: Circle(), color: on ? design.action : palette.step(4)).padding(3)
+                GlassGroup {
+                    ZStack(alignment: on ? .trailing : .leading) {
+                        Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1))
+                        Surface(shape: Circle(), color: on ? design.action : palette.step(4)).padding(3)
+                    }
                 }
                 .frame(width: 44, height: 24)
                 Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
@@ -422,9 +444,14 @@ struct GaugeView: View {
         let more = min(max(extra, 0), 1 - min(value, 1)) * Self.sweep * drawn
         let band = min(9, max(4, side * 0.07))
         return ZStack {
-            Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
-            Surface(shape: ArcBand(from: used, to: used + more, width: band, round: false), color: palette.step(3))
-            Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
+            // Only the arcs in the glass container: it draws only glass, and the share written inside it was lost.
+            GlassGroup {
+                ZStack {
+                    Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
+                    Surface(shape: ArcBand(from: used, to: used + more, width: band, round: false), color: palette.step(3))
+                    Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
+                }
+            }
             // Glass is not drawn inside a rotated view, so the arc is placed by its angles instead of rotating the gauge.
             VStack(spacing: 1) {
                 Text(label).font(.system(size: min(24, side * 0.2), weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
@@ -465,9 +492,13 @@ struct BarGaugeView: View {
             .padding(.leading, GlassCircleButton.margin + GlassCircleButton.diameter + 10 - 15)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
-                    Surface(shape: Capsule(), color: palette.step(1))
-                    Surface(shape: Capsule(), color: palette.step(3)).frame(width: proxy.size.width * (used + more))
-                    Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
+                    GlassGroup {
+                        ZStack(alignment: .leading) {
+                            Surface(shape: Capsule(), color: palette.step(1))
+                            Surface(shape: Capsule(), color: palette.step(3)).frame(width: proxy.size.width * (used + more))
+                            Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
+                        }
+                    }
                     // While loading, a light runs along the bar.
                     if loading && !reduceMotion {
                         TimelineView(.animation(minimumInterval: 1 / 30)) { context in

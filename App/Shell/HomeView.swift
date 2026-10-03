@@ -73,10 +73,9 @@ struct TileFace: View {
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
             // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
             if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
-                GlassGroup {
-                    GeometryReader { proxy in
-                        chart(graphic, in: proxy.size)
-                    }
+                // Each chart puts only its glass shapes in a glass container (it draws only glass); its text stays outside.
+                GeometryReader { proxy in
+                    chart(graphic, in: proxy.size)
                 }
                 .opacity(chartOpacity)
             }

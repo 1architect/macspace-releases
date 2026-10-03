@@ -107,7 +107,7 @@ struct HeroBlocks: View {
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
-            GlassGroup { BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap) }
+            BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap)
                 .frame(height: 150)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
                 .onContinuousHover { phase in
