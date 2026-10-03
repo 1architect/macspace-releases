@@ -177,6 +177,10 @@ enum KeyableWindow {
 
 /// The glass the tiles sit on. It blurs what is behind the window, and is the window's only edge. Under an open page, whose own glass
 /// covers the whole window, only the edge is drawn.
+///
+/// Under the glass lies a plain blur of what is behind the window (`WindowBlur`). Liquid Glass alone blurs as much as the system's
+/// glass setting asks: set to clear, it hardly blurred at all, and windows behind read straight through the tiles. The blur under it
+/// keeps the window frosted whatever that setting, also under an open page.
 struct GlassBackdrop: View {
     var showsGlass = true
     /// How far a page has opened over it (the zoom's progress): the glass fades out as the page's glass grows over it, so it is
@@ -187,6 +191,9 @@ struct GlassBackdrop: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
         ZStack {
+            if design.windowGlass {
+                WindowBlur(cornerRadius: Theme.windowRadius)
+            }
             if !showsGlass {
                 Color.clear
             } else if design.windowGlass {
@@ -212,5 +219,42 @@ private struct GlassFade: ViewModifier, @preconcurrency Animatable {
 
     func body(content: Content) -> some View {
         content.opacity(1 - ZoomMath.ramp(progress, 0.35, 1))
+    }
+}
+
+/// A blur of what is behind the window, in the window's rounded shape: the system's own (`NSVisualEffectView`), whatever the Liquid
+/// Glass setting. With Reduce Transparency, the system draws it solid.
+private struct WindowBlur: NSViewRepresentable {
+    let cornerRadius: CGFloat
+
+    final class BlurView: NSVisualEffectView {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+
+    func makeNSView(context: Context) -> BlurView {
+        let view = BlurView()
+        view.blendingMode = .behindWindow
+        view.material = .underWindowBackground
+        view.state = .active
+        view.maskImage = Self.mask(radius: cornerRadius)
+        return view
+    }
+
+    func updateNSView(_ view: BlurView, context: Context) {
+        let appearance: NSAppearance.Name = context.environment.colorScheme == .dark ? .darkAqua : .aqua
+        if view.appearance?.name != appearance { view.appearance = NSAppearance(named: appearance) }
+    }
+
+    /// A rounded rectangle that stretches to any size, the way the visual effect view takes a shape.
+    private static func mask(radius: CGFloat) -> NSImage {
+        let side = radius * 2 + 1
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.resizingMode = .stretch
+        return image
     }
 }
