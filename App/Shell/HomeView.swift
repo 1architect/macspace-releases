@@ -176,7 +176,8 @@ struct DashboardTile: Identifiable {
 }
 
 /// The dashboard: the startup disk, one tile per active module and Settings, packed into a bento grid that fills the glass. Tiles
-/// come in one after another when the window opens, and glide to their new places when a module is switched on or off.
+/// come in one after another each time the window opens, leave in reverse order when it closes, and glide to their new places when a
+/// module is switched on or off.
 struct HomeView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var storage: StorageOverview
@@ -185,7 +186,13 @@ struct HomeView: View {
     let open: (Destination) -> Void
     /// The tile that is being replaced by the zoom; it is not drawn so it does not show through.
     var hiddenTile: Destination?
+    /// The window is closing: the tiles leave.
+    var closing = false
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// How long the tiles take to leave, for the window to wait before it goes.
+    static func depopulateDuration(tiles: Int) -> Double { 0.26 + Double(max(tiles - 1, 0)) * Theme.depopulateStagger }
 
     static let minimumRowHeight: CGFloat = 120
 
@@ -231,14 +238,16 @@ struct HomeView: View {
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                         let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
+                        let shown = appeared && !closing
                         DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
                                           isHidden: hiddenTile == tile.destination) {
                             open(tile.destination)
                         }
                         .frame(width: frame.width, height: frame.height)
-                        .scaleEffect(appeared ? 1 : 0.86)
-                        .opacity(appeared ? 1 : 0)
-                        .animation(Theme.layout.delay(Double(index) * 0.06), value: appeared)
+                        .scaleEffect(shown || reduceMotion ? 1 : 0.86)
+                        .opacity(shown ? 1 : 0)
+                        .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
+                                           : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
                         .offset(x: frame.minX, y: frame.minY)
                         .opacity(hiddenTile == tile.destination ? 0 : 1)
                         .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -258,7 +267,14 @@ struct HomeView: View {
             .scrollClipDisabled()
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
         }
-        .onChange(of: host.hasScanned, initial: true) { _, scanned in if scanned { appeared = true } }
+        // Each time the window opens, once the tiles are known: a moment later, so the change animates instead of landing in the
+        // first frame.
+        .task(id: host.hasScanned) {
+            guard host.hasScanned else { return }
+            try? await Task.sleep(for: .milliseconds(30))
+            appeared = true
+        }
+        .onDisappear { appeared = false }
     }
 }
 

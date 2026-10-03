@@ -32,6 +32,13 @@ enum Theme {
     static let tileHoverShade = 0.1
     static let press = Animation.spring(duration: 0.22, bounce: 0.2)
     static let layout = Animation.spring(duration: 0.55, bounce: 0.18)
+    /// The window opening: the glass grows in, then the tiles come in one after another (`layout`, `populateStagger` apart).
+    static let windowIn = Animation.spring(duration: 0.45, bounce: 0.15)
+    static let populateStagger = 0.06
+    /// The window closing: the tiles leave in reverse order, quickly and without bounce, then the glass shrinks away.
+    static let depopulate = Animation.smooth(duration: 0.26)
+    static let depopulateStagger = 0.035
+    static let windowOut = Animation.smooth(duration: 0.28)
     static let value = Animation.smooth(duration: 0.9)
 }
 

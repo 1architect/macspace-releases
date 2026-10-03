@@ -36,6 +36,11 @@ public struct MainView: View {
     @ObservedObject private var remote = DebugRemote.shared
     @ObservedObject private var designSettings = DesignSettings.shared
     @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The glass is in: it grows in when the window opens and shrinks away before it closes.
+    @State private var windowShown = false
+    /// The window is closing: the tiles leave, then the glass, then the window goes.
+    @State private var windowClosing = false
 
     /// `progress` is 0 on the dashboard and 1 with a page fully open; `reveal` brings in the page's content after the card has grown.
     /// The layer exists while a page is open or moving.
@@ -72,14 +77,24 @@ public struct MainView: View {
         // Nothing draws outside the glass: a lifted tile's shadow spilling past it left a stray shadow and edge, which macOS then
         // copied into the window's own shadow.
         .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
+        .scaleEffect(windowShown || reduceMotion ? 1 : 0.94)
+        .opacity(windowShown ? 1 : 0)
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow))
+        // Off while closing: macOS draws the shadow from the window's content and would leave it full size behind the shrinking glass.
+        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && !windowClosing))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
         .task { await storage.refresh() }
+        .task {
+            // A moment after the window appears, so the glass animates in instead of landing in the first frame.
+            windowClosing = false
+            try? await Task.sleep(for: .milliseconds(30))
+            withAnimation(Theme.windowIn) { windowShown = true }
+        }
+        .onDisappear { windowShown = false; windowClosing = false }
         .onChange(of: remote.command?.id) { _, _ in
             guard let text = remote.command?.text else { return }
             if text == "close" { close() }
@@ -90,7 +105,7 @@ public struct MainView: View {
 
     private func content(_ size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
-            HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination)
+            HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination, closing: windowClosing)
                 .modifier(ZoomFade(progress: progress))
                 .allowsHitTesting(layer == nil)
             if let layer, size.width > 0 {
@@ -134,7 +149,7 @@ public struct MainView: View {
     private var cornerControls: some View {
         HStack(spacing: 8) {
             GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? "Back" : "Close") {
-                isOpen ? close() : dismissWindow(id: "main")
+                isOpen ? close() : closeWindow()
             }
             if isOpen, case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
                 RefreshButton(handle: handle)
@@ -159,6 +174,7 @@ public struct MainView: View {
         Group {
             Button("Back") { close() }.keyboardShortcut(.cancelAction)
             Button("Settings") { present(.settings) }.keyboardShortcut(",", modifiers: .command)
+            Button("Close Window") { closeWindow() }.keyboardShortcut("w", modifiers: .command)
         }
         .opacity(0)
         .allowsHitTesting(false)
@@ -206,6 +222,20 @@ public struct MainView: View {
         withAnimation(Theme.hover) { isOpen = true }
         withAnimation(Theme.open) { progress = 1 }
         withAnimation(.smooth(duration: 0.5).delay(0.22)) { reveal = 1 }
+    }
+
+    /// The tiles leave in reverse order, then the glass shrinks away, then the window closes.
+    private func closeWindow() {
+        guard !windowClosing else { return }
+        windowClosing = true
+        let tiles = HomeView.depopulateDuration(tiles: HomeView.tiles(for: host.dashboardHandles).count)
+        // The glass starts going while the last tiles are still leaving.
+        let glassDelay = tiles * 0.6
+        withAnimation(Theme.windowOut.delay(glassDelay)) { windowShown = false }
+        Task {
+            try? await Task.sleep(for: .seconds(glassDelay + 0.3))
+            dismissWindow(id: "main")
+        }
     }
 
     /// The page goes first, then the card shrinks back into its tile. Works mid-opening too: the card turns around where it is.
