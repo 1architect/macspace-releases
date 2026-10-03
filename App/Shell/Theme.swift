@@ -201,6 +201,7 @@ struct LoadingDots: View {
 private struct GlassCircleStyle: ButtonStyle {
     let diameter: CGFloat
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
@@ -208,9 +209,19 @@ private struct GlassCircleStyle: ButtonStyle {
         configuration.label
             .opacity(pressed ? 0.55 : 1)
             .background {
-                ClearGlassCircle(diameter: diameter)
-                    // A light over the glass under the pointer, a little less while pressed.
-                    .overlay { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)) }
+                Group {
+                    if reduceTransparency {
+                        // With Reduce Transparency the system draws glass as an opaque disc in its own default colors: one button came
+                        // out near black and another white, its white symbol lost. A solid light over the page's color instead, the
+                        // same for every button, with a fine edge.
+                        Circle().fill(.white.opacity(0.18))
+                            .overlay { Circle().strokeBorder(.white.opacity(0.28), lineWidth: 0.5) }
+                    } else {
+                        ClearGlassCircle(diameter: diameter)
+                    }
+                }
+                // A light over the button under the pointer, a little less while pressed.
+                .overlay { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)) }
             }
             .scaleEffect(pressed ? 0.88 : (hovering ? 1.08 : 1))
             .onHover { hovering = $0 && isEnabled }
@@ -220,8 +231,8 @@ private struct GlassCircleStyle: ButtonStyle {
     }
 }
 
-/// `NSGlassEffectView` dressed like MacBat's unselected pill: dark appearance, the clear style and a 14 % black tint. With Reduce
-/// Transparency it keeps the system's default glass. It never takes clicks; the SwiftUI button above it does.
+/// `NSGlassEffectView` dressed like MacBat's unselected pill: dark appearance, the clear style and a 14 % black tint. Not used with
+/// Reduce Transparency (`GlassCircleStyle`). It never takes clicks; the SwiftUI button above it does.
 private struct ClearGlassCircle: NSViewRepresentable {
     let diameter: CGFloat
 
@@ -232,11 +243,9 @@ private struct ClearGlassCircle: NSViewRepresentable {
     func makeNSView(context: Context) -> GlassView {
         let glass = GlassView()
         glass.cornerRadius = diameter / 2
-        if !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
-            glass.appearance = NSAppearance(named: .darkAqua)
-            glass.style = .clear
-            glass.tintColor = NSColor.black.withAlphaComponent(0.14)
-        }
+        glass.appearance = NSAppearance(named: .darkAqua)
+        glass.style = .clear
+        glass.tintColor = NSColor.black.withAlphaComponent(0.14)
         return glass
     }
 
