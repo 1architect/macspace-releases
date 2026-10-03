@@ -152,29 +152,34 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
   spctl -a -vv "$APP"
 fi
 # The helper daemon can only be registered from an app that sits in an Applications folder: from Build/ macOS reports it as
-# "not found". INSTALL=1 copies the build to /Applications (INSTALL_DIR to choose another; ~/Applications when /Applications is not
-# writable) and removes the copy an earlier build put in the other one.
+# "not found". INSTALL=1 copies the build to /Applications, the one in Finder's sidebar (INSTALL_DIR chooses another), asking for
+# an administrator password when the folder is not writable, and removes the copy earlier builds put in ~/Applications.
 if [ "${INSTALL:-0}" = 1 ]; then
   INSTALL_DIR=${INSTALL_DIR:-/Applications}
-  if [ ! -w "$INSTALL_DIR" ]; then INSTALL_DIR="$HOME/Applications"; mkdir -p "$INSTALL_DIR"; fi
   TARGET="$INSTALL_DIR/MacSpace.app"
+  # A plain string, not an array: macOS's bash 3.2 treats an empty array as unbound under set -u.
+  AS_ADMIN=""
+  if [ ! -w "$INSTALL_DIR" ] || { [ -e "$TARGET" ] && [ ! -w "$TARGET" ]; }; then
+    echo "Installing into $INSTALL_DIR needs an administrator password."
+    AS_ADMIN=sudo
+  fi
   LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
   pkill -i -x MacSpace 2>/dev/null || true
   # One installed copy only: two copies with the same identifier left macOS free to pick either for the helper.
   for other in /Applications/MacSpace.app "$HOME/Applications/MacSpace.app"; do
     if [ "$other" != "$TARGET" ] && [ -d "$other" ]; then
       "$LSREGISTER" -u "$other" 2>/dev/null || true
-      rm -rf "$other" && echo "Removed the earlier copy at $other"
+      if rm -rf "$other" 2>/dev/null || sudo rm -rf "$other"; then echo "Removed the earlier copy at $other"; fi
     fi
   done
-  rm -rf "$TARGET"
-  ditto "$APP" "$TARGET"
+  $AS_ADMIN rm -rf "$TARGET"
+  $AS_ADMIN ditto "$APP" "$TARGET"
   # Only the installed copy is known to Launch Services. The build's own copy, once seen (Finder registers any app it shows),
   # has the same identifier and version, and macOS could resolve the app to it when installing the helper: that copy is deleted and
   # rewritten by every build, and the helper failed with "Codesigning failure loading plist … -67056" (resources not found).
   # Registering the installed copy again also makes Finder and the Dock read its icon again.
   "$LSREGISTER" -u "$PWD/$APP" 2>/dev/null || true
-  touch "$TARGET"
+  $AS_ADMIN touch "$TARGET"
   "$LSREGISTER" -f "$TARGET" 2>/dev/null || true
   echo "Installed $TARGET"
 fi
