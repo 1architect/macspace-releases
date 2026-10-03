@@ -158,11 +158,14 @@ if [ "${INSTALL:-0}" = 1 ]; then
   pkill -i -x MacSpace 2>/dev/null || true
   rm -rf "$HOME/Applications/MacSpace.app"
   ditto "$APP" "$HOME/Applications/MacSpace.app"
-  # macOS keeps the icon it last saw for the app's path, and a rebuilt app put in the same place kept the old (or the generic)
-  # one. Register the new copy so Finder and the Dock read its icon again.
+  # Only the installed copy is known to Launch Services. The build's own copy, once seen (Finder registers any app it shows),
+  # has the same identifier and version, and macOS could resolve the app to it when installing the helper: that copy is deleted and
+  # rewritten by every build, and the helper failed with "Codesigning failure loading plist … -67056" (resources not found).
+  # Registering the installed copy again also makes Finder and the Dock read its icon again.
+  LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+  "$LSREGISTER" -u "$PWD/$APP" 2>/dev/null || true
   touch "$HOME/Applications/MacSpace.app"
-  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f \
-    "$HOME/Applications/MacSpace.app" 2>/dev/null || true
+  "$LSREGISTER" -f "$HOME/Applications/MacSpace.app" 2>/dev/null || true
   echo "Installed $HOME/Applications/MacSpace.app"
 fi
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
