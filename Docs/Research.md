@@ -90,6 +90,11 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
   `fspurgeable_document` not tried. Which category the files counted under is not known (System Data was not noted before the
   purge), so the purge is not in System Data: the Other System Files module lists every service macOS counts as purgeable and frees
   `fspurgeable_data`, and the disk tile's "purgeable" is that service's figure. The other two stay CLI-only (`--experiment`).
+- **Measured – purging again from the app (2026-10-03, development Mac, urgency 3).** The first purge removed 111 MB; the next
+  answered within 0.0013 s with `CACHE_DELETE_AMOUNT = 0` while the estimate at urgency 3 still said 911.7 MB (free space 107.3 GB,
+  goal set to free + the 100 GB asked). The estimate lags what CacheDelete will actually remove. The app now asks at urgency 3 and
+  then at urgency 4 (critically full), and lists the files as declined, not freeable, only when both remove nothing. Not yet
+  measured: what urgency 4 removes.
 
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 

@@ -15,6 +15,9 @@ public enum CacheDeleteService {
     /// it at urgency 3 freed 4.66 GB, measured on the volume, as a normal user. Asked at `fsPurgeableDataUrgency`.
     public static let fsPurgeableData = "com.apple.fspurgeable_data"
     public static let fsPurgeableDataUrgency = 3
+    /// The urgency macOS uses when the disk is critically full. On 2026-10-03, after a purge at urgency 3 had removed 111 MB, asking
+    /// again at 3 removed nothing within a millisecond while the estimate still said 911.7 MB; removing then goes on at this urgency.
+    public static let fsPurgeableDataForceUrgency = 4
     /// The only services MacSpace asks to purge.
     public static let purgeable: Set<String> = [mobileAsset, appContainerCaches, fsPurgeableData]
     /// Documents marked purgeable; 633 MB at urgency 3 on the development Mac.
