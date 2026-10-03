@@ -52,10 +52,18 @@ if [ -d "$ICON" ]; then
   xcrun actool "$ICON" --compile "$APP/Contents/Resources" --app-icon "$ICON_NAME" --include-all-app-icons \
     --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 27.0 \
     --enable-on-demand-resources NO --development-region en --errors --warnings --output-format human-readable-text
-  plutil -replace CFBundleIconFile -string "$ICON_NAME" "$APP/Contents/Info.plist"
-  plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
+  # actool can finish without writing the icon (an Icon Composer document whose files OneDrive has not downloaded, say); then the
+  # app would name an icon it does not carry and show the generic one. Fall back to the old .icns instead, and say so.
+  if [ -f "$APP/Contents/Resources/Assets.car" ] && [ -f "$APP/Contents/Resources/$ICON_NAME.icns" ]; then
+    plutil -replace CFBundleIconFile -string "$ICON_NAME" "$APP/Contents/Info.plist"
+    plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
+    echo "App icon: $ICON"
+  else
+    cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+    echo "warning: actool wrote no icon from $ICON (is it downloaded from OneDrive?); using App/Resources/AppIcon.icns" >&2
+    ls -la "$APP/Contents/Resources" >&2
+  fi
   rm -rf "$PARTIAL"
-  echo "App icon: $ICON"
 else
   cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
   echo "App icon: App/Resources/AppIcon.icns ($ICON not found)"
@@ -122,6 +130,11 @@ if [ "${INSTALL:-0}" = 1 ]; then
   pkill -i -x MacSpace 2>/dev/null || true
   rm -rf "$HOME/Applications/MacSpace.app"
   ditto "$APP" "$HOME/Applications/MacSpace.app"
+  # macOS keeps the icon it last saw for the app's path, and a rebuilt app put in the same place kept the old (or the generic)
+  # one. Register the new copy so Finder and the Dock read its icon again.
+  touch "$HOME/Applications/MacSpace.app"
+  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f \
+    "$HOME/Applications/MacSpace.app" 2>/dev/null || true
   echo "Installed $HOME/Applications/MacSpace.app"
 fi
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
