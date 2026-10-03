@@ -18,7 +18,7 @@ enum OtherSystemFilesScreenBuilder {
     static func segments(_ snapshot: PurgeableSnapshot) -> [UsageSegment] {
         let services = (snapshot.services ?? [:]).filter { $0.value >= threshold || ($0.key == CacheDeleteService.fsPurgeableData && $0.value > 0) }
         return services.sorted { $0.value > $1.value }.enumerated().map { index, entry in
-            let freeable = entry.key == CacheDeleteService.fsPurgeableData
+            let freeable = entry.key == CacheDeleteService.fsPurgeableData && !snapshot.declined
             return UsageSegment(id: entry.key, label: PurgeableService.describe(entry.key).title, bytes: entry.value,
                                 tone: freeable ? .caution : .series(index))
         }
@@ -60,12 +60,16 @@ enum OtherSystemFilesScreenBuilder {
     /// Everything else macOS counts as purgeable, with why MacSpace leaves it, so the total adds up. Drawn like System Data's lists:
     /// open, one row per service with its symbol, the reason in the row's detail.
     static func keptSection(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
-        let kept = (snapshot.services ?? [:]).filter { $0.key != CacheDeleteService.fsPurgeableData && $0.value >= threshold }
+        // The files apps marked purgeable are left alone too while macOS declines them.
+        let kept = (snapshot.services ?? [:]).filter { ($0.key != CacheDeleteService.fsPurgeableData || snapshot.declined) && $0.value >= threshold }
             .sorted { $0.value > $1.value }
         guard !kept.isEmpty else { return nil }
         let rows = kept.map { entry in
             let service = PurgeableService.describe(entry.key)
-            return Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: service.detail)
+            let detail = entry.key == CacheDeleteService.fsPurgeableData
+                ? "macOS declined to remove these when MacSpace asked: it keeps them until it needs the space. Offered again once its estimate grows."
+                : service.detail
+            return Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: detail)
         }
         return .section(SectionWidget(id: "kept", title: "Left alone", subtitle: "Counted as purgeable by macOS, but not worth freeing or not tested.",
                                       widgets: [.list(ListWidget(id: "kept-list", rows: rows))]))

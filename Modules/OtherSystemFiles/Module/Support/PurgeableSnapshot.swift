@@ -6,9 +6,22 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// Bytes each service reports; nil when CacheDelete is unavailable or failed its self-test on this macOS build.
     var services: [String: UInt64]?
     var takenAt: Date
+    /// What macOS estimated for the files apps marked purgeable when it last declined to remove any of them, in this session.
+    var declinedBytes: UInt64? = nil
 
-    /// What MacSpace frees: the files apps marked purgeable. The other services are listed, not purged (see `PurgeableService`).
-    var freeableBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
+    /// macOS's estimate of the files apps marked purgeable.
+    var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
+
+    /// macOS declined to remove those files and its estimate has not grown much since. Its estimate is kept by macOS and lags: after a
+    /// purge that removed 111 MB it still said 911.7 MB, and asked again, macOS answered within a millisecond that it removed nothing.
+    var declined: Bool {
+        guard let declinedBytes else { return false }
+        return estimatedBytes <= declinedBytes + max(declinedBytes / 20, 20_000_000)
+    }
+
+    /// What MacSpace frees: the files apps marked purgeable, unless macOS just declined them. The other services are listed, not
+    /// purged (see `PurgeableService`).
+    var freeableBytes: UInt64 { declined ? 0 : estimatedBytes }
     var totalBytes: UInt64 { services?.values.reduce(0, +) ?? 0 }
 }
 
@@ -40,15 +53,20 @@ struct PurgeableService: Equatable {
 
 actor PurgeableStore {
     private var cached: PurgeableSnapshot?
+    private var declined: UInt64?
 
     func snapshot(maxAge: TimeInterval = 60) async -> PurgeableSnapshot {
         if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
-        let fresh = await Task.detached(priority: .utility) { Self.liveSnapshot() }.value
+        var fresh = await Task.detached(priority: .utility) { Self.liveSnapshot() }.value
+        fresh.declinedBytes = declined
         cached = fresh
         return fresh
     }
 
     func invalidate() { cached = nil }
+
+    /// macOS removed nothing when asked, while estimating `bytes`: not offered again until its estimate grows.
+    func noteDeclined(estimate bytes: UInt64) { declined = bytes }
 
     /// Asked in the CLI child process, so a changed private interface crashes it and not the app. Each macOS build is self-tested
     /// once before CacheDelete is trusted.

@@ -26,7 +26,14 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        defer { Task { await store.invalidate() } }
+        let result = await handle(request, context: context, progress: progress)
+        // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
+        // and a cache dropped later (in a task of its own) gave it the figures from before the action.
+        await store.invalidate()
+        return result
+    }
+
+    private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Machine.isVirtualMachine { return .failed("Apple Intelligence does not exist in a virtual machine; nothing was changed.") }
         switch request.actionID {
         case "toggle":

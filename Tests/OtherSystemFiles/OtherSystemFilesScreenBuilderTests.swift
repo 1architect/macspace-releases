@@ -37,6 +37,22 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertTrue(list.rows.allSatisfy { $0.symbol != nil }, "each row has its symbol, like the rows above it")
     }
 
+    func testFilesMacOSDeclinedAreNotOfferedUntilItsEstimateGrows() throws {
+        var snap = snapshot(measured)
+        snap.declinedBytes = snap.estimatedBytes
+        XCTAssertTrue(snap.declined)
+        XCTAssertEqual(snap.freeableBytes, 0)
+        XCTAssertNil(OtherSystemFilesScreenBuilder.freeAction(snap, prominent: true), "no button for what macOS just declined")
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).status, "nothing to free")
+        XCTAssertFalse(OtherSystemFilesScreenBuilder.segments(snap).contains { $0.tone == .caution })
+        guard case let .section(kept)? = OtherSystemFilesScreenBuilder.keptSection(snap), case let .list(list) = kept.widgets[0] else {
+            return XCTFail()
+        }
+        XCTAssertTrue(list.rows.map(\.id).contains(CacheDeleteService.fsPurgeableData), "listed as left alone, with why")
+        snap.declinedBytes = snap.estimatedBytes / 2
+        XCTAssertFalse(snap.declined, "offered again once the estimate has grown")
+    }
+
     func testTheTileMarksWhatCanBeFreed() {
         let tile = OtherSystemFilesScreenBuilder.tile(snapshot(measured))
         XCTAssertEqual(tile.status, "\(ByteFormat.string(4_888_453_120)) can be freed")
