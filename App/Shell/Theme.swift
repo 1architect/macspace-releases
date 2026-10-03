@@ -82,7 +82,7 @@ struct TileCaption: View {
         .lineLimit(1)
         .minimumScaleFactor(0.5)
         .foregroundStyle(design.ink)
-        .shadow(color: .black.opacity(design.isLight ? 0 : 0.18), radius: 6)
+        // No shadow behind the text: a blurred shadow of every caption was redrawn on every frame any tile moved.
         .animation(Theme.value, value: status)
     }
 }

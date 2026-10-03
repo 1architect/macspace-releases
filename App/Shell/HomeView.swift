@@ -329,9 +329,9 @@ struct DashboardTileView: View {
         let tilt = reduceMotion || !design.tilt ? UnitPoint.center : lean
         let turns = !design.glass
         Button(action: open) {
+            // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
                         hovering: hovering, hoveredBlock: hoveredBlock)
-                .clipShape(shape)
                 .contentShape(shape)
         }
         .buttonStyle(TilePressStyle())
@@ -430,11 +430,17 @@ private struct ModuleTileContent: View {
     var body: some View { content.layout(TileInfo(handle)) }
 }
 
+/// The tile sinks and darkens while pressed. The darkening is a shade laid over the tile, not a brightness filter: a filter stays on
+/// the tile even at 0 and makes every frame draw the whole tile, glass and all, through it.
 private struct TilePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+                    .fill(.black.opacity(configuration.isPressed ? 0.06 : 0))
+                    .allowsHitTesting(false)
+            }
             .scaleEffect(configuration.isPressed ? 0.955 : 1)
-            .brightness(configuration.isPressed ? -0.04 : 0)
             .animation(Theme.press, value: configuration.isPressed)
     }
 }

@@ -53,8 +53,9 @@ struct Surface<S: Shape>: View {
                 .glassEffect(.regular, in: shape)
                 .overlay { HoverShade(shape: shape, on: highlighted && design.hoverShade) }
         } else {
+            // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
             shape.fill(color)
-                .brightness(highlighted ? 0.08 : 0)
+                .overlay { shape.fill(.white.opacity(highlighted ? 0.1 : 0)) }
                 .animation(Theme.highlight, value: highlighted)
         }
     }
