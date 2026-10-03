@@ -110,8 +110,13 @@ struct PillButtonStyle: ButtonStyle {
             .padding(.horizontal, compact ? 10 : 15)
             .padding(.vertical, compact ? 4 : 7)
             .background {
-                if design.glass {
-                    Color.clear.glassEffect(.regular.tint(prominent ? (hovering ? design.actionLight : design.action) : nil).interactive(), in: .capsule)
+                if design.glass && prominent {
+                    // The action color is drawn inside the glass, not given as its tint: macOS greys a glass's tint out while the window
+                    // is not the active one, and the main action lost its color whenever another app was in front.
+                    Capsule().fill(hovering ? design.actionLight : design.action)
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                } else if design.glass {
+                    Color.clear.glassEffect(.regular.interactive(), in: .capsule)
                 } else {
                     Capsule().fill(prominent ? AnyShapeStyle(hovering ? design.actionLight : design.action) : AnyShapeStyle(Color.primary.opacity(hovering ? 0.16 : 0.09)))
                     Capsule().strokeBorder(Color.primary.opacity(prominent ? 0 : 0.12), lineWidth: 1)
@@ -127,8 +132,8 @@ struct PillButtonStyle: ButtonStyle {
 }
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
-/// light dark tint, 36 points, a white symbol, loading dots while busy. Under the pointer it grows a little and lightens; pressed, it
-/// shrinks and the symbol dims. Used for close/back and Refresh in the top-left corner.
+/// light dark tint, 36 points, a symbol in the text's color, loading dots while busy. Under the pointer it grows a little and
+/// lightens; pressed, it shrinks and the symbol dims. Used for close/back and Refresh in the top-left corner.
 struct GlassCircleButton: View {
     static let diameter: CGFloat = 36
     static let margin: CGFloat = 8
@@ -137,6 +142,7 @@ struct GlassCircleButton: View {
     let help: String
     var busy = false
     let action: () -> Void
+    @Environment(\.design) private var design
 
     /// Each symbol's height. The symbol is drawn to its own outline, not as text: as text it kept room below for a baseline and sat
     /// low in the circle.
@@ -151,7 +157,7 @@ struct GlassCircleButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Busy, the symbol makes way for the loading dots, in the same white: the system spinner drew grey on the clear glass.
+                // Busy, the symbol makes way for the loading dots, in the same color: the system spinner drew grey on the clear glass.
                 if busy {
                     LoadingDots()
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -165,7 +171,8 @@ struct GlassCircleButton: View {
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
                 }
             }
-            .foregroundStyle(.white)
+            // The text's color: white on the deep palettes, ink on paper, where white was lost on the light page.
+            .foregroundStyle(design.ink)
             .frame(width: Self.diameter, height: Self.diameter)
             .contentShape(Circle())
             .animation(Theme.press, value: busy)
@@ -177,7 +184,7 @@ struct GlassCircleButton: View {
     }
 }
 
-/// Three white dots pulsing one after another, as the charts do while they load: what a busy round button shows in place of its
+/// Three dots pulsing one after another, as the charts do while they load: what a busy round button shows in place of its
 /// symbol. With Reduce Motion they stay dimmed instead.
 struct LoadingDots: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -49,8 +49,10 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.addChildWindow(shadow, ordered: .below)
             shadowWindow = shadow
             showShadow(animated: false)
-            // A child window moves with its parent by itself; it has to be told about a new size.
-            for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
+            // A child window moves with its parent by itself; it has to be told about a new size. After a move it is put back where it
+            // belongs, should AppKit have placed it anywhere else.
+            for name in [NSWindow.didResizeNotification, NSWindow.didMoveNotification, NSWindow.didChangeScreenNotification,
+                         NSWindow.didChangeBackingPropertiesNotification] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
                         guard let self, let window = self.window else { return }
@@ -121,11 +123,18 @@ final class ShadowWindow: NSWindow {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
+    /// Exactly where `follow` puts it. AppKit keeps a window's top edge below the menu bar, and this one reaches above the glass: with
+    /// the main window near the top of the screen it was pushed down, and the shadow hung below the glass around an empty band.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+
     /// Takes the shape of the main window's glass, which sits inside its frame by the resize band.
     func follow(_ main: NSWindow) {
         let glass = main.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
         let frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
-        setFrame(frame, display: false)
+        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor
+        if frame != self.frame { setFrame(frame, display: false) }
+        // A move only places the window again; the shadow is drawn anew only for a new size.
+        guard redraw else { return }
         let bounds = CGRect(origin: .zero, size: frame.size)
         let inner = bounds.insetBy(dx: Self.margin, dy: Self.margin)
         let radius = min(Theme.windowRadius, inner.width / 2, inner.height / 2)

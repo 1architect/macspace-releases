@@ -82,10 +82,12 @@ final class GlassPaneView: NSGlassEffectView {
     }
 
     private func updateShape() {
+        // Never more than half the shorter side: a block thinner than its corners got glass wider than itself, over its neighbours.
+        let half = max(min(bounds.width, bounds.height) / 2, 0)
         let radius: CGFloat
         switch corners {
-        case let .radius(value): radius = value
-        case .round: radius = min(bounds.width, bounds.height) / 2
+        case let .radius(value): radius = min(value, half)
+        case .round: radius = half
         }
         if cornerRadius != radius { cornerRadius = radius }
         // The content view fills the glass.
@@ -94,7 +96,7 @@ final class GlassPaneView: NSGlassEffectView {
         CATransaction.setDisableActions(true)
         for layer in [fill, shade] {
             layer.frame = inner
-            layer.cornerRadius = min(radius, min(inner.width, inner.height) / 2)
+            layer.cornerRadius = radius
         }
         CATransaction.commit()
     }

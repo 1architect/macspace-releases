@@ -238,17 +238,19 @@ private struct ActionDock: View {
 
 private struct ProgressPill: View {
     let progress: ActionProgress
+    @Environment(\.design) private var design
 
     var body: some View {
+        // In the text's color, as the round buttons: white was lost on the paper palette.
         HStack(spacing: 8) {
             if let fraction = progress.fraction {
-                ProgressView(value: fraction).progressViewStyle(.circular).controlSize(.small).tint(.white)
+                ProgressView(value: fraction).progressViewStyle(.circular).controlSize(.small).tint(design.ink)
             } else {
-                ProgressView().controlSize(.small).tint(.white)
+                ProgressView().controlSize(.small).tint(design.ink)
             }
             Text(progress.message).font(.system(size: 12, weight: .medium)).lineLimit(1).contentTransition(.opacity)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(design.ink)
         .padding(.horizontal, 13)
         .padding(.vertical, 7)
         .glassEffect(.regular, in: .capsule)

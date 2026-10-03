@@ -1,3 +1,4 @@
+import AppKit
 import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
@@ -66,9 +67,34 @@ struct TileFace: View {
     /// resize, and the tiles would trail the window.
     static let resizeTransition = AnyTransition.opacity.combined(with: .scale(scale: 0.86)).animation(Theme.layout)
 
-    /// Where a blocks chart sits in a tile of `size`.
-    static func chartArea(in size: CGSize) -> CGRect {
-        CGRect(x: 12, y: 12, width: max(size.width - 24, 0), height: max(size.height - 12 - captionBand - 14, 0))
+    /// The caption's size, which sets how much room it leaves the legend under a blocks chart.
+    var captionSize: CGFloat = 22
+
+    /// The line under a blocks chart (what amber means, or the block under the pointer): its height, and the least width it reads in.
+    static let legendRow: CGFloat = 20
+    static let legendMinimumWidth: CGFloat = 84
+
+    /// Where a blocks chart sits in a tile of `size`. The legend goes left of the caption; where the caption leaves it too little room
+    /// (a narrow tile, a long caption), it goes over the caption instead and the chart gives way. Side by side, the two overlapped.
+    static func chartArea(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGRect {
+        let band = captionBand + 14 + (legendAbove(in: size, info: info, captionSize: captionSize) ? legendRow : 0)
+        return CGRect(x: 12, y: 12, width: max(size.width - 24, 0), height: max(size.height - 12 - band, 0))
+    }
+
+    static func legendAbove(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
+        legendRoom(in: size, info: info, captionSize: captionSize) < legendMinimumWidth
+    }
+
+    /// The width left of the caption for the legend.
+    static func legendRoom(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGFloat {
+        let padding = CaptionSize.tilePadding
+        func width(_ text: String, _ weight: NSFont.Weight) -> CGFloat {
+            (text as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: captionSize, weight: weight)]).width
+        }
+        let measured = max(width(info.title, .bold), width(info.status, .light))
+        // The caption shrinks to fit the tile rather than run past it.
+        let caption = min(ceil(measured), max(size.width - 2 * padding, 0))
+        return size.width - 14 - 12 - caption - padding
     }
 
     var body: some View {
@@ -122,7 +148,8 @@ struct TileFace: View {
         let palette = design.palette(tint)
         switch graphic {
         case let .blocks(segments):
-            let area = Self.chartArea(in: size)
+            let area = Self.chartArea(in: size, info: info, captionSize: captionSize)
+            let above = Self.legendAbove(in: size, info: info, captionSize: captionSize)
             let hovered = hoveredBlock.flatMap { id in segments.first { $0.id == id } }
             BlocksView(segments: segments, tint: tint, labels: segments.contains { !$0.label.isEmpty }, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
@@ -139,6 +166,9 @@ struct TileFace: View {
             }
             .font(.system(size: 11))
             .foregroundStyle(palette.soft)
+            .lineLimit(1)
+            .frame(width: max(above ? size.width - 28 : Self.legendRoom(in: size, info: info, captionSize: captionSize), 0),
+                   alignment: .leading)
             .offset(x: 14, y: area.maxY + 8)
             .animation(Theme.hover, value: hovered?.id)
         case let .dots(dots):
@@ -468,8 +498,9 @@ struct DashboardTileView: View {
 
     /// The block of this tile's chart under `location`, if the chart is blocks.
     private func block(at location: CGPoint) -> String? {
-        guard case let .module(id) = tile.destination, case let .blocks(segments)? = host.handle(for: id)?.tile?.graphic else { return nil }
-        let area = TileFace.chartArea(in: size)
+        guard case let .module(id) = tile.destination, let handle = host.handle(for: id),
+              case let .blocks(segments)? = handle.tile?.graphic else { return nil }
+        let area = TileFace.chartArea(in: size, info: TileInfo(handle), captionSize: captionSize)
         return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
     }
 }
@@ -594,7 +625,7 @@ struct TileContent: View {
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
-                                      drawsBackdrop: drawsBackdrop) } else { Color.clear }
+                                      drawsBackdrop: drawsBackdrop, captionSize: captionSize) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
                     .padding(captionPadding)

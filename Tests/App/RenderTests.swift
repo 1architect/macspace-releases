@@ -140,4 +140,24 @@ final class RenderTests: XCTestCase {
             try data.write(to: URL(fileURLWithPath: directory).appendingPathComponent("widgets.png"))
         }
     }
+
+    func testTreemapGivesEveryValueAFiniteRectangle() {
+        let rects = Treemap.layout([900, 300, 0.000_001, 0, 0], in: CGRect(x: 0, y: 0, width: 300, height: 120))
+        XCTAssertEqual(rects.count, 5)
+        for rect in rects {
+            XCTAssertTrue([rect.minX, rect.minY, rect.width, rect.height].allSatisfy(\.isFinite), "\(rect)")
+            XCTAssertTrue(rect.minX >= -0.01 && rect.maxX <= 300.01 && rect.minY >= -0.01 && rect.maxY <= 120.01, "\(rect)")
+        }
+    }
+
+    func testBlocksLegendMovesOverALongCaption() {
+        let short = TileInfo(title: "cache", status: "1 GB")
+        let long = TileInfo(title: "other system files", status: "63,9 MB can be freed")
+        let size = CGSize(width: 270, height: 220)
+        XCTAssertFalse(TileFace.legendAbove(in: CGSize(width: 520, height: 220), info: long, captionSize: 22))
+        XCTAssertFalse(TileFace.legendAbove(in: size, info: short, captionSize: 22))
+        XCTAssertTrue(TileFace.legendAbove(in: size, info: long, captionSize: 22))
+        XCTAssertLessThan(TileFace.chartArea(in: size, info: long, captionSize: 22).height,
+                          TileFace.chartArea(in: size, info: short, captionSize: 22).height)
+    }
 }

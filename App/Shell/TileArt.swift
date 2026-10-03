@@ -156,6 +156,12 @@ enum Treemap {
         }
 
         while !remaining.isEmpty {
+            // The space is used up (only empty values left, or what rounding leaves): the rest take no room at its corner. Divided by
+            // a side of zero, they came out at an infinite size.
+            guard space.width > 0.001, space.height > 0.001 else {
+                for index in remaining { result[index] = CGRect(origin: space.origin, size: .zero) }
+                break
+            }
             let side = Double(min(space.width, space.height))
             var row = [remaining.removeFirst()]
             while let next = remaining.first, worst(row + [next], side) <= worst(row, side) {
@@ -222,14 +228,14 @@ struct BlocksView: View {
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                        let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
+                        let rect = inset(rects[index])
                         let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
                         placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
                                        strength: appeared ? wave(context.date, index) : 0),
                                index: index, rect: rect)
                     }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                        let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
+                        let rect = inset(rects[index])
                         placed(overlay(segment, index: index, rect: rect).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
                     }
                 }
@@ -238,6 +244,13 @@ struct BlocksView: View {
             .animation(.smooth(duration: 0.4), value: loading)
         }
         .onAppear { appeared = true }
+    }
+
+    /// A block's rectangle less its share of the gap. A block thinner than the gap keeps its place at no width; inset as usual, it
+    /// became a null rectangle, at infinity, and its glass stayed wherever it had last been drawn.
+    private func inset(_ rect: CGRect) -> CGRect {
+        guard rect.minX.isFinite, rect.minY.isFinite, rect.width.isFinite, rect.height.isFinite else { return .zero }
+        return rect.insetBy(dx: min(gap / 2, rect.width / 2), dy: min(gap / 2, rect.height / 2))
     }
 
     /// A block's place and its coming in (growing from its middle); the same for the block and for its name. The color comes in with
