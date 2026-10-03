@@ -52,6 +52,8 @@ public struct MainView: View {
     /// Bumped by every open and close, so a movement that was interrupted does not finish the one that replaced it.
     @State private var generation = 0
     @State private var frames = TileFrames()
+    /// A page has finished opening and covers the dashboard, which then stops drawing its tiles.
+    @State private var pageSettled = false
 
     public init(host: ModuleHost, updates: UpdateController) {
         self.host = host
@@ -105,7 +107,8 @@ public struct MainView: View {
 
     private func content(_ size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
-            HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination, closing: windowClosing)
+            HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination, closing: windowClosing,
+                     dormant: pageSettled)
                 .modifier(ZoomFade(progress: progress))
                 .allowsHitTesting(layer == nil)
             if let layer, size.width > 0 {
@@ -220,7 +223,10 @@ public struct MainView: View {
         reveal = 0
         layer = ZoomLayer(destination: destination, origin: origin, tint: tint)
         withAnimation(Theme.hover) { isOpen = true }
-        withAnimation(Theme.open) { progress = 1 }
+        let current = generation
+        withAnimation(Theme.open, completionCriteria: .removed) { progress = 1 } completion: {
+            if generation == current { pageSettled = true }
+        }
         withAnimation(.smooth(duration: 0.5).delay(0.22)) { reveal = 1 }
     }
 
@@ -241,6 +247,8 @@ public struct MainView: View {
     /// The page goes first, then the card shrinks back into its tile. Works mid-opening too: the card turns around where it is.
     private func close() {
         guard let open = layer, isOpen else { return }
+        // The tiles are drawn again before the card starts shrinking onto them.
+        pageSettled = false
         generation += 1
         let current = generation
         // The window may have been resized while the page was open.

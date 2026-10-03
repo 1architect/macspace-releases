@@ -60,7 +60,8 @@ struct TileFace: View {
         ZStack(alignment: .topLeading) {
             TileBackdrop(tint: tint)
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
-            if let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
+            // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
+            if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
                 GlassGroup {
                     GeometryReader { proxy in
                         chart(graphic, in: proxy.size)
@@ -190,6 +191,9 @@ struct HomeView: View {
     var hiddenTile: Destination?
     /// The window is closing: the tiles leave.
     var closing = false
+    /// A page fully covers the dashboard: the tiles are not drawn (their glass and animations cost the GPU even when hidden), but
+    /// their places are still laid out and recorded for the zoom back.
+    var dormant = false
     @State private var appeared = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -238,21 +242,23 @@ struct HomeView: View {
                 // hover lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
                 let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
                 ZStack(alignment: .topLeading) {
-                    ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
-                        let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                        let shown = appeared && !closing
-                        DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
-                                          isHidden: hiddenTile == tile.destination) {
-                            open(tile.destination)
+                    if !dormant {
+                        ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
+                            let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
+                            let shown = appeared && !closing
+                            DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
+                                              isHidden: hiddenTile == tile.destination) {
+                                open(tile.destination)
+                            }
+                            .frame(width: frame.width, height: frame.height)
+                            .scaleEffect(shown || reduceMotion ? 1 : 0.86)
+                            .opacity(shown ? 1 : 0)
+                            .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
+                                               : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
+                            .offset(x: frame.minX, y: frame.minY)
+                            .opacity(hiddenTile == tile.destination ? 0 : 1)
+                            .transition(.scale(scale: 0.8).combined(with: .opacity))
                         }
-                        .frame(width: frame.width, height: frame.height)
-                        .scaleEffect(shown || reduceMotion ? 1 : 0.86)
-                        .opacity(shown ? 1 : 0)
-                        .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
-                                           : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-                        .offset(x: frame.minX, y: frame.minY)
-                        .opacity(hiddenTile == tile.destination ? 0 : 1)
-                        .transition(.scale(scale: 0.8).combined(with: .opacity))
                     }
                 }
                 .frame(width: size.width, height: size.height, alignment: .topLeading)

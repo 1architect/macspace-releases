@@ -66,6 +66,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if module == nil {
             do { module = try loader(descriptor) } catch {
                 state = .failed(error.localizedDescription)
+                // Last session's tile stays, but nothing will refresh it: it must not show as loading (and animate) forever.
+                tileIsStale = false
                 return
             }
         }
