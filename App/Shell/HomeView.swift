@@ -243,24 +243,18 @@ struct HomeView: View {
         return (modules.first { $0.wide } ?? modules.first)?.id
     }
 
-    /// The tiles at their places in a grid of `size`, in two layers: every tile's ground (its glass) at the bottom, drawn together in one
-    /// glass container, and every tile's face over it. Glass drawn tile by tile blurred and bent what was behind each tile separately,
-    /// on every frame anything moved; a container draws the six in one pass. Only glass may be in the container: with the faces inside
-    /// it too, nothing but the glass was drawn.
+    /// The tiles at their places in a grid of `size`, in two layers: every tile's ground (its glass) at the bottom and every tile's face
+    /// over it, moved alike by `TilePlacement`. Not in a glass container: one drew the six grounds in a single pass (about 10 points of
+    /// GPU less while hovering), but it drew the glass apart from the faces, and a lifting tile's glass edge trailed behind its face.
     private func grid(_ tiles: [DashboardTile], placements: [Bento.Placement], columns: Int, rows: Int, size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
             if !dormant {
-                GlassGroup {
-                    ZStack(alignment: .topLeading) {
-                        ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
-                            let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                            TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift,
-                                       hovering: pointerTile == tile.destination)
-                                .frame(width: frame.width, height: frame.height)
-                                .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
-                        }
-                    }
-                    .frame(width: size.width, height: size.height, alignment: .topLeading)
+                ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
+                    let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
+                    TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift,
+                               hovering: pointerTile == tile.destination)
+                        .frame(width: frame.width, height: frame.height)
+                        .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
@@ -285,10 +279,7 @@ struct HomeView: View {
     /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
     /// its place, the lift and lean (or tilt) under the pointer, and hiding under the zoom.
     private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect) -> TilePlacement {
-        // Glass tiles stay where they are under the pointer and only darken: the glass container draws the glass apart from the
-        // faces, and while a tile lifted or leaned its glass edge trailed behind its face, showing as a band along the tile. It also
-        // spares the glass a redraw on every frame of the movement. Flat tiles still lift and tilt.
-        let moves = pointerTile == tile.destination && !design.glass
+        let moves = pointerTile == tile.destination
         return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
@@ -412,8 +403,7 @@ struct DashboardTileView: View {
 struct TileGround: View {
     let tint: TileTint
     let lifted: Bool
-    /// The pointer is over the tile. A glass ground darkens its own tint, inside the glass: the glass container draws its glass apart from
-    /// the faces, and a shade laid over it from the face's layer did not keep up with it while the tile lifted and leaned.
+    /// The pointer is over the tile. A glass ground darkens its own tint, inside the glass, so the shade is the glass's own shape.
     var hovering = false
     @Environment(\.design) private var design
 
