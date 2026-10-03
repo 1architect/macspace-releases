@@ -46,7 +46,7 @@ enum SiriScreenBuilder {
     }
 
     /// The tile shows the switch itself: off and quiet while Apple Intelligence stays off, glowing while it is on. What can be purged
-    /// is the meter, against the ~12 GB the on-device model takes.
+    /// is said in the line under it ("12 GB of models can be purged"), without a meter.
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         if snapshot.isVirtualMachine {
             return Tile(title: "siri & AI", status: "not in a virtual machine", graphic: .state(on: false, alarming: false, detail: "not available here", meter: nil, meterIsActionable: false))
@@ -59,8 +59,8 @@ enum SiriScreenBuilder {
         else if on { detail = "macOS may download its model (about 12 GB)" }
         else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
         else { detail = "no models left on disk" }
-        let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: purge.map { min(Double($0) / 12_000_000_000, 1) },
-                                        meterIsActionable: purge != nil)
+        // No meter: what is left to purge is said in the detail line.
+        let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: nil, meterIsActionable: false)
         if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) to purge", graphic: graphic, reclaimableBytes: purge) }
         switch snapshot.status.state {
         case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
