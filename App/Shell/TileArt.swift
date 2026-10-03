@@ -57,6 +57,9 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
     /// How much of the color shows, 0...1: the loading pulse, and a block coming in. It thins the color inside the glass. Animated
     /// frame by frame, so the glass's color follows it.
     var strength: Double = 1
+    /// False for an element too small for glass: AppKit's glass keeps a size of its own below about ten points, and a sliver of a
+    /// block drawn as glass spread over its neighbours and past the chart. It gets the color the glass would show, without the glass.
+    var glass = true
     @Environment(\.design) private var design
 
     var animatableData: Double {
@@ -68,13 +71,15 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
         if design.glass && design.glassElements {
             // Darkened inside the glass, so the shade is the glass's own shape.
             let dark = highlighted && design.hoverShade
-            if let corners = Self.corners(of: shape) {
+            let tinted = shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
+                .animation(Theme.highlight, value: dark)
+            if !glass {
+                tinted
+            } else if let corners = Self.corners(of: shape) {
                 GlassPane(corners: corners, color: color, opacity: 0.7 * strength, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
             } else {
                 // A shape AppKit's glass cannot take stays SwiftUI's glass.
-                shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
-                    .animation(Theme.highlight, value: dark)
-                    .glassEffect(.regular, in: shape)
+                tinted.glassEffect(.regular, in: shape)
             }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
@@ -221,6 +226,9 @@ struct BlocksView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
+    /// The narrowest block drawn as glass (`Surface.glass`).
+    static let smallestGlass: CGFloat = 12
+
     var body: some View {
         GeometryReader { proxy in
             let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: proxy.size))
@@ -231,7 +239,8 @@ struct BlocksView: View {
                         let rect = inset(rects[index])
                         let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
                         placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
-                                       strength: appeared ? wave(context.date, index) : 0),
+                                       strength: appeared ? wave(context.date, index) : 0,
+                                       glass: min(rect.width, rect.height) >= Self.smallestGlass),
                                index: index, rect: rect)
                     }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in

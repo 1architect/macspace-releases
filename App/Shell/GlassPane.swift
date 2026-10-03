@@ -30,6 +30,11 @@ struct GlassPane: NSViewRepresentable {
 
     func makeNSView(context: Context) -> GlassPaneView { GlassPaneView(frame: .zero) }
 
+    /// Exactly the room it is given: the glass has no size of its own to ask for.
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: GlassPaneView, context: Context) -> CGSize? {
+        proposal.replacingUnspecifiedDimensions(by: .zero)
+    }
+
     func updateNSView(_ view: GlassPaneView, context: Context) {
         // The palette's appearance, not the system's: light glass under a deep palette's colors washed them out.
         let appearance: NSAppearance.Name = context.environment.design.isLight ? .aqua : .darkAqua
@@ -66,6 +71,8 @@ final class GlassPaneView: NSGlassEffectView {
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric) }
 
     /// The glass never takes clicks or the pointer: the SwiftUI views over it do.
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
