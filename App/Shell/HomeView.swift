@@ -283,7 +283,9 @@ struct HomeView: View {
         return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
-                             turns: !design.glass, reduceMotion: reduceMotion, hidden: hiddenTile == tile.destination)
+                             turns: !design.glass, reduceMotion: reduceMotion,
+                             liftAnimation: design.liftAnimation, leanAnimation: design.leanAnimation,
+                             hidden: hiddenTile == tile.destination)
     }
 
     /// The pointer moved over a tile (`lean` in steps across it) or left it (nil).
@@ -417,7 +419,7 @@ struct TileGround: View {
                         .fill(design.palette(tint).base)
                         .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
                 }
-                .animation(Theme.hover, value: lifted)
+                .animation(design.liftAnimation, value: lifted)
         }
     }
 }
@@ -434,6 +436,8 @@ struct TilePlacement: ViewModifier {
     let lean: UnitPoint
     let turns: Bool
     let reduceMotion: Bool
+    let liftAnimation: Animation
+    let leanAnimation: Animation
     let hidden: Bool
 
     func body(content: Content) -> some View {
@@ -441,8 +445,8 @@ struct TilePlacement: ViewModifier {
             .tilted(lean, active: turns)
             .offset(x: turns ? 0 : (lean.x - 0.5) * 4, y: turns ? 0 : (lean.y - 0.5) * 4)
             .scaleEffect(lifted ? 1.018 : 1)
-            .animation(Theme.hover, value: lifted)
-            .animation(.interactiveSpring(duration: 0.25), value: lean)
+            .animation(liftAnimation, value: lifted)
+            .animation(leanAnimation, value: lean)
             .scaleEffect(shown || reduceMotion ? 1 : 0.86)
             .opacity(shown ? 1 : 0)
             .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)

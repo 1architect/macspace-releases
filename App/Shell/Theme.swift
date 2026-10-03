@@ -25,6 +25,9 @@ enum Theme {
     /// No bounce: the card has to land exactly on its tile, which then takes its place.
     static let close = Animation.spring(duration: 0.5, bounce: 0)
     static let hover = Animation.spring(duration: 0.35, bounce: 0.3)
+    /// The lift and lean with the temporary Quick Lift switch on: shorter and with less bounce, so a hover draws fewer frames.
+    static let quickHover = Animation.spring(duration: 0.22, bounce: 0.12)
+    static let quickLean = Animation.interactiveSpring(duration: 0.16)
     /// A color answering the pointer: quick and without bounce, so it lets go as soon as the pointer leaves.
     static let highlight = Animation.easeOut(duration: 0.12)
     /// How dark the shade over glass under the pointer is: a chart element, and a whole tile.

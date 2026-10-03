@@ -92,6 +92,14 @@ struct Design: Equatable {
     /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
     /// or cut it off cleanly.
     var pageEdgeFade = false
+    /// Temporary, for measuring GPU use and comparing looks: tiles of the lighter `.clear` glass instead of `.regular`; a shorter lift
+    /// and lean with less bounce.
+    var clearTileGlass = false
+    var quickLift = false
+
+    /// The lift's animation, and the lean's.
+    var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
+    var leanAnimation: Animation { quickLift ? Theme.quickLean : .interactiveSpring(duration: 0.25) }
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -125,6 +133,8 @@ public final class DesignSettings: ObservableObject {
     @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
     @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
     @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
+    @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
+    @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -139,11 +149,14 @@ public final class DesignSettings: ObservableObject {
         trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
         windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
         pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
+        clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
+        quickLift = defaults.bool(forKey: "design.quickLift")
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
-                                  windowGlass: windowGlass, pageEdgeFade: pageEdgeFade) }
+                                  windowGlass: windowGlass, pageEdgeFade: pageEdgeFade,
+                                  clearTileGlass: clearTileGlass, quickLift: quickLift) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -161,6 +174,8 @@ public struct DesignCommands: Commands {
             Toggle("Track Pointer", isOn: $settings.trackPointer)
             Toggle("Window Glass", isOn: $settings.windowGlass)
             Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
+            Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
+            Toggle("Quick Lift", isOn: $settings.quickLift)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -198,6 +213,8 @@ struct DesignSettingsSection: View {
             Toggle("Track pointer", isOn: $settings.trackPointer)
             Toggle("Window glass", isOn: $settings.windowGlass)
             Toggle("Page edge fade", isOn: $settings.pageEdgeFade)
+            Toggle("Clear tile glass", isOn: $settings.clearTileGlass)
+            Toggle("Quick lift", isOn: $settings.quickLift)
         }
     }
 }

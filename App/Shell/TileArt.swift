@@ -28,7 +28,7 @@ struct TileBackdrop: View {
                     // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
                     shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
                         .animation(Theme.highlight, value: darkened)
-                        .glassEffect(.regular, in: shape)
+                        .glassEffect(design.clearTileGlass ? .clear : .regular, in: shape)
                         .transition(.opacity)
                 }
             }
