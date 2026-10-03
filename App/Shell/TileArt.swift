@@ -11,11 +11,14 @@ struct TileBackdrop: View {
     /// layers of glass, one over the other, were blended again on every frame the page scrolled. The two cross-fade, so the change at
     /// the end of the zoom does not flicker.
     var isPage = false
+    /// Under the pointer: the tint inside the glass darkens, so the shade is part of the glass and moves exactly with it.
+    var darkened = false
     @Environment(\.design) private var design
 
     var body: some View {
         let palette = design.palette(tint)
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+        let color = darkened ? palette.base.mix(with: .black, by: Theme.tileHoverShade * 2) : palette.base
         if design.glass {
             ZStack {
                 if isPage {
@@ -23,7 +26,8 @@ struct TileBackdrop: View {
                         .transition(.opacity)
                 } else {
                     // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
-                    shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
+                    shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
+                        .animation(Theme.highlight, value: darkened)
                         .glassEffect(.regular, in: shape)
                         .transition(.opacity)
                 }

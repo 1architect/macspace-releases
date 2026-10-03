@@ -80,8 +80,9 @@ struct TileFace: View {
                 }
                 .opacity(chartOpacity)
             }
-            // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late.
-            if design.glass && design.hoverShade {
+            // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late. Only where the face
+            // draws its own ground (the zoom's card); on the dashboard the ground darkens itself, in the glass layer (`TileGround`).
+            if drawsBackdrop && design.glass && design.hoverShade {
                 HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: hovering, amount: Theme.tileHoverShade)
             }
         }
@@ -253,7 +254,8 @@ struct HomeView: View {
                     ZStack(alignment: .topLeading) {
                         ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                             let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                            TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift)
+                            TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift,
+                                       hovering: pointerTile == tile.destination)
                                 .frame(width: frame.width, height: frame.height)
                                 .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                         }
@@ -407,11 +409,14 @@ struct DashboardTileView: View {
 struct TileGround: View {
     let tint: TileTint
     let lifted: Bool
+    /// The pointer is over the tile. A glass ground darkens its own tint, inside the glass: the glass container draws its glass apart from
+    /// the faces, and a shade laid over it from the face's layer did not keep up with it while the tile lifted and leaned.
+    var hovering = false
     @Environment(\.design) private var design
 
     var body: some View {
         if design.glass {
-            TileBackdrop(tint: tint)
+            TileBackdrop(tint: tint, darkened: hovering && design.hoverShade)
         } else {
             TileBackdrop(tint: tint)
                 .background {
