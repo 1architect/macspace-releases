@@ -287,7 +287,6 @@ struct HomeView: View {
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
                     TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift,
                                hovering: pointerTile == tile.destination)
-                        .frame(width: frame.width, height: frame.height)
                         .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
@@ -297,7 +296,6 @@ struct HomeView: View {
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
                     }
-                    .frame(width: frame.width, height: frame.height)
                     .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
             }
@@ -512,20 +510,52 @@ struct TilePlacement: ViewModifier {
     let leanAnimation: Animation
     let hidden: Bool
 
+    /// The lift and the lean are laid out (the tile's size and place worked out again on every frame), not drawn as a scale and an
+    /// offset: glass moved by those effects followed on its own timing, and the darkened color inside a hovered tile's glass showed
+    /// out of line with the glass's edge while the tile lifted.
     func body(content: Content) -> some View {
+        let grow: CGFloat = lifted ? 1.018 : 1
+        let leanOffset = turns ? CGSize.zero : CGSize(width: (lean.x - 0.5) * 4, height: (lean.y - 0.5) * 4)
         content
-            .tilted(lean, active: turns)
-            .offset(x: turns ? 0 : (lean.x - 0.5) * 4, y: turns ? 0 : (lean.y - 0.5) * 4)
-            .scaleEffect(lifted ? 1.018 : 1)
+            .modifier(TileSize(size: CGSize(width: frame.width * grow, height: frame.height * grow)))
             .animation(liftAnimation, value: lifted)
-            .animation(leanAnimation, value: lean)
+            .tilted(lean, active: turns)
             .scaleEffect(shown || reduceMotion ? 1 : 0.86)
             .opacity(shown ? 1 : 0)
             .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)
                                : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-            .offset(x: frame.minX, y: frame.minY)
+            .modifier(TileCenter(center: CGPoint(x: frame.midX + leanOffset.width, y: frame.midY + leanOffset.height)))
+            .animation(leanAnimation, value: lean)
             .opacity(hidden ? 0 : 1)
             .transition(.scale(scale: 0.8).combined(with: .opacity))
+    }
+}
+
+/// A tile's size, laid out on every frame while it changes.
+private struct TileSize: ViewModifier, @preconcurrency Animatable {
+    var size: CGSize
+
+    var animatableData: CGSize.AnimatableData {
+        get { size.animatableData }
+        set { size.animatableData = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.frame(width: max(size.width, 0), height: max(size.height, 0))
+    }
+}
+
+/// Where a tile's middle is in the grid, laid out on every frame while it moves.
+private struct TileCenter: ViewModifier, @preconcurrency Animatable {
+    var center: CGPoint
+
+    var animatableData: CGPoint.AnimatableData {
+        get { center.animatableData }
+        set { center.animatableData = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.position(center)
     }
 }
 
