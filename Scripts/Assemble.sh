@@ -8,6 +8,9 @@
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
 #   ICON=/path/to/MacSpace.icon Scripts/Assemble.sh   the app icon, an Icon Composer document (default: the design folder below;
 #                                            without it, App/Resources/AppIcon.icns)
+#   NOTARY_PROFILE=MacSpace Scripts/Assemble.sh   also notarize the app and staple the ticket, so it opens on any Mac (another Mac, a
+#                                            VM). Needs a Developer ID identity and a notarytool profile in the keychain, made once with
+#                                            xcrun notarytool store-credentials MacSpace --apple-id … --team-id … (app-specific password)
 #
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
 # supplied by the release pipeline; nothing secret lives in this repository.
@@ -110,7 +113,7 @@ if [ "$SIGN_IDENTITY" = "-" ]; then
   FLAGS=(--force --sign -)
 else
   # A local build needs no secure timestamp (that is a network call and only notarization requires it).
-  if [ "$AUTO_IDENTITY" = 1 ]; then STAMP=--timestamp=none; else STAMP=--timestamp; fi
+  if [ "$AUTO_IDENTITY" = 1 ] && [ -z "${NOTARY_PROFILE:-}" ]; then STAMP=--timestamp=none; else STAMP=--timestamp; fi
   FLAGS=(--force --options runtime "$STAMP" --sign "$SIGN_IDENTITY")
 fi
 # Sparkle ships helpers that must be signed first, inside out, with the same identity (see Sparkle's documentation).
@@ -125,6 +128,29 @@ codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP"
+
+# Notarization: Gatekeeper opens a Developer ID app copied from elsewhere only once Apple has notarized it. The ticket is stapled to
+# the app, so it also opens offline.
+if [ -n "${NOTARY_PROFILE:-}" ]; then
+  case "$SIGN_IDENTITY" in
+    "Developer ID Application:"*) ;;
+    *) echo "error: notarization needs a Developer ID Application identity (signed with $SIGN_IDENTITY)" >&2; exit 1 ;;
+  esac
+  ZIP=$(mktemp -d)/MacSpace.zip
+  ditto -c -k --keepParent "$APP" "$ZIP"
+  echo "Notarizing (this usually takes a few minutes)…"
+  RESULT=$(xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)
+  STATUS=$(printf '%s' "$RESULT" | plutil -extract status raw -o - - 2>/dev/null || echo unknown)
+  SUBMISSION=$(printf '%s' "$RESULT" | plutil -extract id raw -o - - 2>/dev/null || echo "")
+  rm -f "$ZIP"
+  if [ "$STATUS" != "Accepted" ]; then
+    echo "error: notarization $STATUS" >&2
+    [ -n "$SUBMISSION" ] && xcrun notarytool log "$SUBMISSION" --keychain-profile "$NOTARY_PROFILE" >&2
+    exit 1
+  fi
+  xcrun stapler staple "$APP"
+  spctl -a -vv "$APP"
+fi
 # The helper daemon can only be registered from an app that sits in an Applications folder: from Build/ macOS reports it as
 # "not found". INSTALL=1 copies the build to ~/Applications.
 if [ "${INSTALL:-0}" = 1 ]; then
