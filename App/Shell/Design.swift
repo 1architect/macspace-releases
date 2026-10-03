@@ -96,9 +96,6 @@ struct Design: Equatable {
     /// and lean with less bounce.
     var clearTileGlass = false
     var quickLift = false
-    /// Temporary, for comparing looks: the tiles and chart elements are real Liquid Glass, or glass drawn with plain shapes (`LitGlass`),
-    /// whose edges do not shimmer as they move.
-    var liveGlass = false
 
     /// The lift's animation, and the lean's.
     var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
@@ -138,7 +135,6 @@ public final class DesignSettings: ObservableObject {
     @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
     @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
-    @Published public var liveGlass: Bool { didSet { defaults.set(liveGlass, forKey: "design.liveGlass") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -155,13 +151,12 @@ public final class DesignSettings: ObservableObject {
         pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
-        liveGlass = defaults.bool(forKey: "design.liveGlass")
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, pageEdgeFade: pageEdgeFade,
-                                  clearTileGlass: clearTileGlass, quickLift: quickLift, liveGlass: liveGlass) }
+                                  clearTileGlass: clearTileGlass, quickLift: quickLift) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -181,7 +176,6 @@ public struct DesignCommands: Commands {
             Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
             Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
             Toggle("Quick Lift", isOn: $settings.quickLift)
-            Toggle("Live Glass on Tiles and Charts", isOn: $settings.liveGlass)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -221,8 +215,6 @@ struct DesignSettingsSection: View {
             Toggle("Page edge fade", isOn: $settings.pageEdgeFade)
             Toggle("Clear tile glass", isOn: $settings.clearTileGlass)
             Toggle("Quick lift", isOn: $settings.quickLift)
-            Toggle("Live glass on tiles and charts", isOn: $settings.liveGlass)
-                .help("Off: tiles and charts are glass drawn with plain shapes, whose edges do not shimmer as they move.")
         }
     }
 }
