@@ -9,7 +9,7 @@ public final class SystemDataEntry: MacSpaceModuleEntry, @unchecked Sendable {
     public override func makeModule() -> any MacSpaceModule { SystemDataModule() }
 }
 
-/// System Data: what fills it, what is safe to free, and guided manual cleanup for what only another app can remove.
+/// System Data: what fills it, and what is safe to free.
 public struct SystemDataModule: MacSpaceModule {
     private let store = SystemDataStore()
 
@@ -40,7 +40,7 @@ public struct SystemDataModule: MacSpaceModule {
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
                 return .failed("That item is no longer listed. Refresh and try again.")
             }
-            progress(ActionProgress(message: "Cleaning \(item.title)…"))
+            progress(ActionProgress(message: "Freeing \(item.title)…"))
             return Self.clean([item])
         case "cleanReports":
             progress(ActionProgress(message: "Deleting old reports…"))
@@ -62,7 +62,7 @@ public struct SystemDataModule: MacSpaceModule {
             var freed: UInt64 = 0
             let before = DataVolume.freeBytes()
             let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
-            progress(ActionProgress(fraction: 0.1, message: "Cleaning system caches…"))
+            progress(ActionProgress(fraction: 0.1, message: "Freeing system caches…"))
             let caches = Self.clean(cleanable)
             details += caches.details
             progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))
@@ -85,7 +85,7 @@ public struct SystemDataModule: MacSpaceModule {
         let freed = measuredFreed(report.freeBytesBefore, report.freeBytesAfter)
         let details = report.results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
         if !failed.isEmpty && failed.count == report.results.count {
-            return ActionResult(outcome: .failed, message: "Nothing was cleaned.", details: details, refresh: true)
+            return ActionResult(outcome: .failed, message: "Nothing was freed.", details: details, refresh: true)
         }
         return .succeeded(freedMessage(freed, cleaned: report.results.count - failed.count), details: details)
     }
@@ -145,7 +145,7 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     static func freedMessage(_ freed: UInt64?, cleaned: Int) -> String {
-        guard let freed else { return "Cleaned \(cleaned) item(s)." }
-        return freed > 0 ? "Freed \(ByteFormat.string(freed)), measured on the volume." : "Cleaned \(cleaned) item(s); macOS has not reported the space as free yet."
+        guard let freed else { return "Deleted \(cleaned) item(s)." }
+        return freed > 0 ? "Freed \(ByteFormat.string(freed)), measured on the volume." : "Deleted \(cleaned) item(s); macOS has not reported the space as free yet."
     }
 }

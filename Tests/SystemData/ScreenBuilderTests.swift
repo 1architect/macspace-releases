@@ -95,17 +95,6 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [], purgeable: 1_000_000)), "1 MB is not worth a button")
     }
 
-    func testManualSectionCarriesTheGuideStepsAndOnlyMeasuredLargeEntries() throws {
-        let guide = ManualCleanupGuide(app: "WhatsApp", frees: "media", steps: ["Open Storage", "Delete"], verified: false)
-        let snap = snapshot(items: [], manual: [ManualCleanupSummary(app: "WhatsApp", bytes: 4_700_000_000, itemIDs: ["container:wa"], guide: guide),
-                                                ManualCleanupSummary(app: "Unmeasured", bytes: nil, itemIDs: [], guide: guide),
-                                                ManualCleanupSummary(app: "Empty", bytes: 0, itemIDs: [], guide: guide)])
-        guard case let .section(section)? = SystemDataScreenBuilder.manualSection(snap.report), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.title), ["WhatsApp"])
-        XCTAssertEqual(list.rows[0].steps, ["Open Storage", "Delete"])
-        XCTAssertNil(SystemDataScreenBuilder.manualSection(snapshot(items: []).report))
-    }
-
     func testScreenShowsAPartialBannerAndCollapsesTheRest() {
         let items = [item("cache", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
                      item("review", kind: .appSupport, bytes: 700_000_000), item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS)]
@@ -144,7 +133,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(blocks.first { $0.id == "freeable" }?.tone, .caution)
         XCTAssertEqual(blocks.first { $0.id == "caches" }?.bytes, 300_000_000, "the freeable part is taken out of the caches")
         XCTAssertEqual(blocks.reduce(0) { $0 + $1.bytes }, 2_900_000_000, "the total stays the same")
-        XCTAssertEqual(SystemDataScreenBuilder.tile(snapshot(items: [])).status, "nothing to clean")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snapshot(items: [])).status, "nothing to free")
     }
 }
 

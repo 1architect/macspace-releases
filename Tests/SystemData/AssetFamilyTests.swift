@@ -33,7 +33,7 @@ final class AssetFamilyTests: XCTestCase {
         let speech = try XCTUnwrap(families.first { $0.id == "siri-speech" })
         XCTAssertEqual(speech.assets, ["com.apple.siri.asr.assistant.en_US", "com.apple.siri.asr.assistant.pt_BR"])
         XCTAssertGreaterThanOrEqual(speech.bytes, 70_000_000)
-        XCTAssertFalse(speech.steps.isEmpty)
+        XCTAssertTrue(speech.steps.isEmpty, "no setting removes them, so they are not offered as a download to turn off")
         XCTAssertEqual(families.first { $0.id == "siri-voices" }?.assets.count, 2, "small assets count toward their family")
     }
 

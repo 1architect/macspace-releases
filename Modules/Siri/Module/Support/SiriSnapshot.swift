@@ -16,6 +16,8 @@ struct SiriSnapshot: Sendable {
     var takenAt: Date
     /// Running inside a virtual machine, where Apple Intelligence does not exist.
     var isVirtualMachine = false
+    /// MacSpace is releasing leftover models by itself right now (`ModelAutoReleaser`).
+    var releasingAutomatically = false
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {

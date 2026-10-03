@@ -43,7 +43,7 @@ enum OtherSystemFilesScreenBuilder {
         let bytes = snapshot.freeableBytes
         guard bytes >= threshold else { return nil }
         let size = ByteFormat.string(bytes)
-        return Action(id: "purgeFiles", title: prominent ? "Free up to \(size)" : "Remove", symbol: prominent ? "sparkles" : nil,
+        return Action(id: "purgeFiles", title: prominent ? "Free up to \(size)" : "Free", symbol: prominent ? "sparkles" : nil,
                       role: prominent ? .prominent : .normal,
                       confirmation: Confirmation(title: "Free up to \(size) of purgeable app files?",
                                                  message: "macOS deletes the files apps marked purgeable, as it would when the disk is critically full. It decides how much of them goes; what it keeps is then listed as left alone. Apps download again what they need.",

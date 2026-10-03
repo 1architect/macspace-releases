@@ -18,11 +18,23 @@ public struct SiriModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        SiriScreenBuilder.tile(await store.snapshot())
+        SiriScreenBuilder.tile(await snapshot())
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SiriScreenBuilder.screen(await store.snapshot())
+        SiriScreenBuilder.screen(await snapshot())
+    }
+
+    /// The state, after starting the release of leftover models if they are due one: MacSpace does it by itself. `waits` holds the
+    /// caller until the release is over.
+    private func snapshot(waits: Bool = false) async -> SiriSnapshot {
+        var snapshot = await store.snapshot()
+        let store = self.store
+        let running = await ModelAutoReleaser.shared.check(snapshot, release: { _ = Self.release(progress: { _ in }) },
+                                                           finished: { await store.invalidate() })
+        if waits, let running { await running.value }
+        snapshot.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
+        return snapshot
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -37,7 +49,13 @@ public struct SiriModule: MacSpaceModule {
         if Machine.isVirtualMachine { return .failed("Apple Intelligence does not exist in a virtual machine; nothing was changed.") }
         switch request.actionID {
         case "toggle":
-            return Self.setAvailability(available: request.parameters["value"] == "true")
+            let available = request.parameters["value"] == "true"
+            let result = Self.setAvailability(available: available)
+            guard !available, result.outcome == .succeeded else { return result }
+            // Switching off is the transition that unlocks the models; macOS then deletes them only under disk pressure. MacSpace
+            // deletes them right away instead of offering a purge.
+            progress(ActionProgress(message: "Removing the models macOS no longer needs…"))
+            return await Task.detached(priority: .userInitiated) { Self.purgeAfterSwitchingOff(result) }.value
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purge()
@@ -53,6 +71,8 @@ public struct SiriModule: MacSpaceModule {
 
     public func runBackgroundTask(_ id: String, context: ModuleContext) async {
         guard id == "watch" else { return }
+        // Waited for: the background run may end with this call, and the release must get to restore the Siri language.
+        _ = await snapshot(waits: true)
         let store = AppleIntelligenceWatchStore()
         let status = AppleIntelligenceLanguageGuard().status()
         let outcome = AppleIntelligenceWatcher().transition(previous: store.load(), status: status)
@@ -86,6 +106,14 @@ public struct SiriModule: MacSpaceModule {
         if let error = result.error { return .failed(error) }
         return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)), measured on the volume.",
                           details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed."])
+    }
+
+    /// The purge that follows switching off, after the few seconds mobileassetd takes to unlock the models (5 s observed).
+    static func purgeAfterSwitchingOff(_ switched: ActionResult) -> ActionResult {
+        Thread.sleep(forTimeInterval: ModelReleaseTiming().releaseWait)
+        let purged = purge()
+        guard purged.outcome == .succeeded else { return switched }
+        return ActionResult(outcome: .succeeded, message: switched.message, details: switched.details + [purged.message], refresh: true)
     }
 
     static func release(progress: @escaping ProgressSink) -> ActionResult {

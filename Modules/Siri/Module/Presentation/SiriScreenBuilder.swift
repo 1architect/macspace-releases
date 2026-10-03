@@ -46,7 +46,7 @@ enum SiriScreenBuilder {
     }
 
     /// The tile shows the switch itself: off and quiet while Apple Intelligence stays off, glowing while it is on. What can be purged
-    /// is said in the line under it ("12 GB of models can be purged"), without a meter.
+    /// is said in the line under it ("12 GB of models can be freed"), without a meter.
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         if snapshot.isVirtualMachine {
             return Tile(title: "siri & AI", status: "not in a virtual machine", graphic: .state(on: false, alarming: false, detail: "not available here", meter: nil, meterIsActionable: false))
@@ -55,13 +55,13 @@ enum SiriScreenBuilder {
         let purge = snapshot.purgeableAssetsBytes.flatMap { $0 >= purgeThreshold ? $0 : nil }
         let on = snapshot.status.state == .atRisk
         let detail: String
-        if let purge { detail = "\(ByteFormat.string(purge)) of models can be purged" }
+        if let purge { detail = "\(ByteFormat.string(purge)) of models can be freed" }
         else if on { detail = "macOS may download its model (about 12 GB)" }
         else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
         else { detail = "no models left on disk" }
         // No meter: what is left to purge is said in the detail line.
         let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: nil, meterIsActionable: false)
-        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) to purge", graphic: graphic, reclaimableBytes: purge) }
+        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) can be freed", graphic: graphic, reclaimableBytes: purge) }
         switch snapshot.status.state {
         case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
         case .releasing: return Tile(title: "siri & AI", status: "removing the model", graphic: graphic)
@@ -95,8 +95,8 @@ enum SiriScreenBuilder {
 
     static func purge(_ snapshot: SiriSnapshot) -> Action? {
         guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold else { return nil }
-        return Action(id: "purgeAssets", title: "Purge \(ByteFormat.string(bytes))", symbol: "trash", role: .prominent,
-                      confirmation: Confirmation(title: "Remove unused system assets?", message: "macOS deletes the downloads it no longer needs, about \(ByteFormat.string(bytes)), including Apple Intelligence models it has released. Anything needed again is downloaded again.", confirmTitle: "Remove"))
+        return Action(id: "purgeAssets", title: "Free \(ByteFormat.string(bytes))", symbol: "sparkles", role: .prominent,
+                      confirmation: Confirmation(title: "Free \(ByteFormat.string(bytes))?", message: "macOS deletes the downloads it no longer needs, about \(ByteFormat.string(bytes)), including Apple Intelligence models it has released. Anything needed again is downloaded again.", confirmTitle: "Free"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {
@@ -130,7 +130,7 @@ enum SiriScreenBuilder {
                  "If \(name) is not needed, delete the account in System Settings > Users & Groups."]
             } ?? ["The account no longer exists, but macOS keeps its subscriptions and a restart does not clear them.",
                   "Remove them as an administrator (Terminal): sudo \"\(snapshot.cliPath)\" orphan-subscriptions --execute",
-                  "Restart the Mac, then use \"Release and delete leftover models\" below."]
+                  "Restart the Mac; MacSpace then releases and deletes the leftover models by itself."]
             return Row(id: "account:\(account.guid)", title: account.label, subtitle: "\(account.useCases.count) Apple Intelligence feature(s) subscribed",
                        badge: Badge("Keeps the models", tone: .caution), symbol: "person.crop.circle.badge.exclamationmark", steps: steps)
         }
@@ -139,19 +139,25 @@ enum SiriScreenBuilder {
                                       widgets: [.list(ListWidget(id: "accounts-list", rows: rows))]))
     }
 
-    /// For models that stay installed although Apple Intelligence is off. Only offered while it is off.
+    /// While macOS is still removing the model after the switch went off. MacSpace releases models that stay by itself
+    /// (`ModelAutoRelease`); this only says so, or what keeps it from doing it.
     static func modelsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {
-        guard snapshot.status.state == .protected || snapshot.status.state == .releasing else { return nil }
+        guard snapshot.status.state == .releasing || snapshot.releasingAutomatically else { return nil }
         let widget: ScreenWidget
-        if snapshot.releaseBlockers.isEmpty {
-            widget = .button(ButtonWidget(id: "release", action: Action(
-                id: "releaseModels", title: "Release leftover models", symbol: "arrow.triangle.2.circlepath",
-                confirmation: Confirmation(title: "Release the models?", message: "For about a minute Apple Intelligence is briefly available and Siri's language changes; both are restored afterwards. Then macOS deletes the models it no longer needs.", confirmTitle: "Release"),
-                requires: [.fullDiskAccess])))
+        if snapshot.releasingAutomatically {
+            widget = .list(ListWidget(id: "models-list", rows: [
+                Row(id: "releasing", title: "Releasing the leftover models", symbol: "arrow.triangle.2.circlepath",
+                    detail: "For about a minute Apple Intelligence is available and Siri's language changes; both are restored afterwards. Then the models are deleted."),
+            ]))
+        } else if !snapshot.releaseBlockers.isEmpty {
+            widget = .steps(StepsWidget(id: "blockers", title: "Before MacSpace can release them", steps: snapshot.releaseBlockers))
         } else {
-            widget = .steps(StepsWidget(id: "blockers", title: "Before the models can be released", steps: snapshot.releaseBlockers))
+            let minutes = Int(ModelAutoRelease.settleTime / 60)
+            widget = .list(ListWidget(id: "models-list", rows: [
+                Row(id: "releasing", title: "macOS is removing the model", symbol: "arrow.triangle.2.circlepath",
+                    detail: "This usually takes a few minutes. If the models are still here after \(minutes) minutes, MacSpace releases and deletes them by itself."),
+            ]))
         }
-        return .section(SectionWidget(id: "models", title: "Models still installed?", subtitle: "If macOS keeps them after the switch is off, release them, then Purge.",
-                                      widgets: [widget]))
+        return .section(SectionWidget(id: "models", title: "Leftover models", widgets: [widget]))
     }
 }

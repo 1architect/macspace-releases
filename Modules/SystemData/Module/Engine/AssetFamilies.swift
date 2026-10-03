@@ -34,18 +34,19 @@ public struct AssetFamilyScanner {
     }
 
     static let rules: [Rule] = [
+        // No setting releases them: the Siri speech service, speech recognition and phone call features keep the model for the Siri
+        // language and the system language whatever Siri's settings, so they are not listed among the downloads to turn off.
         Rule(id: "siri-speech", title: "Siri speech models", tokens: ["siri.asr.assistant", "siri.asr.hammer"],
-             heldBy: "The Siri speech service, speech recognition and phone call features, for the Siri language and the languages Siri keeps besides it.",
-             steps: ["Open the Siri & Apple Intelligence module here: it shows which accounts and languages keep these models and releases them.",
-                     "The Siri language in System Settings → Apple Intelligence & Siri decides which model is kept for this account."], verified: true),
+             heldBy: "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them.",
+             steps: [], verified: true),
         Rule(id: "siri-voices", title: "Siri voices", tokens: ["siri.tts"],
              heldBy: "The Siri text-to-speech service, for the selected Siri voice and language.",
              steps: ["Open System Settings → Apple Intelligence & Siri → Siri Voice and choose a voice that is not a downloaded premium one.",
-                     "After a restart, use Free now → Remove unused system assets."], verified: false),
+                     "After a restart, free them under Free now → Unused system assets."], verified: false),
         Rule(id: "speech-recognition", title: "Speech recognition (dictation and calls)", tokens: ["speech.asr", "transcription"],
              heldBy: "Siri's speech service and phone call features, for the languages they transcribe.",
              steps: ["Open System Settings → Keyboard → Dictation and remove languages you do not dictate in.",
-                     "After a restart, use Free now → Remove unused system assets."], verified: false),
+                     "After a restart, free them under Free now → Unused system assets."], verified: false),
         Rule(id: "language-data", title: "Language data (spelling, text analysis)", tokens: ["linguisticdata"],
              heldBy: "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g).",
              steps: [], verified: true),

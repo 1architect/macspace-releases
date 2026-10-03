@@ -89,7 +89,7 @@ enum SystemDataScreenBuilder {
 
     static func tile(_ snapshot: SystemDataSnapshot) -> Tile {
         let freeable = freeableBytes(snapshot)
-        return Tile(title: "system data", status: freeable >= worthARow ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to clean",
+        return Tile(title: "system data", status: freeable >= worthARow ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to free",
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil)
     }
@@ -115,11 +115,9 @@ enum SystemDataScreenBuilder {
     /// The page: the bar, one Clean for everything safe, then only what the user can act on. What MacSpace leaves alone is listed once,
     /// collapsed, so the total still adds up.
     static func screen(_ snapshot: SystemDataSnapshot) -> Screen {
-        let report = snapshot.report
         var widgets: [ScreenWidget] = []
         if let banner = partialBanner(snapshot) { widgets.append(banner) }
         if let free = freeNow(snapshot) { widgets.append(free) }
-        if let manual = manualSection(report) { widgets.append(manual) }
         if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         if let assets = assetsSection(snapshot) { widgets.append(assets) }
         if let appData = appDataSection(snapshot) { widgets.append(appData) }
@@ -133,8 +131,8 @@ enum SystemDataScreenBuilder {
         guard total >= worthARow else { return nil }
         var message = "Deletes the caches, old reports and unused system assets listed under Free now. None of it holds your files, and macOS recreates what it needs."
         if versionsRow(snapshot) != nil { message += " Document version history is not deleted: it has its own Delete button." }
-        return Action(id: "cleanAll", title: "Clean \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: "Clean \(ByteFormat.string(total))?", message: message, confirmTitle: "Clean"))
+        return Action(id: "cleanAll", title: "Free \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
+                      confirmation: Confirmation(title: "Free \(ByteFormat.string(total))?", message: message, confirmTitle: "Free"))
     }
 
     // MARK: Sections
@@ -148,35 +146,23 @@ enum SystemDataScreenBuilder {
             Row(id: item.id, title: item.title, subtitle: item.inUse ? "Quit \(item.owners.joined(separator: ", ")) first." : nil,
                 trailing: ByteFormat.string(item.expectedReclaimBytes ?? 0),
                 badge: item.inUse ? Badge("App is open", tone: .caution) : nil, symbol: "internaldrive", detail: item.cleanup.description,
-                actions: item.inUse ? [] : [Action(id: "clean", title: "Clean", parameters: ["id": item.id])])
+                actions: item.inUse ? [] : [Action(id: "clean", title: "Free", parameters: ["id": item.id])])
         }
         if snapshot.reports.totalBytes >= worthARow {
             rows.append(Row(id: "reports", title: "Old diagnostic and crash reports", trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
                             detail: "\(snapshot.reports.candidates.count) report(s) older than \(snapshot.reports.olderThanDays) days. Nothing reads them back.",
-                            actions: [Action(id: "cleanReports", title: "Clean", confirmation: Confirmation(
+                            actions: [Action(id: "cleanReports", title: "Free", confirmation: Confirmation(
                                 title: "Delete old reports?", message: "This permanently deletes \(snapshot.reports.candidates.count) report file(s).", confirmTitle: "Delete"))]))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
             rows.append(Row(id: "assets", title: "Unused system assets", trailing: ByteFormat.string(assets), symbol: "square.stack.3d.down.right",
                             detail: "Downloads macOS no longer needs, such as Apple Intelligence models released by the off-switch. macOS deletes them only when the disk is nearly full; this does it now. Anything needed again is downloaded again.",
-                            actions: [Action(id: "purgeAssets", title: "Remove", confirmation: Confirmation(
-                                title: "Remove unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Remove"))]))
+                            actions: [Action(id: "purgeAssets", title: "Free", confirmation: Confirmation(
+                                title: "Free unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Free"))]))
         }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: "Free now", widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
-    }
-
-    /// Space only another app can free, with the steps. Only what was measured and is large enough to be worth the trip.
-    static func manualSection(_ report: SystemDataReport) -> ScreenWidget? {
-        let entries = report.manualCleanup.filter { ($0.bytes ?? 0) >= manualThreshold }.sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
-        guard !entries.isEmpty else { return nil }
-        let rows = entries.map { entry in
-            Row(id: "manual:\(entry.app)", title: entry.app, subtitle: entry.guide.frees, trailing: entry.bytes.map(ByteFormat.string),
-                symbol: "hand.point.up.left", detail: entry.guide.verified ? nil : "Menu names can differ between app versions.", steps: entry.guide.steps)
-        }
-        return .section(SectionWidget(id: "manual", title: "In other apps", subtitle: "Only the app itself can remove this. Open a row for the steps.",
-                                      widgets: [.list(ListWidget(id: "manual-list", rows: rows))]))
     }
 
     static let manualThreshold: UInt64 = 50_000_000
@@ -184,10 +170,9 @@ enum SystemDataScreenBuilder {
     /// Everything MacSpace leaves alone (it belongs to apps, to the user or to macOS), largest first.
     static func leftAlone(_ snapshot: SystemDataSnapshot) -> [SystemDataItem] {
         let report = snapshot.report
-        let guided = Set(report.manualCleanup.flatMap(\.itemIDs))
         let handled: Set<String> = ["reports:diagnostic", "versions:documents", "update:staged", "assets:system"]
         return report.items.filter { item in
-            guard let bytes = item.bytes, bytes >= manualThreshold, !handled.contains(item.id), !guided.contains(item.id), !item.id.hasPrefix("small:") else { return false }
+            guard let bytes = item.bytes, bytes >= manualThreshold, !handled.contains(item.id), !item.id.hasPrefix("small:") else { return false }
             switch item.cleanup.kind {
             case .review: return !countedByAnotherCategory(item)
             case .managedByMacOS, .command: return item.kind != .codeSignClone && !countedElsewhere.contains(item.kind)
@@ -264,7 +249,7 @@ enum SystemDataScreenBuilder {
             Row(id: "assets:\(family.id)", title: family.title, subtitle: family.heldBy, trailing: ByteFormat.string(family.bytes),
                 symbol: "square.stack.3d.down.right", detail: family.verified ? nil : "Menu names can differ between macOS versions.", steps: family.steps)
         }
-        return .section(SectionWidget(id: "assets", title: "Downloads you can turn off", subtitle: "Change the setting, restart, then Clean.",
+        return .section(SectionWidget(id: "assets", title: "Downloads you can turn off", subtitle: "Change the setting and restart; the downloads then show under Free now.",
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))]))
     }
 

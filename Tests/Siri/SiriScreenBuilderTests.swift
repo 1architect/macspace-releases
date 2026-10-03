@@ -81,7 +81,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(SiriScreenBuilder.accountsSection(snapshot(.protected, accounts: nil)))
     }
 
-    func testPurgeIsTheMainActionAndModelsSectionOffersReleaseOrWhatBlocksIt() throws {
+    func testPurgeIsTheMainActionAndModelsReleaseThemselves() throws {
         func widgets(_ snap: SiriSnapshot) -> [ScreenWidget] {
             guard case let .section(section)? = SiriScreenBuilder.modelsSection(snap) else { return [] }
             return section.widgets
@@ -90,18 +90,44 @@ final class SiriScreenBuilderTests: XCTestCase {
         let purge = try XCTUnwrap(SiriScreenBuilder.screen(ready).primary)
         XCTAssertEqual(purge.id, "purgeAssets")
         XCTAssertNotNil(purge.confirmation)
-        guard case let .button(release)? = widgets(ready).first else { return XCTFail() }
-        XCTAssertEqual(release.action.id, "releaseModels")
-        XCTAssertNotNil(release.action.confirmation, "the release flips the Siri language for a minute, so it asks first")
+        XCTAssertNil(SiriScreenBuilder.modelsSection(ready), "nothing left over once macOS has let go of the model")
 
-        guard case let .steps(steps)? = widgets(snapshot(.protected, blockers: ["Apple Intelligence is on in tester."])).first else { return XCTFail() }
+        guard case let .list(waiting)? = widgets(snapshot(.releasing)).first else { return XCTFail() }
+        XCTAssertTrue(waiting.rows[0].actions.isEmpty, "no button: MacSpace releases them by itself")
+        var running = snapshot(.protected)
+        running.releasingAutomatically = true
+        guard case let .list(releasing)? = widgets(running).first else { return XCTFail() }
+        XCTAssertEqual(releasing.rows[0].title, "Releasing the leftover models")
+
+        guard case let .steps(steps)? = widgets(snapshot(.releasing, blockers: ["Apple Intelligence is on in tester."])).first else { return XCTFail() }
         XCTAssertEqual(steps.steps, ["Apple Intelligence is on in tester."])
         XCTAssertNil(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary, "a few KB is not worth a button")
         XCTAssertNil(SiriScreenBuilder.modelsSection(snapshot(.atRisk)), "nothing to release while Apple Intelligence is on")
     }
 
+    func testAutoReleaseWaitsForMacOSAndDoesNotRepeat() {
+        let now = Date()
+        func due(_ state: AppleIntelligenceGuardState = .releasing, blockers: [String] = [], since: TimeInterval? = 11 * 60,
+                 last: TimeInterval? = nil, vm: Bool = false) -> Bool {
+            ModelAutoRelease.shouldRun(state: state, blockers: blockers, isVirtualMachine: vm,
+                                       releasingSince: since.map { now.addingTimeInterval(-$0) },
+                                       lastRun: last.map { now.addingTimeInterval(-$0) }, now: now)
+        }
+        XCTAssertTrue(due())
+        XCTAssertFalse(due(since: 60), "macOS usually removes the model by itself within minutes")
+        XCTAssertFalse(due(since: nil))
+        XCTAssertFalse(due(.protected))
+        XCTAssertFalse(due(.atRisk))
+        XCTAssertFalse(due(blockers: ["another account"]))
+        XCTAssertFalse(due(vm: true))
+        XCTAssertFalse(due(last: 60 * 60), "once in twelve hours at most")
+        XCTAssertTrue(due(last: 13 * 60 * 60))
+    }
+
     func testScreenContainsEverySectionInOrder() {
-        let screen = SiriScreenBuilder.screen(snapshot(.protected, accounts: [other("tester")], purgeable: 1_000_000_000))
+        var snap = snapshot(.protected, accounts: [other("tester")], purgeable: 1_000_000_000)
+        snap.releasingAutomatically = true
+        let screen = SiriScreenBuilder.screen(snap)
         XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "accounts", "models"])
     }
 }
