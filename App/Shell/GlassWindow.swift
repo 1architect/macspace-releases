@@ -179,6 +179,9 @@ enum KeyableWindow {
 /// covers the whole window, only the edge is drawn.
 struct GlassBackdrop: View {
     var showsGlass = true
+    /// How far a page has opened over it (the zoom's progress): the glass fades out as the page's glass grows over it, so it is
+    /// already gone when it stops being drawn. Dropped all at once, the page darkened in one frame as it settled.
+    var glassFade: CGFloat = 0
     @Environment(\.design) private var design
 
     var body: some View {
@@ -188,11 +191,26 @@ struct GlassBackdrop: View {
                 Color.clear
             } else if design.windowGlass {
                 Color.clear.glassEffect(.clear, in: shape)
+                    .modifier(GlassFade(progress: glassFade))
             } else {
                 // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
                 shape.fill(Color(white: design.isLight ? 0.92 : 0.13))
             }
         }
         .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
+    }
+}
+
+/// Fades the window's glass out over the second half of a page's opening, animated with it.
+private struct GlassFade: ViewModifier, @preconcurrency Animatable {
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.opacity(1 - ZoomMath.ramp(progress, 0.35, 1))
     }
 }

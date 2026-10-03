@@ -63,7 +63,7 @@ public struct MainView: View {
 
     public var body: some View {
         ZStack(alignment: .topLeading) {
-            GlassBackdrop(showsGlass: !pageSettled)
+            GlassBackdrop(showsGlass: !pageSettled, glassFade: layer == nil ? 0 : progress)
                 .gesture(WindowDragGesture())
                 .allowsWindowActivationEvents(true)
             // The size comes from a GeometryReader, which takes whatever the window gives it. Measured from the content instead, the
