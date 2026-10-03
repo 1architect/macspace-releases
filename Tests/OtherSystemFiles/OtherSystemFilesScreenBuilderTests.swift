@@ -64,7 +64,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
 
     func testTheTileMarksWhatCanBeFreed() {
         let tile = OtherSystemFilesScreenBuilder.tile(snapshot(measured))
-        XCTAssertEqual(tile.status, "\(ByteFormat.string(4_888_453_120)) can be freed")
+        XCTAssertEqual(tile.status, "up to \(ByteFormat.string(4_888_453_120)) can be freed")
         guard case let .blocks(segments)? = tile.graphic else { return XCTFail() }
         XCTAssertEqual(segments.first?.id, CacheDeleteService.fsPurgeableData)
         XCTAssertEqual(segments.first?.tone, .caution)

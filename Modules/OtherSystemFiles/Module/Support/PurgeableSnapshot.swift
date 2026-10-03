@@ -56,11 +56,14 @@ actor PurgeableStore {
     private var declined: UInt64?
     /// What MacSpace last freed, and macOS's estimate when it did.
     private var removed: (estimate: UInt64, bytes: UInt64)?
+    /// macOS's own estimate in the last snapshot, before what was freed is taken off it.
+    private var rawEstimate: UInt64 = 0
 
     func snapshot(maxAge: TimeInterval = 60) async -> PurgeableSnapshot {
         if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
         var fresh = await Task.detached(priority: .utility) { Self.liveSnapshot() }.value
         fresh.declinedBytes = declined
+        rawEstimate = fresh.services?[CacheDeleteService.fsPurgeableData] ?? 0
         fresh.services = Self.accounting(for: &removed, in: fresh.services)
         cached = fresh
         return fresh
@@ -77,6 +80,12 @@ actor PurgeableStore {
         }
         services[CacheDeleteService.fsPurgeableData] = current > freed.bytes ? current - freed.bytes : 0
         return services
+    }
+
+    /// macOS's own estimate of the files apps marked purgeable, as it gave it last.
+    func currentRawEstimate() async -> UInt64 {
+        _ = await snapshot()
+        return rawEstimate
     }
 
     /// MacSpace freed `bytes` while macOS estimated `estimate`.

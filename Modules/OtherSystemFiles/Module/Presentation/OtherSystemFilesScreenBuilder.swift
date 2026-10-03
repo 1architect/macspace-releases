@@ -10,7 +10,7 @@ enum OtherSystemFilesScreenBuilder {
     static func tile(_ snapshot: PurgeableSnapshot) -> Tile {
         guard snapshot.services != nil else { return Tile(title: "other system files", status: "unavailable") }
         let freeable = snapshot.freeableBytes
-        return Tile(title: "other system files", status: freeable >= threshold ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to free",
+        return Tile(title: "other system files", status: freeable >= threshold ? "up to \(ByteFormat.string(freeable)) can be freed" : "nothing to free",
                     graphic: .blocks(segments(snapshot)), reclaimableBytes: freeable >= threshold ? freeable : nil)
     }
 
@@ -38,14 +38,15 @@ enum OtherSystemFilesScreenBuilder {
         return Screen(title: "Other System Files", hero: hero, primary: freeAction(snapshot, prominent: true), widgets: widgets)
     }
 
+    /// "Up to": the size is macOS's estimate, which counts far more than macOS then deletes (900 MB estimated, 11 MB removed).
     static func freeAction(_ snapshot: PurgeableSnapshot, prominent: Bool) -> Action? {
         let bytes = snapshot.freeableBytes
         guard bytes >= threshold else { return nil }
         let size = ByteFormat.string(bytes)
-        return Action(id: "purgeFiles", title: prominent ? "Free \(size)" : "Remove", symbol: prominent ? "sparkles" : nil,
+        return Action(id: "purgeFiles", title: prominent ? "Free up to \(size)" : "Remove", symbol: prominent ? "sparkles" : nil,
                       role: prominent ? .prominent : .normal,
-                      confirmation: Confirmation(title: "Free \(size) of purgeable app files?",
-                                                 message: "macOS deletes the files apps marked purgeable, as it would when the disk is nearly full. Apps download again what they need.",
+                      confirmation: Confirmation(title: "Free up to \(size) of purgeable app files?",
+                                                 message: "macOS deletes the files apps marked purgeable, as it would when the disk is critically full. It decides how much of them goes; what it keeps is then listed as left alone. Apps download again what they need.",
                                                  confirmTitle: "Free"))
     }
 
@@ -67,7 +68,7 @@ enum OtherSystemFilesScreenBuilder {
         let rows = kept.map { entry in
             let service = PurgeableService.describe(entry.key)
             let detail = entry.key == CacheDeleteService.fsPurgeableData
-                ? "macOS declined to remove these when MacSpace asked: it keeps them until it needs the space. Offered again once its estimate grows."
+                ? "macOS kept these when MacSpace asked it to delete them: it deletes them only when it needs the space. Offered again once its estimate grows."
                 : service.detail
             return Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: detail)
         }

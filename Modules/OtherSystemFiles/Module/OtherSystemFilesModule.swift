@@ -35,9 +35,12 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         switch request.actionID {
         case "purgeFiles":
-            let estimate = await store.snapshot().estimatedBytes
-            let purge = Self.purgeFiles(progress: progress)
-            if purge.removedNothing { await store.noteDeclined(estimate: estimate) }
+            let estimate = await store.currentRawEstimate()
+            let purge = Self.purgeFiles(estimate: estimate, progress: progress)
+            // macOS has had its chance, at the urgency of a critically full disk: what it kept (all of it, or what is left once it
+            // removed part) is not offered again until its estimate grows. Its estimate counts far more than it will delete: 900 MB
+            // estimated, 11 MB removed (2026-10-03).
+            if purge.result.outcome != .failed { await store.noteDeclined(estimate: estimate) }
             if purge.freed > 0 { await store.noteRemoved(purge.freed, estimate: estimate) }
             return purge.result
         default:
@@ -49,7 +52,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// "purgeable" figure uses, then at the one macOS uses when the disk is critically full, for what the first left (it can
     /// remove part of them and then decline the rest). Only when neither removed anything are the files reported as declined. The
     /// space freed is measured on the volume, over both.
-    static func purgeFiles(progress: ProgressSink) -> (result: ActionResult, removedNothing: Bool, freed: UInt64) {
+    static func purgeFiles(estimate: UInt64, progress: ProgressSink) -> (result: ActionResult, removedNothing: Bool, freed: UInt64) {
         let service = CacheDeleteService.fsPurgeableData
         let before = DataVolume.freeBytes()
         var reported: UInt64 = 0
@@ -78,8 +81,11 @@ public struct OtherSystemFilesModule: MacSpaceModule {
                                  details: ["Asked twice, the second time as when the disk is critically full, macOS declined to delete these files now. It keeps them until it needs the space, and its estimate of them lags behind; MacSpace offers them again once that estimate grows."],
                                  refresh: true), true, 0)
         }
-        return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.",
-                           details: ["macOS reported \(ByteFormat.string(reported)) removed in \(String(format: "%.1f", elapsed)) s."]),
-                false, max(freed, reported))
+        let removed = max(freed, reported)
+        var details = ["macOS reported \(ByteFormat.string(reported)) removed in \(String(format: "%.1f", elapsed)) s."]
+        if estimate > removed + OtherSystemFilesScreenBuilder.threshold {
+            details.append("macOS kept the other \(ByteFormat.string(estimate - removed)): it deletes those only when it needs the space, so they are listed as left alone.")
+        }
+        return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.", details: details), false, removed)
     }
 }
