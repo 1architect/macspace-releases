@@ -16,7 +16,9 @@ cd "$(dirname "$0")/.."
 
 CONFIG=${CONFIG:-release}
 VERSION=${VERSION:-0.1.0}
-BUILD=${BUILD:-1}
+# A local build gets a build number of its own, 1.<year and day>.<time>: macOS keeps an app's icon by its identity and build
+# number, and every build being "1" kept the icon it first cached (the generic one). It stays below any release build (2 and up).
+BUILD=${BUILD:-1.$(date +%y%j).$((10#$(date +%H%M%S)))}
 AUTO_IDENTITY=0
 if [ -z "${SIGN_IDENTITY+x}" ]; then
   SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "((Developer ID Application|Apple Development):.*)"$/\1/p' | head -1 || true)
