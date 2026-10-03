@@ -8,9 +8,11 @@
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
 #   ICON=/path/to/MacSpace.icon Scripts/Assemble.sh   the app icon, an Icon Composer document (default: the design folder below;
 #                                            without it, App/Resources/AppIcon.icns)
-#   NOTARY_PROFILE=MacSpace Scripts/Assemble.sh   also notarize the app and staple the ticket, so it opens on any Mac (another Mac, a
-#                                            VM). Needs a Developer ID identity and a notarytool profile in the keychain, made once with
+#   Notarization is on by default with a Developer ID identity: the app is notarized and the ticket stapled, so it opens on any
+#                                            Mac (another Mac, a VM). It uses the notarytool keychain profile "MacSpace" (NOTARY_PROFILE
+#                                            names another), made once with
 #                                            xcrun notarytool store-credentials MacSpace --apple-id … --team-id … (app-specific password)
+#   NOTARY_PROFILE= Scripts/Assemble.sh      skip notarization (the app then opens only on the Mac that built it)
 #
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
 # supplied by the release pipeline; nothing secret lives in this repository.
@@ -39,6 +41,17 @@ if [ "$SIGN_IDENTITY" != "-" ] && ! printf '%s' "$SIGN_IDENTITY" | grep -qE '^[0
       if (rest == name) { print hash; exit } }' || true)
   [ -n "$HASH" ] && SIGN_KEY=$HASH
 fi
+# Notarized unless NOTARY_PROFILE is set empty. Only a Developer ID identity can be notarized; without one (a contributor's build) it
+# is skipped, unless a profile was asked for explicitly.
+NOTARY_EXPLICIT=${NOTARY_PROFILE+x}
+NOTARY_PROFILE=${NOTARY_PROFILE-MacSpace}
+case "$SIGN_IDENTITY" in
+  "Developer ID Application:"*) ;;
+  *) if [ -n "$NOTARY_PROFILE" ] && [ -z "$NOTARY_EXPLICIT" ]; then
+       echo "Not notarizing: signed with ${SIGN_IDENTITY/#-/ad-hoc}, not a Developer ID identity."
+       NOTARY_PROFILE=""
+     fi ;;
+esac
 # Public half of the Sparkle update key. Without it the built app never checks for updates.
 SPARKLE_PUBLIC_KEY=${SPARKLE_PUBLIC_KEY:-}
 # The team that signs the app; the helper accepts only clients signed by it. Not a secret (it is in every signed binary).
@@ -150,7 +163,12 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
   ZIP=$(mktemp -d)/MacSpace.zip
   ditto -c -k --keepParent "$APP" "$ZIP"
   echo "Notarizing (this usually takes a few minutes)…"
-  RESULT=$(xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)
+  RESULT=$(xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json) || {
+    echo "error: could not submit to Apple's notary service with the keychain profile \"$NOTARY_PROFILE\". Save it once with" >&2
+    echo "  xcrun notarytool store-credentials $NOTARY_PROFILE --apple-id <Apple ID> --team-id $TEAM_ID" >&2
+    echo "or build with NOTARY_PROFILE= to skip notarization." >&2
+    exit 1
+  }
   STATUS=$(printf '%s' "$RESULT" | plutil -extract status raw -o - - 2>/dev/null || echo unknown)
   SUBMISSION=$(printf '%s' "$RESULT" | plutil -extract id raw -o - - 2>/dev/null || echo "")
   rm -f "$ZIP"
@@ -198,5 +216,5 @@ fi
 # knows. Two copies with the same identifier let macOS tie the helper to this one, which the next build replaces ("Codesigning
 # failure loading plist … -67056"). Finder registers it again when it shows the folder; the helper refuses to install from it.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$PWD/$APP" 2>/dev/null || true
-echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
+echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc}${NOTARY_PROFILE:+, notarized})"
 [ "${INSTALL:-0}" = 1 ] || echo "Copy it to /Applications to run it (quit MacSpace first)."
