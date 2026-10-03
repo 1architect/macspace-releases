@@ -6,6 +6,8 @@
 #                                            macOS ties the permission to the signature, and an ad-hoc signature changes every build.
 #   SIGN_IDENTITY=- Scripts/Assemble.sh      force an ad-hoc signature
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
+#   ICON=/path/to/MacSpace.icon Scripts/Assemble.sh   the app icon, an Icon Composer document (default: the design folder below;
+#                                            without it, App/Resources/AppIcon.icns)
 #
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
 # supplied by the release pipeline; nothing secret lives in this repository.
@@ -30,6 +32,9 @@ if [ -z "${DEVELOPER_DIR:-}" ] && [ -d /Applications/Xcode-beta.app ] && ! xcode
   export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 fi
 
+# The app icon, made in Icon Composer. It lives with the design files, outside the repository.
+ICON=${ICON:-"$HOME/Library/CloudStorage/OneDrive-Pessoal/Em andamento/DESIGN/MACSPACE/MacSpace.icon"}
+
 swift build -c "$CONFIG"
 BIN=$(swift build -c "$CONFIG" --show-bin-path)
 
@@ -39,7 +44,22 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MacSpace"
-cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+# The Icon Composer document is compiled by actool into the asset catalog (the icon macOS 26 and later draw, with its light, dark
+# and tinted looks) and an .icns for older places; Info.plist names both. Without it, the old .icns.
+if [ -d "$ICON" ]; then
+  ICON_NAME=$(basename "$ICON" .icon)
+  PARTIAL=$(mktemp -d)
+  xcrun actool "$ICON" --compile "$APP/Contents/Resources" --app-icon "$ICON_NAME" --include-all-app-icons \
+    --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 27.0 \
+    --enable-on-demand-resources NO --development-region en --errors --warnings --output-format human-readable-text
+  plutil -replace CFBundleIconFile -string "$ICON_NAME" "$APP/Contents/Info.plist"
+  plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
+  rm -rf "$PARTIAL"
+  echo "App icon: $ICON"
+else
+  cp App/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+  echo "App icon: App/Resources/AppIcon.icns ($ICON not found)"
+fi
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
