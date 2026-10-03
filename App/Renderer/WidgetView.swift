@@ -17,6 +17,9 @@ struct WidgetForm<Top: View>: View {
     @ViewBuilder var top: Top
     /// Collapsible sections the user has flipped from how they start.
     @State private var flipped: Set<String> = []
+    /// The widgets that are in. Those already there when the page opens come in with the page; those that arrive later (when the
+    /// module answers after the page opened, or a refresh brings new ones) rise in one after another.
+    @State private var revealed: Set<String> = []
 
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
         Binding(get: { section.startsCollapsed == flipped.contains(section.id) },
@@ -40,6 +43,13 @@ struct WidgetForm<Top: View>: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .onAppear { revealed = Set(widgets.map(\.id)) }
+        .onChange(of: widgets.map(\.id)) { _, ids in
+            revealed.formIntersection(ids)
+            for (order, id) in ids.filter({ !revealed.contains($0) }).enumerated() {
+                withAnimation(Theme.layout.delay(0.05 + Double(order) * 0.07)) { _ = revealed.insert(id) }
+            }
+        }
     }
 
     private struct Item: Identifiable {
@@ -52,10 +62,11 @@ struct WidgetForm<Top: View>: View {
     /// One group per widget, all built the same way, so the first one stays the same view when its widget changes kind.
     private func section(for widget: ScreenWidget?, leading: Bool) -> some View {
         let title = widget.map(Self.title) ?? (text: nil, help: nil)
+        let shown = widget.map { revealed.contains($0.id) } ?? true
         return Section {
-            if let widget { content(of: widget) }
+            if let widget { content(of: widget).modifier(Rise(shown: shown)) }
         } header: {
-            header(title.text, help: title.help, leading: leading)
+            header(title.text, help: title.help, leading: leading, shown: shown)
         }
     }
 
@@ -92,15 +103,16 @@ struct WidgetForm<Top: View>: View {
 
     /// A section's header: its title (the description as the tooltip), with the page's top above it on the first section.
     @ViewBuilder
-    private func header(_ title: String?, help: String? = nil, leading: Bool) -> some View {
+    private func header(_ title: String?, help: String? = nil, leading: Bool, shown: Bool = true) -> some View {
         let hasTitle = !(title ?? "").isEmpty
         if leading {
+            // The top stays put; only the title rises in with its rows.
             VStack(alignment: .leading, spacing: 14) {
                 top
-                if hasTitle, let title { Text(title).help(help ?? "") }
+                if hasTitle, let title { Text(title).help(help ?? "").modifier(Rise(shown: shown)) }
             }
         } else if hasTitle, let title {
-            Text(title).help(help ?? "")
+            Text(title).help(help ?? "").modifier(Rise(shown: shown))
         }
     }
 
@@ -128,6 +140,17 @@ struct WidgetForm<Top: View>: View {
         case let .section(section):
             ForEach(section.widgets) { inner in AnyView(WidgetRows(widget: inner, handler: handler)) }
         }
+    }
+}
+
+/// A part of the page coming in: it rises a little as it fades in.
+private struct Rise: ViewModifier {
+    let shown: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 14)
     }
 }
 
