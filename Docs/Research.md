@@ -93,8 +93,9 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
 - **Measured – purging again from the app (2026-10-03, development Mac, urgency 3).** The first purge removed 111 MB; the next
   answered within 0.0013 s with `CACHE_DELETE_AMOUNT = 0` while the estimate at urgency 3 still said 911.7 MB (free space 107.3 GB,
   goal set to free + the 100 GB asked). The estimate lags what CacheDelete will actually remove. The app now asks at urgency 3 and
-  then at urgency 4 (critically full), and lists the files as declined, not freeable, only when both remove nothing. Not yet
-  measured: what urgency 4 removes.
+  then at urgency 4 (critically full), and lists the files as declined, not freeable, only when both remove nothing.
+- **Measured – urgency 3 then 4, from the app (2026-10-03, development Mac).** macOS reported 1.08 GB removed and the volume's free
+  space rose by 1.08 GB; the estimate at urgency 3 then said 63.5 MB. What urgency 3 declined, urgency 4 removed.
 
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
