@@ -63,13 +63,16 @@ struct Surface<S: Shape>: View {
     let shape: S
     let color: Color
     var highlighted = false
+    /// How much of the color shows, 0...1: the loading pulse. On glass it thins the color inside the glass, since the glass itself
+    /// ignores an opacity laid on it, so a pulse laid over the chart only reached its text.
+    var strength: Double = 1
     @Environment(\.design) private var design
 
     var body: some View {
         if design.glass && design.glassElements {
             // Darkened inside the glass. A shade laid over it was lost once the chart's glass was drawn in a glass container.
             let dark = highlighted && design.hoverShade
-            shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7))
+            shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
                 .animation(Theme.highlight, value: dark)
                 .glassEffect(.regular, in: shape)
         } else {
@@ -77,6 +80,7 @@ struct Surface<S: Shape>: View {
             shape.fill(color)
                 .overlay { shape.fill(.white.opacity(highlighted ? 0.1 : 0)) }
                 .animation(Theme.highlight, value: highlighted)
+                .opacity(strength)
         }
     }
 }
@@ -225,14 +229,16 @@ struct BlocksView: View {
                             ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                                 let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
                                 let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                                placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id),
-                                       index: index, rect: rect, date: context.date)
+                                placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
+                                               strength: wave(context.date, index)),
+                                       index: index, rect: rect)
                             }
                         }
                     }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                         let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
-                        placed(overlay(segment, index: index, rect: rect), index: index, rect: rect, date: context.date)
+                        placed(overlay(segment, index: index, rect: rect), index: index, rect: rect)
+                            .opacity(wave(context.date, index))
                     }
                 }
             }
@@ -242,15 +248,19 @@ struct BlocksView: View {
         .onAppear { appeared = true }
     }
 
-    /// A block's place, its coming in, and its loading pulse; the same for the block and for its name.
-    private func placed(_ view: some View, index: Int, rect: CGRect, date: Date) -> some View {
+    /// A block's place and its coming in; the same for the block and for its name.
+    private func placed(_ view: some View, index: Int, rect: CGRect) -> some View {
         view
             .frame(width: max(rect.width, 0), height: max(rect.height, 0))
             .offset(x: rect.minX, y: rect.minY)
             .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
             .opacity(appeared ? 1 : 0)
             .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
-            .opacity(LoadingWave.opacity(date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion))
+    }
+
+    /// Block `index`'s loading pulse: given to the block's surface (glass ignores an opacity) and laid on its name.
+    private func wave(_ date: Date, _ index: Int) -> Double {
+        LoadingWave.opacity(date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion)
     }
 
     /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
@@ -304,16 +314,17 @@ struct DotsView: View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
                 ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
+                    let wave = LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion)
                     ZStack {
                         Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
-                        Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5))
+                            .opacity(wave)
+                        Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5), strength: wave)
                             .scaleEffect(appeared && dot != .open ? 1 : 0.2)
                             .opacity(appeared && dot != .open ? 1 : 0)
                     }
                     .frame(width: diameter, height: diameter)
                     .animation(Theme.layout.delay(appeared ? 0 : 0.2 + Double(index) * 0.035), value: appeared)
                     .animation(Theme.layout, value: dot)
-                    .opacity(LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion))
                 }
             }
         }
@@ -351,27 +362,26 @@ struct StateView: View {
             HStack(spacing: 9) {
                 GlassGroup {
                     ZStack(alignment: on ? .trailing : .leading) {
-                        Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1))
-                        Surface(shape: Circle(), color: on ? design.action : palette.step(4)).padding(3)
+                        Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1), strength: wave(0))
+                        Surface(shape: Circle(), color: on ? design.action : palette.step(4), strength: wave(0)).padding(3)
                     }
                 }
                 .frame(width: 44, height: 24)
                 Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
+                    .opacity(wave(0))
             }
             .animation(Theme.hover, value: on)
-            .opacity(wave(0))
             Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
                 .opacity(wave(1))
             if let meter {
                 GeometryReader { proxy in
-                    Surface(shape: Capsule(), color: palette.step(1))
+                    Surface(shape: Capsule(), color: palette.step(1), strength: wave(2))
                         .overlay(alignment: .leading) {
-                            Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4))
+                            Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: wave(2))
                                 .frame(width: proxy.size.width * CGFloat(meter) * fill)
                         }
                 }
                 .frame(height: 6)
-                .opacity(wave(2))
                 .onAppear { withAnimation(.smooth(duration: 1).delay(0.3)) { fill = 1 } }
             }
         }
