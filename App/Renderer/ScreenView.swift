@@ -31,7 +31,7 @@ struct ScreenView: View {
                 .animation(Theme.layout, value: screen.widgets.map(\.id))
             } else {
                 PageSkeleton()
-                    .padding(.top, PageInsets.top - PageInsets.headerBottom)
+                    .padding(.top, PageInsets.top - PageInsets.scrollTop)
                     .padding(.horizontal, PageInsets.side)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
@@ -56,6 +56,8 @@ enum PageInsets {
     static let top: CGFloat = 70
     /// Where the corner buttons and the title end.
     static let headerBottom: CGFloat = 50
+    /// Where a page's scroll area starts: clear of the title, so a section header scrolled up to it is not cut off right under it.
+    static let scrollTop: CGFloat = 62
     static let side: CGFloat = 30
     /// How far a grouped form indents its section headers from the edge of its groups (to line up with the text in the rows). The page's
     /// hero sits in the first header.
@@ -75,12 +77,12 @@ struct PageScrollArea: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .contentMargins(.top, max(PageInsets.top - 20 - PageInsets.headerBottom, 0), for: .scrollContent)
+            .contentMargins(.top, 0, for: .scrollContent)
             .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
             .contentMargins(.horizontal, 10, for: .scrollContent)
             .scrollEdgeEffectStyle(.soft, for: .all)
             .scrollEdgeEffectHidden(!design.pageEdgeFade, for: .all)
-            .padding(.top, PageInsets.headerBottom)
+            .padding(.top, PageInsets.scrollTop)
             .padding(.bottom, hasFooter ? PageInsets.footer : 0)
             .clipped()
     }

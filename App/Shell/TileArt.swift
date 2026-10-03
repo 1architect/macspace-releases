@@ -7,11 +7,16 @@ import SwiftUI
 /// and press itself.
 struct TileBackdrop: View {
     let tint: TileTint
+    /// The tile has become a page. Its color is then laid straight on the window's glass, without glass of its own: two window-sized
+    /// layers of glass, one over the other, were blended again on every frame the page scrolled.
+    var isPage = false
     @Environment(\.design) private var design
 
     var body: some View {
         let palette = design.palette(tint)
-        if design.glass {
+        if design.glass && isPage {
+            palette.base.opacity(design.isLight ? 0.5 : 0.62)
+        } else if design.glass {
             // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
             let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
             shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
