@@ -25,7 +25,8 @@ struct TileInfo: Equatable {
     @MainActor
     init(_ storage: StorageOverview) {
         let status = storage.status
-        var graphic: TileGraphic?
+        // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
+        var graphic = TileGraphic.gauge(value: 0, extra: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
             graphic = .gauge(value: used, extra: storage.purgeableFraction ?? 0, label: "\(Int((used * 100).rounded()))%",
                              sublabel: "of \(ByteFormat.string(total))")
@@ -58,13 +59,13 @@ struct TileFace: View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
             TileBackdrop(tint: tint)
-            if let graphic = info.graphic {
+            // While a tile has nothing to show yet, placeholder blocks breathe in its place.
+            if let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
                 GeometryReader { proxy in
                     chart(graphic, in: proxy.size)
                 }
                 .opacity(chartOpacity)
             }
-            if info.loading { Shimmer() }
             // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late.
             if design.glass && design.hoverShade {
                 HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: pointer != nil, amount: Theme.tileHoverShade)
@@ -103,7 +104,7 @@ struct TileFace: View {
                 let point = CGPoint(x: unit.x * size.width - area.minX, y: unit.y * size.height - area.minY)
                 return BlocksView.segment(at: point, in: area.size, segments: segments)
             }
-            BlocksView(segments: segments, tint: tint, hovered: hovered?.id)
+            BlocksView(segments: segments, tint: tint, labels: segments.contains { !$0.label.isEmpty }, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, or what amber means.
@@ -122,7 +123,7 @@ struct TileFace: View {
             .animation(Theme.hover, value: hovered?.id)
         case let .dots(dots):
             VStack(alignment: .leading, spacing: 10) {
-                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 28 - 6 * 7) / 7))
+                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 28 - 6 * 7) / 7), loading: info.loading)
                 HStack(spacing: 10) {
                     legend(Circle().fill(palette.step(5)), "off")
                     legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), "runs")
@@ -136,7 +137,7 @@ struct TileFace: View {
             .padding(.top, 16)
             .padding(.trailing, 14)
         case let .state(on, _, detail, meter, actionable):
-            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint)
+            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading)
                 .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
                 .padding(.leading, 14)
                 .padding(.top, 16)
@@ -145,11 +146,11 @@ struct TileFace: View {
             // bar across it instead.
             let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
             if side >= 100 {
-                GaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint)
+                GaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
                     .frame(width: side, height: side)
                     .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
             } else {
-                BarGaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint)
+                BarGaugeView(value: value, extra: extra, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
                     .frame(width: max(size.width - 30, 0), alignment: .leading)
                     .offset(x: 15, y: 9)
             }

@@ -60,6 +60,32 @@ struct Surface<S: Shape>: View {
     }
 }
 
+// MARK: Loading
+
+/// While a tile's figures load, its chart's own elements breathe one after another, a wave running through them, instead of a band of
+/// light sweeping over the tile. With Reduce Motion they stay dimmed instead.
+enum LoadingWave {
+    static let period = 1.4
+
+    /// How bright element `index` of `count` is at `date`: 1 when not loading.
+    static func opacity(_ date: Date, index: Int, count: Int, loading: Bool, reduceMotion: Bool) -> Double {
+        guard loading else { return 1 }
+        guard !reduceMotion else { return 0.55 }
+        let t = date.timeIntervalSinceReferenceDate / period - Double(index) / Double(max(count, 1)) * 0.8
+        return 0.35 + 0.65 * (0.5 + 0.5 * cos(2 * .pi * t))
+    }
+
+    /// Where a running highlight is along its track, 0...1, looping.
+    static func position(_ date: Date, period: Double = 1.2) -> Double {
+        (date.timeIntervalSinceReferenceDate / period).truncatingRemainder(dividingBy: 1)
+    }
+
+    /// Blocks to animate while a tile has nothing to show yet.
+    static let placeholderBlocks: [UsageSegment] = [6, 3, 2, 1.4, 1].enumerated().map { index, weight in
+        UsageSegment(id: "loading-\(index)", label: "", bytes: UInt64(weight * 1_000), tone: .series(index))
+    }
+}
+
 // MARK: Blocks
 
 /// Squarified treemap: rectangles with areas proportional to the values, kept as close to square as the space allows. Values are laid
@@ -137,44 +163,50 @@ struct BlocksView: View {
     var labels = true
     var hovered: String?
     var gap: CGFloat = 3
+    var loading = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
         GeometryReader { proxy in
             let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: proxy.size))
-            ZStack(alignment: .topLeading) {
-                ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                    let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
-                    let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                    Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id)
-                        .overlay {
-                            // Glass has its own edge; an outline would sit inside it.
-                            if !design.glass {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
-                                    .animation(Theme.highlight, value: hovered)
-                            }
-                        }
-                        .overlay(alignment: .topLeading) {
-                            if labels, rect.width > 74, rect.height > 34 {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
-                                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).contentTransition(.numericText())
+            TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+                ZStack(alignment: .topLeading) {
+                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                        let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
+                        let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
+                        Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id)
+                            .overlay {
+                                // Glass has its own edge; an outline would sit inside it.
+                                if !design.glass {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+                                        .animation(Theme.highlight, value: hovered)
                                 }
-                                .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 5)
                             }
-                        }
-                        .frame(width: max(rect.width, 0), height: max(rect.height, 0))
-                        .offset(x: rect.minX, y: rect.minY)
-                        .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
-                        .opacity(appeared ? 1 : 0)
-                        .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
+                            .overlay(alignment: .topLeading) {
+                                if labels, rect.width > 74, rect.height > 34 {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                                        Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).contentTransition(.numericText())
+                                    }
+                                    .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 5)
+                                }
+                            }
+                            .frame(width: max(rect.width, 0), height: max(rect.height, 0))
+                            .offset(x: rect.minX, y: rect.minY)
+                            .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
+                            .opacity(LoadingWave.opacity(context.date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion))
+                    }
                 }
             }
             .animation(Theme.layout, value: segments)
+            .animation(.smooth(duration: 0.4), value: loading)
         }
         .onAppear { appeared = true }
     }
@@ -195,24 +227,30 @@ struct DotsView: View {
     var diameter: CGFloat = 15
     var spacing: CGFloat = 7
     var columns = 7
+    var loading = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
         let palette = design.palette(tint)
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
-            ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
-                ZStack {
-                    Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
-                    Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5))
-                        .scaleEffect(appeared && dot != .open ? 1 : 0.2)
-                        .opacity(appeared && dot != .open ? 1 : 0)
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
+                ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
+                    ZStack {
+                        Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
+                        Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5))
+                            .scaleEffect(appeared && dot != .open ? 1 : 0.2)
+                            .opacity(appeared && dot != .open ? 1 : 0)
+                    }
+                    .frame(width: diameter, height: diameter)
+                    .animation(Theme.layout.delay(appeared ? 0 : 0.2 + Double(index) * 0.035), value: appeared)
+                    .animation(Theme.layout, value: dot)
+                    .opacity(LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion))
                 }
-                .frame(width: diameter, height: diameter)
-                .animation(Theme.layout.delay(appeared ? 0 : 0.2 + Double(index) * 0.035), value: appeared)
-                .animation(Theme.layout, value: dot)
             }
         }
+        .animation(.smooth(duration: 0.4), value: loading)
         .fixedSize()
         .onAppear { appeared = true }
     }
@@ -228,12 +266,21 @@ struct StateView: View {
     let meter: Double?
     let meterIsActionable: Bool
     let tint: TileTint
+    var loading = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fill: CGFloat = 0
 
     var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+            content { index in LoadingWave.opacity(context.date, index: index, count: 3, loading: loading, reduceMotion: reduceMotion) }
+        }
+        .animation(.smooth(duration: 0.4), value: loading)
+    }
+
+    private func content(_ wave: (Int) -> Double) -> some View {
         let palette = design.palette(tint)
-        VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 9) {
                 ZStack(alignment: on ? .trailing : .leading) {
                     Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1))
@@ -243,7 +290,9 @@ struct StateView: View {
                 Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
             }
             .animation(Theme.hover, value: on)
+            .opacity(wave(0))
             Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
+                .opacity(wave(1))
             if let meter {
                 GeometryReader { proxy in
                     Surface(shape: Capsule(), color: palette.step(1))
@@ -253,6 +302,7 @@ struct StateView: View {
                         }
                 }
                 .frame(height: 6)
+                .opacity(wave(2))
                 .onAppear { withAnimation(.smooth(duration: 1).delay(0.3)) { fill = 1 } }
             }
         }
@@ -288,16 +338,33 @@ struct GaugeView: View {
     let label: String
     let sublabel: String
     let tint: TileTint
+    var loading = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var drawn: Double = 0
 
     private static let sweep = 0.75
+    /// The length of the light that runs along the track while loading, as a share of the track.
+    private static let runner = 0.16
 
     var body: some View {
         GeometryReader { proxy in
-            gauge(side: min(proxy.size.width, proxy.size.height))
+            let side = min(proxy.size.width, proxy.size.height)
+            let band = min(9, max(4, side * 0.07))
+            gauge(side: side)
+                .overlay {
+                    if loading && !reduceMotion {
+                        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                            let from = LoadingWave.position(context.date) * (1 + Self.runner) - Self.runner
+                            Surface(shape: ArcBand(from: max(from, 0) * Self.sweep, to: min(from + Self.runner, 1) * Self.sweep, width: band, round: true),
+                                    color: design.palette(tint).step(5))
+                        }
+                        .transition(.opacity)
+                    }
+                }
                 .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .animation(.smooth(duration: 0.4), value: loading)
         .animation(Theme.value, value: value)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
     }
@@ -333,7 +400,9 @@ struct BarGaugeView: View {
     let label: String
     let sublabel: String
     let tint: TileTint
+    var loading = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var drawn: Double = 0
 
     var body: some View {
@@ -354,10 +423,22 @@ struct BarGaugeView: View {
                     Surface(shape: Capsule(), color: palette.step(1))
                     Surface(shape: Capsule(), color: palette.step(3)).frame(width: proxy.size.width * (used + more))
                     Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
+                    // While loading, a light runs along the bar.
+                    if loading && !reduceMotion {
+                        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                            let runner = 0.22
+                            let from = LoadingWave.position(context.date) * (1 + runner) - runner
+                            Surface(shape: Capsule(), color: palette.step(5))
+                                .frame(width: proxy.size.width * (min(from + runner, 1) - max(from, 0)))
+                                .offset(x: proxy.size.width * max(from, 0))
+                        }
+                        .transition(.opacity)
+                    }
                 }
             }
             .frame(height: 10)
         }
+        .animation(.smooth(duration: 0.4), value: loading)
         .animation(Theme.value, value: value)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
     }
