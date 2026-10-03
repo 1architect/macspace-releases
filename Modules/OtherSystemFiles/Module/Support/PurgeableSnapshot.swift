@@ -17,22 +17,24 @@ struct PurgeableService: Equatable {
     let id: String
     let title: String
     let detail: String
+    /// The row's symbol on the page.
+    let symbol: String
 
     static let known: [PurgeableService] = [
         PurgeableService(id: CacheDeleteService.fsPurgeableData, title: "Purgeable app files",
-                         detail: "Caches and downloads apps told macOS it may delete. macOS deletes them only when the disk is nearly full; this does it now. Apps download again what they need."),
+                         detail: "Caches and downloads apps told macOS it may delete. macOS deletes them only when the disk is nearly full; this does it now. Apps download again what they need.", symbol: "arrow.down.circle.dotted"),
         PurgeableService(id: CacheDeleteService.appContainerCaches, title: "App container caches",
-                         detail: "macOS reports them, but purging freed under 100 MB at any urgency, and they keep being reported. Left alone."),
+                         detail: "macOS reports them, but purging freed under 100 MB at any urgency, and they keep being reported. Left alone.", symbol: "shippingbox"),
         PurgeableService(id: CacheDeleteService.fsPurgeableDocument, title: "Purgeable documents",
-                         detail: "Most likely local copies of documents kept in the cloud. Not offered until it is measured what removing them does."),
+                         detail: "Most likely local copies of documents kept in the cloud. Not offered until it is measured what removing them does.", symbol: "icloud.and.arrow.down"),
         PurgeableService(id: CacheDeleteService.quickLookThumbnails, title: "Quick Look thumbnails",
-                         detail: "Previews of files. macOS reports them, but purging removed nothing. Left alone."),
+                         detail: "Previews of files. macOS reports them, but purging removed nothing. Left alone.", symbol: "photo.on.rectangle"),
         PurgeableService(id: CacheDeleteService.mobileAsset, title: "System assets",
-                         detail: "Assets macOS downloaded. The unused ones are removed from System Data."),
+                         detail: "Assets macOS downloaded. The unused ones are removed from System Data.", symbol: "square.stack.3d.down.right"),
     ]
 
     static func describe(_ id: String) -> PurgeableService {
-        known.first { $0.id == id } ?? PurgeableService(id: id, title: id, detail: "Reported by macOS. MacSpace leaves it alone.")
+        known.first { $0.id == id } ?? PurgeableService(id: id, title: id, detail: "Reported by macOS. MacSpace leaves it alone.", symbol: "internaldrive")
     }
 }
 

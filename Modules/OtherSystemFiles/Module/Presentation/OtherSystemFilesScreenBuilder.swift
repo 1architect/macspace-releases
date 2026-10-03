@@ -52,21 +52,22 @@ enum OtherSystemFilesScreenBuilder {
     static func freeNow(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
         guard let action = freeAction(snapshot, prominent: false) else { return nil }
         let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
-        let row = Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes), symbol: "arrow.down.circle.dotted",
+        let row = Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes), symbol: service.symbol,
                       detail: service.detail, actions: [action])
         return .section(SectionWidget(id: "free", title: "Free now", widgets: [.list(ListWidget(id: "free-list", rows: [row]))]))
     }
 
-    /// Everything else macOS counts as purgeable, with why MacSpace leaves it, so the total adds up.
+    /// Everything else macOS counts as purgeable, with why MacSpace leaves it, so the total adds up. Drawn like System Data's lists:
+    /// open, one row per service with its symbol, the reason in the row's detail.
     static func keptSection(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
         let kept = (snapshot.services ?? [:]).filter { $0.key != CacheDeleteService.fsPurgeableData && $0.value >= threshold }
             .sorted { $0.value > $1.value }
         guard !kept.isEmpty else { return nil }
         let rows = kept.map { entry in
             let service = PurgeableService.describe(entry.key)
-            return Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), detail: service.detail)
+            return Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: service.detail)
         }
         return .section(SectionWidget(id: "kept", title: "Left alone", subtitle: "Counted as purgeable by macOS, but not worth freeing or not tested.",
-                                      widgets: [.list(ListWidget(id: "kept-list", rows: rows))], isCollapsible: true, startsCollapsed: true))
+                                      widgets: [.list(ListWidget(id: "kept-list", rows: rows))]))
     }
 }

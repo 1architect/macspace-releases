@@ -33,6 +33,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(list.rows.map(\.id), [CacheDeleteService.appContainerCaches, CacheDeleteService.fsPurgeableDocument,
                                              CacheDeleteService.quickLookThumbnails], "13 MB of Spotlight is not worth a row")
         XCTAssertTrue(list.rows.allSatisfy(\.actions.isEmpty), "nothing left alone has a button")
+        XCTAssertFalse(kept.isCollapsible, "listed open, like System Data's sections")
+        XCTAssertTrue(list.rows.allSatisfy { $0.symbol != nil }, "each row has its symbol, like the rows above it")
     }
 
     func testTheTileMarksWhatCanBeFreed() {
