@@ -124,7 +124,8 @@ struct PillButtonStyle: ButtonStyle {
 }
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
-/// light dark tint, 36 points, a white symbol that dims while pressed. Used for close/back and Refresh in the top-left corner.
+/// light dark tint, 36 points, a white symbol. Under the pointer it grows a little and lightens; pressed, it shrinks and the symbol
+/// dims. Used for close/back and Refresh in the top-left corner.
 struct GlassCircleButton: View {
     static let diameter: CGFloat = 36
     static let margin: CGFloat = 8
@@ -149,17 +150,33 @@ struct GlassCircleButton: View {
             .frame(width: Self.diameter, height: Self.diameter)
             .contentShape(Circle())
         }
-        .buttonStyle(DimWhenPressed())
-        .background(ClearGlassCircle(diameter: Self.diameter))
+        .buttonStyle(GlassCircleStyle(diameter: Self.diameter))
         .disabled(busy)
         .help(help)
         .accessibilityLabel(help)
     }
 }
 
-private struct DimWhenPressed: ButtonStyle {
+/// The glass goes in the style, under the label, so it grows and shrinks with the symbol.
+private struct GlassCircleStyle: ButtonStyle {
+    let diameter: CGFloat
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.opacity(configuration.isPressed ? 0.5 : 1)
+        let pressed = configuration.isPressed
+        configuration.label
+            .opacity(pressed ? 0.55 : 1)
+            .background {
+                ClearGlassCircle(diameter: diameter)
+                    // A light over the glass under the pointer, a little less while pressed.
+                    .overlay { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)) }
+            }
+            .scaleEffect(pressed ? 0.88 : (hovering ? 1.08 : 1))
+            .onHover { hovering = $0 && isEnabled }
+            .onChange(of: isEnabled) { _, enabled in if !enabled { hovering = false } }
+            .animation(Theme.press, value: pressed)
+            .animation(Theme.hover, value: hovering)
     }
 }
 
