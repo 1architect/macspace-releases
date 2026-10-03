@@ -6,7 +6,7 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// Bytes each service reports; nil when CacheDelete is unavailable or failed its self-test on this macOS build.
     var services: [String: UInt64]?
     var takenAt: Date
-    /// What macOS estimated for the files apps marked purgeable when it last declined to remove any of them, in this session.
+    /// What macOS estimated for the files apps marked purgeable when it last kept them after being asked to delete them.
     var declinedBytes: UInt64? = nil
 
     /// macOS's estimate of the files apps marked purgeable.
@@ -53,7 +53,12 @@ struct PurgeableService: Equatable {
 
 actor PurgeableStore {
     private var cached: PurgeableSnapshot?
-    private var declined: UInt64?
+    /// Kept across launches: forgotten when the app quit (a rebuild, a restart), the files macOS had just kept were offered again,
+    /// and asking again removed nothing.
+    private var declined: UInt64? = (UserDefaults.standard.object(forKey: PurgeableStore.declinedKey) as? NSNumber)?.uint64Value {
+        didSet { UserDefaults.standard.set(declined.map { NSNumber(value: $0) }, forKey: PurgeableStore.declinedKey) }
+    }
+    static let declinedKey = "otherSystemFiles.declinedEstimate"
     /// What MacSpace last freed, and macOS's estimate when it did.
     private var removed: (estimate: UInt64, bytes: UInt64)?
     /// macOS's own estimate in the last snapshot, before what was freed is taken off it.

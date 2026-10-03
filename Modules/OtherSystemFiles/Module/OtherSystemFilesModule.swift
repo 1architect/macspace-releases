@@ -78,7 +78,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             if let lastError { return (.failed(lastError), false, 0) }
             // CacheDelete can answer at once that it removed nothing while its estimate still counts the files.
             return (ActionResult(outcome: .needsAttention, message: "macOS removed nothing.",
-                                 details: ["Asked twice, the second time as when the disk is critically full, macOS declined to delete these files now. It keeps them until it needs the space, and its estimate of them lags behind; MacSpace offers them again once that estimate grows."],
+                                 details: ["Even asked as when the disk is critically full, macOS kept all of these files: it deletes them only when it needs the space. They are listed as left alone until macOS counts more."],
                                  refresh: true), true, 0)
         }
         let removed = max(freed, reported)
