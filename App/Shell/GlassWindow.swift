@@ -192,7 +192,7 @@ struct GlassBackdrop: View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
         ZStack {
             if design.windowGlass {
-                WindowBlur(cornerRadius: Theme.windowRadius)
+                WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.isLight)
             }
             if !showsGlass {
                 Color.clear
@@ -224,8 +224,13 @@ private struct GlassFade: ViewModifier, @preconcurrency Animatable {
 
 /// A blur of what is behind the window, in the window's rounded shape: the system's own (`NSVisualEffectView`), whatever the Liquid
 /// Glass setting. With Reduce Transparency, the system draws it solid.
+///
+/// Its look follows the palette, not the system's appearance: under a light system appearance the window's background material laid a
+/// pale grey sheet over the deep tiles. The deep palettes get the dark, smoky material of a heads-up window, which blurs without
+/// whitening; the light palettes a light one.
 private struct WindowBlur: NSViewRepresentable {
     let cornerRadius: CGFloat
+    let isLight: Bool
 
     final class BlurView: NSVisualEffectView {
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
@@ -234,14 +239,15 @@ private struct WindowBlur: NSViewRepresentable {
     func makeNSView(context: Context) -> BlurView {
         let view = BlurView()
         view.blendingMode = .behindWindow
-        view.material = .underWindowBackground
         view.state = .active
         view.maskImage = Self.mask(radius: cornerRadius)
         return view
     }
 
     func updateNSView(_ view: BlurView, context: Context) {
-        let appearance: NSAppearance.Name = context.environment.colorScheme == .dark ? .darkAqua : .aqua
+        let material: NSVisualEffectView.Material = isLight ? .popover : .hudWindow
+        if view.material != material { view.material = material }
+        let appearance: NSAppearance.Name = isLight ? .aqua : .darkAqua
         if view.appearance?.name != appearance { view.appearance = NSAppearance(named: appearance) }
     }
 
