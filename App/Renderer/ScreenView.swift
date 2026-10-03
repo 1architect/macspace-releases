@@ -16,19 +16,29 @@ struct ScreenView: View {
         handle.screen?.primary != nil || handle.progress != nil || handle.lastResult != nil
     }
 
+    /// What the page shows: the module's screen, or while it loads, the tile's own blocks as the hero (pulsing), which then move to
+    /// the page's figures as its rows come in under them. nil while there is nothing to show yet.
+    private var content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)? {
+        if let screen = handle.screen { return (screen.hero, screen.widgets, true) }
+        if case let .blocks(segments)? = handle.tile?.graphic, !segments.isEmpty {
+            return (UsageBar(id: "usage", title: "", segments: segments), [], false)
+        }
+        return nil
+    }
+
     var body: some View {
         Group {
-            if let screen = handle.screen {
-                WidgetForm(widgets: screen.widgets, handler: { action, extra in Task { await handle.perform(action, extraParameters: extra) } },
-                           showsTop: screen.hero != nil) {
-                    if let hero = screen.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: handle.isRefreshing)
+            if let content = self.content {
+                WidgetForm(widgets: content.widgets, handler: { action, extra in Task { await handle.perform(action, extraParameters: extra) } },
+                           showsTop: content.hero != nil) {
+                    if let hero = content.hero {
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
                     }
                 }
-                .animation(Theme.layout, value: screen.widgets.map(\.id))
+                .animation(Theme.layout, value: content.widgets.map(\.id))
             } else {
                 PageSkeleton()
                     .padding(.top, PageInsets.top - PageInsets.scrollTop)
@@ -155,14 +165,21 @@ struct HeroBlocks: View {
 
 /// Grey shapes where the page will be, while the module reads the Mac.
 private struct PageSkeleton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private static let heights: [CGFloat] = [18, 70, 130, 90]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Capsule().fill(.primary.opacity(0.14)).frame(height: 18)
-            ForEach([70.0, 130.0, 90.0], id: \.self) { height in
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.primary.opacity(0.09)).frame(height: height)
+        // The same pulse, one shape after another, as the charts while they load; no band of light sweeping across.
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(Self.heights.enumerated()), id: \.offset) { index, height in
+                    let wave = LoadingWave.opacity(context.date, index: index, count: Self.heights.count, loading: true, reduceMotion: reduceMotion)
+                    RoundedRectangle(cornerRadius: index == 0 ? 9 : 14, style: .continuous)
+                        .fill(.primary.opacity(0.06 + 0.08 * wave))
+                        .frame(height: height)
+                }
             }
         }
-        .overlay { Shimmer().clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)) }
         .accessibilityLabel("Loading")
     }
 }

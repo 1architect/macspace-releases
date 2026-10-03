@@ -220,15 +220,14 @@ struct BlocksView: View {
                                 let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
                                 let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
                                 placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
-                                               strength: wave(context.date, index)),
+                                               strength: appeared ? wave(context.date, index) : 0),
                                        index: index, rect: rect)
                             }
                         }
                     }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                         let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
-                        placed(overlay(segment, index: index, rect: rect), index: index, rect: rect)
-                            .opacity(wave(context.date, index))
+                        placed(overlay(segment, index: index, rect: rect).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
                     }
                 }
             }
@@ -238,13 +237,11 @@ struct BlocksView: View {
         .onAppear { appeared = true }
     }
 
-    /// A block's place and its coming in; the same for the block and for its name.
+    /// A block's place and its coming in (growing from its middle); the same for the block and for its name. The color comes in with
+    /// it (`appeared` in the surface's strength): glass ignores an opacity.
     private func placed(_ view: some View, index: Int, rect: CGRect) -> some View {
         view
-            .frame(width: max(rect.width, 0), height: max(rect.height, 0))
-            .offset(x: rect.minX, y: rect.minY)
-            .scaleEffect(appeared ? 1 : 0.85, anchor: .topLeading)
-            .opacity(appeared ? 1 : 0)
+            .modifier(BlockFrame(rect: rect, grown: appeared ? 1 : 0.6))
             .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
     }
 
@@ -274,7 +271,8 @@ struct BlocksView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.86, anchor: .topLeading)).animation(Theme.layout))
             }
         }
-        .frame(width: max(rect.width, 0), height: max(rect.height, 0), alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .clipped()
         .allowsHitTesting(false)
     }
 
@@ -282,6 +280,29 @@ struct BlocksView: View {
     static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment]) -> UsageSegment? {
         let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: size))
         return zip(segments, rects).first { $0.1.contains(point) }?.0
+    }
+}
+
+/// Sizes and places a block by layout, worked out again on every frame of a movement. Moved and scaled by render effects
+/// (offset, scale), the blocks' glass, which the glass container draws from the layout, stayed at the final size and place while
+/// the colors moved: large dark shapes showed behind smaller blocks.
+private struct BlockFrame: ViewModifier, @preconcurrency Animatable {
+    var rect: CGRect
+    /// The share of its size the block has while it comes in, from its middle.
+    var grown: Double
+
+    var animatableData: AnimatablePair<CGRect.AnimatableData, Double> {
+        get { AnimatablePair(rect.animatableData, grown) }
+        set {
+            rect.animatableData = newValue.first
+            grown = newValue.second
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .frame(width: max(rect.width * grown, 0), height: max(rect.height * grown, 0))
+            .position(x: rect.midX, y: rect.midY)
     }
 }
 

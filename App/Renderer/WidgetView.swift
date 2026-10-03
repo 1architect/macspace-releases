@@ -27,49 +27,66 @@ struct WidgetForm<Top: View>: View {
     }
 
     var body: some View {
+        // The first group keeps one identity whatever the widgets are, and is there even before there are any (while the page loads):
+        // the top, in its header, then stays the same view from loading to loaded, and its blocks move into place instead of being
+        // drawn anew.
+        let items: [Item] = widgets.isEmpty && showsTop
+            ? [Item(id: Item.leading, widget: nil)]
+            : widgets.enumerated().map { Item(id: $0.offset == 0 ? Item.leading : $0.element.id, widget: $0.element) }
         Form {
-            ForEach(Array(widgets.enumerated()), id: \.element.id) { index, widget in
-                sections(for: widget, leading: showsTop && index == 0)
+            ForEach(items) { item in
+                section(for: item.widget, leading: showsTop && item.id == Item.leading)
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
     }
 
-    @ViewBuilder
-    private func sections(for widget: ScreenWidget, leading: Bool) -> some View {
+    private struct Item: Identifiable {
+        // Computed: a type nested in a generic one cannot store a static.
+        static var leading: String { "leading-section" }
+        let id: String
+        let widget: ScreenWidget?
+    }
+
+    /// One group per widget, all built the same way, so the first one stays the same view when its widget changes kind.
+    private func section(for widget: ScreenWidget?, leading: Bool) -> some View {
+        let title = widget.map(Self.title) ?? (text: nil, help: nil)
+        return Section {
+            if let widget { content(of: widget) }
+        } header: {
+            header(title.text, help: title.help, leading: leading)
+        }
+    }
+
+    /// The group's title and its tooltip. A part that folds names itself in its disclosure row instead.
+    private static func title(_ widget: ScreenWidget) -> (text: String?, help: String?) {
         switch widget {
-        case let .section(section):
+        case let .section(section): return section.isCollapsible ? (nil, nil) : (section.title, section.subtitle)
+        case let .list(list): return (list.title, nil)
+        case let .toggles(toggles): return (toggles.title, toggles.footnote)
+        case let .usage(usage): return (usage.title, usage.footnote)
+        case let .chart(chart): return (chart.title, nil)
+        case let .steps(steps): return (steps.title, nil)
+        case .banner, .button, .text: return (nil, nil)
+        }
+    }
+
+    @ViewBuilder
+    private func content(of widget: ScreenWidget) -> some View {
+        if case let .section(section) = widget {
             if section.isCollapsible {
                 // A part that folds is one disclosure row, as macOS forms show them; its rows open under it.
-                Section {
-                    DisclosureGroup(isExpanded: expansion(section)) {
-                        ForEach(section.widgets) { inner in rows(for: inner) }
-                    } label: {
-                        Text(section.title).help(section.subtitle ?? "")
-                    }
-                } header: {
-                    header(nil, leading: leading)
+                DisclosureGroup(isExpanded: expansion(section)) {
+                    ForEach(section.widgets) { inner in rows(for: inner) }
+                } label: {
+                    Text(section.title).help(section.subtitle ?? "")
                 }
             } else {
-                Section {
-                    ForEach(section.widgets) { inner in rows(for: inner) }
-                } header: {
-                    header(section.title, help: section.subtitle, leading: leading)
-                }
+                ForEach(section.widgets) { inner in rows(for: inner) }
             }
-        case let .list(list):
-            Section { rows(for: widget) } header: { header(list.title, leading: leading) }
-        case let .toggles(toggles):
-            Section { rows(for: widget) } header: { header(toggles.title, help: toggles.footnote, leading: leading) }
-        case let .usage(usage):
-            Section { rows(for: widget) } header: { header(usage.title, help: usage.footnote, leading: leading) }
-        case let .chart(chart):
-            Section { rows(for: widget) } header: { header(chart.title, leading: leading) }
-        case let .steps(steps):
-            Section { rows(for: widget) } header: { header(steps.title, leading: leading) }
-        case .banner, .button, .text:
-            Section { rows(for: widget) } header: { header(nil, leading: leading) }
+        } else {
+            rows(for: widget)
         }
     }
 

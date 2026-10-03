@@ -244,21 +244,3 @@ private struct ClearGlassCircle: NSViewRepresentable {
         nsView.cornerRadius = diameter / 2
     }
 }
-
-/// A band of light sweeping across, for things that are still loading.
-struct Shimmer: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
-            let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.6) / 1.6
-            GeometryReader { proxy in
-                LinearGradient(colors: [.clear, .white.opacity(0.28), .clear], startPoint: .leading, endPoint: .trailing)
-                    .frame(width: proxy.size.width * 0.6)
-                    .offset(x: (phase * 1.6 - 0.6) * proxy.size.width)
-            }
-        }
-        .allowsHitTesting(false)
-        .clipped()
-    }
-}
