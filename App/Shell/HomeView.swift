@@ -53,6 +53,9 @@ struct TileFace: View {
     /// when one of these changes, not on every mouse move.
     var hovering = false
     var hoveredBlock: String?
+    /// On the dashboard the tiles' grounds are drawn together, in a layer of their own under all the faces (`HomeView`); the zoom's card
+    /// draws its own.
+    var drawsBackdrop = true
     @Environment(\.design) private var design
 
     /// Room left under the chart for the caption.
@@ -66,7 +69,7 @@ struct TileFace: View {
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
-            TileBackdrop(tint: tint, isPage: progress >= 1)
+            if drawsBackdrop { TileBackdrop(tint: tint, isPage: progress >= 1) } else { Color.clear }
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
             // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
             if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
@@ -200,6 +203,11 @@ struct HomeView: View {
     /// their places are still laid out and recorded for the zoom back.
     var dormant = false
     @State private var appeared = false
+    /// The tile under the pointer, and where on it in coarse steps. Held here, not in each tile, because a tile's ground and its face
+    /// are drawn in different layers and both lift and lean with it.
+    @State private var pointerTile: Destination?
+    @State private var lean = UnitPoint.center
+    @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How long the tiles take to leave, for the window to wait before it goes.
@@ -234,25 +242,33 @@ struct HomeView: View {
         return (modules.first { $0.wide } ?? modules.first)?.id
     }
 
-    /// The tiles at their places in a grid of `size`.
+    /// The tiles at their places in a grid of `size`, in two layers: every tile's ground (its glass) at the bottom, drawn together in one
+    /// glass container, and every tile's face over it. Glass drawn tile by tile blurred and bent what was behind each tile separately,
+    /// on every frame anything moved; a container draws the six in one pass. Only glass may be in the container: with the faces inside
+    /// it too, nothing but the glass was drawn.
     private func grid(_ tiles: [DashboardTile], placements: [Bento.Placement], columns: Int, rows: Int, size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
             if !dormant {
+                GlassGroup {
+                    ZStack(alignment: .topLeading) {
+                        ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
+                            let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
+                            TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift)
+                                .frame(width: frame.width, height: frame.height)
+                                .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
+                        }
+                    }
+                    .frame(width: size.width, height: size.height, alignment: .topLeading)
+                }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                    let shown = appeared && !closing
                     DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
-                                      isHidden: hiddenTile == tile.destination) {
+                                      isHidden: hiddenTile == tile.destination, hovering: pointerTile == tile.destination,
+                                      onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
                     }
                     .frame(width: frame.width, height: frame.height)
-                    .scaleEffect(shown || reduceMotion ? 1 : 0.86)
-                    .opacity(shown ? 1 : 0)
-                    .animation(closing ? Theme.depopulate.delay(Double(tiles.count - 1 - index) * Theme.depopulateStagger)
-                                       : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-                    .offset(x: frame.minX, y: frame.minY)
-                    .opacity(hiddenTile == tile.destination ? 0 : 1)
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
             }
         }
@@ -262,6 +278,27 @@ struct HomeView: View {
         .animation(Theme.layout, value: tiles.map(\.id))
         .animation(Theme.layout, value: tiles.map(\.size))
         .animation(Theme.layout, value: columns)
+    }
+
+    /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
+    /// its place, the lift and lean (or tilt) under the pointer, and hiding under the zoom.
+    private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect) -> TilePlacement {
+        let hovered = pointerTile == tile.destination
+        return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
+                             lifted: hovered && design.lift && tile.opens,
+                             lean: hovered && design.tilt && !reduceMotion ? lean : .center,
+                             turns: !design.glass, reduceMotion: reduceMotion, hidden: hiddenTile == tile.destination)
+    }
+
+    /// The pointer moved over a tile (`lean` in steps across it) or left it (nil).
+    private func pointer(_ destination: Destination, _ newLean: UnitPoint?) {
+        if let newLean {
+            if pointerTile != destination { pointerTile = destination }
+            if lean != newLean { lean = newLean }
+        } else if pointerTile == destination {
+            pointerTile = nil
+            lean = .center
+        }
     }
 
     var body: some View {
@@ -302,9 +339,9 @@ struct HomeView: View {
     }
 }
 
-/// A tile on the dashboard. It lifts and tilts toward the pointer and sinks when pressed; its chart answers the pointer too. A glass
-/// tile tilts without turning in 3D: under a 3D rotation, glass redraws what it shows late, and part of the tile stayed dark after the
-/// pointer left. It leans toward the pointer instead.
+/// A tile's face on the dashboard: its chart and caption, the click, and the pointer. Its ground is drawn in the layer under it
+/// (`TileGround`), and both are moved together by `TilePlacement`. A glass tile leans toward the pointer instead of turning in 3D:
+/// under a 3D rotation, glass redraws what it shows late.
 struct DashboardTileView: View {
     let tile: DashboardTile
     @ObservedObject var host: ModuleHost
@@ -312,26 +349,23 @@ struct DashboardTileView: View {
     let captionSize: CGFloat
     /// The tile is under an open page: it ignores the pointer, so it comes back flat when the page closes onto it.
     var isHidden = false
+    /// The pointer is over this tile (held by the dashboard).
+    var hovering = false
+    /// Reports the pointer in coarse steps across the tile (10 %), or nil when it leaves: only a change of step moves the tile.
+    let onPointer: (UnitPoint?) -> Void
     let open: () -> Void
-    /// The pointer is over the tile; where it is, in coarse steps, for the lean and tilt; the block of the chart it is on. Each changes
-    /// rarely while the mouse moves, and only `hovering` and `hoveredBlock` reach the tile's content: a pointer position passed down
-    /// redrew the whole tile (chart, caption, layout) on every step.
-    @State private var hovering = false
-    @State private var lean = UnitPoint.center
+    /// The block of the chart under the pointer: the face is redrawn only when it changes, not on every mouse move.
     @State private var hoveredBlock: String?
+    @State private var lastStep: UnitPoint?
     @State private var size = CGSize.zero
     @Environment(\.design) private var design
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-        let lifted = hovering && design.lift
-        let tilt = reduceMotion || !design.tilt ? UnitPoint.center : lean
-        let turns = !design.glass
         Button(action: open) {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
-                        hovering: hovering, hoveredBlock: hoveredBlock)
+                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false)
                 .contentShape(shape)
         }
         .buttonStyle(TilePressStyle())
@@ -340,30 +374,15 @@ struct DashboardTileView: View {
         .onContinuousHover { phase in
             switch phase {
             case let .active(location) where size.width > 0 && !isHidden && design.trackPointer:
-                if !hovering { hovering = true }
                 let step = 10.0
                 let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
-                if next != lean { lean = next }
+                if next != lastStep { lastStep = next; onPointer(next) }
                 let block = block(at: location)
                 if block != hoveredBlock { hoveredBlock = block }
             default:
                 resetPointer()
             }
         }
-        .tilted(tilt, active: turns)
-        // Flat tiles only: a glass tile is see-through, so a shadow would show inside it, offset from its edge. The shadow is cast by a
-        // plain rounded rectangle behind the tile, not by the tile itself: a shadow of the whole tile was recomputed from all of its
-        // content on every frame it moved.
-        .background {
-            if !design.glass {
-                shape.fill(design.palette(tile.tint).base)
-                    .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
-            }
-        }
-        .offset(x: turns ? 0 : (tilt.x - 0.5) * 4, y: turns ? 0 : (tilt.y - 0.5) * 4)
-        .scaleEffect(lifted && tile.opens ? 1.018 : 1)
-        .animation(Theme.hover, value: hovering)
-        .animation(.interactiveSpring(duration: 0.25), value: lean)
         .onChange(of: isHidden) { _, hidden in if hidden { resetPointer() } }
         .pointerStyle(tile.opens ? .link : nil)
         .accessibilityElement(children: .combine)
@@ -371,8 +390,7 @@ struct DashboardTileView: View {
     }
 
     private func resetPointer() {
-        if hovering { hovering = false }
-        if lean != .center { lean = .center }
+        if lastStep != nil { lastStep = nil; onPointer(nil) }
         if hoveredBlock != nil { hoveredBlock = nil }
     }
 
@@ -381,6 +399,59 @@ struct DashboardTileView: View {
         guard case let .module(id) = tile.destination, case let .blocks(segments)? = host.handle(for: id)?.tile?.graphic else { return nil }
         let area = TileFace.chartArea(in: size)
         return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
+    }
+}
+
+/// A tile's ground on the dashboard, in the layer under the faces. A flat tile casts its shadow from this plain rounded shape, not from
+/// its whole content (which was recomputed on every frame the tile moved); a glass tile casts none, as it would show inside the glass.
+struct TileGround: View {
+    let tint: TileTint
+    let lifted: Bool
+    @Environment(\.design) private var design
+
+    var body: some View {
+        if design.glass {
+            TileBackdrop(tint: tint)
+        } else {
+            TileBackdrop(tint: tint)
+                .background {
+                    RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+                        .fill(design.palette(tint).base)
+                        .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
+                }
+                .animation(Theme.hover, value: lifted)
+        }
+    }
+}
+
+/// Moves a tile's ground and face alike: in with the window one after another, out in reverse order, to its place, lifted and leaning
+/// (or, flat, tilted) under the pointer, and hidden while the zoom stands in for it.
+struct TilePlacement: ViewModifier {
+    let shown: Bool
+    let closing: Bool
+    let index: Int
+    let count: Int
+    let frame: CGRect
+    let lifted: Bool
+    let lean: UnitPoint
+    let turns: Bool
+    let reduceMotion: Bool
+    let hidden: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .tilted(lean, active: turns)
+            .offset(x: turns ? 0 : (lean.x - 0.5) * 4, y: turns ? 0 : (lean.y - 0.5) * 4)
+            .scaleEffect(lifted ? 1.018 : 1)
+            .animation(Theme.hover, value: lifted)
+            .animation(.interactiveSpring(duration: 0.25), value: lean)
+            .scaleEffect(shown || reduceMotion ? 1 : 0.86)
+            .opacity(shown ? 1 : 0)
+            .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)
+                               : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
+            .offset(x: frame.minX, y: frame.minY)
+            .opacity(hidden ? 0 : 1)
+            .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 }
 
@@ -395,6 +466,7 @@ struct TileContent: View {
     var captionPadding: CGFloat = CaptionSize.tilePadding
     var hovering = false
     var hoveredBlock: String?
+    var drawsBackdrop = true
     /// The zoom draws the face and the caption in separate layers, so the page can scroll between them.
     var showsFace = true
     var showsCaption = true
@@ -413,7 +485,8 @@ struct TileContent: View {
 
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock) } else { Color.clear }
+            if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
+                                      drawsBackdrop: drawsBackdrop) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
                     .padding(captionPadding)
@@ -430,17 +503,16 @@ private struct ModuleTileContent: View {
     var body: some View { content.layout(TileInfo(handle)) }
 }
 
-/// The tile sinks and darkens while pressed. The darkening is a shade laid over the tile, not a brightness filter: a filter stays on
-/// the tile even at 0 and makes every frame draw the whole tile, glass and all, through it.
+/// The tile darkens while pressed. A shade laid over it, not a brightness filter: a filter stays on the tile even at 0 and makes every
+/// frame draw the whole tile through it. It does not sink: its ground, in the layer underneath, cannot see the press.
 private struct TilePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-                    .fill(.black.opacity(configuration.isPressed ? 0.06 : 0))
+                    .fill(.black.opacity(configuration.isPressed ? 0.12 : 0))
                     .allowsHitTesting(false)
             }
-            .scaleEffect(configuration.isPressed ? 0.955 : 1)
             .animation(Theme.press, value: configuration.isPressed)
     }
 }

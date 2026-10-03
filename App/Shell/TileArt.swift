@@ -8,23 +8,32 @@ import SwiftUI
 struct TileBackdrop: View {
     let tint: TileTint
     /// The tile has become a page. Its color is then laid straight on the window's glass, without glass of its own: two window-sized
-    /// layers of glass, one over the other, were blended again on every frame the page scrolled.
+    /// layers of glass, one over the other, were blended again on every frame the page scrolled. The two cross-fade, so the change at
+    /// the end of the zoom does not flicker.
     var isPage = false
     @Environment(\.design) private var design
 
     var body: some View {
         let palette = design.palette(tint)
-        if design.glass && isPage {
-            palette.base.opacity(design.isLight ? 0.5 : 0.62)
-        } else if design.glass {
-            // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
-            let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-            shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
-                .glassEffect(.regular, in: shape)
+        let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+        if design.glass {
+            ZStack {
+                if isPage {
+                    palette.base.opacity(design.isLight ? 0.5 : 0.62)
+                        .transition(.opacity)
+                } else {
+                    // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
+                    shape.fill(palette.base.opacity(design.isLight ? 0.5 : 0.62))
+                        .glassEffect(.regular, in: shape)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.4), value: isPage)
         } else {
-            palette.base
+            // Rounded itself: the tiles are no longer clipped to their shape.
+            shape.fill(palette.base)
                 .overlay {
-                    RadialGradient(colors: [.white.opacity(design.isLight ? 0.5 : 0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 420)
+                    shape.fill(RadialGradient(colors: [.white.opacity(design.isLight ? 0.5 : 0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 420))
                 }
         }
     }
