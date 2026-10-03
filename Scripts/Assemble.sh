@@ -1,8 +1,8 @@
 #!/bin/bash
 # Builds Build/MacSpace.app from the Swift package: the app, its shared libraries and one bundle per module.
 #
-#   Scripts/Assemble.sh                      local build, signed with the first Developer ID / Apple Development identity found
-#                                            (ad-hoc without one). A stable identity keeps Full Disk Access across rebuilds:
+#   Scripts/Assemble.sh                      local build into Build/MacSpace.app; copy it to /Applications to run it. Signed with
+#                                            the first Developer ID / Apple Development identity found (ad-hoc without one). A stable identity keeps Full Disk Access across rebuilds:
 #                                            macOS ties the permission to the signature, and an ad-hoc signature changes every build.
 #   SIGN_IDENTITY=- Scripts/Assemble.sh      force an ad-hoc signature
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
@@ -183,4 +183,9 @@ if [ "${INSTALL:-0}" = 1 ]; then
   "$LSREGISTER" -f "$TARGET" 2>/dev/null || true
   echo "Installed $TARGET"
 fi
+# The build's own copy is not an app to run: macOS is told to forget it, so that the copy in Applications is the only one it
+# knows. Two copies with the same identifier let macOS tie the helper to this one, which the next build replaces ("Codesigning
+# failure loading plist … -67056"). Finder registers it again when it shows the folder; the helper refuses to install from it.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$PWD/$APP" 2>/dev/null || true
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"
+[ "${INSTALL:-0}" = 1 ] || echo "Copy it to /Applications to run it (quit MacSpace first)."
