@@ -190,7 +190,7 @@ struct GlassBackdrop: View {
             if !showsGlass {
                 Color.clear
             } else if design.windowGlass {
-                Color.clear.glassEffect(.clear, in: shape)
+                GlassPane(corners: .radius(Theme.windowRadius), style: .clear)
                     .modifier(GlassFade(progress: glassFade))
             } else {
                 // Measuring switch: a solid window, to see what the full-window glass costs on every frame.

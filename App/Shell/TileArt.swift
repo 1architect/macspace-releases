@@ -2,27 +2,28 @@ import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
-/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass tinted with that color. The glass is not
-/// interactive: the system's pointer response lags behind the pointer and ignores the tile's tilt and lift, and the tile answers hover
-/// and press itself.
+/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass with that color inside it (`GlassPane`).
+/// The glass is not interactive: the system's pointer response lags behind the pointer and ignores the tile's tilt and lift, and the
+/// tile answers hover and press itself.
 struct TileBackdrop: View {
     let tint: TileTint
-    /// Under the pointer: the tint inside the glass darkens, so the shade is part of the glass and moves exactly with it.
+    /// Under the pointer: a shade inside the glass, over its color, so the shade is part of the glass and moves exactly with it.
     var darkened = false
+    /// The corners: a tile's, growing to the window's as the tile becomes a page.
+    var cornerRadius: CGFloat = Theme.tileRadius
     @Environment(\.design) private var design
 
     var body: some View {
         let palette = design.palette(tint)
-        let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-        let color = darkened ? palette.base.mix(with: .black, by: Theme.tileHoverShade * 2) : palette.base
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if design.glass {
             // The color is drawn inside the glass, so it shows whatever the glass picks up behind it. A tile that has become a page
             // keeps its glass: swapping it for a flat color at the end of the zoom flickered however it was cross-faded, glass and a
             // flat color never looking alike. The window's own glass gives way under it instead (`MainView`), so a page is still
             // one layer of glass.
-            shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
-                .animation(Theme.highlight, value: darkened)
-                .glassEffect(design.clearTileGlass ? .clear : .regular, in: shape)
+            let cover = design.isLight ? 0.5 : 0.62
+            GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
+                      color: palette.base, opacity: cover, shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
         } else {
             // Rounded itself: the tiles are no longer clipped to their shape.
             shape.fill(palette.base)
@@ -47,24 +48,34 @@ struct HoverShade<S: Shape>: View {
     }
 }
 
-/// A chart element's surface: flat color, or Liquid Glass tinted with that color when glass is on. Highlighted, flat color lightens
+/// A chart element's surface: flat color, or Liquid Glass with that color inside it when glass is on. Highlighted, flat color lightens
 /// and glass is shaded.
-struct Surface<S: Shape>: View {
+struct Surface<S: Shape>: View, @preconcurrency Animatable {
     let shape: S
     let color: Color
     var highlighted = false
-    /// How much of the color shows, 0...1: the loading pulse. On glass it thins the color inside the glass, since the glass itself
-    /// ignores an opacity laid on it, so a pulse laid over the chart only reached its text.
+    /// How much of the color shows, 0...1: the loading pulse, and a block coming in. It thins the color inside the glass. Animated
+    /// frame by frame, so the glass's color follows it.
     var strength: Double = 1
     @Environment(\.design) private var design
 
+    var animatableData: Double {
+        get { strength }
+        set { strength = newValue }
+    }
+
     var body: some View {
         if design.glass && design.glassElements {
-            // Darkened inside the glass. A shade laid over it was lost once the chart's glass was drawn in a glass container.
+            // Darkened inside the glass, so the shade is the glass's own shape.
             let dark = highlighted && design.hoverShade
-            shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
-                .animation(Theme.highlight, value: dark)
-                .glassEffect(.regular, in: shape)
+            if let corners = Self.corners(of: shape) {
+                GlassPane(corners: corners, color: color, opacity: 0.7 * strength, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
+            } else {
+                // A shape AppKit's glass cannot take (the gauge's arcs) stays SwiftUI's glass.
+                shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
+                    .animation(Theme.highlight, value: dark)
+                    .glassEffect(.regular, in: shape)
+            }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
             shape.fill(color)
@@ -73,15 +84,12 @@ struct Surface<S: Shape>: View {
                 .opacity(strength)
         }
     }
-}
 
-/// Draws the glass elements inside it together, in one pass, as Apple recommends for groups of glass; drawn one by one, each element
-/// sampled and blurred what is behind it separately. Spacing 0: elements a few points apart (the blocks) must not melt into each other.
-struct GlassGroup<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        GlassEffectContainer(spacing: 0) { content }
+    /// The corners AppKit's glass gives a shape, or nil for a shape it cannot take.
+    private static func corners(of shape: S) -> GlassPane.Corners? {
+        if let rectangle = shape as? RoundedRectangle { return .radius(rectangle.cornerSize.width) }
+        if shape is Circle || shape is Capsule { return .round }
+        return nil
     }
 }
 
@@ -211,19 +219,14 @@ struct BlocksView: View {
         GeometryReader { proxy in
             let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: proxy.size))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
-                // Two layers moved alike: the blocks, whose glass is drawn together in a glass container, and their names over them. The
-                // container draws only glass, so names inside it were lost.
+                // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
-                    GlassGroup {
-                        ZStack(alignment: .topLeading) {
-                            ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                                let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
-                                let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                                placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
-                                               strength: appeared ? wave(context.date, index) : 0),
-                                       index: index, rect: rect)
-                            }
-                        }
+                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                        let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
+                        let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
+                        placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
+                                       strength: appeared ? wave(context.date, index) : 0),
+                               index: index, rect: rect)
                     }
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                         let rect = rects[index].insetBy(dx: gap / 2, dy: gap / 2)
@@ -238,7 +241,7 @@ struct BlocksView: View {
     }
 
     /// A block's place and its coming in (growing from its middle); the same for the block and for its name. The color comes in with
-    /// it (`appeared` in the surface's strength): glass ignores an opacity.
+    /// it (`appeared` in the surface's strength).
     private func placed(_ view: some View, index: Int, rect: CGRect) -> some View {
         view
             .modifier(BlockFrame(rect: rect, grown: appeared ? 1 : 0.6))
@@ -283,9 +286,8 @@ struct BlocksView: View {
     }
 }
 
-/// Sizes and places a block by layout, worked out again on every frame of a movement. Moved and scaled by render effects
-/// (offset, scale), the blocks' glass, which the glass container draws from the layout, stayed at the final size and place while
-/// the colors moved: large dark shapes showed behind smaller blocks.
+/// Sizes and places a block by layout, worked out again on every frame of a movement, so its glass (an AppKit view, which SwiftUI does
+/// not size frame by frame) grows and moves with it.
 private struct BlockFrame: ViewModifier, @preconcurrency Animatable {
     var rect: CGRect
     /// The share of its size the block has while it comes in, from its middle.
@@ -371,11 +373,12 @@ struct StateView: View {
         let palette = design.palette(tint)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 9) {
-                GlassGroup {
-                    ZStack(alignment: on ? .trailing : .leading) {
-                        Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1), strength: wave(0))
-                        Surface(shape: Circle(), color: on ? design.action : palette.step(4), strength: wave(0)).padding(3)
-                    }
+                // The knob is placed by an inset laid out on every frame, so its glass slides with it.
+                ZStack(alignment: .leading) {
+                    Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1), strength: wave(0))
+                    Surface(shape: Circle(), color: on ? design.action : palette.step(4), strength: wave(0))
+                        .frame(width: 18, height: 18)
+                        .modifier(AnimatedLength(value: on ? 23 : 3, kind: .leading))
                 }
                 .frame(width: 44, height: 24)
                 Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
@@ -391,7 +394,7 @@ struct StateView: View {
                     Surface(shape: Capsule(), color: palette.step(1), strength: strength)
                         .overlay(alignment: .leading) {
                             Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: strength)
-                                .frame(width: proxy.size.width * CGFloat(meter) * fill)
+                                .modifier(AnimatedLength(value: proxy.size.width * CGFloat(meter) * fill, kind: .width))
                         }
                 }
                 .frame(height: 6)
@@ -447,8 +450,9 @@ struct GaugeView: View {
                     if loading && !reduceMotion {
                         TimelineView(.animation(minimumInterval: 1 / 30)) { context in
                             let from = LoadingWave.position(context.date) * (1 + Self.runner) - Self.runner
-                            Surface(shape: ArcBand(from: max(from, 0) * Self.sweep, to: min(from + Self.runner, 1) * Self.sweep, width: band, round: true),
-                                    color: design.palette(tint).step(5))
+                            // Plain color, not glass: the arcs' glass is SwiftUI's, which a shape changing every frame made flicker.
+                            ArcBand(from: max(from, 0) * Self.sweep, to: min(from + Self.runner, 1) * Self.sweep, width: band, round: true)
+                                .fill(design.palette(tint).step(5))
                         }
                         .transition(.opacity)
                     }
@@ -467,8 +471,9 @@ struct GaugeView: View {
         let used = min(max(value, 0), 1) * Self.sweep * drawn
         let band = min(9, max(4, side * 0.07))
         return ZStack {
-            // Only the arcs in the glass container: it draws only glass, and the share written inside it was lost.
-            GlassGroup {
+            // Only the arcs in the glass container: it draws only glass, and the share written inside it was lost. Arcs are the one
+            // shape AppKit's glass cannot take, so they are SwiftUI's glass.
+            GlassEffectContainer(spacing: 0) {
                 ZStack {
                     Surface(shape: ArcBand(from: 0, to: Self.sweep, width: band, round: true), color: palette.step(1))
                     Surface(shape: ArcBand(from: 0, to: used, width: band, round: true), color: palette.step(5))
@@ -505,12 +510,9 @@ struct BarGaugeView: View {
         let used = min(max(value, 0), 1) * drawn
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                GlassGroup {
-                    ZStack(alignment: .leading) {
-                        Surface(shape: Capsule(), color: palette.step(1))
-                        Surface(shape: Capsule(), color: palette.step(5)).frame(width: proxy.size.width * used)
-                    }
-                }
+                Surface(shape: Capsule(), color: palette.step(1))
+                Surface(shape: Capsule(), color: palette.step(5))
+                    .modifier(AnimatedLength(value: proxy.size.width * used, kind: .width))
                 // While loading, a light runs along the bar.
                 if loading && !reduceMotion {
                     TimelineView(.animation(minimumInterval: 1 / 30)) { context in
