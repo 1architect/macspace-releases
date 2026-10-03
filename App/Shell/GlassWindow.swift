@@ -33,6 +33,13 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.hasShadow = false
             window.isMovableByWindowBackground = true
             window.invalidateShadow()
+            // The window could not become key when SwiftUI first showed it (it only can once adopted above), so it opened inactive and
+            // its glass was drawn in the dimmed, unselected look until clicked. Make it key, with the app in front, once it is set up.
+            DispatchQueue.main.async { [weak window] in
+                guard let window, window.isVisible else { return }
+                NSApp.activate()
+                window.makeKeyAndOrderFront(nil)
+            }
 
             let shadow = ShadowWindow()
             shadow.follow(window)
