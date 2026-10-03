@@ -49,11 +49,19 @@ struct TileFace: View {
     let tint: TileTint
     let info: TileInfo
     var progress: CGFloat = 0
-    var pointer: UnitPoint?
+    /// The pointer is over the tile, and which block of its chart it is on. Not the pointer's position: the face is redrawn only
+    /// when one of these changes, not on every mouse move.
+    var hovering = false
+    var hoveredBlock: String?
     @Environment(\.design) private var design
 
     /// Room left under the chart for the caption.
     static let captionBand: CGFloat = 62
+
+    /// Where a blocks chart sits in a tile of `size`.
+    static func chartArea(in size: CGSize) -> CGRect {
+        CGRect(x: 12, y: 12, width: max(size.width - 24, 0), height: max(size.height - 12 - captionBand - 14, 0))
+    }
 
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
@@ -71,7 +79,7 @@ struct TileFace: View {
             }
             // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late.
             if design.glass && design.hoverShade {
-                HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: pointer != nil, amount: Theme.tileHoverShade)
+                HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: hovering, amount: Theme.tileHoverShade)
             }
         }
         .overlay {
@@ -102,11 +110,8 @@ struct TileFace: View {
         let palette = design.palette(tint)
         switch graphic {
         case let .blocks(segments):
-            let area = CGRect(x: 12, y: 12, width: max(size.width - 24, 0), height: max(size.height - 12 - Self.captionBand - 14, 0))
-            let hovered = pointer.flatMap { unit -> UsageSegment? in
-                let point = CGPoint(x: unit.x * size.width - area.minX, y: unit.y * size.height - area.minY)
-                return BlocksView.segment(at: point, in: area.size, segments: segments)
-            }
+            let area = Self.chartArea(in: size)
+            let hovered = hoveredBlock.flatMap { id in segments.first { $0.id == id } }
             BlocksView(segments: segments, tint: tint, labels: segments.contains { !$0.label.isEmpty }, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
@@ -297,19 +302,24 @@ struct DashboardTileView: View {
     /// The tile is under an open page: it ignores the pointer, so it comes back flat when the page closes onto it.
     var isHidden = false
     let open: () -> Void
-    @State private var pointer: UnitPoint?
+    /// The pointer is over the tile; where it is, in coarse steps, for the lean and tilt; the block of the chart it is on. Each changes
+    /// rarely while the mouse moves, and only `hovering` and `hoveredBlock` reach the tile's content: a pointer position passed down
+    /// redrew the whole tile (chart, caption, layout) on every step.
+    @State private var hovering = false
+    @State private var lean = UnitPoint.center
+    @State private var hoveredBlock: String?
     @State private var size = CGSize.zero
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-        let hovering = pointer != nil
         let lifted = hovering && design.lift
-        let tilt = reduceMotion || !design.tilt ? UnitPoint.center : (pointer ?? .center)
+        let tilt = reduceMotion || !design.tilt ? UnitPoint.center : lean
         let turns = !design.glass
         Button(action: open) {
-            TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize, pointer: pointer)
+            TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
+                        hovering: hovering, hoveredBlock: hoveredBlock)
                 .clipShape(shape)
                 .contentShape(shape)
         }
@@ -319,26 +329,47 @@ struct DashboardTileView: View {
         .onContinuousHover { phase in
             switch phase {
             case let .active(location) where size.width > 0 && !isHidden && design.trackPointer:
-                // In steps of 2.5 %: every tiny mouse move redrew the tile and recomposited the glass window, for changes nobody sees.
-                let step = 40.0
+                if !hovering { hovering = true }
+                let step = 10.0
                 let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
-                if next != pointer { pointer = next }
+                if next != lean { lean = next }
+                let block = block(at: location)
+                if block != hoveredBlock { hoveredBlock = block }
             default:
-                if pointer != nil { pointer = nil }
+                resetPointer()
             }
         }
         .tilted(tilt, active: turns)
+        // Flat tiles only: a glass tile is see-through, so a shadow would show inside it, offset from its edge. The shadow is cast by a
+        // plain rounded rectangle behind the tile, not by the tile itself: a shadow of the whole tile was recomputed from all of its
+        // content on every frame it moved.
+        .background {
+            if !design.glass {
+                shape.fill(design.palette(tile.tint).base)
+                    .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
+            }
+        }
         .offset(x: turns ? 0 : (tilt.x - 0.5) * 4, y: turns ? 0 : (tilt.y - 0.5) * 4)
         .scaleEffect(lifted && tile.opens ? 1.018 : 1)
-        // Glass is see-through, so a deeper shadow would show inside the tile, offset from its edge.
-        .shadow(color: .black.opacity(lifted && !design.glass ? 0.22 : 0.07), radius: lifted && !design.glass ? 14 : 5,
-                y: lifted && !design.glass ? 8 : 2)
         .animation(Theme.hover, value: hovering)
-        .animation(.interactiveSpring(duration: 0.25), value: pointer)
-        .onChange(of: isHidden) { _, hidden in if hidden { pointer = nil } }
+        .animation(.interactiveSpring(duration: 0.25), value: lean)
+        .onChange(of: isHidden) { _, hidden in if hidden { resetPointer() } }
         .pointerStyle(tile.opens ? .link : nil)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(tile.opens ? .isButton : [])
+    }
+
+    private func resetPointer() {
+        if hovering { hovering = false }
+        if lean != .center { lean = .center }
+        if hoveredBlock != nil { hoveredBlock = nil }
+    }
+
+    /// The block of this tile's chart under `location`, if the chart is blocks.
+    private func block(at location: CGPoint) -> String? {
+        guard case let .module(id) = tile.destination, case let .blocks(segments)? = host.handle(for: id)?.tile?.graphic else { return nil }
+        let area = TileFace.chartArea(in: size)
+        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
     }
 }
 
@@ -351,7 +382,8 @@ struct TileContent: View {
     var captionSize: CGFloat
     var progress: CGFloat = 0
     var captionPadding: CGFloat = CaptionSize.tilePadding
-    var pointer: UnitPoint?
+    var hovering = false
+    var hoveredBlock: String?
     /// The zoom draws the face and the caption in separate layers, so the page can scroll between them.
     var showsFace = true
     var showsCaption = true
@@ -370,7 +402,7 @@ struct TileContent: View {
 
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            if showsFace { TileFace(tint: tint, info: info, progress: progress, pointer: pointer) } else { Color.clear }
+            if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
                     .padding(captionPadding)
