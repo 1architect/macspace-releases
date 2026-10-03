@@ -71,11 +71,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .scrollEdgeEffectHidden(true, for: .all)
-        .contentMargins(.top, PageInsets.top - 20, for: .scrollContent)
-        .contentMargins(.bottom, PageInsets.bottom(hasFooter: false) - 10, for: .scrollContent)
-        .contentMargins(.horizontal, 10, for: .scrollContent)
-        .mask(PageFade(hasFooter: false))
+        .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in tick += 1 }
     }

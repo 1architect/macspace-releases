@@ -28,21 +28,17 @@ struct ScreenView: View {
                             .foregroundStyle(.primary)
                     }
                 }
-                .contentMargins(.top, PageInsets.top - 20, for: .scrollContent)
-                .contentMargins(.bottom, PageInsets.bottom(hasFooter: hasFooter) - 10, for: .scrollContent)
-                .contentMargins(.horizontal, 10, for: .scrollContent)
                 .animation(Theme.layout, value: screen.widgets.map(\.id))
             } else {
                 PageSkeleton()
-                    .padding(.top, PageInsets.top)
+                    .padding(.top, PageInsets.top - PageInsets.headerBottom)
                     .padding(.horizontal, PageInsets.side)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .scrollIndicators(.never)
-        .scrollEdgeEffectHidden(true, for: .all)
-        .mask(PageFade(hasFooter: hasFooter))
+        .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
             ActionDock(handle: handle)
@@ -66,35 +62,27 @@ enum PageInsets {
     static let formHeaderIndent: CGFloat = 10
     /// The band at the bottom that belongs to the main action, when the page has one; content never shows in it.
     static let footer: CGFloat = 58
-    /// How tall the fade is where content leaves the page.
+    /// Room left under a page's last row when it is scrolled to the end.
     static let fade: CGFloat = 36
-
-    /// Room under the content, so its end can scroll clear of the fade (and of the main action).
-    static func bottom(hasFooter: Bool) -> CGFloat { (hasFooter ? footer : 0) + fade + 16 }
 }
 
-/// Content fades out under the corner buttons and at the bottom: just above the window's edge, or above the main action when the page
-/// has one.
-struct PageFade: View, @preconcurrency Animatable {
-    /// 0 without a footer, 1 with one; animated, so the fade moves when the main action comes or goes.
-    var footer: CGFloat
+/// A page's scroll area: below the corner buttons and the title, and above the main action when the page has one. It is cut off with
+/// a plain rectangular clip. A gradient mask used to fade the content out at both ends, but it made every scroll frame draw the whole
+/// page offscreen and blend it through the mask. The temporary Page Edge Fade switch turns on the system's own scroll edge fade instead.
+struct PageScrollArea: ViewModifier {
+    let hasFooter: Bool
+    @Environment(\.design) private var design
 
-    init(hasFooter: Bool) { footer = hasFooter ? 1 : 0 }
-
-    var animatableData: CGFloat {
-        get { footer }
-        set { footer = newValue }
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Nothing behind the buttons and the title; content fades in just below them.
-            Color.clear.frame(height: PageInsets.headerBottom)
-            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: PageInsets.top - PageInsets.headerBottom)
-            Color.black
-            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: PageInsets.fade)
-            Color.clear.frame(height: PageInsets.footer * footer + 6)
-        }
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.top, max(PageInsets.top - 20 - PageInsets.headerBottom, 0), for: .scrollContent)
+            .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
+            .contentMargins(.horizontal, 10, for: .scrollContent)
+            .scrollEdgeEffectStyle(.soft, for: .all)
+            .scrollEdgeEffectHidden(!design.pageEdgeFade, for: .all)
+            .padding(.top, PageInsets.headerBottom)
+            .padding(.bottom, hasFooter ? PageInsets.footer : 0)
+            .clipped()
     }
 }
 

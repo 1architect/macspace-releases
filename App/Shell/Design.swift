@@ -89,6 +89,9 @@ struct Design: Equatable {
     var trackPointer = true
     /// Temporary, for measuring GPU use: the window itself is glass over the desktop, or a solid color.
     var windowGlass = true
+    /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
+    /// or cut it off cleanly.
+    var pageEdgeFade = false
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -121,6 +124,7 @@ public final class DesignSettings: ObservableObject {
     @Published public var clipWindow: Bool { didSet { defaults.set(clipWindow, forKey: "design.clipWindow") } }
     @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
     @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
+    @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -134,11 +138,12 @@ public final class DesignSettings: ObservableObject {
         clipWindow = defaults.object(forKey: "design.clipWindow") as? Bool ?? true
         trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
         windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
+        pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
-                                  windowGlass: windowGlass) }
+                                  windowGlass: windowGlass, pageEdgeFade: pageEdgeFade) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -155,6 +160,7 @@ public struct DesignCommands: Commands {
             Toggle("Clip Window Corners", isOn: $settings.clipWindow)
             Toggle("Track Pointer", isOn: $settings.trackPointer)
             Toggle("Window Glass", isOn: $settings.windowGlass)
+            Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -191,6 +197,7 @@ struct DesignSettingsSection: View {
             Toggle("Clip window corners", isOn: $settings.clipWindow)
             Toggle("Track pointer", isOn: $settings.trackPointer)
             Toggle("Window glass", isOn: $settings.windowGlass)
+            Toggle("Page edge fade", isOn: $settings.pageEdgeFade)
         }
     }
 }
