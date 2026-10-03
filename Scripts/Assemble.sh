@@ -152,20 +152,30 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
   spctl -a -vv "$APP"
 fi
 # The helper daemon can only be registered from an app that sits in an Applications folder: from Build/ macOS reports it as
-# "not found". INSTALL=1 copies the build to ~/Applications.
+# "not found". INSTALL=1 copies the build to /Applications (INSTALL_DIR to choose another; ~/Applications when /Applications is not
+# writable) and removes the copy an earlier build put in the other one.
 if [ "${INSTALL:-0}" = 1 ]; then
-  mkdir -p "$HOME/Applications"
+  INSTALL_DIR=${INSTALL_DIR:-/Applications}
+  if [ ! -w "$INSTALL_DIR" ]; then INSTALL_DIR="$HOME/Applications"; mkdir -p "$INSTALL_DIR"; fi
+  TARGET="$INSTALL_DIR/MacSpace.app"
+  LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
   pkill -i -x MacSpace 2>/dev/null || true
-  rm -rf "$HOME/Applications/MacSpace.app"
-  ditto "$APP" "$HOME/Applications/MacSpace.app"
+  # One installed copy only: two copies with the same identifier left macOS free to pick either for the helper.
+  for other in /Applications/MacSpace.app "$HOME/Applications/MacSpace.app"; do
+    if [ "$other" != "$TARGET" ] && [ -d "$other" ]; then
+      "$LSREGISTER" -u "$other" 2>/dev/null || true
+      rm -rf "$other" && echo "Removed the earlier copy at $other"
+    fi
+  done
+  rm -rf "$TARGET"
+  ditto "$APP" "$TARGET"
   # Only the installed copy is known to Launch Services. The build's own copy, once seen (Finder registers any app it shows),
   # has the same identifier and version, and macOS could resolve the app to it when installing the helper: that copy is deleted and
   # rewritten by every build, and the helper failed with "Codesigning failure loading plist … -67056" (resources not found).
   # Registering the installed copy again also makes Finder and the Dock read its icon again.
-  LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
   "$LSREGISTER" -u "$PWD/$APP" 2>/dev/null || true
-  touch "$HOME/Applications/MacSpace.app"
-  "$LSREGISTER" -f "$HOME/Applications/MacSpace.app" 2>/dev/null || true
-  echo "Installed $HOME/Applications/MacSpace.app"
+  touch "$TARGET"
+  "$LSREGISTER" -f "$TARGET" 2>/dev/null || true
+  echo "Installed $TARGET"
 fi
 echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc})"

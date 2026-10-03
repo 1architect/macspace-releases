@@ -55,7 +55,7 @@ INSTALL=1 Scripts/Assemble.sh
 
 `Assemble.sh` builds `Build/MacSpace.app` (app, shared libraries, Sparkle, one `.macspacemodule` bundle per module, the helper and
 its launchd plist, the CLI) and signs it inside-out. `INSTALL=1` also quits any running copy and copies the app to
-`~/Applications`. **Run the app from an Applications folder**: the helper only registers from there.
+`/Applications` (`~/Applications` when that is not writable; `INSTALL_DIR` chooses another), removing a copy left in the other one. **Run the app from an Applications folder**: the helper only registers from there.
 
 Settings of the script, as environment variables: `CONFIG` (default `release`), `VERSION`, `BUILD`, `SIGN_IDENTITY` (default: the
 first Developer ID or Apple Development identity in the keychain, otherwise ad-hoc; `-` forces ad-hoc), `TEAM_ID`,
