@@ -94,14 +94,16 @@ final class VersionStoreTests: XCTestCase {
         var snap = SystemDataSnapshot(
             report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
             purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
-        guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.versionsSection(snap)), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.freeNow(snap)), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), ["versions"], "listed under Free now")
+        XCTAssertNil(SystemDataScreenBuilder.cleanAll(snap), "Clean never deletes version history")
         let action = try XCTUnwrap(list.rows.first?.actions.first)
         XCTAssertEqual(action.id, "deleteVersions")
         XCTAssertEqual(action.role, .destructive)
         XCTAssertNotNil(action.confirmation)
         XCTAssertEqual(action.requires, [.privilegedHelper])
         snap.report.items = []
-        XCTAssertNil(SystemDataScreenBuilder.versionsSection(snap))
+        XCTAssertNil(SystemDataScreenBuilder.versionsRow(snap))
         XCTAssertNil(SystemDataScreenBuilder.otherSection(SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []), purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date())), "the other list does not repeat it")
     }
 }

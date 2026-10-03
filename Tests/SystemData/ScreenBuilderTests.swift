@@ -43,8 +43,10 @@ final class SystemDataScreenBuilderTests: XCTestCase {
                      item("app", kind: .appSupport, bytes: 700_000_000),
                      item("tiny", kind: .logs, bytes: 1_000, cleanup: .managedByMacOS)]
         guard case let .section(section)? = SystemDataScreenBuilder.otherSection(snapshot(items: items)), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.id), ["logs", "app"], "reports are under Free now, swap is counted by Settings elsewhere, tiny items are noise")
+        XCTAssertEqual(list.rows.map(\.id), ["logs"], "reports are under Free now, swap is counted by Settings elsewhere, app data has its own list, tiny items are noise")
         XCTAssertFalse(section.isCollapsible, "a plain list, like In other apps")
+        guard case let .section(apps)? = SystemDataScreenBuilder.appDataSection(snapshot(items: items)), case let .list(appList) = apps.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(appList.rows.map(\.id), ["app"])
     }
 
     func testCloudCopiesAndThirdPartyAppDataAreLeftOutOfTheBar() {
@@ -110,7 +112,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
         let screen = SystemDataScreenBuilder.screen(withoutAccess)
-        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "other"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "appdata", "other"])
         XCTAssertEqual(screen.hero?.segments.isEmpty, false, "the bar is the page's hero")
         XCTAssertNil(screen.hero?.footnote)
         XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "free", "no banner when everything was measured")

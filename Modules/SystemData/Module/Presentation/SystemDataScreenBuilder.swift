@@ -107,7 +107,7 @@ enum SystemDataScreenBuilder {
         if let manual = manualSection(report) { widgets.append(manual) }
         if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         if let assets = assetsSection(snapshot) { widgets.append(assets) }
-        if let versions = versionsSection(snapshot) { widgets.append(versions) }
+        if let appData = appDataSection(snapshot) { widgets.append(appData) }
         if let other = otherSection(snapshot) { widgets.append(other) }
         let hero = UsageBar(id: "usage", title: "What fills System Data", segments: blocks(snapshot))
         return Screen(title: "System Data", hero: hero, primary: cleanAll(snapshot), widgets: widgets)
@@ -116,15 +116,16 @@ enum SystemDataScreenBuilder {
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
         let total = freeableBytes(snapshot)
         guard total >= worthARow else { return nil }
+        var message = "Deletes the caches, old reports and unused system assets listed under Free now. None of it holds your files, and macOS recreates what it needs."
+        if versionsRow(snapshot) != nil { message += " Document version history is not deleted: it has its own Delete button." }
         return Action(id: "cleanAll", title: "Clean \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: "Clean \(ByteFormat.string(total))?",
-                                                 message: "Deletes the caches, old reports and unused system assets listed under Free now. None of it holds your files, and macOS recreates what it needs.",
-                                                 confirmTitle: "Clean"))
+                      confirmation: Confirmation(title: "Clean \(ByteFormat.string(total))?", message: message, confirmTitle: "Clean"))
     }
 
     // MARK: Sections
 
-    /// What Clean deletes, item by item. nil when there is nothing worth a row.
+    /// What Clean deletes, item by item, then document version history, which only its own button deletes. nil when there is nothing
+    /// worth a row.
     static func freeNow(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && ($0.expectedReclaimBytes ?? 0) >= worthARow }
             .sorted { ($0.expectedReclaimBytes ?? 0) > ($1.expectedReclaimBytes ?? 0) }
@@ -146,6 +147,7 @@ enum SystemDataScreenBuilder {
                             actions: [Action(id: "purgeAssets", title: "Remove", confirmation: Confirmation(
                                 title: "Remove unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Remove"))]))
         }
+        if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: "Free now", widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
     }
@@ -164,12 +166,12 @@ enum SystemDataScreenBuilder {
 
     static let manualThreshold: UInt64 = 50_000_000
 
-    /// Everything MacSpace leaves alone (it belongs to apps, to the user or to macOS), largest first, in one collapsed list.
-    static func otherSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+    /// Everything MacSpace leaves alone (it belongs to apps, to the user or to macOS), largest first.
+    static func leftAlone(_ snapshot: SystemDataSnapshot) -> [SystemDataItem] {
         let report = snapshot.report
         let guided = Set(report.manualCleanup.flatMap(\.itemIDs))
         let handled: Set<String> = ["reports:diagnostic", "versions:documents", "update:staged", "assets:system"]
-        let items = report.items.filter { item in
+        return report.items.filter { item in
             guard let bytes = item.bytes, bytes >= manualThreshold, !handled.contains(item.id), !guided.contains(item.id), !item.id.hasPrefix("small:") else { return false }
             switch item.cleanup.kind {
             case .review: return !countedByAnotherCategory(item)
@@ -177,16 +179,33 @@ enum SystemDataScreenBuilder {
             default: return false
             }
         }
-        .sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }.prefix(10)
+        .sorted { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
+    }
+
+    /// What apps keep for themselves (their support folders and containers), listed apart from the rest MacSpace leaves alone.
+    static let appDataKinds: Set<SystemDataKind> = [.appSupport, .appContainer]
+
+    static func appDataSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        let items = leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }
         guard !items.isEmpty else { return nil }
-        let rows = items.map { item in
+        return .section(SectionWidget(id: "appdata", title: "App data", subtitle: "Kept by apps for themselves. MacSpace leaves it alone.",
+                                      widgets: [.list(ListWidget(id: "appdata-list", rows: leftAloneRows(items)))]))
+    }
+
+    static func otherSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+        let items = leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }
+        guard !items.isEmpty else { return nil }
+        return .section(SectionWidget(id: "other", title: "Everything else", subtitle: "Used by macOS and your tools. MacSpace leaves it alone.",
+                                      widgets: [.list(ListWidget(id: "other-list", rows: leftAloneRows(items)))]))
+    }
+
+    /// The ten largest, with what the item is and why it stays.
+    private static func leftAloneRows(_ items: [SystemDataItem]) -> [Row] {
+        items.prefix(10).map { item in
             Row(id: item.id, title: item.title, trailing: ByteFormat.string(item.bytes ?? 0),
                 detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
         }
-        return .section(SectionWidget(id: "other", title: "Everything else", subtitle: "Used by apps or by macOS. MacSpace leaves it alone.",
-                                      widgets: [.list(ListWidget(id: "other-list", rows: Array(rows)))]))
     }
-
 
     /// Files of an update that is already installed; shown only when the scan recognised them as a leftover (see the inspector).
     static func leftoverUpdateSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
@@ -206,11 +225,12 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
     }
 
-    /// The saved history behind File > Revert To > Browse All Versions. Deleting it is irreversible, so it sits apart from "Free now".
-    static func versionsSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
+    /// The saved history behind File > Revert To > Browse All Versions, as a row of Free now. Deleting it is irreversible, so it keeps
+    /// its badge and its own confirmation, and Clean leaves it out.
+    static func versionsRow(_ snapshot: SystemDataSnapshot) -> Row? {
         guard let item = snapshot.report.items.first(where: { $0.id == "versions:documents" }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
-        let row = Row(id: "versions", title: "Document version history", subtitle: "Saved earlier versions of documents (File → Revert To → Browse All Versions).",
+        return Row(id: "versions", title: "Document version history", subtitle: "Saved earlier versions of documents (File → Revert To → Browse All Versions).",
                       trailing: size, badge: Badge("Cannot be undone", tone: .critical), symbol: "clock.arrow.circlepath",
                       detail: "Deleting it removes the earlier versions of every document. The documents themselves stay. Versions share blocks with their documents, so the space freed can be less than \(size); MacSpace measures what the volume gains. Save your documents and quit apps that edit them first.",
                       actions: [Action(id: "deleteVersions", title: "Delete…", role: .destructive,
@@ -218,8 +238,6 @@ enum SystemDataScreenBuilder {
                                                                   message: "This permanently removes the earlier versions of every document on this Mac (\(size) stored). You will no longer be able to revert documents to earlier states. The documents themselves are not touched.\n\nSave and close your documents first. MacSpace stops the macOS versions service, deletes the store and starts the service again.",
                                                                   confirmTitle: "Delete version history"),
                                        requires: [.privilegedHelper])])
-        return .section(SectionWidget(id: "versions", title: "Version history", subtitle: "Irreversible. Use it only if you never revert documents.",
-                                      widgets: [.list(ListWidget(id: "versions-list", rows: [row]))]))
     }
 
     /// System downloads the user can release by changing a setting. Families with no setting are not something to act on, so they
