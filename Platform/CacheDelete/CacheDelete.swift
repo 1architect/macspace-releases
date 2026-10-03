@@ -274,8 +274,11 @@ public struct CacheDeleteClient {
             return CacheDeletePurgeResult(services: services, purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: before,
                                           elapsedSeconds: nil, error: refusal)
         }
+        // QUERY_AFTER_PURGE: CacheDelete keeps an estimate of what it could purge, and answered it unchanged right after purging
+        // (911.7 MB after removing 111 MB); its answer echoes this key as 0, so it is asked to measure again once done.
         let info: [String: Any] = ["CACHE_DELETE_VOLUME": volume, "CACHE_DELETE_URGENCY": urgency,
-                                   "CACHE_DELETE_AMOUNT": Int64(clamping: amount), "CACHE_DELETE_SERVICES": services]
+                                   "CACHE_DELETE_AMOUNT": Int64(clamping: amount), "CACHE_DELETE_SERVICES": services,
+                                   "CACHE_DELETE_QUERY_AFTER_PURGE": true]
         let run = Self.rawPurge(info, timeout: timeout)
         let parsed = run.result.map(Self.parsePurgeResult)
         let serviceError = run.result?["CACHE_DELETE_ERROR"].map { "CacheDelete: \($0)" }

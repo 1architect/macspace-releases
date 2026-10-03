@@ -53,6 +53,15 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertFalse(snap.declined, "offered again once the estimate has grown")
     }
 
+    func testWhatWasFreedIsTakenOffAnEstimateThatHasNotMovedYet() {
+        let service = CacheDeleteService.fsPurgeableData
+        var removed: (estimate: UInt64, bytes: UInt64)? = (877_900_000, 800_000_000)
+        XCTAssertEqual(PurgeableStore.accounting(for: &removed, in: [service: 877_900_000])?[service], 77_900_000, "macOS still gives the old figure")
+        XCTAssertNotNil(removed)
+        XCTAssertEqual(PurgeableStore.accounting(for: &removed, in: [service: 60_000_000])?[service], 60_000_000, "macOS has measured again")
+        XCTAssertNil(removed, "and is believed from then on")
+    }
+
     func testTheTileMarksWhatCanBeFreed() {
         let tile = OtherSystemFilesScreenBuilder.tile(snapshot(measured))
         XCTAssertEqual(tile.status, "\(ByteFormat.string(4_888_453_120)) can be freed")

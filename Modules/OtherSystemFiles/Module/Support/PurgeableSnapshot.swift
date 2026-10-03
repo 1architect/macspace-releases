@@ -54,14 +54,33 @@ struct PurgeableService: Equatable {
 actor PurgeableStore {
     private var cached: PurgeableSnapshot?
     private var declined: UInt64?
+    /// What MacSpace last freed, and macOS's estimate when it did.
+    private var removed: (estimate: UInt64, bytes: UInt64)?
 
     func snapshot(maxAge: TimeInterval = 60) async -> PurgeableSnapshot {
         if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
         var fresh = await Task.detached(priority: .utility) { Self.liveSnapshot() }.value
         fresh.declinedBytes = declined
+        fresh.services = Self.accounting(for: &removed, in: fresh.services)
         cached = fresh
         return fresh
     }
+
+    /// macOS's estimate lags behind what it removed: right after freeing 1 GB it could still give the figure from before. While it
+    /// gives that same figure, what was freed is taken off it; once the figure moves, macOS has measured again and is believed.
+    static func accounting(for removed: inout (estimate: UInt64, bytes: UInt64)?, in services: [String: UInt64]?) -> [String: UInt64]? {
+        guard var services, let freed = removed, let current = services[CacheDeleteService.fsPurgeableData] else { return services }
+        let tolerance = max(freed.estimate / 50, 5_000_000)
+        guard current + tolerance >= freed.estimate, current <= freed.estimate + tolerance else {
+            removed = nil
+            return services
+        }
+        services[CacheDeleteService.fsPurgeableData] = current > freed.bytes ? current - freed.bytes : 0
+        return services
+    }
+
+    /// MacSpace freed `bytes` while macOS estimated `estimate`.
+    func noteRemoved(_ bytes: UInt64, estimate: UInt64) { removed = (estimate, bytes) }
 
     func invalidate() { cached = nil }
 

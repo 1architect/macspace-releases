@@ -38,6 +38,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             let estimate = await store.snapshot().estimatedBytes
             let purge = Self.purgeFiles(progress: progress)
             if purge.removedNothing { await store.noteDeclined(estimate: estimate) }
+            if purge.freed > 0 { await store.noteRemoved(purge.freed, estimate: estimate) }
             return purge.result
         default:
             return .failed("Unknown action \(request.actionID).")
@@ -48,7 +49,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// "purgeable" figure uses, then at the one macOS uses when the disk is critically full, for what the first left (it can
     /// remove part of them and then decline the rest). Only when neither removed anything are the files reported as declined. The
     /// space freed is measured on the volume, over both.
-    static func purgeFiles(progress: ProgressSink) -> (result: ActionResult, removedNothing: Bool) {
+    static func purgeFiles(progress: ProgressSink) -> (result: ActionResult, removedNothing: Bool, freed: UInt64) {
         let service = CacheDeleteService.fsPurgeableData
         let before = DataVolume.freeBytes()
         var reported: UInt64 = 0
@@ -71,14 +72,14 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         var freed: UInt64 = 0
         if let before, let after = DataVolume.freeBytes(), after > before { freed = after - before }
         if reported == 0 && freed < 1_000_000 {
-            if let lastError { return (.failed(lastError), false) }
+            if let lastError { return (.failed(lastError), false, 0) }
             // CacheDelete can answer at once that it removed nothing while its estimate still counts the files.
             return (ActionResult(outcome: .needsAttention, message: "macOS removed nothing.",
                                  details: ["Asked twice, the second time as when the disk is critically full, macOS declined to delete these files now. It keeps them until it needs the space, and its estimate of them lags behind; MacSpace offers them again once that estimate grows."],
-                                 refresh: true), true)
+                                 refresh: true), true, 0)
         }
         return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.",
                            details: ["macOS reported \(ByteFormat.string(reported)) removed in \(String(format: "%.1f", elapsed)) s."]),
-                false)
+                false, max(freed, reported))
     }
 }
