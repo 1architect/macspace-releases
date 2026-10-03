@@ -31,7 +31,8 @@ struct GlassPane: NSViewRepresentable {
     func makeNSView(context: Context) -> GlassPaneView { GlassPaneView(frame: .zero) }
 
     func updateNSView(_ view: GlassPaneView, context: Context) {
-        let appearance: NSAppearance.Name = context.environment.colorScheme == .dark ? .darkAqua : .aqua
+        // The palette's appearance, not the system's: light glass under a deep palette's colors washed them out.
+        let appearance: NSAppearance.Name = context.environment.design.isLight ? .aqua : .darkAqua
         if view.appearance?.name != appearance { view.appearance = NSAppearance(named: appearance) }
         if view.style != style { view.style = style }
         view.corners = corners
