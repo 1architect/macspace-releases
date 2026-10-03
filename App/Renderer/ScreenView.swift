@@ -48,7 +48,7 @@ struct ScreenView: View {
         }
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .scrollIndicators(.never)
-        .modifier(PageScrollArea(hasFooter: hasFooter, tint: tint))
+        .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
             ActionDock(handle: handle)
@@ -79,16 +79,19 @@ enum PageInsets {
 }
 
 /// A page's scroll area: below the corner buttons and the title, and above the main action when the page has one. It is cut off with
-/// a plain rectangular clip. A gradient mask used to fade the content out at both ends, but it made every scroll frame draw the whole
-/// page offscreen and blend it through the mask.
+/// a plain rectangular clip.
 ///
-/// With the temporary Page Edge Fade switch on, the page instead scrolls under the title and the main action, and the page's own color
-/// is laid over both edges as a gradient, so the content fades into the page there. A plain gradient on top costs about nothing; the
-/// system's scroll edge effect was tried first, but it is not drawn for a grouped form.
+/// With the temporary Page Edge Fade switch on, the page scrolls under the title and the main action and fades out as it reaches
+/// them: the scroll area is masked with a gradient, clear under the title and the action and opaque between, so the content itself
+/// fades (a color laid over it only looked like a band with the text showing through). A mask makes every scroll frame draw the page
+/// offscreen and blend it through the mask, which is why it is only on with the switch. The system's scroll edge effect is not drawn
+/// for a grouped form.
 struct PageScrollArea: ViewModifier {
     let hasFooter: Bool
-    var tint: TileTint = .slate
     @Environment(\.design) private var design
+
+    /// How far the content takes to fade in, below the title and above the main action.
+    static let fadeLength: CGFloat = 26
 
     func body(content: Content) -> some View {
         if design.pageEdgeFade {
@@ -98,8 +101,15 @@ struct PageScrollArea: ViewModifier {
                 .contentMargins(.bottom, footer + PageInsets.fade + 6, for: .scrollContent)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
-                .overlay(alignment: .top) { fade(from: .top).frame(height: PageInsets.scrollTop + 18) }
-                .overlay(alignment: .bottom) { fade(from: .bottom).frame(height: footer + 26) }
+                .mask {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: PageInsets.headerBottom)
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
+                        Color.black
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
+                        Color.clear.frame(height: max(footer - 8, 0))
+                    }
+                }
         } else {
             content
                 .contentMargins(.top, 0, for: .scrollContent)
@@ -110,15 +120,6 @@ struct PageScrollArea: ViewModifier {
                 .padding(.bottom, hasFooter ? PageInsets.footer : 0)
                 .clipped()
         }
-    }
-
-    /// The page's color, strongest at the window's edge and gone where the content shows in full.
-    private func fade(from edge: VerticalEdge) -> some View {
-        let color = design.palette(tint).base
-        let strong = color.opacity(design.isLight ? 0.8 : 0.88)
-        return LinearGradient(stops: [.init(color: strong, location: 0), .init(color: strong, location: 0.45), .init(color: color.opacity(0), location: 1)],
-                              startPoint: edge == .top ? .top : .bottom, endPoint: edge == .top ? .bottom : .top)
-            .allowsHitTesting(false)
     }
 }
 
