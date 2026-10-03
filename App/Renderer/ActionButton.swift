@@ -1,3 +1,4 @@
+import AppKit
 import MacSpaceSdk
 import SwiftUI
 
@@ -8,23 +9,32 @@ struct ActionButton: View {
     let action: Action
     var compact = false
     let handler: ActionHandler
-    @State private var confirming = false
 
     var body: some View {
         Button(role: action.role == .destructive ? .destructive : nil) {
-            if action.confirmation != nil { confirming = true } else { handler(action, [:]) }
+            if let confirmation = action.confirmation {
+                if ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { handler(action, [:]) }
+            } else {
+                handler(action, [:])
+            }
         } label: {
             if let symbol = action.symbol { Label(action.title, systemImage: symbol) } else { Text(action.title) }
         }
         .modifier(ActionButtonLook(role: action.role, compact: compact))
-        .confirmationDialog(action.confirmation?.title ?? "", isPresented: $confirming, titleVisibility: .visible) {
-            if let confirmation = action.confirmation {
-                Button(confirmation.confirmTitle, role: action.role == .destructive ? .destructive : nil) { handler(action, [:]) }
-                Button("Cancel", role: .cancel) {}
-            }
-        } message: {
-            Text(action.confirmation?.message ?? "")
-        }
+    }
+}
+
+/// Asks before an action, in an alert of its own in the middle of the screen. Not a sheet on the window: a sheet dims the window's
+/// whole frame, and on this window, clear around its rounded glass, that showed as a grey rectangle with square corners.
+@MainActor
+enum ConfirmationAlert {
+    static func ask(_ confirmation: Confirmation, destructive: Bool) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = confirmation.title
+        alert.informativeText = confirmation.message
+        alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = destructive
+        alert.addButton(withTitle: "Cancel")
+        return alert.runModal() == .alertFirstButtonReturn
     }
 }
 

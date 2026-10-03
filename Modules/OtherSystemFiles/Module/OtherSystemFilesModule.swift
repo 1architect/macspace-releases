@@ -45,6 +45,15 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             result = CacheDeleteClient().purge(services: [service], urgency: urgency)
         }
         if let error = result.error { return .failed(error) }
+        // CacheDelete can answer at once without removing anything (no amount in its answer). That is not a success: say so, with
+        // its answer, rather than "freed Zero KB".
+        if (result.purgedBytes ?? 0) == 0 && (result.freedBytes ?? 0) < 1_000_000 {
+            let answer = (result.answer ?? [:]).sorted { $0.key < $1.key }.map { "\($0.key) = \($0.value)" }
+            return ActionResult(outcome: .needsAttention, message: "macOS removed nothing.",
+                                details: ["macOS keeps these files until it needs the space, and declined to delete them now."]
+                                    + (answer.isEmpty ? ["Its answer was empty."] : ["Its answer: " + answer.joined(separator: "; ")]),
+                                refresh: true)
+        }
         return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)) of purgeable app files, measured on the volume.",
                           details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(String(format: "%.1f", result.elapsedSeconds ?? 0)) s."])
     }

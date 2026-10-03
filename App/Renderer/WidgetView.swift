@@ -261,7 +261,6 @@ struct RowView: View {
 struct ToggleRowView: View {
     let row: ToggleRow
     let handler: ActionHandler
-    @State private var pending: Bool?
 
     var body: some View {
         Toggle(isOn: Binding(get: { row.isOn }, set: { flip(to: $0) })) {
@@ -272,19 +271,15 @@ struct ToggleRowView: View {
         }
         .disabled(!row.isEnabled)
         .help(Tooltip.join(row.subtitle, row.detail) ?? "")
-        .confirmationDialog(row.action.confirmation?.title ?? "", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-                            titleVisibility: .visible) {
-            Button(row.action.confirmation?.confirmTitle ?? "OK") {
-                if let value = pending { handler(row.action, ["value": value ? "true" : "false"]) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(row.action.confirmation?.message ?? "")
-        }
     }
 
     private func flip(to value: Bool) {
-        if row.action.confirmation != nil { pending = value } else { handler(row.action, ["value": value ? "true" : "false"]) }
+        let parameters = ["value": value ? "true" : "false"]
+        guard let confirmation = row.action.confirmation else { return handler(row.action, parameters) }
+        // Asked once the switch has finished handling the click, not from inside it.
+        Task { @MainActor in
+            if ConfirmationAlert.ask(confirmation, destructive: false) { handler(row.action, parameters) }
+        }
     }
 }
 

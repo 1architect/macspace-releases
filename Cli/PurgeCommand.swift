@@ -75,6 +75,7 @@ enum PurgeCommand {
         let result = client.purge(services: [service], urgency: urgency)
         if json { emit(result) }
         if let error = result.error { print("error: \(error)") }
+        for (key, value) in (result.answer ?? [:]).sorted(by: { $0.key < $1.key }) { print("  \(key) = \(value)") }
         print("\(service) reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(result.elapsedSeconds.map { String(format: "%.1f s", $0) } ?? "?").")
         print("Data volume free: \(ByteFormat.string(result.freeBytesBefore ?? 0)) -> \(ByteFormat.string(result.freeBytesAfter ?? 0)) (+\(ByteFormat.string(result.freedBytes ?? 0)))")
         exit(result.error == nil ? 0 : 1)

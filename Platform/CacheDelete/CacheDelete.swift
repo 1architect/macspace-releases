@@ -103,15 +103,18 @@ public struct CacheDeletePurgeResult: Codable, Equatable, Sendable {
     public let freeBytesAfter: UInt64?
     public let elapsedSeconds: Double?
     public let error: String?
+    /// CacheDelete's whole answer, each value as text: what to look at when a purge removes nothing.
+    public let answer: [String: String]?
 
     public init(services: [String], purgedBytes: UInt64?, freeBytesBefore: UInt64?, freeBytesAfter: UInt64?,
-                elapsedSeconds: Double?, error: String?) {
+                elapsedSeconds: Double?, error: String?, answer: [String: String]? = nil) {
         self.services = services
         self.purgedBytes = purgedBytes
         self.freeBytesBefore = freeBytesBefore
         self.freeBytesAfter = freeBytesAfter
         self.elapsedSeconds = elapsedSeconds
         self.error = error
+        self.answer = answer
     }
 
     /// Measured change in free space on the volume (what the user gets).
@@ -275,7 +278,8 @@ public struct CacheDeleteClient {
         let serviceError = run.result?["CACHE_DELETE_ERROR"].map { "CacheDelete: \($0)" }
         return CacheDeletePurgeResult(services: services, purgedBytes: parsed?.purged, freeBytesBefore: before, freeBytesAfter: freeSpace(),
                                       elapsedSeconds: parsed?.elapsed,
-                                      error: !run.answered ? "CacheDelete did not answer within \(Int(timeout)) s." : (run.result == nil ? "CacheDelete returned no result." : serviceError))
+                                      error: !run.answered ? "CacheDelete did not answer within \(Int(timeout)) s." : (run.result == nil ? "CacheDelete returned no result." : serviceError),
+                                      answer: run.result.map { $0.mapValues { String(describing: $0).prefix(300).description } })
     }
 
     // MARK: Crash isolation
