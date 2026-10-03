@@ -76,7 +76,7 @@ public struct MainView: View {
         }
         // Nothing draws outside the glass: a lifted tile's shadow spilling past it left a stray shadow and edge, which macOS then
         // copied into the window's own shadow.
-        .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
+        .clipShape(designSettings.clipWindow ? AnyShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)) : AnyShape(Rectangle()))
         .scaleEffect(windowShown || reduceMotion ? 1 : 0.94)
         .opacity(windowShown ? 1 : 0)
         .environment(\.design, designSettings.design)

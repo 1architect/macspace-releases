@@ -70,6 +70,26 @@ struct GlassGroup<Content: View>: View {
     }
 }
 
+extension View {
+    /// The view inside a `GlassGroup` when `on`.
+    @ViewBuilder
+    func glassGrouped(_ on: Bool) -> some View {
+        if on { GlassGroup { self } } else { self }
+    }
+
+    /// The pointer tilt of a flat tile. Glass tiles get none at all, not a turn of 0°: a 3D effect puts the tile in a projection layer
+    /// even when it does not turn, and glass under it is drawn the expensive way.
+    @ViewBuilder
+    func tilted(_ tilt: UnitPoint, active: Bool) -> some View {
+        if active {
+            rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+        } else {
+            self
+        }
+    }
+}
+
 // MARK: Loading
 
 /// While a tile's figures load, its chart's own elements breathe one after another, a wave running through them, instead of a band of

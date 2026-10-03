@@ -84,6 +84,11 @@ struct Design: Equatable {
     var hoverShade = true
     /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass too, or flat color on the glass tiles.
     var glassElements = true
+    /// Temporary, for measuring GPU use: the tiles' glass drawn together in one pass; the window clipped to its rounded corners;
+    /// tiles following the pointer.
+    var groupTileGlass = true
+    var clipWindow = true
+    var trackPointer = true
 
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
     var action: Color { scheme.action.fill }
@@ -113,6 +118,9 @@ public final class DesignSettings: ObservableObject {
     @Published public var hoverShade: Bool { didSet { defaults.set(hoverShade, forKey: "design.hoverShade") } }
     @Published public var windowShadow: Bool { didSet { defaults.set(windowShadow, forKey: "design.windowShadow") } }
     @Published public var glassElements: Bool { didSet { defaults.set(glassElements, forKey: "design.glassElements") } }
+    @Published public var groupTileGlass: Bool { didSet { defaults.set(groupTileGlass, forKey: "design.groupTileGlass") } }
+    @Published public var clipWindow: Bool { didSet { defaults.set(clipWindow, forKey: "design.clipWindow") } }
+    @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -123,9 +131,13 @@ public final class DesignSettings: ObservableObject {
         hoverShade = defaults.object(forKey: "design.hoverShade") as? Bool ?? true
         windowShadow = defaults.object(forKey: "design.windowShadow") as? Bool ?? true
         glassElements = defaults.object(forKey: "design.glassElements") as? Bool ?? true
+        groupTileGlass = defaults.object(forKey: "design.groupTileGlass") as? Bool ?? true
+        clipWindow = defaults.object(forKey: "design.clipWindow") as? Bool ?? true
+        trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
     }
 
-    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements) }
+    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
+                                  groupTileGlass: groupTileGlass, clipWindow: clipWindow, trackPointer: trackPointer) }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
@@ -139,6 +151,9 @@ public struct DesignCommands: Commands {
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])
             Toggle("Glass Chart Elements", isOn: $settings.glassElements)
+            Toggle("Group Tile Glass", isOn: $settings.groupTileGlass)
+            Toggle("Clip Window Corners", isOn: $settings.clipWindow)
+            Toggle("Track Pointer", isOn: $settings.trackPointer)
             Divider()
             Toggle("Tile Lift", isOn: $settings.lift)
             Toggle("Tile Tilt", isOn: $settings.tilt)
@@ -172,6 +187,9 @@ struct DesignSettingsSection: View {
             Toggle("Hover shade", isOn: $settings.hoverShade)
             Toggle("Window shadow", isOn: $settings.windowShadow)
             Toggle("Glass chart elements", isOn: $settings.glassElements)
+            Toggle("Group tile glass", isOn: $settings.groupTileGlass)
+            Toggle("Clip window corners", isOn: $settings.clipWindow)
+            Toggle("Track pointer", isOn: $settings.trackPointer)
         }
     }
 }

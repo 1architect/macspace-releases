@@ -191,6 +191,7 @@ struct HomeView: View {
     /// The window is closing: the tiles leave.
     var closing = false
     @State private var appeared = false
+    @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How long the tiles take to leave, for the window to wait before it goes.
@@ -256,6 +257,8 @@ struct HomeView: View {
                     }
                 }
                 .frame(width: size.width, height: size.height, alignment: .topLeading)
+                // The tiles' glass drawn together in one pass, not each tile sampling the window glass on its own.
+                .glassGrouped(design.groupTileGlass)
                 // The gaps between tiles are glass too: dragging there moves the window.
                 .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
                 .animation(Theme.layout, value: tiles.map(\.id))
@@ -312,14 +315,16 @@ struct DashboardTileView: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onContinuousHover { phase in
             switch phase {
-            case let .active(location) where size.width > 0 && !isHidden:
-                pointer = UnitPoint(x: location.x / size.width, y: location.y / size.height)
+            case let .active(location) where size.width > 0 && !isHidden && design.trackPointer:
+                // In steps of 2.5 %: every tiny mouse move redrew the tile and recomposited the glass window, for changes nobody sees.
+                let step = 40.0
+                let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
+                if next != pointer { pointer = next }
             default:
-                pointer = nil
+                if pointer != nil { pointer = nil }
             }
         }
-        .rotation3DEffect(.degrees(turns ? (tilt.x - 0.5) * 5 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-        .rotation3DEffect(.degrees(turns ? (0.5 - tilt.y) * 5 : 0), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+        .tilted(tilt, active: turns)
         .offset(x: turns ? 0 : (tilt.x - 0.5) * 4, y: turns ? 0 : (tilt.y - 0.5) * 4)
         .scaleEffect(lifted && tile.opens ? 1.018 : 1)
         // Glass is see-through, so a deeper shadow would show inside the tile, offset from its edge.
