@@ -61,6 +61,9 @@ struct TileFace: View {
 
     /// Room left under the chart for the caption.
     static let captionBand: CGFloat = 62
+    /// How what comes and goes with the tile's size (resizing the window) comes and goes. The animation goes with the transition, not on
+    /// the view: an animation on the view would also animate every frame of the live resize, and the tiles would trail the window.
+    static let resizeTransition = AnyTransition.opacity.combined(with: .scale(scale: 0.92)).animation(.smooth(duration: 0.3))
 
     /// Where a blocks chart sits in a tile of `size`.
     static func chartArea(in size: CGSize) -> CGRect {
@@ -157,15 +160,18 @@ struct TileFace: View {
             // Clear of the window's close button, which sits in this tile's top-left corner. A ring needs height; a short tile gets a
             // bar across it instead, centered in the room between the close button and the caption (the caption says the figures).
             let side = min(size.width * 0.56, size.height - Self.captionBand - 34)
+            // Resizing the window across the threshold swaps one for the other: they cross-fade, and the new one draws in.
             if side >= 100 {
                 GaugeView(value: value, label: label, sublabel: sublabel, tint: tint, loading: info.loading)
                     .frame(width: side, height: side)
                     .position(x: max(size.width / 2, 52 + side / 2), y: 20 + side / 2)
+                    .transition(Self.resizeTransition)
             } else {
                 let top = GlassCircleButton.margin + GlassCircleButton.diameter
                 BarGaugeView(value: value, tint: tint, loading: info.loading)
                     .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
                     .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
+                    .transition(Self.resizeTransition)
             }
         }
     }
@@ -311,15 +317,19 @@ struct HomeView: View {
             // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the hover
             // lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
             let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
+            // Crossing the size where the tiles stop fitting swaps the plain grid for a scrolling one, which draws its tiles anew: the
+            // two cross-fade instead of the tiles blinking out and back.
             if needed <= proxy.size.height {
                 // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to
                 // every frame the window draws.
                 let _ = (frames.scrollOffset = 0)
                 grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
+                    .transition(.opacity.animation(.smooth(duration: 0.3)))
             } else {
                 ScrollView {
                     grid(tiles, placements: placements, columns: columns, rows: rows, size: size)
                 }
+                .transition(.opacity.animation(.smooth(duration: 0.3)))
                 .scrollIndicators(.never)
                 .scrollEdgeEffectHidden(true, for: .all)
                 // A lifted tile may reach into the glass frame; the scroll view must not cut it.

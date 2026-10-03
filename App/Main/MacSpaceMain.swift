@@ -36,7 +36,8 @@ struct MacSpaceMain: App {
         }
         .windowStyle(.plain)
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 700, height: 490)
+        // The glass's default size (`Theme.defaultSize`) and the invisible resize band around it (`Theme.resizeMargin`).
+        .defaultSize(width: 716, height: 506)
         .windowResizability(.contentMinSize)
         .commands {
             DesignCommands()

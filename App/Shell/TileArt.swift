@@ -262,6 +262,7 @@ struct BlocksView: View {
                     .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
                     .animation(Theme.highlight, value: hovered)
             }
+            // A name comes and goes as resizing the window gives its block room or takes it.
             if labels, rect.width > 74, rect.height > 34 {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
@@ -270,6 +271,7 @@ struct BlocksView: View {
                 .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 5)
+                .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .topLeading)).animation(.smooth(duration: 0.25)))
             }
         }
         .frame(width: max(rect.width, 0), height: max(rect.height, 0), alignment: .topLeading)
@@ -452,7 +454,10 @@ struct GaugeView: View {
             // Glass is not drawn inside a rotated view, so the arc is placed by its angles instead of rotating the gauge.
             VStack(spacing: 1) {
                 Text(label).font(.system(size: min(24, side * 0.2), weight: .semibold)).foregroundStyle(palette.text).contentTransition(.numericText())
-                if side >= 90 { Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft) }
+                if side >= 90 {
+                    Text(sublabel).font(.system(size: 11)).foregroundStyle(palette.soft)
+                        .transition(.opacity.animation(.smooth(duration: 0.25)))
+                }
             }
             .lineLimit(1)
             .minimumScaleFactor(0.6)

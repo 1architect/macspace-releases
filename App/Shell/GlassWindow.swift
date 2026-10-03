@@ -32,6 +32,9 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.backgroundColor = .clear
             window.hasShadow = false
             window.isMovableByWindowBackground = true
+            // Set explicitly: left at its default, a transparent window lets clicks on its clear pixels through to the window behind,
+            // so the rounded corners and the resize band around the glass selected the app behind instead of resizing.
+            window.ignoresMouseEvents = false
             window.invalidateShadow()
             // The window could not become key when SwiftUI first showed it (it only can once adopted above), so it opened inactive and
             // its glass was drawn in the dimmed, unselected look until clicked. Make it key, with the app in front, once it is set up.
@@ -82,7 +85,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
     }
 }
 
-/// A click-through window just larger than the main window, drawing a soft shadow around the main window's rounded shape and
+/// A click-through window just larger than the main window, drawing a soft shadow around the main window's rounded glass and
 /// nothing under it (the glass would show a shadow behind it). Its layers only change when the main window is resized, so the shadow
 /// is drawn once instead of on every frame.
 final class ShadowWindow: NSWindow {
@@ -118,9 +121,10 @@ final class ShadowWindow: NSWindow {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
-    /// Takes the main window's place and shape.
+    /// Takes the shape of the main window's glass, which sits inside its frame by the resize band.
     func follow(_ main: NSWindow) {
-        let frame = main.frame.insetBy(dx: -Self.margin, dy: -Self.margin)
+        let glass = main.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
+        let frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
         setFrame(frame, display: false)
         let bounds = CGRect(origin: .zero, size: frame.size)
         let inner = bounds.insetBy(dx: Self.margin, dy: Self.margin)

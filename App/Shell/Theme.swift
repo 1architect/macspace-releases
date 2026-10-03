@@ -16,6 +16,9 @@ enum Theme {
     static let frame: CGFloat = 11
     static let spacing: CGFloat = 10
     static let windowRadius: CGFloat = 28
+    /// An invisible band around the glass that belongs to the window: the resize zone, where macOS puts it for other windows, just
+    /// outside the visible edge. Without it, a drag started there (or on a rounded corner) went to the app behind.
+    static let resizeMargin: CGFloat = 8
     static let tileRadius: CGFloat = 19
     static let defaultSize = CGSize(width: 700, height: 490)
     static let minimumSize = CGSize(width: 520, height: 360)
