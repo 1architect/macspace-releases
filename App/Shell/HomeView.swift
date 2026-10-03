@@ -74,7 +74,7 @@ struct TileFace: View {
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
-            if drawsBackdrop { TileBackdrop(tint: tint, isPage: progress >= 1) } else { Color.clear }
+            if drawsBackdrop { TileBackdrop(tint: tint, isPage: progress >= 1, becomesPage: true) } else { Color.clear }
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
             // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
             if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {

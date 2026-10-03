@@ -226,7 +226,12 @@ public struct MainView: View {
         withAnimation(Theme.hover) { isOpen = true }
         let current = generation
         withAnimation(Theme.open, completionCriteria: .removed) { progress = 1 } completion: {
-            if generation == current { pageSettled = true }
+            // Once the card's glass has finished giving way to the page's color (`TileBackdrop`): dropping the tiles while it still
+            // showed what was behind it changed that in one frame.
+            Task {
+                try? await Task.sleep(for: .milliseconds(450))
+                if generation == current { pageSettled = true }
+            }
         }
         withAnimation(.smooth(duration: 0.5).delay(0.22)) { reveal = 1 }
     }

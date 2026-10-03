@@ -9,8 +9,12 @@ struct TileBackdrop: View {
     let tint: TileTint
     /// The tile has become a page. Its color is then laid straight on the window's glass, without glass of its own: two window-sized
     /// layers of glass, one over the other, were blended again on every frame the page scrolled. The two cross-fade, so the change at
-    /// the end of the zoom does not flicker.
+    /// the end of the zoom does not flicker. Glass ignores an opacity laid on it, so an opacity transition left it to vanish in one
+    /// frame: it dematerializes instead, the way glass leaves, which needs a glass container around it.
     var isPage = false
+    /// Drawn as the zoom's card, which becomes a page. Only the card's glass is in a container: on the dashboard one made a lifting
+    /// tile's glass trail behind its face.
+    var becomesPage = false
     /// Under the pointer: the tint inside the glass darkens, so the shade is part of the glass and moves exactly with it.
     var darkened = false
     @Environment(\.design) private var design
@@ -24,12 +28,17 @@ struct TileBackdrop: View {
                 if isPage {
                     palette.base.opacity(design.isLight ? 0.5 : 0.62)
                         .transition(.opacity)
+                }
+                if becomesPage {
+                    // Only the glass in the container: it draws glass over anything else inside it.
+                    GlassEffectContainer(spacing: 0) {
+                        if !isPage {
+                            glass(shape, color)
+                                .glassEffectTransition(.materialize)
+                        }
+                    }
                 } else {
-                    // The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
-                    shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
-                        .animation(Theme.highlight, value: darkened)
-                        .glassEffect(design.clearTileGlass ? .clear : .regular, in: shape)
-                        .transition(.opacity)
+                    glass(shape, color)
                 }
             }
             .animation(.easeInOut(duration: 0.4), value: isPage)
@@ -40,6 +49,15 @@ struct TileBackdrop: View {
                     shape.fill(RadialGradient(colors: [.white.opacity(design.isLight ? 0.5 : 0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 420))
                 }
         }
+    }
+}
+
+extension TileBackdrop {
+    /// The color is drawn inside the glass, so it shows whatever the glass picks up behind it.
+    fileprivate func glass(_ shape: RoundedRectangle, _ color: Color) -> some View {
+        shape.fill(color.opacity(design.isLight ? 0.5 : 0.62))
+            .animation(Theme.highlight, value: darkened)
+            .glassEffect(design.clearTileGlass ? .clear : .regular, in: shape)
     }
 }
 
