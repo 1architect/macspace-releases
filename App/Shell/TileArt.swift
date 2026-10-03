@@ -374,10 +374,12 @@ struct StateView: View {
             Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
                 .opacity(wave(1))
             if let meter {
+                // Read here: the geometry reader's closure outlives this call and cannot hold `wave`.
+                let strength = wave(2)
                 GeometryReader { proxy in
-                    Surface(shape: Capsule(), color: palette.step(1), strength: wave(2))
+                    Surface(shape: Capsule(), color: palette.step(1), strength: strength)
                         .overlay(alignment: .leading) {
-                            Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: wave(2))
+                            Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: strength)
                                 .frame(width: proxy.size.width * CGFloat(meter) * fill)
                         }
                 }
