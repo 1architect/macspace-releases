@@ -15,7 +15,10 @@ struct TileBackdrop: View {
         let palette = design.palette(tint)
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
         let color = darkened ? palette.base.mix(with: .black, by: Theme.tileHoverShade * 2) : palette.base
-        if design.glass {
+        if design.glass && !design.liveGlass {
+            LitGlass(shape: shape, color: color, opacity: design.isLight ? 0.5 : 0.62)
+                .animation(Theme.highlight, value: darkened)
+        } else if design.glass {
             // The color is drawn inside the glass, so it shows whatever the glass picks up behind it. A tile that has become a page
             // keeps its glass: swapping it for a flat color at the end of the zoom flickered however it was cross-faded, glass and a
             // flat color never looking alike. The window's own glass gives way under it instead (`MainView`), so a page is still
@@ -62,9 +65,15 @@ struct Surface<S: Shape>: View {
         if design.glass && design.glassElements {
             // Darkened inside the glass. A shade laid over it was lost once the chart's glass was drawn in a glass container.
             let dark = highlighted && design.hoverShade
-            shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
-                .animation(Theme.highlight, value: dark)
-                .glassEffect(.regular, in: shape)
+            let fill = dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color
+            if design.liveGlass {
+                shape.fill(fill.opacity(0.7 * strength))
+                    .animation(Theme.highlight, value: dark)
+                    .glassEffect(.regular, in: shape)
+            } else {
+                LitGlass(shape: shape, color: fill, opacity: 0.7, strength: strength)
+                    .animation(Theme.highlight, value: dark)
+            }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
             shape.fill(color)
@@ -79,9 +88,43 @@ struct Surface<S: Shape>: View {
 /// sampled and blurred what is behind it separately. Spacing 0: elements a few points apart (the blocks) must not melt into each other.
 struct GlassGroup<Content: View>: View {
     @ViewBuilder let content: Content
+    @Environment(\.design) private var design
 
     var body: some View {
-        GlassEffectContainer(spacing: 0) { content }
+        if design.liveGlass {
+            GlassEffectContainer(spacing: 0) { content }
+        } else {
+            content
+        }
+    }
+}
+
+/// The look of glass drawn with plain shapes: the color, a sheen from the top, and a thin rim lit from the top left. Used for the tiles
+/// and the chart elements, which move. Real Liquid Glass works its rim highlight out again on every frame its shape moves or changes
+/// size and settles on it slowly, so with many glass shapes moving at once every edge shimmered and the window looked as if it was
+/// coming apart. This never changes as it moves, and costs a fraction of real glass. Real glass stays on the window and the buttons,
+/// which do not move; the temporary Live Glass switch puts it back on the tiles and charts.
+struct LitGlass<S: Shape>: View {
+    let shape: S
+    let color: Color
+    /// How much of the color covers what is behind.
+    var opacity: Double
+    /// The loading pulse, 0...1.
+    var strength: Double = 1
+    @Environment(\.design) private var design
+
+    var body: some View {
+        shape.fill(color.opacity(opacity * strength))
+            .overlay {
+                shape.fill(LinearGradient(colors: [.white.opacity((design.isLight ? 0.22 : 0.09) * strength), .white.opacity(0)],
+                                          startPoint: .top, endPoint: .center))
+            }
+            .overlay {
+                shape.stroke(LinearGradient(colors: [.white.opacity(design.isLight ? 0.6 : 0.34), .white.opacity(0.05), .white.opacity(design.isLight ? 0.3 : 0.12)],
+                                            startPoint: .topLeading, endPoint: .bottomTrailing),
+                             lineWidth: 0.75)
+                    .opacity(strength)
+            }
     }
 }
 

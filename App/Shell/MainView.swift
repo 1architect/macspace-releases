@@ -63,7 +63,10 @@ public struct MainView: View {
 
     public var body: some View {
         ZStack(alignment: .topLeading) {
-            GlassBackdrop(showsGlass: !pageSettled, glassFade: layer == nil ? 0 : progress)
+            // Under an open page the window's glass gives way to the page's own, when the page is real glass or opaque; a page of
+            // drawn glass is translucent and keeps the window's glass under it.
+            let pageReplacesGlass = !designSettings.glass || designSettings.liveGlass
+            GlassBackdrop(showsGlass: !(pageSettled && pageReplacesGlass), glassFade: layer == nil || !pageReplacesGlass ? 0 : progress)
                 .gesture(WindowDragGesture())
                 .allowsWindowActivationEvents(true)
             // The size comes from a GeometryReader, which takes whatever the window gives it. Measured from the content instead, the
