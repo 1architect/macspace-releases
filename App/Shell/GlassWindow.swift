@@ -175,14 +175,18 @@ enum KeyableWindow {
     }
 }
 
-/// The glass the tiles sit on. It blurs what is behind the window, and is the window's only edge.
+/// The glass the tiles sit on. It blurs what is behind the window, and is the window's only edge. Under an open page, whose own glass
+/// covers the whole window, only the edge is drawn.
 struct GlassBackdrop: View {
+    var showsGlass = true
     @Environment(\.design) private var design
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
-        Group {
-            if design.windowGlass {
+        ZStack {
+            if !showsGlass {
+                Color.clear
+            } else if design.windowGlass {
                 Color.clear.glassEffect(.clear, in: shape)
             } else {
                 // Measuring switch: a solid window, to see what the full-window glass costs on every frame.

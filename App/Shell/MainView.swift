@@ -52,7 +52,8 @@ public struct MainView: View {
     /// Bumped by every open and close, so a movement that was interrupted does not finish the one that replaced it.
     @State private var generation = 0
     @State private var frames = TileFrames()
-    /// A page has finished opening and covers the dashboard, which then stops drawing its tiles.
+    /// A page has finished opening and covers the dashboard, which then stops drawing its tiles, and the window's glass, which the
+    /// page's own glass replaces (two window-sized layers of glass, one over the other, were blended on every frame the page scrolled).
     @State private var pageSettled = false
 
     public init(host: ModuleHost, updates: UpdateController) {
@@ -62,7 +63,7 @@ public struct MainView: View {
 
     public var body: some View {
         ZStack(alignment: .topLeading) {
-            GlassBackdrop()
+            GlassBackdrop(showsGlass: !pageSettled)
                 .gesture(WindowDragGesture())
                 .allowsWindowActivationEvents(true)
             // The size comes from a GeometryReader, which takes whatever the window gives it. Measured from the content instead, the
@@ -226,12 +227,7 @@ public struct MainView: View {
         withAnimation(Theme.hover) { isOpen = true }
         let current = generation
         withAnimation(Theme.open, completionCriteria: .removed) { progress = 1 } completion: {
-            // Once the card's glass has finished giving way to the page's color (`TileBackdrop`): dropping the tiles while it still
-            // showed what was behind it changed that in one frame.
-            Task {
-                try? await Task.sleep(for: .milliseconds(450))
-                if generation == current { pageSettled = true }
-            }
+            if generation == current { pageSettled = true }
         }
         withAnimation(.smooth(duration: 0.5).delay(0.22)) { reveal = 1 }
     }
