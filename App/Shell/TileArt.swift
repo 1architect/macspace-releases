@@ -371,6 +371,31 @@ struct DotsView: View {
 
 // MARK: State
 
+/// A switch drawn as macOS draws one: a capsule track, grey when off and colored when on, and a white knob with a soft shadow that
+/// slides across. It only shows a state (the tile opens on a click), so it is drawn rather than a real `Toggle`, which would also
+/// grey out with the window inactive. On is the action color, as everywhere that something can be acted on.
+struct SwitchMark: View {
+    let on: Bool
+    static let size = CGSize(width: 40, height: 24)
+    private static let inset: CGFloat = 2
+    @Environment(\.design) private var design
+
+    var body: some View {
+        let knob = Self.size.height - 2 * Self.inset
+        ZStack(alignment: on ? .trailing : .leading) {
+            Capsule().fill(on ? design.action : (design.isLight ? Color.black.opacity(0.1) : Color.white.opacity(0.18)))
+            // The knob's shadow is a darker disc just under it, not a blurred shadow, which is redrawn on every frame the tile moves.
+            Circle()
+                .fill(.white)
+                .background { Circle().fill(.black.opacity(0.2)).padding(-0.5).offset(y: 0.75) }
+                .frame(width: knob, height: knob)
+                .padding(Self.inset)
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .animation(.spring(duration: 0.3, bounce: 0.15), value: on)
+    }
+}
+
 /// A feature that should stay off, as a switch: off and quiet, or on and glowing. Below it one line of detail and, when there is
 /// something to remove, a meter.
 struct StateView: View {
@@ -395,14 +420,8 @@ struct StateView: View {
         let palette = design.palette(tint)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 9) {
-                // The knob is placed by an inset laid out on every frame, so its glass slides with it.
-                ZStack(alignment: .leading) {
-                    Surface(shape: Capsule(), color: on ? design.action.opacity(0.35) : palette.step(1), strength: wave(0))
-                    Surface(shape: Circle(), color: on ? design.action : palette.step(4), strength: wave(0))
-                        .frame(width: 18, height: 18)
-                        .modifier(AnimatedLength(value: on ? 23 : 3, kind: .leading))
-                }
-                .frame(width: 44, height: 24)
+                SwitchMark(on: on)
+                    .opacity(wave(0))
                 Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
                     .opacity(wave(0))
             }
