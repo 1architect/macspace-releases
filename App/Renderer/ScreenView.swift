@@ -22,7 +22,7 @@ struct ScreenView: View {
                 WidgetForm(widgets: screen.widgets, handler: { action, extra in Task { await handle.perform(action, extraParameters: extra) } },
                            showsTop: screen.hero != nil) {
                     if let hero = screen.hero {
-                        HeroBlocks(usage: hero, tint: tint)
+                        HeroBlocks(usage: hero, tint: tint, loading: handle.isRefreshing)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
@@ -93,6 +93,8 @@ struct PageScrollArea: ViewModifier {
 struct HeroBlocks: View {
     let usage: UsageBar
     let tint: TileTint
+    /// The module is reading the Mac again: the blocks pulse, as a tile's do while it loads.
+    var loading = false
     @Environment(\.design) private var design
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
     @State private var hovered: String?
@@ -107,7 +109,7 @@ struct HeroBlocks: View {
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
-            BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap)
+            BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap, loading: loading)
                 .frame(height: 150)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
                 .onContinuousHover { phase in

@@ -15,7 +15,8 @@ struct TileInfo: Equatable {
     @MainActor
     init(_ handle: ModuleHandle) {
         if let tile = handle.tile {
-            self.init(title: tile.title, status: tile.status, needsAttention: tile.needsAttention, graphic: tile.graphic, loading: handle.tileIsStale)
+            self.init(title: tile.title, status: tile.status, needsAttention: tile.needsAttention, graphic: tile.graphic,
+                      loading: handle.tileIsStale || handle.isRefreshing)
         } else {
             self.init(title: handle.manifest.name.lowercased(), status: "looking…", loading: true)
         }

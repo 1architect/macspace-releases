@@ -24,6 +24,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
+    /// The module is reading the Mac again (Refresh, or after an action): the tile's and the page's charts pulse as while loading.
+    @Published public private(set) var isRefreshing = false
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
 
@@ -90,6 +92,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard state == .ready, let module else { return }
         let context = context()
         isBusy = true
+        isRefreshing = true
+        defer { isRefreshing = false }
         if reload { await module.invalidate() }
         async let nextTile = module.tile(context: context)
         async let nextScreen = module.screen(context: context)

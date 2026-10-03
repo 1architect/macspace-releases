@@ -124,8 +124,8 @@ struct PillButtonStyle: ButtonStyle {
 }
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
-/// light dark tint, 36 points, a white symbol. Under the pointer it grows a little and lightens; pressed, it shrinks and the symbol
-/// dims. Used for close/back and Refresh in the top-left corner.
+/// light dark tint, 36 points, a white symbol that turns while busy. Under the pointer it grows a little and lightens; pressed, it
+/// shrinks and the symbol dims. Used for close/back and Refresh in the top-left corner.
 struct GlassCircleButton: View {
     static let diameter: CGFloat = 36
     static let margin: CGFloat = 8
@@ -137,18 +137,14 @@ struct GlassCircleButton: View {
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                if busy {
-                    ProgressView().controlSize(.small).tint(.white)
-                } else {
-                    Image(systemName: symbol)
-                        .font(.system(size: 15, weight: .medium))
-                        .contentTransition(.symbolEffect(.replace))
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: Self.diameter, height: Self.diameter)
-            .contentShape(Circle())
+            // Busy, the symbol itself turns, in the same white: the system spinner drew grey on the clear glass, whatever its tint.
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .medium))
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.rotate.clockwise, options: .repeat(.continuous), isActive: busy)
+                .foregroundStyle(.white)
+                .frame(width: Self.diameter, height: Self.diameter)
+                .contentShape(Circle())
         }
         .buttonStyle(GlassCircleStyle(diameter: Self.diameter))
         .disabled(busy)
