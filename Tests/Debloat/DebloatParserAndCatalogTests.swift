@@ -182,3 +182,29 @@ final class DebloatCatalogTests: XCTestCase {
                                    "apps.game-center-policy", "apps.news-policy"])
     }
 }
+
+final class PreferenceNotificationTests: XCTestCase {
+    func testSiriImprovementAnnouncesItsChangeTheWayAssistantServicesDoes() throws {
+        let control = try XCTUnwrap(DebloatCatalog.controls.first { $0.id == "telemetry.siri-improvement" })
+        XCTAssertEqual(control.settings.first?.preference?.notification,
+                       .exported(framework: "/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices",
+                                 symbol: "kAFPreferencesDidChangeDarwinNotification"))
+    }
+
+    func testNotificationSurvivesCodingAndOlderJournalsDecode() throws {
+        let setting = PreferenceSetting(scope: .user, domain: "com.example", key: "Key", desired: .int(2), fallback: .absent,
+                                        notification: .exported(framework: "/F", symbol: "kName"))
+        XCTAssertEqual(try JSONDecoder().decode(PreferenceSetting.self, from: JSONEncoder().encode(setting)), setting)
+        let older = Data(#"{"scope":"user","domain":"com.example","key":"Key","desired":2,"fallback":{"kind":"absent"}}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(PreferenceSetting.self, from: older).notification)
+    }
+
+    func testReadsAnExportedStringConstantAndRefusesOthers() {
+        let foundation = "/System/Library/Frameworks/Foundation.framework/Foundation"
+        XCTAssertEqual(ExportedString.value(framework: foundation, symbol: "NSUserDefaultsDidChangeNotification"),
+                       "NSUserDefaultsDidChangeNotification")
+        XCTAssertNil(ExportedString.value(framework: foundation, symbol: "NSFoundationVersionNumber"))
+        XCTAssertNil(ExportedString.value(framework: foundation, symbol: "NoSuchSymbolAnywhere"))
+        XCTAssertEqual(DarwinNotificationName.literal("x").resolve(), "x")
+    }
+}

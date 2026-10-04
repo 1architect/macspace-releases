@@ -1,4 +1,5 @@
 import Foundation
+import MacSpacePlatform
 
 /// The built-in control catalog.
 ///
@@ -12,6 +13,10 @@ public enum DebloatCatalog {
     /// Research (results/debloat-validation/profile-policies-2026-09-29 in the private repository): on 26B5091g with SIP enabled and
     /// no MDM, every policy key was applied through an approved profile and read back forced; the controls read debloated.
     static let policyNote = "Restriction key from ManagedConfiguration's defaultSettings.plist, not marked supervised-only. Tested on 26B5091g (2026-09-29) without MDM: macOS forces it once its profile is approved."
+    /// AssistantServices' preference-change notification, as it names it on the running build.
+    static let assistantPreferencesChanged = DarwinNotificationName.exported(
+        framework: "/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices",
+        symbol: "kAFPreferencesDidChangeDarwinNotification")
     static let flagNote = "Feature-flag overrides are read at boot: the change applies after a reboot. Survival across OS updates is unmeasured."
     static let bootClearedNote = "With SIP enabled on 26B5091g, launchd cleared this override at boot and again at login (\"Clearing enabled state\") and refused bootout (error 150); owner-enforced overrides such as Siri.agent survive."
 
@@ -156,13 +161,15 @@ public enum DebloatCatalog {
             validatedBuilds: ["26B5091g"]
         ),
         // "Improve Siri & Dictation" in System Settings > Privacy & Security > Analytics & Improvements: 2 is opted out, as in the
-        // 2026-09-25 baseline. A plain user setting, so no profile.
+        // 2026-09-25 baseline. A plain user setting, so no profile. AssistantServices owns the domain; after a write it posts the
+        // notification it exports, kAFPreferencesDidChangeDarwinNotification (research results/cp107), so Siri's processes read it again.
         DebloatControl(
             id: "telemetry.siri-improvement",
             title: "Improve Siri & Dictation",
             summary: "Stop sharing Siri and Dictation audio and transcripts with Apple, as the Improve Siri & Dictation switch does.",
             category: .telemetry, mechanism: .userPreference, risk: .low, restart: .none,
-            settings: [.preference(.user, "com.apple.assistant.support", "Siri Data Sharing Opt-In Status", desired: .int(2), fallback: .value(.int(1)))],
+            settings: [.preference(.user, "com.apple.assistant.support", "Siri Data Sharing Opt-In Status", desired: .int(2), fallback: .value(.int(1)),
+                                   notification: assistantPreferencesChanged)],
             notes: ["Self-tested on 26B5091g (2026-10-03): off stores 2, on stores 1."],
             validatedBuilds: ["26B5091g"]
         ),

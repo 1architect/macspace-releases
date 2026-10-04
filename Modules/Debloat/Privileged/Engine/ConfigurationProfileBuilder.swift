@@ -82,4 +82,12 @@ extension PlistValue {
         case .string(let value): return value
         }
     }
+
+    var cfPropertyList: CFPropertyList {
+        switch self {
+        case .bool(let value): return NSNumber(value: value)  // the CFBoolean singletons
+        case .int(let value): return NSNumber(value: value)
+        case .string(let value): return value as NSString
+        }
+    }
 }

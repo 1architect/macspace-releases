@@ -7,6 +7,10 @@
 # the app uses), checks each result against what macOS reports, and puts every switch back the way it found it. The results go to
 # results/selftest-<date>/ in this repository (not committed); send report.md from there.
 #
+# Plain settings are written the way System Settings writes them (CFPreferences, then the setting's change notification). The
+# script checks that each notification is posted, and lists the change notifications the owning frameworks export on this build,
+# for the settings the research names none for (personalized ads and the ad identifier).
+#
 # Not tested here, and why:
 # - Policies (the "Policies (need your approval)" section): macOS applies a configuration profile only after a person approves it.
 # - Siri & Apple Intelligence model removal: it needs Apple Intelligence switched on first, which downloads about 12 GB.
@@ -114,24 +118,88 @@ expected_value() { # control, on|off
   esac
 }
 
-# Sets one control's switch through the app's code, then checks the page and, where known, the stored value.
+# The change notification a control's setting posts after each write, as this build names it (resolved below).
+notification_for() {
+  case "$1" in
+    telemetry.siri-improvement) echo "${SIRI_NOTIFICATION:-}" ;;
+  esac
+}
+
+# Waits in the background for one Darwin notification; notification_received says whether it came within 5 seconds.
+WATCH_PID=""
+watch_notification() { # name, file
+  WATCH_PID=""
+  [ -n "$1" ] || return 0
+  notifyutil -1 "$1" > "$2" 2>&1 &
+  WATCH_PID=$!
+  sleep 0.5
+}
+notification_received() {
+  local tries=0
+  while kill -0 "$WATCH_PID" 2>/dev/null; do
+    tries=$((tries + 1))
+    if [ $tries -gt 20 ]; then kill "$WATCH_PID" 2>/dev/null; wait "$WATCH_PID" 2>/dev/null; return 1; fi
+    sleep 0.25
+  done
+  wait "$WATCH_PID" 2>/dev/null
+  return 0
+}
+
+# Sets one control's switch through the app's code, then checks the page, the stored value and the change notification, where known.
 flip() { # control, on|off
   local value=false; [ "$2" = on ] && value=true
+  local notification; notification=$(notification_for "$1")
+  watch_notification "$notification" "$OUT/notify-$1-$2.txt"
   "$CLI" action $DEBLOAT toggle id="$1" value=$value > "$OUT/action-$1-$2.json" 2>> "$OUT/action-$1-$2.log" < /dev/null
   local message; message=$(grep -o '"message" : "[^"]*"' "$OUT/action-$1-$2.json" | head -1 | cut -d'"' -f4)
+  local posted=""
+  if [ -n "$WATCH_PID" ]; then
+    if notification_received; then posted="; posted $notification"; else posted=" NOT-POSTED"; fi
+  fi
   local now; now=$(switch_now "$1")
   local stored expected; stored=$(stored_value "$1"); expected=$(expected_value "$1" "$2")
   case "$now" in
     "$2"/*) if [ -n "$expected" ] && [ "$stored" != "$expected" ]; then result FAIL "$1 $2" "the switch says $2 but macOS stores $stored (expected $expected)"
-            else result PASS "$1 $2" "${message}${stored:+; stored $stored}"; fi ;;
+            elif [ "$posted" = " NOT-POSTED" ]; then result FAIL "$1 $2" "saved, but $notification was not posted within 5 seconds"
+            else result PASS "$1 $2" "${message}${stored:+; stored $stored}${posted}"; fi ;;
     *) result FAIL "$1 $2" "switch reads ${now%%/*} (${now#*/}); $message" ;;
   esac
+}
+
+# Change notifications a framework exports, as "<symbol> <value>" lines (value "-" when it is not a string).
+exported_notifications() { # framework binary
+  "$DYLD_INFO" -exports "$1" 2>/dev/null | grep -oE '_[A-Za-z0-9_]*(Change|Changed|Update|Updated)[A-Za-z0-9_]*Notification[A-Za-z0-9_]*' \
+    | sort -u | sed 's/^_//' | while read -r symbol; do "$CLI" notification "$1" "$symbol" 2>/dev/null; done
 }
 
 section "Debloat: profiles of earlier versions"
 "$CLI" action $DEBLOAT removeOldProfiles > "$OUT/remove-old-profiles.json" 2>&1 \
   && result PASS "Removed through the helper" "$(grep -o '"message" : "[^"]*"' "$OUT/remove-old-profiles.json" | cut -d'"' -f4)" \
   || result FAIL "Removing them" "see remove-old-profiles.json"
+
+section "Debloat: change notifications of plain settings"
+ASSISTANT=/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices
+SIRI_NOTIFICATION=$("$CLI" notification "$ASSISTANT" kAFPreferencesDidChangeDarwinNotification 2>/dev/null | awk '$2 != "-" { print $2 }')
+if [ -n "$SIRI_NOTIFICATION" ]; then result PASS "Improve Siri & Dictation: AssistantServices names its notification" "$SIRI_NOTIFICATION"
+else result FAIL "Improve Siri & Dictation: AssistantServices names its notification" "kAFPreferencesDidChangeDarwinNotification is missing or not a string on this build"; fi
+DYLD_INFO=$(command -v dyld_info || xcrun -f dyld_info 2>/dev/null)
+if [ -z "$DYLD_INFO" ]; then
+  result FAIL "Change notifications the frameworks export" "dyld_info not found (it comes with Xcode)"
+else
+  : > "$OUT/notifications.txt"
+  for framework in "$ASSISTANT" /System/Library/PrivateFrameworks/Ad*.framework /System/Library/Frameworks/Ad*.framework; do
+    [ -d "$framework" ] || [ -e "$framework" ] || continue
+    [ -d "$framework" ] && framework="$framework/$(basename "$framework" .framework)"
+    exported_notifications "$framework" | sed "s|^|$(basename "$framework") |" >> "$OUT/notifications.txt"
+  done
+  ads=$(grep -v '^AssistantServices ' "$OUT/notifications.txt" | awk '$3 != "-"' | grep -iE 'personaliz|advertis|track|adid|privacy|preference|setting|optin|opt_in' )
+  result INFO "Change notifications the frameworks export" "$(wc -l < "$OUT/notifications.txt" | tr -d ' ') found, in notifications.txt"
+  note ""
+  note "Candidates for personalized ads and the ad identifier (the research names none yet):"
+  note '```'
+  note "${ads:-none found}"
+  note '```'
+fi
 
 section "Debloat: every switch, off and back on (policies apart)"
 "$CLI" screen $DEBLOAT > "$OUT/debloat-before.json" 2>> "$OUT/errors.txt"
@@ -155,6 +223,7 @@ section "Not tested here"
 result SKIPPED "Debloat policies" "macOS needs a person to approve each profile"
 result SKIPPED "Siri & Apple Intelligence model removal" "needs Apple Intelligence on first (about 12 GB download)"
 result SKIPPED "Sparkle update" "needs a published release"
+result SKIPPED "Personalized ads and ad identifier notification" "the research names none yet; candidates are listed above"
 
 note ""
 note "**$PASSED passed, $FAILED failed.**"

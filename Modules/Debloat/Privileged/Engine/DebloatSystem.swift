@@ -35,7 +35,7 @@ public protocol DebloatSystem: AnyObject {
     func launchdJobs() -> LaunchdJobIndex
     func read(_ setting: ControlSetting) -> SettingRead
     func write(_ setting: ControlSetting, value: SettingValue) throws
-    /// The command `write` runs, for plans and logs.
+    /// The command `write` runs, or its equivalent (user settings are written with `CFPreferences`), for plans and logs.
     func command(for setting: ControlSetting, value: SettingValue) -> [String]
     /// Unloads a service from its launchd domain now (`launchctl bootout`). Returns false if it was not loaded.
     func stopService(_ service: LaunchdServiceSetting) throws -> Bool
@@ -79,8 +79,9 @@ public struct DebloatTargetUser: Equatable, Sendable {
     }
 }
 
-/// Live implementation. Preferences go through `defaults` (and therefore cfprefsd); launchd overrides go
-/// through `launchctl`. Reads are cached per instance and invalidated by writes.
+/// Live implementation. User preferences are written with `CFPreferences` and announced with their change notification, root-owned
+/// preference files with `defaults` (both through cfprefsd); launchd overrides go through `launchctl`. Reads are cached per instance
+/// and invalidated by writes.
 public final class LiveDebloatSystem: DebloatSystem {
     public static let defaultsPath = "/usr/bin/defaults"
     public static let launchctlPath = "/bin/launchctl"
@@ -451,6 +452,9 @@ public final class LiveDebloatSystem: DebloatSystem {
         case (.featureFlag, _), (.managedPreference, _):
             // Managed preferences change only through an approved profile (see stageProfile).
             throw DebloatSystemError.unsupportedValue(setting: setting.id, value: value)
+        case (.preference, _) where !isRoot && setting.preference!.scope != .systemFile:
+            try writeUserPreference(setting, value: value)
+            return
         default:
             break
         }
@@ -468,6 +472,29 @@ public final class LiveDebloatSystem: DebloatSystem {
         } catch {
             throw DebloatSystemError.commandFailed((error as? LocalizedError)?.errorDescription ?? "\(error)")
         }
+    }
+
+    /// A user setting, written the way System Settings writes it (research, mechanism ladder #1): through the owning domain with
+    /// `CFPreferences`, never in the plist behind cfprefsd, then the setting's change notification, so the processes that cache it
+    /// read it again.
+    private func writeUserPreference(_ setting: ControlSetting, value: SettingValue) throws {
+        let preference = setting.preference!
+        let object: CFPropertyList?
+        switch value {
+        case .value(let plist): object = plist.cfPropertyList
+        case .absent: object = nil
+        default: throw DebloatSystemError.unsupportedValue(setting: setting.id, value: value)
+        }
+        let domain = preference.domain as CFString
+        let host = preference.scope == .currentHost ? kCFPreferencesCurrentHost : kCFPreferencesAnyHost
+        defer { cachedDomains.removeAll() }
+        CFPreferencesSetValue(preference.key as CFString, object, domain, kCFPreferencesCurrentUser, host)
+        guard CFPreferencesSynchronize(domain, kCFPreferencesCurrentUser, host) else {
+            throw DebloatSystemError.commandFailed("macOS did not save \(preference.key) in \(preference.domain).")
+        }
+        // Missing on a build, the value is still saved; processes then pick it up when they next read it. Scripts/SelfTest.sh checks
+        // that it is posted.
+        preference.notification?.post()
     }
 
     public static let sipBlockedExitCode: Int32 = 150

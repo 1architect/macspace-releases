@@ -31,6 +31,20 @@ struct MacSpaceCli {
             }
             exit(0)
         }
+        if arguments.first == "notification" {
+            // The value of string constants a framework exports, such as the change notifications Debloat posts after writing a
+            // setting: `notification <framework binary> <symbol> ...`. Prints "<symbol> <value>", or "<symbol> -" when it is
+            // missing or not a string.
+            let rest = Array(arguments.dropFirst())
+            guard rest.count >= 2 else { print("usage: MacSpaceCli notification <framework binary> <symbol> ..."); exit(64) }
+            var missing = false
+            for symbol in rest.dropFirst() {
+                let value = ExportedString.value(framework: rest[0], symbol: symbol)
+                missing = missing || value == nil
+                print("\(symbol) \(value ?? "-")")
+            }
+            exit(missing ? 1 : 0)
+        }
         if arguments.first == "screen" { await ScreenCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "action" { await ActionCommand.run(Array(arguments.dropFirst())) }
         guard arguments.first == "modules" else {
@@ -40,6 +54,7 @@ struct MacSpaceCli {
                    MacSpaceCli screen <module-id> [--dir <folder>] [--tile]
                    MacSpaceCli action <module-id> <action-id> [key=value ...]
                    MacSpaceCli helper [--unregister] [--register] [--ping]
+                   MacSpaceCli notification <framework binary> <symbol> ...
                    MacSpaceCli purge-assets [--execute] [--self-test] [--json]
             """)
             exit(arguments.isEmpty ? 0 : 64)

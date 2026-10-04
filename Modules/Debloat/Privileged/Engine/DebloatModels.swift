@@ -1,4 +1,5 @@
 import Foundation
+import MacSpacePlatform
 
 /// Debloat product model: a catalog of controls, each made of primitive settings (a preference key or a
 /// launchd override), an optional effect check.
@@ -131,9 +132,9 @@ public enum DebloatPrivilege: String, Codable, Sendable {
 
 public struct PreferenceSetting: Codable, Equatable, Sendable {
     public enum Scope: String, Codable, Sendable {
-        /// `defaults write <domain>` as the logged-in user.
+        /// The logged-in user's preferences, written with `CFPreferences` (through cfprefsd, as System Settings writes them).
         case user
-        /// `defaults -currentHost write <domain>`.
+        /// The logged-in user's preferences for this Mac only (`defaults -currentHost`).
         case currentHost
         /// An absolute plist path (without `.plist`) owned by root.
         case systemFile
@@ -146,13 +147,18 @@ public struct PreferenceSetting: Codable, Equatable, Sendable {
     /// The value restored when MacSpace has no journal entry for this key. nil means the macOS default is not
     /// known (for example, chosen in Setup Assistant), so revert needs a journal entry.
     public let fallback: SettingValue?
+    /// Posted after each write, so the processes caching the setting read it again: the notification System Settings posts for it.
+    /// nil when the research names none for this setting.
+    public let notification: DarwinNotificationName?
 
-    public init(scope: Scope, domain: String, key: String, desired: PlistValue, fallback: SettingValue?) {
+    public init(scope: Scope, domain: String, key: String, desired: PlistValue, fallback: SettingValue?,
+                notification: DarwinNotificationName? = nil) {
         self.scope = scope
         self.domain = domain
         self.key = key
         self.desired = desired
         self.fallback = fallback
+        self.notification = notification
     }
 }
 
@@ -246,8 +252,8 @@ public struct ControlSetting: Codable, Equatable, Sendable, Identifiable {
     }
 
     public static func preference(_ scope: PreferenceSetting.Scope, _ domain: String, _ key: String,
-                                  desired: PlistValue, fallback: SettingValue?) -> ControlSetting {
-        let setting = PreferenceSetting(scope: scope, domain: domain, key: key, desired: desired, fallback: fallback)
+                                  desired: PlistValue, fallback: SettingValue?, notification: DarwinNotificationName? = nil) -> ControlSetting {
+        let setting = PreferenceSetting(scope: scope, domain: domain, key: key, desired: desired, fallback: fallback, notification: notification)
         return ControlSetting(id: "pref:\(scope.rawValue):\(domain):\(key)", kind: .preference, preference: setting)
     }
 

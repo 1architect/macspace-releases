@@ -151,6 +151,12 @@ and SPARKLE_PUBLIC_KEY); the helper through an update; the automatic release of 
 Debloat profile approval beyond the development Mac; analytics on a release build (`telemetry.diagnostics`, the only control
 marked "Not tested"). The policies were tested in the research (profile-policies-2026-09-29: every key forced once approved).
 
+**Plain settings are written as System Settings writes them** (research, mechanism ladder #1): `CFPreferences` on the owning domain,
+then the setting's change notification. Improve Siri & Dictation posts `kAFPreferencesDidChangeDarwinNotification`, read from
+AssistantServices at run time (the research found that constant in results/cp107). Not verified yet: that the self-test sees it
+posted, and which notification personalized ads and the ad identifier need (the research names none; `Scripts/SelfTest.sh` lists the
+candidates the Ad frameworks export on the running build).
+
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
 measured on any build counts as tested. Untested controls work and say "Not tested", so they get tested.
