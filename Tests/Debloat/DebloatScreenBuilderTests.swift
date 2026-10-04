@@ -6,7 +6,9 @@ import MacSpacePlatform
 
 final class DebloatScreenBuilderTests: XCTestCase {
     private let helperControl = DebloatCatalog.control("diagnostics.tailspin")!
-    private let profileControl = DebloatCatalog.control("ads.personalized-ads-policy")!
+    private let profileControl = DebloatCatalog.control("apps.news-policy")!
+    /// Tested and not a policy: what the page's main button switches.
+    private let mainControl = DebloatCatalog.control("diagnostics.crash-reporter")!
     private let verifiedControl = DebloatCatalog.control("telemetry.diagnostics-policy")!
 
     private func status(_ id: String, _ state: ControlState, effect: EffectStatus? = nil) -> ControlStatus {
@@ -83,11 +85,13 @@ final class DebloatScreenBuilderTests: XCTestCase {
     func testBannersAndTheRecommendedButton() {
         let screen = DebloatScreenBuilder.screen(snapshot([
             status(verifiedControl.id, .stock), status(helperControl.id, .stock),
-            status(profileControl.id, .awaitingApproval), status("ads.advertising-identifier-policy", .drifted),
+            status(profileControl.id, .awaitingApproval), status("telemetry.on-device-speech-policy", .drifted),
         ]))
         XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
+        XCTAssertEqual(screen.widgets.last?.id, "policies", "the policies are listed apart, last")
         let primary = try? XCTUnwrap(screen.primary)
-        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id])
+        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [helperControl.id],
+                       "Switch all off never touches a policy, so it never asks for an approval")
         XCTAssertNotNil(primary?.confirmation)
 
         let clean = DebloatScreenBuilder.screen(snapshot([]))
@@ -95,16 +99,16 @@ final class DebloatScreenBuilderTests: XCTestCase {
     }
 
     func testTheMainButtonSwitchesAllOffThenTurnsAllBackOn() throws {
-        let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(helperControl.id, .debloated)]))
+        let running = DebloatScreenBuilder.screen(snapshot([status(mainControl.id, .stock), status(helperControl.id, .debloated)]))
         XCTAssertEqual(running.primary?.id, "applyRecommended", "a verified feature still runs")
         XCTAssertEqual(running.primary?.role, .prominent)
 
-        let allOff = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .debloated), status(helperControl.id, .debloated),
+        let allOff = DebloatScreenBuilder.screen(snapshot([status(mainControl.id, .debloated), status(helperControl.id, .debloated),
                                                            status(profileControl.id, .awaitingApproval)]))
         let restore = try XCTUnwrap(allOff.primary)
         XCTAssertEqual(restore.id, "restoreAll")
         XCTAssertEqual(restore.role, .prominent)
-        XCTAssertEqual(Set(restore.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id, profileControl.id])
+        XCTAssertEqual(Set(restore.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [mainControl.id, helperControl.id], "policies apart")
         XCTAssertEqual(restore.requires, [.privilegedHelper], "a root control is among them")
         XCTAssertNotNil(restore.confirmation)
 

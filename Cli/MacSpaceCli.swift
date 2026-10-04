@@ -32,11 +32,13 @@ struct MacSpaceCli {
             exit(0)
         }
         if arguments.first == "screen" { await ScreenCommand.run(Array(arguments.dropFirst())) }
+        if arguments.first == "action" { await ActionCommand.run(Array(arguments.dropFirst())) }
         guard arguments.first == "modules" else {
             print("""
             usage: MacSpaceCli modules [--dir <folder>] [--load]
                    MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
-                   MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
+                   MacSpaceCli screen <module-id> [--dir <folder>] [--tile]
+                   MacSpaceCli action <module-id> <action-id> [key=value ...]
                    MacSpaceCli helper [--unregister] [--register] [--ping]
                    MacSpaceCli purge-assets [--execute] [--self-test] [--json]
             """)

@@ -17,6 +17,10 @@ public enum ConfigurationProfileBuilder {
     }
 
     public static func identifier(for controlID: String) -> String { "\(legacyIdentifier).\(controlID)" }
+    /// Profiles of controls that now change a plain setting instead (Personalized ads, Advertising identifier, Siri logging), and the
+    /// single profile of earlier versions. Left installed, they would keep enforcing what the new controls switch.
+    public static let retiredIdentifiers = [legacyIdentifier] + ["ads.personalized-ads-policy", "ads.advertising-identifier-policy",
+                                                                   "telemetry.siri-server-logging-policy"].map(identifier(for:))
     public static func displayName(for title: String) -> String { "MacSpace: \(title)" }
     public static func fileName(for controlID: String) -> String { "MacSpace-\(controlID).mobileconfig" }
 

@@ -47,14 +47,21 @@ public enum DebloatCatalog {
             validatedBuilds: ["26B5091g"],
             audience: .prerelease
         ),
+        // The switches in System Settings > Privacy & Security > Apple Advertising, plain user settings (com.apple.AdLib in the
+        // 2026-09-25 baseline): no profile to approve.
         DebloatControl(
-            id: "ads.personalized-ads-policy",
+            id: "ads.personalized-ads",
             title: "Personalized ads",
-            summary: "Force personalized ads off with a configuration profile (allowApplePersonalizedAdvertising restriction).",
-            category: .advertising, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
-            settings: [.managed("com.apple.applicationaccess", "allowApplePersonalizedAdvertising", desired: .bool(false))],
-            breaks: ["The personalized-ads switch becomes locked off in System Settings"],
-            notes: ["Measured on 26B5091g without MDM: the profile forced the restriction and a derived com.apple.AdLib value."]
+            summary: "Turn off personalized ads from Apple, as the Personalized Ads switch in System Settings > Privacy & Security > Apple Advertising does.",
+            category: .advertising, mechanism: .userPreference, risk: .low, restart: .appRelaunch,
+            settings: [.preference(.user, "com.apple.AdLib", "allowApplePersonalizedAdvertising", desired: .bool(false), fallback: .value(.bool(true)))]
+        ),
+        DebloatControl(
+            id: "ads.advertising-identifier",
+            title: "Advertising identifier",
+            summary: "Stop apps from using the advertising identifier (com.apple.AdLib allowIdentifierForAdvertising).",
+            category: .advertising, mechanism: .userPreference, risk: .low, restart: .appRelaunch,
+            settings: [.preference(.user, "com.apple.AdLib", "allowIdentifierForAdvertising", desired: .bool(false), fallback: .value(.bool(true)))]
         ),
         DebloatControl(
             id: "siri.siri-ai-flag",
@@ -142,21 +149,14 @@ public enum DebloatCatalog {
             ],
             validatedBuilds: ["26B5091g"]
         ),
+        // "Improve Siri & Dictation" in System Settings > Privacy & Security > Analytics & Improvements: 2 is opted out, as in the
+        // 2026-09-25 baseline. A plain user setting, so no profile.
         DebloatControl(
-            id: "ads.advertising-identifier-policy",
-            title: "Advertising identifier",
-            summary: "Force the advertising identifier off with the allowIdentifierForAdvertising restriction.",
-            category: .advertising, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
-            settings: [.managed("com.apple.applicationaccess", "allowIdentifierForAdvertising", desired: .bool(false))],
-            notes: [policyNote]
-        ),
-        DebloatControl(
-            id: "telemetry.siri-server-logging-policy",
-            title: "Siri server-side logging",
-            summary: "Disallow Siri server-side logging (allowSiriServerLogging restriction).",
-            category: .telemetry, mechanism: .configurationProfile, risk: .low, restart: .none,
-            settings: [.managed("com.apple.applicationaccess", "allowSiriServerLogging", desired: .bool(false))],
-            notes: [policyNote]
+            id: "telemetry.siri-improvement",
+            title: "Improve Siri & Dictation",
+            summary: "Stop sharing Siri and Dictation audio and transcripts with Apple, as the Improve Siri & Dictation switch does.",
+            category: .telemetry, mechanism: .userPreference, risk: .low, restart: .none,
+            settings: [.preference(.user, "com.apple.assistant.support", "Siri Data Sharing Opt-In Status", desired: .int(2), fallback: .value(.int(1)))]
         ),
         DebloatControl(
             id: "telemetry.on-device-speech-policy",

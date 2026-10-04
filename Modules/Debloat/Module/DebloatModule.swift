@@ -45,6 +45,19 @@ public struct DebloatModule: MacSpaceModule {
         case "restoreAll":
             let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
             return await Self.change(.revert, ids, context: context, progress: progress)
+        case "removeOldProfiles":
+            // The profiles of earlier versions, removed through the helper (nothing to approve).
+            guard let channel = context.privileged else { return .failed("The helper is not installed.") }
+            do {
+                let data = try await channel.perform(operation: DebloatPrivilegedOperations.removeProfile,
+                                                     arguments: ["identifiers": ConfigurationProfileBuilder.retiredIdentifiers.joined(separator: ",")])
+                let outcome = (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+                let removed = outcome.filter { $0.value == "removed" }.keys.sorted()
+                return .succeeded(removed.isEmpty ? "No profile of an earlier version was installed." : "Removed \(removed.count) profile(s) of an earlier version.",
+                                  details: outcome.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)" })
+            } catch {
+                return .failed("The helper could not remove them: \(error.localizedDescription)")
+            }
         case "openProfiles":
             if let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") { NSWorkspace.shared.open(url) }
             return ActionResult(outcome: .succeeded, message: "Opened System Settings.", refresh: false)

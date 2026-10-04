@@ -107,10 +107,14 @@ enum DebloatScreenBuilder {
         return (on, usable.count, awaiting, drifted)
     }
 
-    /// Every control that can take effect here and is not on yet, tested or not: "Switch all off" switches all of them off.
+    /// Policies: controls that only a configuration profile can apply, which macOS asks the user to approve. They are listed apart,
+    /// and the page's main button never touches them, so it never asks for an approval.
+    static func isPolicy(_ control: DebloatControl) -> Bool { control.mechanism == .configurationProfile }
+
+    /// Every control that is not a policy, can take effect here and is not on yet, tested or not: "Switch all off" switches them off.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
+            guard !isPolicy(control), let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
             return status.state == .stock || status.state == .partial
         }
     }
@@ -142,10 +146,10 @@ enum DebloatScreenBuilder {
         switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
     }
 
-    /// Controls MacSpace switched off, whose saved values it can restore (including those macOS partly undid or waiting for approval).
+    /// Controls MacSpace switched off, whose saved values it can restore (including those macOS partly undid), policies apart.
     static func switchedOff(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard let state = snapshot.status(control.id)?.state else { return false }
+            guard !isPolicy(control), let state = snapshot.status(control.id)?.state else { return false }
             return state == .debloated || state == .awaitingApproval || state == .drifted
         }
     }
@@ -167,11 +171,7 @@ enum DebloatScreenBuilder {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
         let untested = recommended.filter { !$0.tested }
-        let policies = recommended.filter { $0.mechanism == .configurationProfile }
         var message = recommended.map { "• \($0.title)\($0.tested ? "" : " (not tested yet)")" }.joined(separator: "\n")
-        if !policies.isEmpty {
-            message += "\n\n\(policies.count) of them are policies: macOS asks you to approve each one's profile once, in System Settings > General > Device Management. Turning one back on later asks nothing."
-        }
         if !untested.isEmpty { message += "\n\nCheck afterwards that the ones not tested yet took effect." }
         message += "\n\nEverything is written to an undo journal, so you can turn any of it back on."
         return Action(id: "applyRecommended", title: "Switch all off", symbol: "checkmark.shield", role: .prominent,
@@ -195,11 +195,18 @@ enum DebloatScreenBuilder {
                                                          requires: [.privilegedHelper]))))
         }
         for category in categoryOrder {
-            let controls = snapshot.controls.filter { $0.category == category }
+            let controls = snapshot.controls.filter { $0.category == category && !isPolicy($0) }
             guard !controls.isEmpty else { continue }
             widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category),
                                                footnote: "A switch shows whether the feature runs. Hover a row for what it changes.",
                                                rows: controls.map { row($0, snapshot) })))
+        }
+        // Apart, and last: these need a profile, which macOS asks the user to approve.
+        let policies = categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category && isPolicy($0) } }
+        if !policies.isEmpty {
+            widgets.append(.toggles(ToggleList(id: "policies", title: "Policies (need your approval)",
+                                               footnote: "macOS only applies these through a configuration profile. Switching one off asks you to approve its profile once in System Settings > General > Device Management; switching it back on asks nothing. Switch all off leaves them alone.",
+                                               rows: policies.map { row($0, snapshot) })))
         }
         return Screen(title: "Debloat", primary: primary(snapshot), widgets: widgets)
     }
