@@ -16,7 +16,7 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
     public var sdkVersion: Int
     /// SF Symbol shown in the sidebar and on the home tile.
     public var symbol: String
-    /// Lowest macOS version the module supports, e.g. `27.0`.
+    /// Lowest macOS version the module supports, e.g. `26.0`.
     public var minimumMacOS: String?
     /// Position in the sidebar (lower first).
     public var order: Int

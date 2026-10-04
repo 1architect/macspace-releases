@@ -20,10 +20,10 @@ final class ScannerTests: XCTestCase {
 
     func testCompatibility() {
         let sonoma = OperatingSystemVersion(majorVersion: 14, minorVersion: 0, patchVersion: 0)
-        XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "27.0"), systemVersion: sonoma),
-                       .incompatible(reason: "Needs macOS 27.0 or later."))
+        XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "26.0"), systemVersion: sonoma),
+                       .incompatible(reason: "Needs macOS 26.0 or later."))
         XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "14.0"), systemVersion: sonoma), .compatible)
-        XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "27"), systemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0)), .compatible)
+        XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "26"), systemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0)), .compatible)
         guard case .incompatible = ModuleScanner.compatibility(of: Fixtures.manifest(sdkVersion: 99), systemVersion: sonoma) else { return XCTFail() }
     }
 }

@@ -79,7 +79,7 @@ cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MacSpace"
 ICON_NAME=$(basename "$ICON" .icon)
 PARTIAL=$(mktemp -d)
 xcrun actool "$ICON" --compile "$APP/Contents/Resources" --app-icon "$ICON_NAME" --include-all-app-icons \
-  --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 27.0 \
+  --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 26.0 \
   --enable-on-demand-resources NO --development-region en --errors --warnings --output-format human-readable-text
 rm -rf "$PARTIAL"
 if [ ! -f "$APP/Contents/Resources/Assets.car" ] || [ ! -f "$APP/Contents/Resources/$ICON_NAME.icns" ]; then

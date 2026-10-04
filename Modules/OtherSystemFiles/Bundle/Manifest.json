@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "sdkVersion": 2,
   "symbol": "arrow.down.circle.dotted",
-  "minimumMacOS": "27.0",
+  "minimumMacOS": "26.0",
   "order": 15,
   "permissions": [],
   "options": [],

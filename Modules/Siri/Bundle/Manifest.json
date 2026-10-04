@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "sdkVersion": 2,
   "symbol": "sparkles",
-  "minimumMacOS": "27.0",
+  "minimumMacOS": "26.0",
   "order": 20,
   "permissions": [
     "fullDiskAccess",
