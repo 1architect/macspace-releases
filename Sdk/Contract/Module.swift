@@ -37,21 +37,40 @@ public struct ActionResult: Codable, Equatable, Sendable {
     /// Ask the app to fetch the screen again.
     public var refresh: Bool
     public var restartRequired: Bool
+    /// Space the action freed, measured on the volume, when it cleaned something. The app adds it to the cleanup history.
+    public var freedBytes: UInt64?
 
-    public init(outcome: Outcome, message: String, details: [String] = [], refresh: Bool = true, restartRequired: Bool = false) {
+    public init(outcome: Outcome, message: String, details: [String] = [], refresh: Bool = true, restartRequired: Bool = false,
+                freedBytes: UInt64? = nil) {
         self.outcome = outcome
         self.message = message
         self.details = details
         self.refresh = refresh
         self.restartRequired = restartRequired
+        self.freedBytes = freedBytes
     }
 
-    public static func succeeded(_ message: String, details: [String] = [], restartRequired: Bool = false) -> ActionResult {
-        ActionResult(outcome: .succeeded, message: message, details: details, restartRequired: restartRequired)
+    public static func succeeded(_ message: String, details: [String] = [], restartRequired: Bool = false, freedBytes: UInt64? = nil) -> ActionResult {
+        ActionResult(outcome: .succeeded, message: message, details: details, restartRequired: restartRequired, freedBytes: freedBytes)
     }
 
     public static func failed(_ message: String, details: [String] = []) -> ActionResult {
         ActionResult(outcome: .failed, message: message, details: details, refresh: false)
+    }
+}
+
+/// What an automatic cleanup did (`MacSpaceModule.autoClean`).
+public struct CleanupReport: Codable, Equatable, Sendable {
+    /// Space freed, measured on the volume.
+    public var freedBytes: UInt64
+    /// One line: what was cleaned ("caches and old reports").
+    public var summary: String
+    public var details: [String]
+
+    public init(freedBytes: UInt64, summary: String, details: [String] = []) {
+        self.freedBytes = freedBytes
+        self.summary = summary
+        self.details = details
     }
 }
 
@@ -95,10 +114,17 @@ public protocol MacSpaceModule: Sendable {
 
     /// The user pressed Refresh: drop anything cached so the next `tile` and `screen` read the system again.
     func invalidate() async
+
+    /// Automatic cleanup, run in the background from time to time when the user turned it on in Settings: free what is safe to free
+    /// without asking (what the page's main Clean action frees, never anything that cannot be undone or needs a decision). nil
+    /// when there was nothing to do. A module that takes part declares `autoClean` in its manifest.
+    func autoClean(context: ModuleContext) async -> CleanupReport?
 }
 
 public extension MacSpaceModule {
     func invalidate() async {}
+
+    func autoClean(context: ModuleContext) async -> CleanupReport? { nil }
 
     func runBackgroundTask(_ id: String, context: ModuleContext) async {}
 }

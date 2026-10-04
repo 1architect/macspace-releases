@@ -132,7 +132,7 @@ public struct PurgeRun: Sendable {
             return ActionResult(outcome: .succeeded, message: "macOS kept them for now; MacSpace keeps asking in the background.",
                                 details: details(outcome) + [PurgeRun.retryNote])
         }
-        return .succeeded("Freed \(ByteFormat.string(outcome.freed)) of \(what), measured on the volume.", details: details(outcome))
+        return .succeeded("Freed \(ByteFormat.string(outcome.freed)) of \(what), measured on the volume.", details: details(outcome), freedBytes: outcome.freed)
     }
 
     static let retryNote = "MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."

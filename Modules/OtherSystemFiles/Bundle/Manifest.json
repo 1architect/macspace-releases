@@ -10,5 +10,6 @@
   "permissions": [],
   "options": [],
   "backgroundTasks": [],
-  "tileTint": "violet"
+  "tileTint": "violet",
+  "autoClean": true
 }

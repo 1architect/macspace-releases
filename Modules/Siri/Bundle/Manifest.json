@@ -32,5 +32,6 @@
       "intervalSeconds": 900
     }
   ],
-  "tileTint": "graphite"
+  "tileTint": "graphite",
+  "autoClean": true
 }

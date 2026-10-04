@@ -46,8 +46,10 @@ struct MacSpaceMain: App {
             }
         }
 
-        MenuBarExtra("MacSpace", systemImage: "checkmark.shield", isInserted: $showInMenuBar) {
+        MenuBarExtra(isInserted: $showInMenuBar) {
             MenuBarContent(host: host)
+        } label: {
+            MenuBarIcon(host: host)
         }
     }
 }

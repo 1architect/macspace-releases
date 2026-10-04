@@ -32,6 +32,10 @@ public final class ModuleHost: ObservableObject {
     private let loader: ModuleHandle.Loader
     private let privileged: (any PrivilegedChannel)?
     public let scheduler = BackgroundScheduler()
+    public let autoCleaner = AutoCleaner()
+    /// Something is being cleaned (a module's action or automatic cleanup): the menu bar icon animates.
+    @Published public private(set) var isCleaning = false
+    private var cleaningObservers: [AnyCancellable] = []
 
     /// `MACSPACE_MODULES_DIR` points a development build at another folder of modules.
     public static func defaultModulesDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL? {
@@ -72,6 +76,17 @@ public final class ModuleHost: ObservableObject {
         }
         reclaimable = reclaimable.filter { id, _ in handles.contains { $0.id == id } }
         purgeable = purgeable.filter { id, _ in handles.contains { $0.id == id } }
+        let states = handles.map { $0.$isCleaning.eraseToAnyPublisher() } + [autoCleaner.$isRunning.eraseToAnyPublisher()]
+        cleaningObservers = [Publishers.MergeMany(states).sink { [weak self] _ in
+            // The publishers fire before the value changes: read everyone's state on the next turn.
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    let cleaning = self.autoCleaner.isRunning || self.handles.contains(where: \.isCleaning)
+                    if self.isCleaning != cleaning { self.isCleaning = cleaning }
+                }
+            }
+        }]
         purgeableObservers = handles.map { handle in
             let id = handle.id
             return handle.$tile.map { $0?.purgeableByService ?? [:] }.removeDuplicates().sink { [weak self] services in
@@ -121,6 +136,7 @@ public final class ModuleHost: ObservableObject {
         let loading = handles.map { handle in Task { await handle.activate() } }
         for task in loading { await task.value }
         applySchedule()
+        autoCleaner.start(host: self)
     }
 
     public func setEnabled(_ enabled: Bool, module id: String) async {

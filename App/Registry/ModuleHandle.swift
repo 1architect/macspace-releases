@@ -1,4 +1,5 @@
 import Foundation
+import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
@@ -28,6 +29,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isRefreshing = false
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
+    /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates.
+    @Published public private(set) var isCleaning = false
     /// The group row whose page is open over the module's page (`Row.children`), by id; nil on the module's own page.
     @Published public var openGroup: String?
 
@@ -164,7 +167,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             return result
         }
         performing = true
-        if !quiet { updateBusy() }
+        if !quiet { updateBusy(); isCleaning = true }
+        defer { if !quiet { isCleaning = false } }
         if !quiet { progress = nil }
         lastResult = nil
         actionGeneration += 1
@@ -179,6 +183,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         if !quiet { progress = nil }
         if !quiet || result.outcome != .succeeded || result.restartRequired { lastResult = result }
+        if let freed = result.freedBytes {
+            CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: freed, trigger: .manual, summary: result.message)
+        }
         performing = false
         if !quiet { updateBusy() }
         if result.refresh { await refresh(quiet: quiet) }
@@ -192,6 +199,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard state == .ready else { return [] }
         let options = settings.optionStore(for: manifest)
         return manifest.backgroundTasks.filter { options.isBackgroundTaskEnabled($0.id) }
+    }
+
+    /// Runs the module's automatic cleanup, records what it freed and reads the module again. nil when the module has nothing to
+    /// clean, does not take part, or is not ready.
+    @discardableResult
+    func autoClean() async -> CleanupReport? {
+        guard state == .ready, manifest.autoClean == true, let module, !performing else { return nil }
+        isCleaning = true
+        defer { isCleaning = false }
+        let report = await module.autoClean(context: context())
+        if let report {
+            CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: report.freedBytes, trigger: .automatic, summary: report.summary)
+        }
+        await refresh(quiet: true)
+        return report
     }
 
     func runBackgroundTask(_ taskID: String) async {

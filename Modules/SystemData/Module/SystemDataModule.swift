@@ -12,6 +12,7 @@ public final class SystemDataEntry: MacSpaceModuleEntry, @unchecked Sendable {
 /// System Data: what fills it, and what is safe to free.
 public struct SystemDataModule: MacSpaceModule {
     private let store = SystemDataStore()
+    static let moduleID = "com.macspace.system-data"
 
     public init() {}
 
@@ -58,22 +59,37 @@ public struct SystemDataModule: MacSpaceModule {
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purgeAssets(store: store)
         case "cleanAll":
-            var details: [String] = []
-            var freed: UInt64 = 0
-            let before = DataVolume.freeBytes()
-            let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
-            progress(ActionProgress(fraction: 0.1, message: "Freeing system caches…"))
-            let caches = Self.clean(cleanable)
-            details += caches.details
-            progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))
-            if snapshot.reports.totalBytes > 0 { details += Self.cleanReports(snapshot.reports).details }
-            progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
-            if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying { details += Self.purgeAssets(store: store).details }
-            if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
-            return .succeeded("Freed \(ByteFormat.string(freed)), measured on the volume.", details: details)
+            let cleaned = Self.cleanSafe(snapshot, store: store, progress: progress)
+            return .succeeded("Freed \(ByteFormat.string(cleaned.freed)), measured on the volume.", details: cleaned.details, freedBytes: cleaned.freed)
         default:
             return .failed("Unknown action \(request.actionID).")
         }
+    }
+
+    /// Automatic cleanup: what Clean frees (caches of apps that are not open, old reports, unused system assets). Never the version
+    /// history or anything else that cannot be undone.
+    public func autoClean(context: ModuleContext) async -> CleanupReport? {
+        let snapshot = await store.snapshot(maxAge: 0, privileged: context.privileged)
+        guard SystemDataScreenBuilder.cleanBytes(snapshot) >= SystemDataScreenBuilder.worthARow else { return nil }
+        let cleaned = Self.cleanSafe(snapshot, store: store, progress: { _ in })
+        await store.invalidate()
+        return CleanupReport(freedBytes: cleaned.freed, summary: "Caches, old reports and unused system assets", details: cleaned.details)
+    }
+
+    /// Everything Clean frees, measured on the volume over the whole run.
+    static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, progress: ProgressSink) -> (freed: UInt64, details: [String]) {
+        var details: [String] = []
+        let before = DataVolume.freeBytes()
+        let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
+        progress(ActionProgress(fraction: 0.1, message: "Freeing system caches…"))
+        if !cleanable.isEmpty { details += clean(cleanable).details }
+        progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))
+        if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
+        progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
+        if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying { details += purgeAssets(store: store).details }
+        var freed: UInt64 = 0
+        if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
+        return (freed, details)
     }
 
     // MARK: Actions
@@ -87,13 +103,13 @@ public struct SystemDataModule: MacSpaceModule {
         if !failed.isEmpty && failed.count == report.results.count {
             return ActionResult(outcome: .failed, message: "Nothing was freed.", details: details, refresh: true)
         }
-        return .succeeded(freedMessage(freed, cleaned: report.results.count - failed.count), details: details)
+        return .succeeded(freedMessage(freed, cleaned: report.results.count - failed.count), details: details, freedBytes: freed)
     }
 
     static func cleanReports(_ plan: CleanupPlan) -> ActionResult {
         let result = DiagnosticReportCleaner(directories: []).execute(plan)
         let details = result.failed.map { "Could not delete \($0.key): \($0.value)" }
-        return .succeeded("Deleted \(result.deleted.count) report(s), \(ByteFormat.string(result.freedBytes)).", details: details)
+        return .succeeded("Deleted \(result.deleted.count) report(s), \(ByteFormat.string(result.freedBytes)).", details: details, freedBytes: result.freedBytes)
     }
 
     /// Deletes the Versions store through the helper. The freed space is measured on the volume, as for every other cleanup.
@@ -110,7 +126,7 @@ public struct SystemDataModule: MacSpaceModule {
         if let error = result.error { details.append(error) }
         let message = measured.map { "Deleted the version history. The volume gained \(ByteFormat.string($0)); the store shrank by \(ByteFormat.string(stored))." }
             ?? "Deleted the version history; the store shrank by \(ByteFormat.string(stored))."
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details)
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
     }
 
     /// Deletes the files of an update that is already installed, through the helper (which checks they are really a leftover).
@@ -124,13 +140,19 @@ public struct SystemDataModule: MacSpaceModule {
         let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
         let message = measuredFreed(before, DataVolume.freeBytes()).map { "Deleted the leftover update files. The volume gained \(ByteFormat.string($0)); the folder shrank by \(ByteFormat.string(stored))." }
             ?? "Deleted the leftover update files; the folder shrank by \(ByteFormat.string(stored))."
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [])
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [],
+                            freedBytes: measuredFreed(before, DataVolume.freeBytes()))
     }
 
     /// macOS is asked again right before; if it keeps them, again in the background, and the page reads the Mac again once it lets
     /// them go (`PurgeRun`).
     static func purgeAssets(store: SystemDataStore) -> ActionResult {
-        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { _ in await store.invalidate() }
+        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
+            // macOS let them go later, when asked again in the background.
+            CleanupHistory.shared.record(moduleID: Self.moduleID, moduleName: "System Data", freedBytes: freed, trigger: .background,
+                                         summary: "Unused system assets")
+            await store.invalidate()
+        }
         return PurgeRun.result(outcome, what: "unused system assets")
     }
 

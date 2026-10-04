@@ -161,3 +161,39 @@ final class RenderTests: XCTestCase {
                           TileFace.chartArea(in: size, info: short, captionSize: 22).height)
     }
 }
+
+final class MenuBarIconTests: XCTestCase {
+    func testTheSquaresLeaveAndComeBackOneByOne() {
+        XCTAssertEqual(MenuBarIcon.visibility(rank: 0, phase: 0), 1, "the full grid at rest")
+        XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.5), 0, "all gone in the middle of a round")
+        XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.999), 1, "all back at its end")
+        XCTAssertLessThan(MenuBarIcon.visibility(rank: 0, phase: 0.1), MenuBarIcon.visibility(rank: 5, phase: 0.1), "the first leaves first")
+        XCTAssertEqual(Set(MenuBarIcon.order), Set(0..<9))
+    }
+
+    /// Writes the animation as a strip to MACSPACE_SNAPSHOT_DIR/menubar-icon.png, to look at it.
+    func testRendersTheAnimationStrip() throws {
+        guard let directory = ProcessInfo.processInfo.environment["MACSPACE_SNAPSHOT_DIR"] else { throw XCTSkip("no snapshot folder") }
+        let frames = 16, cell: CGFloat = 72
+        let strip = NSImage(size: NSSize(width: cell * CGFloat(frames), height: cell))
+        strip.lockFocus()
+        NSColor.white.setFill(); NSRect(origin: .zero, size: strip.size).fill()
+        for index in 0..<frames {
+            MenuBarIcon.image(phase: Double(index) / Double(frames)).draw(in: NSRect(x: CGFloat(index) * cell + 4, y: 4, width: cell - 8, height: cell - 8))
+        }
+        strip.unlockFocus()
+        let data = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(strip.tiffRepresentation))?.representation(using: .png, properties: [:]))
+        try data.write(to: URL(fileURLWithPath: directory).appendingPathComponent("menubar-icon.png"))
+    }
+}
+
+final class AutoCleanerTests: XCTestCase {
+    func testRunsWhenOnAndDue() {
+        let now = Date()
+        XCTAssertFalse(AutoCleaner.isDue(enabled: false, lastRun: nil, frequency: .daily, now: now))
+        XCTAssertTrue(AutoCleaner.isDue(enabled: true, lastRun: nil, frequency: .daily, now: now), "never run: due at once")
+        XCTAssertFalse(AutoCleaner.isDue(enabled: true, lastRun: now.addingTimeInterval(-3600), frequency: .daily, now: now))
+        XCTAssertTrue(AutoCleaner.isDue(enabled: true, lastRun: now.addingTimeInterval(-90_000), frequency: .daily, now: now))
+        XCTAssertFalse(AutoCleaner.isDue(enabled: true, lastRun: now.addingTimeInterval(-90_000), frequency: .weekly, now: now))
+    }
+}

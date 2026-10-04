@@ -94,3 +94,19 @@ final class FileTreeSizerTests: XCTestCase {
         XCTAssertEqual(size.unreadableFolders, 1)
     }
 }
+
+final class CleanupHistoryTests: XCTestCase {
+    func testKeepsEveryCleanupAndALifetimeTotalThatNeverShrinks() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("history-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let history = CleanupHistory(url: url)
+        history.record(moduleID: "m", moduleName: "System Data", freedBytes: 408_800_000, trigger: .manual, summary: "Clean")
+        history.record(moduleID: "m", moduleName: "System Data", freedBytes: 500_000, trigger: .automatic, summary: "noise")
+        XCTAssertEqual(history.entries.count, 1, "less than 1 MB is not a cleanup worth listing")
+        for _ in 0..<600 { history.record(moduleID: "s", moduleName: "Siri", freedBytes: 11_080_000_000, trigger: .background, summary: "models") }
+        XCTAssertEqual(history.entries.count, 500, "old entries are trimmed")
+        XCTAssertEqual(history.lifetimeBytes, 408_800_000 + 600 * 11_080_000_000, "trimmed entries still count")
+        XCTAssertEqual(CleanupHistory(url: url).lifetimeBytes, history.lifetimeBytes, "kept across launches")
+        XCTAssertEqual(history.entries.first?.moduleName, "Siri", "newest first")
+    }
+}

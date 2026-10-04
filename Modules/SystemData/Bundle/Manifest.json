@@ -14,5 +14,6 @@
   "options": [],
   "backgroundTasks": [],
   "tileSize": "wide",
-  "tileTint": "blue"
+  "tileTint": "blue",
+  "autoClean": true
 }

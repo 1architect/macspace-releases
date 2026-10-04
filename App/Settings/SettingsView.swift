@@ -33,6 +33,8 @@ struct SettingsView: View {
         let _ = tick
         Form {
             GeneralSettingsSection(updates: updates)
+            AutoCleanSection(cleaner: host.autoCleaner, host: host)
+            CleanupHistorySection()
             DesignSettingsSection()
             Section("Modules") {
                 ForEach(host.handles) { handle in

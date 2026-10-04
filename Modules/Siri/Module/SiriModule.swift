@@ -30,7 +30,9 @@ public struct SiriModule: MacSpaceModule {
     private func snapshot(waits: Bool = false) async -> SiriSnapshot {
         var snapshot = await store.snapshot()
         let store = self.store
-        let running = await ModelAutoReleaser.shared.check(snapshot, release: { _ = Self.release(progress: { _ in }) },
+        let running = await ModelAutoReleaser.shared.check(snapshot, release: {
+            Self.recordBackground(Self.release(progress: { _ in }).freedBytes ?? 0, summary: "Leftover Apple Intelligence models")
+        },
                                                            finished: { await store.invalidate() })
         if waits, let running { await running.value }
         snapshot.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
@@ -40,6 +42,28 @@ public struct SiriModule: MacSpaceModule {
         }
         snapshot.purgingModels = await ModelPurger.shared.isRunning
         return snapshot
+    }
+
+    static let moduleID = "com.macspace.siri"
+
+    /// A cleanup MacSpace finished by itself, for the history in Settings.
+    static func recordBackground(_ freed: UInt64, summary: String) {
+        CleanupHistory.shared.record(moduleID: moduleID, moduleName: "Siri & Apple Intelligence", freedBytes: freed, trigger: .background, summary: summary)
+    }
+
+    /// Automatic cleanup: released Apple Intelligence models and other system assets macOS no longer needs.
+    public func autoClean(context: ModuleContext) async -> CleanupReport? {
+        let snapshot = await store.snapshot()
+        let offerable = (snapshot.purgeableAssetsBytes ?? 0) >= SiriScreenBuilder.purgeThreshold && !snapshot.assetsRetrying
+        guard !snapshot.isVirtualMachine, offerable || Self.releasedModelsOnDisk(snapshot), !(await ModelPurger.shared.isRunning) else { return nil }
+        let store = self.store
+        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
+            Self.recordBackground(freed, summary: "Released Apple Intelligence models")
+            await store.invalidate()
+        }
+        await store.invalidate()
+        guard outcome.error == nil else { return nil }
+        return CleanupReport(freedBytes: outcome.freed, summary: "Released Apple Intelligence models and unused system assets", details: PurgeRun.details(outcome))
     }
 
     /// Off and not being released by `ModelAutoReleaser` (which purges itself), with models still on disk.
@@ -78,7 +102,10 @@ public struct SiriModule: MacSpaceModule {
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             let store = self.store
-            return Self.purge { _ in await store.invalidate() }
+            return Self.purge { freed in
+                Self.recordBackground(freed, summary: "Unused system assets")
+                await store.invalidate()
+            }
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
             return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then come back.", refresh: false)
@@ -138,6 +165,7 @@ public struct SiriModule: MacSpaceModule {
         if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: "The release cannot run yet.", details: result.blockers, refresh: true) }
         if let error = result.error { return .failed(error, details: result.steps.map(\.detail)) }
         return .succeeded("Freed \(ByteFormat.string(result.purge?.freedBytes ?? 0)), measured on the volume.",
-                          details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."])
+                          details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."],
+                          freedBytes: result.purge?.freedBytes)
     }
 }

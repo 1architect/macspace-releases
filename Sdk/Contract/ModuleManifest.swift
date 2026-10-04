@@ -28,11 +28,13 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
     public var tileSize: Tile.Size?
     /// The deep color of the module's tile and page. The app picks one when absent.
     public var tileTint: TileTint?
+    /// The module frees space by itself when automatic cleanup runs (`MacSpaceModule.autoClean`). Settings lists the modules that do.
+    public var autoClean: Bool?
 
     public init(id: String, name: String, summary: String, version: String, sdkVersion: Int = SdkVersion.current,
                 symbol: String, minimumMacOS: String? = nil, order: Int = 100, permissions: [Permission] = [],
                 options: [OptionDefinition] = [], backgroundTasks: [BackgroundTaskDefinition] = [], tileSize: Tile.Size? = nil,
-                tileTint: TileTint? = nil) {
+                tileTint: TileTint? = nil, autoClean: Bool? = nil) {
         self.id = id
         self.name = name
         self.summary = summary
@@ -46,5 +48,6 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
         self.backgroundTasks = backgroundTasks
         self.tileSize = tileSize
         self.tileTint = tileTint
+        self.autoClean = autoClean
     }
 }

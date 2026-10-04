@@ -35,23 +35,40 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         switch request.actionID {
         case "purgeFiles":
-            let estimate = await store.currentRawEstimate()
-            PurgeRetrier.shared.cancel(CacheDeleteService.fsPurgeableData)
-            let purge = Self.purgeFiles(estimate: estimate, progress: progress)
-            if purge.freed > 0 { await store.noteRemoved(purge.freed, estimate: estimate) }
-            // macOS kept all or much of them: it is asked again in the background, at the urgency of a critically full disk, and the
-            // page reads the Mac again once it lets the files go. The user does not have to ask again.
-            if purge.removedNothing || estimate > purge.freed + OtherSystemFilesScreenBuilder.threshold {
-                let store = self.store
-                PurgeRetrier.shared.schedule(service: CacheDeleteService.fsPurgeableData, urgency: CacheDeleteService.fsPurgeableDataForceUrgency) { freed in
-                    if freed > 0 { await store.noteRemoved(freed, estimate: estimate) }
-                    await store.invalidate()
-                }
-            }
-            return purge.result
+            return await purgeAndKeepAsking(progress: progress).result
         default:
             return .failed("Unknown action \(request.actionID).")
         }
+    }
+
+    /// Automatic cleanup: the purgeable app files, unless MacSpace is already asking macOS for them again.
+    public func autoClean(context: ModuleContext) async -> CleanupReport? {
+        let snapshot = await store.snapshot(maxAge: 0)
+        guard snapshot.freeableBytes >= OtherSystemFilesScreenBuilder.threshold, !snapshot.retrying else { return nil }
+        let purge = await purgeAndKeepAsking(progress: { _ in })
+        await store.invalidate()
+        return CleanupReport(freedBytes: purge.freed, summary: "Purgeable app files", details: purge.result.details)
+    }
+
+    /// Purges, and when macOS keeps all or much of the files, asks it again in the background at the urgency of a critically full
+    /// disk; the page reads the Mac again once it lets them go. The user never has to ask again.
+    private func purgeAndKeepAsking(progress: ProgressSink) async -> (result: ActionResult, freed: UInt64) {
+        let estimate = await store.currentRawEstimate()
+        PurgeRetrier.shared.cancel(CacheDeleteService.fsPurgeableData)
+        let purge = Self.purgeFiles(estimate: estimate, progress: progress)
+        if purge.freed > 0 { await store.noteRemoved(purge.freed, estimate: estimate) }
+        if purge.removedNothing || estimate > purge.freed + OtherSystemFilesScreenBuilder.threshold {
+            let store = self.store
+            PurgeRetrier.shared.schedule(service: CacheDeleteService.fsPurgeableData, urgency: CacheDeleteService.fsPurgeableDataForceUrgency) { freed in
+                if freed > 0 {
+                    await store.noteRemoved(freed, estimate: estimate)
+                    CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
+                                                 trigger: .background, summary: "Purgeable app files")
+                }
+                await store.invalidate()
+            }
+        }
+        return (purge.result, purge.freed)
     }
 
     /// Apple's own purge of the files apps marked purgeable, run in the CLI child process: first at the urgency the disk's
@@ -92,6 +109,6 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         if estimate > removed + OtherSystemFilesScreenBuilder.threshold {
             details.append("macOS kept the other \(ByteFormat.string(estimate - removed)) for now.")
         }
-        return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.", details: details), false, removed)
+        return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.", details: details, freedBytes: freed), false, removed)
     }
 }
