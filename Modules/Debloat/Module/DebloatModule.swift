@@ -62,10 +62,31 @@ public struct DebloatModule: MacSpaceModule {
         progress(ActionProgress(message: action == .apply ? "Switching off…" : "Switching back on…"))
         let coordinator = DebloatCoordinator(engine: DebloatStore.liveEngine(), channel: context.privileged)
         do {
-            let results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions())
+            // Switching a feature back on restores macOS's default where MacSpace has no saved value (a policy applied by an earlier
+            // build, say); without this the switch did nothing and stayed off.
+            var results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions(restoreFallbacks: action == .revert))
+            results = await removeProfileIfEmpty(results, channel: context.privileged)
             return summarize(action, results)
         } catch {
             return .failed(error.localizedDescription)
+        }
+    }
+
+    /// When the last policy goes, the profile has to be removed, which only root can do: the helper removes it. Until then macOS
+    /// keeps enforcing every policy in it.
+    static func removeProfileIfEmpty(_ results: [ControlChangeResult], channel: (any PrivilegedChannel)?) async -> [ControlChangeResult] {
+        let needed = results.contains { $0.steps.contains { $0.detail == ConfigurationProfileBuilder.removalNeeded } }
+        guard needed, let channel else { return results }
+        let outcome: (StepOutcome, String)
+        do {
+            let data = try await channel.perform(operation: DebloatPrivilegedOperations.removeProfile, arguments: [:])
+            outcome = (.changed, String(decoding: data, as: UTF8.self))
+        } catch {
+            outcome = (.failed, "The helper could not remove the \"\(ConfigurationProfileBuilder.displayName)\" profile (\(error.localizedDescription)); remove it in System Settings > General > Device Management.")
+        }
+        return results.map { result in
+            let steps = result.steps.map { $0.detail == ConfigurationProfileBuilder.removalNeeded ? StepResult(settingID: $0.settingID, outcome: outcome.0, detail: outcome.1) : $0 }
+            return ControlChangeResult(plan: result.plan, executed: result.executed || outcome.0 == .changed, steps: steps, statusAfter: result.statusAfter)
         }
     }
 
@@ -90,7 +111,7 @@ public struct DebloatModule: MacSpaceModule {
         if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Nothing was changed.", details: details, refresh: true) }
         if changed == 0 { return .succeeded(action == .apply ? "Already switched off." : "Already back on.") }
         if approval {
-            return ActionResult(outcome: .needsAttention, message: "Approve the MacSpace profile to finish.",
+            return ActionResult(outcome: .needsAttention, message: action == .apply ? "Approve the MacSpace profile to finish." : "Approve the updated MacSpace profile to finish turning it back on.",
                                 details: ["Open System Settings > General > Device Management and approve it."] + details, restartRequired: restart)
         }
         return ActionResult(outcome: .succeeded, message: "Turned \(changed) protection(s) \(verb).", details: details, restartRequired: restart)

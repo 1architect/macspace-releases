@@ -16,6 +16,8 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
     public static let status = "debloat.status"
     public static let apply = "debloat.apply"
     public static let revert = "debloat.revert"
+    /// Removes the MacSpace profile once no policy remains in it. Takes no arguments: it can only remove that one profile.
+    public static let removeProfile = "debloat.removeProfile"
 
     private let engineFactory: @Sendable (DebloatTargetUser?) -> DebloatEngine
 
@@ -25,7 +27,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
         self.engineFactory = engineFactory
     }
 
-    public var operations: Set<String> { [Self.status, Self.apply, Self.revert] }
+    public var operations: Set<String> { [Self.status, Self.apply, Self.revert, Self.removeProfile] }
 
     public static func arguments(controlIDs: [String], options: DebloatPlanOptions) -> [String: String] {
         ["controls": controlIDs.joined(separator: ","),
@@ -34,6 +36,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
         let engine = engineFactory(DebloatTargetUser.forUID(caller.uid))
+        if operation == Self.removeProfile { return Data(try engine.system.removeProfile().utf8) }
         let ids = (arguments["controls"] ?? "").split(separator: ",").map(String.init)
         let unknown = ids.filter { id in !engine.controls.contains { $0.id == id } }
         guard unknown.isEmpty else { throw PrivilegedOperationError("Unknown control(s): \(unknown.joined(separator: ", ")).") }

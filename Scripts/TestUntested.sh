@@ -125,7 +125,25 @@ debloat() {
   news_opens && news_before=yes
   note "- News opened before: $news_before"
 
-  pause "In MacSpace → Debloat, switch OFF these 8 (one at a time; each says \"Not tested\"):
+  # Turning back on: a policy MacSpace applied earlier (even by an older build) must come back when its switch is turned on.
+  pause "In MacSpace → Debloat, switch these 8 back ON (the feature runs again):
+  Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
+  Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
+If MacSpace asks you to approve the updated MacSpace profile, approve it in System Settings → General → Device Management.
+(When none is left, MacSpace removes the profile itself through the helper.)"
+  screen com.macspace.debloat debloat-turned-on
+  profiles list > "$OUT/profiles-turned-on.txt" 2>&1
+  local id switch badge
+  while read -r id switch badge; do
+    case "$switch" in
+      on) if [ "$badge" = Approve_to_turn_on ]; then result FAIL "$id turns back on" "the updated profile is not approved yet"
+          else result PASS "$id turns back on"; fi ;;
+      off) result FAIL "$id turns back on" "the switch stays off, badge ${badge//_/ }" ;;
+      *) result FAIL "$id turns back on" "not found on the Debloat page" ;;
+    esac
+  done < <(debloat_states "$OUT/debloat-turned-on.json")
+
+  pause "Now, in MacSpace → Debloat, switch OFF these 8 (one at a time; each says \"Not tested\"):
   Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
   Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
 Then approve the MacSpace profile in System Settings → General → Device Management (or Profiles)."
@@ -133,11 +151,10 @@ Then approve the MacSpace profile in System Settings → General → Device Mana
   defaults read com.apple.AdLib > "$OUT/adlib-after.txt" 2>&1
   profiles list > "$OUT/profiles-after.txt" 2>&1
 
-  local id switch badge
   while read -r id switch badge; do
     case "$switch" in
       off) case "$badge" in
-             Waiting_for_approval) result FAIL "$id applied" "the MacSpace profile is not approved yet" ;;
+             Waiting_for_approval|Approve_to_turn_on) result FAIL "$id applied" "the MacSpace profile is not approved yet" ;;
              Undone_by_macOS|Not_working|Cannot_take_effect_here) result FAIL "$id applied" "${badge//_/ }" ;;
              *) result PASS "$id applied" "switch off${badge:+, badge ${badge//_/ }}" ;;
            esac ;;

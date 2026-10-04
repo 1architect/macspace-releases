@@ -45,6 +45,8 @@ public protocol DebloatSystem: AnyObject {
     func liveFeatureFlag(domain: String, feature: String) -> Bool?
     /// Writes the MacSpace configuration profile and opens it for approval; returns a description for the user.
     func stageProfile(_ profile: Data) throws -> String
+    /// Removes the installed MacSpace profile (needs root); returns a description for the user.
+    func removeProfile() throws -> String
     /// Labels whose launchd overrides survive with SIP enabled (`RemovableServices` in launchd's rootless
     /// policy); nil if the policy cannot be read.
     func sipRemovableServices() -> Set<String>?
@@ -54,6 +56,11 @@ public protocol DebloatSystem: AnyObject {
     func diagnosticHistory() -> DiagnosticSubmissionHistory?
     /// SubmitDiagInfo's opt-in decisions logged since the given date; nil if the log cannot be read.
     func submissionDecisions(since: Date) -> [SubmissionDecision]?
+}
+
+public extension DebloatSystem {
+    /// Systems that cannot remove the profile (test doubles) say so; the app then asks the helper.
+    func removeProfile() throws -> String { throw DebloatSystemError.commandFailed("Removing the MacSpace profile needs root.") }
 }
 
 /// The user whose preferences and gui launchd domain are targeted: the current user, or `SUDO_USER` under sudo.
@@ -402,6 +409,16 @@ public final class LiveDebloatSystem: DebloatSystem {
 
     private var profileURL: URL? {
         targetUser?.home.appendingPathComponent("Library/Application Support/MacSpace/Profiles/\(ConfigurationProfileBuilder.fileName)")
+    }
+
+    public func removeProfile() throws -> String {
+        guard isRoot else { throw DebloatSystemError.commandFailed("Removing the MacSpace profile needs root.") }
+        let result = try runner.run("/usr/bin/profiles", ["remove", "-identifier", ConfigurationProfileBuilder.identifier], timeout: 30)
+        guard result.exitCode == 0 else {
+            let message = String(decoding: result.stderr + result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            throw DebloatSystemError.commandFailed("profiles remove failed: \(message)")
+        }
+        return "Removed the \"\(ConfigurationProfileBuilder.displayName)\" profile; the policies no longer apply."
     }
 
     public func stageProfile(_ profile: Data) throws -> String {

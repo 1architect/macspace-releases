@@ -527,6 +527,9 @@ public enum ControlState: String, Codable, Sendable {
     case drifted
     /// MacSpace generated a configuration profile for it that the user has not approved (or has since removed).
     case awaitingApproval
+    /// Switched back on in MacSpace, but the installed profile still enforces it until the new profile is approved (or the
+    /// profile is removed).
+    case awaitingRemoval
     /// None of the control's settings exist on this build.
     case unavailable
     case unknown
@@ -623,6 +626,12 @@ public struct StepResult: Codable, Equatable, Sendable {
     public let settingID: String
     public let outcome: StepOutcome
     public let detail: String?
+
+    public init(settingID: String, outcome: StepOutcome, detail: String?) {
+        self.settingID = settingID
+        self.outcome = outcome
+        self.detail = detail
+    }
 }
 
 public struct ControlChangeResult: Codable, Equatable, Sendable {

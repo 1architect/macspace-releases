@@ -39,9 +39,11 @@ enum DebloatScreenBuilder {
             case .ineffective?: return Badge("Not working", tone: .critical)
             case .pending?: return Badge("After restart", tone: .caution)
             case .notControllable?: return Badge("Cannot take effect here", tone: .critical)
-            default: return nil
+            // Switched off but never tested: says so, so it gets tested, also once it is off.
+            default: return control.tested ? nil : Badge("Not tested", tone: .caution)
             }
         case .awaitingApproval: return Badge("Waiting for approval", tone: .caution)
+        case .awaitingRemoval: return Badge("Approve to turn on", tone: .caution)
         case .drifted: return Badge("Undone by macOS", tone: .critical)
         case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
@@ -100,7 +102,7 @@ enum DebloatScreenBuilder {
     static func counts(_ snapshot: DebloatSnapshot) -> (on: Int, total: Int, awaiting: [DebloatControl], drifted: [DebloatControl]) {
         let usable = snapshot.controls.filter { snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
         let on = usable.filter { snapshot.status($0.id)?.state == .debloated }.count
-        let awaiting = usable.filter { snapshot.status($0.id)?.state == .awaitingApproval }
+        let awaiting = usable.filter { control in snapshot.status(control.id).map { [.awaitingApproval, .awaitingRemoval].contains($0.state) } ?? false }
         let drifted = usable.filter { snapshot.status($0.id)?.state == .drifted }
         return (on, usable.count, awaiting, drifted)
     }
@@ -177,7 +179,7 @@ enum DebloatScreenBuilder {
         var widgets: [ScreenWidget] = []
         if !counts.awaiting.isEmpty {
             widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
-                                          message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) take effect once you approve it in System Settings > General > Device Management.",
+                                          message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) change once you approve it in System Settings > General > Device Management.",
                                           action: Action(id: "openProfiles", title: "Open System Settings", role: .prominent))))
         }
         if !counts.drifted.isEmpty {

@@ -145,6 +145,8 @@ public final class DebloatEngine {
             let journaled = Set(outstanding.map(\.settingID))
             if available.isEmpty {
                 state = unreadable.isEmpty ? .unavailable : .unknown
+            } else if mismatched.isEmpty, unreadable.isEmpty, revertPending(control, available: available, entries: entries) {
+                state = .awaitingRemoval
             } else if mismatched.isEmpty {
                 state = unreadable.isEmpty ? .debloated : .unknown
             } else if case let pending = mismatched.filter({ journaled.contains($0.setting.id) }), !pending.isEmpty {
@@ -160,6 +162,18 @@ public final class DebloatEngine {
         let effect = control.effect.map { evaluate($0, control: control, state: state, appliedAt: appliedAt, processes: processes) }
         return ControlStatus(controlID: control.id, state: state, effect: effect, settings: settings,
                              tested: control.tested, appliedAt: appliedAt)
+    }
+
+    /// A policy switched back on whose value the installed profile still enforces: the latest journal entry for one of its managed
+    /// settings is a revert.
+    func revertPending(_ control: DebloatControl, available: [SettingStatus], entries: [JournalEntry]) -> Bool {
+        available.contains { status in
+            guard status.setting.kind == .managedPreference else { return false }
+            // The last written of the latest entries: an apply and a revert can carry the same time.
+            let latest = entries.filter { $0.controlID == control.id && $0.settingID == status.setting.id }
+                .reduce(nil as JournalEntry?) { latest, entry in (latest?.at ?? .distantPast) <= entry.at ? entry : latest }
+            return latest?.action == .revert
+        }
     }
 
     func evaluate(_ check: EffectCheck, control: DebloatControl, state: ControlState, appliedAt: Date?,
@@ -447,15 +461,33 @@ public final class DebloatEngine {
     /// Regenerates the MacSpace profile from every managed setting still applied according to the journal, and
     /// hands it to the user. If staging fails, this plan's journal entries are removed again.
     private func stageProfile(_ results: [StepResult], stagedEntries: [UUID], privilege: DebloatPrivilege) -> [StepResult] {
-        let applied = journal.load(privilege).outstanding.filter { $0.setting.kind == .managedPreference }
+        let log = journal.load(privilege)
+        let applied = log.outstanding.filter { $0.setting.kind == .managedPreference }
         var latest: [String: ManagedPreferenceSetting] = [:]
         for entry in applied { latest[entry.settingID] = entry.setting.managed }
+        // Policies the installed profile enforces without a journal entry (applied by an earlier build, or a lost journal) stay in
+        // the new profile: built from the journal alone, switching one policy back on dropped all of them.
+        // Not those switched back on, now or earlier while the profile still enforces them: their latest journal entry is a revert.
+        var lastAction: [String: (at: Date, action: ChangeAction)] = [:]
+        for entry in log.entries where (lastAction[entry.settingID]?.at ?? .distantPast) <= entry.at { lastAction[entry.settingID] = (entry.at, entry.action) }
+        let switchedBackOn = Set(lastAction.filter { $0.value.action == .revert }.keys)
+        for control in controls {
+            for setting in control.settings where setting.kind == .managedPreference && latest[setting.id] == nil && !switchedBackOn.contains(setting.id) {
+                if case .value(let value) = system.read(setting), value == setting.desiredValue { latest[setting.id] = setting.managed }
+            }
+        }
         let settings = latest.keys.sorted().compactMap { latest[$0] }
 
         let detail: String
         var failed: String?
         if settings.isEmpty {
-            detail = "No MacSpace policies remain; remove \"\(ConfigurationProfileBuilder.displayName)\" in System Settings > General > Device Management (or run `sudo profiles remove -identifier \(ConfigurationProfileBuilder.identifier)`)."
+            // Nothing left to enforce: the profile goes. Only root can remove it; the app asks the helper (`DebloatModule`).
+            do {
+                let removed = try system.removeProfile()
+                return results.map { $0.outcome == .pendingApproval ? StepResult(settingID: $0.settingID, outcome: .changed, detail: removed) : $0 }
+            } catch {
+                detail = ConfigurationProfileBuilder.removalNeeded
+            }
         } else {
             do {
                 detail = try system.stageProfile(ConfigurationProfileBuilder.build(settings))

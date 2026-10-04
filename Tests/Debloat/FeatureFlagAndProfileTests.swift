@@ -127,11 +127,29 @@ final class ConfigurationProfileTests: XCTestCase {
         let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.diag"]))[0]
         XCTAssertEqual(reverted.steps.map(\.outcome), [.pendingApproval, .pendingApproval])
         XCTAssertEqual(system.lastProfileValues, ["com.apple.applicationaccess:allowApplePersonalizedAdvertising": .bool(false)])
+        XCTAssertEqual(engine.status(of: controls[0]).state, .awaitingRemoval, "the installed profile enforces it until the new one is approved")
 
         let stagedBefore = system.stagedProfiles.count
         let last = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"]))[0]
         XCTAssertEqual(system.stagedProfiles.count, stagedBefore, "nothing left to stage")
-        XCTAssertTrue(last.steps[0].detail?.contains("profiles remove -identifier com.macspace.policies") ?? false)
+        XCTAssertEqual(last.steps[0].detail, ConfigurationProfileBuilder.removalNeeded, "only root removes the profile; the app asks the helper")
+
+        for setting in diagnostics + ads { system.forced[setting.id] = nil } // the profile was removed
+        XCTAssertEqual(engine.status(of: controls[0]).state, .stock)
+    }
+
+    func testPoliciesWithoutAJournalStayInTheProfile() throws {
+        // Applied by an earlier build: the profile enforces both controls, and the journal knows nothing.
+        let system = FakeDebloatSystem(controls: controls)
+        let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
+        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) }
+
+        let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"], options: DebloatPlanOptions(restoreFallbacks: true)))[0]
+        XCTAssertEqual(reverted.steps.map(\.outcome), [.pendingApproval], "switching it back on works without a saved value")
+        XCTAssertEqual(system.lastProfileValues, ["com.apple.SubmitDiagInfo:AutoSubmit": .bool(false),
+                                                  "com.apple.applicationaccess:allowDiagnosticSubmission": .bool(false)],
+                       "the other policy stays enforced")
+        XCTAssertEqual(engine.status(of: controls[1]).state, .awaitingRemoval)
     }
 
     func testStagingFailureUndoesTheJournalEntries() throws {

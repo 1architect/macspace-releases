@@ -10,6 +10,8 @@ public enum ConfigurationProfileBuilder {
     public static let identifier = "com.macspace.policies"
     public static let displayName = "MacSpace policies"
     public static let fileName = "MacSpace-policies.mobileconfig"
+    /// The step detail when no policy remains and the profile could not be removed in this process (it needs root).
+    public static let removalNeeded = "No MacSpace policies remain; the \"MacSpace policies\" profile has to be removed (System Settings > General > Device Management)."
 
     public static func build(_ settings: [ManagedPreferenceSetting]) throws -> Data {
         var byType: [String: [String: Any]] = [:]
