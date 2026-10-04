@@ -53,7 +53,7 @@ final class SiriScreenBuilderTests: XCTestCase {
     func testSwitchAlwaysAsksBeforeChangingAndNeedsFullDiskAccess() throws {
         let off = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows.first)
         XCTAssertTrue(off.action.confirmation?.message.contains("pt-BR to en-US") == true)
-        XCTAssertFalse(off.action.confirmation?.message.contains("Whether this preference syncs") == true)
+        XCTAssertTrue(off.action.confirmation?.message.contains("iPhone and iPad") == true, "the Siri language syncs through iCloud")
         XCTAssertEqual(off.action.requires, [.fullDiskAccess], "the result cannot be verified without it")
         let on = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.protected)).rows.first)
         XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on")

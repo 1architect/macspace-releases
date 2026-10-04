@@ -116,7 +116,7 @@ public struct SiriLanguageChangePlan: Codable, Sendable, Equatable {
     public let targetOutputVoice: Data?
     public let systemLanguage: String
     public let scope: SiriLanguageSyncScope
-    /// CP112 did not measure whether the preference syncs through iCloud, so neither scope is guaranteed yet.
+    /// The preference syncs through iCloud to iPhone and iPad (reported 2026-10-04), whichever scope is chosen.
     public let scopeVerified: Bool
     /// The target's Siri speech assets are not installed, so switching will download them (~1.5 GB observed for en-US).
     public let requiresSiriAssetDownload: Bool?
@@ -296,7 +296,8 @@ public struct AppleIntelligenceLanguageGuard {
         if supported == nil { warnings.append("Siri's supported-language list could not be read; \(target) was not validated.") }
         let needsDownload = installed.map { !$0.contains(target) }
         if needsDownload == true { warnings.append("Siri speech assets for \(target) are not installed; macOS will download them (~1.5 GB observed for en-US).") }
-        warnings.append("Whether this preference syncs to other devices through iCloud is unverified (CP112); the \(scope.rawValue) choice is recorded but not guaranteed.")
+        // Reported by the maintainer (2026-10-04): the change reaches the iPhone.
+        warnings.append("The Siri language syncs through iCloud: iPhone and iPad signed in to the same Apple Account get the same Siri language.")
         let unchanged = current == target && voice == nil
         return SiriLanguageChangePlan(action: action, currentSiriLanguage: current, targetSiriLanguage: target,
                                       targetOutputVoice: voice, systemLanguage: system, scope: scope, scopeVerified: false,

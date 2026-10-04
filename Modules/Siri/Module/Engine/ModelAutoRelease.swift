@@ -23,6 +23,9 @@ enum ModelAutoRelease {
 /// one release at a time, off the caller's task.
 actor ModelAutoReleaser {
     static let shared = ModelAutoReleaser()
+    /// Only the app releases models by itself. The CLI also loads modules (`MacSpaceCli screen`) and exits as soon as it has printed:
+    /// a release started there would be cut off with the Siri language still changed, on the Mac and, through iCloud, on the iPhone.
+    static let runsHere = ProcessInfo.processInfo.processName == "MacSpace"
 
     private static let releasingSinceKey = "siri.modelsReleasingSince"
     private static let lastRunKey = "siri.modelsAutoReleasedAt"
@@ -35,7 +38,7 @@ actor ModelAutoReleaser {
     @discardableResult
     func check(_ snapshot: SiriSnapshot, now: Date = Date(), release: @escaping @Sendable () -> Void,
                finished: @escaping @Sendable () async -> Void) -> Task<Void, Never>? {
-        guard !isRunning else { return nil }
+        guard Self.runsHere, !isRunning else { return nil }
         if snapshot.status.state == .releasing {
             if defaults.object(forKey: Self.releasingSinceKey) == nil { defaults.set(now, forKey: Self.releasingSinceKey) }
         } else {

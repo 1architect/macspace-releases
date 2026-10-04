@@ -131,7 +131,8 @@ Telling the user to "install the waiting update" for such files was wrong, and t
 - Models are shared by all accounts, so one eligible account, or a deleted account that still holds subscriptions, keeps them.
 - **Measured – virtual machines.** `kern.hv_vmm_present` is 1 and Apple Intelligence never becomes available, so the release flow
   waits and fails. MacSpace shows a single explanation there and offers no controls.
-- **Unverified:** whether the Siri language preference syncs through iCloud.
+- **Measured (2026-10-04):** the Siri language preference syncs through iCloud to iOS devices on the same Apple Account, so switching
+  Apple Intelligence off on the Mac changes the Siri language on the iPhone too, and so does the minute-long model release.
 
 ## 4. The privileged helper
 

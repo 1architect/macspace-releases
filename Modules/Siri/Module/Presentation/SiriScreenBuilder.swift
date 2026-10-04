@@ -72,12 +72,16 @@ enum SiriScreenBuilder {
 
     static let purgeThreshold: UInt64 = 50_000_000
 
+    /// Reported by the maintainer (2026-10-04): a Siri language changed on the Mac reaches the iPhone.
+    static let iCloudSync = "The Siri language syncs through iCloud: iPhone and iPad signed in to the same Apple Account get the same Siri language."
+
     static func disableConfirmation(_ snapshot: SiriSnapshot) -> Confirmation {
         var message = "Siri's language will differ from your system language, which makes Apple Intelligence unavailable. macOS then removes its model."
         if case let .success(plan) = snapshot.disablePlan {
             message = "Siri's language changes from \(plan.currentSiriLanguage ?? "?") to \(plan.targetSiriLanguage), which makes Apple Intelligence unavailable. "
-                + plan.warnings.filter { !$0.hasPrefix("Whether this preference syncs") && !$0.hasPrefix("Apple Intelligence becomes unavailable") }.joined(separator: " ")
+                + plan.warnings.filter { !$0.hasPrefix("Apple Intelligence becomes unavailable") && $0 != Self.iCloudSync }.joined(separator: " ")
         }
+        message += " " + Self.iCloudSync
         return Confirmation(title: "Switch Apple Intelligence off?", message: message, confirmTitle: "Switch off")
     }
 
@@ -111,9 +115,9 @@ enum SiriScreenBuilder {
         }
         let confirmation: Confirmation? = available
             ? disableConfirmation(snapshot)
-            : Confirmation(title: "Turn Apple Intelligence back on?", message: "Siri's language returns to your system language. macOS may download the on-device model (about 12 GB).", confirmTitle: "Turn on")
+            : Confirmation(title: "Turn Apple Intelligence back on?", message: "Siri's language returns to your system language. macOS may download the on-device model (about 12 GB). " + iCloudSync, confirmTitle: "Turn on")
         let state = snapshot.status.state
-        let detail = ([subtitle, "Applies to this account on this Mac. Whether the Siri language syncs through iCloud is unverified."] + snapshot.status.reasons).joined(separator: " ")
+        let detail = ([subtitle, "Applies to this account. " + iCloudSync] + snapshot.status.reasons).joined(separator: " ")
         return ToggleList(id: "switch", rows: [
             ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
                       badge: state == .atRisk ? Badge("On", tone: .caution) : nil,
@@ -147,7 +151,7 @@ enum SiriScreenBuilder {
         if snapshot.releasingAutomatically {
             widget = .list(ListWidget(id: "models-list", rows: [
                 Row(id: "releasing", title: "Releasing the leftover models", symbol: "arrow.triangle.2.circlepath",
-                    detail: "For about a minute Apple Intelligence is available and Siri's language changes; both are restored afterwards. Then the models are deleted."),
+                    detail: "For about a minute Apple Intelligence is available and Siri's language changes, on this Mac and, through iCloud, on iPhone and iPad; both are restored afterwards. Then the models are deleted."),
             ]))
         } else if !snapshot.releaseBlockers.isEmpty {
             widget = .steps(StepsWidget(id: "blockers", title: "Before MacSpace can release them", steps: snapshot.releaseBlockers))

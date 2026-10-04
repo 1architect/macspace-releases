@@ -31,3 +31,6 @@ Build/
 notarization-log*.json
 notary-log*.json
 *.notarization.json
+
+# Test and experiment results (Scripts/TestUntested.sh); they go to the private repository, not here.
+results/
