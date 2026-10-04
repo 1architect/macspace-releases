@@ -81,7 +81,14 @@ enum PurgeCommand {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         encoder.dateEncodingStrategy = .iso8601
-        if let data = try? encoder.encode(value) { FileHandle.standardOutput.write(data); print() }
+        guard let data = try? encoder.encode(value) else {
+            // Never exit without an answer: the app would only know that the process ended.
+            FileHandle.standardOutput.write(Data(#"{"services":[],"error":"The purge result could not be written as JSON."}"#.utf8))
+            print()
+            exit(1)
+        }
+        FileHandle.standardOutput.write(data)
+        print()
         exit(status)
     }
 }

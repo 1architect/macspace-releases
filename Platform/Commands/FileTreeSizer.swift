@@ -3,11 +3,18 @@ import Foundation
 public struct FileTreeSize: Sendable, Equatable {
     public let logicalBytes: UInt64
     public let allocatedBytesEstimate: UInt64?
+    /// Folders inside the tree that could not be listed (no permission, SIP). The sizes then leave them out: a tree with a folder it
+    /// could not open is not known to be empty.
+    public let unreadableFolders: Int
 
-    public init(logicalBytes: UInt64, allocatedBytesEstimate: UInt64?) {
+    public init(logicalBytes: UInt64, allocatedBytesEstimate: UInt64?, unreadableFolders: Int = 0) {
         self.logicalBytes = logicalBytes
         self.allocatedBytesEstimate = allocatedBytesEstimate
+        self.unreadableFolders = unreadableFolders
     }
+
+    /// The best figure for what the tree takes on disk.
+    public var bytes: UInt64 { allocatedBytesEstimate ?? logicalBytes }
 }
 
 public struct FileTreeSizer: Sendable {
@@ -50,11 +57,13 @@ public struct FileTreeSizer: Sendable {
             }
 
             let rootVolumeID = rootValues.volumeIdentifier.map { String(describing: $0) }
+            // The enumerator reports a folder it cannot open through this handler and goes on; the count says the sizes are short.
+            let errors = ErrorCount()
             guard let enumerator = FileManager.default.enumerator(
                 at: url,
                 includingPropertiesForKeys: Array(sizingKeys),
                 options: [],
-                errorHandler: { _, _ in true }
+                errorHandler: { _, _ in errors.value += 1; return true }
             ) else { return nil }
 
             var logical: UInt64 = 0
@@ -82,11 +91,16 @@ public struct FileTreeSizer: Sendable {
 
             return FileTreeSize(
                 logicalBytes: logical,
-                allocatedBytesEstimate: sawAllocated ? allocated : nil
+                allocatedBytesEstimate: sawAllocated ? allocated : nil,
+                unreadableFolders: errors.value
             )
         } catch {
             return nil
         }
+    }
+
+    private final class ErrorCount: @unchecked Sendable {
+        var value = 0
     }
 
     private func logicalSize(from values: URLResourceValues) -> UInt64? {

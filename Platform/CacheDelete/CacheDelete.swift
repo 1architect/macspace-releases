@@ -209,7 +209,9 @@ public struct CacheDeleteClient {
         let run = Self.rawPurge(info, timeout: timeout)
         let parsed = run.result.map(Self.parsePurgeResult)
         let serviceError = run.result?["CACHE_DELETE_ERROR"].map { "CacheDelete: \($0)" }
-        return CacheDeletePurgeResult(services: services, purgedBytes: parsed?.purged, freeBytesBefore: before, freeBytesAfter: freeSpace(),
+        // Read once the freed blocks are back with the volume: a reading right after the call could show nothing freed.
+        let after = DataVolume.settledFreeBytes(read: freeSpace)
+        return CacheDeletePurgeResult(services: services, purgedBytes: parsed?.purged, freeBytesBefore: before, freeBytesAfter: after,
                                       elapsedSeconds: parsed?.elapsed,
                                       error: !run.answered ? "CacheDelete did not answer within \(Int(timeout)) s." : (run.result == nil ? "CacheDelete returned no result." : serviceError),
                                       answer: run.result.map { $0.mapValues { String(describing: $0).prefix(300).description } })
@@ -239,11 +241,23 @@ public struct CacheDeleteClient {
         let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service, "--urgency", "\(urgency)"])
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        if let result = try? decoder.decode(CacheDeletePurgeResult.self, from: output.data) { return result }
+        if let result = decodeResult(output.data, decoder: decoder) { return result }
+        // No answer to read, but the purge may still have run: what the volume gained is still the truth for the user.
+        let after = DataVolume.settledFreeBytes(read: freeSpace)
+        let gained = (before.flatMap { b in after.map { $0 > b ? $0 - b : 0 } }) ?? 0
         let reason = output.signal.map { "the purge process crashed (signal \($0)); CacheDelete's private interface may have changed" }
-            ?? "the purge process exited with status \(output.status) and no result"
-        return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before,
-                                      freeBytesAfter: freeSpace(), elapsedSeconds: nil, error: reason.prefix(1).uppercased() + reason.dropFirst() + ".")
+            ?? (gained > 0 ? nil : "macOS gave no answer to the purge and the volume gained no space")
+        return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: after, elapsedSeconds: nil,
+                                      error: reason.map { $0.prefix(1).uppercased() + $0.dropFirst() + "." })
+    }
+
+    /// The result in the child's output. Only the JSON object is read: anything else the child printed around it (a framework's own
+    /// logging) made the whole output unreadable.
+    static func decodeResult(_ data: Data, decoder: JSONDecoder) -> CacheDeletePurgeResult? {
+        if let result = try? decoder.decode(CacheDeletePurgeResult.self, from: data) { return result }
+        let text = String(decoding: data, as: UTF8.self)
+        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end else { return nil }
+        return try? decoder.decode(CacheDeletePurgeResult.self, from: Data(text[start...end].utf8))
     }
 
     static func runSubprocess(_ executable: URL, _ arguments: [String], timeout: TimeInterval = 660) -> (status: Int32, signal: Int32?, data: Data) {
@@ -293,7 +307,9 @@ public struct CacheDeleteClient {
         return services
     }
 
+    /// A time that is not a finite number is dropped: JSON cannot hold it, and the child then wrote no result at all.
     public static func parsePurgeResult(_ result: [String: Any]) -> (purged: UInt64?, elapsed: Double?) {
-        ((result["CACHE_DELETE_AMOUNT"] as? NSNumber)?.uint64Value, (result["CACHE_DELETE_ELAPSED_TIME"] as? NSNumber)?.doubleValue)
+        let elapsed = (result["CACHE_DELETE_ELAPSED_TIME"] as? NSNumber)?.doubleValue
+        return ((result["CACHE_DELETE_AMOUNT"] as? NSNumber)?.uint64Value, elapsed.flatMap { $0.isFinite ? $0 : nil })
     }
 }
