@@ -45,11 +45,17 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertNil(off.badge)
         XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn off")
 
-        let untested = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
+        let policy = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
+        XCTAssertNil(policy.badge, "the policies were tested in the research (2026-09-29)")
+        XCTAssertTrue(policy.action.confirmation?.message.contains("approve the MacSpace profile") == true)
+
+        let candidate = DebloatControl(id: "test.candidate", title: "Candidate", summary: "s", category: .telemetry, mechanism: .userPreference,
+                                       risk: .low, restart: .none, settings: [.preference(.user, "com.example", "key", desired: .bool(false), fallback: nil)])
+        let untested = DebloatScreenBuilder.row(candidate, snapshot([ControlStatus(controlID: candidate.id, state: .stock, effect: nil, settings: [],
+                                                                                    tested: false, appliedAt: nil)]))
         XCTAssertEqual(untested.badge?.text, "Not tested")
         XCTAssertTrue(untested.isEnabled, "an untested control can be switched, to test it")
         XCTAssertTrue(untested.action.confirmation?.message.contains("Not tested yet") == true)
-        XCTAssertTrue(untested.action.confirmation?.message.contains("approve the MacSpace profile") == true)
     }
 
     func testStatesThatNeedAttentionAreVisible() {

@@ -148,7 +148,8 @@ through the app's code, checked against the page and the stored values, and left
 
 **Not verified:** Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build (needs a published release
 and SPARKLE_PUBLIC_KEY); the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
-Debloat profile approval beyond the development Mac; the Debloat controls marked "Not tested" in the app.
+Debloat profile approval beyond the development Mac; analytics on a release build (`telemetry.diagnostics`, the only control
+marked "Not tested"). The policies were tested in the research (profile-policies-2026-09-29: every key forced once approved).
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control

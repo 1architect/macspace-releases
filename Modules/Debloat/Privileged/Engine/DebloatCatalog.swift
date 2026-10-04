@@ -9,7 +9,9 @@ import Foundation
 /// - `breaks` names every feature known to depend on what the control switches off.
 public enum DebloatCatalog {
     static let diagnosticsFile = "/Library/Application Support/CrashReporter/DiagnosticMessagesHistory"
-    static let policyNote = "Restriction key from ManagedConfiguration's defaultSettings.plist on 26B5091g, not marked supervised-only. Measured on 26B5091g without MDM: macOS forces it once the MacSpace policies profile is approved; the behavioral effect is unmeasured."
+    /// Research (results/debloat-validation/profile-policies-2026-09-29 in the private repository): on 26B5091g with SIP enabled and
+    /// no MDM, every policy key was applied through an approved profile and read back forced; the controls read debloated.
+    static let policyNote = "Restriction key from ManagedConfiguration's defaultSettings.plist, not marked supervised-only. Tested on 26B5091g (2026-09-29) without MDM: macOS forces it once its profile is approved."
     static let flagNote = "Feature-flag overrides are read at boot: the change applies after a reboot. Survival across OS updates is unmeasured."
     static let bootClearedNote = "With SIP enabled on 26B5091g, launchd cleared this override at boot and again at login (\"Clearing enabled state\") and refused bootout (error 150); owner-enforced overrides such as Siri.agent survive."
 
@@ -174,7 +176,8 @@ public enum DebloatCatalog {
                 .managed("com.apple.applicationaccess", "forceOnDeviceOnlyTranslation", desired: .bool(true)),
             ],
             breaks: ["Dictation and translation in languages without an on-device model"],
-            notes: [policyNote]
+            notes: [policyNote],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "suggestions.spotlight-internet-policy",
@@ -183,7 +186,8 @@ public enum DebloatCatalog {
             category: .suggestions, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
             settings: [.managed("com.apple.applicationaccess", "allowSpotlightInternetResults", desired: .bool(false))],
             breaks: ["Siri Suggestions and web results in Spotlight"],
-            notes: [policyNote]
+            notes: [policyNote],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "ai.features-policy",
@@ -208,7 +212,8 @@ public enum DebloatCatalog {
             notes: [
                 policyNote,
                 "Does not evict the on-device model: CP110 showed Screen Time/MDM restrictions leave ModelCatalog's selection unchanged; use ai.apple-intelligence for that.",
-            ]
+            ],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "apps.game-center-policy",
@@ -217,7 +222,8 @@ public enum DebloatCatalog {
             category: .appServices, mechanism: .configurationProfile, risk: .medium, restart: .logout,
             settings: [.managed("com.apple.applicationaccess", "allowGameCenter", desired: .bool(false))],
             breaks: ["Game Center sign-in, achievements, leaderboards and multiplayer"],
-            notes: [policyNote, "Measured on 26B5091g: gamed still launches on demand and contacts Apple with the restriction in place; it is not a daemon switch."]
+            notes: [policyNote, "Measured on 26B5091g: gamed still launches on demand and contacts Apple with the restriction in place; it is not a daemon switch."],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "apps.news-policy",
@@ -229,7 +235,8 @@ public enum DebloatCatalog {
                 .managed("com.apple.applicationaccess", "allowNewsToday", desired: .bool(false)),
             ],
             breaks: ["Apple News app", "News widgets"],
-            notes: [policyNote, "Measured on 26B5091g: LaunchServices hides News (`open -a News` fails), but opening News.app by path still works."]
+            notes: [policyNote, "Measured on 26B5091g: LaunchServices hides News (`open -a News` fails), but opening News.app by path still works."],
+            validatedBuilds: ["26B5091g"]
         ),
     ]
 
