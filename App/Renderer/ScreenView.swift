@@ -26,11 +26,62 @@ struct ScreenView: View {
         return nil
     }
 
+    /// The group row whose page is open (`ModuleHandle.openGroup`), as the module's screen has it now. nil once a refresh no longer
+    /// has it.
+    private var openGroup: Row? {
+        guard let id = handle.openGroup, let screen = handle.screen else { return nil }
+        return Self.row(id, in: screen.widgets)
+    }
+
+    static func row(_ id: String, in widgets: [ScreenWidget]) -> Row? {
+        for widget in widgets {
+            switch widget {
+            case let .list(list): if let row = list.rows.first(where: { $0.id == id && !$0.children.isEmpty }) { return row }
+            case let .section(section): if let row = row(id, in: section.widgets) { return row }
+            default: continue
+            }
+        }
+        return nil
+    }
+
+    private var handler: ActionHandler {
+        { [handle] action, extra, quiet in await handle.perform(action, extraParameters: extra, quiet: quiet) }
+    }
+
     var body: some View {
+        ZStack(alignment: .topLeading) {
+            if let group = openGroup {
+                // A group's page slides in from the right over the module's page, and back out to the right.
+                groupPage(group)
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .trailing).combined(with: .opacity)))
+            } else {
+                mainPage
+                    .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+            }
+        }
+        .animation(Theme.push, value: openGroup?.id)
+        .environment(\.openGroup) { [handle] id in handle.openGroup = id }
+        .modifier(ZoomReveal(index: 1, reveal: reveal))
+        .animation(Theme.layout, value: hasFooter)
+        .overlay(alignment: .bottomLeading) {
+            ActionDock(handle: handle)
+                .padding(.leading, PageInsets.side)
+                .padding(.bottom, 18)
+                .modifier(ZoomReveal(index: 2, reveal: reveal))
+        }
+        .disabled(handle.isBusy && handle.progress != nil)
+        .environment(\.colorScheme, design.colorScheme)
+        // A refresh that no longer has the open group (its items were freed) goes back to the module's page.
+        .onChange(of: openGroup == nil) { _, gone in if gone, handle.openGroup != nil { handle.openGroup = nil } }
+    }
+
+    @ViewBuilder
+    private var mainPage: some View {
         Group {
             if let content = self.content {
-                WidgetForm(widgets: content.widgets, handler: { action, extra in Task { await handle.perform(action, extraParameters: extra) } },
-                           showsTop: content.hero != nil) {
+                WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing)
                             .padding(.bottom, 4)
@@ -46,18 +97,18 @@ struct ScreenView: View {
                     .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .modifier(ZoomReveal(index: 1, reveal: reveal))
         .scrollIndicators(.never)
         .modifier(PageScrollArea(hasFooter: hasFooter))
-        .animation(Theme.layout, value: hasFooter)
-        .overlay(alignment: .bottomLeading) {
-            ActionDock(handle: handle)
-                .padding(.leading, PageInsets.side)
-                .padding(.bottom, 18)
-                .modifier(ZoomReveal(index: 2, reveal: reveal))
-        }
-        .disabled(handle.isBusy && handle.progress != nil)
-        .environment(\.colorScheme, design.colorScheme)
+    }
+
+    /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total.
+    private func groupPage(_ group: Row) -> some View {
+        let list = ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
+                              rows: group.children)
+        return WidgetForm(widgets: [.list(list)], handler: handler, showsTop: false) { EmptyView() }
+            .environment(\.showsRowSubtitles, true)
+            .scrollIndicators(.never)
+            .modifier(PageScrollArea(hasFooter: hasFooter))
     }
 }
 
@@ -224,7 +275,7 @@ private struct ActionDock: View {
                     ProgressPill(progress: progress)
                         .transition(.blurReplace)
                 } else if let primary = handle.screen?.primary {
-                    ActionButton(action: primary) { action, extra in Task { await handle.perform(action, extraParameters: extra) } }
+                    ActionButton(action: primary) { [handle] action, extra, quiet in await handle.perform(action, extraParameters: extra, quiet: quiet) }
                         .transition(.blurReplace)
                 }
             }

@@ -171,6 +171,13 @@ private struct WidgetRows: View {
     }
 }
 
+extension EnvironmentValues {
+    /// Opens the page of a group row (`Row.children`), by its id.
+    @Entry var openGroup: @MainActor (String) -> Void = { _ in }
+    /// Rows show their subtitle under the title (a group's page, where it says what kind of item each is) instead of in the tooltip.
+    @Entry var showsRowSubtitles = false
+}
+
 /// Joins the parts of a description into one tooltip.
 enum Tooltip {
     static func join(_ parts: String?...) -> String? {
@@ -217,13 +224,42 @@ struct BannerRow: View {
 struct RowView: View {
     let row: Row
     let handler: ActionHandler
+    @Environment(\.showsRowSubtitles) private var showsSubtitle
     @State private var expanded = false
+    @Environment(\.openGroup) private var openGroup
 
     var body: some View {
+        if !row.children.isEmpty { groupRow } else { itemRow }
+    }
+
+    /// A group: its count under the title, its total on the right, and a chevron; it opens the page of its items.
+    private var groupRow: some View {
+        Button { openGroup(row.id) } label: {
+            HStack(spacing: 10) {
+                if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.title).lineLimit(1)
+                    if let subtitle = row.subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
+                }
+                Spacer(minLength: 8)
+                if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(row.detail ?? "")
+    }
+
+    private var itemRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                Text(row.title).lineLimit(1)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.title).lineLimit(1)
+                    // On a group's page the subtitle says what kind of item it is; elsewhere it is part of the tooltip.
+                    if let subtitle = row.subtitle, showsSubtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                }
                 if let badge = row.badge { BadgeView(badge: badge) }
                 Spacer(minLength: 8)
                 if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -238,7 +274,7 @@ struct RowView: View {
                 }
             }
             .contentShape(Rectangle())
-            .help(Tooltip.join(row.subtitle, row.detail) ?? "")
+            .help(Tooltip.join(showsSubtitle ? nil : row.subtitle, row.detail) ?? "")
             .onTapGesture { if !row.steps.isEmpty { withAnimation(Theme.hover) { expanded.toggle() } } }
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
@@ -257,28 +293,42 @@ struct RowView: View {
     }
 }
 
-/// A switch row, as in Settings. It asks first when the module wants a confirmation.
+/// A switch row, as in Settings. It never asks: the switch moves as soon as it is flipped, then the module makes the change. If the
+/// change fails, the switch moves back and the page says why; the rest of the page is not reloaded around it.
 struct ToggleRowView: View {
     let row: ToggleRow
     let handler: ActionHandler
+    /// What the switch shows while its change runs, ahead of the module's answer.
+    @State private var shown: Bool?
+    @State private var running = false
 
     var body: some View {
-        Toggle(isOn: Binding(get: { row.isOn }, set: { flip(to: $0) })) {
+        Toggle(isOn: Binding(get: { shown ?? row.isOn }, set: flip)) {
             HStack(spacing: 8) {
                 Text(row.title)
                 if let badge = row.badge { BadgeView(badge: badge) }
             }
         }
         .disabled(!row.isEnabled)
+        // Not disabled while the change runs (that greys the switch out): it just takes no second flip until the first is done.
+        .allowsHitTesting(!running)
         .help(Tooltip.join(row.subtitle, row.detail) ?? "")
+        .onChange(of: row.isOn) { _, _ in if !running { shown = nil } }
     }
 
     private func flip(to value: Bool) {
-        let parameters = ["value": value ? "true" : "false"]
-        guard let confirmation = row.action.confirmation else { return handler(row.action, parameters) }
-        // Asked once the switch has finished handling the click, not from inside it.
+        guard !running, value != (shown ?? row.isOn) else { return }
+        withAnimation(Theme.toggle) { shown = value }
+        running = true
         Task { @MainActor in
-            if ConfirmationAlert.ask(confirmation, destructive: false) { handler(row.action, parameters) }
+            let result = await handler(row.action, ["value": value ? "true" : "false"], true)
+            running = false
+            // Done: the module's own reading takes over (the same value, or what macOS really did). Failed: back where it was.
+            withAnimation(Theme.toggle) { shown = result.map { $0.outcome == .failed } == false ? nil : !value }
+            if shown != nil {
+                try? await Task.sleep(for: .milliseconds(400))
+                if !running { shown = nil }
+            }
         }
     }
 }

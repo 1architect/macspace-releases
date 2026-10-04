@@ -55,6 +55,10 @@ public struct MainView: View {
     /// A page has finished opening and covers the dashboard, which then stops drawing its tiles, and the window's glass, which the
     /// page's own glass replaces (two window-sized layers of glass, one over the other, were blended on every frame the page scrolled).
     @State private var pageSettled = false
+    /// The page Settings was opened over with Command-comma: Back returns to it instead of to the dashboard.
+    @State private var returnTo: ZoomLayer?
+    /// Which way the last swap of one page for another went: forward slides the new page in from the right, back from the left.
+    @State private var swapForward = true
 
     public init(host: ModuleHost, updates: UpdateController) {
         self.host = host
@@ -80,7 +84,9 @@ public struct MainView: View {
         // Nothing draws outside the glass: a lifted tile's shadow spilling past it left a stray shadow and edge, which macOS then
         // copied into the window's own shadow.
         .clipShape(designSettings.clipWindow ? AnyShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)) : AnyShape(Rectangle()))
-        .scaleEffect(windowShown || reduceMotion ? 1 : 0.94)
+        // Glass tiles do not take part in the scale (their AppKit glass followed it late, ghosting while the tiles loaded): with
+        // Liquid Glass tiles the window only fades in.
+        .scaleEffect(windowShown || reduceMotion || designSettings.glass ? 1 : 0.94)
         .opacity(windowShown ? 1 : 0)
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
@@ -103,6 +109,8 @@ public struct MainView: View {
             guard let text = remote.command?.text else { return }
             if text == "close" { close() }
             else if text == "open:settings" { present(.settings) }
+            else if text == "back" { close() }
+            else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.openGroup = String(text.dropFirst(6)) }
             else if text.hasPrefix("open:") { present(.module(String(text.dropFirst(5)))) }
         }
     }
@@ -111,7 +119,7 @@ public struct MainView: View {
         ZStack(alignment: .topLeading) {
             HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination, closing: windowClosing,
                      dormant: pageSettled)
-                .modifier(ZoomFade(progress: progress))
+                .modifier(ZoomFade(progress: progress, scales: !designSettings.glass))
                 .allowsHitTesting(layer == nil)
             if let layer, size.width > 0 {
                 // An open page covers the whole window, glass frame included. It is drawn larger than the dashboard, so it sits in a box of
@@ -123,6 +131,9 @@ public struct MainView: View {
                     page(for: layer.destination)
                         .id(layer.destination)
                         .frame(width: full.width, height: full.height)
+                        // One page swapped for another (Command-comma over a module's page, and Back to it) slides across.
+                        .transition(.asymmetric(insertion: .move(edge: swapForward ? .trailing : .leading).combined(with: .opacity),
+                                                removal: .move(edge: swapForward ? .leading : .trailing).combined(with: .opacity)))
                         .overlay(alignment: .top) {
                             // The band behind the corner buttons and the title moves the window, like a title bar.
                             Color.clear
@@ -144,7 +155,13 @@ public struct MainView: View {
 
     private func title(for destination: Destination) -> String {
         switch destination {
-        case let .module(id): return host.handle(for: id)?.manifest.name ?? ""
+        case let .module(id):
+            guard let handle = host.handle(for: id) else { return "" }
+            // On a group's page: the module, then the group.
+            if let group = handle.openGroup, let screen = handle.screen, let row = ScreenView.row(group, in: screen.widgets) {
+                return "\(handle.manifest.name) › \(row.title)"
+            }
+            return handle.manifest.name
         case .settings: return "Settings"
         case .home, .storage: return ""
         }
@@ -161,7 +178,7 @@ public struct MainView: View {
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
             if isOpen, let destination = layer?.destination {
-                Text(title(for: destination))
+                PageTitle(host: host, destination: destination, title: title)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(designSettings.design.ink)
                     .shadow(color: .black.opacity(designSettings.design.isLight ? 0 : 0.12), radius: 4, y: 1)
@@ -209,20 +226,25 @@ public struct MainView: View {
         }
     }
 
-    /// Opens a page: the tile grows into it. From another page it just swaps.
+    /// Opens a page: the tile grows into it. From another page (Command-comma over a module's page) the new page slides in over it,
+    /// and Back slides back to the page it came from.
     private func present(_ destination: Destination) {
         guard destination != .storage, destination != .home else { return }
         if case let .module(id) = destination, host.handle(for: id) == nil { return }
         let tint = HomeView.tiles(for: host.dashboardHandles).first { $0.destination == destination }?.tint ?? .slate
         let origin = frames.frame(of: destination) ?? CGRect(origin: .zero, size: container)
-        if layer != nil {
-            guard isOpen else { return }
-            layer = ZoomLayer(destination: destination, origin: origin, tint: tint)
+        if let current = layer {
+            guard isOpen, current.destination != destination else { return }
+            returnTo = current
+            swapForward = true
+            withAnimation(Theme.push) { layer = ZoomLayer(destination: destination, origin: origin, tint: tint) }
             return
         }
         generation += 1
         progress = 0
         reveal = 0
+        returnTo = nil
+        swapForward = true
         layer = ZoomLayer(destination: destination, origin: origin, tint: tint)
         withAnimation(Theme.hover) { isOpen = true }
         let current = generation
@@ -249,6 +271,19 @@ public struct MainView: View {
     /// The page goes first, then the card shrinks back into its tile. Works mid-opening too: the card turns around where it is.
     private func close() {
         guard let open = layer, isOpen else { return }
+        // A group's page goes back to its module's page.
+        if case let .module(id) = open.destination, let handle = host.handle(for: id), handle.openGroup != nil {
+            handle.openGroup = nil
+            return
+        }
+        // Settings opened over a page goes back to that page.
+        if let previous = returnTo {
+            returnTo = nil
+            swapForward = false
+            withAnimation(Theme.push) { layer = ZoomLayer(destination: previous.destination, origin: frames.frame(of: previous.destination) ?? previous.origin,
+                                                          tint: previous.tint) }
+            return
+        }
         // The tiles are drawn again before the card starts shrinking onto them.
         pageSettled = false
         generation += 1
@@ -261,5 +296,31 @@ public struct MainView: View {
             if generation == current { layer = nil }
         }
         Task { await storage.refresh() }
+    }
+}
+
+/// The open page's name next to the corner buttons. A module's page is watched, so the name follows into and out of a group's page.
+private struct PageTitle: View {
+    @ObservedObject var host: ModuleHost
+    let destination: Destination
+    let title: (Destination) -> String
+
+    var body: some View {
+        if case let .module(id) = destination, let handle = host.handle(for: id) {
+            ModulePageTitle(handle: handle) { title(destination) }
+        } else {
+            Text(title(destination))
+        }
+    }
+}
+
+private struct ModulePageTitle: View {
+    @ObservedObject var handle: ModuleHandle
+    let text: () -> String
+
+    var body: some View {
+        Text(text())
+            .contentTransition(.opacity)
+            .animation(Theme.push, value: handle.openGroup)
     }
 }

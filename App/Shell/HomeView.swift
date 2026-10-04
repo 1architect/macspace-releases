@@ -538,14 +538,15 @@ struct TilePlacement: ViewModifier {
     /// The lift and the lean are laid out (the tile's size and place worked out again on every frame), not drawn as a scale and an
     /// offset: glass moved by those effects followed on its own timing, and the darkened color inside a hovered tile's glass showed
     /// out of line with the glass's edge while the tile lifted.
+    /// Coming in and leaving is laid out too, not a scale effect: a tile's glass ground (AppKit) followed a scale effect on its own
+    /// timing, and while the tiles came in (when the charts load) a ghost of each ground showed beside its face.
     func body(content: Content) -> some View {
-        let grow: CGFloat = lifted ? 1.018 : 1
+        let grow: CGFloat = (lifted ? 1.018 : 1) * (shown || reduceMotion ? 1 : 0.86)
         let leanOffset = turns ? CGSize.zero : CGSize(width: (lean.x - 0.5) * 4, height: (lean.y - 0.5) * 4)
         content
             .modifier(TileSize(size: CGSize(width: frame.width * grow, height: frame.height * grow)))
             .animation(liftAnimation, value: lifted)
             .tilted(lean, active: turns)
-            .scaleEffect(shown || reduceMotion ? 1 : 0.86)
             .opacity(shown ? 1 : 0)
             .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)
                                : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)

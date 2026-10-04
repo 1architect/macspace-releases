@@ -85,6 +85,8 @@ struct ZoomCard<Content: View>: View, @preconcurrency Animatable {
 /// forward.
 struct ZoomFade: ViewModifier, @preconcurrency Animatable {
     var progress: CGFloat
+    /// Glass tiles only fade: their AppKit glass lags behind a scale effect and left ghosts of the tiles behind the growing card.
+    var scales = true
 
     var animatableData: CGFloat {
         get { progress }
@@ -94,7 +96,7 @@ struct ZoomFade: ViewModifier, @preconcurrency Animatable {
     func body(content: Content) -> some View {
         content
             // No blur: the dashboard is all glass, and blurring it on top is very expensive to draw.
-            .scaleEffect(1 - 0.06 * progress)
+            .scaleEffect(scales ? 1 - 0.06 * progress : 1)
             .opacity(1 - ZoomMath.ramp(progress, 0.05, 0.6))
     }
 }

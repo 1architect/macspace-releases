@@ -2,8 +2,9 @@ import AppKit
 import MacSpaceSdk
 import SwiftUI
 
-/// Runs a module action, asking for confirmation first when the action requires it.
-typealias ActionHandler = @MainActor (Action, [String: String]) -> Void
+/// Runs a module action with extra parameters and returns what the module answered (nil when it was not called). `quiet` is for a
+/// switch, which shows its change itself (`ModuleHandle.perform`).
+typealias ActionHandler = @MainActor (_ action: Action, _ extra: [String: String], _ quiet: Bool) async -> ActionResult?
 
 struct ActionButton: View {
     let action: Action
@@ -12,10 +13,10 @@ struct ActionButton: View {
 
     var body: some View {
         Button(role: action.role == .destructive ? .destructive : nil) {
-            if let confirmation = action.confirmation {
-                if ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { handler(action, [:]) }
-            } else {
-                handler(action, [:])
+            // Asked once the button has finished handling the click, not from inside it.
+            Task { @MainActor in
+                if let confirmation = action.confirmation, !ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { return }
+                _ = await handler(action, [:], false)
             }
         } label: {
             if let symbol = action.symbol { Label(action.title, systemImage: symbol) } else { Text(action.title) }

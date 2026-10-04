@@ -1,3 +1,4 @@
+import MacSpacePlatform
 import ServiceManagement
 import SwiftUI
 
@@ -27,6 +28,16 @@ struct GeneralSettingsSection: View {
                 }
             }
             .help("Starts MacSpace when you log in.")
+            // The release the Mac runs, for reports and debugging: selectable, so it can be copied.
+            LabeledContent("macOS") {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
+                    if !SupportedReleases.isSupported() {
+                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(.orange)
+                    }
+                }
+            }
+            .help("The macOS version and build MacSpace is running on.")
             if updates.isAvailable {
                 Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
                 HStack {

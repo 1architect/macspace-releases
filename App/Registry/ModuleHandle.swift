@@ -28,6 +28,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isRefreshing = false
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
+    /// The group row whose page is open over the module's page (`Row.children`), by id; nil on the module's own page.
+    @Published public var openGroup: String?
 
     private var module: (any MacSpaceModule)?
     /// Refreshes under way, and whether an action is running: both make the module busy.
@@ -92,19 +94,26 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         tile = nil
         tileIsStale = false
         lastResult = nil
+        openGroup = nil
     }
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
-    public func refresh(reload: Bool = false) async {
+    /// `quiet` reads the module again without showing it: the charts do not pulse and Refresh does not spin (after a switch, whose
+    /// row already shows the change).
+    public func refresh(reload: Bool = false, quiet: Bool = false) async {
         guard state == .ready, let module else { return }
         let context = context()
         refreshGeneration += 1
         let generation = refreshGeneration
-        refreshes += 1
-        updateBusy()
-        defer {
-            refreshes -= 1
+        if !quiet {
+            refreshes += 1
             updateBusy()
+        }
+        defer {
+            if !quiet {
+                refreshes -= 1
+                updateBusy()
+            }
         }
         if reload { await module.invalidate() }
         async let nextTile = module.tile(context: context)
@@ -122,34 +131,44 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         isRefreshing = refreshes > 0
     }
 
-    /// Runs an action. Missing permissions stop it before the module is called.
-    public func perform(_ action: Action, extraParameters: [String: String] = [:]) async {
-        guard state == .ready, let module else { return }
+    /// Runs an action. Missing permissions stop it before the module is called. Returns what the module answered (nil when it was not
+    /// called).
+    ///
+    /// `quiet` is for a switch: its row has already moved, so the page shows no progress and is not held while the change runs, and
+    /// it is read again quietly afterwards. Only a result the user must see is shown: a failure (the row then moves back) or something
+    /// left to do.
+    @discardableResult
+    public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false) async -> ActionResult? {
+        guard state == .ready, let module else { return nil }
         let missing = action.requires.filter { permissions.status(of: $0) == .missing }
         if !missing.isEmpty {
-            lastResult = ActionResult(outcome: .needsAttention,
+            // For a switch it counts as failed: nothing changed, so the switch goes back.
+            let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
                                       message: "Needs \(missing.map(\.title).joined(separator: ", ")). Grant it in Settings, then try again.",
                                       refresh: false)
-            return
+            lastResult = result
+            return result
         }
         performing = true
-        updateBusy()
-        progress = nil
+        if !quiet { updateBusy() }
+        if !quiet { progress = nil }
         lastResult = nil
         actionGeneration += 1
         let generation = actionGeneration
         let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new })
         let result = await module.perform(request, context: context()) { [weak self] update in
+            guard !quiet else { return }
             Task { @MainActor in
                 guard let self, self.performing, self.actionGeneration == generation else { return }
                 self.progress = update
             }
         }
-        progress = nil
-        lastResult = result
+        if !quiet { progress = nil }
+        if !quiet || result.outcome != .succeeded || result.restartRequired { lastResult = result }
         performing = false
-        updateBusy()
-        if result.refresh { await refresh() }
+        if !quiet { updateBusy() }
+        if result.refresh { await refresh(quiet: quiet) }
+        return result
     }
 
     public func dismissResult() { lastResult = nil }

@@ -46,6 +46,10 @@ enum Theme {
     static let depopulateStagger = 0.035
     static let windowOut = Animation.smooth(duration: 0.28)
     static let value = Animation.smooth(duration: 0.9)
+    /// A switch flipping, and flipping back when its change failed.
+    static let toggle = Animation.spring(duration: 0.3, bounce: 0.15)
+    /// One page giving way to another in the same window: a group's items, or Settings over a module's page.
+    static let push = Animation.spring(duration: 0.45, bounce: 0.1)
 }
 
 extension Color {

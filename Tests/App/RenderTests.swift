@@ -39,7 +39,7 @@ final class RenderTests: XCTestCase {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 14) {
-            WidgetForm(widgets: Self.sample.widgets, handler: { _, _ in }) { EmptyView() }.frame(height: 900)
+            WidgetForm(widgets: Self.sample.widgets, handler: { _, _, _ in nil }) { EmptyView() }.frame(height: 900)
         }
         .padding(20)
         .frame(width: 760)
@@ -100,7 +100,7 @@ final class RenderTests: XCTestCase {
         let view = ZStack(alignment: .topLeading) {
             TileFace(tint: .teal, info: TileInfo(title: "debloat", status: "0/14 switched off"), progress: 1)
             VStack(alignment: .leading, spacing: 14) {
-                WidgetForm(widgets: Array(Self.sample.widgets.prefix(5)), handler: { _, _ in }) { EmptyView() }.frame(height: 560)
+                WidgetForm(widgets: Array(Self.sample.widgets.prefix(5)), handler: { _, _, _ in nil }) { EmptyView() }.frame(height: 560)
             }
             .padding(.top, PageInsets.top).padding(.horizontal, PageInsets.side)
             .frame(maxWidth: 760, alignment: .leading)
@@ -119,7 +119,7 @@ final class RenderTests: XCTestCase {
         let screen = try JSONDecoder().decode(Screen.self, from: Data(contentsOf: URL(fileURLWithPath: file)))
         let view = VStack(alignment: .leading, spacing: 14) {
             Text(screen.title).font(.largeTitle.weight(.bold))
-            WidgetForm(widgets: screen.widgets, handler: { _, _ in }) { EmptyView() }.frame(height: 1200)
+            WidgetForm(widgets: screen.widgets, handler: { _, _, _ in nil }) { EmptyView() }.frame(height: 1200)
         }
         .padding(20).frame(width: 760).background(Color(nsColor: .windowBackgroundColor))
         let renderer = ImageRenderer(content: view)
