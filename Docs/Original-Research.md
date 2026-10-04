@@ -142,7 +142,7 @@ engineering of ModelCatalog internals, stayed research.
 
 | Research result | In the app |
 |---|---|
-| Principles 1–7, build gating, effect-based verification | Every control and cleanup reports what was measured; unverified builds are disabled or labelled. |
+| Principles 1–7, effect-based verification | Every control and cleanup reports what was measured; untested controls are labelled "Not tested". Nothing is gated by macOS build. |
 | Siri-language method, preference write plus notification, round trip | Siri & Apple Intelligence module: the off-switch, the watcher, the release flow. |
 | Orphaned subscription rows, shared models, CacheDelete purge | The release flow's blockers and the "remove leftover models" step. |
 | Metal Toolchain removal, asset census, Full Disk Access findings | System Data's asset families and the permission probe. |

@@ -59,6 +59,9 @@ actor SystemDataStore {
     private var cached: SystemDataSnapshot?
     private var inflight: Task<SystemDataSnapshot, Never>?
     private let builder: Builder
+    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
+    /// came back with the figures from before the action.
+    private var generation = 0
 
     init(builder: @escaping Builder = SystemDataStore.liveSnapshot) {
         self.builder = builder
@@ -73,14 +76,20 @@ actor SystemDataStore {
             guard let privileged else { return scanned }
             return await RootMeasurements.apply(to: scanned, channel: privileged)
         }
+        let started = generation
         inflight = task
         let fresh = await task.value
+        guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged) }
         cached = fresh
         inflight = nil
         return fresh
     }
 
-    func invalidate() { cached = nil }
+    func invalidate() {
+        cached = nil
+        inflight = nil
+        generation += 1
+    }
 
     static func liveSnapshot() -> SystemDataSnapshot {
         let report = SystemDataInspector().inspect()
@@ -91,19 +100,12 @@ actor SystemDataStore {
         return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
     }
 
-    /// Tests CacheDelete on this macOS build the first time (in the CLI child process), then asks how much is purgeable.
-    /// Only mobileassetd's figure is used: the app-container-caches service also reports a figure (1.15 GB on 26B5091g), but
-    /// purging it removed under 100 MB at any urgency, so it is not offered.
+    /// How much is purgeable, asked in the CLI child process. Only mobileassetd's figure is used: the app-container-caches service
+    /// also reports a figure (1.15 GB on 26B5091g), but purging it removed under 100 MB at any urgency, so it is not offered.
     static func livePurgeable() -> UInt64? {
-        let client = CacheDeleteClient()
         let all: [String: UInt64]?
-        if let cli = ToolLocator.cli() {
-            client.ensureValidated(executable: cli)
-            guard client.support == .validated else { return nil }
-            all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli)
-        } else {
-            all = client.support == .validated ? client.purgeableByService() : nil
-        }
+        if let cli = ToolLocator.cli() { all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) }
+        else { all = CacheDeleteClient().purgeableByService() }
         return all?[CacheDeleteService.mobileAsset]
     }
 }

@@ -27,8 +27,8 @@ enum OtherSystemFilesScreenBuilder {
     static func screen(_ snapshot: PurgeableSnapshot) -> Screen {
         guard snapshot.services != nil else {
             return Screen(title: "Other System Files", widgets: [.banner(Banner(id: "unavailable", severity: .warning,
-                title: "macOS's purge service is not available",
-                message: "CacheDelete is missing or failed its self-test on this macOS build, so nothing can be measured or freed here."))])
+                title: "macOS's purge service did not answer",
+                message: "CacheDelete is missing on this system or did not answer, so nothing can be measured or freed right now. Refresh to ask again."))])
         }
         var widgets: [ScreenWidget] = []
         if let free = freeNow(snapshot) { widgets.append(free) }

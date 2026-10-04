@@ -46,7 +46,7 @@ enum DebloatScreenBuilder {
         case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
         case .unknown: return Badge("Cannot read")
-        case .stock: return status.validatedOnThisBuild ? nil : Badge("Unverified")
+        case .stock: return status.tested ? nil : Badge("Not tested", tone: .caution)
         }
     }
 
@@ -62,7 +62,7 @@ enum DebloatScreenBuilder {
     static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
         var lines: [String] = [control.summary]
         if status?.effect?.state == .effective { lines.append("Measured off on this Mac.") }
-        if status?.state == .stock && status?.validatedOnThisBuild == false { lines.append("Not verified on this macOS version; it may have no effect.") }
+        if !control.tested { lines.append("Not tested yet: after switching it off, check that it took effect.") }
         if !control.breaks.isEmpty { lines.append("Stops working while this is off: " + control.breaks.joined(separator: "; ") + ".") }
         if let restart = restartText(control.restart) { lines.append(restart) }
         if let effect = status?.effect?.detail, !effect.isEmpty { lines.append(effect) }
@@ -70,7 +70,7 @@ enum DebloatScreenBuilder {
         return lines.joined(separator: "\n")
     }
 
-    static func confirmation(_ control: DebloatControl, turningOn: Bool, verified: Bool) -> Confirmation {
+    static func confirmation(_ control: DebloatControl, turningOn: Bool) -> Confirmation {
         if !turningOn {
             return Confirmation(title: "Turn \(control.title) back on?", message: "MacSpace restores the values it saved before it changed them.", confirmTitle: "Turn on")
         }
@@ -78,7 +78,7 @@ enum DebloatScreenBuilder {
         if !control.breaks.isEmpty { message += "\n\nStops working while off: " + control.breaks.joined(separator: "; ") + "." }
         if let restart = restartText(control.restart) { message += "\n\n" + restart }
         if control.mechanism == .configurationProfile { message += "\n\nmacOS asks you to approve the MacSpace profile in System Settings before this takes effect." }
-        if !verified { message += "\n\nThis was not verified on your macOS version; it may have no effect." }
+        if !control.tested { message += "\n\nNot tested yet: check afterwards that it took effect." }
         return Confirmation(title: "Turn off \(control.title)?", message: message, confirmTitle: "Turn off")
     }
 
@@ -86,9 +86,8 @@ enum DebloatScreenBuilder {
         let status = snapshot.status(control.id)
         let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable
         let on = isOn(status)
-        let verified = status?.validatedOnThisBuild ?? false
-        var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id, "unverified": verified ? "false" : "true"],
-                            confirmation: confirmation(control, turningOn: !on, verified: verified))
+        var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id],
+                            confirmation: confirmation(control, turningOn: !on))
         if needsHelper(control) { action.requires = [.privilegedHelper] }
         // The switch shows the feature, as in the other modules: on = the feature runs, off = MacSpace switched it off.
         return ToggleRow(id: control.id, title: control.title, isOn: !on, isEnabled: !blocked,
@@ -106,10 +105,10 @@ enum DebloatScreenBuilder {
         return (on, usable.count, awaiting, drifted)
     }
 
-    /// Controls verified on this macOS build that are not on yet.
+    /// Tested controls (on any macOS build) that are not on yet. Untested ones are switched one at a time, so each can be checked.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard let status = snapshot.status(control.id), status.validatedOnThisBuild, !snapshot.cannotTakeEffect.contains(control.id) else { return false }
+            guard control.tested, let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
             return status.state == .stock || status.state == .partial
         }
     }

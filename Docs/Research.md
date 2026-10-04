@@ -70,8 +70,10 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
 `com.apple.mobileassetd.cache-delete`, to remove unlocked assets now (12.04 GB in 4.6 s once, as a normal user).
 
 - The functions are private. Their signature came from disassembly of one build, and a wrong signature crashes the caller. So the
-  call runs in a throwaway child process, and each macOS build is self-tested once (query answers, service filter honoured, purge
-  against a nonexistent volume answers) before it is trusted. Builds checked by hand are listed in `CacheDelete.swift`.
+  call runs in a throwaway child process, where a crash ends that process and is reported as an error. Every build that has the
+  functions may use them (no list of builds); a purge first checks, read-only, that the service filter is honoured. The self-test
+  (`MacSpaceCli purge-assets --self-test`) remains as a diagnostic. **Measured:** on 26A434 in a VM it found no answer right after
+  the VM started and passed later, which is why a self-test result no longer gates anything.
 - **Measured – a bug worth remembering.** The purge callback must be an escaping block. A trailing closure traps with "non-escaping
   closure has escaped" for services that answer after the call returns.
 - **Measured – container caches are not worth offering.** The service `com.apple.cache_delete_app_container_caches` reports

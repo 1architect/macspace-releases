@@ -9,8 +9,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
     private let profileControl = DebloatCatalog.control("ads.personalized-ads-policy")!
     private let verifiedControl = DebloatCatalog.control("telemetry.diagnostics-policy")!
 
-    private func status(_ id: String, _ state: ControlState, validated: Bool = false, effect: EffectStatus? = nil) -> ControlStatus {
-        ControlStatus(controlID: id, state: state, effect: effect, settings: [], validatedOnThisBuild: validated, appliedAt: nil)
+    private func status(_ id: String, _ state: ControlState, effect: EffectStatus? = nil) -> ControlStatus {
+        ControlStatus(controlID: id, state: state, effect: effect, settings: [], tested: DebloatCatalog.control(id)?.tested ?? false, appliedAt: nil)
     }
 
     private func snapshot(_ statuses: [ControlStatus], blocked: Set<String> = []) -> DebloatSnapshot {
@@ -28,24 +28,23 @@ final class DebloatScreenBuilderTests: XCTestCase {
     }
 
     func testToggleStateBadgeAndConfirmationFollowTheControlState() {
-        let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated, validated: true,
+        let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
         XCTAssertFalse(on.isOn, "the switch shows the feature, which MacSpace switched off")
         XCTAssertNil(on.badge, "working as intended needs no badge")
         XCTAssertTrue(on.detail?.contains("Measured off") == true)
         XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on", "flipping it back restores the feature")
 
-        let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock, validated: true)]))
+        let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock)]))
         XCTAssertTrue(off.isOn, "the feature still runs")
         XCTAssertNil(off.badge)
         XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn off")
-        XCTAssertEqual(off.action.parameters["unverified"], "false")
 
-        let unverified = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
-        XCTAssertEqual(unverified.badge?.text, "Unverified")
-        XCTAssertEqual(unverified.action.parameters["unverified"], "true")
-        XCTAssertTrue(unverified.action.confirmation?.message.contains("not verified") == true)
-        XCTAssertTrue(unverified.action.confirmation?.message.contains("approve the MacSpace profile") == true)
+        let untested = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
+        XCTAssertEqual(untested.badge?.text, "Not tested")
+        XCTAssertTrue(untested.isEnabled, "an untested control can be switched, to test it")
+        XCTAssertTrue(untested.action.confirmation?.message.contains("Not tested yet") == true)
+        XCTAssertTrue(untested.action.confirmation?.message.contains("approve the MacSpace profile") == true)
     }
 
     func testStatesThatNeedAttentionAreVisible() {
@@ -80,7 +79,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
 
     func testBannersAndTheRecommendedButton() {
         let screen = DebloatScreenBuilder.screen(snapshot([
-            status(verifiedControl.id, .stock, validated: true), status(helperControl.id, .stock, validated: true),
+            status(verifiedControl.id, .stock), status(helperControl.id, .stock),
             status(profileControl.id, .awaitingApproval), status("ads.advertising-identifier-policy", .drifted),
         ]))
         XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
@@ -93,11 +92,11 @@ final class DebloatScreenBuilderTests: XCTestCase {
     }
 
     func testTheMainButtonSwitchesAllOffThenTurnsAllBackOn() throws {
-        let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock, validated: true), status(helperControl.id, .debloated)]))
+        let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(helperControl.id, .debloated)]))
         XCTAssertEqual(running.primary?.id, "applyRecommended", "a verified feature still runs")
         XCTAssertEqual(running.primary?.role, .prominent)
 
-        let allOff = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .debloated, validated: true), status(helperControl.id, .debloated),
+        let allOff = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .debloated), status(helperControl.id, .debloated),
                                                            status(profileControl.id, .awaitingApproval)]))
         let restore = try XCTUnwrap(allOff.primary)
         XCTAssertEqual(restore.id, "restoreAll")

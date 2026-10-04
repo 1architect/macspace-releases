@@ -30,6 +30,9 @@ actor SiriStore {
     private var cached: SiriSnapshot?
     private var inflight: Task<SiriSnapshot, Never>?
     private let builder: Builder
+    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
+    /// came back with the figures from before the action.
+    private var generation = 0
 
     init(builder: @escaping Builder = SiriStore.liveSnapshot) {
         self.builder = builder
@@ -40,14 +43,20 @@ actor SiriStore {
         if let inflight { return await inflight.value }
         let builder = self.builder
         let task = Task.detached(priority: .utility) { builder() }
+        let started = generation
         inflight = task
         let fresh = await task.value
+        guard started == generation else { return await snapshot(maxAge: maxAge) }
         cached = fresh
         inflight = nil
         return fresh
     }
 
-    func invalidate() { cached = nil }
+    func invalidate() {
+        cached = nil
+        inflight = nil
+        generation += 1
+    }
 
     static func liveSnapshot() -> SiriSnapshot {
         var snapshot = liveSnapshotOnThisMac()
@@ -67,14 +76,9 @@ actor SiriStore {
         }
         let accounts = AppleIntelligenceAccountsReport.live()
         let cli = ToolLocator.cli()
-        let client = CacheDeleteClient()
-        var purgeable: UInt64?
-        if let cli {
-            client.ensureValidated(executable: cli)
-            if client.support == .validated { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
-        } else if client.support == .validated {
-            purgeable = client.purgeableByService()?[CacheDeleteService.mobileAsset]
-        }
+        let purgeable: UInt64?
+        if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
+        else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
         return SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                             releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),

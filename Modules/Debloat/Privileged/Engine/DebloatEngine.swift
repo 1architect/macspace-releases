@@ -12,8 +12,6 @@ public enum DebloatEngineError: Error, Equatable, CustomStringConvertible {
 }
 
 public struct DebloatPlanOptions: Sendable {
-    /// Allow applying controls without evidence for the running build.
-    public var allowUnverified: Bool
     /// On revert, restore the catalog fallback for settings MacSpace never changed. By default MacSpace only
     /// undoes its own changes.
     public var restoreFallbacks: Bool
@@ -24,9 +22,7 @@ public struct DebloatPlanOptions: Sendable {
     /// the privileged helper.
     public var privilegeFilter: DebloatPrivilege?
 
-    public init(allowUnverified: Bool = false, restoreFallbacks: Bool = false, immediate: Bool = false,
-                privilegeFilter: DebloatPrivilege? = nil) {
-        self.allowUnverified = allowUnverified
+    public init(restoreFallbacks: Bool = false, immediate: Bool = false, privilegeFilter: DebloatPrivilege? = nil) {
         self.restoreFallbacks = restoreFallbacks
         self.immediate = immediate
         self.privilegeFilter = privilegeFilter
@@ -139,9 +135,6 @@ public final class DebloatEngine {
             return SettingStatus(setting: status.setting, availability: status.availability, current: status.current, desired: status.desired,
                                  matchesDesired: status.matchesDesired, detail: [status.detail, note].compactMap { $0 }.joined(separator: "; "))
         }
-        let build = system.environment().build
-        let validated = build.map(control.validatedBuilds.contains) ?? false
-
         let state: ControlState
         if control.settings.isEmpty {
             state = .unknown
@@ -166,7 +159,7 @@ public final class DebloatEngine {
 
         let effect = control.effect.map { evaluate($0, control: control, state: state, appliedAt: appliedAt, processes: processes) }
         return ControlStatus(controlID: control.id, state: state, effect: effect, settings: settings,
-                             validatedOnThisBuild: validated, appliedAt: appliedAt)
+                             tested: control.tested, appliedAt: appliedAt)
     }
 
     func evaluate(_ check: EffectCheck, control: DebloatControl, state: ControlState, appliedAt: Date?,
@@ -255,22 +248,15 @@ public final class DebloatEngine {
         }
         let ignored = action == .apply ? ignoredLaunchdSettings(control) : [:]
         if action == .apply, control.measuredIneffective(in: environment) {
-            blockers.append("Measured ineffective with SIP enabled on build \(environment.build ?? "?"): the change does not take effect.")
+            blockers.append("Measured ineffective with SIP enabled (\(control.ineffectiveWithSIPBuilds.joined(separator: ", "))): the change does not take effect.")
         } else if action == .apply, cannotTakeEffect(control) {
             blockers.append("Cannot take effect: \(Self.ignoreSummary(ignored.values)).")
         } else if !ignored.isEmpty {
             let labels = control.settings.filter { ignored[$0.id] != nil }.compactMap { $0.launchd?.label }
             warnings.append("launchd will not honor these overrides (\(Self.ignoreSummary(ignored.values))): \(labels.joined(separator: ", ")).")
-        } else if action == .apply, environment.sip == .enabled, !control.ineffectiveWithSIPBuilds.isEmpty {
-            warnings.append("Measured ineffective with SIP enabled on \(control.ineffectiveWithSIPBuilds.joined(separator: ", ")); likely ineffective on this build too.")
         }
         if action == .apply {
-            let validated = environment.build.map(control.validatedBuilds.contains) ?? false
-            if !validated && !options.allowUnverified {
-                blockers.append("Not validated on build \(environment.build ?? "unknown"); applying it needs explicit permission (allowUnverified).")
-            } else if !validated {
-                warnings.append("Not validated on build \(environment.build ?? "unknown"); verify the effect after applying.")
-            }
+            if !control.tested { warnings.append("Not tested yet: check that it takes effect after applying.") }
             if !control.breaks.isEmpty { warnings.append("Breaks: " + control.breaks.joined(separator: "; ")) }
         }
         if options.immediate, control.settings.contains(where: { $0.kind == .launchdService }) {

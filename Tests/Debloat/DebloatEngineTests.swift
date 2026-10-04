@@ -55,14 +55,11 @@ final class DebloatEngineTests: XCTestCase {
 
     // MARK: Plans
 
-    func testUnverifiedControlsNeedExplicitPermission() throws {
+    func testUntestedControlsApplyWithANoteToCheckThem() throws {
         let (engine, _, _) = makeEngine()
-        let blocked = try engine.plan(.apply, controlIDs: ["test.mixed"])[0]
-        XCTAssertFalse(blocked.runnable)
-        XCTAssertTrue(blocked.blockers[0].contains("allowUnverified"))
-
-        let allowed = try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true))[0]
-        XCTAssertTrue(allowed.runnable)
+        let allowed = try engine.plan(.apply, controlIDs: ["test.mixed"])[0]
+        XCTAssertTrue(allowed.runnable, "no control is gated by macOS build or by being untested")
+        XCTAssertTrue(allowed.warnings.contains { $0.contains("Not tested yet") })
         XCTAssertTrue(allowed.warnings.contains { $0.contains("Example feature") })
         XCTAssertTrue(allowed.warnings.contains { $0.contains("need root") })
         XCTAssertEqual(allowed.steps.map(\.privilege), [.user, .root])
@@ -93,7 +90,7 @@ final class DebloatEngineTests: XCTestCase {
 
     func testStepsForAnotherPrivilegeAreSkipped() throws {
         let (engine, system, journal) = makeEngine()
-        let plans = try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true))
+        let plans = try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions())
         let result = engine.execute(plans)[0]
         XCTAssertEqual(result.steps.map(\.outcome), [.changed, .skipped])
         XCTAssertEqual(result.statusAfter?.state, .partial)
@@ -103,7 +100,7 @@ final class DebloatEngineTests: XCTestCase {
         XCTAssertTrue(journal.load(.root).entries.isEmpty)
 
         system.env.runningAsRoot = true
-        let rootResult = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true)))[0]
+        let rootResult = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions()))[0]
         XCTAssertEqual(rootResult.steps.map(\.outcome), [.alreadySatisfied, .changed])
         XCTAssertEqual(journal.load(.root).entries.count, 1)
         XCTAssertEqual(rootResult.statusAfter?.state, .debloated)
@@ -140,7 +137,7 @@ final class DebloatEngineTests: XCTestCase {
     func testRevertAfterLaunchdClearedTheOverrideWritesNothing() throws {
         let (engine, system, journal) = makeEngine()
         system.env.sip = .disabled
-        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true)))
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions()))
         system.overrides[agent.id] = nil // cleared by launchd at login
         let writes = system.writes.count
         let result = engine.execute(try engine.plan(.revert, controlIDs: ["test.mixed"]))[0]
@@ -231,7 +228,7 @@ final class DebloatEngineTests: XCTestCase {
         system.env.runningAsRoot = false
         system.overrides[daemon.id] = true
         system.runningProcesses = [process("/usr/libexec/exampleagent", elapsed: 3600)]
-        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true)))
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions()))
         XCTAssertEqual(engine.status(of: try engine.control("test.mixed")).effect?.state, .pending)
 
         system.clock += 600
@@ -249,7 +246,7 @@ final class DebloatEngineTests: XCTestCase {
         let (engine, system, _) = makeEngine()
         system.env.bootedAt = system.clock - 86_400
         system.overrides[daemon.id] = true
-        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true)))
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions()))
         system.clock += 60
         system.runningProcesses = [process("/usr/libexec/exampleagent", elapsed: 5)]
         let pending = engine.status(of: try engine.control("test.mixed")).effect
@@ -264,7 +261,7 @@ final class DebloatEngineTests: XCTestCase {
         let (engine, system, _) = makeEngine()
         system.env.sip = .disabled // bootout of Apple agents worked with SIP disabled on 26B5091g
         system.runningProcesses = [process("/fake/com.example.agent")]
-        let options = DebloatPlanOptions(allowUnverified: true, immediate: true)
+        let options = DebloatPlanOptions(immediate: true)
         let plan = try engine.plan(.apply, controlIDs: ["test.mixed"], options: options)[0]
         XCTAssertTrue(plan.immediate)
         XCTAssertTrue(plan.warnings.contains { $0.contains("bootout") })
@@ -281,7 +278,7 @@ final class DebloatEngineTests: XCTestCase {
     func testImmediateStopsAnAlreadyDisabledServiceAndToleratesFailure() throws {
         let (engine, system, _) = makeEngine()
         system.overrides[agent.id] = true
-        let options = DebloatPlanOptions(allowUnverified: true, immediate: true)
+        let options = DebloatPlanOptions(immediate: true)
         _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: options))
         XCTAssertEqual(system.sessionCalls, ["stop com.example.agent"])
 
@@ -303,7 +300,7 @@ final class DebloatEngineTests: XCTestCase {
     func testDriftedControlEffectSaysUndone() throws {
         let (engine, system, _) = makeEngine()
         system.overrides[daemon.id] = true
-        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions(allowUnverified: true)))
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.mixed"], options: DebloatPlanOptions()))
         system.overrides[agent.id] = nil // launchd cleared the override at boot
         system.runningProcesses = [process("/usr/libexec/exampleagent", elapsed: 5)]
         let status = engine.status(of: try engine.control("test.mixed"))
@@ -318,18 +315,17 @@ final class DebloatEngineTests: XCTestCase {
                                      ineffectiveWithSIPBuilds: ["26B5091g"])
         let system = FakeDebloatSystem(controls: [control])
         let engine = DebloatEngine(controls: [control], system: system, journal: MemoryJournalStore())
-        let options = DebloatPlanOptions(allowUnverified: true)
+        let options = DebloatPlanOptions()
 
         system.env.sip = .enabled
         let blocked = try engine.plan(.apply, controlIDs: ["test.cleared"], options: options)[0]
-        XCTAssertTrue(blocked.blockers.contains { $0.contains("Measured ineffective with SIP enabled") }, "allowUnverified does not bypass a measured failure")
+        XCTAssertTrue(blocked.blockers.contains { $0.contains("Measured ineffective with SIP enabled") })
         XCTAssertEqual(engine.status(of: control).effect?.state, .notControllable)
         XCTAssertTrue(try engine.plan(.revert, controlIDs: ["test.cleared"])[0].runnable, "revert stays possible")
 
-        system.env.build = "26C1"
-        let otherBuild = try engine.plan(.apply, controlIDs: ["test.cleared"], options: options)[0]
-        XCTAssertTrue(otherBuild.runnable)
-        XCTAssertTrue(otherBuild.warnings.contains { $0.contains("likely ineffective") })
+        system.env.build = "27A1"
+        XCTAssertFalse(try engine.plan(.apply, controlIDs: ["test.cleared"], options: options)[0].runnable,
+                       "a measurement on one build holds on every build")
 
         system.env.build = "26B5091g"
         system.env.sip = .disabled

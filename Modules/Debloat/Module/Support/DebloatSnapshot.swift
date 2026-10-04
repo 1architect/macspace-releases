@@ -20,6 +20,9 @@ actor DebloatStore {
     private var cached: DebloatSnapshot?
     private var inflight: Task<DebloatSnapshot, Never>?
     private let builder: Builder
+    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
+    /// came back with the figures from before the action.
+    private var generation = 0
 
     init(builder: @escaping Builder = DebloatStore.liveSnapshot) {
         self.builder = builder
@@ -30,14 +33,20 @@ actor DebloatStore {
         if let inflight { return await inflight.value }
         let builder = self.builder
         let task = Task.detached(priority: .utility) { builder() }
+        let started = generation
         inflight = task
         let fresh = await task.value
+        guard started == generation else { return await snapshot(maxAge: maxAge) }
         cached = fresh
         inflight = nil
         return fresh
     }
 
-    func invalidate() { cached = nil }
+    func invalidate() {
+        cached = nil
+        inflight = nil
+        generation += 1
+    }
 
     static func liveEngine() -> DebloatEngine {
         DebloatEngine(system: LiveDebloatSystem(), journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))

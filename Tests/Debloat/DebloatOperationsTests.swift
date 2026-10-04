@@ -37,8 +37,8 @@ final class DebloatOperationsTests: XCTestCase {
     }
 
     func testArgumentsRoundTripThePlanOptions() {
-        let arguments = DebloatPrivilegedOperations.arguments(controlIDs: ["a", "b"], options: DebloatPlanOptions(allowUnverified: true, immediate: true))
-        XCTAssertEqual(arguments, ["controls": "a,b", "allowUnverified": "true", "restoreFallbacks": "false", "immediate": "true"])
+        let arguments = DebloatPrivilegedOperations.arguments(controlIDs: ["a", "b"], options: DebloatPlanOptions(immediate: true))
+        XCTAssertEqual(arguments, ["controls": "a,b", "restoreFallbacks": "false", "immediate": "true"])
     }
 
     func testTheCallerBecomesTheTargetUser() {

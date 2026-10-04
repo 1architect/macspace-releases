@@ -3,7 +3,7 @@ import MacSpacePlatform
 
 /// What macOS counts as purgeable on the Data volume, per CacheDelete service, at the urgency the disk's "purgeable" figure uses (3).
 struct PurgeableSnapshot: Sendable, Equatable {
-    /// Bytes each service reports; nil when CacheDelete is unavailable or failed its self-test on this macOS build.
+    /// Bytes each service reports; nil when CacheDelete is unavailable or did not answer.
     var services: [String: UInt64]?
     var takenAt: Date
     /// What macOS estimated for the files apps marked purgeable when it last kept them after being asked to delete them.
@@ -63,10 +63,31 @@ actor PurgeableStore {
     private var removed: (estimate: UInt64, bytes: UInt64)?
     /// macOS's own estimate in the last snapshot, before what was freed is taken off it.
     private var rawEstimate: UInt64 = 0
+    /// One query at a time: the tile and the page asked together and started two CLI processes.
+    private var inflight: Task<PurgeableSnapshot, Never>?
+    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
+    /// came back with the figures from before the action.
+    private var generation = 0
 
     func snapshot(maxAge: TimeInterval = 60) async -> PurgeableSnapshot {
         if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
-        var fresh = await Task.detached(priority: .utility) { Self.liveSnapshot() }.value
+        let started = generation
+        if let inflight {
+            let raw = await inflight.value
+            return started == generation ? settle(raw) : await snapshot(maxAge: maxAge)
+        }
+        let task = Task.detached(priority: .utility) { Self.liveSnapshot() }
+        inflight = task
+        let raw = await task.value
+        guard started == generation else { return await snapshot(maxAge: maxAge) }
+        inflight = nil
+        return settle(raw)
+    }
+
+    /// macOS's answer with what MacSpace knows on top: what macOS kept, and what was just freed. The same for every caller that
+    /// waited on one query (applying it twice to the same answer gives the same result).
+    private func settle(_ raw: PurgeableSnapshot) -> PurgeableSnapshot {
+        var fresh = raw
         fresh.declinedBytes = declined
         rawEstimate = fresh.services?[CacheDeleteService.fsPurgeableData] ?? 0
         fresh.services = Self.accounting(for: &removed, in: fresh.services)
@@ -96,23 +117,21 @@ actor PurgeableStore {
     /// MacSpace freed `bytes` while macOS estimated `estimate`.
     func noteRemoved(_ bytes: UInt64, estimate: UInt64) { removed = (estimate, bytes) }
 
-    func invalidate() { cached = nil }
+    func invalidate() {
+        cached = nil
+        inflight = nil
+        generation += 1
+    }
 
     /// macOS removed nothing when asked, while estimating `bytes`: not offered again until its estimate grows.
     func noteDeclined(estimate bytes: UInt64) { declined = bytes }
 
-    /// Asked in the CLI child process, so a changed private interface crashes it and not the app. Each macOS build is self-tested
-    /// once before CacheDelete is trusted.
+    /// Asked in the CLI child process, so a changed private interface crashes it and not the app.
     static func liveSnapshot() -> PurgeableSnapshot {
-        let client = CacheDeleteClient()
         let urgency = CacheDeleteService.fsPurgeableDataUrgency
-        var services: [String: UInt64]?
-        if let cli = ToolLocator.cli() {
-            client.ensureValidated(executable: cli)
-            if client.support == .validated { services = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
-        } else if client.support == .validated {
-            services = client.purgeableByService(urgency: urgency)
-        }
+        let services: [String: UInt64]?
+        if let cli = ToolLocator.cli() { services = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
+        else { services = CacheDeleteClient().purgeableByService(urgency: urgency) }
         return PurgeableSnapshot(services: services, takenAt: Date())
     }
 }

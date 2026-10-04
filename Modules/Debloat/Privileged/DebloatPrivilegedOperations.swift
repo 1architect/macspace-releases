@@ -28,7 +28,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
     public var operations: Set<String> { [Self.status, Self.apply, Self.revert] }
 
     public static func arguments(controlIDs: [String], options: DebloatPlanOptions) -> [String: String] {
-        ["controls": controlIDs.joined(separator: ","), "allowUnverified": String(options.allowUnverified),
+        ["controls": controlIDs.joined(separator: ","),
          "restoreFallbacks": String(options.restoreFallbacks), "immediate": String(options.immediate)]
     }
 
@@ -45,7 +45,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
             return try encoder.encode(controls.map(engine.status(of:)))
         case Self.apply, Self.revert:
             guard !ids.isEmpty else { throw PrivilegedOperationError("Name at least one control.") }
-            let options = DebloatPlanOptions(allowUnverified: arguments["allowUnverified"] == "true", restoreFallbacks: arguments["restoreFallbacks"] == "true",
+            let options = DebloatPlanOptions(restoreFallbacks: arguments["restoreFallbacks"] == "true",
                                              immediate: arguments["immediate"] == "true", privilegeFilter: .root)
             let plans = try engine.plan(operation == Self.apply ? .apply : .revert, controlIDs: ids, options: options)
             return try encoder.encode(engine.execute(plans))

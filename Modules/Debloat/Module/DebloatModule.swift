@@ -38,13 +38,13 @@ public struct DebloatModule: MacSpaceModule {
         case "toggle":
             guard let id = request.parameters["id"] else { return .failed("No control was named.") }
             let apply = Self.appliesProtection(switchValue: request.parameters["value"])
-            return await Self.change(apply ? .apply : .revert, [id], unverified: request.parameters["unverified"] == "true", context: context, progress: progress)
+            return await Self.change(apply ? .apply : .revert, [id], context: context, progress: progress)
         case "applyRecommended", "reapply":
             let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
-            return await Self.change(.apply, ids, unverified: false, context: context, progress: progress)
+            return await Self.change(.apply, ids, context: context, progress: progress)
         case "restoreAll":
             let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
-            return await Self.change(.revert, ids, unverified: false, context: context, progress: progress)
+            return await Self.change(.revert, ids, context: context, progress: progress)
         case "openProfiles":
             if let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") { NSWorkspace.shared.open(url) }
             return ActionResult(outcome: .succeeded, message: "Opened System Settings.", refresh: false)
@@ -56,13 +56,13 @@ public struct DebloatModule: MacSpaceModule {
     /// The switch shows the feature: switching it off applies the protection, switching it on restores the original.
     static func appliesProtection(switchValue: String?) -> Bool { switchValue == "false" }
 
-    static func change(_ action: ChangeAction, _ ids: [String], unverified: Bool, context: ModuleContext,
+    static func change(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed("No controls were selected.") }
         progress(ActionProgress(message: action == .apply ? "Switching off…" : "Switching back on…"))
         let coordinator = DebloatCoordinator(engine: DebloatStore.liveEngine(), channel: context.privileged)
         do {
-            let results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions(allowUnverified: unverified))
+            let results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions())
             return summarize(action, results)
         } catch {
             return .failed(error.localizedDescription)
@@ -88,6 +88,7 @@ public struct DebloatModule: MacSpaceModule {
         }
         let verb = action == .apply ? "on" : "off"
         if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Nothing was changed.", details: details, refresh: true) }
+        if changed == 0 { return .succeeded(action == .apply ? "Already switched off." : "Already back on.") }
         if approval {
             return ActionResult(outcome: .needsAttention, message: "Approve the MacSpace profile to finish.",
                                 details: ["Open System Settings > General > Device Management and approve it."] + details, restartRequired: restart)

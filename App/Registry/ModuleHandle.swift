@@ -30,6 +30,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var lastResult: ActionResult?
 
     private var module: (any MacSpaceModule)?
+    /// Refreshes under way, and whether an action is running: both make the module busy.
+    private var refreshes = 0
+    private var performing = false
+    /// Bumped by each refresh: a slower, older one that finishes last must not put back figures older than the newest.
+    private var refreshGeneration = 0
+    /// Bumped by each action: a progress message that arrives after its action finished must not show again.
+    private var actionGeneration = 0
     private let settings: SettingsStore
     private let permissions: any PermissionChecker
     private let privileged: (any PrivilegedChannel)?
@@ -91,18 +98,28 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func refresh(reload: Bool = false) async {
         guard state == .ready, let module else { return }
         let context = context()
-        isBusy = true
-        isRefreshing = true
-        defer { isRefreshing = false }
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        refreshes += 1
+        updateBusy()
+        defer {
+            refreshes -= 1
+            updateBusy()
+        }
         if reload { await module.invalidate() }
         async let nextTile = module.tile(context: context)
         async let nextScreen = module.screen(context: context)
         let (newTile, newScreen) = await (nextTile, nextScreen)
+        guard generation == refreshGeneration, state == .ready else { return }
         tile = newTile
         tileIsStale = false
         settings.setLastTile(newTile, module: id)
         screen = newScreen
-        isBusy = false
+    }
+
+    private func updateBusy() {
+        isBusy = performing || refreshes > 0
+        isRefreshing = refreshes > 0
     }
 
     /// Runs an action. Missing permissions stop it before the module is called.
@@ -115,16 +132,23 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                                       refresh: false)
             return
         }
-        isBusy = true
+        performing = true
+        updateBusy()
         progress = nil
         lastResult = nil
+        actionGeneration += 1
+        let generation = actionGeneration
         let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new })
         let result = await module.perform(request, context: context()) { [weak self] update in
-            Task { @MainActor in self?.progress = update }
+            Task { @MainActor in
+                guard let self, self.performing, self.actionGeneration == generation else { return }
+                self.progress = update
+            }
         }
         progress = nil
         lastResult = result
-        isBusy = false
+        performing = false
+        updateBusy()
         if result.refresh { await refresh() }
     }
 

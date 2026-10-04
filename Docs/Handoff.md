@@ -140,8 +140,12 @@ Settings; helper install, approval and measurement of root-only locations; delet
 state; all of it on macOS 27 build 26B5091g, and the helper install and Siri message on 27.0.1 in a VM.
 
 **Not verified:** notarization and stapling; Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build;
-the helper through an update; the "Release and delete leftover models" flow and Debloat profile approval beyond the development Mac;
-any other macOS build.
+the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
+Debloat profile approval beyond the development Mac; the Debloat controls marked "Not tested" in the app.
+
+**No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
+(crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
+measured on any build counts as tested. Untested controls work and say "Not tested", so they get tested.
 
 ## Releasing
 

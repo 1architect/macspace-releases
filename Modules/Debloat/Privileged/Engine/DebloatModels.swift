@@ -391,11 +391,12 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
     /// Features that stop working while the control is applied.
     public let breaks: [String]
     public let notes: [String]
-    /// Builds on which a before/after experiment showed the effect. Apply is refused elsewhere unless the
-    /// caller explicitly allows unverified controls.
+    /// Builds on which a before/after experiment showed the effect. A control tested on any build counts as tested on every build;
+    /// an empty list means it was never tested, which the app says so it gets tested (`tested`).
     public let validatedBuilds: [String]
     /// Builds on which the control was measured to have no effect while SIP is enabled (e.g. launchd clears the
-    /// override whenever the login session starts). Apply is refused there and the effect is `notControllable`.
+    /// override whenever the login session starts). Like a test, the measurement holds for every build: with SIP enabled apply is
+    /// refused and the effect is `notControllable`.
     public let ineffectiveWithSIPBuilds: [String]
     /// The System Settings pane that shows the same option, for a deep link in the app.
     public let settingsURL: String?
@@ -440,8 +441,11 @@ public enum SIPState: String, Codable, Sendable {
 public extension DebloatControl {
     /// Whether measurements show the control cannot take effect on this system.
     func measuredIneffective(in environment: DebloatEnvironment) -> Bool {
-        environment.sip == .enabled && environment.build.map(ineffectiveWithSIPBuilds.contains) == true
+        environment.sip == .enabled && !ineffectiveWithSIPBuilds.isEmpty
     }
+
+    /// Whether a before/after experiment showed the effect, on any macOS build.
+    public var tested: Bool { !validatedBuilds.isEmpty }
 }
 
 public struct DebloatEnvironment: Codable, Equatable, Sendable {
@@ -549,9 +553,25 @@ public struct ControlStatus: Codable, Equatable, Sendable {
     public let state: ControlState
     public let effect: EffectStatus?
     public let settings: [SettingStatus]
-    public let validatedOnThisBuild: Bool
+    /// A before/after experiment showed the effect, on any macOS build (`DebloatControl.tested`).
+    public let tested: Bool
     /// When MacSpace last applied the control and it has not been reverted since.
     public let appliedAt: Date?
+
+    public init(controlID: String, state: ControlState, effect: EffectStatus?, settings: [SettingStatus], tested: Bool, appliedAt: Date?) {
+        self.controlID = controlID
+        self.state = state
+        self.effect = effect
+        self.settings = settings
+        self.tested = tested
+        self.appliedAt = appliedAt
+    }
+
+    // The key keeps its old name, so an app and a helper of different builds still read each other.
+    enum CodingKeys: String, CodingKey {
+        case controlID, state, effect, settings, appliedAt
+        case tested = "validatedOnThisBuild"
+    }
 }
 
 // MARK: - Plans and results

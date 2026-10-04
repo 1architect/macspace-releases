@@ -1,32 +1,27 @@
 import Foundation
 import MacSpacePlatform
 
-/// `MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]`
+/// `MacSpaceCli purge-assets [--execute] [--self-test] [--json]`
 /// `MacSpaceCli purge-assets --all-services [--urgency 1-4] [--raw]`
 /// `MacSpaceCli purge-assets --service <id> --experiment [--urgency 1-4] [--execute]` for a service still being measured
 ///
 /// The only place the private CacheDelete calls run in a normal flow, so that a changed interface crashes this
-/// throwaway process and not the app. The app starts it as a child (`CacheDeleteClient.validate/purgeInSubprocess`).
+/// throwaway process and not the app. The app starts it as a child (`CacheDeleteClient.…InSubprocess`).
 enum PurgeCommand {
     static func run(_ arguments: [String]) -> Never {
         let json = arguments.contains("--json")
-        let client = CacheDeleteClient(allowUnverified: arguments.contains("--allow-unverified"))
+        let client = CacheDeleteClient()
 
         if arguments.contains("--self-test") {
             let result = client.runSelfTest()
-            if json { emit(result) }
+            if json { emit(result, status: result.passed ? 0 : 1) }
             print("CacheDelete self-test on \(result.build ?? "?"): \(result.passed ? "passed" : "failed") — \(result.detail)")
             exit(result.passed ? 0 : 1)
         }
 
-        // First use on this macOS build: test in a child process, then carry on if it passed.
-        if client.support == .unverified, !arguments.contains("--allow-unverified"), let executable = Bundle.main.executableURL {
-            let test = client.validate(executable: executable)
-            if !json { print("First use on build \(test.build ?? "?"): self-test \(test.passed ? "passed" : "failed") (\(test.detail)).") }
-        }
         if let refusal = client.refusal {
             if json { emit(CacheDeletePurgeResult(services: [CacheDeleteService.mobileAsset], purgedBytes: nil, freeBytesBefore: nil,
-                                                  freeBytesAfter: nil, elapsedSeconds: nil, error: refusal)) }
+                                                  freeBytesAfter: nil, elapsedSeconds: nil, error: refusal), status: 1) }
             print(refusal)
             exit(1)
         }
@@ -73,7 +68,7 @@ enum PurgeCommand {
             exit(0)
         }
         let result = client.purge(services: [service], urgency: urgency)
-        if json { emit(result) }
+        if json { emit(result, status: result.error == nil ? 0 : 1) }
         if let error = result.error { print("error: \(error)") }
         for (key, value) in (result.answer ?? [:]).sorted(by: { $0.key < $1.key }) { print("  \(key) = \(value)") }
         print("\(service) reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed in \(result.elapsedSeconds.map { String(format: "%.1f s", $0) } ?? "?").")
@@ -81,11 +76,12 @@ enum PurgeCommand {
         exit(result.error == nil ? 0 : 1)
     }
 
-    static func emit<T: Encodable>(_ value: T) -> Never {
+    /// Writes `value` as JSON and exits with `status`: a refusal or a failed purge no longer exited 0.
+    static func emit<T: Encodable>(_ value: T, status: Int32 = 0) -> Never {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         encoder.dateEncodingStrategy = .iso8601
         if let data = try? encoder.encode(value) { FileHandle.standardOutput.write(data); print() }
-        exit(0)
+        exit(status)
     }
 }

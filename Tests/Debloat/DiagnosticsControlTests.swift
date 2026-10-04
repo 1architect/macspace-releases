@@ -19,7 +19,7 @@ final class SIPRuleTests: XCTestCase {
     func testControlWhoseServicesAreAllClearedIsBlocked() throws {
         let (engine, _, control) = engine([cleared])
         XCTAssertTrue(engine.cannotTakeEffect(control))
-        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions(allowUnverified: true))[0]
+        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions())[0]
         XCTAssertTrue(plan.blockers.contains { $0.contains("RemovableServices") })
         XCTAssertEqual(engine.status(of: control).effect?.state, .notControllable)
         XCTAssertTrue(engine.status(of: control).settings[0].detail?.contains("not in RemovableServices") ?? false)
@@ -28,7 +28,7 @@ final class SIPRuleTests: XCTestCase {
     func testRemovableServicesStayApplicable() throws {
         let (engine, _, control) = engine([removable])
         XCTAssertFalse(engine.cannotTakeEffect(control))
-        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions(allowUnverified: true))[0]
+        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions())[0]
         XCTAssertTrue(plan.runnable)
         XCTAssertFalse(plan.warnings.contains { $0.contains("will not honor") })
         XCTAssertNil(engine.status(of: control).settings[0].detail)
@@ -37,7 +37,7 @@ final class SIPRuleTests: XCTestCase {
     func testMixedControlWarnsAboutTheClearedServices() throws {
         let (engine, _, control) = engine([removable, cleared])
         XCTAssertFalse(engine.cannotTakeEffect(control))
-        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions(allowUnverified: true))[0]
+        let plan = try engine.plan(.apply, controlIDs: ["test.launchd"], options: DebloatPlanOptions())[0]
         XCTAssertTrue(plan.runnable)
         XCTAssertTrue(plan.warnings.contains { $0.contains("will not honor") && $0.hasSuffix(": com.apple.sirittsd.") })
     }
@@ -109,7 +109,7 @@ final class SystemToolTests: XCTestCase {
         let setting = control.settings[0]
         system.preferences[setting.id] = .bool(true)
         system.env.runningAsRoot = true
-        let options = DebloatPlanOptions(allowUnverified: true)
+        let options = DebloatPlanOptions()
         XCTAssertEqual(engine.execute(try engine.plan(.apply, controlIDs: [control.id], options: options))[0].steps.map(\.outcome), [.changed])
         XCTAssertEqual(engine.status(of: control).state, .debloated)
         _ = engine.execute(try engine.plan(.revert, controlIDs: [control.id]))

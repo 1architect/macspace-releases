@@ -38,7 +38,7 @@ struct MacSpaceCli {
                    MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
                    MacSpaceCli screen <module-id> [--dir <folder>] [--summary]
                    MacSpaceCli helper [--unregister] [--register] [--ping]
-                   MacSpaceCli purge-assets [--execute] [--self-test] [--allow-unverified] [--json]
+                   MacSpaceCli purge-assets [--execute] [--self-test] [--json]
             """)
             exit(arguments.isEmpty ? 0 : 64)
         }

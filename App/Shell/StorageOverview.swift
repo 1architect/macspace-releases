@@ -45,15 +45,10 @@ final class StorageOverview: ObservableObject {
     }
 
     /// The purgeable files, asked in the CLI child process (a changed private interface crashes it, not the app). nil when
-    /// CacheDelete is unavailable or failed its self-test on this macOS build.
+    /// CacheDelete is unavailable or does not answer.
     nonisolated static func purgeableFiles() -> UInt64? {
-        let client = CacheDeleteClient()
         let service = CacheDeleteService.fsPurgeableData, urgency = CacheDeleteService.fsPurgeableDataUrgency
-        if let cli = ToolLocator.cli() {
-            client.ensureValidated(executable: cli)
-            guard client.support == .validated else { return nil }
-            return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency)?[service]
-        }
-        return client.support == .validated ? client.purgeableByService(urgency: urgency)?[service] : nil
+        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency)?[service] }
+        return CacheDeleteClient().purgeableByService(urgency: urgency)?[service]
     }
 }
