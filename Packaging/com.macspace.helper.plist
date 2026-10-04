@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Template for the app's helper daemon. Scripts/Assemble.sh copies it to Contents/Library/LaunchDaemons/ and fills in
-  TEAM_ID: only a client signed by that team with the app's bundle identifier can talk to the root helper.
+  TEAM_ID: only a client signed by that team as the app or as its command-line tool can talk to the root helper.
 -->
 <plist version="1.0">
 <dict>
@@ -14,7 +14,7 @@
 	<array>
 		<string>MacSpaceHelper</string>
 		<string>--client-requirement</string>
-		<string>anchor apple generic and identifier "com.macspace.app" and certificate leaf[subject.OU] = "__TEAM_ID__"</string>
+		<string>anchor apple generic and (identifier "com.macspace.app" or identifier "com.macspace.cli") and certificate leaf[subject.OU] = "__TEAM_ID__"</string>
 	</array>
 	<key>MachServices</key>
 	<dict>

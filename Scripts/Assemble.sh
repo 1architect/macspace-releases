@@ -148,7 +148,8 @@ done
 codesign "${FLAGS[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do codesign "${FLAGS[@]}" "$lib"; done
 for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
-codesign "${FLAGS[@]}" "$APP/Contents/MacOS/MacSpaceCli"
+# Its own identifier, which the helper accepts besides the app's: signed as "MacSpaceCli", `MacSpaceCli helper --ping` was turned away.
+codesign "${FLAGS[@]}" --identifier com.macspace.cli "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP" || { echo "error: the signed app does not verify; do not copy Build/MacSpace.app" >&2; exit 1; }
