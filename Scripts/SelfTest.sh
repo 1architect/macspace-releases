@@ -237,8 +237,9 @@ react_window() { # name, command...
   "$@" > /dev/null 2>&1 < /dev/null
   sleep 5
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+  if ! grep -q '^Filtering' "$file"; then result FAIL "$name" "log stream did not start: $(head -1 "$file")"; return; fi
   local lines; lines=$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -vc '^Filtering')
-  result INFO "$name" "$lines log lines from the ads daemons"
+  result INFO "$name" "$lines log lines from the ads daemons; running: $(pgrep -x adprivacyd > /dev/null && echo adprivacyd) $(pgrep -x promotedcontentd > /dev/null && echo promotedcontentd)"
   note ""; note "$name:"; note '```'; note "$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -v '^Filtering' | head -15)"; note '```'
 }
 note "Running before: $(pgrep -lx promotedcontentd | tr '\n' ' ')$(pgrep -lx adprivacyd | tr '\n' ' ')"
@@ -247,10 +248,17 @@ case "$ads_found" in
   on|off)
     ads_other=on; [ "$ads_found" = on ] && ads_other=off
     as_value() { [ "$1" = on ] && echo true || echo false; }
-    react_window "Nothing done (baseline)" true
-    react_window "Personalized ads written $ads_other, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value $ads_other)
-    react_window "ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
-    react_window "kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
+    # Idle, as macOS leaves them: launchd starts the daemons on demand, and they read com.apple.AdLib when they start.
+    react_window "Idle: nothing done (baseline)" true
+    react_window "Idle: personalized ads written $ads_other, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value $ads_other)
+    react_window "Idle: ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
+    react_window "Idle: kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
+    # Running: adprivacyd started through its own launch event (com.apple.ap.adprivacyd.launch, in its launchd plist).
+    react_window "Start adprivacyd (its launch event)" notifyutil -p com.apple.ap.adprivacyd.launch
+    react_window "Running: nothing done (baseline)" true
+    react_window "Running: personalized ads written $ads_found, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value "$ads_found")
+    react_window "Running: ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
+    react_window "Running: kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
     "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value "$ads_found") > /dev/null 2>> "$OUT/errors.txt" < /dev/null
     ads_now=$(switch_now ads.personalized-ads)
     [ "${ads_now%%/*}" = "$ads_found" ] && result PASS "Personalized ads put back $ads_found" || result FAIL "Personalized ads put back $ads_found" "reads $ads_now"
