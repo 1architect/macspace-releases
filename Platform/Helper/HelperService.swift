@@ -25,6 +25,9 @@ public final class PrivilegedHelperService: @unchecked Sendable {
         self.handlers = map
     }
 
+    /// Runs `body` once no operation is running (operations run one at a time on the service's queue).
+    public func whenIdle(_ body: () -> Void) { queue.sync { body() } }
+
     public var operations: [String] { (Array(handlers.keys) + [Self.pingOperation]).sorted() }
 
     public func handle(_ request: HelperRequest, clientUID: uid_t) -> HelperResponse {
@@ -51,11 +54,42 @@ public enum HelperFingerprint {
         return "\(info.st_mtimespec.tv_sec).\(info.st_mtimespec.tv_nsec)-\(info.st_size)"
     }
 
-    public static func ofCurrentExecutable() -> String? {
+    public static func ofCurrentExecutable() -> String? { currentExecutablePath().flatMap(of(path:)) }
+
+    public static func currentExecutablePath() -> String? {
         var size: UInt32 = 0
         _NSGetExecutablePath(nil, &size)
         var buffer = [CChar](repeating: 0, count: Int(size))
         guard _NSGetExecutablePath(&buffer, &size) == 0 else { return nil }
-        return of(path: String(cString: buffer))
+        return String(cString: buffer)
     }
+
+    /// The binary at `path` is no longer the one this process started from (the app was replaced). A missing file is not stale: the
+    /// app may be in the middle of being copied.
+    public static func isStale(launched: String, path: String) -> Bool {
+        guard let now = of(path: path) else { return false }
+        return now != launched
+    }
+}
+
+/// The helper steps down by itself when the app around it was replaced, so launchd starts the new binary on the next request. This
+/// keeps the user's approval: the app used to unregister and register the helper again to load a new one, and macOS then asked
+/// for approval again, every time a new build was installed.
+public enum HelperLifecycle {
+    /// Checked on every new connection and every `interval` seconds; between requests, so no operation is cut off.
+    public static func exitWhenReplaced(service: PrivilegedHelperService, interval: TimeInterval = 20) {
+        guard let path = HelperFingerprint.currentExecutablePath() else { return }
+        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+        timer.schedule(deadline: .now() + interval, repeating: interval)
+        timer.setEventHandler { exitIfReplaced(service: service, path: path) }
+        timer.resume()
+        retained = timer
+    }
+
+    public static func exitIfReplaced(service: PrivilegedHelperService, path: String? = HelperFingerprint.currentExecutablePath()) {
+        guard let path, HelperFingerprint.isStale(launched: service.launchFingerprint, path: path) else { return }
+        service.whenIdle { exit(0) }
+    }
+
+    nonisolated(unsafe) private static var retained: DispatchSourceTimer?
 }

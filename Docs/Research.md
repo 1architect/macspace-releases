@@ -147,9 +147,11 @@ had to learn (all **measured** on a Mac and a VM):
      `xattr -dr com.apple.quarantine` is the workaround; a notarized release avoids it (**inferred**, not yet tested).
 2. **Requires approval (2)** is normal after registering. The register call reports an error while it waits; that is not a failure.
    The user allows MacSpace in System Settings → General → Login Items & Extensions.
-3. **Replacing the app leaves the helper stale.** The old process keeps running and does not know new operations, or the job is
-   left unloaded so nothing answers. MacSpace asks the helper which binary it started from (modification time and size) and compares
-   it with the one in the app; if they differ or nothing answers, it unregisters and registers again.
+3. **Replacing the app leaves the helper stale.** The old process keeps running and does not know new operations. MacSpace used to
+   unregister and register the helper to load the new binary, but **measured (2026-10-04): registering again drops the user's
+   approval**, so every new build asked for it again and System Data warned until it was given. Now the helper compares the binary
+   on disk with the one it started from, on every new connection and every 20 s, and quits between requests when the app was
+   replaced; launchd starts the new binary on the next request. The app re-registers only a helper that never answers.
 4. **A dead connection stays dead.** An `NSXPCConnection` that failed once never recovers. The app drops a failed connection and
    retries once on a new one.
 5. **Stable signature keeps Full Disk Access.** macOS ties the permission to the code requirement. Local builds are signed with the

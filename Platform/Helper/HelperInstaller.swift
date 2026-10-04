@@ -50,16 +50,28 @@ public enum PrivilegedHelperInstaller {
 
     public static func unregister() async throws { try await service.unregister() }
 
-    /// After an app update the old helper process keeps running until it is restarted, so it would not know new operations, and a
-    /// replaced app can leave the job unloaded so that nothing answers at all. The helper reports the fingerprint of the binary it
-    /// started from; when that differs from the binary in this app, or the helper does not answer, it is unregistered and
-    /// registered again, which loads the current one. Returns whether it was re-registered.
+    /// Checks at launch that the approved helper answers, without ever costing the user their approval.
+    ///
+    /// Unregistering and registering again drops the approval: the app used to do that whenever the running helper was from an
+    /// earlier build or did not answer at once, and every new build had to be approved again (and System Data warned until it was).
+    /// Now a helper from an earlier build steps down by itself (`HelperLifecycle`), and launchd starts the current one on the next
+    /// request, which this check makes. Only a helper that never answers, over several tries, is registered again: the job is then
+    /// not loaded at all, and registering is the only way back. Returns whether it was re-registered.
     @discardableResult
-    public static func restartIfStale(channel: any PrivilegedChannel, bundle: Bundle = .main) async -> Bool {
+    public static func restartIfStale(channel: any PrivilegedChannel, bundle: Bundle = .main,
+                                      waits: [Double] = [0, 1, 3, 6]) async -> Bool {
         guard status == .enabled, let helperPath = bundle.executableURL?.deletingLastPathComponent().appendingPathComponent("MacSpaceHelper").path,
               let onDisk = HelperFingerprint.of(path: helperPath) else { return false }
-        if let data = try? await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:]),
-           String(decoding: data, as: UTF8.self) == onDisk { return false }
+        var answered = false
+        for wait in waits {
+            if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+            guard let data = try? await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:]) else { continue }
+            answered = true
+            // The current helper, or an earlier one that has not stepped down yet (one from before HelperLifecycle never does; it is
+            // replaced at the next restart): either way it is approved and answering, so it is left alone.
+            if String(decoding: data, as: UTF8.self) == onDisk { return false }
+        }
+        guard needsRegistering(answered: answered) else { return false }
         do { try await unregister() } catch { return false }
         // Registering straight after unregistering can fail while launchd is still removing the job: retry briefly.
         for attempt in 0..<6 {
@@ -70,6 +82,9 @@ public enum PrivilegedHelperInstaller {
         }
         return false
     }
+
+    /// Registering again costs the user their approval, so it is done only when the approved helper never answered.
+    public static func needsRegistering(answered: Bool) -> Bool { !answered }
 
     /// Why macOS reports the helper as "not found", worded for the Settings page. The usual cause is a quarantined app: macOS runs it
     /// from a randomized, read-only copy (App Translocation) and the helper cannot be registered from there.

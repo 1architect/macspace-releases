@@ -21,6 +21,7 @@ struct MacSpaceHelper {
         let listener = NSXPCListener(machServiceName: PrivilegedHelperConstants.machServiceName)
         listener.delegate = delegate
         listener.resume()
+        HelperLifecycle.exitWhenReplaced(service: service)
         RunLoop.main.run()
     }
 }

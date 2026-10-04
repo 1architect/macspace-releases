@@ -97,6 +97,21 @@ final class LazyChannelTests: XCTestCase {
         XCTAssertNil(HelperFingerprint.of(path: "/nonexistent"))
     }
 
+    /// Installing a new build used to unregister and register the helper, which made macOS ask for approval again every time.
+    func testAReplacedHelperStepsDownInsteadOfBeingRegisteredAgain() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("helper-\(UUID().uuidString)")
+        try Data("old".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let launched = try XCTUnwrap(HelperFingerprint.of(path: file.path))
+        XCTAssertFalse(HelperFingerprint.isStale(launched: launched, path: file.path))
+        Thread.sleep(forTimeInterval: 0.01)
+        try Data("new build".utf8).write(to: file)
+        XCTAssertTrue(HelperFingerprint.isStale(launched: launched, path: file.path), "the app was replaced: the helper steps down")
+        XCTAssertFalse(HelperFingerprint.isStale(launched: launched, path: "/nonexistent"), "an app being copied is not a reason to quit")
+        XCTAssertFalse(PrivilegedHelperInstaller.needsRegistering(answered: true), "a helper that answers keeps its approval, even an old one")
+        XCTAssertTrue(PrivilegedHelperInstaller.needsRegistering(answered: false))
+    }
+
     func testAFailedConnectionIsReplacedByANewOneOnTheNextTry() async throws {
         final class Flaky: PrivilegedChannel, @unchecked Sendable {
             let fails: Bool

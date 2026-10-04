@@ -33,6 +33,8 @@ public final class PrivilegedHelperListenerDelegate: NSObject, NSXPCListenerDele
     }
 
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
+        // A helper whose app was replaced steps down instead of serving the old code; the client's retry starts the new one.
+        HelperLifecycle.exitIfReplaced(service: service)
         if let clientRequirement { connection.setCodeSigningRequirement(clientRequirement) }
         connection.exportedInterface = NSXPCInterface(with: MacSpaceHelperProtocol.self)
         connection.exportedObject = HelperExportedObject(service: service, clientUID: connection.effectiveUserIdentifier)
