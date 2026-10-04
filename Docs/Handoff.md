@@ -160,6 +160,12 @@ promotedcontentd, are started by launchd on demand and read the value then. A ru
 either candidate the frameworks hold (ADConfigurationDidChangeNotification, kADIDManager_ChangedNotification), and its log shows
 cfprefsd's generation check ("Contents Need Refresh"), so it gets the saved value on its next read.
 
+**Policies switched off together share one profile** (2026-10-04). macOS keeps a single downloaded profile waiting for approval, and
+each one opened replaced the one before: Switch all off left every policy but the last waiting forever (Game Center among them). The
+engine now puts every policy switched off in one run, plus any still waiting, in one profile; the journal records which profile
+carries each policy. Switching one back on removes that profile through the helper and stages the others that shared it again. The
+banner's "Show the profile" opens the profile of everything waiting again. Not verified yet: approval of the combined profile.
+
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
 measured on any build counts as tested. Untested controls work and say "Not tested", so they get tested.

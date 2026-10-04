@@ -43,7 +43,7 @@ enum DebloatScreenBuilder {
             default: return control.tested ? nil : Badge("Not tested", tone: .caution)
             }
         case .awaitingApproval: return Badge("Waiting for approval", tone: .caution)
-        case .awaitingRemoval: return Badge("Approve to turn on", tone: .caution)
+        case .awaitingRemoval: return Badge("Profile still installed", tone: .caution)
         case .drifted: return Badge("Undone by macOS", tone: .critical)
         case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
@@ -188,10 +188,21 @@ enum DebloatScreenBuilder {
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
-        if !counts.awaiting.isEmpty {
+        // Waiting for approval: one profile holds them all, opened again on demand (macOS drops a downloaded profile after a while,
+        // and keeps only the latest one).
+        let approving = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingApproval }
+        if !approving.isEmpty {
             widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
-                                          message: "\(counts.awaiting.map(\.title).joined(separator: ", ")) change once you approve it in System Settings > General > Device Management.",
-                                          action: Action(id: "openProfiles", title: "Open System Settings", role: .prominent))))
+                                          message: "\(approving.map(\.title).joined(separator: ", ")) switch off once you approve one profile in System Settings > General > Device Management.",
+                                          action: Action(id: "approvePending", title: "Show the profile", role: .prominent))))
+        }
+        // Switched back on while macOS still enforces their profile: the helper removes it, with nothing to approve.
+        let removing = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingRemoval }
+        if !removing.isEmpty {
+            widgets.append(.banner(Banner(id: "removal", severity: .warning, title: "Finish switching back on",
+                                          message: "macOS still enforces the profile of \(removing.map(\.title).joined(separator: ", ")). MacSpace removes it; there is nothing to approve.",
+                                          action: Action(id: "removePending", title: "Remove the profile", role: .prominent,
+                                                         parameters: ["ids": removing.map(\.id).joined(separator: ",")], requires: [.privilegedHelper]))))
         }
         if !counts.drifted.isEmpty {
             widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) feature(s) switched back on by macOS",

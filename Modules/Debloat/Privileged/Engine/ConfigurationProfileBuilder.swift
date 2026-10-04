@@ -1,11 +1,13 @@
 import Foundation
 import CryptoKit
 
-/// Builds the configuration profile of one Debloat control.
+/// Builds the configuration profiles of the Debloat policies.
 ///
-/// Each policy control has a profile of its own (`com.macspace.policies.<control id>`). Switching one off installs its profile, which
-/// macOS asks the user to approve once; switching it back on removes that profile through the helper, which needs no approval; the
-/// other policies are not touched. One profile for all of them had to be replaced, and approved again, on every change.
+/// Policies switched off together go in one profile, approved once: macOS keeps a single downloaded profile waiting for approval,
+/// and each one opened replaced the one before, so Switch all off left all but the last unapproved. A policy switched off alone has a
+/// profile of its own (`com.macspace.policies.<control id>`); several share `com.macspace.policies.set-<hash of their ids>`.
+/// Switching one back on removes its profile through the helper, which needs no approval; the others that shared it get a new
+/// profile to approve. Every policy waiting for approval is staged again with the next one, so none is left behind.
 /// Payload UUIDs are derived from their identifiers, so the same content always produces the same profile.
 public enum ConfigurationProfileBuilder {
     /// The single profile of earlier versions, which held every policy. Removed when a policy is switched back on; the policies it
@@ -17,12 +19,21 @@ public enum ConfigurationProfileBuilder {
     }
 
     public static func identifier(for controlID: String) -> String { "\(legacyIdentifier).\(controlID)" }
+    /// The profile of policies switched off together: the control's own one for a single policy.
+    public static func identifier(forSet controlIDs: [String]) -> String {
+        let ids = Array(Set(controlIDs)).sorted()
+        if ids.count == 1 { return identifier(for: ids[0]) }
+        let digest = SHA256.hash(data: Data(ids.joined(separator: ",").utf8)).map { String(format: "%02x", $0) }.joined()
+        return "\(legacyIdentifier).set-\(digest.prefix(12))"
+    }
+    public static func fileName(forIdentifier identifier: String) -> String {
+        "MacSpace-\(identifier.hasPrefix(legacyIdentifier + ".") ? String(identifier.dropFirst(legacyIdentifier.count + 1)) : identifier).mobileconfig"
+    }
     /// Profiles of controls that now change a plain setting instead (Personalized ads, Advertising identifier, Siri logging), and the
     /// single profile of earlier versions. Left installed, they would keep enforcing what the new controls switch.
     public static let retiredIdentifiers = [legacyIdentifier] + ["ads.personalized-ads-policy", "ads.advertising-identifier-policy",
                                                                    "telemetry.siri-server-logging-policy"].map(identifier(for:))
     public static func displayName(for title: String) -> String { "MacSpace: \(title)" }
-    public static func fileName(for controlID: String) -> String { "MacSpace-\(controlID).mobileconfig" }
 
     /// The step detail when a profile has to be removed and this process cannot (it needs root): the app asks the helper. It names
     /// the profiles; the app replaces it with the outcome.
@@ -34,7 +45,10 @@ public enum ConfigurationProfileBuilder {
     }
 
     public static func build(_ settings: [ManagedPreferenceSetting], controlID: String, title: String) throws -> Data {
-        let identifier = identifier(for: controlID)
+        try build(settings, identifier: identifier(for: controlID), title: title)
+    }
+
+    public static func build(_ settings: [ManagedPreferenceSetting], identifier: String, title: String) throws -> Data {
         var byType: [String: [String: Any]] = [:]
         for setting in settings { byType[setting.payloadType, default: [:]][setting.key] = setting.desired.propertyListObject }
 

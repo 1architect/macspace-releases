@@ -18,7 +18,9 @@ enum SiriScreenBuilder {
         switch snapshot.status.state {
         case .protected: return "Off. Its model is not installed."
         case .releasing: return "Off. macOS is removing its model, which usually takes a few minutes."
-        case .atRisk: return "On. macOS may download its model (about 12 GB)."
+        case .atRisk:
+            guard let bytes = snapshot.installedModelBytes else { return "On." }
+            return bytes >= purgeThreshold ? "On. Its models take \(ByteFormat.string(bytes)); switch it off to free them." : "On. No model is downloaded yet."
         case .unknown: return "MacSpace cannot read the state without Full Disk Access."
         }
     }
@@ -45,23 +47,28 @@ enum SiriScreenBuilder {
                message: "macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.")
     }
 
-    /// The tile shows the switch itself: off and quiet while Apple Intelligence stays off, glowing while it is on. What can be purged
-    /// is said in the line under it ("12 GB of models can be freed"), without a meter.
+    /// The tile shows the switch itself, with no glow. What can be freed is said in the line under it, without a meter: the models
+    /// macOS released and can purge, or, while Apple Intelligence is on, the models it has downloaded (freed by switching it off).
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         if snapshot.isVirtualMachine {
             return Tile(title: "siri & AI", status: "not in a virtual machine", graphic: .state(on: false, alarming: false, detail: "not available here", meter: nil, meterIsActionable: false))
         }
         let elsewhere = !(snapshot.accounts?.enabledElsewhere ?? []).isEmpty
-        let purge = snapshot.purgeableAssetsBytes.flatMap { $0 >= purgeThreshold ? $0 : nil }
         let on = snapshot.status.state == .atRisk
+        let purge = snapshot.purgeableAssetsBytes.flatMap { $0 >= purgeThreshold ? $0 : nil }
+        let installed = on ? snapshot.installedModelBytes.flatMap { $0 >= purgeThreshold ? $0 : nil } : nil
         let detail: String
         if let purge { detail = "\(ByteFormat.string(purge)) of models can be freed" }
-        else if on { detail = "macOS may download its model (about 12 GB)" }
+        else if let installed { detail = "\(ByteFormat.string(installed)) of models; switch it off to free them" }
+        else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
         else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
         else { detail = "no models left on disk" }
         // No meter: what is left to purge is said in the detail line.
-        let graphic = TileGraphic.state(on: on, alarming: on, detail: detail, meter: nil, meterIsActionable: false)
-        if let purge { return Tile(title: "siri & AI", status: "\(ByteFormat.string(purge)) can be freed", graphic: graphic, reclaimableBytes: purge) }
+        let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)
+        if let freeable = purge ?? installed {
+            return Tile(title: "siri & AI", status: "\(ByteFormat.string(freeable)) can be freed", needsAttention: installed != nil, graphic: graphic,
+                        reclaimableBytes: freeable)
+        }
         switch snapshot.status.state {
         case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
         case .releasing: return Tile(title: "siri & AI", status: "removing the model", graphic: graphic)

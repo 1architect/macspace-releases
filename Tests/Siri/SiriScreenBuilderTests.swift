@@ -69,6 +69,24 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertTrue(SiriScreenBuilder.tile(snapshot(.protected, accounts: [other("tester")])).needsAttention, "another account keeps the models")
     }
 
+    func testTileShowsTheDownloadedModelsAsFreeableAndDoesNotGlow() {
+        var on = snapshot(.atRisk)
+        on.installedModelBytes = 12_000_000_000
+        let tile = SiriScreenBuilder.tile(on)
+        XCTAssertEqual(tile.reclaimableBytes, 12_000_000_000, "switching it off frees them")
+        XCTAssertTrue(tile.status.hasSuffix("can be freed"))
+        guard case let .state(isOn, alarming, detail, _, _)? = tile.graphic else { return XCTFail() }
+        XCTAssertTrue(isOn)
+        XCTAssertFalse(alarming, "no glow")
+        XCTAssertFalse(detail.contains("may download"))
+        XCTAssertTrue(SiriScreenBuilder.stateLine(on).contains("switch it off to free them"))
+
+        on.installedModelBytes = 0
+        XCTAssertEqual(SiriScreenBuilder.tile(on).status, "AI is on")
+        XCTAssertEqual(SiriScreenBuilder.stateLine(on), "On. No model is downloaded yet.")
+        XCTAssertNil(SiriScreenBuilder.tile(snapshot(.protected)).reclaimableBytes, "off with nothing left: nothing to free")
+    }
+
     func testOtherAccountsExplainWhatToDo() throws {
         let snap = snapshot(.protected, accounts: [other("tester"), other(nil)])
         XCTAssertEqual(SiriScreenBuilder.statusBanner(snap)?.severity, .warning)

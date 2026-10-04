@@ -113,27 +113,30 @@ final class ConfigurationProfileTests: XCTestCase {
         XCTAssertFalse(ConfigurationProfileBuilder.isMacSpaceProfile("com.macspace.policiesX"))
     }
 
-    func testEachPolicyHasItsOwnProfileAndSwitchingBackOnNeedsNoApproval() throws {
+    func testPoliciesSwitchedOffTogetherShareOneProfileAndSwitchingBackOnNeedsNoApproval() throws {
         let system = FakeDebloatSystem(controls: controls)
         let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
 
         let result = engine.execute(try engine.plan(.apply, controlIDs: ["test.diag", "test.ads"]))
         XCTAssertEqual(result.flatMap(\.steps).map(\.outcome), [.pendingApproval, .pendingApproval, .pendingApproval])
-        XCTAssertEqual(system.stagedFileNames, ["MacSpace-test.diag.mobileconfig", "MacSpace-test.ads.mobileconfig"], "one profile per control")
-        XCTAssertEqual(system.lastProfileValues, ["com.apple.applicationaccess:allowApplePersonalizedAdvertising": .bool(false)],
-                       "a control's profile holds only its own policy")
+        let shared = ConfigurationProfileBuilder.identifier(forSet: ["test.ads", "test.diag"])
+        XCTAssertTrue(shared.hasPrefix("com.macspace.policies.set-"))
+        XCTAssertEqual(shared, ConfigurationProfileBuilder.identifier(forSet: ["test.diag", "test.ads"]), "the same set, the same profile")
+        XCTAssertEqual(system.stagedFileNames, [ConfigurationProfileBuilder.fileName(forIdentifier: shared)],
+                       "one profile, approved once: macOS keeps only the latest downloaded profile")
+        XCTAssertEqual(system.lastProfileValues.count, diagnostics.count + ads.count, "it holds both policies")
         XCTAssertEqual(engine.status(of: controls[0]).state, .awaitingApproval)
 
-        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) } // the user approved both
+        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) } // the user approved it
         XCTAssertEqual(engine.status(of: controls[0]).state, .debloated)
 
-        // Switching one back on stages nothing for the user: its profile is removed, which the app asks the helper to do.
+        // Switching one back on removes the shared profile (the app asks the helper); the policy that shared it gets one of its own.
         let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"]))[0]
-        XCTAssertEqual(system.stagedProfiles.count, 2, "the other policy's profile is not replaced, so nothing asks again")
         XCTAssertEqual(ConfigurationProfileBuilder.identifiers(inRemovalNeeded: reverted.steps[0].detail),
-                       ["com.macspace.policies.test.ads", "com.macspace.policies"])
+                       ["com.macspace.policies.test.ads", "com.macspace.policies", shared])
+        XCTAssertEqual(system.stagedFileNames.last, "MacSpace-test.diag.mobileconfig")
+        XCTAssertEqual(system.lastProfileValues.count, diagnostics.count, "only the policy still switched off")
         XCTAssertEqual(engine.status(of: controls[1]).state, .awaitingRemoval, "until the profile is gone")
-        XCTAssertEqual(engine.status(of: controls[0]).state, .debloated, "the other policy stays in force")
 
         // Where profiles can be removed (the helper), switching back on is done at once.
         system.removesProfiles = true
@@ -142,6 +145,20 @@ final class ConfigurationProfileTests: XCTestCase {
         XCTAssertEqual(system.removedProfiles, ["com.macspace.policies.test.diag", "com.macspace.policies"])
         for setting in diagnostics { system.forced[setting.id] = nil }
         XCTAssertEqual(engine.status(of: controls[0]).state, .stock)
+    }
+
+    func testAPolicyLeftWaitingGoesInTheNextProfile() throws {
+        let system = FakeDebloatSystem(controls: controls)
+        let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.diag"]))
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.ads"]))
+        let both = ConfigurationProfileBuilder.fileName(forIdentifier: ConfigurationProfileBuilder.identifier(forSet: ["test.diag", "test.ads"]))
+        XCTAssertEqual(system.stagedFileNames, ["MacSpace-test.diag.mobileconfig", both],
+                       "the first one, replaced before it was approved, comes along")
+        XCTAssertEqual(try engine.stagePendingProfiles().sorted(), ["test.ads", "test.diag"], "shown again on demand")
+        XCTAssertEqual(system.stagedFileNames.last, both)
+        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) }
+        XCTAssertEqual(try engine.stagePendingProfiles(), [], "nothing left to approve")
     }
 
     func testAPolicyWithoutAJournalSwitchesBackOn() throws {

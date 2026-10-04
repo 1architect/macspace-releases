@@ -18,6 +18,8 @@ struct SiriSnapshot: Sendable {
     var isVirtualMachine = false
     /// MacSpace is releasing leftover models by itself right now (`ModelAutoReleaser`).
     var releasingAutomatically = false
+    /// What the Apple Intelligence models take on disk now (the 3B base model and its adapters); nil if it cannot be read.
+    var installedModelBytes: UInt64?
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -80,8 +82,18 @@ actor SiriStore {
         if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
         else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
-        return SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
-                            releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
-                            cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
+        var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
+                                    releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
+                                    cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
+        snapshot.installedModelBytes = installedModelBytes()
+        return snapshot
+    }
+
+    /// The Apple Intelligence models' folder (every purpose), measured.
+    static func installedModelBytes() -> UInt64? {
+        let folder = URL(fileURLWithPath: AppleIntelligenceLanguageGuard.generativeModelsAssetDirectory).deletingLastPathComponent()
+        guard FileManager.default.fileExists(atPath: folder.path) else { return 0 }
+        guard let size = FileTreeSizer().size(at: folder) else { return nil }
+        return size.allocatedBytesEstimate ?? size.logicalBytes
     }
 }

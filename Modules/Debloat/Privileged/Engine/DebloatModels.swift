@@ -688,9 +688,11 @@ public struct JournalEntry: Codable, Equatable, Sendable, Identifiable {
     public let build: String?
     /// For apply entries: when a later revert undid this change.
     public var revertedAt: Date?
+    /// For a policy's apply entries: the configuration profile that carries it (several policies switched off together share one).
+    public var profile: String?
 
     public init(id: UUID = UUID(), at: Date, controlID: String, setting: ControlSetting, action: ChangeAction,
-                before: SettingValue, after: SettingValue, build: String?, revertedAt: Date? = nil) {
+                before: SettingValue, after: SettingValue, build: String?, revertedAt: Date? = nil, profile: String? = nil) {
         self.id = id
         self.at = at
         self.controlID = controlID
@@ -701,6 +703,7 @@ public struct JournalEntry: Codable, Equatable, Sendable, Identifiable {
         self.after = after
         self.build = build
         self.revertedAt = revertedAt
+        self.profile = profile
     }
 }
 
