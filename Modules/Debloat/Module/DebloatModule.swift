@@ -60,33 +60,59 @@ public struct DebloatModule: MacSpaceModule {
                        progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed("No controls were selected.") }
         progress(ActionProgress(message: action == .apply ? "Switching off…" : "Switching back on…"))
-        let coordinator = DebloatCoordinator(engine: DebloatStore.liveEngine(), channel: context.privileged)
+        let engine = DebloatStore.liveEngine()
+        let coordinator = DebloatCoordinator(engine: engine, channel: context.privileged)
+        // The policies in force before switching back on: the single profile of earlier versions may hold some of them, and it goes.
+        let enforcedBefore = action == .revert ? enforcedPolicies(engine) : []
         do {
             // Switching a feature back on restores macOS's default where MacSpace has no saved value (a policy applied by an earlier
             // build, say); without this the switch did nothing and stayed off.
             var results = try await coordinator.execute(action, controlIDs: ids, options: DebloatPlanOptions(restoreFallbacks: action == .revert))
-            results = await removeProfileIfEmpty(results, channel: context.privileged)
-            return summarize(action, results)
+            results = await removeProfiles(results, engine: engine, channel: context.privileged)
+            var summary = summarize(action, results)
+            // Policies that only the earlier single profile enforced came back on with it: each gets a profile of its own, once.
+            let moved = enforcedBefore.subtracting(ids).subtracting(enforcedPolicies(engine)).sorted()
+            if !moved.isEmpty {
+                let staged = try await coordinator.execute(.apply, controlIDs: moved, options: DebloatPlanOptions())
+                let titles = moved.compactMap { DebloatCatalog.control($0)?.title }
+                summary.details.append("MacSpace now gives each policy its own profile, so switching one back on never asks again. Approve these once in System Settings > General > Device Management: \(titles.joined(separator: ", ")).")
+                summary.details += staged.flatMap { result in result.steps.filter { $0.outcome == .failed }.map { $0.detail ?? "" } }
+                if summary.outcome == .succeeded { summary.outcome = .needsAttention }
+            }
+            return summary
         } catch {
             return .failed(error.localizedDescription)
         }
     }
 
-    /// When the last policy goes, the profile has to be removed, which only root can do: the helper removes it. Until then macOS
-    /// keeps enforcing every policy in it.
-    static func removeProfileIfEmpty(_ results: [ControlChangeResult], channel: (any PrivilegedChannel)?) async -> [ControlChangeResult] {
-        let needed = results.contains { $0.steps.contains { $0.detail == ConfigurationProfileBuilder.removalNeeded } }
-        guard needed, let channel else { return results }
-        let outcome: (StepOutcome, String)
-        do {
-            let data = try await channel.perform(operation: DebloatPrivilegedOperations.removeProfile, arguments: [:])
-            outcome = (.changed, String(decoding: data, as: UTF8.self))
-        } catch {
-            outcome = (.failed, "The helper could not remove the \"\(ConfigurationProfileBuilder.displayName)\" profile (\(error.localizedDescription)); remove it in System Settings > General > Device Management.")
+    /// Policy controls whose profile is in force now.
+    static func enforcedPolicies(_ engine: DebloatEngine) -> Set<String> {
+        Set(engine.controls.filter { $0.mechanism == .configurationProfile && engine.status(of: $0).state == .debloated }.map(\.id))
+    }
+
+    /// Switching a policy back on removes its profile, which only root can do: the helper removes it, with no approval to give.
+    static func removeProfiles(_ results: [ControlChangeResult], engine: DebloatEngine, channel: (any PrivilegedChannel)?) async -> [ControlChangeResult] {
+        let identifiers = Array(Set(results.flatMap { $0.steps.compactMap { ConfigurationProfileBuilder.identifiers(inRemovalNeeded: $0.detail) }.joined() })).sorted()
+        guard !identifiers.isEmpty else { return results }
+        var helperError: String?
+        if let channel {
+            do { _ = try await channel.perform(operation: DebloatPrivilegedOperations.removeProfile, arguments: ["identifiers": identifiers.joined(separator: ",")]) }
+            catch { helperError = error.localizedDescription }
+        } else {
+            helperError = "the helper is not installed"
         }
         return results.map { result in
-            let steps = result.steps.map { $0.detail == ConfigurationProfileBuilder.removalNeeded ? StepResult(settingID: $0.settingID, outcome: outcome.0, detail: outcome.1) : $0 }
-            return ControlChangeResult(plan: result.plan, executed: result.executed || outcome.0 == .changed, steps: steps, statusAfter: result.statusAfter)
+            guard let control = engine.controls.first(where: { $0.id == result.plan.controlID }) else { return result }
+            // Judged by what macOS enforces now, not by the helper's answer: the earlier single profile may not have been installed.
+            let after = engine.status(of: control)
+            let back = after.state != .debloated && after.state != .awaitingRemoval
+            let steps = result.steps.map { step -> StepResult in
+                guard ConfigurationProfileBuilder.identifiers(inRemovalNeeded: step.detail) != nil else { return step }
+                return back ? StepResult(settingID: step.settingID, outcome: .changed, detail: "Its profile was removed.")
+                    : StepResult(settingID: step.settingID, outcome: .failed,
+                                 detail: "Its profile could not be removed (\(helperError ?? "macOS still enforces it")); remove \"\(ConfigurationProfileBuilder.displayName(for: control.title))\" in System Settings > General > Device Management.")
+            }
+            return ControlChangeResult(plan: result.plan, executed: result.executed || back, steps: steps, statusAfter: after)
         }
     }
 
@@ -111,8 +137,8 @@ public struct DebloatModule: MacSpaceModule {
         if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Nothing was changed.", details: details, refresh: true) }
         if changed == 0 { return .succeeded(action == .apply ? "Already switched off." : "Already back on.") }
         if approval {
-            return ActionResult(outcome: .needsAttention, message: action == .apply ? "Approve the MacSpace profile to finish." : "Approve the updated MacSpace profile to finish turning it back on.",
-                                details: ["Open System Settings > General > Device Management and approve it."] + details, restartRequired: restart)
+            return ActionResult(outcome: .needsAttention, message: "Approve the MacSpace profile to finish.",
+                                details: ["Open System Settings > General > Device Management and approve each MacSpace profile there, once. Switching a policy back on later needs no approval."] + details, restartRequired: restart)
         }
         return ActionResult(outcome: .succeeded, message: "Turned \(changed) protection(s) \(verb).", details: details, restartRequired: restart)
     }

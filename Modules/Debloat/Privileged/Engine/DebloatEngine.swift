@@ -359,18 +359,14 @@ public final class DebloatEngine {
 
     // MARK: Execution
 
-    /// Runs the plans. Each change is journaled first (write-ahead) and verified by reading it back.
-    /// Managed-preference changes from all plans are staged as one profile at the end, so the user approves once.
+    /// Runs the plans. Each change is journaled first (write-ahead) and verified by reading it back. A policy control's profile is
+    /// staged (switching off) or removed (switching back on) once its steps are journaled; the other policies' profiles are not
+    /// touched.
     public func execute(_ plans: [ControlChangePlan]) -> [ControlChangeResult] {
+        let privilege = system.environment().privilege
         var runs = plans.map(executeSteps)
-        let staged = runs.flatMap(\.stagedEntries)
-        if runs.contains(where: \.profileTouched) {
-            let patched = stageProfile(runs.flatMap(\.results), stagedEntries: staged, privilege: system.environment().privilege)
-            var offset = 0
-            for index in runs.indices {
-                runs[index].results = Array(patched[offset..<offset + runs[index].results.count])
-                offset += runs[index].results.count
-            }
+        for index in runs.indices where runs[index].profileTouched {
+            runs[index].results = settleProfile(runs[index], privilege: privilege)
         }
         return runs.map { run in
             guard let control = run.control else {
@@ -438,7 +434,7 @@ public final class DebloatEngine {
         return PlanRun(plan: plan, control: control, results: results, profileTouched: profileTouched, stagedEntries: stagedEntries)
     }
 
-    /// Journals a managed-preference change. The profile itself is written once per plan by `stageProfile`.
+    /// Journals a managed-preference change. The control's profile is staged or removed after its steps (`settleProfile`).
     private func journalManaged(_ step: ChangeStep, control: DebloatControl, action: ChangeAction,
                                 privilege: DebloatPrivilege, build: String?) -> (StepResult, UUID?) {
         let id = step.setting.id
@@ -458,51 +454,33 @@ public final class DebloatEngine {
         return (StepResult(settingID: id, outcome: .pendingApproval, detail: nil), entry.id)
     }
 
-    /// Regenerates the MacSpace profile from every managed setting still applied according to the journal, and
-    /// hands it to the user. If staging fails, this plan's journal entries are removed again.
-    private func stageProfile(_ results: [StepResult], stagedEntries: [UUID], privilege: DebloatPrivilege) -> [StepResult] {
-        let log = journal.load(privilege)
-        let applied = log.outstanding.filter { $0.setting.kind == .managedPreference }
-        var latest: [String: ManagedPreferenceSetting] = [:]
-        for entry in applied { latest[entry.settingID] = entry.setting.managed }
-        // Policies the installed profile enforces without a journal entry (applied by an earlier build, or a lost journal) stay in
-        // the new profile: built from the journal alone, switching one policy back on dropped all of them.
-        // Not those switched back on, now or earlier while the profile still enforces them: their latest journal entry is a revert.
-        var lastAction: [String: (at: Date, action: ChangeAction)] = [:]
-        for entry in log.entries where (lastAction[entry.settingID]?.at ?? .distantPast) <= entry.at { lastAction[entry.settingID] = (entry.at, entry.action) }
-        let switchedBackOn = Set(lastAction.filter { $0.value.action == .revert }.keys)
-        for control in controls {
-            for setting in control.settings where setting.kind == .managedPreference && latest[setting.id] == nil && !switchedBackOn.contains(setting.id) {
-                if case .value(let value) = system.read(setting), value == setting.desiredValue { latest[setting.id] = setting.managed }
-            }
+    /// Switching off: the control's own profile, opened for approval. Switching back on: its profile goes, with the single profile of
+    /// earlier versions, which may hold it too; removing needs root, so outside the helper the step says which profiles to remove and
+    /// the app asks the helper. If staging fails, this plan's journal entries are removed again.
+    private func settleProfile(_ run: PlanRun, privilege: DebloatPrivilege) -> [StepResult] {
+        guard let control = run.control else { return run.results }
+        let waiting = { (outcome: StepOutcome, detail: String) in
+            run.results.map { $0.outcome == .pendingApproval ? StepResult(settingID: $0.settingID, outcome: outcome, detail: detail) : $0 }
         }
-        let settings = latest.keys.sorted().compactMap { latest[$0] }
-
-        let detail: String
-        var failed: String?
-        if settings.isEmpty {
-            // Nothing left to enforce: the profile goes. Only root can remove it; the app asks the helper (`DebloatModule`).
+        switch run.plan.action {
+        case .apply:
             do {
-                let removed = try system.removeProfile()
-                return results.map { $0.outcome == .pendingApproval ? StepResult(settingID: $0.settingID, outcome: .changed, detail: removed) : $0 }
+                let profile = try ConfigurationProfileBuilder.build(control.settings.compactMap(\.managed), controlID: control.id, title: control.title)
+                return waiting(.pendingApproval, try system.stageProfile(profile, fileName: ConfigurationProfileBuilder.fileName(for: control.id)))
             } catch {
-                detail = ConfigurationProfileBuilder.removalNeeded
+                var log = journal.load(privilege)
+                log.entries.removeAll { run.stagedEntries.contains($0.id) }
+                try? journal.save(log, privilege)
+                return waiting(.failed, "\(error)")
             }
-        } else {
-            do {
-                detail = try system.stageProfile(ConfigurationProfileBuilder.build(settings))
-            } catch {
-                detail = ""
-                failed = "\(error)"
+        case .revert:
+            let identifiers = [ConfigurationProfileBuilder.identifier(for: control.id), ConfigurationProfileBuilder.legacyIdentifier]
+            var removed: [String] = []
+            for identifier in identifiers {
+                do { removed.append(try system.removeProfile(identifier: identifier)) } catch { return waiting(.pendingApproval, ConfigurationProfileBuilder.removalNeeded(identifiers)) }
             }
+            return waiting(.changed, removed.joined(separator: " "))
         }
-        if let failed {
-            var log = journal.load(privilege)
-            log.entries.removeAll { stagedEntries.contains($0.id) }
-            try? journal.save(log, privilege)
-            return results.map { $0.outcome == .pendingApproval ? StepResult(settingID: $0.settingID, outcome: .failed, detail: failed) : $0 }
-        }
-        return results.map { $0.outcome == .pendingApproval ? StepResult(settingID: $0.settingID, outcome: .pendingApproval, detail: detail) : $0 }
     }
 
     private func perform(_ step: ChangeStep, control: DebloatControl, action: ChangeAction,

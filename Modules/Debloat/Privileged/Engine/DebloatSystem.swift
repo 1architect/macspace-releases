@@ -43,10 +43,10 @@ public protocol DebloatSystem: AnyObject {
     func startService(_ service: LaunchdServiceSetting) throws -> Bool
     /// The flag value libfeatureflags reports to processes now (computed at boot); nil if unreadable.
     func liveFeatureFlag(domain: String, feature: String) -> Bool?
-    /// Writes the MacSpace configuration profile and opens it for approval; returns a description for the user.
-    func stageProfile(_ profile: Data) throws -> String
-    /// Removes the installed MacSpace profile (needs root); returns a description for the user.
-    func removeProfile() throws -> String
+    /// Writes a MacSpace configuration profile (one control's) and opens it for approval; returns a description for the user.
+    func stageProfile(_ profile: Data, fileName: String) throws -> String
+    /// Removes an installed MacSpace profile (needs root); returns a description for the user.
+    func removeProfile(identifier: String) throws -> String
     /// Labels whose launchd overrides survive with SIP enabled (`RemovableServices` in launchd's rootless
     /// policy); nil if the policy cannot be read.
     func sipRemovableServices() -> Set<String>?
@@ -59,8 +59,8 @@ public protocol DebloatSystem: AnyObject {
 }
 
 public extension DebloatSystem {
-    /// Systems that cannot remove the profile (test doubles) say so; the app then asks the helper.
-    func removeProfile() throws -> String { throw DebloatSystemError.commandFailed("Removing the MacSpace profile needs root.") }
+    /// Systems that cannot remove a profile (the app, test doubles) say so; the app then asks the helper.
+    func removeProfile(identifier: String) throws -> String { throw DebloatSystemError.commandFailed("Removing a profile needs root.") }
 }
 
 /// The user whose preferences and gui launchd domain are targeted: the current user, or `SUDO_USER` under sudo.
@@ -311,7 +311,8 @@ public final class LiveDebloatSystem: DebloatSystem {
             let flag = setting.featureFlag!
             return ["/usr/libexec/PlistBuddy", "-c", "Delete :\(flag.feature):Enabled", flag.overridePath]
         case (.managedPreference, _):
-            return ["/usr/bin/open", profileURL?.path ?? ConfigurationProfileBuilder.fileName]
+            // The control's own profile, opened for approval (see `stageProfile`).
+            return ["/usr/bin/open", "MacSpace-<control>.mobileconfig"]
         case (.systemTool, .value(.bool(let enabled))):
             switch setting.tool!.tool {
             case .tailspin: return ["/usr/bin/tailspin", enabled ? "enable" : "disable"]
@@ -407,27 +408,28 @@ public final class LiveDebloatSystem: DebloatSystem {
         try fileManager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: path)
     }
 
-    private var profileURL: URL? {
-        targetUser?.home.appendingPathComponent("Library/Application Support/MacSpace/Profiles/\(ConfigurationProfileBuilder.fileName)")
+    private func profileURL(_ fileName: String) -> URL? {
+        targetUser?.home.appendingPathComponent("Library/Application Support/MacSpace/Profiles/\(fileName)")
     }
 
-    public func removeProfile() throws -> String {
-        guard isRoot else { throw DebloatSystemError.commandFailed("Removing the MacSpace profile needs root.") }
-        let result = try runner.run("/usr/bin/profiles", ["remove", "-identifier", ConfigurationProfileBuilder.identifier], timeout: 30)
+    public func removeProfile(identifier: String) throws -> String {
+        guard ConfigurationProfileBuilder.isMacSpaceProfile(identifier) else { throw DebloatSystemError.commandFailed("\(identifier) is not a MacSpace profile.") }
+        guard isRoot else { throw DebloatSystemError.commandFailed("Removing a profile needs root.") }
+        let result = try runner.run("/usr/bin/profiles", ["remove", "-identifier", identifier], timeout: 30)
         guard result.exitCode == 0 else {
             let message = String(decoding: result.stderr + result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            throw DebloatSystemError.commandFailed("profiles remove failed: \(message)")
+            throw DebloatSystemError.commandFailed("profiles remove -identifier \(identifier) failed: \(message)")
         }
-        return "Removed the \"\(ConfigurationProfileBuilder.displayName)\" profile; the policies no longer apply."
+        return "Removed \(identifier)."
     }
 
-    public func stageProfile(_ profile: Data) throws -> String {
-        guard let url = profileURL else { throw DebloatSystemError.targetUserUnknown }
+    public func stageProfile(_ profile: Data, fileName: String) throws -> String {
+        guard let url = profileURL(fileName) else { throw DebloatSystemError.targetUserUnknown }
         try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try profile.write(to: url, options: .atomic)
         do { _ = try runner.run("/usr/bin/open", [url.path], timeout: 15) }
         catch { throw DebloatSystemError.commandFailed("Wrote \(url.path) but could not open it: \(error)") }
-        return "Opened \(url.path); approve \"\(ConfigurationProfileBuilder.displayName)\" in System Settings > General > Device Management."
+        return "Approve its profile once in System Settings > General > Device Management."
     }
 
     public func liveFeatureFlag(domain: String, feature: String) -> Bool? {

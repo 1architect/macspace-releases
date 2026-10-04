@@ -84,10 +84,20 @@ final class FakeDebloatSystem: DebloatSystem {
     func launchdForceEnabled(_ service: LaunchdServiceSetting) -> Bool { forceEnabled.contains(service.label) }
     var decisions: [SubmissionDecision]? = []
     func submissionDecisions(since: Date) -> [SubmissionDecision]? { decisions?.filter { $0.at >= since } }
-    func stageProfile(_ profile: Data) throws -> String {
+    func stageProfile(_ profile: Data, fileName: String) throws -> String {
         if failStaging { throw DebloatSystemError.commandFailed("open failed in test") }
         stagedProfiles.append(profile)
+        stagedFileNames.append(fileName)
         return "staged in test"
+    }
+    var stagedFileNames: [String] = []
+    /// As root (the helper) profiles can be removed; as the user they cannot.
+    var removesProfiles = false
+    var removedProfiles: [String] = []
+    func removeProfile(identifier: String) throws -> String {
+        guard removesProfiles else { throw DebloatSystemError.commandFailed("needs root in test") }
+        removedProfiles.append(identifier)
+        return "removed \(identifier)"
     }
     /// The managed values in the last staged profile, as payloadType:key -> value.
     var lastProfileValues: [String: PlistValue] {

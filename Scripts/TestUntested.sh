@@ -86,26 +86,23 @@ release() {
 
 # MARK: Debloat
 
-DEBLOAT_UNTESTED="telemetry.diagnostics ads.personalized-ads-policy ads.advertising-identifier-policy telemetry.siri-server-logging-policy telemetry.on-device-speech-policy suggestions.spotlight-internet-policy ai.features-policy apps.game-center-policy apps.news-policy"
-
-# Prints "<id> <switch on|off> <badge>" for each untested control, from a saved Debloat page.
+# Prints "<id> <switch on|off> <badge>" for every control on a saved Debloat page.
 debloat_states() {
-  /usr/bin/python3 - "$1" $DEBLOAT_UNTESTED <<'PY' 2>> "$OUT/errors.txt"
+  /usr/bin/python3 - "$1" <<'PY' 2>> "$OUT/errors.txt"
 import json, sys
 page = json.load(open(sys.argv[1]))
-wanted = sys.argv[2:]
-found = {}
+found = []
 def walk(node):
     if isinstance(node, dict):
-        if node.get("id") in wanted and "isOn" in node:
+        if "isOn" in node and "id" in node:
             badge = node.get("badge") or {}
-            found[node["id"]] = ("on" if node["isOn"] else "off", badge.get("text", "-") if isinstance(badge, dict) else "-")
+            switch = "disabled" if node.get("isEnabled") is False else ("on" if node["isOn"] else "off")
+            found.append((node["id"], switch, (badge.get("text") if isinstance(badge, dict) else None) or "-"))
         for value in node.values(): walk(value)
     elif isinstance(node, list):
         for value in node: walk(value)
 walk(page)
-for control in wanted:
-    switch, badge = found.get(control, ("missing", "-"))
+for control, switch, badge in found:
     print(control, switch, badge.replace(" ", "_"))
 PY
 }
@@ -116,52 +113,44 @@ news_opens() { # exit 0 when `open -a News` opens News
 }
 
 debloat() {
-  say "2. Debloat: the controls marked \"Not tested\""
-  note ""; note "## Debloat (controls marked Not tested)"
+  say "2. Debloat: every control, back on and off again"
+  note ""; note "## Debloat"
   screen com.macspace.debloat debloat-before
   defaults read com.apple.AdLib > "$OUT/adlib-before.txt" 2>&1
-  profiles list > "$OUT/profiles-before.txt" 2>&1
-  local news_before=no
-  news_opens && news_before=yes
-  note "- News opened before: $news_before"
-
-  # Turning back on: a policy MacSpace applied earlier (even by an older build) must come back when its switch is turned on.
-  pause "In MacSpace → Debloat, switch these back ON (the feature runs again):
-  Share analytics with Apple (release builds only: no profile), Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
-  Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
-If MacSpace asks you to approve the updated MacSpace profile, approve it in System Settings → General → Device Management.
-(When none is left, MacSpace removes the profile itself through the helper.)"
-  screen com.macspace.debloat debloat-turned-on
-  profiles list > "$OUT/profiles-turned-on.txt" 2>&1
   local id switch badge
-  while read -r id switch badge; do
-    case "$switch" in
-      on) if [ "$badge" = Approve_to_turn_on ]; then result FAIL "$id turns back on" "the updated profile is not approved yet"
-          else result PASS "$id turns back on"; fi ;;
-      off) result FAIL "$id turns back on" "the switch stays off, badge ${badge//_/ }" ;;
-      *) result SKIPPED "$id turns back on" "not offered on this build" ;;
-    esac
-  done < <(debloat_states "$OUT/debloat-turned-on.json")
 
-  pause "Now, in MacSpace → Debloat, switch OFF these (one at a time; each says \"Not tested\"):
-  Share analytics with Apple (release builds only), Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
-  Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
-Then approve the MacSpace profile in System Settings → General → Device Management (or Profiles)."
-  screen com.macspace.debloat debloat-after
+  # Back on: no approval is ever needed for this; the helper removes each policy's profile.
+  pause "In MacSpace → Debloat, press the main button \"Turn all back on\" (or, if it says \"Switch all off\", turn on by hand every switch that is off).
+Nothing should ask you to approve anything."
+  screen com.macspace.debloat debloat-on
+  while read -r id switch badge; do
+    case "$switch/$badge" in
+      disabled/*) result SKIPPED "$id" "cannot be changed on this Mac (${badge//_/ })" ;;
+      on/-|on/Not_tested) result PASS "$id back on" ;;
+      on/*) result FAIL "$id back on" "${badge//_/ }" ;;
+      *) result FAIL "$id back on" "still off${badge:+, ${badge//_/ }}" ;;
+    esac
+  done < <(debloat_states "$OUT/debloat-on.json")
+  ask "No approval asked when turning back on" "Did turning everything back on avoid asking you to approve any profile?"
+
+  # Off: each policy asks for its own profile once.
+  pause "Now press \"Switch all off\". macOS shows one MacSpace profile per policy: open System Settings → General → Device Management and approve each one (once)."
+  screen com.macspace.debloat debloat-off
   defaults read com.apple.AdLib > "$OUT/adlib-after.txt" 2>&1
   profiles list > "$OUT/profiles-after.txt" 2>&1
-
   while read -r id switch badge; do
-    case "$switch" in
-      off) case "$badge" in
-             Waiting_for_approval|Approve_to_turn_on) result FAIL "$id applied" "the MacSpace profile is not approved yet" ;;
-             Undone_by_macOS|Not_working|Cannot_take_effect_here) result FAIL "$id applied" "${badge//_/ }" ;;
-             *) result PASS "$id applied" "switch off${badge:+, badge ${badge//_/ }}" ;;
-           esac ;;
-      on) result FAIL "$id applied" "the switch still shows the feature on, badge ${badge//_/ }" ;;
-      *) result SKIPPED "$id applied" "not offered on this build" ;;
+    case "$switch/$badge" in
+      disabled/*) ;;
+      off/-|off/Not_tested|off/After_restart) result PASS "$id switched off" "${badge//_/ }" ;;
+      off/Waiting_for_approval) result FAIL "$id switched off" "its profile is not approved yet" ;;
+      off/*) result FAIL "$id switched off" "${badge//_/ }" ;;
+      *) result FAIL "$id switched off" "the switch still shows it on${badge:+, ${badge//_/ }}" ;;
     esac
-  done < <(debloat_states "$OUT/debloat-after.json")
+  done < <(debloat_states "$OUT/debloat-off.json")
+
+  # Then change one: nothing else may ask again.
+  pause "Turn ONE policy back on (for example Apple News), then switch it off again."
+  ask "Changing one policy asks only for that one" "Did turning it back on ask nothing, and switching it off again ask only for that one profile?"
 
   # What each one should change, checked where a script can see it, asked where only you can.
   if diff -q "$OUT/adlib-before.txt" "$OUT/adlib-after.txt" > /dev/null; then result NOTE "Personalized ads: com.apple.AdLib" "unchanged (see adlib-*.txt)"
@@ -171,15 +160,7 @@ Then approve the MacSpace profile in System Settings → General → Device Mana
   ask "Apple Intelligence features" "In TextEdit, type a sentence, select it and right-click: is Writing Tools gone from the menu?"
   ask "On-device dictation" "Press the Dictation shortcut and dictate a sentence in your language: does it still work (on device)?"
   note "- Advertising identifier and Siri server-side logging change nothing visible; the switch state above is their test."
-
-  printf '\nGame Center and News take effect after logging out and back in. Have you logged out and back in since switching them off? [y/n] '
-  local loggedout; read -r loggedout
-  if [ "$loggedout" = y ]; then
-    if news_opens; then result FAIL "Apple News blocked" "open -a News still opens it"; else result PASS "Apple News blocked" "open -a News fails"; fi
-    ask "Game Center" "System Settings → Game Center: is it unavailable or locked?"
-  else
-    result PENDING "Game Center and Apple News" "log out and back in, then run: Scripts/TestUntested.sh debloat-logout"
-  fi
+  result PENDING "Game Center and Apple News" "log out and back in, then run: Scripts/TestUntested.sh debloat-logout"
 }
 
 debloat_logout() {

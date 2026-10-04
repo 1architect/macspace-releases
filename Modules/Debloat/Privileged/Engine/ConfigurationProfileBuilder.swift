@@ -1,36 +1,53 @@
 import Foundation
 import CryptoKit
 
-/// Builds the single "MacSpace policies" configuration profile from managed-preference settings.
+/// Builds the configuration profile of one Debloat control.
 ///
-/// There is one profile with a fixed identifier: installing a new version replaces the old one, so applying or
-/// reverting a control regenerates the profile from every control still applied. Payload UUIDs are derived
-/// from their identifiers, so the same content always produces the same profile.
+/// Each policy control has a profile of its own (`com.macspace.policies.<control id>`). Switching one off installs its profile, which
+/// macOS asks the user to approve once; switching it back on removes that profile through the helper, which needs no approval; the
+/// other policies are not touched. One profile for all of them had to be replaced, and approved again, on every change.
+/// Payload UUIDs are derived from their identifiers, so the same content always produces the same profile.
 public enum ConfigurationProfileBuilder {
-    public static let identifier = "com.macspace.policies"
-    public static let displayName = "MacSpace policies"
-    public static let fileName = "MacSpace-policies.mobileconfig"
-    /// The step detail when no policy remains and the profile could not be removed in this process (it needs root).
-    public static let removalNeeded = "No MacSpace policies remain; the \"MacSpace policies\" profile has to be removed (System Settings > General > Device Management)."
+    /// The single profile of earlier versions, which held every policy. Removed when a policy is switched back on; the policies it
+    /// still enforced then get profiles of their own (`DebloatModule`).
+    public static let legacyIdentifier = "com.macspace.policies"
+    /// What the helper may remove: MacSpace's profiles, and nothing else.
+    public static func isMacSpaceProfile(_ identifier: String) -> Bool {
+        identifier == legacyIdentifier || identifier.hasPrefix(legacyIdentifier + ".")
+    }
 
-    public static func build(_ settings: [ManagedPreferenceSetting]) throws -> Data {
+    public static func identifier(for controlID: String) -> String { "\(legacyIdentifier).\(controlID)" }
+    public static func displayName(for title: String) -> String { "MacSpace: \(title)" }
+    public static func fileName(for controlID: String) -> String { "MacSpace-\(controlID).mobileconfig" }
+
+    /// The step detail when a profile has to be removed and this process cannot (it needs root): the app asks the helper. It names
+    /// the profiles; the app replaces it with the outcome.
+    public static let removalMarker = "macspace-remove-profiles:"
+    public static func removalNeeded(_ identifiers: [String]) -> String { removalMarker + identifiers.joined(separator: ",") }
+    public static func identifiers(inRemovalNeeded detail: String?) -> [String]? {
+        guard let detail, detail.hasPrefix(removalMarker) else { return nil }
+        return detail.dropFirst(removalMarker.count).split(separator: ",").map(String.init)
+    }
+
+    public static func build(_ settings: [ManagedPreferenceSetting], controlID: String, title: String) throws -> Data {
+        let identifier = identifier(for: controlID)
         var byType: [String: [String: Any]] = [:]
         for setting in settings { byType[setting.payloadType, default: [:]][setting.key] = setting.desired.propertyListObject }
 
         let payloads: [[String: Any]] = byType.keys.sorted().map { type in
-            let identifier = "\(Self.identifier).\(type)"
+            let payloadIdentifier = "\(identifier).\(type)"
             var payload: [String: Any] = [
                 "PayloadType": type,
-                "PayloadIdentifier": identifier,
-                "PayloadUUID": uuid(identifier),
+                "PayloadIdentifier": payloadIdentifier,
+                "PayloadUUID": uuid(payloadIdentifier),
                 "PayloadVersion": 1,
             ]
             payload.merge(byType[type]!) { current, _ in current }
             return payload
         }
         let profile: [String: Any] = [
-            "PayloadDisplayName": displayName,
-            "PayloadDescription": "Privacy policies chosen in MacSpace: \(settings.map { "\($0.payloadType) \($0.key)" }.sorted().joined(separator: ", ")). Remove this profile to undo them.",
+            "PayloadDisplayName": displayName(for: title),
+            "PayloadDescription": "\(title), switched off in MacSpace (\(settings.map { "\($0.payloadType) \($0.key)" }.sorted().joined(separator: ", "))). Switch it back on in MacSpace, or remove this profile, to undo it.",
             "PayloadIdentifier": identifier,
             "PayloadOrganization": "MacSpace",
             "PayloadScope": "System",

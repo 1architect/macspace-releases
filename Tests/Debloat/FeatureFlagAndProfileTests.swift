@@ -96,59 +96,64 @@ final class ConfigurationProfileTests: XCTestCase {
 
     func testBuilderGroupsPayloadsAndIsDeterministic() throws {
         let settings = (diagnostics + ads).map { $0.managed! }
-        let data = try ConfigurationProfileBuilder.build(settings)
-        XCTAssertEqual(data, try ConfigurationProfileBuilder.build(settings))
+        let data = try ConfigurationProfileBuilder.build(settings, controlID: "test.diag", title: "Diag")
+        XCTAssertEqual(data, try ConfigurationProfileBuilder.build(settings, controlID: "test.diag", title: "Diag"))
         let root = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any])
-        XCTAssertEqual(root["PayloadIdentifier"] as? String, "com.macspace.policies")
+        XCTAssertEqual(root["PayloadIdentifier"] as? String, "com.macspace.policies.test.diag", "one profile per control")
+        XCTAssertEqual(root["PayloadDisplayName"] as? String, "MacSpace: Diag")
         XCTAssertEqual(root["PayloadScope"] as? String, "System")
         let payloads = try XCTUnwrap(root["PayloadContent"] as? [[String: Any]])
         XCTAssertEqual(payloads.map { $0["PayloadType"] as? String }, ["com.apple.SubmitDiagInfo", "com.apple.applicationaccess"])
         XCTAssertEqual(payloads[1]["allowDiagnosticSubmission"] as? Bool, false)
         XCTAssertEqual(payloads[1]["allowApplePersonalizedAdvertising"] as? Bool, false)
         XCTAssertNotNil(UUID(uuidString: payloads[0]["PayloadUUID"] as! String))
+        XCTAssertTrue(ConfigurationProfileBuilder.isMacSpaceProfile("com.macspace.policies"))
+        XCTAssertTrue(ConfigurationProfileBuilder.isMacSpaceProfile("com.macspace.policies.test.diag"))
+        XCTAssertFalse(ConfigurationProfileBuilder.isMacSpaceProfile("com.example.vpn"), "the helper removes MacSpace's profiles only")
+        XCTAssertFalse(ConfigurationProfileBuilder.isMacSpaceProfile("com.macspace.policiesX"))
     }
 
-    func testApplyStagesOneProfileAndWaitsForApproval() throws {
+    func testEachPolicyHasItsOwnProfileAndSwitchingBackOnNeedsNoApproval() throws {
         let system = FakeDebloatSystem(controls: controls)
         let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
 
         let result = engine.execute(try engine.plan(.apply, controlIDs: ["test.diag", "test.ads"]))
         XCTAssertEqual(result.flatMap(\.steps).map(\.outcome), [.pendingApproval, .pendingApproval, .pendingApproval])
-        XCTAssertEqual(result[1].steps[0].detail, "staged in test")
-        XCTAssertEqual(system.stagedProfiles.count, 1, "one profile, one approval, for both controls")
-        XCTAssertEqual(system.lastProfileValues, ["com.apple.SubmitDiagInfo:AutoSubmit": .bool(false),
-                                                  "com.apple.applicationaccess:allowDiagnosticSubmission": .bool(false),
-                                                  "com.apple.applicationaccess:allowApplePersonalizedAdvertising": .bool(false)])
+        XCTAssertEqual(system.stagedFileNames, ["MacSpace-test.diag.mobileconfig", "MacSpace-test.ads.mobileconfig"], "one profile per control")
+        XCTAssertEqual(system.lastProfileValues, ["com.apple.applicationaccess:allowApplePersonalizedAdvertising": .bool(false)],
+                       "a control's profile holds only its own policy")
         XCTAssertEqual(engine.status(of: controls[0]).state, .awaitingApproval)
 
-        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) } // the user approved it
+        for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) } // the user approved both
         XCTAssertEqual(engine.status(of: controls[0]).state, .debloated)
 
-        let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.diag"]))[0]
-        XCTAssertEqual(reverted.steps.map(\.outcome), [.pendingApproval, .pendingApproval])
-        XCTAssertEqual(system.lastProfileValues, ["com.apple.applicationaccess:allowApplePersonalizedAdvertising": .bool(false)])
-        XCTAssertEqual(engine.status(of: controls[0]).state, .awaitingRemoval, "the installed profile enforces it until the new one is approved")
+        // Switching one back on stages nothing for the user: its profile is removed, which the app asks the helper to do.
+        let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"]))[0]
+        XCTAssertEqual(system.stagedProfiles.count, 2, "the other policy's profile is not replaced, so nothing asks again")
+        XCTAssertEqual(ConfigurationProfileBuilder.identifiers(inRemovalNeeded: reverted.steps[0].detail),
+                       ["com.macspace.policies.test.ads", "com.macspace.policies"])
+        XCTAssertEqual(engine.status(of: controls[1]).state, .awaitingRemoval, "until the profile is gone")
+        XCTAssertEqual(engine.status(of: controls[0]).state, .debloated, "the other policy stays in force")
 
-        let stagedBefore = system.stagedProfiles.count
-        let last = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"]))[0]
-        XCTAssertEqual(system.stagedProfiles.count, stagedBefore, "nothing left to stage")
-        XCTAssertEqual(last.steps[0].detail, ConfigurationProfileBuilder.removalNeeded, "only root removes the profile; the app asks the helper")
-
-        for setting in diagnostics + ads { system.forced[setting.id] = nil } // the profile was removed
+        // Where profiles can be removed (the helper), switching back on is done at once.
+        system.removesProfiles = true
+        let back = engine.execute(try engine.plan(.revert, controlIDs: ["test.diag"]))[0]
+        XCTAssertEqual(back.steps.map(\.outcome), [.changed, .changed])
+        XCTAssertEqual(system.removedProfiles, ["com.macspace.policies.test.diag", "com.macspace.policies"])
+        for setting in diagnostics { system.forced[setting.id] = nil }
         XCTAssertEqual(engine.status(of: controls[0]).state, .stock)
     }
 
-    func testPoliciesWithoutAJournalStayInTheProfile() throws {
-        // Applied by an earlier build: the profile enforces both controls, and the journal knows nothing.
+    func testAPolicyWithoutAJournalSwitchesBackOn() throws {
+        // Applied by an earlier build: macOS enforces both controls, and the journal knows nothing.
         let system = FakeDebloatSystem(controls: controls)
         let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
         for setting in diagnostics + ads { system.forced[setting.id] = .bool(false) }
 
         let reverted = engine.execute(try engine.plan(.revert, controlIDs: ["test.ads"], options: DebloatPlanOptions(restoreFallbacks: true)))[0]
         XCTAssertEqual(reverted.steps.map(\.outcome), [.pendingApproval], "switching it back on works without a saved value")
-        XCTAssertEqual(system.lastProfileValues, ["com.apple.SubmitDiagInfo:AutoSubmit": .bool(false),
-                                                  "com.apple.applicationaccess:allowDiagnosticSubmission": .bool(false)],
-                       "the other policy stays enforced")
+        XCTAssertNotNil(ConfigurationProfileBuilder.identifiers(inRemovalNeeded: reverted.steps[0].detail))
+        XCTAssertTrue(system.stagedProfiles.isEmpty, "nothing for the user to approve")
         XCTAssertEqual(engine.status(of: controls[1]).state, .awaitingRemoval)
     }
 

@@ -16,7 +16,8 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
     public static let status = "debloat.status"
     public static let apply = "debloat.apply"
     public static let revert = "debloat.revert"
-    /// Removes the MacSpace profile once no policy remains in it. Takes no arguments: it can only remove that one profile.
+    /// Removes MacSpace profiles, named in `identifiers` (comma-separated); any other profile is refused. Answers, as JSON, what
+    /// happened to each: "removed", or why not (a profile that is not installed cannot be removed, which is not a problem).
     public static let removeProfile = "debloat.removeProfile"
 
     private let engineFactory: @Sendable (DebloatTargetUser?) -> DebloatEngine
@@ -36,7 +37,17 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
         let engine = engineFactory(DebloatTargetUser.forUID(caller.uid))
-        if operation == Self.removeProfile { return Data(try engine.system.removeProfile().utf8) }
+        if operation == Self.removeProfile {
+            let identifiers = (arguments["identifiers"] ?? "").split(separator: ",").map(String.init)
+            guard !identifiers.isEmpty, identifiers.allSatisfy(ConfigurationProfileBuilder.isMacSpaceProfile) else {
+                throw PrivilegedOperationError("Only MacSpace profiles can be removed.")
+            }
+            var outcome: [String: String] = [:]
+            for identifier in identifiers {
+                do { _ = try engine.system.removeProfile(identifier: identifier); outcome[identifier] = "removed" } catch { outcome[identifier] = "\(error)" }
+            }
+            return try JSONEncoder().encode(outcome)
+        }
         let ids = (arguments["controls"] ?? "").split(separator: ",").map(String.init)
         let unknown = ids.filter { id in !engine.controls.contains { $0.id == id } }
         guard unknown.isEmpty else { throw PrivilegedOperationError("Unknown control(s): \(unknown.joined(separator: ", ")).") }

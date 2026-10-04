@@ -107,10 +107,10 @@ enum DebloatScreenBuilder {
         return (on, usable.count, awaiting, drifted)
     }
 
-    /// Tested controls (on any macOS build) that are not on yet. Untested ones are switched one at a time, so each can be checked.
+    /// Every control that can take effect here and is not on yet, tested or not: "Switch all off" switches all of them off.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard control.tested, let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
+            guard let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
             return status.state == .stock || status.state == .partial
         }
     }
@@ -136,7 +136,7 @@ enum DebloatScreenBuilder {
             }
     }
 
-    /// The page's main button, which does what the switches most need: while a verified feature still runs, it switches them all off;
+    /// The page's main button, which does what the switches most need: while a feature still runs, it switches them all off;
     /// once they are all off, it turns back on everything MacSpace switched off. nil when neither applies.
     static func primary(_ snapshot: DebloatSnapshot) -> Action? {
         switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
@@ -162,15 +162,21 @@ enum DebloatScreenBuilder {
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
     }
 
-    /// Switches off every feature verified on this macOS build that is still on. nil when there is none.
+    /// Switches off every feature that is still on. nil when there is none.
     static func switchOffRecommended(_ snapshot: DebloatSnapshot) -> Action? {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
+        let untested = recommended.filter { !$0.tested }
+        let policies = recommended.filter { $0.mechanism == .configurationProfile }
+        var message = recommended.map { "• \($0.title)\($0.tested ? "" : " (not tested yet)")" }.joined(separator: "\n")
+        if !policies.isEmpty {
+            message += "\n\n\(policies.count) of them are policies: macOS asks you to approve each one's profile once, in System Settings > General > Device Management. Turning one back on later asks nothing."
+        }
+        if !untested.isEmpty { message += "\n\nCheck afterwards that the ones not tested yet took effect." }
+        message += "\n\nEverything is written to an undo journal, so you can turn any of it back on."
         return Action(id: "applyRecommended", title: "Switch all off", symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Switch off \(recommended.count) verified features?",
-                                                 message: recommended.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nEach one was measured to work on this macOS version. Everything is written to an undo journal, so you can turn any of it back on.",
-                                                 confirmTitle: "Switch off"),
+                      confirmation: Confirmation(title: "Switch off \(recommended.count) features?", message: message, confirmTitle: "Switch off"),
                       requires: [.privilegedHelper])
     }
 
