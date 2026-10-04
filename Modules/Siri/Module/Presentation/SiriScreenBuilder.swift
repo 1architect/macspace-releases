@@ -79,7 +79,10 @@ enum SiriScreenBuilder {
         else if on, snapshot.downloadingModelBytes >= purgeThreshold { detail = "downloading models: \(ByteFormat.string(onDisk)) so far" }
         else if let installed { detail = "\(ByteFormat.string(installed)) of models; switch it off to free them" }
         else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
+        // Off, but macOS has not removed the models yet: their size, never "none".
+        else if onDisk >= purgeThreshold { detail = "\(ByteFormat.string(onDisk)) of models still on disk" }
         else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
+        else if snapshot.installedModelBytes == nil { detail = "models not measured" }
         else { detail = "no models left on disk" }
         // No meter: what is left to purge is said in the detail line.
         let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)

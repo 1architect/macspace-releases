@@ -46,7 +46,8 @@ public final class ModuleHost: ObservableObject {
     }
 
     public init(modulesDirectory: URL? = ModuleHost.defaultModulesDirectory(), settings: SettingsStore = SettingsStore(),
-                permissions: any PermissionChecker = LivePermissionChecker(helper: { PrivilegedHelperInstaller.permissionStatus() }),
+                permissions: any PermissionChecker = LivePermissionChecker(helper: { PrivilegedHelperInstaller.permissionStatus() },
+                                                                          profile: { ConfigurationProfiles.shared.status() }),
                 privileged: (any PrivilegedChannel)? = LazyPrivilegedChannel(),
                 loader: @escaping ModuleHandle.Loader = ModuleLoader.load) {
         self.modulesDirectory = modulesDirectory

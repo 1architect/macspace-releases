@@ -158,3 +158,34 @@ final class LazyChannelTests: XCTestCase {
                        "a helper registered from the build folder stayed tied to a copy every build replaces")
     }
 }
+
+final class ConfigurationProfilesTests: XCTestCase {
+    /// The shape `system_profiler SPConfigurationProfileDataType -json` gives without root (macOS 27, 2026-10-04).
+    func testFindsTheMacSpaceProfileAmongTheDeviceProfiles() throws {
+        let json = """
+        {"SPConfigurationProfileDataType":[
+          {"_name":"User Configuration Profiles (501)","_items":[{"_name":"ManagedSettings User Settings",
+            "spconfigprofile_profile_identifier":"com.apple.ManagedSettings.macOS.7BE22211"}]},
+          {"_name":"spconfigprofile_section_deviceconfigprofiles","_items":[{"_name":"MacSpace: Share analytics with Apple",
+            "spconfigprofile_profile_identifier":"com.macspace.policies.set-10f13ddcaa46",
+            "_items":[{"_name":"com.apple.SubmitDiagInfo","spconfigprofile_payload_identifier":"com.macspace.policies.set-10f13ddcaa46.x"}]}]}
+        ]}
+        """
+        let identifiers = try XCTUnwrap(ConfigurationProfiles.parse(Data(json.utf8)))
+        XCTAssertEqual(identifiers, ["com.apple.ManagedSettings.macOS.7BE22211", "com.macspace.policies.set-10f13ddcaa46"])
+        XCTAssertEqual(ConfigurationProfiles.status(identifiers), .granted)
+        XCTAssertEqual(ConfigurationProfiles.status(["com.apple.ManagedSettings.macOS.7BE22211"]), .missing, "another profile is not MacSpace's")
+    }
+
+    func testAnswersFromTheLastReadingAndUnknownBeforeTheFirst() {
+        let profiles = ConfigurationProfiles(read: { ["com.macspace.policies.set-1"] })
+        profiles.refreshNow()
+        XCTAssertEqual(profiles.status(), .granted)
+        XCTAssertEqual(ConfigurationProfiles(read: { nil }).status(), .unknown)
+    }
+
+    /// This Mac, read-only: the profile check runs without root.
+    func testReadsTheInstalledProfilesWithoutRoot() throws {
+        XCTAssertNotNil(ConfigurationProfiles.readInstalled())
+    }
+}

@@ -73,7 +73,16 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in tick += 1 }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // A profile approved in System Settings meanwhile shows at once.
+            ConfigurationProfiles.shared.refresh()
+            tick += 1
+        }
+        // The profile check reads in the background; the page is redrawn once it has an answer.
+        .task {
+            await Task.detached { ConfigurationProfiles.shared.refreshNow() }.value
+            tick += 1
+        }
     }
 
     @ViewBuilder
@@ -134,6 +143,9 @@ private struct PermissionRow: View {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
                 } else if permission == .privilegedHelper {
                     helperButton
+                } else if permission == .configurationProfile {
+                    // None installed: nothing is wrong until a policy is switched off, which opens the profile to approve.
+                    Text("Not installed").foregroundStyle(.secondary)
                 } else {
                     Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange)
                 }

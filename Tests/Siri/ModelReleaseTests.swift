@@ -153,3 +153,54 @@ final class OrphanSubscriptionTests: XCTestCase {
     }
 }
 
+
+final class ModelDescriptorsTests: XCTestCase {
+    /// A record the way MobileAsset writes it: a SUCore persisted-state plist holding an archived `MADAutoAssetDescriptor`.
+    @objc(MacSpaceTestDescriptor) private final class FakeDescriptor: NSObject, NSCoding {
+        let type: String, onDisk: Bool, fs: Int64, net: Int64
+        init(_ type: String, onDisk: Bool, fs: Int64, net: Int64) { self.type = type; self.onDisk = onDisk; self.fs = fs; self.net = net }
+        required init?(coder: NSCoder) { nil }
+        func encode(with coder: NSCoder) {
+            coder.encode(type, forKey: "assetType"); coder.encode(onDisk, forKey: "isOnFilesystem")
+            coder.encode(fs, forKey: "downloadedFilesystemBytes"); coder.encode(net, forKey: "downloadedNetworkBytes")
+            coder.encode("com.apple.fm.example", forKey: "AssetSpecifier")
+        }
+    }
+
+    private func record(_ descriptor: FakeDescriptor) throws -> Data {
+        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
+        archiver.setClassName("MADAutoAssetDescriptor", for: FakeDescriptor.self)
+        archiver.encode(descriptor, forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+        return try PropertyListSerialization.data(fromPropertyList: [
+            "SUCorePersistedStateContentsType": "SoftwareUpdateCorePersistedStateFile",
+            "SUCorePersistedStatePolicySecureCodedObjectsFields": ["assetDescriptor": archiver.encodedData],
+        ], format: .binary, options: 0)
+    }
+
+    func testSumsWhatIsOnDiskAndWhatIsDownloadingForTheFamiliesStorageCounts() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("descriptors-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let generative = "com.apple.MobileAsset.UAF.FM.GenerativeModels", visual = "com.apple.MobileAsset.UAF.FM.Visual"
+        let records: [(String, FakeDescriptor)] = [
+            (generative, FakeDescriptor(generative, onDisk: true, fs: 6_200_000_000, net: 6_200_000_000)),
+            (visual, FakeDescriptor(visual, onDisk: true, fs: 100_000_000, net: 100_000_000)),
+            (generative, FakeDescriptor(generative, onDisk: false, fs: 0, net: 2_000_000_000)),
+            ("com.apple.MobileAsset.UAF.Siri.Understanding", FakeDescriptor("com.apple.MobileAsset.UAF.Siri.Understanding", onDisk: true, fs: 1_000_000_000, net: 0)),
+        ]
+        for (index, (family, descriptor)) in records.enumerated() {
+            try record(descriptor).write(to: directory.appendingPathComponent("AutoAssetDescriptors_Entry_\(family)_asset\(index)_0.state"))
+        }
+        let usage = try XCTUnwrap(ModelDescriptors.usage(directory: directory.path))
+        XCTAssertEqual(usage.installedBytes, 6_300_000_000, "the two families System Settings counts as Apple Intelligence")
+        XCTAssertEqual(usage.downloadingBytes, 2_000_000_000, "a download in progress counts too")
+        XCTAssertEqual(usage.assets, 3)
+    }
+
+    /// This Mac, read-only: MobileAsset's records are readable without Full Disk Access or root.
+    func testReadsThisMacsRecords() throws {
+        guard FileManager.default.fileExists(atPath: ModelDescriptors.directory) else { throw XCTSkip("no AssetsV2 records here") }
+        XCTAssertNotNil(ModelDescriptors.usage())
+    }
+}

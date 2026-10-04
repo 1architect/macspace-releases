@@ -1,0 +1,68 @@
+import Foundation
+
+/// How much the Apple Intelligence models take, from MobileAsset's own records.
+///
+/// The model folders cannot be read: System Settings' Storage page measures `com_apple_MobileAsset_UAF_FM_GenerativeModels` and
+/// `…_FM_Visual` with a private entitlement (`com.apple.private.security.storage.MobileAssetGenerativeModels`), and without it even
+/// root cannot list them. But MobileAsset keeps one world-readable record per asset in `/System/Library/AssetsV2/persisted/
+/// AutoAssetDescriptors`: an archived `MADAutoAssetDescriptor` with `isOnFilesystem`, `downloadedFilesystemBytes` (on disk) and
+/// `downloadedNetworkBytes` (a download's progress). Summed for the families Storage counts, they give the size (measured
+/// 2026-10-04: 104 assets, 11.35 GB on disk, 6.2 GB of it the 3B base model).
+public enum ModelDescriptors {
+    public static let directory = "/System/Library/AssetsV2/persisted/AutoAssetDescriptors"
+    /// The families System Settings counts as Apple Intelligence.
+    public static let families = ["com.apple.MobileAsset.UAF.FM.GenerativeModels", "com.apple.MobileAsset.UAF.FM.Visual"]
+
+    public struct Usage: Equatable, Sendable {
+        /// On disk now.
+        public var installedBytes: UInt64
+        /// Downloaded so far for assets not complete yet.
+        public var downloadingBytes: UInt64
+        public var assets: Int
+    }
+
+    /// nil when the records cannot be read at all (an unknown macOS layout).
+    public static func usage(directory: String = directory, families: [String] = families, fileManager: FileManager = .default) -> Usage? {
+        guard let names = try? fileManager.contentsOfDirectory(atPath: directory) else { return nil }
+        var usage = Usage(installedBytes: 0, downloadingBytes: 0, assets: 0)
+        var readAny = false
+        for name in names where families.contains(where: { name.contains("_\($0)_") }) {
+            guard let data = fileManager.contents(atPath: "\(directory)/\(name)"), let descriptor = decode(data) else { continue }
+            readAny = true
+            guard families.contains(descriptor.assetType) else { continue }
+            usage.assets += 1
+            if descriptor.onDisk { usage.installedBytes += UInt64(max(descriptor.filesystemBytes, 0)) }
+            else { usage.downloadingBytes += UInt64(max(descriptor.networkBytes, 0)) }
+        }
+        return readAny || names.isEmpty ? usage : nil
+    }
+
+    /// The descriptor archived inside one record (a SUCore persisted-state property list).
+    static func decode(_ data: Data) -> Descriptor? {
+        guard let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let blob = (plist["SUCorePersistedStatePolicySecureCodedObjectsFields"] as? [String: Any])?["assetDescriptor"] as? Data,
+              let unarchiver = try? NSKeyedUnarchiver(forReadingFrom: blob) else { return nil }
+        unarchiver.requiresSecureCoding = false
+        unarchiver.setClass(Descriptor.self, forClassName: "MADAutoAssetDescriptor")
+        defer { unarchiver.finishDecoding() }
+        return unarchiver.decodeObject(forKey: NSKeyedArchiveRootObjectKey) as? Descriptor
+    }
+
+    /// The fields MacSpace reads from `MADAutoAssetDescriptor`; the rest of the archive is left undecoded.
+    @objc(MacSpaceModelDescriptor)
+    final class Descriptor: NSObject, NSCoding {
+        let assetType: String
+        let onDisk: Bool
+        let filesystemBytes: Int64
+        let networkBytes: Int64
+
+        func encode(with coder: NSCoder) {}
+
+        init?(coder: NSCoder) {
+            assetType = coder.decodeObject(forKey: "assetType") as? String ?? ""
+            onDisk = coder.decodeBool(forKey: "isOnFilesystem")
+            filesystemBytes = coder.decodeInt64(forKey: "downloadedFilesystemBytes")
+            networkBytes = coder.decodeInt64(forKey: "downloadedNetworkBytes")
+        }
+    }
+}

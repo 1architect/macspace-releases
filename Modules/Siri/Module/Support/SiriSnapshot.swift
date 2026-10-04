@@ -102,32 +102,18 @@ actor SiriStore {
         return snapshot
     }
 
-    /// The asset families that hold Apple Intelligence's models: the language models, their overrides, the image models and the
-    /// planner. Measured together: the 3B model alone left out what macOS downloads first.
-    static let modelFamilies = ["com_apple_MobileAsset_UAF_FM_GenerativeModels", "com_apple_MobileAsset_UAF_FM_Overrides",
-                                "com_apple_MobileAsset_UAF_FM_Visual", "com_apple_MobileAsset_UAF_IF_Planner",
-                                "com_apple_MobileAsset_UAF_IF_PlannerOverrides"]
-    static let assetsRoot = "/System/Library/AssetsV2"
     /// Where MobileAsset puts a download until it is complete (`<family>.<hash>.auto.<uuid>`, measured in the research: 5.8 GB there
     /// while the 3B model came back).
     static let stagingFolder = "/System/Library/AssetsV2/staging"
 
-    /// What the models take now, installed and still downloading. `installed` is nil when a family's folder could not be read: macOS
-    /// keeps them closed without Full Disk Access, and an unreadable folder must not read as "no model".
+    /// What the models take now, installed and still downloading, from MobileAsset's own records (`ModelDescriptors`), as System
+    /// Settings' Storage counts them. The staging folder also shows a download whose records have not caught up. `installed` is nil
+    /// only when the records cannot be read.
     static func modelBytes(fileManager: FileManager = .default) -> (installed: UInt64?, downloading: UInt64) {
-        let sizer = FileTreeSizer()
-        var installed: UInt64 = 0
-        var unreadable = false
-        for family in modelFamilies {
-            let url = URL(fileURLWithPath: "\(assetsRoot)/\(family)")
-            guard fileManager.fileExists(atPath: url.path) else { continue }
-            guard let size = sizer.size(at: url) else { unreadable = true; continue }
-            if size.unreadableFolders > 0 { unreadable = true }
-            installed += size.bytes
-        }
+        let usage = ModelDescriptors.usage(fileManager: fileManager)
         let staged = ((try? fileManager.contentsOfDirectory(atPath: stagingFolder)) ?? [])
-            .filter { name in modelFamilies.contains { name.hasPrefix($0 + ".") } }
-        let downloading = staged.compactMap { sizer.size(at: URL(fileURLWithPath: "\(stagingFolder)/\($0)"))?.bytes }.reduce(0, +)
-        return (unreadable && installed == 0 ? nil : installed, downloading)
+            .filter { name in ModelDescriptors.families.contains { name.hasPrefix($0.replacingOccurrences(of: ".", with: "_") + ".") } }
+            .compactMap { FileTreeSizer().size(at: URL(fileURLWithPath: "\(stagingFolder)/\($0)"))?.bytes }.reduce(0, +)
+        return (usage?.installedBytes, max(usage?.downloadingBytes ?? 0, staged))
     }
 }
