@@ -14,10 +14,25 @@ public enum DebloatCatalog {
     static let bootClearedNote = "With SIP enabled on 26B5091g, launchd cleared this override at boot and again at login (\"Clearing enabled state\") and refused bootout (error 150); owner-enforced overrides such as Siri.agent survive."
 
     public static let controls: [DebloatControl] = [
+        // On a release build the System Settings switch is honored, so it is what MacSpace changes: no profile to approve.
+        DebloatControl(
+            id: "telemetry.diagnostics",
+            title: "Share analytics with Apple",
+            summary: "Turn off Share Mac Analytics and sharing with app developers, as System Settings > Privacy & Security > Analytics & Improvements does.",
+            category: .telemetry, mechanism: .systemPreference, risk: .low, restart: .none,
+            settings: [
+                .preference(.systemFile, diagnosticsFile, "AutoSubmit", desired: .bool(false), fallback: nil),
+                .preference(.systemFile, diagnosticsFile, "ThirdPartyDataSubmit", desired: .bool(false), fallback: nil),
+            ],
+            effect: .diagnosticSubmission,
+            notes: ["On release builds only. On a beta, macOS submits diagnostics whatever this says, and the profile control replaces it."],
+            audience: .release
+        ),
+        // On a beta (SeedAutoSubmit), macOS submits whatever System Settings says; only a profile stops it.
         DebloatControl(
             id: "telemetry.diagnostics-policy",
             title: "Share analytics with Apple",
-            summary: "Force diagnostics submission off with a configuration profile (SubmitDiagInfo AutoSubmit and the allowDiagnosticSubmission restriction).",
+            summary: "Force diagnostics submission off with a configuration profile (SubmitDiagInfo AutoSubmit and the allowDiagnosticSubmission restriction). On a beta build macOS submits diagnostics whatever System Settings says; this is what stops it.",
             category: .telemetry, mechanism: .configurationProfile, risk: .low, restart: .none,
             settings: [
                 .managed("com.apple.SubmitDiagInfo", "AutoSubmit", desired: .bool(false)),
@@ -29,7 +44,8 @@ public enum DebloatCatalog {
                 "Measured on 26B5091g without MDM: a user-approved profile forced both values and they survived a reboot.",
                 "Measured on 26B5091g (seed, SeedAutoSubmit=1): with the profile SubmitDiagInfo decided optIn: OUT and uploaded nothing; without it, optIn: IN and an upload.",
             ],
-            validatedBuilds: ["26B5091g"]
+            validatedBuilds: ["26B5091g"],
+            audience: .prerelease
         ),
         DebloatControl(
             id: "ads.personalized-ads-policy",

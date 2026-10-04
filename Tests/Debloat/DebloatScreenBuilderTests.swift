@@ -13,18 +13,21 @@ final class DebloatScreenBuilderTests: XCTestCase {
         ControlStatus(controlID: id, state: state, effect: effect, settings: [], tested: DebloatCatalog.control(id)?.tested ?? false, appliedAt: nil)
     }
 
+    private let environment = DebloatEnvironment(productVersion: "27.2", build: "26B5091g", isPrerelease: true, sip: .enabled, mdmEnrolled: false, depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
+    /// The controls a beta build is offered, as the live snapshot filters them.
+    private var offered: [DebloatControl] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) } }
+
     private func snapshot(_ statuses: [ControlStatus], blocked: Set<String> = []) -> DebloatSnapshot {
-        DebloatSnapshot(controls: DebloatCatalog.controls, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
-                        environment: DebloatEnvironment(productVersion: "27.2", build: "26B5091g", isPrerelease: true, sip: .enabled, mdmEnrolled: false, depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true),
-                        cannotTakeEffect: blocked, takenAt: Date())
+        DebloatSnapshot(controls: offered, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
+                        environment: environment, cannotTakeEffect: blocked, takenAt: Date())
     }
 
     func testEveryControlGetsOneToggleInItsCategory() {
         let screen = DebloatScreenBuilder.screen(snapshot([]))
         var ids: [String] = []
         for case let .toggles(list) in screen.widgets { ids += list.rows.map(\.id) }
-        XCTAssertEqual(Set(ids), Set(DebloatCatalog.controls.map(\.id)))
-        XCTAssertEqual(ids.count, DebloatCatalog.controls.count)
+        XCTAssertEqual(Set(ids), Set(offered.map(\.id)))
+        XCTAssertEqual(ids.count, offered.count)
     }
 
     func testToggleStateBadgeAndConfirmationFollowTheControlState() {
@@ -123,7 +126,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         guard case let .dots(dots)? = drift.graphic else { return XCTFail() }
         XCTAssertEqual(dots.count, 14)
         XCTAssertEqual(dots.filter { $0 == .attention }.count, 1, "the undone control is the amber dot")
-        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(DebloatCatalog.controls.map { status($0.id, .debloated) })).status, "14/14 switched off")
+        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "14/14 switched off")
     }
 
     func testSummarizingResultsMentionsApprovalRestartAndFailures() {

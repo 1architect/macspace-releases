@@ -136,7 +136,7 @@ final class DebloatCatalogTests: XCTestCase {
     }
 
     func testTheCatalogShipsOnlyControlsThatWork() {
-        XCTAssertEqual(DebloatCatalog.controls.count, 14)
+        XCTAssertEqual(DebloatCatalog.controls.count, 15)
         for control in DebloatCatalog.controls {
             XCTAssertNil(control.replacedBy, control.id)
             XCTAssertNotEqual(control.mechanism, .privateSurface, "Apple Intelligence itself belongs to the Siri module")
@@ -145,6 +145,19 @@ final class DebloatCatalogTests: XCTestCase {
         // launchd overrides other than the RemovableServices ones are cleared at boot with SIP on, so none are shipped.
         let launchdControls = DebloatCatalog.controls.filter { $0.mechanism == .launchdOverride }.map(\.id)
         XCTAssertEqual(launchdControls, ["diagnostics.crash-reporter"])
+    }
+
+    func testAnalyticsUseTheSettingOnReleaseBuildsAndTheProfileOnBetas() throws {
+        var environment = DebloatEnvironment(productVersion: "27.0", build: "26A434", isPrerelease: false, sip: .enabled, mdmEnrolled: false,
+                                             depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
+        func offered() -> [String] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) }.map(\.id).filter { $0.hasPrefix("telemetry.diagnostics") } }
+        XCTAssertEqual(offered(), ["telemetry.diagnostics"], "a release build asks for no profile")
+        XCTAssertEqual(try XCTUnwrap(DebloatCatalog.control("telemetry.diagnostics")).mechanism, .systemPreference)
+        environment.isPrerelease = true
+        XCTAssertEqual(offered(), ["telemetry.diagnostics-policy"], "a beta submits whatever the setting says; only the profile stops it")
+        environment.isPrerelease = nil
+        XCTAssertEqual(offered(), ["telemetry.diagnostics"], "an unknown build counts as a release")
+        XCTAssertEqual(DebloatCatalog.controls.filter { $0.isOffered(in: environment) }.count, 14)
     }
 
     func testRestrictionKeysExistOnThisBuild() throws {

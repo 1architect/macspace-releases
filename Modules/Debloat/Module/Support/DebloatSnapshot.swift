@@ -54,9 +54,12 @@ actor DebloatStore {
 
     static func liveSnapshot() -> DebloatSnapshot {
         let engine = liveEngine()
-        let statuses = engine.status()
-        return DebloatSnapshot(controls: engine.controls, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
-                               environment: engine.system.environment(),
-                               cannotTakeEffect: Set(engine.controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date())
+        let environment = engine.system.environment()
+        // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta).
+        let controls = engine.controls.filter { $0.isOffered(in: environment) }
+        let statuses = controls.map(engine.status(of:))
+        return DebloatSnapshot(controls: controls, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
+                               environment: environment,
+                               cannotTakeEffect: Set(controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date())
     }
 }

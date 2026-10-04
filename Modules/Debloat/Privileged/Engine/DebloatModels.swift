@@ -404,12 +404,30 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
     public let applyCommand: String?
     /// A control that achieves the same goal where this one cannot take effect (e.g. a profile instead of launchd).
     public let replacedBy: String?
+    /// The builds the control is offered on; nil for every build.
+    public let audience: Audience?
+
+    public enum Audience: String, Codable, Sendable {
+        /// Beta (seed) builds, where macOS can override what System Settings says.
+        case prerelease
+        /// Release builds.
+        case release
+    }
+
+    /// Whether the control is offered on this Mac. An unknown build counts as a release build.
+    public func isOffered(in environment: DebloatEnvironment) -> Bool {
+        switch audience {
+        case nil: return true
+        case .prerelease?: return environment.isPrerelease == true
+        case .release?: return environment.isPrerelease != true
+        }
+    }
 
     public init(id: String, title: String, summary: String, category: ControlCategory, mechanism: ControlMechanism,
                 risk: ControlRisk, restart: RestartRequirement, settings: [ControlSetting], effect: EffectCheck? = nil,
                 breaks: [String] = [], notes: [String] = [], validatedBuilds: [String] = [],
                 ineffectiveWithSIPBuilds: [String] = [],
-                settingsURL: String? = nil, applyCommand: String? = nil, replacedBy: String? = nil) {
+                settingsURL: String? = nil, applyCommand: String? = nil, replacedBy: String? = nil, audience: Audience? = nil) {
         self.id = id
         self.title = title
         self.summary = summary
@@ -426,6 +444,7 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
         self.settingsURL = settingsURL
         self.applyCommand = applyCommand
         self.replacedBy = replacedBy
+        self.audience = audience
     }
 }
 

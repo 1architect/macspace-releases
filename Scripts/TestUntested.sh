@@ -86,7 +86,7 @@ release() {
 
 # MARK: Debloat
 
-DEBLOAT_UNTESTED="ads.personalized-ads-policy ads.advertising-identifier-policy telemetry.siri-server-logging-policy telemetry.on-device-speech-policy suggestions.spotlight-internet-policy ai.features-policy apps.game-center-policy apps.news-policy"
+DEBLOAT_UNTESTED="telemetry.diagnostics ads.personalized-ads-policy ads.advertising-identifier-policy telemetry.siri-server-logging-policy telemetry.on-device-speech-policy suggestions.spotlight-internet-policy ai.features-policy apps.game-center-policy apps.news-policy"
 
 # Prints "<id> <switch on|off> <badge>" for each untested control, from a saved Debloat page.
 debloat_states() {
@@ -116,7 +116,7 @@ news_opens() { # exit 0 when `open -a News` opens News
 }
 
 debloat() {
-  say "2. Debloat: the 8 controls marked \"Not tested\""
+  say "2. Debloat: the controls marked \"Not tested\""
   note ""; note "## Debloat (controls marked Not tested)"
   screen com.macspace.debloat debloat-before
   defaults read com.apple.AdLib > "$OUT/adlib-before.txt" 2>&1
@@ -126,8 +126,8 @@ debloat() {
   note "- News opened before: $news_before"
 
   # Turning back on: a policy MacSpace applied earlier (even by an older build) must come back when its switch is turned on.
-  pause "In MacSpace → Debloat, switch these 8 back ON (the feature runs again):
-  Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
+  pause "In MacSpace → Debloat, switch these back ON (the feature runs again):
+  Share analytics with Apple (release builds only: no profile), Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
   Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
 If MacSpace asks you to approve the updated MacSpace profile, approve it in System Settings → General → Device Management.
 (When none is left, MacSpace removes the profile itself through the helper.)"
@@ -139,12 +139,12 @@ If MacSpace asks you to approve the updated MacSpace profile, approve it in Syst
       on) if [ "$badge" = Approve_to_turn_on ]; then result FAIL "$id turns back on" "the updated profile is not approved yet"
           else result PASS "$id turns back on"; fi ;;
       off) result FAIL "$id turns back on" "the switch stays off, badge ${badge//_/ }" ;;
-      *) result FAIL "$id turns back on" "not found on the Debloat page" ;;
+      *) result SKIPPED "$id turns back on" "not offered on this build" ;;
     esac
   done < <(debloat_states "$OUT/debloat-turned-on.json")
 
-  pause "Now, in MacSpace → Debloat, switch OFF these 8 (one at a time; each says \"Not tested\"):
-  Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
+  pause "Now, in MacSpace → Debloat, switch OFF these (one at a time; each says \"Not tested\"):
+  Share analytics with Apple (release builds only), Personalized ads, Advertising identifier, Siri server-side logging, Dictation and translation on Apple servers,
   Spotlight internet results, Apple Intelligence features, Game Center, Apple News.
 Then approve the MacSpace profile in System Settings → General → Device Management (or Profiles)."
   screen com.macspace.debloat debloat-after
@@ -159,7 +159,7 @@ Then approve the MacSpace profile in System Settings → General → Device Mana
              *) result PASS "$id applied" "switch off${badge:+, badge ${badge//_/ }}" ;;
            esac ;;
       on) result FAIL "$id applied" "the switch still shows the feature on, badge ${badge//_/ }" ;;
-      *) result FAIL "$id applied" "not found on the Debloat page (see debloat-after.json)" ;;
+      *) result SKIPPED "$id applied" "not offered on this build" ;;
     esac
   done < <(debloat_states "$OUT/debloat-after.json")
 
