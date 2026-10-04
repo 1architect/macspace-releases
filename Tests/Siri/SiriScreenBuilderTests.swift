@@ -50,13 +50,34 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.unknown, match: true)).rows[0].isOn, true, "unknown falls back to the language match")
     }
 
-    func testSwitchAlwaysAsksBeforeChangingAndNeedsFullDiskAccess() throws {
+    func testSwitchNeverAsksAndNeedsFullDiskAccess() throws {
         let off = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows.first)
-        XCTAssertTrue(off.action.confirmation?.message.contains("pt-BR to en-US") == true)
-        XCTAssertTrue(off.action.confirmation?.message.contains("iPhone and iPad") == true, "the Siri language syncs through iCloud")
+        XCTAssertNil(off.action.confirmation, "the switch moves at once; a failure moves it back")
+        XCTAssertTrue(off.detail?.contains("iPhone and iPad") == true, "says where the Siri language goes")
         XCTAssertEqual(off.action.requires, [.fullDiskAccess], "the result cannot be verified without it")
         let on = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.protected)).rows.first)
-        XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on")
+        XCTAssertNil(on.action.confirmation)
+    }
+
+    func testICloudSyncSwitchShowsTheLiveSetting() throws {
+        var synced = snapshot(.protected)
+        synced.cloudSyncOn = true
+        let row = try XCTUnwrap(SiriScreenBuilder.switchList(synced).rows.first { $0.id == "icloud-sync" })
+        XCTAssertTrue(row.isOn)
+        XCTAssertEqual(row.action.id, "cloudSync")
+        XCTAssertNil(row.action.confirmation)
+        XCTAssertNil(SiriScreenBuilder.switchList(snapshot(.protected)).rows.first { $0.id == "icloud-sync" }, "no switch when the setting cannot be read")
+    }
+
+    func testModelsBeingDownloadedAreNeverNoModel() {
+        var downloading = snapshot(.atRisk)
+        downloading.installedModelBytes = 0
+        downloading.downloadingModelBytes = 2_000_000_000
+        XCTAssertTrue(SiriScreenBuilder.modelLine(downloading).contains("downloading"))
+        XCTAssertFalse(SiriScreenBuilder.tile(downloading).graphic.map { "\($0)".contains("no model downloaded yet") } ?? true)
+        var unreadable = snapshot(.atRisk)
+        unreadable.installedModelBytes = nil
+        XCTAssertTrue(SiriScreenBuilder.modelLine(unreadable).contains("could not be measured"))
     }
 
     func testTileFlagsAppleIntelligenceWhenItIsOn() {

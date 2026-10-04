@@ -56,6 +56,14 @@ public struct SiriModule: MacSpaceModule {
             // deletes them right away instead of offering a purge.
             progress(ActionProgress(message: "Removing the models macOS no longer needs…"))
             return await Task.detached(priority: .userInitiated) { Self.purgeAfterSwitchingOff(result) }.value
+        case "cloudSync":
+            let on = request.parameters["value"] == "true"
+            do {
+                try SiriCloudSync().choose(on)
+                return .succeeded(on ? "Siri syncs with iCloud again." : "Siri's settings now stay on this Mac.")
+            } catch {
+                return .failed("macOS did not save Siri's iCloud sync setting.")
+            }
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             return Self.purge()
@@ -99,13 +107,9 @@ public struct SiriModule: MacSpaceModule {
         }
     }
 
+    /// macOS is asked again right before, and what it declines is not offered again (`PurgeRun`).
     static func purge() -> ActionResult {
-        let result: CacheDeletePurgeResult
-        if let cli = ToolLocator.cli() { result = CacheDeleteClient.purgeInSubprocess(executable: cli) }
-        else { result = CacheDeleteClient().purge(services: [CacheDeleteService.mobileAsset]) }
-        if let error = result.error { return .failed(error) }
-        return .succeeded("Freed \(ByteFormat.string(result.freedBytes ?? 0)), measured on the volume.",
-                          details: ["macOS reported \(ByteFormat.string(result.purgedBytes ?? 0)) removed."])
+        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise), what: "unused system assets")
     }
 
     /// The purge that follows switching off, after the few seconds mobileassetd takes to unlock the models (5 s observed).

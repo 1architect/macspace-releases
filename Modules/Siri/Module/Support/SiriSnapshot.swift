@@ -20,6 +20,11 @@ struct SiriSnapshot: Sendable {
     var releasingAutomatically = false
     /// What the Apple Intelligence models take on disk now (the 3B base model and its adapters); nil if it cannot be read.
     var installedModelBytes: UInt64?
+    /// What macOS is downloading for those models right now (its staging folder).
+    var downloadingModelBytes: UInt64 = 0
+    /// Siri's iCloud sync: on now (nil when unreadable), and whether the user chose to keep it (`SiriCloudSync`).
+    var cloudSyncOn: Bool?
+    var keepsCloudSync = false
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -81,19 +86,46 @@ actor SiriStore {
         let purgeable: UInt64?
         if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
         else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+        let offerable = PurgeLedger().offerable(CacheDeleteService.mobileAsset, estimate: purgeable)
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
-        var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
+        var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: offerable,
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
-        snapshot.installedModelBytes = installedModelBytes()
+        let models = modelBytes()
+        snapshot.installedModelBytes = models.installed
+        snapshot.downloadingModelBytes = models.downloading
+        let sync = SiriCloudSync()
+        snapshot.cloudSyncOn = sync.isEnabled()
+        snapshot.keepsCloudSync = sync.userChoice() == true
         return snapshot
     }
 
-    /// The Apple Intelligence models' folder (every purpose), measured.
-    static func installedModelBytes() -> UInt64? {
-        let folder = URL(fileURLWithPath: AppleIntelligenceLanguageGuard.generativeModelsAssetDirectory).deletingLastPathComponent()
-        guard FileManager.default.fileExists(atPath: folder.path) else { return 0 }
-        guard let size = FileTreeSizer().size(at: folder) else { return nil }
-        return size.allocatedBytesEstimate ?? size.logicalBytes
+    /// The asset families that hold Apple Intelligence's models: the language models, their overrides, the image models and the
+    /// planner. Measured together: the 3B model alone left out what macOS downloads first.
+    static let modelFamilies = ["com_apple_MobileAsset_UAF_FM_GenerativeModels", "com_apple_MobileAsset_UAF_FM_Overrides",
+                                "com_apple_MobileAsset_UAF_FM_Visual", "com_apple_MobileAsset_UAF_IF_Planner",
+                                "com_apple_MobileAsset_UAF_IF_PlannerOverrides"]
+    static let assetsRoot = "/System/Library/AssetsV2"
+    /// Where MobileAsset puts a download until it is complete (`<family>.<hash>.auto.<uuid>`, measured in the research: 5.8 GB there
+    /// while the 3B model came back).
+    static let stagingFolder = "/System/Library/AssetsV2/staging"
+
+    /// What the models take now, installed and still downloading. `installed` is nil when a family's folder could not be read: macOS
+    /// keeps them closed without Full Disk Access, and an unreadable folder must not read as "no model".
+    static func modelBytes(fileManager: FileManager = .default) -> (installed: UInt64?, downloading: UInt64) {
+        let sizer = FileTreeSizer()
+        var installed: UInt64 = 0
+        var unreadable = false
+        for family in modelFamilies {
+            let url = URL(fileURLWithPath: "\(assetsRoot)/\(family)")
+            guard fileManager.fileExists(atPath: url.path) else { continue }
+            guard let size = sizer.size(at: url) else { unreadable = true; continue }
+            if size.unreadableFolders > 0 { unreadable = true }
+            installed += size.bytes
+        }
+        let staged = ((try? fileManager.contentsOfDirectory(atPath: stagingFolder)) ?? [])
+            .filter { name in modelFamilies.contains { name.hasPrefix($0 + ".") } }
+        let downloading = staged.compactMap { sizer.size(at: URL(fileURLWithPath: "\(stagingFolder)/\($0)"))?.bytes }.reduce(0, +)
+        return (unreadable && installed == 0 ? nil : installed, downloading)
     }
 }

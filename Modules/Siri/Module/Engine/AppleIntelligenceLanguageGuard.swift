@@ -177,6 +177,8 @@ public struct AppleIntelligenceLanguageGuard {
     public static let siriUnderstandingAssetDirectory = "/System/Library/AssetsV2/com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto"
     public static let siriASRSpecifierPrefix = "com.apple.siri.asr.assistant."
     public static let targetSpecifier = "com.apple.fm.language.instruct_3b.base.generic_sparse"
+    /// Said when the user keeps Siri in sync with iCloud.
+    public static let iCloudSyncWarning = "Siri syncs through iCloud: iPhone and iPad signed in to the same Apple Account get the same Siri language."
     /// Fallback mismatch candidates, used after the current Siri language and installed languages.
     public static let defaultDisableLanguages = ["en-US", "es-ES", "fr-FR", "de-DE", "ja-JP"]
 
@@ -227,7 +229,7 @@ public struct AppleIntelligenceLanguageGuard {
         case .some(true):
             state = .atRisk
             if languagesMatch == false {
-                reasons.append("The languages differ but Apple still reports eligible; the mismatch method may not apply on this build.")
+                reasons.append("The languages differ but Apple still reports eligible; the mismatch method may not apply on this macOS release.")
             }
         case .some(false):
             source = languagesMatch == false ? .languageMismatch : .other
@@ -296,8 +298,11 @@ public struct AppleIntelligenceLanguageGuard {
         if supported == nil { warnings.append("Siri's supported-language list could not be read; \(target) was not validated.") }
         let needsDownload = installed.map { !$0.contains(target) }
         if needsDownload == true { warnings.append("Siri speech assets for \(target) are not installed; macOS will download them (~1.5 GB observed for en-US).") }
-        // Reported by the maintainer (2026-10-04): the change reaches the iPhone.
-        warnings.append("The Siri language syncs through iCloud: iPhone and iPad signed in to the same Apple Account get the same Siri language.")
+        // Measured (2026-10-04): with Siri's iCloud sync on, the change reaches the iPhone. MacSpace turns sync off first unless the
+        // user chose to keep it (`SiriCloudSync`).
+        if SiriCloudSync().userChoice() == true {
+            warnings.append(Self.iCloudSyncWarning)
+        }
         let unchanged = current == target && voice == nil
         return SiriLanguageChangePlan(action: action, currentSiriLanguage: current, targetSiriLanguage: target,
                                       targetOutputVoice: voice, systemLanguage: system, scope: scope, scopeVerified: false,
@@ -436,6 +441,9 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
     }
 
     public func write(siriLanguage: String, outputVoice: Data?) throws {
+        // Siri's iCloud sync goes off first (unless the user chose to keep it), so the new language stays on this Mac instead of
+        // reaching iPhone and iPad. A moment for the daemons to read the change before the language follows.
+        if SiriCloudSync().keepLanguageChangeLocal() { Thread.sleep(forTimeInterval: 0.5) }
         let domain = AppleIntelligenceLanguageGuard.siriPreferencesDomain as CFString
         CFPreferencesSetAppValue(AppleIntelligenceLanguageGuard.siriLanguageKey as CFString, siriLanguage as CFString, domain)
         if let outputVoice, let voice = try? PropertyListSerialization.propertyList(from: outputVoice, options: [], format: nil) {

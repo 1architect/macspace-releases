@@ -87,7 +87,7 @@ final class AppleIntelligenceLanguageGuardTests: XCTestCase {
         XCTAssertEqual(guardian.evaluate(inputs(siri: "pt-BR", answer: 4, selectors: 177, targets: 1)).state, .atRisk)
         let differing = guardian.evaluate(inputs(answer: 4))
         XCTAssertEqual(differing.state, .atRisk)
-        XCTAssertTrue(differing.reasons.contains { $0.contains("may not apply on this build") })
+        XCTAssertTrue(differing.reasons.contains { $0.contains("may not apply on this macOS release") })
     }
 
     func testMatchingLanguagesButIneligibleIsProtectedForAnotherReason() {
