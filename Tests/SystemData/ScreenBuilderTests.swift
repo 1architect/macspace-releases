@@ -171,4 +171,26 @@ final class SystemDataStoreTests: XCTestCase {
         _ = await store.snapshot()
         XCTAssertEqual(counter.n, 2)
     }
+
+    /// A caller waiting on a scan when an action invalidates the store must not get that scan's figures (from before the action).
+    func testACallerWaitingOnAnObsoleteScanGetsAFreshOne() async throws {
+        final class Counter: @unchecked Sendable { var n = 0; let lock = NSLock(); func next() -> Int { lock.lock(); defer { lock.unlock() }; n += 1; return n } }
+        let counter = Counter()
+        let store = SystemDataStore(builder: {
+            let scan = counter.next()
+            Thread.sleep(forTimeInterval: 0.3)
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: UInt64(scan), cleanableBytes: 0,
+                                                             manualCleanup: [], unreadable: [], warnings: []),
+                                    purgeableAssetsBytes: nil,
+                                    reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
+        })
+        let first = Task { await store.snapshot() }
+        try await Task.sleep(for: .milliseconds(50))
+        let waiting = Task { await store.snapshot() }
+        try await Task.sleep(for: .milliseconds(50))
+        await store.invalidate()
+        _ = await first.value
+        let snapshot = await waiting.value
+        XCTAssertEqual(snapshot.report.measuredBytes, 2, "the waiting caller got the scan started after the invalidate")
+    }
 }

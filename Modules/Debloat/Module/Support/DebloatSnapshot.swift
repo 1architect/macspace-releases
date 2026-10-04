@@ -30,7 +30,13 @@ actor DebloatStore {
 
     func snapshot(maxAge: TimeInterval = 15, now: Date = Date()) async -> DebloatSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
-        if let inflight { return await inflight.value }
+        // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
+        // the figures from before the action.
+        if let inflight {
+            let waitedFor = generation
+            let fresh = await inflight.value
+            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge)
+        }
         let builder = self.builder
         let task = Task.detached(priority: .utility) { builder() }
         let started = generation

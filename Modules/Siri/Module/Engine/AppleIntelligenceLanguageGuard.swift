@@ -168,7 +168,12 @@ public struct AppleIntelligenceLanguageGuard {
     public static let outputVoiceKey = "Output Voice"
     public static let siriEnabledDomain = "com.apple.assistant.support"
     public static let siriEnabledKey = "Assistant Enabled"
-    public static let languageChangeNotification = "AFLanguageCodeDidChangeDarwinNotification"
+    /// Posted after the language is written. Its name is the string AssistantServices exports under this symbol, read at run time
+    /// (as Debloat does for its settings); the symbol's own spelling is posted only if the framework does not export it.
+    public static let languageChangeNotification = DarwinNotificationName.exported(
+        framework: "/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices",
+        symbol: "AFLanguageCodeDidChangeDarwinNotification")
+    static let languageChangeFallback = "AFLanguageCodeDidChangeDarwinNotification"
     public static let eligibilityPath = "/private/var/db/os_eligibility/eligibility.plist"
     public static let siriModeDomain = "OS_ELIGIBILITY_DOMAIN_SIRI_MODE"
     public static let languageMatchInputKey = "OS_ELIGIBILITY_INPUT_DEVICE_AND_SIRI_LANGUAGE_MATCH"
@@ -450,9 +455,9 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
             CFPreferencesSetAppValue(AppleIntelligenceLanguageGuard.outputVoiceKey as CFString, voice as CFPropertyList, domain)
         }
         guard CFPreferencesAppSynchronize(domain) else { throw AppleIntelligenceGuardError.preferenceWriteFailed }
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                             CFNotificationName(AppleIntelligenceLanguageGuard.languageChangeNotification as CFString),
-                                             nil, nil, true)
+        if AppleIntelligenceLanguageGuard.languageChangeNotification.post() == nil {
+            DarwinNotificationName.literal(AppleIntelligenceLanguageGuard.languageChangeFallback).post()
+        }
     }
 
     public func loadSavedSettings() -> SavedSiriSettings? {

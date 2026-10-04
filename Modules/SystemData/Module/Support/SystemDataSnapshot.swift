@@ -69,7 +69,13 @@ actor SystemDataStore {
 
     func snapshot(maxAge: TimeInterval = 120, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil { return cached }
-        if let inflight { return await inflight.value }
+        // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
+        // the figures from before the action.
+        if let inflight {
+            let waitedFor = generation
+            let fresh = await inflight.value
+            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, privileged: privileged)
+        }
         let builder = self.builder
         let task = Task.detached(priority: .utility) { () -> SystemDataSnapshot in
             let scanned = builder()
