@@ -303,11 +303,9 @@ public struct AppleIntelligenceLanguageGuard {
         if supported == nil { warnings.append("Siri's supported-language list could not be read; \(target) was not validated.") }
         let needsDownload = installed.map { !$0.contains(target) }
         if needsDownload == true { warnings.append("Siri speech assets for \(target) are not installed; macOS will download them (~1.5 GB observed for en-US).") }
-        // Measured (2026-10-04): with Siri's iCloud sync on, the change reaches the iPhone. MacSpace turns sync off first unless the
-        // user chose to keep it (`SiriCloudSync`).
-        if SiriCloudSync().userChoice() == true {
-            warnings.append(Self.iCloudSyncWarning)
-        }
+        // Measured (2026-10-04): with Siri's iCloud sync on, the change reaches the iPhone. Only the user can turn that sync off
+        // (`SiriCloudSync`).
+        warnings.append(Self.iCloudSyncWarning)
         let unchanged = current == target && voice == nil
         return SiriLanguageChangePlan(action: action, currentSiriLanguage: current, targetSiriLanguage: target,
                                       targetOutputVoice: voice, systemLanguage: system, scope: scope, scopeVerified: false,
@@ -446,9 +444,6 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
     }
 
     public func write(siriLanguage: String, outputVoice: Data?) throws {
-        // Siri's iCloud sync goes off first (unless the user chose to keep it), so the new language stays on this Mac instead of
-        // reaching iPhone and iPad. A moment for the daemons to read the change before the language follows.
-        if SiriCloudSync().keepLanguageChangeLocal() { Thread.sleep(forTimeInterval: 0.5) }
         let domain = AppleIntelligenceLanguageGuard.siriPreferencesDomain as CFString
         CFPreferencesSetAppValue(AppleIntelligenceLanguageGuard.siriLanguageKey as CFString, siriLanguage as CFString, domain)
         if let outputVoice, let voice = try? PropertyListSerialization.propertyList(from: outputVoice, options: [], format: nil) {

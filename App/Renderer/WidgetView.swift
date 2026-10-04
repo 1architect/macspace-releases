@@ -301,14 +301,18 @@ struct RowView: View {
     }
 }
 
-/// A switch row, as in Settings. It never asks: the switch moves as soon as it is flipped, then the module makes the change. If the
-/// change fails, the switch moves back and the page says why; the rest of the page is not reloaded around it.
+/// A switch row, as in Settings. It never asks and never waits: the switch moves as soon as it is flipped, then the module makes the
+/// change. Flipped again while a change runs, it moves at once too, and the latest position is applied as soon as the running change
+/// ends. If a change fails, the switch moves back to what the Mac really has and the page says why; the rest of the page is not
+/// reloaded around it.
 struct ToggleRowView: View {
     let row: ToggleRow
     let handler: ActionHandler
-    /// What the switch shows while its change runs, ahead of the module's answer.
+    /// What the switch shows ahead of the module's answer.
     @State private var shown: Bool?
     @State private var running = false
+    /// The position chosen while a change was running, applied next.
+    @State private var queued: Bool?
 
     var body: some View {
         Toggle(isOn: Binding(get: { shown ?? row.isOn }, set: flip)) {
@@ -318,22 +322,31 @@ struct ToggleRowView: View {
             }
         }
         .disabled(!row.isEnabled)
-        // Not disabled while the change runs (that greys the switch out): it just takes no second flip until the first is done.
-        .allowsHitTesting(!running)
         .help(Tooltip.join(row.subtitle, row.detail) ?? "")
         .onChange(of: row.isOn) { _, _ in if !running { shown = nil } }
     }
 
     private func flip(to value: Bool) {
-        guard !running, value != (shown ?? row.isOn) else { return }
+        guard value != (shown ?? row.isOn) else { return }
         withAnimation(Theme.toggle) { shown = value }
+        if running { queued = value } else { apply(value) }
+    }
+
+    private func apply(_ value: Bool) {
         running = true
         Task { @MainActor in
             let result = await handler(row.action, ["value": value ? "true" : "false"], true)
+            let applied = result.map { $0.outcome != .failed } ?? false
+            // Where the Mac is now: the new position, or, after a failure, the one before it.
+            let actual = applied ? value : !value
+            if let next = queued {
+                queued = nil
+                if next != actual { return apply(next) }
+            }
             running = false
-            // Done: the module's own reading takes over (the same value, or what macOS really did). Failed: back where it was.
-            withAnimation(Theme.toggle) { shown = result.map { $0.outcome == .failed } == false ? nil : !value }
-            if shown != nil {
+            // Done: the module's own reading takes over. Failed: back to where the Mac is.
+            withAnimation(Theme.toggle) { shown = applied ? nil : actual }
+            if !applied {
                 try? await Task.sleep(for: .milliseconds(400))
                 if !running { shown = nil }
             }

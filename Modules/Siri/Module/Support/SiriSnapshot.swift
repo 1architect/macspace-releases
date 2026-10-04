@@ -22,9 +22,6 @@ struct SiriSnapshot: Sendable {
     var installedModelBytes: UInt64?
     /// What macOS is downloading for those models right now (its staging folder).
     var downloadingModelBytes: UInt64 = 0
-    /// Siri's iCloud sync: on now (nil when unreadable), and whether the user chose to keep it (`SiriCloudSync`).
-    var cloudSyncOn: Bool?
-    var keepsCloudSync = false
     /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
     var assetsRetrying = false
 }
@@ -101,9 +98,6 @@ actor SiriStore {
         let models = modelBytes()
         snapshot.installedModelBytes = models.installed
         snapshot.downloadingModelBytes = models.downloading
-        let sync = SiriCloudSync()
-        snapshot.cloudSyncOn = sync.isEnabled()
-        snapshot.keepsCloudSync = sync.userChoice() == true
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         return snapshot
     }

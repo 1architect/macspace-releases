@@ -56,14 +56,9 @@ public struct SiriModule: MacSpaceModule {
             // deletes them right away instead of offering a purge.
             progress(ActionProgress(message: "Removing the models macOS no longer needs…"))
             return await Task.detached(priority: .userInitiated) { Self.purgeAfterSwitchingOff(result) }.value
-        case "cloudSync":
-            let on = request.parameters["value"] == "true"
-            do {
-                try SiriCloudSync().choose(on)
-                return .succeeded(on ? "Siri syncs with iCloud again." : "Siri's settings now stay on this Mac.")
-            } catch {
-                return .failed("macOS did not save Siri's iCloud sync setting.")
-            }
+        case "openICloudSettings":
+            NSWorkspace.shared.open(SiriCloudSync.settingsURL)
+            return ActionResult(outcome: .succeeded, message: "Opened iCloud settings: Siri > Sync this Mac.", refresh: false)
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
             let store = self.store

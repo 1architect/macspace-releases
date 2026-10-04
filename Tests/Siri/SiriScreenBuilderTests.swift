@@ -59,14 +59,16 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(on.action.confirmation)
     }
 
-    func testICloudSyncSwitchShowsTheLiveSetting() throws {
-        var synced = snapshot(.protected)
-        synced.cloudSyncOn = true
-        let row = try XCTUnwrap(SiriScreenBuilder.switchList(synced).rows.first { $0.id == "icloud-sync" })
-        XCTAssertTrue(row.isOn)
-        XCTAssertEqual(row.action.id, "cloudSync")
-        XCTAssertNil(row.action.confirmation)
-        XCTAssertNil(SiriScreenBuilder.switchList(snapshot(.protected)).rows.first { $0.id == "icloud-sync" }, "no switch when the setting cannot be read")
+    /// MacSpace cannot change Siri's iCloud sync (an iCloud account data class only System Settings may set): the page says what it
+    /// does and opens the setting, with no switch that would pretend to change it.
+    func testICloudSyncIsAGuideToSystemSettingsNotASwitch() throws {
+        let screen = SiriScreenBuilder.screen(snapshot(.protected))
+        var toggleIDs: [String] = []
+        for case let .toggles(list) in screen.widgets { toggleIDs += list.rows.map(\.id) }
+        XCTAssertFalse(toggleIDs.contains("icloud-sync"))
+        let row = SiriScreenBuilder.cloudSyncRow
+        XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
+        XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
     }
 
     func testModelsBeingDownloadedAreNeverNoModel() {
@@ -167,6 +169,6 @@ final class SiriScreenBuilderTests: XCTestCase {
         var snap = snapshot(.protected, accounts: [other("tester")], purgeable: 1_000_000_000)
         snap.releasingAutomatically = true
         let screen = SiriScreenBuilder.screen(snap)
-        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "accounts", "models"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts", "models"])
     }
 }

@@ -139,6 +139,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// left to do.
     @discardableResult
     public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false) async -> ActionResult? {
+        // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
+        // both write the module's undo journal.
+        let previous = lastAction
+        let task = Task { @MainActor [weak self] () -> ActionResult? in
+            _ = await previous?.value
+            return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet)
+        }
+        lastAction = task
+        return await task.value
+    }
+
+    private var lastAction: Task<ActionResult?, Never>?
+
+    private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool) async -> ActionResult? {
         guard state == .ready, let module else { return nil }
         let missing = action.requires.filter { permissions.status(of: $0) == .missing }
         if !missing.isEmpty {

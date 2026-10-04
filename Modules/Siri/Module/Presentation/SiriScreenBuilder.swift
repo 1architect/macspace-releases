@@ -97,13 +97,8 @@ enum SiriScreenBuilder {
 
     static let purgeThreshold: UInt64 = 50_000_000
 
-    /// Where the Siri language goes: only this Mac while Siri's iCloud sync is off (MacSpace turns it off before changing the
-    /// language), also iPhone and iPad while the user keeps it on.
-    static func languageReach(_ snapshot: SiriSnapshot) -> String {
-        snapshot.keepsCloudSync
-            ? AppleIntelligenceLanguageGuard.iCloudSyncWarning
-            : "MacSpace turns Siri's iCloud sync off before it changes the Siri language, so iPhone and iPad keep theirs."
-    }
+    /// Where the Siri language goes.
+    static func languageReach(_ snapshot: SiriSnapshot) -> String { SiriCloudSync.reach }
 
     static func screen(_ snapshot: SiriSnapshot) -> Screen {
         if snapshot.isVirtualMachine {
@@ -112,6 +107,7 @@ enum SiriScreenBuilder {
         var widgets: [ScreenWidget] = []
         if let banner = statusBanner(snapshot) { widgets.append(.banner(banner)) }
         widgets.append(.toggles(switchList(snapshot)))
+        widgets.append(.list(ListWidget(id: "icloud", rows: [cloudSyncRow])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
         if let models = modelsSection(snapshot) { widgets.append(models) }
         return Screen(title: "Siri & Apple Intelligence", primary: purge(snapshot), widgets: widgets)
@@ -137,18 +133,17 @@ enum SiriScreenBuilder {
         let state = snapshot.status.state
         let detail = ([subtitle, "Applies to this account.", languageReach(snapshot)] + snapshot.status.reasons).joined(separator: " ")
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why.
-        var rows = [ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
+        let rows = [ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
                               badge: state == .atRisk ? Badge("On", tone: .caution) : nil,
                               detail: detail,
                               action: Action(id: "toggle", title: "Apple Intelligence", parameters: ["id": "ai"], requires: [.fullDiskAccess]))]
-        if let sync = snapshot.cloudSyncOn {
-            rows.append(ToggleRow(id: "icloud-sync", title: "Sync Siri with iCloud", subtitle: sync ? "On: iPhone and iPad get the same Siri settings." : "Off: Siri's settings stay on this Mac.",
-                                  isOn: sync, badge: SiriCloudSync.tested ? nil : Badge("Not tested", tone: .caution),
-                                  detail: "The Siri switch under System Settings > Apple Account > iCloud > Saved to iCloud. MacSpace switches it off before it changes the Siri language, so iPhone and iPad keep theirs; switch it on here to keep Siri in sync, and MacSpace leaves it on.",
-                                  action: Action(id: "cloudSync", title: "Sync Siri with iCloud", parameters: ["id": "icloud-sync"])))
-        }
         return ToggleList(id: "switch", rows: rows)
     }
+
+    /// Siri's iCloud sync, which only the user can turn off: what it does, the steps, and a button to the page that has it.
+    static let cloudSyncRow = Row(id: "icloud-sync", title: "Siri's iCloud sync", subtitle: "set in System Settings", symbol: "icloud",
+                                  detail: SiriCloudSync.reach + " macOS lets only System Settings change it.", steps: SiriCloudSync.steps,
+                                  actions: [Action(id: "openICloudSettings", title: "Open")])
 
     static func accountsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {
         guard let elsewhere = snapshot.accounts?.enabledElsewhere, !elsewhere.isEmpty else { return nil }
