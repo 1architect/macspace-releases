@@ -5,7 +5,7 @@
     <key>CFBundleIdentifier</key><string>com.macspace.app</string>
     <key>CFBundleName</key><string>MacSpace</string>
     <key>CFBundleDisplayName</key><string>MacSpace</string>
-    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleIconFile</key><string>MacSpace</string>
     <key>CFBundleExecutable</key><string>MacSpace</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>__VERSION__</string>
