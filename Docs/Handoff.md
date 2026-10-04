@@ -153,9 +153,10 @@ marked "Not tested"). The policies were tested in the research (profile-policies
 
 **Plain settings are written as System Settings writes them** (research, mechanism ladder #1): `CFPreferences` on the owning domain,
 then the setting's change notification. Improve Siri & Dictation posts `kAFPreferencesDidChangeDarwinNotification`, read from
-AssistantServices at run time (the research found that constant in results/cp107). Not verified yet: that the self-test sees it
-posted, and which notification personalized ads and the ad identifier need (the research names none; `Scripts/SelfTest.sh` lists the
-candidates the Ad frameworks export on the running build).
+AssistantServices at run time (the research found that constant in results/cp107; on 26B5091g its value is its own name).
+Self-tested 2026-10-03 (26B5091g, 29 passed): the notification is posted on every write, off and on. Not verified yet: which
+notification personalized ads and the ad identifier need (the research names none; `Scripts/SelfTest.sh` lists the candidates the
+Ad frameworks export on the running build).
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
