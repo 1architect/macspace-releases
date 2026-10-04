@@ -56,7 +56,7 @@ public struct SystemDataModule: MacSpaceModule {
             return await Self.deleteVersions(context.privileged)
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
-            return Self.purgeAssets()
+            return Self.purgeAssets(store: store)
         case "cleanAll":
             var details: [String] = []
             var freed: UInt64 = 0
@@ -68,7 +68,7 @@ public struct SystemDataModule: MacSpaceModule {
             progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))
             if snapshot.reports.totalBytes > 0 { details += Self.cleanReports(snapshot.reports).details }
             progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
-            if (snapshot.purgeableAssetsBytes ?? 0) > 0 { details += Self.purgeAssets().details }
+            if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying { details += Self.purgeAssets(store: store).details }
             if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
             return .succeeded("Freed \(ByteFormat.string(freed)), measured on the volume.", details: details)
         default:
@@ -127,9 +127,11 @@ public struct SystemDataModule: MacSpaceModule {
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [])
     }
 
-    /// macOS is asked again right before, and what it declines is not offered again (`PurgeRun`).
-    static func purgeAssets() -> ActionResult {
-        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise), what: "unused system assets")
+    /// macOS is asked again right before; if it keeps them, again in the background, and the page reads the Mac again once it lets
+    /// them go (`PurgeRun`).
+    static func purgeAssets(store: SystemDataStore) -> ActionResult {
+        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise) { _ in await store.invalidate() }
+        return PurgeRun.result(outcome, what: "unused system assets")
     }
 
     static func measuredFreed(_ before: UInt64?, _ after: UInt64?) -> UInt64? {

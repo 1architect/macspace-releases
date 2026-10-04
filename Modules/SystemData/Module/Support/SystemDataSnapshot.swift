@@ -12,6 +12,8 @@ struct SystemDataSnapshot: Sendable {
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
     var takenAt: Date
+    /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
+    var assetsRetrying = false
     /// The helper was asked to measure the places only root can read.
     var helperTried = false
     /// Why the helper could not measure (it was not reachable), when that is the reason.
@@ -103,7 +105,8 @@ actor SystemDataStore {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date())
+        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
+                                  assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
     }
 
     /// How much is purgeable, asked in the CLI child process. Only mobileassetd's figure is used: the app-container-caches service
@@ -112,7 +115,6 @@ actor SystemDataStore {
         let all: [String: UInt64]?
         if let cli = ToolLocator.cli() { all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) }
         else { all = CacheDeleteClient().purgeableByService() }
-        // What macOS just declined to delete is not offered again until its estimate grows.
-        return PurgeLedger().offerable(CacheDeleteService.mobileAsset, estimate: all?[CacheDeleteService.mobileAsset])
+        return all?[CacheDeleteService.mobileAsset]
     }
 }

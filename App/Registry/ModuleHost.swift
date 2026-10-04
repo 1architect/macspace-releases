@@ -14,6 +14,17 @@ public final class ModuleHost: ObservableObject {
     /// What each module's tile says it can free, by module id. The dashboard gives the large tile to the most, so it must redraw when a
     /// module's figure arrives or changes; it does not observe each handle.
     @Published public private(set) var reclaimable: [String: UInt64] = [:]
+    /// What each module purges through macOS, by module id then CacheDelete service (`Tile.purgeableByService`), for the disk tile.
+    @Published public private(set) var purgeable: [String: [String: UInt64]] = [:]
+
+    /// The disk tile's "purgeable": every service once (the largest figure any module gives for it), summed.
+    public var purgeableTotal: UInt64 {
+        var byService: [String: UInt64] = [:]
+        for services in purgeable.values {
+            for (service, bytes) in services { byService[service] = max(byService[service] ?? 0, bytes) }
+        }
+        return byService.values.reduce(0, +)
+    }
 
     public let settings: SettingsStore
     public let permissions: any PermissionChecker
@@ -49,6 +60,7 @@ public final class ModuleHost: ObservableObject {
     private var startTask: Task<Void, Never>?
     private var stateObservers: [AnyCancellable] = []
     private var tileObservers: [AnyCancellable] = []
+    private var purgeableObservers: [AnyCancellable] = []
 
     /// `activeHandles` depends on each handle's state, which changes after the handles are created (off → ready). The views that list
     /// the active modules observe the host, so a module becoming ready must announce itself through the host too; without this the
@@ -58,6 +70,16 @@ public final class ModuleHost: ObservableObject {
             handle.$state.dropFirst().removeDuplicates().sink { [weak self] _ in self?.objectWillChange.send() }
         }
         reclaimable = reclaimable.filter { id, _ in handles.contains { $0.id == id } }
+        purgeable = purgeable.filter { id, _ in handles.contains { $0.id == id } }
+        purgeableObservers = handles.map { handle in
+            let id = handle.id
+            return handle.$tile.map { $0?.purgeableByService ?? [:] }.removeDuplicates().sink { [weak self] services in
+                MainActor.assumeIsolated {
+                    guard let self, self.purgeable[id] != services else { return }
+                    self.purgeable[id] = services
+                }
+            }
+        }
         tileObservers = handles.map { handle in
             let id = handle.id
             // Handles publish their tiles on the main actor.

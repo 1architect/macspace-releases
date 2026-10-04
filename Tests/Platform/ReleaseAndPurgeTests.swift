@@ -29,27 +29,46 @@ final class MacOSReleaseTests: XCTestCase {
     }
 }
 
-final class PurgeLedgerTests: XCTestCase {
-    private let suite = "PurgeLedgerTests-\(UUID().uuidString)"
+final class PurgeRetrierTests: XCTestCase {
+    private static func result(_ purged: UInt64) -> CacheDeletePurgeResult {
+        CacheDeletePurgeResult(services: ["svc"], purgedBytes: purged, freeBytesBefore: 0, freeBytesAfter: purged, elapsedSeconds: 0.1, error: nil)
+    }
 
-    override func tearDown() { UserDefaults().removePersistentDomain(forName: suite) }
+    /// macOS kept the files: MacSpace asks again by itself, and stops once macOS lets them go.
+    func testKeepsAskingUntilMacOSFreesThem() async throws {
+        final class Attempts: @unchecked Sendable { var n = 0 }
+        let attempts = Attempts()
+        let retrier = PurgeRetrier()
+        let freed = expectation(description: "freed")
+        retrier.schedule(service: "svc", urgency: 4, delays: [0.05, 0.05, 0.05], purge: {
+            attempts.n += 1
+            return Self.result(attempts.n < 2 ? 0 : 50_000_000)
+        }) { bytes in
+            XCTAssertEqual(bytes, 50_000_000)
+            freed.fulfill()
+        }
+        XCTAssertTrue(retrier.isRetrying("svc"), "the page shows it is being freed")
+        await fulfillment(of: [freed], timeout: 2)
+        XCTAssertEqual(attempts.n, 2, "no more requests once macOS freed them")
+        XCTAssertFalse(retrier.isRetrying("svc"))
+    }
 
-    func testWhatMacOSDeclinedIsNotOfferedUntilItsEstimateGrows() {
-        let ledger = PurgeLedger(suite: suite)
-        XCTAssertEqual(ledger.offerable("svc", estimate: 91_400_000), 91_400_000)
-        ledger.noteDeclined("svc", estimate: 91_400_000)
-        XCTAssertEqual(ledger.offerable("svc", estimate: 91_400_000), 0, "no button promises what macOS just refused")
-        XCTAssertEqual(ledger.offerable("svc", estimate: 105_000_000), 0, "a little more is the same files")
-        XCTAssertEqual(ledger.offerable("svc", estimate: 400_000_000), 400_000_000, "much more is offered again")
-        ledger.clear("svc")
-        XCTAssertEqual(ledger.offerable("svc", estimate: 91_400_000), 91_400_000)
-        XCTAssertNil(ledger.offerable("svc", estimate: nil))
+    func testGivesUpAfterTheLastDelay() async {
+        let retrier = PurgeRetrier()
+        let done = expectation(description: "done")
+        retrier.schedule(service: "svc", urgency: 4, delays: [0.02, 0.02], purge: { Self.result(0) }) { bytes in
+            XCTAssertEqual(bytes, 0)
+            done.fulfill()
+        }
+        await fulfillment(of: [done], timeout: 2)
+        XCTAssertFalse(retrier.isRetrying("svc"), "offered again with its button")
     }
 
     func testOutcomeThatRemovedNothing() {
         let nothing = PurgeRun.Outcome(estimate: 91_400_000, reported: 0, freed: 300_000, error: nil, skipped: false)
         XCTAssertTrue(nothing.removedNothing, "a few hundred kilobytes are the system's own writes")
-        XCTAssertEqual(PurgeRun.result(nothing, what: "assets").outcome, .needsAttention)
+        XCTAssertEqual(PurgeRun.result(nothing, what: "assets").message, "macOS kept them for now; MacSpace keeps asking in the background.",
+                       "the user is not asked to try again")
         let freed = PurgeRun.Outcome(estimate: 91_400_000, reported: 90_000_000, freed: 88_000_000, error: nil, skipped: false)
         XCTAssertEqual(PurgeRun.result(freed, what: "assets").message, "Freed \(ByteFormat.string(88_000_000)) of assets, measured on the volume.")
         let skipped = PurgeRun.Outcome(estimate: 2_000, reported: 0, freed: 0, error: nil, skipped: true)

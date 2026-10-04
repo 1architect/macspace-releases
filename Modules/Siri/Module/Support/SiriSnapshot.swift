@@ -25,6 +25,8 @@ struct SiriSnapshot: Sendable {
     /// Siri's iCloud sync: on now (nil when unreadable), and whether the user chose to keep it (`SiriCloudSync`).
     var cloudSyncOn: Bool?
     var keepsCloudSync = false
+    /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
+    var assetsRetrying = false
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -92,9 +94,8 @@ actor SiriStore {
         let purgeable: UInt64?
         if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
         else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
-        let offerable = PurgeLedger().offerable(CacheDeleteService.mobileAsset, estimate: purgeable)
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
-        var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: offerable,
+        var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
         let models = modelBytes()
@@ -103,6 +104,7 @@ actor SiriStore {
         let sync = SiriCloudSync()
         snapshot.cloudSyncOn = sync.isEnabled()
         snapshot.keepsCloudSync = sync.userChoice() == true
+        snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         return snapshot
     }
 

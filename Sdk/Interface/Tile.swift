@@ -21,13 +21,31 @@ public struct Tile: Codable, Equatable, Sendable {
     public var graphic: TileGraphic?
     /// Bytes the module can free right now, if it frees space. The dashboard gives the module with the most the large tile.
     public var reclaimableBytes: UInt64?
+    /// What the module frees through macOS's purge, by CacheDelete service. The disk tile's "purgeable" adds these up across modules
+    /// (a service two modules free counts once), so it says what the app can purge, not what macOS estimates in general.
+    public var purgeableByService: [String: UInt64]
 
-    public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil) {
+    public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil,
+                purgeableByService: [String: UInt64] = [:]) {
         self.title = title
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
         self.reclaimableBytes = reclaimableBytes
+        self.purgeableByService = purgeableByService
+    }
+
+    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService }
+
+    /// `purgeableByService` may be missing (a tile saved by an earlier version).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decode(String.self, forKey: .title)
+        status = try container.decode(String.self, forKey: .status)
+        needsAttention = try container.decodeIfPresent(Bool.self, forKey: .needsAttention) ?? false
+        graphic = try container.decodeIfPresent(TileGraphic.self, forKey: .graphic)
+        reclaimableBytes = try container.decodeIfPresent(UInt64.self, forKey: .reclaimableBytes)
+        purgeableByService = try container.decodeIfPresent([String: UInt64].self, forKey: .purgeableByService) ?? [:]
     }
 }
 

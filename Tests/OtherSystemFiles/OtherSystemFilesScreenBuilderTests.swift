@@ -21,10 +21,13 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         let screen = OtherSystemFilesScreenBuilder.screen(snap)
         XCTAssertEqual(screen.primary?.id, "purgeFiles")
         XCTAssertNotNil(screen.primary?.confirmation, "freeing asks first")
-        guard case let .list(groups)? = screen.widgets.first else { return XCTFail() }
-        XCTAssertEqual(groups.rows.first?.id, CacheDeleteService.fsPurgeableData, "Free now holds one row, shown as itself")
-        XCTAssertEqual(groups.rows.first?.actions.map(\.id), ["purgeFiles"])
-        XCTAssertEqual(groups.rows.last?.id, "group:kept", "what macOS keeps is one group")
+        guard case let .section(free)? = screen.widgets.first, case let .list(list) = free.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), [CacheDeleteService.fsPurgeableData], "what can be freed has its own section, row by row")
+        XCTAssertEqual(list.rows[0].actions.map(\.id), ["purgeFiles"])
+        guard case let .list(kept)? = screen.widgets.last else { return XCTFail() }
+        XCTAssertEqual(kept.rows.map(\.id), ["group:kept"], "what macOS keeps is one group")
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).purgeableByService, [CacheDeleteService.fsPurgeableData: 4_888_453_120],
+                       "the disk tile counts what this page frees")
     }
 
     func testTheRestIsListedAsLeftAloneLargestFirst() throws {
@@ -38,20 +41,17 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertTrue(list.rows.allSatisfy { $0.symbol != nil }, "each row has its symbol, like the rows above it")
     }
 
-    func testFilesMacOSDeclinedAreNotOfferedUntilItsEstimateGrows() throws {
+    /// macOS kept the files: they stay freeable, and while MacSpace asks again in the background the row says so instead of a button.
+    func testFilesMacOSKeptStayFreeableWhileMacSpaceAsksAgain() throws {
         var snap = snapshot(measured)
-        snap.declinedBytes = snap.estimatedBytes
-        XCTAssertTrue(snap.declined)
-        XCTAssertEqual(snap.freeableBytes, 0)
-        XCTAssertNil(OtherSystemFilesScreenBuilder.freeAction(snap, prominent: true), "no button for what macOS just declined")
-        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).status, "nothing to free")
-        XCTAssertFalse(OtherSystemFilesScreenBuilder.segments(snap).contains { $0.tone == .caution })
-        guard case let .section(kept)? = OtherSystemFilesScreenBuilder.keptSection(snap), case let .list(list) = kept.widgets[0] else {
-            return XCTFail()
-        }
-        XCTAssertTrue(list.rows.map(\.id).contains(CacheDeleteService.fsPurgeableData), "listed as left alone, with why")
-        snap.declinedBytes = snap.estimatedBytes / 2
-        XCTAssertFalse(snap.declined, "offered again once the estimate has grown")
+        snap.retrying = true
+        XCTAssertEqual(snap.freeableBytes, 4_888_453_120)
+        XCTAssertNil(OtherSystemFilesScreenBuilder.freeAction(snap, prominent: true), "no button while MacSpace is already asking")
+        XCTAssertTrue(OtherSystemFilesScreenBuilder.tile(snap).status.hasPrefix("freeing"))
+        XCTAssertTrue(OtherSystemFilesScreenBuilder.segments(snap).contains { $0.tone == .caution })
+        guard case let .section(free)? = OtherSystemFilesScreenBuilder.freeNow(snap), case let .list(list) = free.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows[0].badge?.text, "Freeing in the background")
+        XCTAssertTrue(list.rows[0].actions.isEmpty)
     }
 
     func testWhatWasFreedIsTakenOffAnEstimateThatHasNotMovedYet() {

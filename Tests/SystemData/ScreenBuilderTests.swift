@@ -101,12 +101,14 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
         let screen = SystemDataScreenBuilder.screen(withoutAccess)
-        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "groups"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "groups"], "what can be cleaned has its own section, item by item")
         guard case let .list(groups)? = screen.widgets.last else { return XCTFail("the groups are one list") }
-        XCTAssertEqual(groups.rows.map(\.id), ["cache", "review", "logs"], "a group of one is that item's own row")
+        XCTAssertEqual(groups.rows.map(\.id), ["review", "logs"], "a group of one is that item's own row")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(withoutAccess).purgeableByService[CacheDeleteService.mobileAsset], 0,
+                       "the disk tile counts the assets this page purges")
         XCTAssertEqual(screen.hero?.segments.isEmpty, false, "the bar is the page's hero")
         XCTAssertNil(screen.hero?.footnote)
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "groups", "no banner when everything was measured")
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "free", "no banner when everything was measured")
     }
 
     func testGroupsShowTheirCountAndTotalAndOpenEveryItem() throws {

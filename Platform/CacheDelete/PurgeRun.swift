@@ -1,52 +1,65 @@
 import Foundation
 import MacSpaceSdk
 
-/// What macOS declined to purge, per CacheDelete service: the estimate it gave when it was asked to delete and removed nothing. A
-/// service is not offered again until its estimate grows past that, so a button never promises space macOS has just refused to free.
-/// Kept across launches (a rebuild or a restart offered the same refused files again).
-public struct PurgeLedger: Sendable {
-    /// A defaults suite (tests use their own); nil is the app's own defaults.
-    private let suite: String?
-    private static let prefix = "purge.declined."
-    private var defaults: UserDefaults { suite.flatMap(UserDefaults.init(suiteName:)) ?? .standard }
+/// When macOS keeps files it was asked to purge, MacSpace asks it again by itself, a few times over the next hour, instead of leaving
+/// the user to press the button again. While it does, the files still count as purgeable, and the page says they are being freed.
+/// Only the app keeps asking: the CLI exits as soon as it is done.
+public final class PurgeRetrier: @unchecked Sendable {
+    public static let shared = PurgeRetrier()
+    /// How long after the refusal each new request is made.
+    public static let delays: [TimeInterval] = [60, 5 * 60, 15 * 60, 60 * 60]
 
-    public init(suite: String? = nil) {
-        self.suite = suite
+    private let lock = NSLock()
+    private var pending: [String: Task<Void, Never>] = [:]
+
+    public init() {}
+
+    /// MacSpace is still asking macOS to purge this service.
+    public func isRetrying(_ service: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return pending[service] != nil
     }
 
-    public func declinedEstimate(_ service: String) -> UInt64? {
-        (defaults.object(forKey: Self.prefix + service) as? NSNumber)?.uint64Value
+    /// Asks again after each delay until macOS frees something; `freed` is told what the volume gained (the module drops its cache
+    /// so the figures move). A new schedule for the same service replaces the old one.
+    public func schedule(service: String, urgency: Int, delays: [TimeInterval] = PurgeRetrier.delays,
+                         purge: (@Sendable () -> CacheDeletePurgeResult)? = nil, freed: @escaping @Sendable (UInt64) async -> Void) {
+        let attempt = purge ?? { PurgeRun.purgeOnce(service: service, urgency: urgency) }
+        let task = Task.detached(priority: .utility) { [weak self] in
+            for delay in delays {
+                try? await Task.sleep(for: .seconds(delay))
+                if Task.isCancelled { return }
+                let result = attempt()
+                let gained = result.freedBytes ?? 0
+                if result.error == nil, (result.purgedBytes ?? 0) > 0 || gained >= PurgeRun.noise {
+                    self?.finish(service)
+                    await freed(gained)
+                    return
+                }
+            }
+            self?.finish(service)
+            await freed(0)
+        }
+        lock.lock()
+        pending[service]?.cancel()
+        pending[service] = task
+        lock.unlock()
     }
 
-    public func noteDeclined(_ service: String, estimate: UInt64) {
-        defaults.set(NSNumber(value: estimate), forKey: Self.prefix + service)
+    public func cancel(_ service: String) {
+        lock.lock(); defer { lock.unlock() }
+        pending.removeValue(forKey: service)?.cancel()
     }
 
-    public func clear(_ service: String) {
-        defaults.removeObject(forKey: Self.prefix + service)
-    }
-
-    /// macOS declined this service and its estimate has not grown much since: it would decline again.
-    public func isDeclined(_ service: String, estimate: UInt64) -> Bool {
-        guard let declined = declinedEstimate(service) else { return false }
-        return Self.withinDeclined(estimate: estimate, declined: declined)
-    }
-
-    /// The estimate is no more than 5 % (at least 20 MB) above what macOS declined.
-    public static func withinDeclined(estimate: UInt64, declined: UInt64) -> Bool {
-        estimate <= declined + max(declined / 20, 20_000_000)
-    }
-
-    /// What can honestly be offered: the estimate, or nothing while macOS declines it.
-    public func offerable(_ service: String, estimate: UInt64?) -> UInt64? {
-        guard let estimate else { return nil }
-        return isDeclined(service, estimate: estimate) ? 0 : estimate
+    private func finish(_ service: String) {
+        lock.lock(); defer { lock.unlock() }
+        pending.removeValue(forKey: service)
     }
 }
 
 /// One purge of one CacheDelete service, done the honest way: macOS is asked again right before (its estimate is the only figure it
 /// gives, and it lags), the purge runs in the CLI child process, and what the user got is measured on the volume once it has settled.
-/// A purge that freed nothing is remembered in the ledger.
+/// When macOS keeps everything, `PurgeRetrier` asks it again in the background.
 public struct PurgeRun: Sendable {
     public struct Outcome: Sendable, Equatable {
         /// macOS's estimate just before the purge.
@@ -76,12 +89,18 @@ public struct PurgeRun: Sendable {
 
     public let service: String
     public let urgency: Int
-    public let ledger: PurgeLedger
+    public let retrier: PurgeRetrier
 
-    public init(service: String, urgency: Int = 1, ledger: PurgeLedger = PurgeLedger()) {
+    public init(service: String, urgency: Int = 1, retrier: PurgeRetrier = .shared) {
         self.service = service
         self.urgency = urgency
-        self.ledger = ledger
+        self.retrier = retrier
+    }
+
+    /// One purge request, in the CLI child process when there is one.
+    public static func purgeOnce(service: String, urgency: Int) -> CacheDeletePurgeResult {
+        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: urgency) }
+        return CacheDeleteClient().purge(services: [service], urgency: urgency)
     }
 
     /// macOS's estimate for the service now, asked in the CLI child process. nil when it does not answer.
@@ -90,18 +109,17 @@ public struct PurgeRun: Sendable {
         return CacheDeleteClient().purgeableByService(urgency: urgency)?[service]
     }
 
-    /// Asks macOS for a fresh estimate, then purges when it is at least `threshold`.
-    public func run(threshold: UInt64) -> Outcome {
+    /// Asks macOS for a fresh estimate, then purges when it is at least `threshold`. If macOS keeps everything, it is asked again in
+    /// the background; `freedLater` is told when that frees something.
+    public func run(threshold: UInt64, freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> Outcome {
         let fresh = estimate()
         if let fresh, fresh < threshold {
             return Outcome(estimate: fresh, reported: 0, freed: 0, error: nil, skipped: true)
         }
-        let result: CacheDeletePurgeResult
-        if let cli = ToolLocator.cli() { result = CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: urgency) }
-        else { result = CacheDeleteClient().purge(services: [service], urgency: urgency) }
+        retrier.cancel(service)
+        let result = Self.purgeOnce(service: service, urgency: urgency)
         let outcome = Outcome(estimate: fresh, reported: result.purgedBytes ?? 0, freed: result.freedBytes ?? 0, error: result.error, skipped: false)
-        if outcome.removedNothing, let fresh { ledger.noteDeclined(service, estimate: fresh) }
-        else if outcome.error == nil { ledger.clear(service) }
+        if outcome.removedNothing { retrier.schedule(service: service, urgency: urgency, freed: freedLater) }
         return outcome
     }
 
@@ -113,11 +131,13 @@ public struct PurgeRun: Sendable {
                                 details: ["Asked again just before, macOS estimated \(ByteFormat.string(outcome.estimate ?? 0)) of \(what)."])
         }
         if outcome.removedNothing {
-            return ActionResult(outcome: .needsAttention, message: "macOS removed nothing.",
-                                details: details(outcome) + ["macOS keeps these until it needs the space. MacSpace stops offering them until macOS counts more."])
+            return ActionResult(outcome: .succeeded, message: "macOS kept them for now; MacSpace keeps asking in the background.",
+                                details: details(outcome) + [PurgeRun.retryNote])
         }
         return .succeeded("Freed \(ByteFormat.string(outcome.freed)) of \(what), measured on the volume.", details: details(outcome))
     }
+
+    static let retryNote = "MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."
 
     /// The lines that say what happened, for a result note.
     public static func details(_ outcome: Outcome) -> [String] {

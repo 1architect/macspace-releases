@@ -75,7 +75,7 @@ enum SiriScreenBuilder {
         let onDisk = (snapshot.installedModelBytes ?? 0) + snapshot.downloadingModelBytes
         let installed = on && onDisk >= purgeThreshold ? onDisk : nil
         let detail: String
-        if let purge { detail = "up to \(ByteFormat.string(purge)) of models can be freed" }
+        if let purge { detail = snapshot.assetsRetrying ? "freeing \(ByteFormat.string(purge)) of models" : "up to \(ByteFormat.string(purge)) of models can be freed" }
         else if on, snapshot.downloadingModelBytes >= purgeThreshold { detail = "downloading models: \(ByteFormat.string(onDisk)) so far" }
         else if let installed { detail = "\(ByteFormat.string(installed)) of models; switch it off to free them" }
         else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
@@ -85,7 +85,7 @@ enum SiriScreenBuilder {
         let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)
         if let freeable = purge ?? installed {
             return Tile(title: "siri & AI", status: "up to \(ByteFormat.string(freeable)) can be freed", needsAttention: installed != nil, graphic: graphic,
-                        reclaimableBytes: freeable)
+                        reclaimableBytes: freeable, purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
         }
         switch snapshot.status.state {
         case .protected: return Tile(title: "siri & AI", status: elsewhere ? "on in another account" : "AI is off", needsAttention: elsewhere, graphic: graphic)
@@ -118,7 +118,8 @@ enum SiriScreenBuilder {
     }
 
     static func purge(_ snapshot: SiriSnapshot) -> Action? {
-        guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold else { return nil }
+        // No button while MacSpace is already asking macOS again in the background.
+        guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold, !snapshot.assetsRetrying else { return nil }
         return Action(id: "purgeAssets", title: "Free up to \(ByteFormat.string(bytes))", symbol: "sparkles", role: .prominent,
                       confirmation: Confirmation(title: "Free up to \(ByteFormat.string(bytes))?", message: "macOS deletes the downloads it no longer needs, including Apple Intelligence models it has released. \(ByteFormat.string(bytes)) is macOS's estimate: MacSpace asks it again just before and reports what the disk actually gained. Anything needed again is downloaded again.", confirmTitle: "Free"))
     }

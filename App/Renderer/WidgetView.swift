@@ -171,6 +171,20 @@ private struct WidgetRows: View {
     }
 }
 
+/// A row's title with its complementary text ("12 items", "App container") right after it, the same size and greyed, on one line:
+/// a row never grows taller for it.
+struct TitleLine: View {
+    let title: String
+    let note: String?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(title).lineLimit(1).layoutPriority(1)
+            if let note { Text(note).foregroundStyle(.secondary).lineLimit(1) }
+        }
+    }
+}
+
 extension EnvironmentValues {
     /// Opens the page of a group row (`Row.children`), by its id.
     @Entry var openGroup: @MainActor (String) -> Void = { _ in }
@@ -237,10 +251,7 @@ struct RowView: View {
         Button { openGroup(row.id) } label: {
             HStack(spacing: 10) {
                 if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title).lineLimit(1)
-                    if let subtitle = row.subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
-                }
+                TitleLine(title: row.title, note: row.subtitle)
                 Spacer(minLength: 8)
                 if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
@@ -255,11 +266,8 @@ struct RowView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title).lineLimit(1)
-                    // On a group's page the subtitle says what kind of item it is; elsewhere it is part of the tooltip.
-                    if let subtitle = row.subtitle, showsSubtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
-                }
+                // On a group's page the subtitle says what kind of item it is; elsewhere it is part of the tooltip.
+                TitleLine(title: row.title, note: showsSubtitle ? row.subtitle : nil)
                 if let badge = row.badge { BadgeView(badge: badge) }
                 Spacer(minLength: 8)
                 if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }

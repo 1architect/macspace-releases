@@ -91,7 +91,8 @@ enum SystemDataScreenBuilder {
         let freeable = freeableBytes(snapshot)
         return Tile(title: "system data", status: freeable >= worthARow ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to free",
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
-                    reclaimableBytes: freeable >= worthARow ? freeable : nil)
+                    reclaimableBytes: freeable >= worthARow ? freeable : nil,
+                    purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
     }
 
     /// What fills System Data as blocks, largest first, with what can be freed split out as its own block in the caution tone (what
@@ -114,14 +115,15 @@ enum SystemDataScreenBuilder {
 
     /// The page: the bar, one Clean for everything safe, then only what the user can act on. What MacSpace leaves alone is listed once,
     /// collapsed, so the total still adds up.
-    /// Under the bar, one row per group (what Clean frees, the downloads, app data, everything else) with how many items it holds and
-    /// their total; a group opens a page of its own with every item, its size and its actions. A group of one is that item's row.
+    /// Under the bar: what can be cleaned, in its own section and item by item (Free now, then leftover update files); then one row
+    /// per list of what MacSpace leaves alone (downloads, app data, everything else) with how many items it holds and their total,
+    /// opening a page of its own with every item. A list of one is that item's row.
     static func screen(_ snapshot: SystemDataSnapshot) -> Screen {
         var widgets: [ScreenWidget] = []
         if let banner = partialBanner(snapshot) { widgets.append(banner) }
+        if let free = freeNow(snapshot) { widgets.append(free) }
+        if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let groups = [
-            group(freeNow(snapshot), symbol: "sparkles", total: freeNowBytes(snapshot)),
-            group(leftoverUpdateSection(snapshot), symbol: "arrow.down.app", total: leftoverUpdateBytes(snapshot)),
             group(assetsSection(snapshot), symbol: "square.stack.3d.down.right",
                   total: snapshot.assetFamilies.filter { !$0.steps.isEmpty && $0.bytes >= 100_000_000 }.map(\.bytes).reduce(0, +)),
             group(appDataSection(snapshot), symbol: "app.badge", total: leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)),
@@ -144,18 +146,7 @@ enum SystemDataScreenBuilder {
         return Row.group(id: "group:\(section.id)", title: section.title, symbol: symbol, totalBytes: total, rows: rows, detail: section.subtitle)
     }
 
-    /// What the rows under Free now add up to.
-    static func freeNowBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && ($0.expectedReclaimBytes ?? 0) >= worthARow }
-            .compactMap(\.expectedReclaimBytes).reduce(0, +)
-        let reports = snapshot.reports.totalBytes >= worthARow ? snapshot.reports.totalBytes : 0
-        let assets = (snapshot.purgeableAssetsBytes ?? 0) >= assetsThreshold ? (snapshot.purgeableAssetsBytes ?? 0) : 0
-        return caches + reports + assets + versionHistoryBytes(snapshot)
-    }
 
-    static func leftoverUpdateBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        snapshot.report.items.first { $0.id == "update:staged" }?.bytes ?? 0
-    }
 
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
         let total = cleanBytes(snapshot)
@@ -186,10 +177,12 @@ enum SystemDataScreenBuilder {
                                 title: "Delete old reports?", message: "This permanently deletes \(snapshot.reports.candidates.count) report file(s).", confirmTitle: "Delete"))]))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
-            rows.append(Row(id: "assets", title: "Unused system assets", trailing: ByteFormat.string(assets), symbol: "square.stack.3d.down.right",
+            // While macOS is being asked again in the background, the row says so instead of offering the button.
+            rows.append(Row(id: "assets", title: "Unused system assets", trailing: ByteFormat.string(assets),
+                            badge: snapshot.assetsRetrying ? Badge("Freeing in the background", tone: .caution) : nil, symbol: "square.stack.3d.down.right",
                             detail: "Downloads macOS no longer needs, such as Apple Intelligence models released by the off-switch. macOS deletes them only when the disk is nearly full; this does it now. Anything needed again is downloaded again.",
-                            actions: [Action(id: "purgeAssets", title: "Free", confirmation: Confirmation(
-                                title: "Free unused system assets?", message: "macOS deletes the assets it no longer needs, about \(ByteFormat.string(assets)).", confirmTitle: "Free"))]))
+                            actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: "Free", confirmation: Confirmation(
+                                title: "Free up to \(ByteFormat.string(assets)) of unused system assets?", message: "macOS deletes the assets it no longer needs. If it keeps some for now, MacSpace asks it again in the background.", confirmTitle: "Free"))]))
         }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }

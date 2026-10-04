@@ -66,7 +66,8 @@ public struct SiriModule: MacSpaceModule {
             }
         case "purgeAssets":
             progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
-            return Self.purge()
+            let store = self.store
+            return Self.purge { _ in await store.invalidate() }
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
             return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then come back.", refresh: false)
@@ -107,9 +108,11 @@ public struct SiriModule: MacSpaceModule {
         }
     }
 
-    /// macOS is asked again right before, and what it declines is not offered again (`PurgeRun`).
-    static func purge() -> ActionResult {
-        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise), what: "unused system assets")
+    /// macOS is asked again right before; if it keeps them, again in the background (`PurgeRun`), and `freedLater` lets the page
+    /// read the Mac again once it lets them go.
+    static func purge(freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> ActionResult {
+        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise, freedLater: freedLater),
+                        what: "unused system assets")
     }
 
     /// The purge that follows switching off, after the few seconds mobileassetd takes to unlock the models (5 s observed).

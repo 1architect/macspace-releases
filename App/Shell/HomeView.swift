@@ -26,8 +26,8 @@ struct TileInfo: Equatable {
     /// The disk: an arc filled as far as the disk is used. What macOS can purge by itself is not drawn: at a few gigabytes it was a
     /// sliver too thin to see.
     @MainActor
-    init(_ storage: StorageOverview) {
-        let status = storage.status
+    init(_ storage: StorageOverview, purgeable: UInt64) {
+        let status = storage.status(purgeable: purgeable)
         // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
         var graphic = TileGraphic.gauge(value: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
@@ -608,7 +608,7 @@ struct TileContent: View {
         case let .module(id):
             if let handle = host.handle(for: id) { ModuleTileContent(handle: handle, content: self) }
         case .settings: layout(TileInfo.settings)
-        case .storage: layout(TileInfo(storage))
+        case .storage: layout(TileInfo(storage, purgeable: host.purgeableTotal))
         case .home: EmptyView()
         }
     }

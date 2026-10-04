@@ -6,22 +6,15 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// Bytes each service reports; nil when CacheDelete is unavailable or did not answer.
     var services: [String: UInt64]?
     var takenAt: Date
-    /// What macOS estimated for the files apps marked purgeable when it last kept them after being asked to delete them.
-    var declinedBytes: UInt64? = nil
+    /// macOS kept the files apps marked purgeable when MacSpace asked, and MacSpace is asking it again in the background
+    /// (`PurgeRetrier`). They still count as freeable.
+    var retrying = false
 
     /// macOS's estimate of the files apps marked purgeable.
     var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
 
-    /// macOS declined to remove those files and its estimate has not grown much since. Its estimate is kept by macOS and lags: after a
-    /// purge that removed 111 MB it still said 911.7 MB, and asked again, macOS answered within a millisecond that it removed nothing.
-    var declined: Bool {
-        guard let declinedBytes else { return false }
-        return PurgeLedger.withinDeclined(estimate: estimatedBytes, declined: declinedBytes)
-    }
-
-    /// What MacSpace frees: the files apps marked purgeable, unless macOS just declined them. The other services are listed, not
-    /// purged (see `PurgeableService`).
-    var freeableBytes: UInt64 { declined ? 0 : estimatedBytes }
+    /// What MacSpace frees: the files apps marked purgeable. The other services are listed, not purged (see `PurgeableService`).
+    var freeableBytes: UInt64 { estimatedBytes }
     var totalBytes: UInt64 { services?.values.reduce(0, +) ?? 0 }
 }
 
@@ -53,21 +46,14 @@ struct PurgeableService: Equatable {
 
 actor PurgeableStore {
     private var cached: PurgeableSnapshot?
-    /// What macOS declined, in the ledger every purge shares (`PurgeLedger`), so it is kept across launches like the others: forgotten
-    /// when the app quit, the files macOS had just kept were offered again, and asking again removed nothing.
-    private let ledger: PurgeLedger
-    private var declined: UInt64? { ledger.declinedEstimate(CacheDeleteService.fsPurgeableData) }
-    /// Where this module kept it before the shared ledger.
-    static let legacyDeclinedKey = "otherSystemFiles.declinedEstimate"
+    /// Where an earlier version kept what macOS declined; nothing is hidden any more, so it is only removed.
+    static let legacyDeclinedKeys = ["otherSystemFiles.declinedEstimate", "purge.declined.\(CacheDeleteService.fsPurgeableData)",
+                                     "purge.declined.\(CacheDeleteService.mobileAsset)"]
 
-    init(ledger: PurgeLedger = PurgeLedger()) {
-        self.ledger = ledger
-        let defaults = UserDefaults.standard
-        if let old = (defaults.object(forKey: Self.legacyDeclinedKey) as? NSNumber)?.uint64Value {
-            if ledger.declinedEstimate(CacheDeleteService.fsPurgeableData) == nil { ledger.noteDeclined(CacheDeleteService.fsPurgeableData, estimate: old) }
-            defaults.removeObject(forKey: Self.legacyDeclinedKey)
-        }
+    init() {
+        for key in Self.legacyDeclinedKeys { UserDefaults.standard.removeObject(forKey: key) }
     }
+
     /// What MacSpace last freed, and macOS's estimate when it did.
     private var removed: (estimate: UInt64, bytes: UInt64)?
     /// macOS's own estimate in the last snapshot, before what was freed is taken off it.
@@ -97,7 +83,7 @@ actor PurgeableStore {
     /// waited on one query (applying it twice to the same answer gives the same result).
     private func settle(_ raw: PurgeableSnapshot) -> PurgeableSnapshot {
         var fresh = raw
-        fresh.declinedBytes = declined
+        fresh.retrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.fsPurgeableData)
         rawEstimate = fresh.services?[CacheDeleteService.fsPurgeableData] ?? 0
         fresh.services = Self.accounting(for: &removed, in: fresh.services)
         cached = fresh
@@ -131,9 +117,6 @@ actor PurgeableStore {
         inflight = nil
         generation += 1
     }
-
-    /// macOS removed nothing when asked, while estimating `bytes`: not offered again until its estimate grows.
-    func noteDeclined(estimate bytes: UInt64) { ledger.noteDeclined(CacheDeleteService.fsPurgeableData, estimate: bytes) }
 
     /// Asked in the CLI child process, so a changed private interface crashes it and not the app.
     static func liveSnapshot() -> PurgeableSnapshot {
