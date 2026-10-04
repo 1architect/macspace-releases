@@ -8,9 +8,8 @@
 # results/selftest-<date>/ in this repository (not committed); send report.md from there.
 #
 # Plain settings are written the way System Settings writes them (CFPreferences, then the setting's change notification). The
-# script checks that each notification is posted. For the settings the research names none for (personalized ads and the ad
-# identifier), it lists what the daemons owning them listen for: their launch events, the names in their programs and the change
-# notifications their frameworks export.
+# script checks that each notification is posted. Personalized ads and the ad identifier need none (self-tested 2026-10-03, see
+# Docs/Handoff.md).
 #
 # Not tested here, and why:
 # - Policies (the "Policies (need your approval)" section): macOS applies a configuration profile only after a person approves it.
@@ -167,106 +166,16 @@ flip() { # control, on|off
   esac
 }
 
-# Change notifications a framework exports, as "<symbol> <value>" lines (value "-" when it is not a string).
-exported_notifications() { # framework binary
-  "$DYLD_INFO" -exports "$1" 2>/dev/null | grep -oE '_[A-Za-z0-9_]*(Change|Changed|Update|Updated)[A-Za-z0-9_]*Notification[A-Za-z0-9_]*' \
-    | sort -u | sed 's/^_//' | while read -r symbol; do "$CLI" notification "$1" "$symbol" 2>/dev/null; done
-}
-
 section "Debloat: profiles of earlier versions"
 "$CLI" action $DEBLOAT removeOldProfiles > "$OUT/remove-old-profiles.json" 2>&1 \
   && result PASS "Removed through the helper" "$(grep -o '"message" : "[^"]*"' "$OUT/remove-old-profiles.json" | cut -d'"' -f4)" \
   || result FAIL "Removing them" "see remove-old-profiles.json"
 
-section "Debloat: change notifications of plain settings"
+section "Debloat: change notification of Improve Siri & Dictation"
 ASSISTANT=/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices
 SIRI_NOTIFICATION=$("$CLI" notification "$ASSISTANT" kAFPreferencesDidChangeDarwinNotification 2>/dev/null | awk '$2 != "-" { print $2 }')
 if [ -n "$SIRI_NOTIFICATION" ]; then result PASS "Improve Siri & Dictation: AssistantServices names its notification" "$SIRI_NOTIFICATION"
 else result FAIL "Improve Siri & Dictation: AssistantServices names its notification" "kAFPreferencesDidChangeDarwinNotification is missing or not a string on this build"; fi
-DYLD_INFO=$(command -v dyld_info || xcrun -f dyld_info 2>/dev/null)
-# The daemons that own personalized ads and the ad identifier (com.apple.AdLib), as the research found them running.
-: > "$OUT/notifications.txt"
-for label in com.apple.ap.adprivacyd com.apple.ap.promotedcontentd; do
-  plist=$(ls /System/Library/LaunchAgents/$label.plist /System/Library/LaunchDaemons/$label.plist 2>/dev/null | head -1)
-  [ -n "$plist" ] || { echo "## $label: no launchd plist on this build" >> "$OUT/notifications.txt"; continue; }
-  {
-    echo "## $label ($plist)"
-    # The Darwin notifications launchd wakes it for, and its program.
-    /usr/bin/python3 - "$plist" <<'PY'
-import plistlib, sys
-job = plistlib.load(open(sys.argv[1], "rb"))
-print("program", job.get("Program") or (job.get("ProgramArguments") or ["?"])[0])
-for stream, events in (job.get("LaunchEvents") or {}).items():
-    for name, event in (events.items() if isinstance(events, dict) else []):
-        print("launch-event", stream, name, event.get("Notification", "") if isinstance(event, dict) else "")
-PY
-  } >> "$OUT/notifications.txt" 2>> "$OUT/errors.txt"
-  program=$(grep '^program ' "$OUT/notifications.txt" | tail -1 | cut -d' ' -f2-)
-  [ -e "$program" ] || continue
-  # Names in the program that look like change notifications or name the ads settings.
-  strings -a "$program" 2>/dev/null | grep -E '^[A-Za-z0-9_.:-]{6,}$' \
-    | grep -iE 'chang|notif|did[A-Z]|optin|opt_in|personaliz|advertis|AdLib|allowApple|allowIdentifier|tracking' \
-    | sort -u | sed 's/^/string /' >> "$OUT/notifications.txt"
-  # Change notifications the frameworks it links export, with their values.
-  if [ -n "$DYLD_INFO" ]; then
-    otool -L "$program" 2>/dev/null | awk 'NR > 1 { print $1 }' \
-      | grep -E '/(Ad[A-Z][A-Za-z]*|[A-Za-z]*(Promoted|Privacy|Advert|Tracking)[A-Za-z]*)\.framework/' | grep -v AddressBook \
-      | while read -r framework; do
-          exported_notifications "$framework" | sed "s|^|export $(basename "$framework") |"
-        done >> "$OUT/notifications.txt"
-  fi
-done
-candidates=$(grep -E '^(launch-event|string|export) ' "$OUT/notifications.txt" | grep -v ' -$')
-result INFO "Notifications around the ads daemons" "$(printf '%s' "$candidates" | grep -c . | tr -d ' ') candidates, in notifications.txt"
-note ""
-note "Candidates for personalized ads and the ad identifier (the research names none yet):"
-note '```'
-note "$(cat "$OUT/notifications.txt")"
-note '```'
-
-# The CP112 method: post each candidate and watch the owning daemons' log; the one they react to is the one they listen for. The
-# personalized-ads value is first changed the app's way (CFPreferences, no notification), so a daemon that re-reads it has news.
-section "Ads: what the ads daemons react to"
-REACT="$OUT/ads-reactions"; mkdir -p "$REACT"
-react_window() { # name, command...
-  local name=$1; shift
-  local file; file="$REACT/$(printf '%s' "$name" | tr -c 'A-Za-z0-9_.-' '-').log"
-  log stream --style compact --level debug --predicate 'process == "promotedcontentd" OR process == "adprivacyd"' > "$file" 2>&1 &
-  local pid=$!
-  sleep 2
-  "$@" > /dev/null 2>&1 < /dev/null
-  sleep 5
-  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
-  if ! grep -q '^Filtering' "$file"; then result FAIL "$name" "log stream did not start: $(head -1 "$file")"; return; fi
-  local lines; lines=$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -vc '^Filtering')
-  result INFO "$name" "$lines log lines from the ads daemons; running: $(pgrep -x adprivacyd > /dev/null && echo adprivacyd) $(pgrep -x promotedcontentd > /dev/null && echo promotedcontentd)"
-  note ""; note "$name:"; note '```'; note "$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -v '^Filtering' | head -15)"; note '```'
-}
-note "Running before: $(pgrep -lx promotedcontentd | tr '\n' ' ')$(pgrep -lx adprivacyd | tr '\n' ' ')"
-ads_found=$(switch_now ads.personalized-ads); ads_found=${ads_found%%/*}
-case "$ads_found" in
-  on|off)
-    ads_other=on; [ "$ads_found" = on ] && ads_other=off
-    as_value() { [ "$1" = on ] && echo true || echo false; }
-    # Idle, as macOS leaves them: launchd starts the daemons on demand, and they read com.apple.AdLib when they start.
-    react_window "Idle: nothing done (baseline)" true
-    react_window "Idle: personalized ads written $ads_other, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value $ads_other)
-    react_window "Idle: ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
-    react_window "Idle: kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
-    # Running: adprivacyd started through its own launch event (com.apple.ap.adprivacyd.launch, in its launchd plist).
-    react_window "Start adprivacyd (its launch event)" notifyutil -p com.apple.ap.adprivacyd.launch
-    react_window "Running: nothing done (baseline)" true
-    react_window "Running: personalized ads written $ads_found, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value "$ads_found")
-    react_window "Running: ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
-    react_window "Running: kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
-    "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value "$ads_found") > /dev/null 2>> "$OUT/errors.txt" < /dev/null
-    ads_now=$(switch_now ads.personalized-ads)
-    [ "${ads_now%%/*}" = "$ads_found" ] && result PASS "Personalized ads put back $ads_found" || result FAIL "Personalized ads put back $ads_found" "reads $ads_now"
-    note "Running after: $(pgrep -lx promotedcontentd | tr '\n' ' ')$(pgrep -lx adprivacyd | tr '\n' ' ')"
-    ;;
-  *) result SKIPPED "Ads reactions" "the personalized ads switch reads $ads_found" ;;
-esac
-
 section "Debloat: every switch, off and back on (policies apart)"
 "$CLI" screen $DEBLOAT > "$OUT/debloat-before.json" 2>> "$OUT/errors.txt"
 debloat_rows "$OUT/debloat-before.json" > "$OUT/debloat-before.txt"
@@ -289,7 +198,6 @@ section "Not tested here"
 result SKIPPED "Debloat policies" "macOS needs a person to approve each profile"
 result SKIPPED "Siri & Apple Intelligence model removal" "needs Apple Intelligence on first (about 12 GB download)"
 result SKIPPED "Sparkle update" "needs a published release"
-result SKIPPED "Personalized ads and ad identifier notification" "the research names none yet; candidates are listed above"
 
 note ""
 note "**$PASSED passed, $FAILED failed.**"

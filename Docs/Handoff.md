@@ -154,12 +154,11 @@ marked "Not tested"). The policies were tested in the research (profile-policies
 **Plain settings are written as System Settings writes them** (research, mechanism ladder #1): `CFPreferences` on the owning domain,
 then the setting's change notification. Improve Siri & Dictation posts `kAFPreferencesDidChangeDarwinNotification`, read from
 AssistantServices at run time (the research found that constant in results/cp107; on 26B5091g its value is its own name).
-Self-tested 2026-10-03 (26B5091g, 29 passed): the notification is posted on every write, off and on. Not verified yet: which
-notification personalized ads and the ad identifier need (the research names none; `Scripts/SelfTest.sh` lists the candidates the
-Ad frameworks export on the running build). Self-tested 2026-10-03: their owners, adprivacyd and promotedcontentd, were not
-running and logged nothing on the write or on either candidate (ADConfigurationDidChangeNotification,
-kADIDManager_ChangedNotification); launchd starts them on demand and they read the value then. The self-test also checks a running
-adprivacyd.
+Self-tested 2026-10-03 (26B5091g, 29 passed): the notification is posted on every write, off and on.
+Personalized ads and the ad identifier need no notification (self-tested 2026-10-03, 26B5091g): their owners, adprivacyd and
+promotedcontentd, are started by launchd on demand and read the value then. A running adprivacyd logged nothing on the write or on
+either candidate the frameworks hold (ADConfigurationDidChangeNotification, kADIDManager_ChangedNotification), and its log shows
+cfprefsd's generation check ("Contents Need Refresh"), so it gets the saved value on its next read.
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
