@@ -32,22 +32,22 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(ids.count, offered.count)
     }
 
-    func testToggleStateBadgeAndConfirmationFollowTheControlState() {
+    func testToggleStateAndBadgeFollowTheControlStateAndNoSwitchAsks() {
         let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
         XCTAssertFalse(on.isOn, "the switch shows the feature, which MacSpace switched off")
         XCTAssertNil(on.badge, "working as intended needs no badge")
         XCTAssertTrue(on.detail?.contains("Measured off") == true)
-        XCTAssertEqual(on.action.confirmation?.confirmTitle, "Turn on", "flipping it back restores the feature")
+        XCTAssertNil(on.action.confirmation, "a switch never asks: it moves, then the change follows")
 
         let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock)]))
         XCTAssertTrue(off.isOn, "the feature still runs")
         XCTAssertNil(off.badge)
-        XCTAssertEqual(off.action.confirmation?.confirmTitle, "Turn off")
+        XCTAssertNil(off.action.confirmation)
 
         let policy = DebloatScreenBuilder.row(profileControl, snapshot([status(profileControl.id, .stock)]))
         XCTAssertNil(policy.badge, "the policies were tested in the research (2026-09-29)")
-        XCTAssertTrue(policy.action.confirmation?.message.contains("approve the MacSpace profile") == true)
+        XCTAssertNil(policy.action.confirmation)
 
         let candidate = DebloatControl(id: "test.candidate", title: "Candidate", summary: "s", category: .telemetry, mechanism: .userPreference,
                                        risk: .low, restart: .none, settings: [.preference(.user, "com.example", "key", desired: .bool(false), fallback: nil)])
@@ -55,7 +55,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
                                                                                     tested: false, appliedAt: nil)]))
         XCTAssertEqual(untested.badge?.text, "Not tested")
         XCTAssertTrue(untested.isEnabled, "an untested control can be switched, to test it")
-        XCTAssertTrue(untested.action.confirmation?.message.contains("Not tested yet") == true)
+        XCTAssertTrue(untested.detail?.contains("Not tested yet") == true, "what a switch changes is in its tooltip")
     }
 
     func testStatesThatNeedAttentionAreVisible() {
@@ -96,8 +96,9 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
         XCTAssertEqual(screen.widgets.last?.id, "policies", "the policies are listed apart, last")
         let primary = try? XCTUnwrap(screen.primary)
-        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id],
-                       "Switch all off switches the policies off too")
+        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []),
+                       [verifiedControl.id, helperControl.id, "telemetry.on-device-speech-policy"],
+                       "Switch all off switches off everything still on, what macOS switched back on included")
         XCTAssertNotNil(primary?.confirmation)
 
         let clean = DebloatScreenBuilder.screen(snapshot([]))

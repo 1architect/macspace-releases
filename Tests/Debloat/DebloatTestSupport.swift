@@ -83,7 +83,9 @@ final class FakeDebloatSystem: DebloatSystem {
     var forceEnabled: Set<String> = []
     func launchdForceEnabled(_ service: LaunchdServiceSetting) -> Bool { forceEnabled.contains(service.label) }
     var decisions: [SubmissionDecision]? = []
-    func submissionDecisions(since: Date) -> [SubmissionDecision]? { decisions?.filter { $0.at >= since } }
+    /// As `log show --start` does on the Mac: everything, whatever the start.
+    var decisionsIgnoreStart = false
+    func submissionDecisions(since: Date) -> [SubmissionDecision]? { decisionsIgnoreStart ? decisions : decisions?.filter { $0.at >= since } }
     func stageProfile(_ profile: Data, fileName: String) throws -> String {
         if failStaging { throw DebloatSystemError.commandFailed("open failed in test") }
         stagedProfiles.append(profile)

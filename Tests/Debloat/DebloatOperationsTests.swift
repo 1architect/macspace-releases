@@ -33,7 +33,8 @@ final class DebloatOperationsTests: XCTestCase {
                              "only catalog controls can be named")
         XCTAssertThrowsError(try operations.handle(DebloatPrivilegedOperations.apply, arguments: [:], caller: caller), "applying needs named controls")
         XCTAssertThrowsError(try operations.handle("debloat.shell", arguments: ["controls": "test.flag"], caller: caller))
-        XCTAssertEqual(operations.operations, ["debloat.status", "debloat.apply", "debloat.revert"])
+        XCTAssertEqual(Set(operations.operations), [DebloatPrivilegedOperations.status, DebloatPrivilegedOperations.apply,
+                                                     DebloatPrivilegedOperations.revert, DebloatPrivilegedOperations.removeProfile])
     }
 
     func testArgumentsRoundTripThePlanOptions() {

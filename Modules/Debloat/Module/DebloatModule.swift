@@ -106,6 +106,17 @@ public struct DebloatModule: MacSpaceModule {
                     if summary.outcome == .succeeded { summary.outcome = .needsAttention }
                 }
             }
+            // Read back: every switch asked to go off must read off (or wait for its profile's approval). One that does not is named,
+            // so a "Switch all off" that left some on says which.
+            if action == .apply {
+                let stillOn = ids.compactMap { id in engine.controls.first { $0.id == id } }.filter { control in
+                    ![.debloated, .awaitingApproval].contains(engine.status(of: control).state)
+                }
+                if !stillOn.isEmpty {
+                    summary.details.insert("Still on: \(stillOn.map(\.title).joined(separator: ", ")).", at: 0)
+                    if summary.outcome == .succeeded { summary.outcome = .needsAttention }
+                }
+            }
             // Policies that only the earlier single profile enforced came back on with it: each gets a profile of its own, once.
             let moved = enforcedBefore.subtracting(ids).subtracting(enforcedPolicies(engine)).sorted()
             if !moved.isEmpty {

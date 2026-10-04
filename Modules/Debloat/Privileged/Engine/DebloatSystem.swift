@@ -175,7 +175,7 @@ public final class LiveDebloatSystem: DebloatSystem {
     public static func isPrerelease(build: String?, seedAutoSubmit: Bool?) -> Bool? {
         if seedAutoSubmit == true { return true }
         guard let build else { return nil }
-        return build.range(of: #"^[0-9]+[A-Z][0-9]{4}[a-z]$"#, options: .regularExpression) != nil
+        return MacOSRelease(major: 0, build: build).isPrerelease
     }
 
     public static func parseSIP(_ text: String?) -> SIPState {
@@ -244,7 +244,7 @@ public final class LiveDebloatSystem: DebloatSystem {
         case .featureFlag:
             let flag = setting.featureFlag!
             guard Self.systemFeatureExists(domain: flag.domain, feature: flag.feature, fileManager: fileManager) else {
-                return .unavailable("No feature flag \(flag.domain)/\(flag.feature) on this build.")
+                return .unavailable("No feature flag \(flag.domain)/\(flag.feature) in this macOS.")
             }
             guard let data = fileManager.contents(atPath: flag.overridePath) else {
                 return fileManager.fileExists(atPath: flag.overridePath) ? .unreadable("\(flag.overridePath) is not readable.") : .value(.absent)
@@ -276,7 +276,7 @@ public final class LiveDebloatSystem: DebloatSystem {
         case .launchdService:
             let service = setting.launchd!
             guard launchdJobs().job(service.domain, service.label) != nil else {
-                return .unavailable("No \(service.domain == .system ? "LaunchDaemon" : "LaunchAgent") named \(service.label) on this build.")
+                return .unavailable("No \(service.domain == .system ? "LaunchDaemon" : "LaunchAgent") named \(service.label) in this macOS.")
             }
             guard let overrides = overrides(service.domain) else {
                 return .unreadable("`launchctl print-disabled \(launchdTarget(service.domain) ?? service.domain.rawValue)` failed.")
@@ -523,7 +523,7 @@ public final class LiveDebloatSystem: DebloatSystem {
     public func startService(_ service: LaunchdServiceSetting) throws -> Bool {
         guard let target = launchdTarget(service.domain) else { throw DebloatSystemError.targetUserUnknown }
         guard let plist = launchdJobs().job(service.domain, service.label)?.plistPath else {
-            throw DebloatSystemError.commandFailed("No plist for \(service.label) on this build.")
+            throw DebloatSystemError.commandFailed("No plist for \(service.label) in this macOS.")
         }
         // 5 and 37 are returned when the service is already loaded.
         return try launchctl(["bootstrap", target, plist], unchanged: [5, 37])
@@ -543,8 +543,10 @@ public final class LiveDebloatSystem: DebloatSystem {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        // `log show --start` does not limit what it prints (it returned decisions from days before), so the decisions are filtered
+        // by their own time here; one from before the change made a working policy read "Not working".
         return output("/usr/bin/log", ["show", "--start", formatter.string(from: since), "--style", "ndjson", "--predicate",
                                        "process == \"SubmitDiagInfo\" AND eventMessage BEGINSWITH \"Initiating submission for\""],
-                      timeout: 60).map(SubmissionDecisionParser.parse)
+                      timeout: 60).map { SubmissionDecisionParser.parse($0).filter { $0.at >= since } }
     }
 }

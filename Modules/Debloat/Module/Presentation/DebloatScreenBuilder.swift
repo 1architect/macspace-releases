@@ -72,24 +72,13 @@ enum DebloatScreenBuilder {
         return lines.joined(separator: "\n")
     }
 
-    static func confirmation(_ control: DebloatControl, turningOn: Bool) -> Confirmation {
-        if !turningOn {
-            return Confirmation(title: "Turn \(control.title) back on?", message: "MacSpace restores the values it saved before it changed them.", confirmTitle: "Turn on")
-        }
-        var message = control.summary
-        if !control.breaks.isEmpty { message += "\n\nStops working while off: " + control.breaks.joined(separator: "; ") + "." }
-        if let restart = restartText(control.restart) { message += "\n\n" + restart }
-        if control.mechanism == .configurationProfile { message += "\n\nmacOS asks you to approve the MacSpace profile in System Settings before this takes effect." }
-        if !control.tested { message += "\n\nNot tested yet: check afterwards that it took effect." }
-        return Confirmation(title: "Turn off \(control.title)?", message: message, confirmTitle: "Turn off")
-    }
-
     static func row(_ control: DebloatControl, _ snapshot: DebloatSnapshot) -> ToggleRow {
         let status = snapshot.status(control.id)
         let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable
         let on = isOn(status)
-        var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id],
-                            confirmation: confirmation(control, turningOn: !on))
+        // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why. What a
+        // switch changes and breaks is in its tooltip.
+        var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id])
         if needsHelper(control) { action.requires = [.privilegedHelper] }
         // The switch shows the feature, as in the other modules: on = the feature runs, off = MacSpace switched it off.
         return ToggleRow(id: control.id, title: control.title, isOn: !on, isEnabled: !blocked,
@@ -110,12 +99,16 @@ enum DebloatScreenBuilder {
     /// Policies: controls that only a configuration profile can apply, which macOS asks the user to approve. They are listed apart.
     static func isPolicy(_ control: DebloatControl) -> Bool { control.mechanism == .configurationProfile }
 
-    /// Every control that can take effect here and is not on yet, policies and untested ones included: "Switch all off" switches
-    /// all of them off.
+    /// Every control that can take effect here and is not off yet, policies, untested ones and those macOS switched back on included:
+    /// "Switch all off" switches all of them off. Only what cannot be changed here (not on this macOS, ignored by launchd) and what is
+    /// already off or waiting for approval is left out.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
             guard let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
-            return status.state == .stock || status.state == .partial
+            switch status.state {
+            case .stock, .partial, .drifted, .unknown, .awaitingRemoval: return true
+            case .debloated, .awaitingApproval, .unavailable: return false
+            }
         }
     }
 

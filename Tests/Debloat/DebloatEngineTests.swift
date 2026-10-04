@@ -319,7 +319,7 @@ final class DebloatEngineTests: XCTestCase {
 
         system.env.sip = .enabled
         let blocked = try engine.plan(.apply, controlIDs: ["test.cleared"], options: options)[0]
-        XCTAssertTrue(blocked.blockers.contains { $0.contains("Measured ineffective with SIP enabled") })
+        XCTAssertTrue(blocked.blockers.contains { $0.contains("Measured to have no effect while SIP is enabled") && !$0.contains("26B") })
         XCTAssertEqual(engine.status(of: control).effect?.state, .notControllable)
         XCTAssertTrue(try engine.plan(.revert, controlIDs: ["test.cleared"])[0].runnable, "revert stays possible")
 
@@ -352,6 +352,27 @@ final class DebloatEngineTests: XCTestCase {
 
         system.decisions?.append(SubmissionDecision(at: system.clock, optedIn: true))
         XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .ineffective)
+    }
+
+    /// The analytics policy read "Not working" with its profile approved: `log show --start` returned an IN decision from before
+    /// the change, and an IN from before the user approved the profile counted although every later decision was OUT.
+    func testTheLatestDecisionAfterTheChangeIsWhatCounts() throws {
+        let (engine, system, _) = makeEngine()
+        system.env.runningAsRoot = true
+        system.env.isPrerelease = false
+        system.preferences[systemPref.id] = .bool(true)
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.system"]))
+        system.history = DiagnosticSubmissionHistory(autoSubmit: false, thirdPartyDataSubmit: false, seedAutoSubmit: false,
+                                                     lastFullSubmissionCalled: nil, lastFullSubmissionSuccess: system.clock + 4200)
+        system.decisionsIgnoreStart = true
+        system.decisions = [SubmissionDecision(at: system.clock - 600, optedIn: true),   // before the change
+                            SubmissionDecision(at: system.clock + 60, optedIn: true),    // before the approval
+                            SubmissionDecision(at: system.clock + 600, optedIn: false),
+                            SubmissionDecision(at: system.clock + 4200, optedIn: false)]
+        system.clock += 7200
+        let effect = engine.status(of: try engine.control("test.system")).effect
+        XCTAssertEqual(effect?.state, .effective)
+        XCTAssertTrue(effect?.detail.contains("OUT 2 time(s) in a row") ?? false)
     }
 
     func testOptOutDecisionsOutrankTheSuccessTimestamp() throws {

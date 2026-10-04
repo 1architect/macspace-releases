@@ -83,7 +83,7 @@ public final class DebloatEngine {
         return ignored
     }
 
-    /// Whether the control cannot take effect here: measured on this build, or launchd ignores every one of its
+    /// Whether the control cannot take effect here: measured to have no effect with SIP enabled, or launchd ignores every one of its
     /// overrides.
     public func cannotTakeEffect(_ control: DebloatControl) -> Bool {
         if control.measuredIneffective(in: system.environment()) { return true }
@@ -182,7 +182,7 @@ public final class DebloatEngine {
         // behavior running, and a drifted one is no longer applied.
         if cannotTakeEffect(control) {
             let reasons = control.measuredIneffective(in: system.environment())
-                ? "measured ineffective with SIP enabled on this build" : Self.ignoreSummary(ignoredLaunchdSettings(control).values)
+                ? "measured to have no effect while SIP is enabled" : Self.ignoreSummary(ignoredLaunchdSettings(control).values)
             return EffectStatus(state: .notControllable, detail: "Cannot take effect on this Mac: \(reasons).")
         }
         let applied = state == .debloated
@@ -205,11 +205,15 @@ public final class DebloatEngine {
             // SubmitDiagInfo logs its opt-in decision on every run. That is the authoritative signal:
             // LastFullSubmissionSuccess also advances on opt-out runs that upload nothing but a ~480-byte check-in
             // (measured on 26B5091g, 2026-09-29).
-            if let decisions = system.submissionDecisions(since: appliedAt), !decisions.isEmpty {
-                if let optedIn = decisions.first(where: \.optedIn) {
-                    return EffectStatus(state: .ineffective, detail: "SubmitDiagInfo decided optIn: IN at \(optedIn.at.ISO8601Format()), after the change (\(lastText)).")
+            // The latest decision is what counts: a policy is applied when its profile is approved, which can be a while after MacSpace
+            // staged it (`appliedAt`), and SubmitDiagInfo kept deciding IN until then.
+            if let decisions = system.submissionDecisions(since: appliedAt)?.filter({ $0.at >= appliedAt }).sorted(by: { $0.at < $1.at }),
+               let latest = decisions.last {
+                if latest.optedIn {
+                    return EffectStatus(state: .ineffective, detail: "SubmitDiagInfo decided optIn: IN at \(latest.at.ISO8601Format()), after the change (\(lastText)).")
                 }
-                return EffectStatus(state: .effective, detail: "SubmitDiagInfo decided optIn: OUT \(decisions.count) time(s) since the change, most recently at \(decisions.map(\.at).max()!.ISO8601Format()) (\(lastText); opt-out runs still record a success).")
+                let outs = decisions.reversed().prefix { !$0.optedIn }.count
+                return EffectStatus(state: .effective, detail: "SubmitDiagInfo decided optIn: OUT \(outs) time(s) in a row, most recently at \(latest.at.ISO8601Format()) (\(lastText); opt-out runs still record a success).")
             }
             if let last, last > appliedAt {
                 return EffectStatus(state: .ineffective, detail: "Diagnostics were submitted after the change at \(appliedAt.ISO8601Format()) (\(lastText)).")
@@ -262,7 +266,7 @@ public final class DebloatEngine {
         }
         let ignored = action == .apply ? ignoredLaunchdSettings(control) : [:]
         if action == .apply, control.measuredIneffective(in: environment) {
-            blockers.append("Measured ineffective with SIP enabled (\(control.ineffectiveWithSIPBuilds.joined(separator: ", "))): the change does not take effect.")
+            blockers.append("Measured to have no effect while SIP is enabled: the change does not take effect.")
         } else if action == .apply, cannotTakeEffect(control) {
             blockers.append("Cannot take effect: \(Self.ignoreSummary(ignored.values)).")
         } else if !ignored.isEmpty {
