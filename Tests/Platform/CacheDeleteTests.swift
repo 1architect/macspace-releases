@@ -86,6 +86,27 @@ final class CacheDeleteGateTests: XCTestCase {
         XCTAssertFalse(client("27C200").validate(executable: otherBuild).passed, "a result for another build does not count")
     }
 
+    func testAnEmptyAnswerIsTestedAgainButACrashIsNot() throws {
+        try XCTSkipIf(client("27A999").support == .unavailable, "CacheDelete not present")
+        let then = Date()
+        // As recorded in a VM just after it started (26A434): both calls came back, the queries were empty.
+        let empty = CacheDeleteSelfTest(build: "27D1", testedAt: then, queryAnswered: false, serviceFilterHonored: false, purgeAnswered: true,
+                                        detail: "query: no valid answer; filtered query: 0 services (filter not honored); purge probe: Bad volume")
+        XCTAssertTrue(empty.isRetryable)
+        client("27D1").store.save(empty)
+        XCTAssertEqual(client("27D1").support(now: then.addingTimeInterval(60)), .failedSelfTest, "not straight away")
+        XCTAssertEqual(client("27D1").support(now: then.addingTimeInterval(11 * 60)), .unverified, "tested again a few minutes later")
+
+        let leaking = CacheDeleteSelfTest(build: "27D2", testedAt: then, queryAnswered: true, serviceFilterHonored: false, purgeAnswered: true,
+                                          detail: "filtered query: 5 services (filter not honored)", filterLeaked: true)
+        XCTAssertFalse(leaking.isRetryable, "a purge would clear every service")
+        XCTAssertFalse(CacheDeleteSelfTest(build: "27D3", testedAt: then, queryAnswered: false, serviceFilterHonored: false, purgeAnswered: false,
+                                           detail: "self-test process crashed (signal 10)").isRetryable)
+        XCTAssertFalse(CacheDeleteSelfTest(build: "27D4", testedAt: then, queryAnswered: false, serviceFilterHonored: false, purgeAnswered: true,
+                                           detail: "query: no valid answer; filtered query: 3 services (filter not honored)").isRetryable,
+                       "an old record whose filter answered for other services")
+    }
+
     func testSubprocessPurgeDecodesResultsAndReportsCrashes() throws {
         let ok = try script(#"echo '{"services":["com.apple.mobileassetd.cache-delete"],"purgedBytes":42,"freeBytesBefore":1,"freeBytesAfter":43,"elapsedSeconds":1.5}'"#)
         let crash = try script("kill -BUS $$")

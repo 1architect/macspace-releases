@@ -55,17 +55,32 @@ public struct CacheDeleteSelfTest: Codable, Equatable, Sendable {
     public let serviceFilterHonored: Bool
     public let purgeAnswered: Bool
     public let detail: String
+    /// The restricted query answered for services besides mobileassetd: a purge would clear them too. nil in records written
+    /// before it was kept (read from `detail` then).
+    public let filterLeaked: Bool?
 
-    public init(build: String?, testedAt: Date, queryAnswered: Bool, serviceFilterHonored: Bool, purgeAnswered: Bool, detail: String) {
+    public init(build: String?, testedAt: Date, queryAnswered: Bool, serviceFilterHonored: Bool, purgeAnswered: Bool, detail: String,
+                filterLeaked: Bool? = nil) {
         self.build = build
         self.testedAt = testedAt
         self.queryAnswered = queryAnswered
         self.serviceFilterHonored = serviceFilterHonored
         self.purgeAnswered = purgeAnswered
         self.detail = detail
+        self.filterLeaked = filterLeaked
     }
 
     public var passed: Bool { queryAnswered && serviceFilterHonored && purgeAnswered }
+
+    /// A failure that only says CacheDelete had nothing to answer yet: both calls came back without crashing, and the restricted
+    /// query named no other service, but the queries were empty. Seen in a VM just after it started (26A434: "query: no valid
+    /// answer"; the same test passed later). Such a build is tested again later instead of being kept off until the next macOS
+    /// update. A crash, an unanswered purge or a leaking filter stays a failure.
+    public var isRetryable: Bool {
+        guard !passed, purgeAnswered else { return false }
+        let leaked = filterLeaked ?? (detail.contains("filter not honored") && !detail.contains("filtered query: 0 services"))
+        return !leaked
+    }
 }
 
 /// Self-test results per build, so each macOS build is tested once.
@@ -158,14 +173,18 @@ public struct CacheDeleteClient {
         return String(cString: buffer)
     }
 
-    public var support: CacheDeleteSupport {
+    /// How long after a retryable failure (`CacheDeleteSelfTest.isRetryable`) the build is tested again.
+    public static let selfTestRetryInterval: TimeInterval = 10 * 60
+
+    public var support: CacheDeleteSupport { support(now: Date()) }
+
+    public func support(now: Date) -> CacheDeleteSupport {
         guard Self.symbol(Self.querySymbol) != nil, Self.symbol(Self.purgeSymbol) != nil else { return .unavailable }
         if build.map(Self.validatedBuilds.contains) == true { return .validated }
-        switch store.record(for: build)?.passed {
-        case true?: return .validated
-        case false?: return .failedSelfTest
-        case nil: return .unverified
-        }
+        guard let record = store.record(for: build) else { return .unverified }
+        if record.passed { return .validated }
+        if record.isRetryable, now.timeIntervalSince(record.testedAt) >= Self.selfTestRetryInterval { return .unverified }
+        return .failedSelfTest
     }
 
     /// Why a call is refused, or nil when it may proceed.
@@ -174,7 +193,11 @@ public struct CacheDeleteClient {
         case .validated: return nil
         case .unavailable: return "CacheDelete is not available on this system."
         case .failedSelfTest:
-            return "CacheDelete's self-test failed on build \(build ?? "unknown") (\(store.record(for: build)?.detail ?? "no detail")); it stays off until the next macOS update."
+            let record = store.record(for: build)
+            if record?.isRetryable == true {
+                return "CacheDelete did not answer its self-test on build \(build ?? "unknown") (\(record?.detail ?? "no detail")); it is tested again in a few minutes."
+            }
+            return "CacheDelete's self-test failed on build \(build ?? "unknown") (\(record?.detail ?? "no detail")); it stays off until the next macOS update."
         case .unverified:
             return allowUnverified ? nil : "CacheDelete has not been validated on build \(build ?? "unknown") yet; run the self-test (CacheDeleteClient.validate(executable:))."
         }
@@ -196,10 +219,12 @@ public struct CacheDeleteClient {
         let purge = Self.rawPurge(["CACHE_DELETE_VOLUME": Self.selfTestVolume, "CACHE_DELETE_URGENCY": 1, "CACHE_DELETE_AMOUNT": Int64(1),
                                    "CACHE_DELETE_SERVICES": [CacheDeleteService.mobileAsset]], timeout: 30)
         let purgeOK = purge.answered && purge.result?["CACHE_DELETE_ERROR"] != nil
+        let leaked = filtered.map { !$0.isEmpty && Set($0.keys) != [CacheDeleteService.mobileAsset] } ?? false
         let detail = "query: \(queryOK ? "\(Self.parseItemized(query ?? [:]).count) services" : "no valid answer"); "
             + "filtered query: \(filterOK ? "mobileassetd only" : "\(filtered?.count ?? 0) services (filter not honored)"); "
             + "purge probe: \(purge.answered ? (purge.result?["CACHE_DELETE_ERROR"].map { "\($0)" } ?? "answered without the expected error") : "no answer")"
-        return CacheDeleteSelfTest(build: build, testedAt: now, queryAnswered: queryOK, serviceFilterHonored: filterOK, purgeAnswered: purgeOK, detail: detail)
+        return CacheDeleteSelfTest(build: build, testedAt: now, queryAnswered: queryOK, serviceFilterHonored: filterOK, purgeAnswered: purgeOK, detail: detail,
+                                   filterLeaked: leaked)
     }
 
     /// Runs the self-test in `executable` (the `MacSpaceCli` tool) and records the result for this build.
