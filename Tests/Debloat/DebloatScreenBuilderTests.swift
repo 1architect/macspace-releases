@@ -90,8 +90,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
         XCTAssertEqual(screen.widgets.last?.id, "policies", "the policies are listed apart, last")
         let primary = try? XCTUnwrap(screen.primary)
-        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [helperControl.id],
-                       "Switch all off never touches a policy, so it never asks for an approval")
+        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [verifiedControl.id, helperControl.id],
+                       "Switch all off switches the policies off too")
         XCTAssertNotNil(primary?.confirmation)
 
         let clean = DebloatScreenBuilder.screen(snapshot([]))
@@ -108,7 +108,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         let restore = try XCTUnwrap(allOff.primary)
         XCTAssertEqual(restore.id, "restoreAll")
         XCTAssertEqual(restore.role, .prominent)
-        XCTAssertEqual(Set(restore.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [mainControl.id, helperControl.id], "policies apart")
+        XCTAssertEqual(Set(restore.parameters["ids"]?.split(separator: ",").map(String.init) ?? []), [mainControl.id, helperControl.id, profileControl.id], "Turn all back on includes the policies")
         XCTAssertEqual(restore.requires, [.privilegedHelper], "a root control is among them")
         XCTAssertNotNil(restore.confirmation)
 
