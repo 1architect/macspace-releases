@@ -192,8 +192,13 @@ final class ModelDescriptorsTests: XCTestCase {
         for (index, (family, descriptor)) in records.enumerated() {
             try record(descriptor).write(to: directory.appendingPathComponent("AutoAssetDescriptors_Entry_\(family)_asset\(index)_0.state"))
         }
-        let usage = try XCTUnwrap(ModelDescriptors.usage(directory: directory.path))
+        let locks = directory.appendingPathComponent("locks")
+        try FileManager.default.createDirectory(at: locks, withIntermediateDirectories: true)
+        try Data().write(to: locks.appendingPathComponent("AutoAssetLocker_Entry_\(visual)_asset1_0.state"))
+        let usage = try XCTUnwrap(ModelDescriptors.usage(directory: directory.path, lockDirectory: locks.path))
         XCTAssertEqual(usage.installedBytes, 6_300_000_000, "the two families System Settings counts as Apple Intelligence")
+        XCTAssertEqual(usage.lockedBytes, 100_000_000, "a client still holds the Visual asset")
+        XCTAssertEqual(usage.releasedBytes, 6_200_000_000)
         XCTAssertEqual(usage.downloadingBytes, 2_000_000_000, "a download in progress counts too")
         XCTAssertEqual(usage.assets, 3)
     }

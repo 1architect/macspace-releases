@@ -71,6 +71,28 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
     }
 
+    /// Off with released models still on disk: MacSpace deletes them by itself (11 GB sat there after switching off, 2026-10-04).
+    func testReleasedModelsOnDiskAreDeletedWithoutAsking() {
+        var off = snapshot(.protected)
+        off.installedModelBytes = 11_348_320_256
+        XCTAssertTrue(SiriModule.releasedModelsOnDisk(off))
+        var on = snapshot(.atRisk)
+        on.installedModelBytes = 11_348_320_256
+        XCTAssertFalse(SiriModule.releasedModelsOnDisk(on), "in use while Apple Intelligence is on")
+        var elsewhere = snapshot(.protected, accounts: [other("tester")])
+        elsewhere.installedModelBytes = 11_348_320_256
+        XCTAssertFalse(SiriModule.releasedModelsOnDisk(elsewhere), "another account keeps them locked")
+        var empty = snapshot(.protected)
+        empty.installedModelBytes = 0
+        XCTAssertFalse(SiriModule.releasedModelsOnDisk(empty))
+        XCTAssertTrue(SiriScreenBuilder.tile(off).graphic.map { "\($0)".contains("deleting") } ?? false)
+        var kept = snapshot(.protected)
+        kept.installedModelBytes = 367_300_000
+        kept.lockedModelBytes = 367_300_000
+        XCTAssertFalse(SiriModule.releasedModelsOnDisk(kept), "assets macOS still locks are not purged over and over")
+        XCTAssertTrue(SiriScreenBuilder.tile(kept).graphic.map { "\($0)".contains("kept by macOS") } ?? false)
+    }
+
     func testModelsBeingDownloadedAreNeverNoModel() {
         var downloading = snapshot(.atRisk)
         downloading.installedModelBytes = 0

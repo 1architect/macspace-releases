@@ -24,6 +24,10 @@ struct SiriSnapshot: Sendable {
     var downloadingModelBytes: UInt64 = 0
     /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
     var assetsRetrying = false
+    /// MacSpace is deleting released models in the background right now (`ModelPurger`).
+    var purgingModels = false
+    /// The part of the installed models macOS still holds a lock on (`ModelDescriptors.Usage.lockedBytes`).
+    var lockedModelBytes: UInt64 = 0
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -98,6 +102,7 @@ actor SiriStore {
         let models = modelBytes()
         snapshot.installedModelBytes = models.installed
         snapshot.downloadingModelBytes = models.downloading
+        snapshot.lockedModelBytes = models.locked
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         return snapshot
     }
@@ -109,11 +114,11 @@ actor SiriStore {
     /// What the models take now, installed and still downloading, from MobileAsset's own records (`ModelDescriptors`), as System
     /// Settings' Storage counts them. The staging folder also shows a download whose records have not caught up. `installed` is nil
     /// only when the records cannot be read.
-    static func modelBytes(fileManager: FileManager = .default) -> (installed: UInt64?, downloading: UInt64) {
+    static func modelBytes(fileManager: FileManager = .default) -> (installed: UInt64?, downloading: UInt64, locked: UInt64) {
         let usage = ModelDescriptors.usage(fileManager: fileManager)
         let staged = ((try? fileManager.contentsOfDirectory(atPath: stagingFolder)) ?? [])
             .filter { name in ModelDescriptors.families.contains { name.hasPrefix($0.replacingOccurrences(of: ".", with: "_") + ".") } }
             .compactMap { FileTreeSizer().size(at: URL(fileURLWithPath: "\(stagingFolder)/\($0)"))?.bytes }.reduce(0, +)
-        return (usage?.installedBytes, max(usage?.downloadingBytes ?? 0, staged))
+        return (usage?.installedBytes, max(usage?.downloadingBytes ?? 0, staged), usage?.lockedBytes ?? 0)
     }
 }

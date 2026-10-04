@@ -34,7 +34,21 @@ public struct SiriModule: MacSpaceModule {
                                                            finished: { await store.invalidate() })
         if waits, let running { await running.value }
         snapshot.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
+        // Apple Intelligence is off, the models are released, but still on disk: they are deleted without the user asking.
+        if Self.releasedModelsOnDisk(snapshot) {
+            await ModelPurger.shared.purge(after: 0, force: false) { await store.invalidate() }
+        }
+        snapshot.purgingModels = await ModelPurger.shared.isRunning
         return snapshot
+    }
+
+    /// Off and not being released by `ModelAutoReleaser` (which purges itself), with models still on disk.
+    static func releasedModelsOnDisk(_ snapshot: SiriSnapshot) -> Bool {
+        guard !snapshot.isVirtualMachine, !snapshot.releasingAutomatically, snapshot.status.state == .protected || snapshot.status.state == .releasing,
+              snapshot.accounts?.enabledElsewhere.isEmpty ?? true else { return false }
+        let installed = snapshot.installedModelBytes ?? 0
+        let released = installed > snapshot.lockedModelBytes ? installed - snapshot.lockedModelBytes : 0
+        return released >= SiriScreenBuilder.purgeThreshold
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -53,9 +67,11 @@ public struct SiriModule: MacSpaceModule {
             let result = Self.setAvailability(available: available)
             guard !available, result.outcome == .succeeded else { return result }
             // Switching off is the transition that unlocks the models; macOS then deletes them only under disk pressure. MacSpace
-            // deletes them right away instead of offering a purge.
-            progress(ActionProgress(message: "Removing the models macOS no longer needs…"))
-            return await Task.detached(priority: .userInitiated) { Self.purgeAfterSwitchingOff(result) }.value
+            // deletes them itself, in the background once mobileassetd has dropped its locks, so the switch answers at once.
+            let store = self.store
+            await ModelPurger.shared.purge(after: ModelReleaseTiming().releaseWait, force: true) { await store.invalidate() }
+            return ActionResult(outcome: .succeeded, message: result.message,
+                                details: result.details + ["MacSpace deletes the released models in the background."], refresh: true)
         case "openICloudSettings":
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
             return ActionResult(outcome: .succeeded, message: "Opened iCloud settings: Siri > Sync this Mac.", refresh: false)
@@ -106,16 +122,8 @@ public struct SiriModule: MacSpaceModule {
     /// macOS is asked again right before; if it keeps them, again in the background (`PurgeRun`), and `freedLater` lets the page
     /// read the Mac again once it lets them go.
     static func purge(freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> ActionResult {
-        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise, freedLater: freedLater),
+        PurgeRun.result(PurgeRun(service: CacheDeleteService.mobileAsset).run(freedLater: freedLater),
                         what: "unused system assets")
-    }
-
-    /// The purge that follows switching off, after the few seconds mobileassetd takes to unlock the models (5 s observed).
-    static func purgeAfterSwitchingOff(_ switched: ActionResult) -> ActionResult {
-        Thread.sleep(forTimeInterval: ModelReleaseTiming().releaseWait)
-        let purged = purge()
-        guard purged.outcome == .succeeded else { return switched }
-        return ActionResult(outcome: .succeeded, message: switched.message, details: switched.details + [purged.message], refresh: true)
     }
 
     static func release(progress: @escaping ProgressSink) -> ActionResult {

@@ -130,7 +130,7 @@ public struct SystemDataModule: MacSpaceModule {
     /// macOS is asked again right before; if it keeps them, again in the background, and the page reads the Mac again once it lets
     /// them go (`PurgeRun`).
     static func purgeAssets(store: SystemDataStore) -> ActionResult {
-        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run(threshold: PurgeRun.noise) { _ in await store.invalidate() }
+        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { _ in await store.invalidate() }
         return PurgeRun.result(outcome, what: "unused system assets")
     }
 

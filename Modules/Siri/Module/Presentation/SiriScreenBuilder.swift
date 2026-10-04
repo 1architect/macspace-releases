@@ -79,8 +79,13 @@ enum SiriScreenBuilder {
         else if on, snapshot.downloadingModelBytes >= purgeThreshold { detail = "downloading models: \(ByteFormat.string(onDisk)) so far" }
         else if let installed { detail = "\(ByteFormat.string(installed)) of models; switch it off to free them" }
         else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
-        // Off, but macOS has not removed the models yet: their size, never "none".
-        else if onDisk >= purgeThreshold { detail = "\(ByteFormat.string(onDisk)) of models still on disk" }
+        // Off, models still on disk: released ones MacSpace is deleting, or a few macOS keeps for other features; their size, never
+        // "none".
+        else if onDisk >= purgeThreshold {
+            let released = onDisk > snapshot.lockedModelBytes ? onDisk - snapshot.lockedModelBytes : 0
+            if released >= purgeThreshold { detail = "deleting \(ByteFormat.string(released)) of models" }
+            else { detail = "\(ByteFormat.string(onDisk)) of models kept by macOS" }
+        }
         else if snapshot.status.state == .unknown { detail = "needs Full Disk Access to read" }
         else if snapshot.installedModelBytes == nil { detail = "models not measured" }
         else { detail = "no models left on disk" }

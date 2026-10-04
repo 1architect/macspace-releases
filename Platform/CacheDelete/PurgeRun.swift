@@ -69,7 +69,7 @@ public struct PurgeRun: Sendable {
         /// What the Data volume gained, measured.
         public var freed: UInt64
         public var error: String?
-        /// Nothing was asked: macOS's fresh estimate was already below the threshold.
+        /// Nothing was asked (kept for callers that decide not to purge).
         public var skipped: Bool
 
         public init(estimate: UInt64?, reported: UInt64, freed: UInt64, error: String?, skipped: Bool) {
@@ -109,13 +109,11 @@ public struct PurgeRun: Sendable {
         return CacheDeleteClient().purgeableByService(urgency: urgency)?[service]
     }
 
-    /// Asks macOS for a fresh estimate, then purges when it is at least `threshold`. If macOS keeps everything, it is asked again in
-    /// the background; `freedLater` is told when that frees something.
-    public func run(threshold: UInt64, freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> Outcome {
+    /// Purges, reporting macOS's estimate from just before. The estimate never decides whether to purge: it lags behind what macOS
+    /// can delete (it read 0 with 11 GB of released Apple Intelligence models unlocked, and the purge then removed 11.08 GB,
+    /// 2026-10-04). If macOS keeps everything, it is asked again in the background; `freedLater` is told when that frees something.
+    public func run(freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> Outcome {
         let fresh = estimate()
-        if let fresh, fresh < threshold {
-            return Outcome(estimate: fresh, reported: 0, freed: 0, error: nil, skipped: true)
-        }
         retrier.cancel(service)
         let result = Self.purgeOnce(service: service, urgency: urgency)
         let outcome = Outcome(estimate: fresh, reported: result.purgedBytes ?? 0, freed: result.freedBytes ?? 0, error: result.error, skipped: false)

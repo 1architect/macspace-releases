@@ -10,6 +10,9 @@ import Foundation
 /// 2026-10-04: 104 assets, 11.35 GB on disk, 6.2 GB of it the 3B base model).
 public enum ModelDescriptors {
     public static let directory = "/System/Library/AssetsV2/persisted/AutoAssetDescriptors"
+    /// One record per asset some client holds a lock on, named like its descriptor (`AutoAssetLocker_Entry_…` for
+    /// `AutoAssetDescriptors_Entry_…`). A purge deletes only assets without a lock.
+    public static let lockDirectory = "/System/Library/AssetsV2/persisted/AutoAssetLocker"
     /// The families System Settings counts as Apple Intelligence.
     public static let families = ["com.apple.MobileAsset.UAF.FM.GenerativeModels", "com.apple.MobileAsset.UAF.FM.Visual"]
 
@@ -19,11 +22,19 @@ public enum ModelDescriptors {
         /// Downloaded so far for assets not complete yet.
         public var downloadingBytes: UInt64
         public var assets: Int
+        /// The part of `installedBytes` some client still holds a lock on: macOS keeps it, a purge leaves it.
+        public var lockedBytes: UInt64 = 0
+
+        /// On disk and released: what a purge deletes now.
+        public var releasedBytes: UInt64 { installedBytes > lockedBytes ? installedBytes - lockedBytes : 0 }
     }
 
     /// nil when the records cannot be read at all (an unknown macOS layout).
-    public static func usage(directory: String = directory, families: [String] = families, fileManager: FileManager = .default) -> Usage? {
+    public static func usage(directory: String = directory, lockDirectory: String = lockDirectory, families: [String] = families,
+                             fileManager: FileManager = .default) -> Usage? {
         guard let names = try? fileManager.contentsOfDirectory(atPath: directory) else { return nil }
+        let locked = Set(((try? fileManager.contentsOfDirectory(atPath: lockDirectory)) ?? [])
+            .map { $0.replacingOccurrences(of: "AutoAssetLocker_Entry_", with: "") })
         var usage = Usage(installedBytes: 0, downloadingBytes: 0, assets: 0)
         var readAny = false
         for name in names where families.contains(where: { name.contains("_\($0)_") }) {
@@ -31,7 +42,11 @@ public enum ModelDescriptors {
             readAny = true
             guard families.contains(descriptor.assetType) else { continue }
             usage.assets += 1
-            if descriptor.onDisk { usage.installedBytes += UInt64(max(descriptor.filesystemBytes, 0)) }
+            if descriptor.onDisk {
+                let bytes = UInt64(max(descriptor.filesystemBytes, 0))
+                usage.installedBytes += bytes
+                if locked.contains(name.replacingOccurrences(of: "AutoAssetDescriptors_Entry_", with: "")) { usage.lockedBytes += bytes }
+            }
             else { usage.downloadingBytes += UInt64(max(descriptor.networkBytes, 0)) }
         }
         return readAny || names.isEmpty ? usage : nil
