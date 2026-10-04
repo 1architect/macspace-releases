@@ -8,8 +8,9 @@
 # results/selftest-<date>/ in this repository (not committed); send report.md from there.
 #
 # Plain settings are written the way System Settings writes them (CFPreferences, then the setting's change notification). The
-# script checks that each notification is posted, and lists the change notifications the owning frameworks export on this build,
-# for the settings the research names none for (personalized ads and the ad identifier).
+# script checks that each notification is posted. For the settings the research names none for (personalized ads and the ad
+# identifier), it lists what the daemons owning them listen for: their launch events, the names in their programs and the change
+# notifications their frameworks export.
 #
 # Not tested here, and why:
 # - Policies (the "Policies (need your approval)" section): macOS applies a configuration profile only after a person approves it.
@@ -183,23 +184,45 @@ SIRI_NOTIFICATION=$("$CLI" notification "$ASSISTANT" kAFPreferencesDidChangeDarw
 if [ -n "$SIRI_NOTIFICATION" ]; then result PASS "Improve Siri & Dictation: AssistantServices names its notification" "$SIRI_NOTIFICATION"
 else result FAIL "Improve Siri & Dictation: AssistantServices names its notification" "kAFPreferencesDidChangeDarwinNotification is missing or not a string on this build"; fi
 DYLD_INFO=$(command -v dyld_info || xcrun -f dyld_info 2>/dev/null)
-if [ -z "$DYLD_INFO" ]; then
-  result FAIL "Change notifications the frameworks export" "dyld_info not found (it comes with Xcode)"
-else
-  : > "$OUT/notifications.txt"
-  for framework in "$ASSISTANT" /System/Library/PrivateFrameworks/Ad*.framework /System/Library/Frameworks/Ad*.framework; do
-    [ -d "$framework" ] || [ -e "$framework" ] || continue
-    [ -d "$framework" ] && framework="$framework/$(basename "$framework" .framework)"
-    exported_notifications "$framework" | sed "s|^|$(basename "$framework") |" >> "$OUT/notifications.txt"
-  done
-  ads=$(grep -v '^AssistantServices ' "$OUT/notifications.txt" | awk '$3 != "-"' | grep -iE 'personaliz|advertis|track|adid|privacy|preference|setting|optin|opt_in' )
-  result INFO "Change notifications the frameworks export" "$(wc -l < "$OUT/notifications.txt" | tr -d ' ') found, in notifications.txt"
-  note ""
-  note "Candidates for personalized ads and the ad identifier (the research names none yet):"
-  note '```'
-  note "${ads:-none found}"
-  note '```'
-fi
+# The daemons that own personalized ads and the ad identifier (com.apple.AdLib), as the research found them running.
+: > "$OUT/notifications.txt"
+for label in com.apple.ap.adprivacyd com.apple.ap.promotedcontentd; do
+  plist=$(ls /System/Library/LaunchAgents/$label.plist /System/Library/LaunchDaemons/$label.plist 2>/dev/null | head -1)
+  [ -n "$plist" ] || { echo "## $label: no launchd plist on this build" >> "$OUT/notifications.txt"; continue; }
+  {
+    echo "## $label ($plist)"
+    # The Darwin notifications launchd wakes it for, and its program.
+    /usr/bin/python3 - "$plist" <<'PY'
+import plistlib, sys
+job = plistlib.load(open(sys.argv[1], "rb"))
+print("program", job.get("Program") or (job.get("ProgramArguments") or ["?"])[0])
+for stream, events in (job.get("LaunchEvents") or {}).items():
+    for name, event in (events.items() if isinstance(events, dict) else []):
+        print("launch-event", stream, name, event.get("Notification", "") if isinstance(event, dict) else "")
+PY
+  } >> "$OUT/notifications.txt" 2>> "$OUT/errors.txt"
+  program=$(grep '^program ' "$OUT/notifications.txt" | tail -1 | cut -d' ' -f2-)
+  [ -e "$program" ] || continue
+  # Names in the program that look like change notifications or name the ads settings.
+  strings -a "$program" 2>/dev/null | grep -E '^[A-Za-z0-9_.:-]{6,}$' \
+    | grep -iE 'chang|notif|did[A-Z]|optin|opt_in|personaliz|advertis|AdLib|allowApple|allowIdentifier|tracking' \
+    | sort -u | sed 's/^/string /' >> "$OUT/notifications.txt"
+  # Change notifications the frameworks it links export, with their values.
+  if [ -n "$DYLD_INFO" ]; then
+    otool -L "$program" 2>/dev/null | awk 'NR > 1 { print $1 }' \
+      | grep -E '/(Ad[A-Z][A-Za-z]*|[A-Za-z]*(Promoted|Privacy|Advert|Tracking)[A-Za-z]*)\.framework/' | grep -v AddressBook \
+      | while read -r framework; do
+          exported_notifications "$framework" | sed "s|^|export $(basename "$framework") |"
+        done >> "$OUT/notifications.txt"
+  fi
+done
+candidates=$(grep -E '^(launch-event|string|export) ' "$OUT/notifications.txt" | grep -v ' -$')
+result INFO "Notifications around the ads daemons" "$(printf '%s' "$candidates" | grep -c . | tr -d ' ') candidates, in notifications.txt"
+note ""
+note "Candidates for personalized ads and the ad identifier (the research names none yet):"
+note '```'
+note "$(cat "$OUT/notifications.txt")"
+note '```'
 
 section "Debloat: every switch, off and back on (policies apart)"
 "$CLI" screen $DEBLOAT > "$OUT/debloat-before.json" 2>> "$OUT/errors.txt"
