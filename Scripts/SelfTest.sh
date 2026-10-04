@@ -224,6 +224,41 @@ note '```'
 note "$(cat "$OUT/notifications.txt")"
 note '```'
 
+# The CP112 method: post each candidate and watch the owning daemons' log; the one they react to is the one they listen for. The
+# personalized-ads value is first changed the app's way (CFPreferences, no notification), so a daemon that re-reads it has news.
+section "Ads: what the ads daemons react to"
+REACT="$OUT/ads-reactions"; mkdir -p "$REACT"
+react_window() { # name, command...
+  local name=$1; shift
+  local file; file="$REACT/$(printf '%s' "$name" | tr -c 'A-Za-z0-9_.-' '-').log"
+  log stream --style compact --level debug --predicate 'process == "promotedcontentd" OR process == "adprivacyd"' > "$file" 2>&1 &
+  local pid=$!
+  sleep 2
+  "$@" > /dev/null 2>&1 < /dev/null
+  sleep 5
+  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+  local lines; lines=$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -vc '^Filtering')
+  result INFO "$name" "$lines log lines from the ads daemons"
+  note ""; note "$name:"; note '```'; note "$(grep -E 'promotedcontentd|adprivacyd' "$file" | grep -v '^Filtering' | head -15)"; note '```'
+}
+note "Running before: $(pgrep -lx promotedcontentd | tr '\n' ' ')$(pgrep -lx adprivacyd | tr '\n' ' ')"
+ads_found=$(switch_now ads.personalized-ads); ads_found=${ads_found%%/*}
+case "$ads_found" in
+  on|off)
+    ads_other=on; [ "$ads_found" = on ] && ads_other=off
+    as_value() { [ "$1" = on ] && echo true || echo false; }
+    react_window "Nothing done (baseline)" true
+    react_window "Personalized ads written $ads_other, no notification" "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value $ads_other)
+    react_window "ADConfigurationDidChangeNotification posted" notifyutil -p ADConfigurationDidChangeNotification
+    react_window "kADIDManager_ChangedNotification posted" notifyutil -p kADIDManager_ChangedNotification
+    "$CLI" action $DEBLOAT toggle id=ads.personalized-ads value=$(as_value "$ads_found") > /dev/null 2>> "$OUT/errors.txt" < /dev/null
+    ads_now=$(switch_now ads.personalized-ads)
+    [ "${ads_now%%/*}" = "$ads_found" ] && result PASS "Personalized ads put back $ads_found" || result FAIL "Personalized ads put back $ads_found" "reads $ads_now"
+    note "Running after: $(pgrep -lx promotedcontentd | tr '\n' ' ')$(pgrep -lx adprivacyd | tr '\n' ' ')"
+    ;;
+  *) result SKIPPED "Ads reactions" "the personalized ads switch reads $ads_found" ;;
+esac
+
 section "Debloat: every switch, off and back on (policies apart)"
 "$CLI" screen $DEBLOAT > "$OUT/debloat-before.json" 2>> "$OUT/errors.txt"
 debloat_rows "$OUT/debloat-before.json" > "$OUT/debloat-before.txt"
