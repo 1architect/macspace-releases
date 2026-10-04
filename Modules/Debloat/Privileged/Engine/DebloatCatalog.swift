@@ -54,14 +54,18 @@ public enum DebloatCatalog {
             title: "Personalized ads",
             summary: "Turn off personalized ads from Apple, as the Personalized Ads switch in System Settings > Privacy & Security > Apple Advertising does.",
             category: .advertising, mechanism: .userPreference, risk: .low, restart: .appRelaunch,
-            settings: [.preference(.user, "com.apple.AdLib", "allowApplePersonalizedAdvertising", desired: .bool(false), fallback: .value(.bool(true)))]
+            settings: [.preference(.user, "com.apple.AdLib", "allowApplePersonalizedAdvertising", desired: .bool(false), fallback: .value(.bool(true)))],
+            notes: ["Self-tested on 26B5091g (2026-10-03): off stores 0, on stores 1."],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "ads.advertising-identifier",
             title: "Advertising identifier",
             summary: "Stop apps from using the advertising identifier (com.apple.AdLib allowIdentifierForAdvertising).",
             category: .advertising, mechanism: .userPreference, risk: .low, restart: .appRelaunch,
-            settings: [.preference(.user, "com.apple.AdLib", "allowIdentifierForAdvertising", desired: .bool(false), fallback: .value(.bool(true)))]
+            settings: [.preference(.user, "com.apple.AdLib", "allowIdentifierForAdvertising", desired: .bool(false), fallback: .value(.bool(true)))],
+            notes: ["Self-tested on 26B5091g (2026-10-03): off stores 0, on stores 1."],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "siri.siri-ai-flag",
@@ -156,7 +160,9 @@ public enum DebloatCatalog {
             title: "Improve Siri & Dictation",
             summary: "Stop sharing Siri and Dictation audio and transcripts with Apple, as the Improve Siri & Dictation switch does.",
             category: .telemetry, mechanism: .userPreference, risk: .low, restart: .none,
-            settings: [.preference(.user, "com.apple.assistant.support", "Siri Data Sharing Opt-In Status", desired: .int(2), fallback: .value(.int(1)))]
+            settings: [.preference(.user, "com.apple.assistant.support", "Siri Data Sharing Opt-In Status", desired: .int(2), fallback: .value(.int(1)))],
+            notes: ["Self-tested on 26B5091g (2026-10-03): off stores 2, on stores 1."],
+            validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(
             id: "telemetry.on-device-speech-policy",

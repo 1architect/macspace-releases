@@ -142,6 +142,10 @@ state; all of it on macOS 27 build 26B5091g, and the helper install and Siri mes
 **Verified 2026-10-03 (27.2, 26B5091g, `Scripts/TestUntested.sh release`):** Developer ID signature with the hardened runtime,
 notarization and the stapled ticket (Gatekeeper accepts the app), the helper installed from a notarized build and answering.
 
+**Self-tested 2026-10-03 (27.2, 26B5091g, `Scripts/SelfTest.sh`, 28 passed):** the helper answering the CLI; CacheDelete's
+self-test and every service; every module's page and tile; every Debloat control that is not a policy switched off and back on
+through the app's code, checked against the page and the stored values, and left as found.
+
 **Not verified:** Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build (needs a published release
 and SPARKLE_PUBLIC_KEY); the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
 Debloat profile approval beyond the development Mac; the Debloat controls marked "Not tested" in the app.

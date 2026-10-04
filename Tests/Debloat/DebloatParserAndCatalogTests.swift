@@ -176,7 +176,7 @@ final class DebloatCatalogTests: XCTestCase {
 
     func testOnlyMeasuredControlsClaimValidation() {
         let validated = DebloatCatalog.controls.filter { !$0.validatedBuilds.isEmpty }.map(\.id)
-        XCTAssertEqual(validated, ["telemetry.diagnostics-policy", "siri.siri-ai-flag", "ai.visual-intelligence",
-                                   "ai.generative-indexing", "diagnostics.tailspin", "diagnostics.crash-reporter"])
+        XCTAssertEqual(validated, ["telemetry.diagnostics-policy", "ads.personalized-ads", "ads.advertising-identifier", "siri.siri-ai-flag", "ai.visual-intelligence",
+                                   "ai.generative-indexing", "diagnostics.tailspin", "diagnostics.crash-reporter", "telemetry.siri-improvement"])
     }
 }
