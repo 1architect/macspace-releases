@@ -35,6 +35,12 @@ public final class ModuleHost: ObservableObject {
     public let autoCleaner = AutoCleaner()
     /// Something is being cleaned (a module's action or automatic cleanup): the menu bar icon animates.
     @Published public private(set) var isCleaning = false
+    /// A page open over Settings, if any (like a group's page over a module's).
+    @Published public var settingsPage: SettingsPage?
+
+    public enum SettingsPage: String, Sendable {
+        case cleanupHistory
+    }
     private var cleaningObservers: [AnyCancellable] = []
 
     /// `MACSPACE_MODULES_DIR` points a development build at another folder of modules.

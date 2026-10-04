@@ -34,7 +34,7 @@ struct SettingsView: View {
         Form {
             GeneralSettingsSection(updates: updates)
             AutoCleanSection(cleaner: host.autoCleaner, host: host)
-            CleanupHistorySection()
+            CleanupHistorySection(host: host)
             DesignSettingsSection()
             Section("Modules") {
                 ForEach(host.handles) { handle in

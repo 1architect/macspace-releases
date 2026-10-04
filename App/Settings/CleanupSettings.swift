@@ -22,27 +22,15 @@ struct AutoCleanSection: View {
             LabeledContent("Modules") {
                 Text(takingPart.isEmpty ? "None is on" : takingPart.joined(separator: ", ")).foregroundStyle(.secondary).lineLimit(1)
             }
-            HStack {
-                TitleLine(title: "Last run", note: lastRunText)
-                Spacer()
-                if cleaner.isRunning { ProgressView().controlSize(.small) }
-                Button("Clean Now") { Task { await cleaner.runNow() } }.disabled(cleaner.isRunning || takingPart.isEmpty)
-            }
         }
-    }
-
-    private var lastRunText: String {
-        guard let lastRun = cleaner.lastRun else { return "never" }
-        let when = lastRun.formatted(.relative(presentation: .named))
-        return cleaner.lastFreed.map { "\(when), freed \(ByteFormat.string($0))" } ?? when
     }
 }
 
-/// Every cleanup MacSpace made, with the lifetime total on top.
+/// The lifetime total, and a row that opens the page of every cleanup (`CleanupHistoryPage`).
 struct CleanupHistorySection: View {
-    @State private var entries = CleanupHistory.shared.entries
+    @ObservedObject var host: ModuleHost
+    @State private var count = CleanupHistory.shared.entries.count
     @State private var lifetime = CleanupHistory.shared.lifetimeBytes
-    @State private var expanded = false
 
     var body: some View {
         Section("Cleanup history") {
@@ -50,25 +38,55 @@ struct CleanupHistorySection: View {
                 Text(ByteFormat.string(lifetime)).monospacedDigit().contentTransition(.numericText())
             }
             .help("Everything MacSpace has freed on this Mac, measured on the volume each time.")
-            if entries.isEmpty {
-                Text("Nothing cleaned yet.").foregroundStyle(.secondary)
-            } else {
-                DisclosureGroup(isExpanded: $expanded) {
-                    ForEach(entries.prefix(50)) { entry in
-                        HStack {
-                            TitleLine(title: entry.moduleName, note: "\(entry.date.formatted(date: .abbreviated, time: .shortened)) · \(Self.trigger(entry.trigger))")
-                            Spacer(minLength: 8)
-                            Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
-                        }
-                        .help(entry.summary)
-                    }
-                } label: {
-                    TitleLine(title: "Recent cleanups", note: entries.count == 1 ? "1 cleanup" : "\(entries.count) cleanups")
+            Button { host.settingsPage = .cleanupHistory } label: {
+                HStack {
+                    TitleLine(title: "Recent cleanups", note: count == 1 ? "1 cleanup" : "\(count) cleanups")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
             withAnimation(Theme.value) {
+                count = CleanupHistory.shared.entries.count
+                lifetime = CleanupHistory.shared.lifetimeBytes
+            }
+        }
+    }
+}
+
+/// Every cleanup, newest first: the module, when and how it started beside it, and the space freed.
+struct CleanupHistoryPage: View {
+    @State private var entries = CleanupHistory.shared.entries
+    @State private var lifetime = CleanupHistory.shared.lifetimeBytes
+    @Environment(\.design) private var design
+
+    var body: some View {
+        Form {
+            Section {
+                if entries.isEmpty {
+                    Text("Nothing cleaned yet.").foregroundStyle(.secondary)
+                }
+                ForEach(entries) { entry in
+                    HStack {
+                        TitleLine(title: entry.moduleName, note: "\(entry.date.formatted(date: .abbreviated, time: .shortened)) · \(Self.trigger(entry.trigger))")
+                        Spacer(minLength: 8)
+                        Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    .help(entry.summary)
+                }
+            } header: {
+                TitleLine(title: "Recent cleanups", note: "\(ByteFormat.string(lifetime)) freed in total")
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .modifier(PageScrollArea(hasFooter: false))
+        .environment(\.colorScheme, design.colorScheme)
+        .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
+            withAnimation(Theme.layout) {
                 entries = CleanupHistory.shared.entries
                 lifetime = CleanupHistory.shared.lifetimeBytes
             }

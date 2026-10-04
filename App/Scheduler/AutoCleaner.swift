@@ -36,8 +36,6 @@ public final class AutoCleaner: ObservableObject {
     @Published public var frequency: Frequency { didSet { defaults.set(frequency.rawValue, forKey: Self.frequencyKey) } }
     @Published public private(set) var lastRun: Date? { didSet { defaults.set(lastRun, forKey: Self.lastRunKey) } }
     @Published public private(set) var isRunning = false
-    /// What the last run freed, for Settings.
-    @Published public private(set) var lastFreed: UInt64?
 
     private let defaults: UserDefaults
     private weak var host: ModuleHost?
@@ -87,11 +85,9 @@ public final class AutoCleaner: ObservableObject {
         guard !isRunning, let host else { return }
         isRunning = true
         defer { isRunning = false }
-        var freed: UInt64 = 0
         for handle in host.activeHandles where handle.manifest.autoClean == true {
-            if let report = await handle.autoClean() { freed += report.freedBytes }
+            await handle.autoClean()
         }
-        lastFreed = freed
         lastRun = Date()
     }
 }

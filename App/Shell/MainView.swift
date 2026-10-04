@@ -162,7 +162,7 @@ public struct MainView: View {
                 return "\(handle.manifest.name) › \(row.title)"
             }
             return handle.manifest.name
-        case .settings: return "Settings"
+        case .settings: return host.settingsPage == .cleanupHistory ? "Settings › Recent cleanups" : "Settings"
         case .home, .storage: return ""
         }
     }
@@ -219,7 +219,7 @@ public struct MainView: View {
                 ScreenView(handle: handle, tint: layer?.tint ?? .slate, reveal: reveal)
             }
         case .settings:
-            SettingsView(host: host, updates: updates)
+            SettingsPages(host: host, updates: updates)
                 .modifier(ZoomReveal(index: 1, reveal: reveal))
         case .home, .storage:
             EmptyView()
@@ -237,6 +237,7 @@ public struct MainView: View {
             guard isOpen, current.destination != destination else { return }
             returnTo = current
             swapForward = true
+            if destination == .settings { host.settingsPage = nil }
             withAnimation(Theme.push) { layer = ZoomLayer(destination: destination, origin: origin, tint: tint) }
             return
         }
@@ -245,6 +246,7 @@ public struct MainView: View {
         reveal = 0
         returnTo = nil
         swapForward = true
+        if destination == .settings { host.settingsPage = nil }
         layer = ZoomLayer(destination: destination, origin: origin, tint: tint)
         withAnimation(Theme.hover) { isOpen = true }
         let current = generation
@@ -274,6 +276,11 @@ public struct MainView: View {
         // A group's page goes back to its module's page.
         if case let .module(id) = open.destination, let handle = host.handle(for: id), handle.openGroup != nil {
             handle.openGroup = nil
+            return
+        }
+        // A page over Settings goes back to Settings.
+        if open.destination == .settings, host.settingsPage != nil {
+            host.settingsPage = nil
             return
         }
         // Settings opened over a page goes back to that page.
@@ -322,5 +329,26 @@ private struct ModulePageTitle: View {
         Text(text())
             .contentTransition(.opacity)
             .animation(Theme.push, value: handle.openGroup)
+    }
+}
+
+/// Settings, or the page open over it, sliding in from the right as a group's page does.
+private struct SettingsPages: View {
+    @ObservedObject var host: ModuleHost
+    @ObservedObject var updates: UpdateController
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            if host.settingsPage == .cleanupHistory {
+                CleanupHistoryPage()
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .trailing).combined(with: .opacity)))
+            } else {
+                SettingsView(host: host, updates: updates)
+                    .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+            }
+        }
+        .animation(Theme.push, value: host.settingsPage)
     }
 }
