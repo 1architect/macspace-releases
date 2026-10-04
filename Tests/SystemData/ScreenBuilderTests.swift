@@ -101,10 +101,22 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
         let screen = SystemDataScreenBuilder.screen(withoutAccess)
-        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "appdata", "other"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "groups"])
+        guard case let .list(groups)? = screen.widgets.last else { return XCTFail("the groups are one list") }
+        XCTAssertEqual(groups.rows.map(\.id), ["cache", "review", "logs"], "a group of one is that item's own row")
         XCTAssertEqual(screen.hero?.segments.isEmpty, false, "the bar is the page's hero")
         XCTAssertNil(screen.hero?.footnote)
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "free", "no banner when everything was measured")
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snapshot(items: items)).widgets.first?.id, "groups", "no banner when everything was measured")
+    }
+
+    func testGroupsShowTheirCountAndTotalAndOpenEveryItem() throws {
+        let items = (1...12).map { item("support\($0)", kind: .appSupport, bytes: UInt64($0) * 100_000_000) }
+        let screen = SystemDataScreenBuilder.screen(snapshot(items: items))
+        guard case let .list(groups)? = screen.widgets.last else { return XCTFail() }
+        let appData = try XCTUnwrap(groups.rows.first { $0.id == "group:appdata" })
+        XCTAssertEqual(appData.subtitle, "12 items")
+        XCTAssertEqual(appData.children.count, 12, "the group's page lists every item, not the ten largest")
+        XCTAssertEqual(appData.trailing, ByteFormat.string(78 * 100_000_000))
     }
 
     func testPlacesNoCustomerCanFixAreNotAWarning() {

@@ -21,9 +21,10 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         let screen = OtherSystemFilesScreenBuilder.screen(snap)
         XCTAssertEqual(screen.primary?.id, "purgeFiles")
         XCTAssertNotNil(screen.primary?.confirmation, "freeing asks first")
-        guard case let .section(free)? = screen.widgets.first, case let .list(list) = free.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.id), [CacheDeleteService.fsPurgeableData])
-        XCTAssertEqual(list.rows[0].actions.map(\.id), ["purgeFiles"])
+        guard case let .list(groups)? = screen.widgets.first else { return XCTFail() }
+        XCTAssertEqual(groups.rows.first?.id, CacheDeleteService.fsPurgeableData, "Free now holds one row, shown as itself")
+        XCTAssertEqual(groups.rows.first?.actions.map(\.id), ["purgeFiles"])
+        XCTAssertEqual(groups.rows.last?.id, "group:kept", "what macOS keeps is one group")
     }
 
     func testTheRestIsListedAsLeftAloneLargestFirst() throws {

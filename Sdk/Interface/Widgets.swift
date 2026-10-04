@@ -200,9 +200,12 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// Steps shown when the row is expanded (for example a manual cleanup guide).
     public var steps: [String]
     public var actions: [Action]
+    /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
+    /// its size and actions). Put the group's total in `trailing`.
+    public var children: [Row]
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, symbol: String? = nil,
-                detail: String? = nil, steps: [String] = [], actions: [Action] = []) {
+                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = []) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -212,6 +215,31 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.detail = detail
         self.steps = steps
         self.actions = actions
+        self.children = children
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children }
+
+    /// `children` may be missing (a screen written before groups existed).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
+        trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
+        badge = try container.decodeIfPresent(Badge.self, forKey: .badge)
+        symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
+        detail = try container.decodeIfPresent(String.self, forKey: .detail)
+        steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
+        actions = try container.decodeIfPresent([Action].self, forKey: .actions) ?? []
+        children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
+    }
+
+    /// A group of `rows` as one row: its count under the title and its total on the right.
+    public static func group(id: String, title: String, symbol: String? = nil, totalBytes: UInt64, rows: [Row], detail: String? = nil) -> Row {
+        Row(id: id, title: title, subtitle: rows.count == 1 ? "1 item" : "\(rows.count) items",
+            trailing: ByteCountFormatter.string(fromByteCount: Int64(clamping: totalBytes), countStyle: .file), symbol: symbol, detail: detail,
+            children: rows)
     }
 }
 

@@ -106,6 +106,7 @@ actor SystemDataStore {
         let all: [String: UInt64]?
         if let cli = ToolLocator.cli() { all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) }
         else { all = CacheDeleteClient().purgeableByService() }
-        return all?[CacheDeleteService.mobileAsset]
+        // What macOS just declined to delete is not offered again until its estimate grows.
+        return PurgeLedger().offerable(CacheDeleteService.mobileAsset, estimate: all?[CacheDeleteService.mobileAsset])
     }
 }

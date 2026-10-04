@@ -114,16 +114,47 @@ enum SystemDataScreenBuilder {
 
     /// The page: the bar, one Clean for everything safe, then only what the user can act on. What MacSpace leaves alone is listed once,
     /// collapsed, so the total still adds up.
+    /// Under the bar, one row per group (what Clean frees, the downloads, app data, everything else) with how many items it holds and
+    /// their total; a group opens a page of its own with every item, its size and its actions. A group of one is that item's row.
     static func screen(_ snapshot: SystemDataSnapshot) -> Screen {
         var widgets: [ScreenWidget] = []
         if let banner = partialBanner(snapshot) { widgets.append(banner) }
-        if let free = freeNow(snapshot) { widgets.append(free) }
-        if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
-        if let assets = assetsSection(snapshot) { widgets.append(assets) }
-        if let appData = appDataSection(snapshot) { widgets.append(appData) }
-        if let other = otherSection(snapshot) { widgets.append(other) }
+        let groups = [
+            group(freeNow(snapshot), symbol: "sparkles", total: freeNowBytes(snapshot)),
+            group(leftoverUpdateSection(snapshot), symbol: "arrow.down.app", total: leftoverUpdateBytes(snapshot)),
+            group(assetsSection(snapshot), symbol: "square.stack.3d.down.right",
+                  total: snapshot.assetFamilies.filter { !$0.steps.isEmpty && $0.bytes >= 100_000_000 }.map(\.bytes).reduce(0, +)),
+            group(appDataSection(snapshot), symbol: "app.badge", total: leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)),
+            group(otherSection(snapshot), symbol: "gearshape.2", total: leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)),
+        ].compactMap { $0 }
+        if !groups.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: "What is in it", rows: groups))) }
         let hero = UsageBar(id: "usage", title: "What fills System Data", segments: blocks(snapshot))
         return Screen(title: "System Data", hero: hero, primary: cleanAll(snapshot), widgets: widgets)
+    }
+
+    /// A section of rows as one group row (named after the section, its description as the tooltip), or its only row.
+    static func group(_ widget: ScreenWidget?, symbol: String, total: UInt64) -> Row? {
+        guard case let .section(section)? = widget else { return nil }
+        let rows = section.widgets.flatMap { inner -> [Row] in
+            if case let .list(list) = inner { return list.rows }
+            return []
+        }
+        guard !rows.isEmpty else { return nil }
+        if rows.count == 1 { return rows[0] }
+        return Row.group(id: "group:\(section.id)", title: section.title, symbol: symbol, totalBytes: total, rows: rows, detail: section.subtitle)
+    }
+
+    /// What the rows under Free now add up to.
+    static func freeNowBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && ($0.expectedReclaimBytes ?? 0) >= worthARow }
+            .compactMap(\.expectedReclaimBytes).reduce(0, +)
+        let reports = snapshot.reports.totalBytes >= worthARow ? snapshot.reports.totalBytes : 0
+        let assets = (snapshot.purgeableAssetsBytes ?? 0) >= assetsThreshold ? (snapshot.purgeableAssetsBytes ?? 0) : 0
+        return caches + reports + assets + versionHistoryBytes(snapshot)
+    }
+
+    static func leftoverUpdateBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        snapshot.report.items.first { $0.id == "update:staged" }?.bytes ?? 0
     }
 
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
@@ -199,11 +230,18 @@ enum SystemDataScreenBuilder {
                                       widgets: [.list(ListWidget(id: "other-list", rows: leftAloneRows(items)))]))
     }
 
-    /// The ten largest, with what the item is and why it stays.
+    /// Every item, largest first, with what it is and why it stays. A container's kind goes under its name: the group already says
+    /// it is app data.
     private static func leftAloneRows(_ items: [SystemDataItem]) -> [Row] {
-        items.prefix(10).map { item in
-            Row(id: item.id, title: item.title, trailing: ByteFormat.string(item.bytes ?? 0),
-                detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
+        items.map { item in
+            var title = item.title
+            var subtitle: String?
+            for prefix in ["App container: ", "App group data: "] where title.hasPrefix(prefix) {
+                subtitle = String(prefix.dropLast(2))
+                title = String(title.dropFirst(prefix.count))
+            }
+            return Row(id: item.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(item.bytes ?? 0),
+                       detail: ([item.cleanup.description] + item.notes).joined(separator: " "))
         }
     }
 

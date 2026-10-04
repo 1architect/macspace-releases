@@ -329,7 +329,7 @@ public struct SystemDataInspector {
         }
         for path in children((home as NSString).appendingPathComponent("Library/Application Support")) {
             let name = (path as NSString).lastPathComponent
-            add("appsupport:\(name)", "App data: \(name)", .appSupport, paths: [path], owners: [name],
+            add("appsupport:\(name)", name, .appSupport, paths: [path], owners: [name],
                 cleanup: SystemDataCleanup(kind: .review, description: "Data that belongs to the app (settings, libraries, downloads). Remove it with the app, not as junk.", command: nil),
                 minimum: 100 * 1_000_000)
         }
