@@ -139,8 +139,11 @@ trip in-process, the lazy channel, crash-isolation subprocesses, the version-sto
 Settings; helper install, approval and measurement of root-only locations; deletion of the version history; Debloat reading live
 state; all of it on macOS 27 build 26B5091g, and the helper install and Siri message on 27.0.1 in a VM.
 
-**Not verified:** notarization and stapling; Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build;
-the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
+**Verified 2026-10-03 (27.2, 26B5091g, `Scripts/TestUntested.sh release`):** Developer ID signature with the hardened runtime,
+notarization and the stapled ticket (Gatekeeper accepts the app), the helper installed from a notarized build and answering.
+
+**Not verified:** Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build (needs a published release
+and SPARKLE_PUBLIC_KEY); the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
 Debloat profile approval beyond the development Mac; the Debloat controls marked "Not tested" in the app.
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
