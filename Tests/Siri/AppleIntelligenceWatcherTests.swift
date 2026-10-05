@@ -40,8 +40,17 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
         XCTAssertEqual(outcomes[3].record.since, Date(timeIntervalSince1970: 10))
     }
 
-    func testUnknownAlertsBecauseTheMethodMayHaveBroken() {
-        XCTAssertEqual(run([(.protected, 0), (.unknown, 5)])[1].alert?.title, "Couldn't check Apple Intelligence")
+    func testUnknownAlertsOnlyOnceItLasts() {
+        let outcomes = run([(.protected, 0), (.unknown, 5), (.unknown, 1800), (.unknown, 3700), (.unknown, 7400)])
+        XCTAssertNil(outcomes[1].alert, "a read that fails once (a copy without Full Disk Access) says nothing")
+        XCTAssertNil(outcomes[2].alert)
+        XCTAssertEqual(outcomes[3].alert?.title, "Couldn't check Apple Intelligence")
+        XCTAssertNil(outcomes[4].alert, "once")
+    }
+
+    func testAShortUnreadableSpellAnnouncesNothingEitherWay() {
+        let outcomes = run([(.protected, 0), (.unknown, 10), (.protected, 200), (.unknown, 400), (.protected, 600)])
+        XCTAssertTrue(outcomes.allSatisfy { $0.alert == nil }, "no warning reached the user, so no restoration either")
     }
 
     func testReleasingIsQuietUntilTheGracePeriodThenAlertsOnce() {
