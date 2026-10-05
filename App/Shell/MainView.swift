@@ -48,6 +48,33 @@ private struct RefreshButton: View {
     }
 }
 
+/// The glass window's canvas inside the standard window (`StandardWindowView`): the sidebar asks it for a page, and the canvas says
+/// which page it shows, so the sidebar's selection follows a tile clicked or Back pressed.
+@MainActor
+public final class CanvasNavigator: ObservableObject {
+    struct Request: Equatable {
+        let id: Int
+        let destination: Destination
+    }
+
+    @Published private(set) var request: Request?
+    @Published var shown: Destination = .home
+    /// The standard window's sidebar is showing: without it, the canvas's corner gets ✕ (or Back) and the sidebar's button.
+    @Published var sidebarShown = true
+    /// The standard window shows the page's title in its own band.
+    @Published var showsTitle = true
+    var closeWindow: () -> Void = {}
+    var toggleSidebar: () -> Void = {}
+    private var counter = 0
+
+    public init() {}
+
+    func go(_ destination: Destination) {
+        counter += 1
+        request = Request(id: counter, destination: destination)
+    }
+}
+
 public struct MainView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
@@ -80,16 +107,46 @@ public struct MainView: View {
     /// Which way the last swap of one page for another went: forward slides the new page in from the right, back from the left.
     @State private var swapForward = true
 
+    /// Drawn inside the standard window instead of as a window of its own: no glass backdrop, frame, shadow or window motion.
+    let embedded: Bool
+    @ObservedObject var navigator: CanvasNavigator
+
     public init(host: ModuleHost, updates: UpdateController) {
+        self.init(host: host, updates: updates, navigator: CanvasNavigator(), embedded: false)
+    }
+
+    init(host: ModuleHost, updates: UpdateController, navigator: CanvasNavigator, embedded: Bool) {
         self.host = host
         self.updates = updates
+        self.navigator = navigator
+        self.embedded = embedded
     }
 
     public var body: some View {
+        if embedded {
+            // The same tiles, zoom, pages and Back as the glass window, on the standard window's ground.
+            canvas
+                .environment(\.design, designSettings.design)
+                .animation(.smooth(duration: 0.45), value: designSettings.design)
+                .background { shortcuts }
+                .task { await host.start() }
+                .task { await storage.refresh() }
+                .onAppear { windowShown = true }
+                .onChange(of: navigator.request) { _, request in if let request { follow(request.destination) } }
+                .onChange(of: remote.command?.id) { _, _ in handleRemote() }
+        } else {
+            window
+        }
+    }
+
+    /// The dashboard, the open page and the corner buttons.
+    private var canvas: some View {
         ZStack(alignment: .topLeading) {
-            GlassBackdrop(showsGlass: !pageSettled, glassFade: layer == nil ? 0 : progress)
-                .gesture(WindowDragGesture())
-                .allowsWindowActivationEvents(true)
+            if !embedded {
+                GlassBackdrop(showsGlass: !pageSettled, glassFade: layer == nil ? 0 : progress)
+                    .gesture(WindowDragGesture())
+                    .allowsWindowActivationEvents(true)
+            }
             // The size comes from a GeometryReader, which takes whatever the window gives it. Measured from the content instead, the
             // open page (sized to the last measurement) held the content at its old size, and the window could grow but not shrink.
             GeometryReader { proxy in
@@ -101,6 +158,11 @@ public struct MainView: View {
             cornerControls
                 .padding(Theme.frame + GlassCircleButton.margin)
         }
+    }
+
+    /// The glass window: the canvas on its glass, clipped to its corners, with its shadow, growing in and shrinking away.
+    private var window: some View {
+        canvas
         // Nothing draws outside the glass: a lifted tile's shadow spilling past it left a stray shadow and edge, which macOS then
         // copied into the window's own shadow.
         .clipShape(designSettings.clipWindow ? AnyShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)) : AnyShape(Rectangle()))
@@ -131,7 +193,10 @@ public struct MainView: View {
             withAnimation(Theme.windowIn) { windowShown = true }
         }
         .onDisappear { windowShown = false; windowClosing = false }
-        .onChange(of: remote.command?.id) { _, _ in
+        .onChange(of: remote.command?.id) { _, _ in handleRemote() }
+    }
+
+    private func handleRemote() {
             guard let text = remote.command?.text else { return }
             if text == "close" { close() }
             else if text == "open:settings" { present(.settings) }
@@ -150,13 +215,12 @@ public struct MainView: View {
                 default: handle.previewPill(cleaning: false, progress: nil, result: nil)
                 }
             }
-        }
     }
 
     private func content(_ size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
-            HomeView(host: host, storage: storage, frames: frames, open: present, hiddenTile: layer?.destination, closing: windowClosing,
-                     dormant: pageSettled)
+            HomeView(host: host, storage: storage, frames: frames, open: { present($0) }, hiddenTile: layer?.destination, closing: windowClosing,
+                     dormant: pageSettled, showsSettingsTile: !embedded)
                 .modifier(ZoomFade(progress: progress, scales: !designSettings.glass))
                 .allowsHitTesting(layer == nil)
             if let layer, size.width > 0 {
@@ -208,10 +272,18 @@ public struct MainView: View {
     /// Top left: ✕ or back, then the page's title. Top right, on a module's page: its Refresh, as far from the window's edges as Back.
     private var cornerControls: some View {
         HStack(spacing: 8) {
-            GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? "Back" : "Close") {
-                isOpen ? close() : closeWindow()
+            // In the standard window, ✕ only while the sidebar (and the window's own buttons above it) is hidden; Back on a page.
+            if !embedded || isOpen || !navigator.sidebarShown {
+                GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? "Back" : "Close") {
+                    isOpen ? close() : closeWindow()
+                }
+                .transition(.opacity)
             }
-            if isOpen, let destination = layer?.destination {
+            if embedded, !navigator.sidebarShown {
+                GlassCircleButton(symbol: "sidebar.left", help: "Show the sidebar") { navigator.toggleSidebar() }
+                    .transition(.opacity.combined(with: .offset(x: -14)))
+            }
+            if isOpen, !embedded || !navigator.showsTitle, let destination = layer?.destination {
                 PageTitle(host: host, destination: destination, title: title)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(designSettings.design.ink)
@@ -228,6 +300,7 @@ public struct MainView: View {
             }
         }
         .animation(Theme.hover, value: isOpen)
+        .animation(.smooth(duration: 0.3), value: navigator.sidebarShown)
     }
 
     /// Keyboard: Escape goes back, Command-comma opens Settings.
@@ -267,17 +340,19 @@ public struct MainView: View {
 
     /// Opens a page: the tile grows into it. From another page (Command-comma over a module's page) the new page slides in over it,
     /// and Back slides back to the page it came from.
-    private func present(_ destination: Destination) {
+    private func present(_ destination: Destination, fromSidebar: Bool = false, forward: Bool = true) {
         guard destination != .storage, destination != .home else { return }
         if case let .module(id) = destination, host.handle(for: id) == nil { return }
         let tint = HomeView.tiles(for: host.dashboardHandles).first { $0.destination == destination }?.tint ?? .slate
         let origin = frames.frame(of: destination) ?? CGRect(origin: .zero, size: container)
         if let current = layer {
             guard isOpen, current.destination != destination else { return }
-            returnTo = current
-            swapForward = true
+            // From the sidebar, Back goes to the dashboard, not to the page before.
+            returnTo = fromSidebar ? nil : current
+            swapForward = forward
             if destination == .settings { host.settingsPage = nil }
             withAnimation(Theme.push) { layer = ZoomLayer(destination: destination, origin: origin, tint: tint) }
+            navigator.shown = destination
             return
         }
         generation += 1
@@ -287,6 +362,7 @@ public struct MainView: View {
         swapForward = true
         if destination == .settings { host.settingsPage = nil }
         layer = ZoomLayer(destination: destination, origin: origin, tint: tint)
+        navigator.shown = destination
         withAnimation(Theme.hover) { isOpen = true }
         let current = generation
         withAnimation(Theme.open, completionCriteria: .removed) { progress = 1 } completion: {
@@ -295,8 +371,25 @@ public struct MainView: View {
         withAnimation(.smooth(duration: 0.5).delay(0.22)) { reveal = 1 }
     }
 
+    /// The sidebar's choice: the dashboard closes whatever page is open, all the way back; a page opens from its tile, or slides in
+    /// over the open page in the sidebar's order.
+    private func follow(_ destination: Destination) {
+        if destination == .home || destination == .storage {
+            guard let open = layer, isOpen else { return }
+            returnTo = nil
+            if case let .module(id) = open.destination { host.handle(for: id)?.openGroup = nil }
+            host.settingsPage = nil
+            close()
+            return
+        }
+        let order: [Destination] = host.dashboardHandles.map { .module($0.id) } + [.settings]
+        let forward = (order.firstIndex(of: destination) ?? 0) >= (layer.flatMap { order.firstIndex(of: $0.destination) } ?? 0)
+        present(destination, fromSidebar: true, forward: forward)
+    }
+
     /// The tiles leave in reverse order, then the glass shrinks away, then the window closes.
     private func closeWindow() {
+        if embedded { navigator.closeWindow(); return }
         guard !windowClosing else { return }
         windowClosing = true
         let tiles = HomeView.depopulateDuration(tiles: HomeView.tiles(for: host.dashboardHandles).count)
@@ -328,6 +421,7 @@ public struct MainView: View {
             swapForward = false
             withAnimation(Theme.push) { layer = ZoomLayer(destination: previous.destination, origin: frames.frame(of: previous.destination) ?? previous.origin,
                                                           tint: previous.tint) }
+            navigator.shown = previous.destination
             return
         }
         // The tiles are drawn again before the card starts shrinking onto them.
@@ -337,6 +431,7 @@ public struct MainView: View {
         // The window may have been resized while the page was open.
         if let tile = frames.frame(of: open.destination) { layer?.origin = tile }
         withAnimation(Theme.hover) { isOpen = false }
+        navigator.shown = .home
         withAnimation(.easeIn(duration: 0.15)) { reveal = 0 }
         withAnimation(Theme.close.delay(0.05), completionCriteria: .removed) { progress = 0 } completion: {
             if generation == current { layer = nil }

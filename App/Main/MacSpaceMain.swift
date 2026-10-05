@@ -31,9 +31,13 @@ struct MacSpaceMain: App {
     @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
 
     var body: some Scene {
+        // Only the window of the chosen kind opens at launch, and neither is restored: both opening, then one closing itself,
+        // left an empty glass frame and its shadow on screen beside the standard window.
         Window("MacSpace", id: MacSpaceWindow.glass) {
             MainView(host: host, updates: updates)
         }
+        .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .suppressed : .presented)
+        .restorationBehavior(.disabled)
         .windowStyle(.plain)
         .windowBackgroundDragBehavior(.enabled)
         // The glass's default size (`Theme.defaultSize`) and the invisible resize band around it (`Theme.resizeMargin`).
@@ -52,6 +56,8 @@ struct MacSpaceMain: App {
         }
         // MacSpace draws the window's buttons and its band (`StandardWindowView`); the content reaches the top of the window.
         .windowStyle(.hiddenTitleBar)
+        .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .presented : .suppressed)
+        .restorationBehavior(.disabled)
         .defaultSize(width: 900, height: 600)
 
         // Temporary: the Color Lab (Design menu, ⌥⌘L).
