@@ -47,9 +47,11 @@ public struct StandardWindowView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     @State private var selection: Destination = .home
     @State private var sidebarShown = true
-    /// Which way the last change of page went in the sidebar's order: down slides the new page up from below, up from above.
-    @State private var forward = true
-    @State private var window = WindowReference()
+    @StateObject private var window = WindowReference()
+    /// The page's width held while the window resizes with the sidebar; nil lets it follow the window.
+    @State private var pinnedDetailWidth: CGFloat?
+    /// The sidebar slides over the page (full screen, tiled) rather than with the window's edge.
+    @State private var sidebarSlides = false
 
     static let sidebarWidth: CGFloat = 210
     /// The band at the top for the corner buttons, the title and Refresh.
@@ -67,17 +69,23 @@ public struct StandardWindowView: View {
 
     public var body: some View {
         ZStack(alignment: .topLeading) {
-            HStack(spacing: 0) {
-                if sidebarShown {
-                    sidebar
-                        .frame(width: Self.sidebarWidth)
-                        .transition(.move(edge: .leading).combined(with: .opacity))
+            // The columns lie in an overlay, aligned to the trailing edge, so they never set the window's size: while a freely placed
+            // window closes up or opens out (`toggleSidebar`), the page keeps its width and the sidebar slides under the window's
+            // moving left edge, and nothing is laid out again on the way.
+            Color.clear.overlay(alignment: .trailing) {
+                HStack(spacing: 0) {
+                    if sidebarShown {
+                        sidebar
+                            .frame(width: Self.sidebarWidth)
+                            .transition(sidebarSlides ? .move(edge: .leading) : .identity)
+                    }
+                    detailColumn
+                        .frame(width: pinnedDetailWidth)
                 }
-                detailColumn
             }
-            controls.padding(Self.controlInset)
+            sidebarButton
         }
-        .animation(Theme.push, value: sidebarShown)
+        .animation(sidebarSlides ? .smooth(duration: 0.35) : nil, value: sidebarShown)
         .background { windowBackground.ignoresSafeArea() }
         .ignoresSafeArea()
         .environment(\.design, design)
@@ -99,12 +107,18 @@ public struct StandardWindowView: View {
 
     // MARK: Chrome
 
-    /// ✕ closes the window, as on the glass window; beside it, the sidebar's button.
-    private var controls: some View {
-        HStack(spacing: 8) {
-            GlassCircleButton(symbol: "xmark", help: "Close") { dismissWindow(id: MacSpaceWindow.standard) }
-            GlassCircleButton(symbol: "sidebar.left", help: sidebarShown ? "Hide the sidebar" : "Show the sidebar") { toggleSidebar() }
+    /// The sidebar's button, beside the window's own close, minimize and zoom buttons and centred on them.
+    private var sidebarButton: some View {
+        Button(action: toggleSidebar) {
+            Image(systemName: "sidebar.left")
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(design.ink.opacity(0.75))
+                .frame(width: 28, height: 24)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .help(sidebarShown ? "Hide the sidebar" : "Show the sidebar")
+        .position(x: window.buttonsMaxX + 22, y: window.buttonsCenterY)
     }
 
     /// The window's solid color, or Liquid Glass over the desktop (Design menu > Standard Window Glass Background).
@@ -171,11 +185,11 @@ public struct StandardWindowView: View {
     private var detailColumn: some View {
         VStack(spacing: 0) {
             if needsHeader { header.frame(height: Self.headerHeight) }
+            // A page gives way to the next by dissolving through a soft blur, while the ground beneath changes color: no slide.
             ZStack {
                 page(selection)
                     .id(selection)
-                    .transition(.asymmetric(insertion: .move(edge: forward ? .bottom : .top).combined(with: .opacity),
-                                            removal: .move(edge: forward ? .top : .bottom).combined(with: .opacity)))
+                    .transition(.blurReplace)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
@@ -184,7 +198,14 @@ public struct StandardWindowView: View {
         .overlay(alignment: .topTrailing) {
             if !needsHeader { refresh.padding(Self.controlInset) }
         }
-        .background { ground(selection).ignoresSafeArea() }
+        .background {
+            ZStack {
+                ground(selection)
+                    .id(selection)
+                    .transition(.opacity)
+            }
+            .ignoresSafeArea()
+        }
     }
 
     /// The band only with the title bar. Without it there is no band at all: the corner buttons and Refresh float over the page, as
@@ -207,7 +228,7 @@ public struct StandardWindowView: View {
             refresh
         }
         // Clear of the corner buttons while they are over the page.
-        .padding(.leading, sidebarShown ? 20 : Self.controlInset + 2 * GlassCircleButton.diameter + 8 + 16)
+        .padding(.leading, sidebarShown ? 20 : window.buttonsMaxX + 56)
         .padding(.trailing, Self.controlInset)
         .background {
             if designSettings.standardTitleBar {
@@ -268,30 +289,39 @@ public struct StandardWindowView: View {
 
     // MARK: Navigation
 
-    /// The sidebar's order, for the direction of the slide.
-    private var order: [Destination] { [.home] + host.dashboardHandles.map { .module($0.id) } + [.settings] }
-
-    /// Hides or shows the sidebar; a freely placed window closes up or opens out by the sidebar's width with it.
+    /// Hides or shows the sidebar. A freely placed window closes up or opens out by the sidebar's width: the page is held at its
+    /// width while AppKit moves the window's left edge, so the sidebar slides under the edge or out from it and nothing reflows.
+    /// In full screen or tiled, the window keeps its size and the sidebar slides over, the page taking the room.
     private func toggleSidebar() {
         let showing = !sidebarShown
-        if let window = window.window, Self.isFreelyPlaced(window) {
-            var frame = window.frame
-            let change = Self.sidebarWidth
-            if showing {
-                frame.origin.x -= change
-                frame.size.width += change
-            } else {
-                let narrower = max(frame.width - change, Theme.minimumSize.width)
-                frame.origin.x += frame.width - narrower
-                frame.size.width = narrower
-            }
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.35
-                context.allowsImplicitAnimation = true
-                window.animator().setFrame(frame, display: true)
-            }
+        guard let window = window.window, Self.isFreelyPlaced(window) else {
+            sidebarSlides = true
+            sidebarShown = showing
+            return
         }
-        withAnimation(Theme.push) { sidebarShown = showing }
+        sidebarSlides = false
+        let width = Self.sidebarWidth
+        var frame = window.frame
+        pinnedDetailWidth = frame.width - (sidebarShown ? width : 0)
+        if showing {
+            frame.origin.x -= width
+            frame.size.width += width
+            sidebarShown = true
+        } else {
+            let narrower = max(frame.width - width, Theme.minimumSize.width)
+            frame.origin.x += frame.width - narrower
+            frame.size.width = narrower
+        }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.3
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            window.animator().setFrame(frame, display: true)
+        }, completionHandler: {
+            Task { @MainActor in
+                if !showing { sidebarShown = false }
+                pinnedDetailWidth = nil
+            }
+        })
     }
 
     /// Not in full screen, and not tiled to a half, a quarter or the whole of the screen (macOS's tiling leaves a margin of a few
@@ -311,10 +341,7 @@ public struct StandardWindowView: View {
 
     private func select(_ destination: Destination) {
         guard destination != selection else { return }
-        let from = order.firstIndex(of: selection) ?? 0
-        let to = order.firstIndex(of: destination) ?? 0
-        forward = to >= from
-        withAnimation(Theme.push) { selection = destination }
+        withAnimation(.smooth(duration: 0.4)) { selection = destination }
     }
 
     /// A tile clicked on the overview selects its page.
@@ -336,12 +363,17 @@ private struct RefreshControl: View {
     }
 }
 
-/// The standard window's frame: its own buttons hidden (MacSpace draws ✕ and the sidebar's button), no title, movable by its
-/// background, and clear behind the content when the background is glass.
-/// The standard window, for resizing it with the sidebar.
-final class WindowReference {
+/// The standard window, for resizing it with the sidebar, and where its close, minimize and zoom buttons are (in the content's
+/// coordinates, from the top left), for the sidebar's button beside them.
+@MainActor
+final class WindowReference: ObservableObject {
     weak var window: NSWindow?
+    @Published var buttonsMaxX: CGFloat = 78
+    @Published var buttonsCenterY: CGFloat = 20
 }
+
+/// The standard window's frame: its own buttons kept, no title, movable by its background, and clear behind the content when the
+/// background is glass.
 
 private struct StandardWindowConfigurator: NSViewRepresentable {
     let glass: Bool
@@ -354,7 +386,13 @@ private struct StandardWindowConfigurator: NSViewRepresentable {
         DispatchQueue.main.async {
             guard let window = view.window else { return }
             reference.window = window
-            for kind in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] { window.standardWindowButton(kind)?.isHidden = true }
+            if let zoom = window.standardWindowButton(.zoomButton), let superview = zoom.superview, let content = window.contentView {
+                let rect = content.convert(superview.convert(zoom.frame, to: nil), from: nil)
+                let maxX = rect.maxX
+                let centerY = content.isFlipped ? rect.midY : content.bounds.height - rect.midY
+                if reference.buttonsMaxX != maxX { reference.buttonsMaxX = maxX }
+                if reference.buttonsCenterY != centerY { reference.buttonsCenterY = centerY }
+            }
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
             window.isMovableByWindowBackground = true
