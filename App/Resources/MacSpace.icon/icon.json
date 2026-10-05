@@ -31,8 +31,8 @@
           },
           "glass" : false,
           "hidden" : false,
-          "image-name" : "Interiors3.svg",
-          "name" : "Interiors3",
+          "image-name" : "Circles.svg",
+          "name" : "Circles",
           "position" : {
             "scale" : 0.7,
             "translation-in-points" : [

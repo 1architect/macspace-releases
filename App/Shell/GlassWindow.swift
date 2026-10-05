@@ -215,23 +215,28 @@ struct GlassBackdrop: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
-        ZStack {
-            if design.windowGlass {
-                WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.isLight)
-                // The Color Lab's window fill, over the blur and under the glass.
-                if let fill = design.fill(.window) { shape.fill(fill.style(Color(white: design.isLight ? 0.92 : 0.13))) }
+        if design.windowBackground {
+            ZStack {
+                if design.windowGlass {
+                    WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.isLight)
+                    // The Color Lab's window fill, over the blur and under the glass.
+                    if let fill = design.fill(.window) { shape.fill(fill.style(design.systemWindowColor)) }
+                }
+                if !showsGlass {
+                    Color.clear
+                } else if design.windowGlass {
+                    GlassPane(corners: .radius(Theme.windowRadius), style: .clear)
+                        .modifier(GlassFade(progress: glassFade))
+                } else {
+                    // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
+                    LabFill(shape: shape, color: design.systemWindowColor, fill: design.fill(.window))
+                }
             }
-            if !showsGlass {
-                Color.clear
-            } else if design.windowGlass {
-                GlassPane(corners: .radius(Theme.windowRadius), style: .clear)
-                    .modifier(GlassFade(progress: glassFade))
-            } else {
-                // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
-                LabFill(shape: shape, color: Color(white: design.isLight ? 0.92 : 0.13), fill: design.fill(.window))
-            }
+            .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
+        } else {
+            // Nothing drawn behind the widgets (Design menu > Window Background); the empty ground still takes the window drag.
+            Color.clear.contentShape(Rectangle())
         }
-        .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
     }
 }
 

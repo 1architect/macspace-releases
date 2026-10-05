@@ -75,7 +75,7 @@ public struct ColorLabView: View {
     private func elementColor(_ target: FillTarget) -> Color {
         let design = settings.design
         switch target {
-        case .window: return Color(white: design.isLight ? 0.92 : 0.13)
+        case .window: return design.systemWindowColor
         case .tiles: return design.palette(tint).base
         case let .tile(tint): return design.palette(tint).base
         case .chartElements: return design.palette(tint).step(4)

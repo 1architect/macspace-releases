@@ -163,7 +163,7 @@ final class RenderTests: XCTestCase {
 }
 
 final class MenuBarIconTests: XCTestCase {
-    func testTheSquaresLeaveAndComeBackOneByOne() {
+    func testTheCirclesLeaveAndComeBackOneByOne() {
         XCTAssertEqual(MenuBarIcon.visibility(rank: 0, phase: 0), 1, "the full grid at rest")
         XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.5), 0, "all gone in the middle of a round")
         XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.999), 1, "all back at its end")

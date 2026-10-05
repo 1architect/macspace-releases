@@ -1,3 +1,4 @@
+import AppKit
 import MacSpaceSdk
 import SwiftUI
 
@@ -9,6 +10,14 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
     case sketch
     case nord
     case paper
+    // The three night and day pairs, drawn on the system's own window background (Window Glass off). Day and night of a pair share
+    // their hues; the night ramp runs dark to light, the day ramp light to dark, so a mark keeps its place in both.
+    case auroraNight
+    case auroraDay
+    case terraNight
+    case terraDay
+    case inkNight
+    case inkDay
 
     public var id: String { rawValue }
 
@@ -19,17 +28,34 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
         case .sketch: return "Sketch"
         case .nord: return "Nord"
         case .paper: return "Paper (light)"
+        case .auroraNight: return "Aurora, night"
+        case .auroraDay: return "Aurora, day"
+        case .terraNight: return "Terra, night"
+        case .terraDay: return "Terra, day"
+        case .inkNight: return "Ink, night"
+        case .inkDay: return "Ink, day"
         }
     }
 
     /// Light grounds take dark text.
-    var isLight: Bool { self == .paper }
+    var isLight: Bool {
+        switch self {
+        case .paper, .auroraDay, .terraDay, .inkDay: return true
+        default: return false
+        }
+    }
 
     var action: (fill: Color, light: Color, deep: Color) {
         switch self {
         case .sketch: return (Color(hex: 0xF5B800), Color(hex: 0xFFD54D), Color(hex: 0x3D2C00))
         case .nord: return (Color(hex: 0xEBCB8B), Color(hex: 0xF3DDB0), Color(hex: 0x3B3220))
-        case .paper: return (Color(hex: 0xE58A12), Color(hex: 0xF0A848), Color(hex: 0x412402))
+        case .paper, .auroraDay: return (Color(hex: 0xE58A12), Color(hex: 0xF0A848), Color(hex: 0x412402))
+        case .auroraNight: return (Color(hex: 0xEF9F27), Color(hex: 0xFAC775), Color(hex: 0x412402))
+        case .terraNight: return (Color(hex: 0xF2B134), Color(hex: 0xF8CF7A), Color(hex: 0x3D2800))
+        case .terraDay: return (Color(hex: 0xD98A00), Color(hex: 0xB86F00), Color(hex: 0x3D2400))
+        case .inkNight: return (Color(hex: 0xC6F135), Color(hex: 0xDDF98A), Color(hex: 0x26300A))
+        // Light and deep lime read on a near-white tile, where the night's pale lime would vanish.
+        case .inkDay: return (Color(hex: 0x9BC900), Color(hex: 0x6E9100), Color(hex: 0x1F2A00))
         case .deep, .mono: return (Color(hex: 0xEF9F27), Color(hex: 0xFAC775), Color(hex: 0x412402))
         }
     }
@@ -69,6 +95,39 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
         case (.paper, .teal): return make(0xE1F5EE, [0xCBEEE1, 0x9FE1CB, 0x5DCAA5, 0x1D9E75, 0x0F6E56, 0x085041], 0x04342C)
         case (.paper, .graphite): return make(0xF1EFE8, [0xE4E2DA, 0xD3D1C7, 0xB4B2A9, 0x888780, 0x5F5E5A, 0x444441], 0x2C2C2A)
         case (.paper, .slate): return make(0xEEF2F6, [0xE1E7EE, 0xCBD3DC, 0xA9B4C0, 0x7D8996, 0x55606C, 0x3A434D], 0x1E2329)
+        // Aurora: a hue per module (violet, blue, teal, rose, slate); day grounds are tinted, not white, so tiles tell apart.
+        case (.auroraNight, .violet): return make(0x2E2870, [0x464090, 0x5E57B0, 0x766ED0, 0x8E86F0, 0xAEA8F5, 0xCECBF9], 0xEEEDFE)
+        case (.auroraNight, .blue): return make(0x0A3A6B, [0x1A528B, 0x2A6AAA, 0x3A83CA, 0x4A9BEA, 0x7EB8F0, 0xB2D4F5], 0xE6F1FB)
+        case (.auroraNight, .teal): return make(0x0A4036, [0x125D4A, 0x1A7A5E, 0x239772, 0x2BB486, 0x68CAA9, 0xA4DFCB], 0xE1F5EE)
+        case (.auroraNight, .graphite): return make(0x5A1B33, [0x7C2E4A, 0x9D4061, 0xBE5378, 0xE0668F, 0xE992AF, 0xF2BED0], 0xFBEAF0)
+        case (.auroraNight, .slate): return make(0x2D353E, [0x46505B, 0x5E6A78, 0x768595, 0x8FA0B2, 0xAFBBC9, 0xCED7DF], 0xEEF2F6)
+        case (.auroraDay, .violet): return make(0xD8D4F8, [0xBDB8EB, 0xA39DDE, 0x8881D1, 0x6E66C4, 0x534AB7, 0x3C368A], 0x26215C)
+        case (.auroraDay, .blue): return make(0xBBDCF8, [0x9AC3E7, 0x7AAAD7, 0x5991C6, 0x3978B6, 0x185FA5, 0x0E467C], 0x042C53)
+        case (.auroraDay, .teal): return make(0xAEEBD3, [0x8ED2BA, 0x6EB9A1, 0x4FA088, 0x2F876F, 0x0F6E56, 0x0A5141], 0x04342C)
+        case (.auroraDay, .graphite): return make(0xF8C4D6, [0xE5A7BC, 0xD28BA3, 0xBF6E89, 0xAC5270, 0x993556, 0x72253F], 0x4B1528)
+        case (.auroraDay, .slate): return make(0xD3DAE3, [0xBAC2CB, 0xA1A9B3, 0x87919C, 0x6E7884, 0x55606C, 0x3A424A], 0x1E2329)
+        // Terra: earthy hues (plum, petrol, moss, umber, slate).
+        case (.terraNight, .violet): return make(0x47213D, [0x653256, 0x84446E, 0xA25686, 0xC0679F, 0xD393BB, 0xE5BED8], 0xF8EAF4)
+        case (.terraNight, .blue): return make(0x0F3F4D, [0x1A5868, 0x247184, 0x2F8AA0, 0x3AA3BB, 0x72BECF, 0xABD8E2], 0xE3F3F6)
+        case (.terraNight, .teal): return make(0x26402A, [0x3A5C36, 0x4E7743, 0x629250, 0x76AE5C, 0x9DC589, 0xC4DCB5], 0xEBF3E2)
+        case (.terraNight, .graphite): return make(0x3A3027, [0x56493D, 0x716253, 0x8C7C69, 0xA8957F, 0xC1B3A1, 0xDAD0C4], 0xF3EEE6)
+        case (.terraNight, .slate): return make(0x2D353E, [0x46505B, 0x5E6A78, 0x768595, 0x8FA0B2, 0xAFBBC9, 0xCED7DF], 0xEEF2F6)
+        case (.terraDay, .violet): return make(0xEBCFE3, [0xD8B1CD, 0xC493B7, 0xB176A1, 0x9D588B, 0x8A3A75, 0x622A54], 0x3A1A33)
+        case (.terraDay, .blue): return make(0xBFE0E8, [0x9FC9D4, 0x7FB3C0, 0x5E9CAB, 0x3E8697, 0x1E6F83, 0x145262], 0x0B3440)
+        case (.terraDay, .teal): return make(0xCFE5BF, [0xB2D0A2, 0x95BA85, 0x79A568, 0x5C8F4B, 0x3F7A2E, 0x2F5627], 0x1F3320)
+        case (.terraDay, .graphite): return make(0xE3D5C3, [0xCCBDAA, 0xB4A592, 0x9D8C79, 0x857461, 0x6E5C48, 0x4E4134], 0x2E2620)
+        case (.terraDay, .slate): return make(0xD5DCE3, [0xBBC3CB, 0xA2AAB3, 0x88929C, 0x6F7984, 0x55606C, 0x3C454E], 0x232A30)
+        // Ink: quiet neutral grounds, near-white by day; the color is in the marks.
+        case (.inkNight, .violet): return make(0x2A2838, [0x48436A, 0x665E9C, 0x8579CD, 0xA394FF, 0xBDB3FD, 0xD8D2FA], 0xF2F1F8)
+        case (.inkNight, .blue): return make(0x232C38, [0x2E4A6A, 0x38689C, 0x4285CD, 0x4DA3FF, 0x83BEFD, 0xBAD9FB], 0xF0F4F9)
+        case (.inkNight, .teal): return make(0x212E29, [0x285848, 0x2F8267, 0x36AC86, 0x3DD6A5, 0x78E1BF, 0xB4EBD9], 0xEFF6F3)
+        case (.inkNight, .graphite): return make(0x33232A, [0x663546, 0x994762, 0xCC597E, 0xFF6B9A, 0xFD97B8, 0xFBC4D5], 0xF9F0F3)
+        case (.inkNight, .slate): return make(0x2A2C31, [0x464A52, 0x626973, 0x7E8894, 0x9AA6B5, 0xB7BFCA, 0xD4D9DF], 0xF1F2F4)
+        case (.inkDay, .violet): return make(0xF7F5FD, [0xD8D2F5, 0xB9AFED, 0x998BE6, 0x7A68DE, 0x5B45D6, 0x3C3080], 0x1C1A2B)
+        case (.inkDay, .blue): return make(0xF2F7FD, [0xC8DCF4, 0x9EC1EB, 0x73A5E3, 0x498ADA, 0x1F6FD1, 0x1A467C], 0x141C26)
+        case (.inkDay, .teal): return make(0xF1F9F6, [0xC4E6DB, 0x96D3C0, 0x69C0A5, 0x3BAD8A, 0x0E9A6F, 0x105E46], 0x12211C)
+        case (.inkDay, .graphite): return make(0xFDF3F7, [0xF4CEDC, 0xEBA9C0, 0xE384A5, 0xDA5F89, 0xD13A6E, 0x7C2744], 0x26141B)
+        case (.inkDay, .slate): return make(0xF5F6F8, [0xD6D9DE, 0xB6BBC3, 0x979EA9, 0x77808E, 0x586374, 0x373E48], 0x16181C)
         }
     }
 }
@@ -89,6 +148,8 @@ struct Design: Equatable {
     var trackPointer = true
     /// Temporary, for measuring GPU use: the window itself is glass over the desktop, or a solid color.
     var windowGlass = true
+    /// The glass window's whole background (blur, glass, fill and edge); off, the widgets float over the desktop with nothing behind them.
+    var windowBackground = true
     /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
     /// or cut it off cleanly.
     var pageEdgeFade = false
@@ -117,6 +178,15 @@ struct Design: Equatable {
     func fill(_ target: FillTarget) -> FillSpec? { lab.fill(target) }
     /// The color scheme pages and their controls are drawn in.
     var colorScheme: ColorScheme { isLight ? .light : .dark }
+    /// macOS's own window background in the palette's light or dark, whatever the system is set to: the solid window (Window Glass
+    /// off) is drawn in it, so day and night follow the system's defaults.
+    var systemWindowColor: Color {
+        var resolved = NSColor.windowBackgroundColor
+        NSAppearance(named: isLight ? .aqua : .darkAqua)?.performAsCurrentDrawingAppearance {
+            resolved = NSColor.windowBackgroundColor.usingColorSpace(.sRGB) ?? resolved
+        }
+        return Color(nsColor: resolved)
+    }
 }
 
 extension EnvironmentValues {
@@ -139,6 +209,7 @@ public final class DesignSettings: ObservableObject {
     @Published public var clipWindow: Bool { didSet { defaults.set(clipWindow, forKey: "design.clipWindow") } }
     @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
     @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
+    @Published public var windowBackground: Bool { didSet { defaults.set(windowBackground, forKey: "design.windowBackground") } }
     @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
     @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
@@ -171,6 +242,7 @@ public final class DesignSettings: ObservableObject {
         clipWindow = defaults.object(forKey: "design.clipWindow") as? Bool ?? true
         trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
         windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
+        windowBackground = defaults.object(forKey: "design.windowBackground") as? Bool ?? true
         pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
@@ -186,7 +258,7 @@ public final class DesignSettings: ObservableObject {
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
-                                  windowGlass: windowGlass, pageEdgeFade: pageEdgeFade,
+                                  windowGlass: windowGlass, windowBackground: windowBackground, pageEdgeFade: pageEdgeFade,
                                   clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
                                   tileRadius: tileRadius, windowRadius: windowRadius) }
 
@@ -197,7 +269,7 @@ public final class DesignSettings: ObservableObject {
     }
 }
 
-/// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
+/// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…9), and switches for what answers the pointer.
 public struct DesignCommands: Commands {
     @ObservedObject private var settings = DesignSettings.shared
     @Environment(\.openWindow) private var openWindow
@@ -229,6 +301,7 @@ public struct DesignCommands: Commands {
             Toggle("Clip Window Corners", isOn: $settings.clipWindow)
             Toggle("Track Pointer", isOn: $settings.trackPointer)
             Toggle("Window Glass", isOn: $settings.windowGlass)
+            Toggle("Window Background", isOn: $settings.windowBackground)
             Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
             Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
             Toggle("Quick Lift", isOn: $settings.quickLift)
@@ -241,7 +314,10 @@ public struct DesignCommands: Commands {
             Divider()
             Picker("Palette", selection: $settings.scheme) {
                 ForEach(Array(PaletteScheme.allCases.enumerated()), id: \.element) { index, scheme in
-                    Text(scheme.title).keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command, .option]).tag(scheme)
+                    // ⌥⌘1…9; the rest are picked from the menu.
+                    Text(scheme.title)
+                        .keyboardShortcut(index < 9 ? KeyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command, .option]) : nil)
+                        .tag(scheme)
                 }
             }
             .pickerStyle(.inline)
