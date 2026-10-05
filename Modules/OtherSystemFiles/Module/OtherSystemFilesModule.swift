@@ -56,11 +56,19 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         let estimate = await store.currentRawEstimate()
         PurgeRetrier.shared.cancel(CacheDeleteService.fsPurgeableData)
         let purge = Self.purgeFiles(estimate: estimate, progress: progress)
-        if purge.freed > 0 { await store.noteRemoved(purge.freed, estimate: estimate) }
+        if purge.freed > 0 {
+            await store.noteRemoved(purge.freed, estimate: estimate)
+            PurgeHoldouts.shared.clear(CacheDeleteService.fsPurgeableData)
+        }
         if purge.removedNothing || estimate > purge.freed + OtherSystemFilesScreenBuilder.threshold {
             let store = self.store
             PurgeRetrier.shared.schedule(service: CacheDeleteService.fsPurgeableData, urgency: CacheDeleteService.fsPurgeableDataForceUrgency) { freed in
-                if freed > 0 {
+                if freed == 0 {
+                    // Every request freed nothing: what macOS still estimates is what it keeps, and is no longer offered.
+                    await store.invalidate()
+                    PurgeHoldouts.shared.hold(CacheDeleteService.fsPurgeableData, bytes: await store.currentRawEstimate())
+                } else {
+                    PurgeHoldouts.shared.clear(CacheDeleteService.fsPurgeableData)
                     await store.noteRemoved(freed, estimate: estimate)
                     CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
                                                  trigger: .background, summary: "Purgeable app files")

@@ -86,6 +86,10 @@ actor PurgeableStore {
         fresh.retrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.fsPurgeableData)
         rawEstimate = fresh.services?[CacheDeleteService.fsPurgeableData] ?? 0
         fresh.services = Self.accounting(for: &removed, in: fresh.services)
+        // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
+        if let estimate = fresh.services?[CacheDeleteService.fsPurgeableData] {
+            fresh.services?[CacheDeleteService.fsPurgeableData] = PurgeHoldouts.shared.freeable(CacheDeleteService.fsPurgeableData, estimate: estimate)
+        }
         cached = fresh
         return fresh
     }

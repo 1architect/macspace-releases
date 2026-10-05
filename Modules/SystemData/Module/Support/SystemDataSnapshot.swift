@@ -115,6 +115,7 @@ actor SystemDataStore {
         let all: [String: UInt64]?
         if let cli = ToolLocator.cli() { all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) }
         else { all = CacheDeleteClient().purgeableByService() }
-        return all?[CacheDeleteService.mobileAsset]
+        // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
+        return all?[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
     }
 }

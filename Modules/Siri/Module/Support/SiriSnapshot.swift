@@ -92,9 +92,11 @@ actor SiriStore {
         }
         let accounts = AppleIntelligenceAccountsReport.live()
         let cli = ToolLocator.cli()
-        let purgeable: UInt64?
+        var purgeable: UInt64?
         if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
         else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+        // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
+        purgeable = purgeable.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
         var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),

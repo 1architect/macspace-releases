@@ -110,3 +110,41 @@ final class CleanupHistoryTests: XCTestCase {
         XCTAssertEqual(history.entries.first?.moduleName, "Siri", "newest first")
     }
 }
+
+final class PurgeHoldoutsTests: XCTestCase {
+    private let service = "com.apple.mobileassetd.cache-delete"
+
+    func testWithoutAHoldTheWholeEstimateCounts() {
+        XCTAssertEqual(PurgeHoldouts(url: nil).freeable(service, estimate: 129_103_785), 129_103_785)
+    }
+
+    func testWhatMacOSKeptIsNotOfferedWhileItEstimatesTheSame() {
+        let holdouts = PurgeHoldouts(url: nil)
+        holdouts.hold(service, bytes: 129_103_785)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 129_103_785), 0)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 131_000_000), 0, "measured again, the same files")
+    }
+
+    func testOnlyWhatComesOnTopCounts() {
+        let holdouts = PurgeHoldouts(url: nil)
+        holdouts.hold(service, bytes: 129_103_785)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 11_129_103_785), 11_000_000_000, "released models on top of the kept assets")
+    }
+
+    func testTheHoldGoesWhenTheEstimateDropsOrADayPasses() {
+        let holdouts = PurgeHoldouts(url: nil)
+        let start = Date(timeIntervalSince1970: 0)
+        holdouts.hold(service, bytes: 129_103_785, now: start)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 50_000_000, now: start), 50_000_000)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 129_103_785, now: start), 129_103_785, "dropped, so the hold is gone")
+        holdouts.hold(service, bytes: 129_103_785, now: start)
+        XCTAssertEqual(holdouts.freeable(service, estimate: 129_103_785, now: start.addingTimeInterval(PurgeHoldouts.lifetime)), 129_103_785)
+    }
+
+    func testHoldsSurviveARelaunch() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("holdouts-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        PurgeHoldouts(url: url).hold(service, bytes: 129_103_785)
+        XCTAssertEqual(PurgeHoldouts(url: url).freeable(service, estimate: 129_103_785), 0)
+    }
+}
