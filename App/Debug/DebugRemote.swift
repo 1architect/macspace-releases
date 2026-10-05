@@ -5,7 +5,7 @@ import Foundation
 /// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
-///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | radius:<tile>:<window> | captureTitled:<window title>:<file.png>
+///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
@@ -35,6 +35,10 @@ final class DebugRemote: ObservableObject {
             window.setFrame(NSRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3]), display: true, animate: false)
         } else if text.hasPrefix("glassElements:") {
             DesignSettings.shared.glassElements = text == "glassElements:on"
+        } else if text.hasPrefix("sidebarIcons:") {
+            DesignSettings.shared.standardSidebarIcons = text == "sidebarIcons:on"
+        } else if text.hasPrefix("standardGlass:") {
+            DesignSettings.shared.standardGlassBackground = text == "standardGlass:on"
         } else if text.hasPrefix("titleBar:") {
             DesignSettings.shared.standardTitleBar = text == "titleBar:on"
         } else if text.hasPrefix("radius:") {

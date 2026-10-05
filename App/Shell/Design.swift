@@ -148,6 +148,10 @@ public final class DesignSettings: ObservableObject {
     @Published public var windowRadius: CGFloat { didSet { defaults.set(Double(windowRadius), forKey: "design.windowRadius") } }
     /// The standard window's title bar (its title and the band behind it); off, the pages reach the top of the window.
     @Published public var standardTitleBar: Bool { didSet { defaults.set(standardTitleBar, forKey: "design.standardTitleBar") } }
+    /// The standard window's sidebar shows each item's symbol.
+    @Published public var standardSidebarIcons: Bool { didSet { defaults.set(standardSidebarIcons, forKey: "design.standardSidebarIcons") } }
+    /// The standard window's background is Liquid Glass over the desktop instead of the window's solid color.
+    @Published public var standardGlassBackground: Bool { didSet { defaults.set(standardGlassBackground, forKey: "design.standardGlassBackground") } }
     /// MacSpace in a standard macOS window with a sidebar instead of the glass window (`StandardWindowView`).
     @Published public var standardWindow: Bool { didSet { defaults.set(standardWindow, forKey: "design.standardWindow") } }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
@@ -173,6 +177,8 @@ public final class DesignSettings: ObservableObject {
         windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
         standardWindow = defaults.bool(forKey: "design.standardWindow")
         standardTitleBar = defaults.object(forKey: "design.standardTitleBar") as? Bool ?? true
+        standardSidebarIcons = defaults.object(forKey: "design.standardSidebarIcons") as? Bool ?? true
+        standardGlassBackground = defaults.bool(forKey: "design.standardGlassBackground")
         tileRadius = CGFloat(defaults.object(forKey: "design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
         windowRadius = CGFloat(defaults.object(forKey: "design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
         colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
@@ -202,6 +208,10 @@ public struct DesignCommands: Commands {
         CommandMenu("Design") {
             Toggle("Standard Window with Sidebar", isOn: $settings.standardWindow)
             Toggle("Standard Window Title Bar", isOn: $settings.standardTitleBar)
+                .disabled(!settings.standardWindow)
+            Toggle("Standard Window Sidebar Icons", isOn: $settings.standardSidebarIcons)
+                .disabled(!settings.standardWindow)
+            Toggle("Standard Window Glass Background", isOn: $settings.standardGlassBackground)
                 .disabled(!settings.standardWindow)
             Picker("Widget Corners", selection: $settings.tileRadius) {
                 ForEach(CornerRadii.choices, id: \.self) { Text("\(Int($0)) pt" + ($0 == CornerRadii.defaultTile ? " (default)" : "")).tag($0) }

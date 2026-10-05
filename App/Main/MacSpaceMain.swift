@@ -50,6 +50,8 @@ struct MacSpaceMain: App {
         Window("MacSpace", id: MacSpaceWindow.standard) {
             StandardWindowView(host: host, updates: updates)
         }
+        // MacSpace draws the window's buttons and its band (`StandardWindowView`); the content reaches the top of the window.
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 900, height: 600)
 
         // Temporary: the Color Lab (Design menu, ⌥⌘L).

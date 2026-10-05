@@ -235,6 +235,8 @@ struct HomeView: View {
     /// A page fully covers the dashboard: the tiles are not drawn (their glass and animations cost the GPU even when hidden), but
     /// their places are still laid out and recorded for the zoom back.
     var dormant = false
+    /// The Settings tile; the standard window has Settings in its sidebar instead.
+    var showsSettingsTile = true
     @State private var appeared = false
     /// Resizing the window changed how the tiles are arranged: they leave as when the window closes, the grid takes the new
     /// arrangement, and they come in again as when it opens. Until then the old arrangement stays drawn (`shownArrangement`).
@@ -277,7 +279,7 @@ struct HomeView: View {
     /// The disk is violet and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
-    static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
+    static func tiles(for handles: [ModuleHandle], includesSettings: Bool = true) -> [DashboardTile] {
         let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
         var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .violet)]
         let spare: [TileTint] = [.blue, .teal, .graphite]
@@ -289,7 +291,7 @@ struct HomeView: View {
             let size = handle.id == large ? Bento.Size(width: 2, height: 2) : Bento.Size(width: 1, height: 1)
             tiles.append(DashboardTile(destination: .module(handle.id), size: size, tint: tint ?? .blue))
         }
-        tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate))
+        if includesSettings { tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate)) }
         return tiles
     }
 
@@ -382,7 +384,7 @@ struct HomeView: View {
     }
 
     var body: some View {
-        let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
+        let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles, includesSettings: showsSettingsTile) : []
         let sizes = tiles.map(\.size)
         GeometryReader { proxy in
             let wanted = Self.arrangement(for: proxy.size, sizes: sizes)

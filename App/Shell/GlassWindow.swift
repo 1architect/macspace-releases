@@ -255,7 +255,7 @@ private struct GlassFade: ViewModifier, @preconcurrency Animatable {
 /// Its look follows the palette, not the system's appearance: under a light system appearance the window's background material laid a
 /// pale grey sheet over the deep tiles. The deep palettes get the dark, smoky material of a heads-up window, which blurs without
 /// whitening; the light palettes a light one.
-private struct WindowBlur: NSViewRepresentable {
+struct WindowBlur: NSViewRepresentable {
     let cornerRadius: CGFloat
     let isLight: Bool
 
