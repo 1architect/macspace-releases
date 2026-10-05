@@ -638,6 +638,9 @@ private struct ModuleTileContent: View {
 /// The tile darkens while pressed. A shade laid over it, not a brightness filter: a filter stays on the tile even at 0 and makes every
 /// frame draw the whole tile through it. It does not sink: its ground, in the layer underneath, cannot see the press.
 private struct TilePressStyle: ButtonStyle {
+    /// Read so a change of the corner radius redraws the press shade.
+    @Environment(\.design) private var design
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .overlay {

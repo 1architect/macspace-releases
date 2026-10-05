@@ -35,7 +35,6 @@ struct SettingsView: View {
             GeneralSettingsSection(updates: updates)
             AutoCleanSection(cleaner: host.autoCleaner, host: host)
             CleanupHistorySection(host: host)
-            DesignSettingsSection()
             Section("Modules") {
                 ForEach(host.handles) { handle in
                     ModuleToggleRow(host: host, handle: handle)

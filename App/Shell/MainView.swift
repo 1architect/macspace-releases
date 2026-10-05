@@ -118,7 +118,7 @@ public struct MainView: View {
         .background { shortcuts }
         .padding(Theme.resizeMargin)
         // The shadow comes in once the glass has grown in, and leaves before the glass shrinks away when the window closes.
-        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && windowShown && !windowClosing))
+        .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && windowShown && !windowClosing, radius: designSettings.windowRadius))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + 2 * Theme.resizeMargin)
         .task { await host.start() }

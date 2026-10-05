@@ -98,6 +98,9 @@ struct Design: Equatable {
     var quickLift = false
     /// Temporary: the Color Lab's colors and fills for this palette (`ColorLab.swift`).
     var lab = LabOverrides()
+    /// The tiles' and the glass window's corners (`CornerRadii`); here so a change redraws everything.
+    var tileRadius = CornerRadii.defaultTile
+    var windowRadius = CornerRadii.defaultWindow
 
     /// The lift's animation, and the lean's.
     var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
@@ -141,6 +144,10 @@ public final class DesignSettings: ObservableObject {
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
     /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
     @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
+    @Published public var tileRadius: CGFloat { didSet { defaults.set(Double(tileRadius), forKey: "design.tileRadius") } }
+    @Published public var windowRadius: CGFloat { didSet { defaults.set(Double(windowRadius), forKey: "design.windowRadius") } }
+    /// The standard window's title bar (its title and the band behind it); off, the pages reach the top of the window.
+    @Published public var standardTitleBar: Bool { didSet { defaults.set(standardTitleBar, forKey: "design.standardTitleBar") } }
     /// MacSpace in a standard macOS window with a sidebar instead of the glass window (`StandardWindowView`).
     @Published public var standardWindow: Bool { didSet { defaults.set(standardWindow, forKey: "design.standardWindow") } }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
@@ -165,13 +172,17 @@ public final class DesignSettings: ObservableObject {
         quickLift = defaults.bool(forKey: "design.quickLift")
         windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
         standardWindow = defaults.bool(forKey: "design.standardWindow")
+        standardTitleBar = defaults.object(forKey: "design.standardTitleBar") as? Bool ?? true
+        tileRadius = CGFloat(defaults.object(forKey: "design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
+        windowRadius = CGFloat(defaults.object(forKey: "design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
         colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, pageEdgeFade: pageEdgeFade,
-                                  clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides()) }
+                                  clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
+                                  tileRadius: tileRadius, windowRadius: windowRadius) }
 
     /// The current palette's overrides, read and written by the Color Lab.
     var lab: LabOverrides {
@@ -190,6 +201,15 @@ public struct DesignCommands: Commands {
     public var body: some Commands {
         CommandMenu("Design") {
             Toggle("Standard Window with Sidebar", isOn: $settings.standardWindow)
+            Toggle("Standard Window Title Bar", isOn: $settings.standardTitleBar)
+                .disabled(!settings.standardWindow)
+            Picker("Widget Corners", selection: $settings.tileRadius) {
+                ForEach(CornerRadii.choices, id: \.self) { Text("\(Int($0)) pt" + ($0 == CornerRadii.defaultTile ? " (default)" : "")).tag($0) }
+            }
+            Picker("Window Corners", selection: $settings.windowRadius) {
+                ForEach(CornerRadii.choices, id: \.self) { Text("\(Int($0)) pt" + ($0 == CornerRadii.defaultWindow ? " (default)" : "")).tag($0) }
+            }
+            Divider()
             Button("Color Lab…") { openWindow(id: ColorLabView.windowID) }
                 .keyboardShortcut("l", modifiers: [.command, .option])
             Divider()
@@ -219,35 +239,3 @@ public struct DesignCommands: Commands {
     }
 }
 
-/// The same choice inside Settings, as a section.
-struct DesignSettingsSection: View {
-    @ObservedObject var settings = DesignSettings.shared
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some View {
-        Section("Design (temporary)") {
-            Toggle("Standard window with sidebar", isOn: $settings.standardWindow)
-                .help("A normal macOS window, with the modules in a sidebar, instead of the glass window.")
-            Button("Open Color Lab…") { openWindow(id: ColorLabView.windowID) }
-                .help("Also in the Design menu: ⌥⌘L.")
-            Toggle("Liquid Glass tiles", isOn: $settings.glass)
-                .help("Also in the Design menu: ⌥⌘G.")
-            Picker("Palette", selection: $settings.scheme) {
-                ForEach(PaletteScheme.allCases) { Text($0.title).tag($0) }
-            }
-            .help("Also in the Design menu: ⌥⌘1 to ⌥⌘5.")
-            Toggle("Tile lift", isOn: $settings.lift)
-            Toggle("Tile tilt", isOn: $settings.tilt)
-            Toggle("Hover shade", isOn: $settings.hoverShade)
-            Toggle("Window shadow", isOn: $settings.windowShadow)
-            Toggle("Window border", isOn: $settings.windowBorder)
-            Toggle("Glass chart elements", isOn: $settings.glassElements)
-            Toggle("Clip window corners", isOn: $settings.clipWindow)
-            Toggle("Track pointer", isOn: $settings.trackPointer)
-            Toggle("Window glass", isOn: $settings.windowGlass)
-            Toggle("Page edge fade", isOn: $settings.pageEdgeFade)
-            Toggle("Clear tile glass", isOn: $settings.clearTileGlass)
-            Toggle("Quick lift", isOn: $settings.quickLift)
-        }
-    }
-}

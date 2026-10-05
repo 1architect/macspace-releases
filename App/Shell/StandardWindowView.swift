@@ -64,6 +64,10 @@ public struct StandardWindowView: View {
             detail
         }
         .environment(\.design, designSettings.design)
+        // The title bar (Design menu > Standard Window Title Bar): off, no title and no band behind the toolbar; the pages' grounds
+        // reach the top of the window and only the buttons stay.
+        .toolbar(removing: designSettings.standardTitleBar ? nil : .title)
+        .toolbarBackgroundVisibility(designSettings.standardTitleBar ? .automatic : .hidden, for: .windowToolbar)
         // The window takes the palette's appearance (dark grounds, dark chrome), so its toolbar and sidebar match the pages.
         .preferredColorScheme(designSettings.design.colorScheme)
         .frame(minWidth: Theme.minimumSize.width + 200, minHeight: Theme.minimumSize.height)
@@ -84,6 +88,8 @@ public struct StandardWindowView: View {
         case .home, .storage:
             HomeView(host: host, storage: storage, open: open)
                 .padding(Theme.frame)
+                // Without the title bar the tiles start at the top of the window: the overview has no toolbar button there.
+                .ignoresSafeArea(.container, edges: designSettings.standardTitleBar ? [] : .top)
                 .coordinateSpace(name: ZoomSpace.name)
                 .navigationTitle("MacSpace")
         case let .module(id):

@@ -9,15 +9,21 @@ import SwiftUI
 struct GlassWindowConfigurator: NSViewRepresentable {
     /// Whether the shadow shows: off while the window opens and closes, and with the temporary Window Shadow switch off.
     var shadow = true
+    /// The glass's corner radius: the shadow is drawn again around a new one.
+    var radius: CGFloat = Theme.windowRadius
 
     func makeNSView(context: Context) -> ConfiguringView { ConfiguringView() }
     func updateNSView(_ nsView: ConfiguringView, context: Context) {
         nsView.wantsShadow = shadow
+        nsView.radius = radius
     }
 
     final class ConfiguringView: NSView {
         var wantsShadow = true {
             didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
+        }
+        var radius: CGFloat = Theme.windowRadius {
+            didSet { if radius != oldValue, let window { shadowWindow?.follow(window) } }
         }
         private var shadowWindow: ShadowWindow?
         private var observers: [NSObjectProtocol] = []
@@ -91,6 +97,8 @@ struct GlassWindowConfigurator: NSViewRepresentable {
 /// nothing under it (the glass would show a shadow behind it). Its layers only change when the main window is resized, so the shadow
 /// is drawn once instead of on every frame.
 final class ShadowWindow: NSWindow {
+    /// The corner radius the shadow was last drawn with: a new one in the Design menu draws it again.
+    private var drawnRadius: CGFloat = -1
     /// Room around the main window for the shadow to spread into.
     static let margin: CGFloat = 60
     private let container = CALayer()
@@ -138,7 +146,8 @@ final class ShadowWindow: NSWindow {
             let top = max(min(frame.maxY, screen.visibleFrame.maxY - Theme.resizeMargin), glass.maxY)
             frame.size.height = top - frame.minY
         }
-        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor
+        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != Theme.windowRadius
+        drawnRadius = Theme.windowRadius
         if frame != self.frame { setFrame(frame, display: false) }
         // A move only places the window again; the shadow is drawn anew only for a new size.
         guard redraw else { return }

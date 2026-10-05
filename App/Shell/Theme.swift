@@ -15,11 +15,13 @@ enum Theme {
     /// The glass frame around the tiles, and the space between tiles.
     static let frame: CGFloat = 11
     static let spacing: CGFloat = 10
-    static let windowRadius: CGFloat = 28
+    /// The glass window's corners, set in the Design menu (`DesignSettings.windowRadius`).
+    static var windowRadius: CGFloat { CornerRadii.window }
     /// An invisible band around the glass that belongs to the window: the resize zone, where macOS puts it for other windows, just
     /// outside the visible edge. Without it, a drag started there (or on a rounded corner) went to the app behind.
     static let resizeMargin: CGFloat = 8
-    static let tileRadius: CGFloat = 19
+    /// The tiles' corners, set in the Design menu (`DesignSettings.tileRadius`).
+    static var tileRadius: CGFloat { CornerRadii.tile }
     static let defaultSize = CGSize(width: 700, height: 490)
     static let minimumSize = CGSize(width: 520, height: 360)
 
@@ -50,6 +52,17 @@ enum Theme {
     static let toggle = Animation.spring(duration: 0.3, bounce: 0.15)
     /// One page giving way to another in the same window: a group's items, or Settings over a module's page.
     static let push = Animation.spring(duration: 0.45, bounce: 0.1)
+}
+
+/// The corner radii chosen in the Design menu, read straight from the defaults so any view (and the shadow window) can read them.
+/// `Design` carries them too, so changing one redraws every view that reads the design.
+enum CornerRadii {
+    static let defaultTile: CGFloat = 19
+    static let defaultWindow: CGFloat = 28
+    static let choices: [CGFloat] = [0, 6, 10, 14, 19, 24, 28, 34, 40]
+
+    static var tile: CGFloat { CGFloat(UserDefaults.standard.object(forKey: "design.tileRadius") as? Double ?? Double(defaultTile)) }
+    static var window: CGFloat { CGFloat(UserDefaults.standard.object(forKey: "design.windowRadius") as? Double ?? Double(defaultWindow)) }
 }
 
 extension Color {
