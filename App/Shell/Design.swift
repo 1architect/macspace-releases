@@ -82,7 +82,7 @@ struct Design: Equatable {
     var lift = true
     var tilt = true
     var hoverShade = true
-    /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass too, or flat color on the glass tiles.
+    /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass, on glass tiles and flat ones alike, or flat color.
     var glassElements = true
     /// Temporary, for measuring GPU use: the window clipped to its rounded corners; tiles following the pointer.
     var clipWindow = true

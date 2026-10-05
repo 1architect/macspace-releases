@@ -48,7 +48,8 @@ struct HoverShade<S: Shape>: View {
     }
 }
 
-/// A chart element's surface: flat color, or Liquid Glass with that color inside it when glass is on. Highlighted, flat color lightens
+/// A chart element's surface: flat color, or Liquid Glass with that color inside it when glass chart elements are on, whether the
+/// tiles are glass or not. Highlighted, flat color lightens
 /// and glass is shaded.
 struct Surface<S: Shape>: View, @preconcurrency Animatable {
     let shape: S
@@ -68,7 +69,7 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
     }
 
     var body: some View {
-        if design.glass && design.glassElements {
+        if design.glassElements {
             // Darkened inside the glass, so the shade is the glass's own shape.
             let dark = highlighted && design.hoverShade
             let tinted = shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
@@ -279,7 +280,7 @@ struct BlocksView: View {
     /// own edge; an outline would sit inside it).
     private func overlay(_ segment: UsageSegment, index: Int, rect: CGRect) -> some View {
         ZStack(alignment: .topLeading) {
-            if !design.glass {
+            if !design.glassElements {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
                     .animation(Theme.highlight, value: hovered)
