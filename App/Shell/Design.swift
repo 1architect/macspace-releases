@@ -96,18 +96,22 @@ struct Design: Equatable {
     /// and lean with less bounce.
     var clearTileGlass = false
     var quickLift = false
+    /// Temporary: the Color Lab's colors and fills for this palette (`ColorLab.swift`).
+    var lab = LabOverrides()
 
     /// The lift's animation, and the lean's.
     var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
     var leanAnimation: Animation { quickLift ? Theme.quickLean : .interactiveSpring(duration: 0.25) }
 
-    func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint) }
-    var action: Color { scheme.action.fill }
-    var actionLight: Color { scheme.action.light }
-    var actionDeep: Color { scheme.action.deep }
+    func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint).applying(lab, tint: tint) }
+    var action: Color { lab.color(.action) ?? scheme.action.fill }
+    var actionLight: Color { lab.color(.actionLight) ?? scheme.action.light }
+    var actionDeep: Color { lab.color(.actionDeep) ?? scheme.action.deep }
     var isLight: Bool { scheme.isLight }
     /// Text on tiles and pages.
-    var ink: Color { isLight ? Color(hex: 0x1C1C1E) : .white }
+    var ink: Color { lab.color(.ink) ?? (isLight ? Color(hex: 0x1C1C1E) : .white) }
+    /// The Color Lab's fill for a part of the app; nil draws it as before.
+    func fill(_ target: FillTarget) -> FillSpec? { lab.fill(target) }
     /// The color scheme pages and their controls are drawn in.
     var colorScheme: ColorScheme { isLight ? .light : .dark }
 }
@@ -137,6 +141,10 @@ public final class DesignSettings: ObservableObject {
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
     /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
     @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
+    /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
+    @Published var colorLab: [String: LabOverrides] {
+        didSet { if let data = try? JSONEncoder().encode(colorLab) { defaults.set(data, forKey: "design.colorLab") } }
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -154,22 +162,33 @@ public final class DesignSettings: ObservableObject {
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
         windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
+        colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, pageEdgeFade: pageEdgeFade,
-                                  clearTileGlass: clearTileGlass, quickLift: quickLift) }
+                                  clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides()) }
+
+    /// The current palette's overrides, read and written by the Color Lab.
+    var lab: LabOverrides {
+        get { colorLab[scheme.rawValue] ?? LabOverrides() }
+        set { colorLab[scheme.rawValue] = newValue.isEmpty ? nil : newValue }
+    }
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…5), and switches for what answers the pointer.
 public struct DesignCommands: Commands {
     @ObservedObject private var settings = DesignSettings.shared
+    @Environment(\.openWindow) private var openWindow
 
     public init() {}
 
     public var body: some Commands {
         CommandMenu("Design") {
+            Button("Color Lab…") { openWindow(id: ColorLabView.windowID) }
+                .keyboardShortcut("l", modifiers: [.command, .option])
+            Divider()
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])
             Toggle("Glass Chart Elements", isOn: $settings.glassElements)
@@ -199,9 +218,12 @@ public struct DesignCommands: Commands {
 /// The same choice inside Settings, as a section.
 struct DesignSettingsSection: View {
     @ObservedObject var settings = DesignSettings.shared
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Section("Design (temporary)") {
+            Button("Open Color Lab…") { openWindow(id: ColorLabView.windowID) }
+                .help("Also in the Design menu: ⌥⌘L.")
             Toggle("Liquid Glass tiles", isOn: $settings.glass)
                 .help("Also in the Design menu: ⌥⌘G.")
             Picker("Palette", selection: $settings.scheme) {

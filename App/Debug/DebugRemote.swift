@@ -5,7 +5,7 @@ import Foundation
 /// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
-///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | pill:<idle|working[:fraction]|done|later|fail|long>
+///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | captureTitled:<window title>:<file.png>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
@@ -39,6 +39,10 @@ final class DebugRemote: ObservableObject {
             DesignSettings.shared.glass = text == "glass:on"
         } else if text.hasPrefix("palette:"), let scheme = PaletteScheme(rawValue: String(text.dropFirst("palette:".count))) {
             DesignSettings.shared.scheme = scheme
+        } else if text.hasPrefix("captureTitled:") {
+            // captureTitled:<window title>:<file.png>
+            let parts = text.dropFirst("captureTitled:".count).split(separator: ":", maxSplits: 1).map(String.init)
+            if parts.count == 2 { Self.capture(to: parts[1], title: parts[0]) }
         } else if text.hasPrefix("capture:") {
             Self.capture(to: String(text.dropFirst("capture:".count)))
         } else if text.hasPrefix("frames:") {
@@ -64,8 +68,8 @@ final class DebugRemote: ObservableObject {
         return unsafeBitCast(symbol, to: CreateImage.self)
     }()
 
-    static func capture(to path: String) {
-        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 300 }), let createImage,
+    static func capture(to path: String, title: String? = nil) {
+        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 300 && (title == nil || $0.title == title) }), let createImage,
               let image = createImage(.null, 1 << 3, UInt32(window.windowNumber), 0)?.takeRetainedValue(),
               let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
             NSLog("MacSpace debug: capture failed")

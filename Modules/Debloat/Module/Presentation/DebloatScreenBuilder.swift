@@ -139,7 +139,28 @@ enum DebloatScreenBuilder {
     /// The page's main button, which does what the switches most need: while a feature still runs, it switches them all off;
     /// once they are all off, it turns back on everything MacSpace switched off. nil when neither applies.
     static func primary(_ snapshot: DebloatSnapshot) -> Action? {
-        switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
+        fix(snapshot) ?? switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
+    }
+
+    /// When something is not right, the main button becomes what fixes it, before anything else: features macOS enabled again,
+    /// a profile waiting for approval, a profile left to remove. No banner of its own: the button changes into the fix.
+    static func fix(_ snapshot: DebloatSnapshot) -> Action? {
+        let counts = counts(snapshot)
+        if !counts.drifted.isEmpty {
+            return Action(id: "reapply", title: counts.drifted.count == 1 ? "Disable \(counts.drifted[0].title) again" : "Disable \(counts.drifted.count) features again",
+                          role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")], requires: [.privilegedHelper])
+        }
+        // One profile holds every policy waiting for approval, opened again on demand (macOS drops a downloaded profile after a while).
+        if counts.awaiting.contains(where: { snapshot.status($0.id)?.state == .awaitingApproval }) {
+            return Action(id: "approvePending", title: "Approve the profile", role: .prominent)
+        }
+        // Enabled again while macOS still enforces their profile: the helper removes it, with nothing to approve.
+        let removing = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingRemoval }
+        if !removing.isEmpty {
+            return Action(id: "removePending", title: "Finish enabling", role: .prominent,
+                          parameters: ["ids": removing.map(\.id).joined(separator: ",")], requires: [.privilegedHelper])
+        }
+        return nil
     }
 
     /// Controls switched off, policies included, whose values MacSpace can restore (including those macOS partly undid or waiting
@@ -184,33 +205,11 @@ enum DebloatScreenBuilder {
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
-        // Waiting for approval: one profile holds them all, opened again on demand (macOS drops a downloaded profile after a while,
-        // and keeps only the latest one).
-        let approving = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingApproval }
-        if !approving.isEmpty {
-            widgets.append(.banner(Banner(id: "approval", severity: .warning, title: "Approve the MacSpace profile",
-                                          message: "\(approving.map(\.title).joined(separator: ", ")) switch off once you approve one profile in System Settings > General > Device Management.",
-                                          action: Action(id: "approvePending", title: "Show the profile", role: .prominent))))
-        }
-        // Switched back on while macOS still enforces their profile: the helper removes it, with nothing to approve.
-        let removing = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingRemoval }
-        if !removing.isEmpty {
-            widgets.append(.banner(Banner(id: "removal", severity: .warning, title: "Finish enabling",
-                                          message: "macOS still enforces the profile of \(removing.map(\.title).joined(separator: ", ")). MacSpace removes it; there is nothing to approve.",
-                                          action: Action(id: "removePending", title: "Remove the profile", role: .prominent,
-                                                         parameters: ["ids": removing.map(\.id).joined(separator: ",")], requires: [.privilegedHelper]))))
-        }
-        if !counts.drifted.isEmpty {
-            widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) feature(s) enabled again by macOS",
-                                          message: "macOS or an update turned them back on: \(counts.drifted.map(\.title).joined(separator: ", ")).",
-                                          action: Action(id: "reapply", title: "Re-apply", role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")],
-                                                         requires: [.privilegedHelper]))))
-        }
         for category in categoryOrder {
             let controls = snapshot.controls.filter { $0.category == category && !isPolicy($0) }
             guard !controls.isEmpty else { continue }
             widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category),
-                                               footnote: "A switch shows whether the feature runs. Hover a row for what it changes.",
+                                               footnote: "Hover a row for what it changes.",
                                                rows: controls.map { row($0, snapshot) })))
         }
         // Apart, and last: these need a profile, which macOS asks the user to approve.

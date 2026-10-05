@@ -88,21 +88,30 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertTrue(DebloatScreenBuilder.row(profileControl, snapshot([])).action.requires.isEmpty, "a profile needs the user's approval, not root")
     }
 
-    func testBannersAndTheRecommendedButton() {
+    func testNoBannersTheMainButtonBecomesTheFix() throws {
         let screen = DebloatScreenBuilder.screen(snapshot([
             status(verifiedControl.id, .stock), status(helperControl.id, .stock),
             status(profileControl.id, .awaitingApproval), status("telemetry.on-device-speech-policy", .drifted),
         ]))
-        XCTAssertEqual(screen.widgets.map(\.id).prefix(3), ["approval", "drifted", "cat:telemetry"])
+        XCTAssertFalse(screen.widgets.contains { if case .banner = $0 { return true } else { return false } }, "no banners")
         XCTAssertEqual(screen.widgets.last?.id, "policies", "the policies are listed apart, last")
-        let primary = try? XCTUnwrap(screen.primary)
-        XCTAssertEqual(Set(primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []),
-                       [verifiedControl.id, helperControl.id, "telemetry.on-device-speech-policy"],
-                       "Switch all off switches off everything still on, what macOS switched back on included")
-        XCTAssertNotNil(primary?.confirmation)
+        let reapply = try XCTUnwrap(screen.primary)
+        XCTAssertEqual(reapply.id, "reapply", "what macOS enabled again comes first")
+        XCTAssertEqual(reapply.parameters["ids"], "telemetry.on-device-speech-policy")
+        XCTAssertNil(reapply.symbol, "words only")
 
-        let clean = DebloatScreenBuilder.screen(snapshot([]))
-        XCTAssertFalse(clean.widgets.contains { $0.id == "approval" || $0.id == "drifted" })
+        let approving = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(profileControl.id, .awaitingApproval)]))
+        XCTAssertEqual(approving.primary?.id, "approvePending")
+        XCTAssertEqual(approving.primary?.title, "Approve the profile")
+
+        let removing = DebloatScreenBuilder.screen(snapshot([status(profileControl.id, .awaitingRemoval)]))
+        XCTAssertEqual(removing.primary?.id, "removePending")
+        XCTAssertEqual(removing.primary?.parameters["ids"], profileControl.id)
+
+        let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(helperControl.id, .stock)]))
+        XCTAssertEqual(Set(running.primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []),
+                       [verifiedControl.id, helperControl.id], "Disable all disables everything still enabled")
+        XCTAssertNotNil(running.primary?.confirmation)
     }
 
     func testTheMainButtonSwitchesAllOffThenTurnsAllBackOn() throws {
@@ -111,7 +120,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(running.primary?.role, .prominent)
 
         let allOff = DebloatScreenBuilder.screen(snapshot([status(mainControl.id, .debloated), status(helperControl.id, .debloated),
-                                                           status(profileControl.id, .awaitingApproval)]))
+                                                           status(profileControl.id, .debloated)]))
         let restore = try XCTUnwrap(allOff.primary)
         XCTAssertEqual(restore.id, "restoreAll")
         XCTAssertEqual(restore.role, .prominent)
@@ -124,7 +133,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
 
     func testThePageOpensWithWhatNeedsTheUser() {
         let undone = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .drifted)]))
-        XCTAssertEqual(undone.widgets.first?.id, "drifted")
+        XCTAssertEqual(undone.primary?.id, "reapply")
+        XCTAssertEqual(undone.primary?.title, "Disable \(verifiedControl.title) again")
     }
 
     func testTile() {

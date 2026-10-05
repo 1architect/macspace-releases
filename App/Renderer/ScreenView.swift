@@ -106,7 +106,6 @@ struct ScreenView: View {
         let list = ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
                               rows: group.children)
         return WidgetForm(widgets: [.list(list)], handler: handler, showsTop: false) { EmptyView() }
-            .environment(\.showsRowSubtitles, true)
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
     }
@@ -308,14 +307,6 @@ private struct ActionPill: View {
         return result.outcome == .succeeded ? .success : (result.outcome == .failed ? .critical : .warning)
     }
 
-    private var symbol: String? {
-        switch phase {
-        case let .idle(action): return action.symbol
-        case .working: return nil
-        case .done: return severity == .success ? "checkmark" : "exclamationmark"
-        }
-    }
-
     private var text: String {
         switch phase {
         case let .idle(action): return action.title
@@ -336,14 +327,9 @@ private struct ActionPill: View {
             case .working: break
             }
         } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if let symbol {
-                    Image(systemName: symbol).font(.system(size: 12, weight: .bold)).transition(.blurReplace)
-                }
-                // Never cut: the whole message wraps, and the pill grows to hold it.
-                Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                    .contentTransition(.interpolate)
-            }
+            // Words only, no symbol. Never cut: the whole message wraps, and the pill grows to hold it.
+            Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.interpolate)
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
@@ -364,7 +350,11 @@ private struct ActionPill: View {
 
     private var background: some View {
         ZStack(alignment: .leading) {
-            Self.shape.fill(hovering && !isWorking ? lighter : fill)
+            if severity != .critical, let lab = design.fill(.mainButton) {
+                Self.shape.fill(lab.style(hovering && !isWorking ? lighter : fill))
+            } else {
+                Self.shape.fill(hovering && !isWorking ? lighter : fill)
+            }
             if case let .working(progress) = phase {
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)

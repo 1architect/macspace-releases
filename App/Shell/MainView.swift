@@ -55,6 +55,7 @@ public struct MainView: View {
     @ObservedObject private var remote = DebugRemote.shared
     @ObservedObject private var designSettings = DesignSettings.shared
     @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The glass is in: it grows in when the window opens and shrinks away before it closes.
     @State private var windowShown = false
@@ -133,6 +134,7 @@ public struct MainView: View {
             guard let text = remote.command?.text else { return }
             if text == "close" { close() }
             else if text == "open:settings" { present(.settings) }
+            else if text == "open:colorLab" { openWindow(id: ColorLabView.windowID) }
             else if text == "back" { close() }
             else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.openGroup = String(text.dropFirst(6)) }
             else if text.hasPrefix("open:") { present(.module(String(text.dropFirst(5)))) }

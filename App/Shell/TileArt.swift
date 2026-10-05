@@ -22,11 +22,21 @@ struct TileBackdrop: View {
             // flat color never looking alike. The window's own glass gives way under it instead (`MainView`), so a page is still
             // one layer of glass.
             let cover = design.isLight ? 0.5 : 0.62
-            GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
-                      color: palette.base, opacity: cover, shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
+            if let fill = design.fill(.tile(tint)), fill.kind != .solid {
+                // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
+                ZStack {
+                    shape.fill(fill.style(palette.base)).opacity(cover)
+                    GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
+                              color: .clear, opacity: 0, shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
+                }
+            } else {
+                GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
+                          color: design.fill(.tile(tint))?.average(palette.base) ?? palette.base, opacity: cover,
+                          shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
+            }
         } else {
             // Rounded itself: the tiles are no longer clipped to their shape.
-            shape.fill(palette.base)
+            LabFill(shape: shape, color: palette.base, fill: design.fill(.tile(tint)))
                 .overlay {
                     shape.fill(RadialGradient(colors: [.white.opacity(design.isLight ? 0.5 : 0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 420))
                 }
@@ -70,26 +80,40 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
 
     var body: some View {
         if design.glassElements {
-            // Darkened inside the glass, so the shade is the glass's own shape.
-            let dark = highlighted && design.hoverShade
-            let tinted = shape.fill((dark ? color.mix(with: .black, by: Theme.highlightDarkening) : color).opacity(0.7 * strength))
-                .animation(Theme.highlight, value: dark)
+            // On glass tiles, darkened inside the glass, so the shade is the glass's own shape. On flat tiles nothing dims under the
+            // pointer: the element lightens, as flat elements do.
+            let dark = highlighted && design.hoverShade && design.glass
+            let light = highlighted && !design.glass
+            let base = light ? color.mix(with: .white, by: Self.flatHighlight) : color
+            let shown = dark ? base.mix(with: .black, by: Theme.highlightDarkening) : base
+            let tinted = LabFill(shape: shape, color: shown, fill: design.fill(.chartElements)).opacity(0.7 * strength)
+                .animation(Theme.highlight, value: highlighted)
             if !glass {
                 tinted
+            } else if let corners = Self.corners(of: shape), let fill = design.fill(.chartElements), fill.kind != .solid {
+                // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
+                ZStack {
+                    tinted
+                    GlassPane(corners: corners, color: .clear, opacity: 0, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
+                }
             } else if let corners = Self.corners(of: shape) {
-                GlassPane(corners: corners, color: color, opacity: 0.7 * strength, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
+                GlassPane(corners: corners, color: design.fill(.chartElements)?.average(base) ?? base, opacity: 0.7 * strength,
+                          shade: dark ? Theme.highlightDarkening * 0.7 : 0)
             } else {
                 // A shape AppKit's glass cannot take stays SwiftUI's glass.
                 tinted.glassEffect(.regular, in: shape)
             }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
-            shape.fill(color)
-                .overlay { shape.fill(.white.opacity(highlighted ? 0.1 : 0)) }
+            LabFill(shape: shape, color: color, fill: design.fill(.chartElements))
+                .overlay { shape.fill(.white.opacity(highlighted ? Self.flatHighlight : 0)) }
                 .animation(Theme.highlight, value: highlighted)
                 .opacity(strength)
         }
     }
+
+    /// How much a flat element lightens under the pointer.
+    static var flatHighlight: Double { 0.1 }
 
     /// The corners AppKit's glass gives a shape, or nil for a shape it cannot take.
     private static func corners(of shape: S) -> GlassPane.Corners? {

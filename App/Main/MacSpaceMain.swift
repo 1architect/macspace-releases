@@ -46,6 +46,12 @@ struct MacSpaceMain: App {
             }
         }
 
+        // Temporary: the Color Lab (Design menu, ⌥⌘L).
+        Window("Color Lab", id: ColorLabView.windowID) {
+            ColorLabView()
+        }
+        .defaultSize(width: 480, height: 760)
+
         MenuBarExtra(isInserted: $showInMenuBar) {
             MenuBarContent(host: host)
         } label: {

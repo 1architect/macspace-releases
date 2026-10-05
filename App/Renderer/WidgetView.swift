@@ -188,8 +188,6 @@ struct TitleLine: View {
 extension EnvironmentValues {
     /// Opens the page of a group row (`Row.children`), by its id.
     @Entry var openGroup: @MainActor (String) -> Void = { _ in }
-    /// Rows show their subtitle under the title (a group's page, where it says what kind of item each is) instead of in the tooltip.
-    @Entry var showsRowSubtitles = false
 }
 
 /// Joins the parts of a description into one tooltip.
@@ -238,7 +236,6 @@ struct BannerRow: View {
 struct RowView: View {
     let row: Row
     let handler: ActionHandler
-    @Environment(\.showsRowSubtitles) private var showsSubtitle
     @State private var expanded = false
     @Environment(\.openGroup) private var openGroup
 
@@ -266,8 +263,8 @@ struct RowView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                // On a group's page the subtitle says what kind of item it is; elsewhere it is part of the tooltip.
-                TitleLine(title: row.title, note: showsSubtitle ? row.subtitle : nil)
+                // An item's description is in its tooltip, never on the row.
+                TitleLine(title: row.title, note: nil)
                 if let badge = row.badge { BadgeView(badge: badge) }
                 Spacer(minLength: 8)
                 if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -282,7 +279,7 @@ struct RowView: View {
                 }
             }
             .contentShape(Rectangle())
-            .help(Tooltip.join(showsSubtitle ? nil : row.subtitle, row.detail) ?? "")
+            .help(Tooltip.join(row.subtitle, row.detail) ?? "")
             .onTapGesture { if !row.steps.isEmpty { withAnimation(Theme.hover) { expanded.toggle() } } }
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {

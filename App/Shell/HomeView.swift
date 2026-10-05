@@ -510,8 +510,8 @@ struct TileGround: View {
         } else {
             TileBackdrop(tint: tint)
                 .background {
-                    RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-                        .fill(design.palette(tint).base)
+                    LabFill(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), color: design.palette(tint).base,
+                            fill: design.fill(.tile(tint)))
                         .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
                 }
                 .animation(design.liftAnimation, value: lifted)

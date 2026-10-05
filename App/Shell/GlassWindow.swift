@@ -209,6 +209,8 @@ struct GlassBackdrop: View {
         ZStack {
             if design.windowGlass {
                 WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.isLight)
+                // The Color Lab's window fill, over the blur and under the glass.
+                if let fill = design.fill(.window) { shape.fill(fill.style(Color(white: design.isLight ? 0.92 : 0.13))) }
             }
             if !showsGlass {
                 Color.clear
@@ -217,7 +219,7 @@ struct GlassBackdrop: View {
                     .modifier(GlassFade(progress: glassFade))
             } else {
                 // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
-                shape.fill(Color(white: design.isLight ? 0.92 : 0.13))
+                LabFill(shape: shape, color: Color(white: design.isLight ? 0.92 : 0.13), fill: design.fill(.window))
             }
         }
         .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
