@@ -137,7 +137,7 @@ struct PillButtonStyle: ButtonStyle {
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
 /// light dark tint, 36 points, a symbol in the text's color, loading dots while busy. Under the pointer it grows a little and
-/// lightens; pressed, it shrinks and the symbol dims. Used for close/back and Refresh in the top-left corner.
+/// lightens; pressed, it shrinks and the symbol dims. Used for close/back in the top-left corner and Refresh in the top-right one.
 struct GlassCircleButton: View {
     static let diameter: CGFloat = 36
     static let margin: CGFloat = 8

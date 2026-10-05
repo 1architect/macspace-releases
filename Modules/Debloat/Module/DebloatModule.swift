@@ -81,13 +81,13 @@ public struct DebloatModule: MacSpaceModule {
         }
     }
 
-    /// The switch shows the feature: switching it off applies the protection, switching it on restores the original.
-    static func appliesProtection(switchValue: String?) -> Bool { switchValue == "false" }
+    /// The switch is "Disable <feature>": switching it on applies the protection, switching it off restores the original.
+    static func appliesProtection(switchValue: String?) -> Bool { switchValue == "true" }
 
     static func change(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed("No controls were selected.") }
-        progress(ActionProgress(message: action == .apply ? "Switching off…" : "Switching back on…"))
+        progress(ActionProgress(message: action == .apply ? "Disabling…" : "Enabling…"))
         let engine = DebloatStore.liveEngine()
         let coordinator = DebloatCoordinator(engine: engine, channel: context.privileged)
         // The policies in force before switching back on: the single profile of earlier versions may hold some of them, and it goes.
@@ -107,7 +107,7 @@ public struct DebloatModule: MacSpaceModule {
                 }
             }
             // Read back: every switch asked to go off must read off (or wait for its profile's approval). One that does not is named,
-            // so a "Switch all off" that left some on says which.
+            // so a "Disable all" that left some on says which.
             if action == .apply {
                 let stillOn = ids.compactMap { id in engine.controls.first { $0.id == id } }.filter { control in
                     ![.debloated, .awaitingApproval].contains(engine.status(of: control).state)
@@ -181,11 +181,11 @@ public struct DebloatModule: MacSpaceModule {
             if result.executed { changed += 1; restart = restart || result.plan.restart == .reboot }
         }
         if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Couldn't change it", details: details, refresh: true) }
-        if changed == 0 { return .succeeded(action == .apply ? "Already off" : "Already on") }
+        if changed == 0 { return .succeeded(action == .apply ? "Already disabled" : "Already enabled") }
         if approval {
             return ActionResult(outcome: .needsAttention, message: "Approve the profile in System Settings",
                                 details: ["Open System Settings > General > Device Management and approve the MacSpace profile there, once: it holds every policy switched off. Switching a policy back on later needs no approval."] + details, restartRequired: restart)
         }
-        return ActionResult(outcome: .succeeded, message: action == .apply ? "Switched off" : "Switched on", details: details, restartRequired: restart)
+        return ActionResult(outcome: .succeeded, message: action == .apply ? "Disabled" : "Enabled", details: details, restartRequired: restart)
     }
 }

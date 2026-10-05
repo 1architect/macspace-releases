@@ -178,15 +178,11 @@ public struct MainView: View {
         }
     }
 
-    /// Top left: ✕ or back, and on a module's page its Refresh, both in the same glass.
+    /// Top left: ✕ or back, then the page's title. Top right, on a module's page: its Refresh, as far from the window's edges as Back.
     private var cornerControls: some View {
         HStack(spacing: 8) {
             GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? "Back" : "Close") {
                 isOpen ? close() : closeWindow()
-            }
-            if isOpen, case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
-                RefreshButton(handle: handle)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
             if isOpen, let destination = layer?.destination {
                 PageTitle(host: host, destination: destination, title: title)
@@ -197,6 +193,11 @@ public struct MainView: View {
                     .lineLimit(1)
                     .transition(.opacity.combined(with: .offset(x: -10)))
                     .allowsHitTesting(false)
+            }
+            Spacer(minLength: 8)
+            if isOpen, case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
+                RefreshButton(handle: handle)
+                    .transition(.opacity)
             }
         }
         .animation(Theme.hover, value: isOpen)

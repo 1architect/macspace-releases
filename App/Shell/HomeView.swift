@@ -175,8 +175,8 @@ struct TileFace: View {
             VStack(alignment: .leading, spacing: 10) {
                 DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 28 - 6 * 7) / 7), loading: info.loading)
                 HStack(spacing: 10) {
-                    legend(Circle().fill(palette.step(5)), "off")
-                    legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), "runs")
+                    legend(Circle().fill(palette.step(5)), "disabled")
+                    legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), "enabled")
                     if dots.contains(.attention) { legend(Circle().fill(design.action), "undone") }
                 }
                 .font(.system(size: 11))

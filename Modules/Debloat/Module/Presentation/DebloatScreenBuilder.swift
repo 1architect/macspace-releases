@@ -72,16 +72,19 @@ enum DebloatScreenBuilder {
         return lines.joined(separator: "\n")
     }
 
+    /// What a switch is called: what switching it on does.
+    static func title(_ control: DebloatControl) -> String { "Disable \(control.title)" }
+
     static func row(_ control: DebloatControl, _ snapshot: DebloatSnapshot) -> ToggleRow {
         let status = snapshot.status(control.id)
         let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable
         let on = isOn(status)
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why. What a
         // switch changes and breaks is in its tooltip.
-        var action = Action(id: "toggle", title: control.title, parameters: ["id": control.id])
+        var action = Action(id: "toggle", title: title(control), parameters: ["id": control.id])
         if needsHelper(control) { action.requires = [.privilegedHelper] }
-        // The switch shows the feature, as in the other modules: on = the feature runs, off = MacSpace switched it off.
-        return ToggleRow(id: control.id, title: control.title, isOn: !on, isEnabled: !blocked,
+        // The switch shows the protection, named as such: "Disable <feature>" on = MacSpace switched the feature off.
+        return ToggleRow(id: control.id, title: title(control), isOn: on, isEnabled: !blocked,
                          badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
                          detail: detail(control, status), action: action)
     }
@@ -117,7 +120,7 @@ enum DebloatScreenBuilder {
         let graphic = TileGraphic.dots(dots(snapshot))
         if !counts.drifted.isEmpty { return Tile(title: "debloat", status: "\(counts.drifted.count) undone by macOS", needsAttention: true, graphic: graphic) }
         if !counts.awaiting.isEmpty { return Tile(title: "debloat", status: "\(counts.awaiting.count) awaiting approval", needsAttention: true, graphic: graphic) }
-        return Tile(title: "debloat", status: "\(counts.on)/\(counts.total) switched off", graphic: graphic)
+        return Tile(title: "debloat", status: "\(counts.on)/\(counts.total) disabled", graphic: graphic)
     }
 
     /// One dot per control that can take effect here, in page order: done when switched off, attention when macOS undid it.
@@ -152,11 +155,11 @@ enum DebloatScreenBuilder {
     static func turnAllBackOn(_ snapshot: DebloatSnapshot) -> Action? {
         let controls = switchedOff(snapshot)
         guard !controls.isEmpty else { return nil }
-        return Action(id: "restoreAll", title: "Turn all back on", symbol: "arrow.uturn.backward", role: .prominent,
+        return Action(id: "restoreAll", title: "Enable all", symbol: "arrow.uturn.backward", role: .prominent,
                       parameters: ["ids": controls.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Turn all \(controls.count) features back on?",
+                      confirmation: Confirmation(title: "Enable all \(controls.count) features again?",
                                                  message: controls.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nMacSpace restores the values it saved before it changed them.",
-                                                 confirmTitle: "Turn on"),
+                                                 confirmTitle: "Enable"),
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
     }
 
@@ -171,10 +174,10 @@ enum DebloatScreenBuilder {
             message += "\n\nmacOS asks you to approve the profile of each policy (\(policies.map(\.title).joined(separator: ", "))) once, in System Settings > General > Device Management."
         }
         if !untested.isEmpty { message += "\n\nCheck afterwards that the ones not tested yet took effect." }
-        message += "\n\nEverything is written to an undo journal, so you can turn any of it back on."
-        return Action(id: "applyRecommended", title: "Switch all off", symbol: "checkmark.shield", role: .prominent,
+        message += "\n\nEverything is written to an undo journal, so you can enable any of it again."
+        return Action(id: "applyRecommended", title: "Disable all", symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Switch off \(recommended.count) features?", message: message, confirmTitle: "Switch off"),
+                      confirmation: Confirmation(title: "Disable \(recommended.count) features?", message: message, confirmTitle: "Disable"),
                       requires: [.privilegedHelper])
     }
 
@@ -192,13 +195,13 @@ enum DebloatScreenBuilder {
         // Switched back on while macOS still enforces their profile: the helper removes it, with nothing to approve.
         let removing = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingRemoval }
         if !removing.isEmpty {
-            widgets.append(.banner(Banner(id: "removal", severity: .warning, title: "Finish switching back on",
+            widgets.append(.banner(Banner(id: "removal", severity: .warning, title: "Finish enabling",
                                           message: "macOS still enforces the profile of \(removing.map(\.title).joined(separator: ", ")). MacSpace removes it; there is nothing to approve.",
                                           action: Action(id: "removePending", title: "Remove the profile", role: .prominent,
                                                          parameters: ["ids": removing.map(\.id).joined(separator: ",")], requires: [.privilegedHelper]))))
         }
         if !counts.drifted.isEmpty {
-            widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) feature(s) switched back on by macOS",
+            widgets.append(.banner(Banner(id: "drifted", severity: .warning, title: "\(counts.drifted.count) feature(s) enabled again by macOS",
                                           message: "macOS or an update turned them back on: \(counts.drifted.map(\.title).joined(separator: ", ")).",
                                           action: Action(id: "reapply", title: "Re-apply", role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")],
                                                          requires: [.privilegedHelper]))))
@@ -214,7 +217,7 @@ enum DebloatScreenBuilder {
         let policies = categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category && isPolicy($0) } }
         if !policies.isEmpty {
             widgets.append(.toggles(ToggleList(id: "policies", title: "Policies (need your approval)",
-                                               footnote: "macOS only applies these through a configuration profile. Switching one off asks you to approve its profile once in System Settings > General > Device Management; switching it back on asks nothing.",
+                                               footnote: "macOS only applies these through a configuration profile. Disabling one asks you to approve its profile once in System Settings > General > Device Management; enabling it again asks nothing.",
                                                rows: policies.map { row($0, snapshot) })))
         }
         return Screen(title: "Debloat", primary: primary(snapshot), widgets: widgets)

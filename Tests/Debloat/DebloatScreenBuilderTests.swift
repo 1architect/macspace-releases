@@ -35,13 +35,13 @@ final class DebloatScreenBuilderTests: XCTestCase {
     func testToggleStateAndBadgeFollowTheControlStateAndNoSwitchAsks() {
         let on = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .debloated,
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
-        XCTAssertFalse(on.isOn, "the switch shows the feature, which MacSpace switched off")
+        XCTAssertTrue(on.isOn, "Disable <feature> is on once MacSpace switched the feature off")
         XCTAssertNil(on.badge, "working as intended needs no badge")
         XCTAssertTrue(on.detail?.contains("Measured off") == true)
         XCTAssertNil(on.action.confirmation, "a switch never asks: it moves, then the change follows")
 
         let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock)]))
-        XCTAssertTrue(off.isOn, "the feature still runs")
+        XCTAssertFalse(off.isOn, "the feature still runs")
         XCTAssertNil(off.badge)
         XCTAssertNil(off.action.confirmation)
 
@@ -68,12 +68,12 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .pending, detail: "")), "After restart")
         XCTAssertEqual(badge(.unavailable), "Not on this macOS")
         let waiting = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .awaitingApproval)]))
-        XCTAssertFalse(waiting.isOn, "applied, waiting only for the user's approval")
+        XCTAssertTrue(waiting.isOn, "applied, waiting only for the user's approval")
     }
 
-    func testSwitchingTheFeatureOffAppliesTheProtection() {
-        XCTAssertTrue(DebloatModule.appliesProtection(switchValue: "false"))
-        XCTAssertFalse(DebloatModule.appliesProtection(switchValue: "true"))
+    func testSwitchingDisableOnAppliesTheProtection() {
+        XCTAssertTrue(DebloatModule.appliesProtection(switchValue: "true"))
+        XCTAssertFalse(DebloatModule.appliesProtection(switchValue: "false"))
         XCTAssertFalse(DebloatModule.appliesProtection(switchValue: nil))
     }
 
@@ -129,7 +129,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
 
     func testTile() {
         let none = DebloatScreenBuilder.tile(snapshot([]))
-        XCTAssertEqual(none.status, "0/14 switched off")
+        XCTAssertEqual(none.status, "0/14 disabled")
         XCTAssertFalse(none.needsAttention)
         let drift = DebloatScreenBuilder.tile(snapshot([status(verifiedControl.id, .drifted)]))
         XCTAssertEqual(drift.status, "1 undone by macOS")
@@ -137,7 +137,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         guard case let .dots(dots)? = drift.graphic else { return XCTFail() }
         XCTAssertEqual(dots.count, 14)
         XCTAssertEqual(dots.filter { $0 == .attention }.count, 1, "the undone control is the amber dot")
-        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "14/14 switched off")
+        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "14/14 disabled")
     }
 
     func testSummarizingResultsMentionsApprovalRestartAndFailures() {
