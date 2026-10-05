@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The menu bar icon: the nine rounded squares of the app's design (Interiores.svg), drawn as a template image so it takes the
+/// The menu bar icon: the nine rounded squares of the app's design (Interiors3.svg), drawn as a template image so it takes the
 /// menu bar's color. While something is being cleaned the squares leave one after another, shrinking as they fade, and come back
 /// the same way, over and over; when the cleanup ends the current round finishes and the icon rests full.
 public struct MenuBarIcon: View {
@@ -57,11 +57,11 @@ public struct MenuBarIcon: View {
         return t * t * (3 - 2 * t)
     }
 
-    /// The design's squares in its 1024 × 1024 canvas: three columns and rows of 268 × 266.5 with corners of 53.6.
-    static let columns: [CGFloat] = [74.4, 378.0, 681.5]
-    static let rows: [CGFloat] = [86.5, 378.8, 671.0]
-    static let squareSize = CGSize(width: 268.1, height: 266.5)
-    static let cornerRadius: CGFloat = 53.6
+    /// The design's squares in its 1024 × 1024 canvas (Interiors3.svg): three columns and rows of 231.4 × 230 with corners of 11.5.
+    static let columns: [CGFloat] = [92.7, 396.3, 699.9]
+    static let rows: [CGFloat] = [104.7, 397.0, 689.3]
+    static let squareSize = CGSize(width: 231.4, height: 230.0)
+    static let cornerRadius: CGFloat = 11.5
     static let pointSize = NSSize(width: 18, height: 18)
 
     static func image(phase: Double) -> NSImage {
