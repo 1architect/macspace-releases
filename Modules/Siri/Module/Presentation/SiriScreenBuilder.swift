@@ -64,7 +64,21 @@ enum SiriScreenBuilder {
 
     /// The tile shows the switch itself, with no glow. What can be freed is said in the line under it, without a meter: the models
     /// macOS released and can purge, or, while Apple Intelligence is on, the models it has downloaded (freed by switching it off).
+    /// The models are changing (downloading while on, being released or deleted): the app reads again every few seconds so the size
+    /// follows what macOS does.
+    static func refreshAfter(_ snapshot: SiriSnapshot) -> Double? {
+        let changing = snapshot.status.state == .atRisk || snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0
+            || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.assetsRetrying
+        return changing ? 5 : nil
+    }
+
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
+        var tile = baseTile(snapshot)
+        tile.refreshAfter = refreshAfter(snapshot)
+        return tile
+    }
+
+    private static func baseTile(_ snapshot: SiriSnapshot) -> Tile {
         if snapshot.isVirtualMachine {
             return Tile(title: "siri & AI", status: "not in a virtual machine", graphic: .state(on: false, alarming: false, detail: "not available here", meter: nil, meterIsActionable: false))
         }
@@ -81,6 +95,8 @@ enum SiriScreenBuilder {
         else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
         // Off, models still on disk: released ones MacSpace is deleting, or a few macOS keeps for other features; their size, never
         // "none".
+        // The state cannot be read: the size, without saying what happens to it.
+        else if onDisk >= purgeThreshold, snapshot.status.state == .unknown { detail = "\(ByteFormat.string(onDisk)) of models on disk" }
         else if onDisk >= purgeThreshold {
             let released = onDisk > snapshot.lockedModelBytes ? onDisk - snapshot.lockedModelBytes : 0
             if released >= purgeThreshold { detail = "deleting \(ByteFormat.string(released)) of models" }

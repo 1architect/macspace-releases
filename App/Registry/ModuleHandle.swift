@@ -93,6 +93,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func deactivate() {
         if case .incompatible = state { return }
         state = .off
+        autoRefresh?.cancel()
+        autoRefresh = nil
         screen = nil
         tile = nil
         tileIsStale = false
@@ -127,6 +129,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         tileIsStale = false
         settings.setLastTile(newTile, module: id)
         screen = newScreen
+        scheduleAutoRefresh()
     }
 
     private func updateBusy() {
@@ -154,6 +157,25 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private var lastAction: Task<ActionResult?, Never>?
+
+    /// How often a module is read again by itself, so its tile and page follow the Mac without Refresh; a tile that is changing
+    /// asks for sooner (`Tile.refreshAfter`).
+    static let autoRefreshInterval: TimeInterval = 60
+    static let fastestAutoRefresh: TimeInterval = 3
+    private var autoRefresh: Task<Void, Never>?
+
+    /// Schedules the next quiet reading after the one that just finished.
+    private func scheduleAutoRefresh() {
+        autoRefresh?.cancel()
+        guard state == .ready else { return }
+        let delay = max(min(tile?.refreshAfter ?? Self.autoRefreshInterval, Self.autoRefreshInterval), Self.fastestAutoRefresh)
+        autoRefresh = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled, let self, self.state == .ready else { return }
+            // Not while an action runs: it reads the module again itself when it ends.
+            if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true) }
+        }
+    }
 
     private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool) async -> ActionResult? {
         guard state == .ready, let module else { return nil }

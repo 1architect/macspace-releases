@@ -24,18 +24,22 @@ public struct Tile: Codable, Equatable, Sendable {
     /// What the module frees through macOS's purge, by CacheDelete service. The disk tile's "purgeable" adds these up across modules
     /// (a service two modules free counts once), so it says what the app can purge, not what macOS estimates in general.
     public var purgeableByService: [String: UInt64]
+    /// What the tile shows is changing (a download, a removal): the app asks again after this many seconds instead of its usual
+    /// minute. nil for the usual pace.
+    public var refreshAfter: Double?
 
     public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil,
-                purgeableByService: [String: UInt64] = [:]) {
+                purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil) {
         self.title = title
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
         self.reclaimableBytes = reclaimableBytes
         self.purgeableByService = purgeableByService
+        self.refreshAfter = refreshAfter
     }
 
-    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService }
+    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter }
 
     /// `purgeableByService` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -46,6 +50,7 @@ public struct Tile: Codable, Equatable, Sendable {
         graphic = try container.decodeIfPresent(TileGraphic.self, forKey: .graphic)
         reclaimableBytes = try container.decodeIfPresent(UInt64.self, forKey: .reclaimableBytes)
         purgeableByService = try container.decodeIfPresent([String: UInt64].self, forKey: .purgeableByService) ?? [:]
+        refreshAfter = try container.decodeIfPresent(Double.self, forKey: .refreshAfter)
     }
 }
 

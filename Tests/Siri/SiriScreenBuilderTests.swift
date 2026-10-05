@@ -194,3 +194,12 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts", "models"])
     }
 }
+
+extension SiriScreenBuilderTests {
+    /// While the models change, the tile asks to be read again every few seconds, so it follows a download without Refresh.
+    func testTheTileAsksForQuickReadingsWhileTheModelsChange() {
+        XCTAssertEqual(SiriScreenBuilder.tile(snapshot(.atRisk)).refreshAfter, 5, "on: macOS may be downloading")
+        XCTAssertEqual(SiriScreenBuilder.tile(snapshot(.releasing)).refreshAfter, 5)
+        XCTAssertNil(SiriScreenBuilder.tile(snapshot(.protected)).refreshAfter, "settled: the usual minute")
+    }
+}

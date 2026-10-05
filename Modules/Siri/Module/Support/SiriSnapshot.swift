@@ -48,7 +48,7 @@ actor SiriStore {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 20, now: Date = Date()) async -> SiriSnapshot {
+    func snapshot(maxAge: TimeInterval = 4, now: Date = Date()) async -> SiriSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.
