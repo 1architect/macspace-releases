@@ -97,11 +97,13 @@ struct TileFace: View {
         return size.width - 14 - 12 - caption - padding
     }
 
+    @Environment(\.openPageRadius) private var pageRadius
+
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
             if drawsBackdrop {
-                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, Theme.windowRadius, progress))
+                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, pageRadius ?? Theme.windowRadius, progress))
             } else {
                 Color.clear
             }

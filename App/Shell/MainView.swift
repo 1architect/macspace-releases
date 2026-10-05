@@ -126,6 +126,8 @@ public struct MainView: View {
         if embedded {
             // The same tiles, zoom, pages and Back as the glass window, on the standard window's ground.
             canvas
+                // An open page fills the canvas, square: the window's frame rounds its outer corners.
+                .environment(\.openPageRadius, 0)
                 .environment(\.design, designSettings.design)
                 .animation(.smooth(duration: 0.45), value: designSettings.design)
                 .background { shortcuts }
@@ -244,7 +246,7 @@ public struct MainView: View {
                                 .gesture(WindowDragGesture())
                                 .allowsWindowActivationEvents(true)
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: embedded ? 0 : Theme.windowRadius, style: .continuous))
                         .offset(x: full.minX, y: full.minY)
                         .allowsHitTesting(isOpen)
                     card(layer, in: size, target: full, face: false)

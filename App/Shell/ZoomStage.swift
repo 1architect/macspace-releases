@@ -57,6 +57,7 @@ struct ZoomReveal: ViewModifier, @preconcurrency Animatable {
 /// A tile growing into the page and shrinking back. At `progress` 0 it is exactly the dashboard tile; at 1 it fills the glass.
 /// The face is drawn under the page and the caption over it, so the page scrolls between the two.
 struct ZoomCard<Content: View>: View, @preconcurrency Animatable {
+    @Environment(\.openPageRadius) private var pageRadius
     var progress: CGFloat
     /// The tile's rectangle on the dashboard, and the rectangle the page takes (the whole window).
     let origin: CGRect
@@ -73,7 +74,7 @@ struct ZoomCard<Content: View>: View, @preconcurrency Animatable {
         let card = ZoomMath.rect(from: origin, to: target, progress: progress)
         content(progress)
             .frame(width: card.width, height: card.height)
-            .clipShape(RoundedRectangle(cornerRadius: ZoomMath.lerp(Theme.tileRadius, Theme.windowRadius, progress), style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: ZoomMath.lerp(Theme.tileRadius, pageRadius ?? Theme.windowRadius, progress), style: .continuous))
             .offset(x: card.minX, y: card.minY)
             .frame(width: container.width, height: container.height, alignment: .topLeading)
             .allowsHitTesting(false)
@@ -99,4 +100,10 @@ struct ZoomFade: ViewModifier, @preconcurrency Animatable {
             .scaleEffect(scales ? 1 - 0.06 * progress : 1)
             .opacity(1 - ZoomMath.ramp(progress, 0.05, 0.6))
     }
+}
+
+extension EnvironmentValues {
+    /// The corners of a fully open page: the glass window's (nil), or none in the standard window, where the page fills the canvas
+    /// and the window's own frame rounds its outer corners.
+    @Entry var openPageRadius: CGFloat? = nil
 }
