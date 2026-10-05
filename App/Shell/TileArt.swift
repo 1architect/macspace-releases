@@ -80,11 +80,10 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
 
     var body: some View {
         if design.glassElements {
-            // On glass tiles, darkened inside the glass, so the shade is the glass's own shape. On flat tiles nothing dims under the
-            // pointer: the element lightens, as flat elements do.
+            // On glass tiles, darkened inside the glass, so the shade is the glass's own shape. On flat tiles nothing changes under
+            // the pointer.
             let dark = highlighted && design.hoverShade && design.glass
-            let light = highlighted && !design.glass
-            let base = light ? color.mix(with: .white, by: Self.flatHighlight) : color
+            let base = color
             let shown = dark ? base.mix(with: .black, by: Theme.highlightDarkening) : base
             let tinted = LabFill(shape: shape, color: shown, fill: design.fill(.chartElements)).opacity(0.7 * strength)
                 .animation(Theme.highlight, value: highlighted)
