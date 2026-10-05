@@ -35,8 +35,9 @@ struct WindowKindSwitch: ViewModifier {
 }
 
 /// The dashboard and the pages in a standard macOS window: a sidebar with the overview and the modules, Settings apart at its foot,
-/// and the selected one beside it. The sidebar is drawn by MacSpace, not by a split view: showing it never makes the window larger,
-/// it takes its room from the page. The window's own buttons give way to the glass window's: ✕ to close, and the sidebar's button.
+/// and the selected one beside it. The sidebar is drawn by MacSpace, not by a split view. In a window the user placed freely, hiding
+/// the sidebar closes the window up by its width and showing it opens the window out again, the page staying where it is; in full
+/// screen or tiled to a part of the screen, the window keeps its size and the page takes the room. The window's own buttons give way to the glass window's: ✕ to close, and the sidebar's button.
 public struct StandardWindowView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
@@ -48,11 +49,14 @@ public struct StandardWindowView: View {
     @State private var sidebarShown = true
     /// Which way the last change of page went in the sidebar's order: down slides the new page up from below, up from above.
     @State private var forward = true
+    @State private var window = WindowReference()
 
     static let sidebarWidth: CGFloat = 210
     /// The band at the top for the corner buttons, the title and Refresh.
     static let headerHeight: CGFloat = 56
     static let controlInset: CGFloat = 12
+    /// How far the background glass reaches past the window's edges.
+    static let glassBleed: CGFloat = 60
 
     public init(host: ModuleHost, updates: UpdateController) {
         self.host = host
@@ -79,7 +83,7 @@ public struct StandardWindowView: View {
         .environment(\.design, design)
         // The window takes the palette's appearance (dark grounds, dark chrome), so its sidebar matches the pages.
         .preferredColorScheme(design.colorScheme)
-        .background(StandardWindowConfigurator(glass: designSettings.standardGlassBackground))
+        .background(StandardWindowConfigurator(glass: designSettings.standardGlassBackground, reference: window))
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
         .task { await storage.refresh() }
@@ -88,7 +92,7 @@ public struct StandardWindowView: View {
             guard let text = remote.command?.text else { return }
             if text == "open:settings" { open(.settings) }
             else if text == "back" { select(.home) }
-            else if text == "sidebar" { sidebarShown.toggle() }
+            else if text == "sidebar" { toggleSidebar() }
             else if text.hasPrefix("open:"), text != "open:colorLab" { open(.module(String(text.dropFirst(5)))) }
         }
     }
@@ -99,7 +103,7 @@ public struct StandardWindowView: View {
     private var controls: some View {
         HStack(spacing: 8) {
             GlassCircleButton(symbol: "xmark", help: "Close") { dismissWindow(id: MacSpaceWindow.standard) }
-            GlassCircleButton(symbol: "sidebar.left", help: sidebarShown ? "Hide the sidebar" : "Show the sidebar") { sidebarShown.toggle() }
+            GlassCircleButton(symbol: "sidebar.left", help: sidebarShown ? "Hide the sidebar" : "Show the sidebar") { toggleSidebar() }
         }
     }
 
@@ -109,7 +113,10 @@ public struct StandardWindowView: View {
         if designSettings.standardGlassBackground {
             ZStack {
                 WindowBlur(cornerRadius: 0, isLight: design.isLight)
+                // Larger than the window, so the window cuts off the glass's lit rim: the glass itself shows, its edge does not shine
+                // along the window's border.
                 GlassPane(corners: .radius(0), style: .clear)
+                    .padding(-Self.glassBleed)
             }
         } else {
             Color(nsColor: .windowBackgroundColor)
@@ -173,13 +180,19 @@ public struct StandardWindowView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
         }
+        // Without the band, Refresh floats in the page's top-right corner, as on the glass window.
+        .overlay(alignment: .topTrailing) {
+            if !needsHeader { refresh.padding(Self.controlInset) }
+        }
         .background { ground(selection).ignoresSafeArea() }
     }
 
-    /// The overview reaches the top of the window when nothing needs the band: no title bar, and the sidebar holding the buttons.
-    private var needsHeader: Bool {
-        designSettings.standardTitleBar || !sidebarShown || selection != .home
-    }
+    /// The band only with the title bar. Without it there is no band at all: the corner buttons and Refresh float over the page, as
+    /// on the glass window (over the disk tile on the overview), and pages keep the glass window's room for them at the top.
+    private var needsHeader: Bool { designSettings.standardTitleBar }
+
+    /// Where a page's content starts: right under the band, or clear of the floating buttons without it.
+    private var pageTop: CGFloat { needsHeader ? 8 : PageInsets.scrollTop }
 
     private var header: some View {
         HStack(spacing: 12) {
@@ -191,9 +204,7 @@ public struct StandardWindowView: View {
                     .contentTransition(.opacity)
             }
             Spacer(minLength: 8)
-            if case let .module(id) = selection, let handle = host.handle(for: id) {
-                RefreshControl(handle: handle)
-            }
+            refresh
         }
         // Clear of the corner buttons while they are over the page.
         .padding(.leading, sidebarShown ? 20 : Self.controlInset + 2 * GlassCircleButton.diameter + 8 + 16)
@@ -210,6 +221,11 @@ public struct StandardWindowView: View {
     }
 
     @ViewBuilder
+    private var refresh: some View {
+        if case let .module(id) = selection, let handle = host.handle(for: id) { RefreshControl(handle: handle) }
+    }
+
+    @ViewBuilder
     private func page(_ destination: Destination) -> some View {
         switch destination {
         case .home, .storage:
@@ -219,11 +235,11 @@ public struct StandardWindowView: View {
         case let .module(id):
             if let handle = host.handle(for: id) {
                 ScreenView(handle: handle, tint: tint(of: destination))
-                    .environment(\.pageScrollTop, 8)
+                    .environment(\.pageScrollTop, pageTop)
             }
         case .settings:
             SettingsPages(host: host, updates: updates)
-                .environment(\.pageScrollTop, 8)
+                .environment(\.pageScrollTop, pageTop)
         }
     }
 
@@ -255,6 +271,44 @@ public struct StandardWindowView: View {
     /// The sidebar's order, for the direction of the slide.
     private var order: [Destination] { [.home] + host.dashboardHandles.map { .module($0.id) } + [.settings] }
 
+    /// Hides or shows the sidebar; a freely placed window closes up or opens out by the sidebar's width with it.
+    private func toggleSidebar() {
+        let showing = !sidebarShown
+        if let window = window.window, Self.isFreelyPlaced(window) {
+            var frame = window.frame
+            let change = Self.sidebarWidth
+            if showing {
+                frame.origin.x -= change
+                frame.size.width += change
+            } else {
+                let narrower = max(frame.width - change, Theme.minimumSize.width)
+                frame.origin.x += frame.width - narrower
+                frame.size.width = narrower
+            }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.35
+                context.allowsImplicitAnimation = true
+                window.animator().setFrame(frame, display: true)
+            }
+        }
+        withAnimation(Theme.push) { sidebarShown = showing }
+    }
+
+    /// Not in full screen, and not tiled to a half, a quarter or the whole of the screen (macOS's tiling leaves a margin of a few
+    /// points, hence the tolerance).
+    static func isFreelyPlaced(_ window: NSWindow) -> Bool {
+        if window.styleMask.contains(.fullScreen) { return false }
+        guard let screen = window.screen?.visibleFrame else { return true }
+        let frame = window.frame, tolerance: CGFloat = 16
+        func near(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= tolerance }
+        let widths = [screen.width, screen.width / 2]
+        let heights = [screen.height, screen.height / 2]
+        let tiledWidth = widths.contains { near(frame.width, $0) || near(frame.width, $0 - tolerance) }
+        let tiledHeight = heights.contains { near(frame.height, $0) || near(frame.height, $0 - tolerance) }
+        let onEdge = (near(frame.minX, screen.minX) || near(frame.maxX, screen.maxX)) && (near(frame.minY, screen.minY) || near(frame.maxY, screen.maxY))
+        return !(tiledWidth && tiledHeight && onEdge)
+    }
+
     private func select(_ destination: Destination) {
         guard destination != selection else { return }
         let from = order.firstIndex(of: selection) ?? 0
@@ -284,15 +338,22 @@ private struct RefreshControl: View {
 
 /// The standard window's frame: its own buttons hidden (MacSpace draws ✕ and the sidebar's button), no title, movable by its
 /// background, and clear behind the content when the background is glass.
+/// The standard window, for resizing it with the sidebar.
+final class WindowReference {
+    weak var window: NSWindow?
+}
+
 private struct StandardWindowConfigurator: NSViewRepresentable {
     let glass: Bool
+    let reference: WindowReference
 
     func makeNSView(context: Context) -> NSView { NSView() }
 
     func updateNSView(_ view: NSView, context: Context) {
-        let glass = self.glass
+        let glass = self.glass, reference = self.reference
         DispatchQueue.main.async {
             guard let window = view.window else { return }
+            reference.window = window
             for kind in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] { window.standardWindowButton(kind)?.isHidden = true }
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
