@@ -338,7 +338,9 @@ struct HomeView: View {
         return TilePlacement(shown: appeared && !closing && !relayout, closing: closing || relayout, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
-                             turns: !design.glass, reduceMotion: reduceMotion,
+                             // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is
+                             // drawn the expensive way and in its dimmed look, so glass elements darkened under the pointer.
+                             turns: !design.glass && !design.glassElements, reduceMotion: reduceMotion,
                              liftAnimation: design.liftAnimation, leanAnimation: design.leanAnimation,
                              hidden: hiddenTile == tile.destination)
     }
