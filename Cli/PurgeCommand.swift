@@ -77,6 +77,10 @@ enum PurgeCommand {
     }
 
     /// Writes `value` as JSON and exits with `status`: a refusal or a failed purge no longer exited 0.
+    ///
+    /// Not optimized: in release builds the optimizer dropped the call after a purge (`if json { emit(result, …) }`), the CLI
+    /// printed its text summary instead, and the app read "no answer" from every purge it ran (2026-10-05).
+    @inline(never) @_optimize(none)
     static func emit<T: Encodable>(_ value: T, status: Int32 = 0) -> Never {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]

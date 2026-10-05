@@ -98,7 +98,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
         if reported == 0 && freed < 1_000_000 {
-            if let lastError { return (.failed(lastError), false, 0) }
+            if let lastError { return (.failed(PurgeRun.failedMessage, details: [lastError]), false, 0) }
             // CacheDelete can answer at once that it removed nothing while its estimate still counts the files.
             return (ActionResult(outcome: .succeeded, message: PurgeRun.laterMessage,
                                  details: ["MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."]),

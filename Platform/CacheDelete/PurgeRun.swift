@@ -123,7 +123,7 @@ public struct PurgeRun: Sendable {
 
     /// What to tell the user. `what` names the files ("unused system assets").
     public static func result(_ outcome: Outcome, what: String) -> ActionResult {
-        if let error = outcome.error { return .failed(error, details: details(outcome)) }
+        if let error = outcome.error { return .failed(failedMessage, details: [error] + details(outcome)) }
         if outcome.skipped {
             return ActionResult(outcome: .succeeded, message: PurgeRun.nothingMessage,
                                 details: ["Asked again just before, macOS estimated \(ByteFormat.string(outcome.estimate ?? 0)) of \(what)."])
@@ -138,6 +138,8 @@ public struct PurgeRun: Sendable {
     /// The words a cleanup shows the user, in its button, as few as possible: what it freed, measured on the volume.
     public static func freedMessage(_ freed: UInt64) -> String { freed > 0 ? "Freed \(ByteFormat.string(freed))" : nothingMessage }
     public static let nothingMessage = "Nothing to free"
+    /// A purge that failed; why is in the details, not in front of the user.
+    public static let failedMessage = "Couldn't free space. Try again later."
     /// macOS kept the files; MacSpace asks it again in the background (`PurgeRetrier`).
     public static let laterMessage = "Finishing in the background"
 

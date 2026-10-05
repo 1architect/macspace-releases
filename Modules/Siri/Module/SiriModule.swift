@@ -163,7 +163,7 @@ public struct SiriModule: MacSpaceModule {
             progress(ActionProgress(fraction: min(0.9, Double(count) * 0.2), message: step.detail))
         }
         if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: "Can't free it yet", details: result.blockers, refresh: true) }
-        if let error = result.error { return .failed(error, details: result.steps.map(\.detail)) }
+        if let error = result.error { return .failed(PurgeRun.failedMessage, details: [error] + result.steps.map(\.detail)) }
         return .succeeded(PurgeRun.freedMessage(result.purge?.freedBytes ?? 0),
                           details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."],
                           freedBytes: result.purge?.freedBytes)

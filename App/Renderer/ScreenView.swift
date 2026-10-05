@@ -336,18 +336,20 @@ private struct ActionPill: View {
             case .working: break
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let symbol {
                     Image(systemName: symbol).font(.system(size: 12, weight: .bold)).transition(.blurReplace)
                 }
-                Text(text).lineLimit(1).contentTransition(.interpolate)
+                // Never cut: the whole message wraps, and the pill grows to hold it.
+                Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.interpolate)
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
             .padding(.vertical, 7)
             .background { background }
-            .contentShape(Capsule())
+            .contentShape(Self.shape)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
@@ -362,7 +364,7 @@ private struct ActionPill: View {
 
     private var background: some View {
         ZStack(alignment: .leading) {
-            Capsule().fill(hovering && !isWorking ? lighter : fill)
+            Self.shape.fill(hovering && !isWorking ? lighter : fill)
             if case let .working(progress) = phase {
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
@@ -377,11 +379,14 @@ private struct ActionPill: View {
                         }
                     }
                 }
-                .clipShape(Capsule())
+                .clipShape(Self.shape)
             }
         }
         .modifier(PillGlass(enabled: design.glass))
     }
+
+    /// A capsule on one line (half its height), a rounded box once the message wraps.
+    static let shape = RoundedRectangle(cornerRadius: 15.5, style: .continuous)
 
     private var isWorking: Bool { if case .working = phase { return true } else { return false } }
     private var lighter: Color { severity == .critical ? fill.opacity(0.85) : design.actionLight }
@@ -392,6 +397,6 @@ private struct PillGlass: ViewModifier {
     let enabled: Bool
 
     func body(content: Content) -> some View {
-        if enabled { content.glassEffect(.regular.interactive(), in: .capsule) } else { content }
+        if enabled { content.glassEffect(.regular.interactive(), in: ActionPill.shape) } else { content }
     }
 }

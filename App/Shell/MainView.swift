@@ -119,6 +119,7 @@ public struct MainView: View {
                 case "done": handle.previewPill(cleaning: false, progress: nil, result: .succeeded("Freed 712,7 MB"))
                 case "later": handle.previewPill(cleaning: false, progress: nil, result: ActionResult(outcome: .succeeded, message: "Finishing in the background"))
                 case "fail": handle.previewPill(cleaning: false, progress: nil, result: .failed("Couldn't free it"))
+                case "long": handle.previewPill(cleaning: false, progress: nil, result: .failed("Install the helper in Settings, then switch Apple Intelligence off again from this page."))
                 default: handle.previewPill(cleaning: false, progress: nil, result: nil)
                 }
             }
