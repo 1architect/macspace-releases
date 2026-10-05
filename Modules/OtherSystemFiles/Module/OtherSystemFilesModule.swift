@@ -81,8 +81,8 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         var reported: UInt64 = 0
         var elapsed: Double = 0
         var lastError: String?
-        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, "Asking macOS to remove the files apps marked purgeable…"),
-                     (CacheDeleteService.fsPurgeableDataForceUrgency, "Asking macOS again, as when the disk is critically full…")]
+        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, "Freeing space…"),
+                     (CacheDeleteService.fsPurgeableDataForceUrgency, "Freeing space…")]
         for (index, step) in steps.enumerated() {
             progress(ActionProgress(fraction: Double(index) / Double(steps.count), message: step.1))
             let result: CacheDeletePurgeResult
@@ -100,7 +100,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         if reported == 0 && freed < 1_000_000 {
             if let lastError { return (.failed(lastError), false, 0) }
             // CacheDelete can answer at once that it removed nothing while its estimate still counts the files.
-            return (ActionResult(outcome: .succeeded, message: "macOS kept them for now; MacSpace keeps asking in the background.",
+            return (ActionResult(outcome: .succeeded, message: PurgeRun.laterMessage,
                                  details: ["MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."]),
                     true, 0)
         }
@@ -109,6 +109,6 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         if estimate > removed + OtherSystemFilesScreenBuilder.threshold {
             details.append("macOS kept the other \(ByteFormat.string(estimate - removed)) for now.")
         }
-        return (.succeeded("Freed \(ByteFormat.string(freed)) of purgeable app files, measured on the volume.", details: details, freedBytes: freed), false, removed)
+        return (.succeeded(PurgeRun.freedMessage(freed), details: details, freedBytes: freed), false, removed)
     }
 }

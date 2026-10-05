@@ -112,6 +112,16 @@ public struct MainView: View {
             else if text == "back" { close() }
             else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.openGroup = String(text.dropFirst(6)) }
             else if text.hasPrefix("open:") { present(.module(String(text.dropFirst(5)))) }
+            else if text.hasPrefix("pill:"), case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
+                let parts = text.split(separator: ":").map(String.init)
+                switch parts[1] {
+                case "working": handle.previewPill(cleaning: true, progress: ActionProgress(fraction: parts.count > 2 ? Double(parts[2]) : nil, message: "Freeing space…"), result: nil)
+                case "done": handle.previewPill(cleaning: false, progress: nil, result: .succeeded("Freed 712,7 MB"))
+                case "later": handle.previewPill(cleaning: false, progress: nil, result: ActionResult(outcome: .succeeded, message: "Finishing in the background"))
+                case "fail": handle.previewPill(cleaning: false, progress: nil, result: .failed("Couldn't free it"))
+                default: handle.previewPill(cleaning: false, progress: nil, result: nil)
+                }
+            }
         }
     }
 

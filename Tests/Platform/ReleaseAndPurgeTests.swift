@@ -67,13 +67,13 @@ final class PurgeRetrierTests: XCTestCase {
     func testOutcomeThatRemovedNothing() {
         let nothing = PurgeRun.Outcome(estimate: 91_400_000, reported: 0, freed: 300_000, error: nil, skipped: false)
         XCTAssertTrue(nothing.removedNothing, "a few hundred kilobytes are the system's own writes")
-        XCTAssertEqual(PurgeRun.result(nothing, what: "assets").message, "macOS kept them for now; MacSpace keeps asking in the background.",
+        XCTAssertEqual(PurgeRun.result(nothing, what: "assets").message, "Finishing in the background",
                        "the user is not asked to try again")
         let freed = PurgeRun.Outcome(estimate: 91_400_000, reported: 90_000_000, freed: 88_000_000, error: nil, skipped: false)
-        XCTAssertEqual(PurgeRun.result(freed, what: "assets").message, "Freed \(ByteFormat.string(88_000_000)) of assets, measured on the volume.")
+        XCTAssertEqual(PurgeRun.result(freed, what: "assets").message, "Freed \(ByteFormat.string(88_000_000))")
         let skipped = PurgeRun.Outcome(estimate: 2_000, reported: 0, freed: 0, error: nil, skipped: true)
         XCTAssertFalse(skipped.removedNothing)
-        XCTAssertEqual(PurgeRun.result(skipped, what: "assets").message, "macOS has nothing to free right now.")
+        XCTAssertEqual(PurgeRun.result(skipped, what: "assets").message, "Nothing to free")
     }
 }
 

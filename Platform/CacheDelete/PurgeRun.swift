@@ -125,15 +125,21 @@ public struct PurgeRun: Sendable {
     public static func result(_ outcome: Outcome, what: String) -> ActionResult {
         if let error = outcome.error { return .failed(error, details: details(outcome)) }
         if outcome.skipped {
-            return ActionResult(outcome: .succeeded, message: "macOS has nothing to free right now.",
+            return ActionResult(outcome: .succeeded, message: PurgeRun.nothingMessage,
                                 details: ["Asked again just before, macOS estimated \(ByteFormat.string(outcome.estimate ?? 0)) of \(what)."])
         }
         if outcome.removedNothing {
-            return ActionResult(outcome: .succeeded, message: "macOS kept them for now; MacSpace keeps asking in the background.",
+            return ActionResult(outcome: .succeeded, message: PurgeRun.laterMessage,
                                 details: details(outcome) + [PurgeRun.retryNote])
         }
-        return .succeeded("Freed \(ByteFormat.string(outcome.freed)) of \(what), measured on the volume.", details: details(outcome), freedBytes: outcome.freed)
+        return .succeeded(freedMessage(outcome.freed), details: details(outcome), freedBytes: outcome.freed)
     }
+
+    /// The words a cleanup shows the user, in its button, as few as possible: what it freed, measured on the volume.
+    public static func freedMessage(_ freed: UInt64) -> String { freed > 0 ? "Freed \(ByteFormat.string(freed))" : nothingMessage }
+    public static let nothingMessage = "Nothing to free"
+    /// macOS kept the files; MacSpace asks it again in the background (`PurgeRetrier`).
+    public static let laterMessage = "Finishing in the background"
 
     static let retryNote = "MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."
 

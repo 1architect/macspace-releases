@@ -39,28 +39,28 @@ public struct SystemDataModule: MacSpaceModule {
         switch request.actionID {
         case "clean":
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
-                return .failed("That item is no longer listed. Refresh and try again.")
+                return .failed("Already gone")
             }
-            progress(ActionProgress(message: "Freeing \(item.title)…"))
+            progress(ActionProgress(message: "Freeing space…"))
             return Self.clean([item])
         case "cleanReports":
-            progress(ActionProgress(message: "Deleting old reports…"))
+            progress(ActionProgress(message: "Freeing space…"))
             return Self.cleanReports(snapshot.reports)
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
-            return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then press Refresh.", refresh: false)
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "deleteStagedUpdate":
-            progress(ActionProgress(message: "Deleting the leftover update files…"))
+            progress(ActionProgress(message: "Freeing space…"))
             return await Self.deleteStagedUpdate(context.privileged)
         case "deleteVersions":
-            progress(ActionProgress(message: "Stopping revisiond and deleting the version history…"))
+            progress(ActionProgress(message: "Freeing space…"))
             return await Self.deleteVersions(context.privileged)
         case "purgeAssets":
-            progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
+            progress(ActionProgress(message: "Freeing space…"))
             return Self.purgeAssets(store: store)
         case "cleanAll":
             let cleaned = Self.cleanSafe(snapshot, store: store, progress: progress)
-            return .succeeded("Freed \(ByteFormat.string(cleaned.freed)), measured on the volume.", details: cleaned.details, freedBytes: cleaned.freed)
+            return .succeeded(Self.freedMessage(cleaned.freed), details: cleaned.details, freedBytes: cleaned.freed)
         default:
             return .failed("Unknown action \(request.actionID).")
         }
@@ -81,11 +81,11 @@ public struct SystemDataModule: MacSpaceModule {
         var details: [String] = []
         let before = DataVolume.freeBytes()
         let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
-        progress(ActionProgress(fraction: 0.1, message: "Freeing system caches…"))
+        progress(ActionProgress(fraction: 0.1, message: "Freeing space…"))
         if !cleanable.isEmpty { details += clean(cleanable).details }
-        progress(ActionProgress(fraction: 0.5, message: "Deleting old reports…"))
+        progress(ActionProgress(fraction: 0.5, message: "Freeing space…"))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
-        progress(ActionProgress(fraction: 0.7, message: "Removing unused system assets…"))
+        progress(ActionProgress(fraction: 0.7, message: "Freeing space…"))
         if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying { details += purgeAssets(store: store).details }
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
@@ -101,45 +101,43 @@ public struct SystemDataModule: MacSpaceModule {
         let freed = measuredFreed(report.freeBytesBefore, report.freeBytesAfter)
         let details = report.results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
         if !failed.isEmpty && failed.count == report.results.count {
-            return ActionResult(outcome: .failed, message: "Nothing was freed.", details: details, refresh: true)
+            return ActionResult(outcome: .failed, message: "Couldn't free it", details: details, refresh: true)
         }
-        return .succeeded(freedMessage(freed, cleaned: report.results.count - failed.count), details: details, freedBytes: freed)
+        return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
     }
 
     static func cleanReports(_ plan: CleanupPlan) -> ActionResult {
         let result = DiagnosticReportCleaner(directories: []).execute(plan)
         let details = result.failed.map { "Could not delete \($0.key): \($0.value)" }
-        return .succeeded("Deleted \(result.deleted.count) report(s), \(ByteFormat.string(result.freedBytes)).", details: details, freedBytes: result.freedBytes)
+        return .succeeded(freedMessage(result.freedBytes), details: details, freedBytes: result.freedBytes)
     }
 
     /// Deletes the Versions store through the helper. The freed space is measured on the volume, as for every other cleanup.
     static func deleteVersions(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed("The helper is not installed. Install it in Settings, then try again.") }
+        guard let channel else { return .failed("Install the helper in Settings") }
         let before = DataVolume.freeBytes()
         let result: VersionStoreResult
         do { result = try await channel.perform(VersionStoreResult.self, operation: SystemDataPrivilegedOperations.deleteVersions) }
-        catch { return .failed("The helper could not delete the version history: \(error.localizedDescription)") }
-        guard result.executed else { return .failed(result.error ?? "Nothing was deleted.") }
+        catch { return .failed("Couldn't free it", details: [error.localizedDescription]) }
+        guard result.executed else { return .failed("Couldn't free it", details: result.error.map { [$0] } ?? []) }
         let measured = measuredFreed(before, DataVolume.freeBytes())
         let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
         var details = ["Removed \(result.removedEntries) item(s) from the store; it went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
         if let error = result.error { details.append(error) }
-        let message = measured.map { "Deleted the version history. The volume gained \(ByteFormat.string($0)); the store shrank by \(ByteFormat.string(stored))." }
-            ?? "Deleted the version history; the store shrank by \(ByteFormat.string(stored))."
+        let message = freedMessage(measured ?? stored)
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
     }
 
     /// Deletes the files of an update that is already installed, through the helper (which checks they are really a leftover).
     static func deleteStagedUpdate(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed("The helper is not installed. Install it in Settings, then try again.") }
+        guard let channel else { return .failed("Install the helper in Settings") }
         let before = DataVolume.freeBytes()
         let result: StagedUpdateResult
         do { result = try await channel.perform(StagedUpdateResult.self, operation: SystemDataPrivilegedOperations.deleteStagedUpdate) }
-        catch { return .failed("The helper could not delete the files: \(error.localizedDescription)") }
-        guard result.executed else { return .failed(result.error ?? "Nothing was deleted.") }
+        catch { return .failed("Couldn't free it", details: [error.localizedDescription]) }
+        guard result.executed else { return .failed("Couldn't free it", details: result.error.map { [$0] } ?? []) }
         let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
-        let message = measuredFreed(before, DataVolume.freeBytes()).map { "Deleted the leftover update files. The volume gained \(ByteFormat.string($0)); the folder shrank by \(ByteFormat.string(stored))." }
-            ?? "Deleted the leftover update files; the folder shrank by \(ByteFormat.string(stored))."
+        let message = freedMessage(measuredFreed(before, DataVolume.freeBytes()) ?? stored)
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [],
                             freedBytes: measuredFreed(before, DataVolume.freeBytes()))
     }
@@ -161,8 +159,6 @@ public struct SystemDataModule: MacSpaceModule {
         return after > before ? after - before : 0
     }
 
-    static func freedMessage(_ freed: UInt64?, cleaned: Int) -> String {
-        guard let freed else { return "Deleted \(cleaned) item(s)." }
-        return freed > 0 ? "Freed \(ByteFormat.string(freed)), measured on the volume." : "Deleted \(cleaned) item(s); macOS has not reported the space as free yet."
-    }
+    /// What a cleanup tells the user: the space it freed, measured on the volume, and nothing else.
+    static func freedMessage(_ freed: UInt64?) -> String { PurgeRun.freedMessage(freed ?? 0) }
 }

@@ -53,18 +53,17 @@ public struct AppleIntelligenceWatcher: Sendable {
         if !alreadyAlerted {
             switch status.state {
             case .atRisk:
-                let languages = "Siri \(status.inputs.siriLanguage ?? "?"), system \(status.inputs.systemLanguage ?? "?")"
-                alert = .init(severity: .warning, title: "Apple Intelligence protection lost",
-                              message: "Apple Intelligence is eligible again (\(languages)); macOS may download the ~12 GB model. Switch Apple Intelligence off again in MacSpace.")
+                alert = .init(severity: .warning, title: "Apple Intelligence is back on",
+                              message: "Switch it off again in MacSpace.")
             case .unknown:
-                alert = .init(severity: .warning, title: "Apple Intelligence protection unknown",
-                              message: "MacSpace could not read eligibility or asset state; the method may have changed after a macOS update. Open MacSpace to check.")
+                alert = .init(severity: .warning, title: "Couldn't check Apple Intelligence",
+                              message: "Open MacSpace to check.")
             case .releasing where now.timeIntervalSince(since) >= releaseGrace:
-                alert = .init(severity: .warning, title: "Apple Intelligence model not released",
-                              message: "Apple Intelligence is off, but the 3B model is still selected or installed after \(Int(releaseGrace / 60)) minutes.")
+                alert = .init(severity: .warning, title: "Apple Intelligence models still on disk",
+                              message: "Open MacSpace to free them.")
             case .protected where previous != nil && previous!.state != .protected:
-                alert = .init(severity: .info, title: "Apple Intelligence protection restored",
-                              message: "Apple Intelligence is ineligible and the 3B model is absent.")
+                alert = .init(severity: .info, title: "Apple Intelligence is off",
+                              message: "Its models are gone.")
             default:
                 break
             }

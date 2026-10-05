@@ -84,7 +84,7 @@ public struct SiriModule: MacSpaceModule {
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        if Machine.isVirtualMachine { return .failed("Apple Intelligence does not exist in a virtual machine; nothing was changed.") }
+        if Machine.isVirtualMachine { return .failed("Not available in a virtual machine") }
         switch request.actionID {
         case "toggle":
             let available = request.parameters["value"] == "true"
@@ -98,9 +98,9 @@ public struct SiriModule: MacSpaceModule {
                                 details: result.details + ["MacSpace deletes the released models in the background."], refresh: true)
         case "openICloudSettings":
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
-            return ActionResult(outcome: .succeeded, message: "Opened iCloud settings: Siri > Sync this Mac.", refresh: false)
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "purgeAssets":
-            progress(ActionProgress(message: "Asking macOS to remove unused system assets…"))
+            progress(ActionProgress(message: "Freeing space…"))
             let store = self.store
             return Self.purge { freed in
                 Self.recordBackground(freed, summary: "Unused system assets")
@@ -108,7 +108,7 @@ public struct SiriModule: MacSpaceModule {
             }
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
-            return ActionResult(outcome: .succeeded, message: "Opened System Settings. Allow MacSpace, then come back.", refresh: false)
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "releaseModels":
             return await Task.detached(priority: .userInitiated) { Self.release(progress: progress) }.value
         default:
@@ -136,11 +136,11 @@ public struct SiriModule: MacSpaceModule {
         do {
             let plan = try guardian.plan(available ? .enable : .disable, context: environment.context(), scope: .thisMacOnly, saved: environment.loadSavedSettings())
             let result = try guardian.apply(plan, environment: environment)
-            if plan.noChangeNeeded { return .succeeded(available ? "Apple Intelligence was already on." : "Apple Intelligence was already off.") }
+            if plan.noChangeNeeded { return .succeeded(available ? "Already on" : "Already off") }
             let state = guardian.status().state
-            if available { return .succeeded("Apple Intelligence is available again.", details: plan.warnings) }
+            if available { return .succeeded("Apple Intelligence is on", details: plan.warnings) }
             let tail = state == .releasing ? "macOS is removing its model; this usually takes a few minutes." : "Verified: eligibility reads unavailable."
-            return .succeeded("Apple Intelligence is off.", details: [tail] + (result.executed ? [] : []))
+            return .succeeded("Apple Intelligence is off", details: [tail] + (result.executed ? [] : []))
         } catch {
             return .failed("\(error)")
         }
@@ -162,9 +162,9 @@ public struct SiriModule: MacSpaceModule {
             count += 1
             progress(ActionProgress(fraction: min(0.9, Double(count) * 0.2), message: step.detail))
         }
-        if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: "The release cannot run yet.", details: result.blockers, refresh: true) }
+        if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: "Can't free it yet", details: result.blockers, refresh: true) }
         if let error = result.error { return .failed(error, details: result.steps.map(\.detail)) }
-        return .succeeded("Freed \(ByteFormat.string(result.purge?.freedBytes ?? 0)), measured on the volume.",
+        return .succeeded(PurgeRun.freedMessage(result.purge?.freedBytes ?? 0),
                           details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."],
                           freedBytes: result.purge?.freedBytes)
     }

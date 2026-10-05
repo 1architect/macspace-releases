@@ -34,15 +34,14 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
 
     func testLosingProtectionAlertsOnceThenStaysQuiet() {
         let outcomes = run([(.protected, 0), (.atRisk, 10), (.atRisk, 20), (.atRisk, 4000)])
-        XCTAssertEqual(outcomes[1].alert?.title, "Apple Intelligence protection lost")
-        XCTAssertTrue(outcomes[1].alert?.message.contains("Siri pt-BR, system pt-BR") ?? false)
+        XCTAssertEqual(outcomes[1].alert?.title, "Apple Intelligence is back on")
         XCTAssertNil(outcomes[2].alert)
         XCTAssertNil(outcomes[3].alert)
         XCTAssertEqual(outcomes[3].record.since, Date(timeIntervalSince1970: 10))
     }
 
     func testUnknownAlertsBecauseTheMethodMayHaveBroken() {
-        XCTAssertEqual(run([(.protected, 0), (.unknown, 5)])[1].alert?.title, "Apple Intelligence protection unknown")
+        XCTAssertEqual(run([(.protected, 0), (.unknown, 5)])[1].alert?.title, "Couldn't check Apple Intelligence")
     }
 
     func testReleasingIsQuietUntilTheGracePeriodThenAlertsOnce() {
@@ -50,7 +49,7 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
         XCTAssertNil(outcomes[0].alert)
         XCTAssertNil(outcomes[1].alert)
         XCTAssertFalse(outcomes[1].record.alerted)
-        XCTAssertEqual(outcomes[2].alert?.title, "Apple Intelligence model not released")
+        XCTAssertEqual(outcomes[2].alert?.title, "Apple Intelligence models still on disk")
         XCTAssertNil(outcomes[3].alert)
     }
 
@@ -58,7 +57,7 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
         let outcomes = run([(.atRisk, 0), (.releasing, 60), (.protected, 120)])
         XCTAssertNil(outcomes[1].alert)
         XCTAssertEqual(outcomes[2].alert?.severity, .info)
-        XCTAssertEqual(outcomes[2].alert?.title, "Apple Intelligence protection restored")
+        XCTAssertEqual(outcomes[2].alert?.title, "Apple Intelligence is off")
     }
 
     func testStorePersistsRecordAndRotatesEventLog() throws {

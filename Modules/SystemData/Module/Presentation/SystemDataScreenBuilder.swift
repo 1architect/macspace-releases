@@ -162,13 +162,12 @@ enum SystemDataScreenBuilder {
     /// What Clean deletes, item by item, then document version history, which only its own button deletes. nil when there is nothing
     /// worth a row.
     static func freeNow(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
-        let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && ($0.expectedReclaimBytes ?? 0) >= worthARow }
+        // The caches of an app that is open are not freeable now, so they are not listed: they come back once it quits.
+        let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) >= worthARow }
             .sorted { ($0.expectedReclaimBytes ?? 0) > ($1.expectedReclaimBytes ?? 0) }
         var rows = cleanable.map { item -> Row in
-            Row(id: item.id, title: item.title, subtitle: item.inUse ? "Quit \(item.owners.joined(separator: ", ")) first." : nil,
-                trailing: ByteFormat.string(item.expectedReclaimBytes ?? 0),
-                badge: item.inUse ? Badge("App is open", tone: .caution) : nil, symbol: "internaldrive", detail: item.cleanup.description,
-                actions: item.inUse ? [] : [Action(id: "clean", title: "Free", parameters: ["id": item.id])])
+            Row(id: item.id, title: item.title, trailing: ByteFormat.string(item.expectedReclaimBytes ?? 0), symbol: "internaldrive",
+                detail: item.cleanup.description, actions: [Action(id: "clean", title: "Free", parameters: ["id": item.id])])
         }
         if snapshot.reports.totalBytes >= worthARow {
             rows.append(Row(id: "reports", title: "Old diagnostic and crash reports", trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",

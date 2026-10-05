@@ -183,7 +183,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !missing.isEmpty {
             // For a switch it counts as failed: nothing changed, so the switch goes back.
             let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
-                                      message: "Needs \(missing.map(\.title).joined(separator: ", ")). Grant it in Settings, then try again.",
+                                      message: "Needs \(missing.map(\.title).joined(separator: ", "))",
                                       refresh: false)
             lastResult = result
             return result
@@ -215,6 +215,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     public func dismissResult() { lastResult = nil }
+
+    /// Shows a state of the page's action pill without running anything, for development captures (`DebugRemote`).
+    func previewPill(cleaning: Bool, progress: ActionProgress?, result: ActionResult?) {
+        isCleaning = cleaning
+        self.progress = progress
+        lastResult = result
+    }
 
     /// Background tasks the user switched on, for the scheduler.
     public func enabledBackgroundTasks() -> [BackgroundTaskDefinition] {

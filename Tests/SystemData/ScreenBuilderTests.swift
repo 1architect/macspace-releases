@@ -74,13 +74,11 @@ final class SystemDataScreenBuilderTests: XCTestCase {
             item("crumbs", kind: .appCache, bytes: 5_000, cleanup: .deleteWhenNotRunning, reclaim: 5_000),
         ], purgeable: 12_000_000_000, reports: 4_000_000)
         guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.id), ["big", "open", "small", "reports", "assets"], "largest first, crumbs hidden")
+        XCTAssertEqual(list.rows.map(\.id), ["big", "small", "reports", "assets"], "largest first, crumbs and the open app's cache hidden")
         XCTAssertEqual(list.rows[0].actions.map(\.id), ["clean"])
-        XCTAssertTrue(list.rows[1].actions.isEmpty, "an item whose app is open cannot be cleaned")
-        XCTAssertEqual(list.rows[1].badge?.text, "App is open")
         XCTAssertNil(list.rows[0].badge, "an ordinary row needs no badge")
-        XCTAssertNotNil(list.rows[3].actions[0].confirmation, "deleting reports asks first")
-        XCTAssertNotNil(list.rows[4].actions[0].confirmation)
+        XCTAssertNotNil(list.rows[2].actions[0].confirmation, "deleting reports asks first")
+        XCTAssertNotNil(list.rows[3].actions[0].confirmation)
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).primary?.id, "cleanAll")
         XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_005_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
     }

@@ -13,7 +13,7 @@ struct ScreenView: View {
 
     /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
     private var hasFooter: Bool {
-        handle.screen?.primary != nil || handle.progress != nil || handle.lastResult != nil
+        handle.screen?.primary != nil || handle.isCleaning || handle.lastResult != nil
     }
 
     /// What the page shows: the module's screen, or while it loads, the tile's own blocks as the hero (pulsing), which then move to
@@ -260,81 +260,138 @@ private struct PageSkeleton: View {
     }
 }
 
-/// The bottom-left corner of a page: the main action, the progress of what is running in its place, and the outcome above it.
+/// The bottom-left corner of a page: one pill that is the main action, turns into the progress of what is running, then into its
+/// outcome, and back into the action. No note of its own: the outcome is the pill's text for a moment.
 private struct ActionDock: View {
     @ObservedObject var handle: ModuleHandle
 
+    private var phase: ActionPill.Phase? {
+        if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
+        if handle.isCleaning { return .working(handle.progress) }
+        if let primary = handle.screen?.primary { return .idle(primary) }
+        return nil
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let result = handle.lastResult {
-                ResultNote(result: result) { handle.dismissResult() }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            Group {
-                if let progress = handle.progress {
-                    ProgressPill(progress: progress)
-                        .transition(.blurReplace)
-                } else if let primary = handle.screen?.primary {
-                    ActionButton(action: primary) { [handle] action, extra, quiet in await handle.perform(action, extraParameters: extra, quiet: quiet) }
-                        .transition(.blurReplace)
+        Group {
+            if let phase {
+                ActionPill(phase: phase, dismiss: { handle.dismissResult() }) { [handle] action in
+                    if let confirmation = action.confirmation, !ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { return }
+                    await handle.perform(action)
                 }
+                .transition(.blurReplace)
             }
         }
         .frame(maxWidth: 360, alignment: .leading)
-        .animation(Theme.layout, value: handle.progress)
-        .animation(Theme.layout, value: handle.lastResult)
-        .animation(Theme.layout, value: handle.screen?.primary)
+        .animation(Theme.layout, value: phase)
     }
 }
 
-private struct ProgressPill: View {
-    let progress: ActionProgress
-    @Environment(\.design) private var design
-
-    var body: some View {
-        // In the text's color, as the round buttons: white was lost on the paper palette.
-        HStack(spacing: 8) {
-            if let fraction = progress.fraction {
-                ProgressView(value: fraction).progressViewStyle(.circular).controlSize(.small).tint(design.ink)
-            } else {
-                ProgressView().controlSize(.small).tint(design.ink)
-            }
-            Text(progress.message).font(.system(size: 12, weight: .medium)).lineLimit(1).contentTransition(.opacity)
-        }
-        .foregroundStyle(design.ink)
-        .padding(.horizontal, 13)
-        .padding(.vertical, 7)
-        .glassEffect(.regular, in: .capsule)
+/// The main action's pill. Its shape stays while its text changes, so it grows and shrinks from one state to the next; while an
+/// action runs it fills from the left as the action advances, or breathes when the module gives no fraction.
+private struct ActionPill: View {
+    enum Phase: Equatable {
+        case idle(Action)
+        case working(ActionProgress?)
+        case done(ActionResult)
     }
-}
 
-/// What the last action did. Successes go away by themselves; anything else stays until dismissed.
-private struct ResultNote: View {
-    let result: ActionResult
+    let phase: Phase
     let dismiss: () -> Void
+    let run: @MainActor (Action) async -> Void
+    @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hovering = false
+
+    private var severity: Banner.Severity? {
+        guard case let .done(result) = phase else { return nil }
+        return result.outcome == .succeeded ? .success : (result.outcome == .failed ? .critical : .warning)
+    }
+
+    private var symbol: String? {
+        switch phase {
+        case let .idle(action): return action.symbol
+        case .working: return nil
+        case .done: return severity == .success ? "checkmark" : "exclamationmark"
+        }
+    }
+
+    private var text: String {
+        switch phase {
+        case let .idle(action): return action.title
+        case let .working(progress): return progress?.message ?? "Working…"
+        case let .done(result): return result.restartRequired ? "Restart to finish" : result.message
+        }
+    }
+
+    /// A failure is drawn in red; everything else in the action color.
+    private var fill: Color { severity == .critical ? Palette.color(Tone.critical) : design.action }
+    private var ink: Color { severity == .critical ? .white : design.actionDeep }
 
     var body: some View {
-        let severity: Banner.Severity = result.outcome == .succeeded ? .success : (result.outcome == .failed ? .critical : .warning)
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: Palette.symbol(severity)).foregroundStyle(Palette.color(severity))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(result.message).font(.system(size: 12, weight: .semibold))
-                ForEach(Array(result.details.prefix(3).enumerated()), id: \.offset) { _, line in
-                    Text(line).font(.caption).foregroundStyle(.secondary)
-                }
-                if result.restartRequired { Text("Restart the Mac for this to take effect.").font(.caption.weight(.semibold)) }
+        Button {
+            switch phase {
+            case let .idle(action): Task { @MainActor in await run(action) }
+            case .done: dismiss()
+            case .working: break
             }
-            Spacer(minLength: 4)
-            Button(action: dismiss) { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)) }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+        } label: {
+            HStack(spacing: 6) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 12, weight: .bold)).transition(.blurReplace)
+                }
+                Text(text).lineLimit(1).contentTransition(.interpolate)
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(ink)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 7)
+            .background { background }
+            .contentShape(Capsule())
         }
-        .padding(10)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
-        .task(id: result) {
-            guard result.outcome == .succeeded, !result.restartRequired else { return }
-            try? await Task.sleep(for: .seconds(5))
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(Theme.hover, value: hovering)
+        .task(id: phase) {
+            // A success goes back to the action by itself; anything else stays until it is clicked.
+            guard case let .done(result) = phase, result.outcome == .succeeded, !result.restartRequired else { return }
+            try? await Task.sleep(for: .seconds(4))
             if !Task.isCancelled { dismiss() }
         }
+    }
+
+    private var background: some View {
+        ZStack(alignment: .leading) {
+            Capsule().fill(hovering && !isWorking ? lighter : fill)
+            if case let .working(progress) = phase {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+                    let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
+                    GeometryReader { geometry in
+                        if let fraction = progress?.fraction {
+                            Rectangle().fill(design.actionLight)
+                                .frame(width: geometry.size.width * max(0.08, min(1, fraction)))
+                                .opacity(0.7 + 0.3 * wave)
+                                .animation(Theme.layout, value: fraction)
+                        } else {
+                            Rectangle().fill(design.actionLight).opacity(0.25 + 0.6 * wave)
+                        }
+                    }
+                }
+                .clipShape(Capsule())
+            }
+        }
+        .modifier(PillGlass(enabled: design.glass))
+    }
+
+    private var isWorking: Bool { if case .working = phase { return true } else { return false } }
+    private var lighter: Color { severity == .critical ? fill.opacity(0.85) : design.actionLight }
+}
+
+/// The glass around the pill, when the window is glass.
+private struct PillGlass: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled { content.glassEffect(.regular.interactive(), in: .capsule) } else { content }
     }
 }
