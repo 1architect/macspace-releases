@@ -132,10 +132,33 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// What the window's background follows, apart from the tiles (which keep the palette): the palette, the system's appearance
+/// (changing with it, system wide), or light or dark whatever either says.
+public enum BackgroundAppearance: String, CaseIterable, Identifiable, Sendable {
+    case palette
+    case system
+    case light
+    case dark
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .palette: return "Follow Palette"
+        case .system: return "Follow System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+}
+
 /// How the app is drawn right now: the palette, and whether tiles and their elements are Liquid Glass. Handed down the view tree in
 /// the environment, so switching redraws everything at once.
 struct Design: Equatable {
     var scheme: PaletteScheme = .deep
+    var backgroundAppearance = BackgroundAppearance.palette
+    /// The system's appearance is dark right now (`DesignSettings` keeps it up to date).
+    var systemIsDark = false
     var glass = false
     /// Temporary, for finding what lags on hover: tiles lift, and tilt toward the pointer; glass is shaded under the pointer.
     var lift = true
@@ -172,17 +195,26 @@ struct Design: Equatable {
     var actionLight: Color { lab.color(.actionLight) ?? scheme.action.light }
     var actionDeep: Color { lab.color(.actionDeep) ?? scheme.action.deep }
     var isLight: Bool { scheme.isLight }
+    /// Whether the window's background is light: the palette's, the system's, or the one chosen.
+    var backgroundIsLight: Bool {
+        switch backgroundAppearance {
+        case .palette: return isLight
+        case .system: return !systemIsDark
+        case .light: return true
+        case .dark: return false
+        }
+    }
     /// Text on tiles and pages.
     var ink: Color { lab.color(.ink) ?? (isLight ? Color(hex: 0x1C1C1E) : .white) }
     /// The Color Lab's fill for a part of the app; nil draws it as before.
     func fill(_ target: FillTarget) -> FillSpec? { lab.fill(target) }
     /// The color scheme pages and their controls are drawn in.
     var colorScheme: ColorScheme { isLight ? .light : .dark }
-    /// macOS's own window background in the palette's light or dark, whatever the system is set to: the solid window (Window Glass
-    /// off) is drawn in it, so day and night follow the system's defaults.
+    /// macOS's own window background in the light or dark the background follows (`backgroundIsLight`): the solid window (Window
+    /// Glass off) is drawn in it, so day and night follow the system's defaults.
     var systemWindowColor: Color {
         var resolved = NSColor.windowBackgroundColor
-        NSAppearance(named: isLight ? .aqua : .darkAqua)?.performAsCurrentDrawingAppearance {
+        NSAppearance(named: backgroundIsLight ? .aqua : .darkAqua)?.performAsCurrentDrawingAppearance {
             resolved = NSColor.windowBackgroundColor.usingColorSpace(.sRGB) ?? resolved
         }
         return Color(nsColor: resolved)
@@ -200,6 +232,10 @@ public final class DesignSettings: ObservableObject {
     private let defaults: UserDefaults
 
     @Published public var scheme: PaletteScheme { didSet { defaults.set(scheme.rawValue, forKey: "design.palette") } }
+    @Published public var backgroundAppearance: BackgroundAppearance { didSet { defaults.set(backgroundAppearance.rawValue, forKey: "design.backgroundAppearance") } }
+    /// The system's appearance is dark; kept up to date while the app runs, for `.system` backgrounds.
+    @Published private(set) var systemIsDark = DesignSettings.readSystemIsDark()
+    private var appearanceObserver: NSObjectProtocol?
     @Published public var glass: Bool { didSet { defaults.set(glass, forKey: "design.glass") } }
     @Published public var lift: Bool { didSet { defaults.set(lift, forKey: "design.lift") } }
     @Published public var tilt: Bool { didSet { defaults.set(tilt, forKey: "design.tilt") } }
@@ -233,6 +269,7 @@ public final class DesignSettings: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         scheme = PaletteScheme(rawValue: defaults.string(forKey: "design.palette") ?? "") ?? .deep
+        backgroundAppearance = BackgroundAppearance(rawValue: defaults.string(forKey: "design.backgroundAppearance") ?? "") ?? .palette
         glass = defaults.bool(forKey: "design.glass")
         lift = defaults.object(forKey: "design.lift") as? Bool ?? true
         tilt = defaults.object(forKey: "design.tilt") as? Bool ?? true
@@ -254,13 +291,27 @@ public final class DesignSettings: ObservableObject {
         tileRadius = CGFloat(defaults.object(forKey: "design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
         windowRadius = CGFloat(defaults.object(forKey: "design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
         colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
+        observeSystemAppearance()
     }
 
-    var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
+    var design: Design { Design(scheme: scheme, backgroundAppearance: backgroundAppearance, systemIsDark: systemIsDark, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, windowBackground: windowBackground, pageEdgeFade: pageEdgeFade,
                                   clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
                                   tileRadius: tileRadius, windowRadius: windowRadius) }
+
+    /// The system's setting, global for the user: "Dark" while the appearance is dark, absent while it is light.
+    private static func readSystemIsDark() -> Bool {
+        UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+    }
+
+    /// The system switching between light and dark (by hand, or on its schedule) redraws the backgrounds that follow it.
+    private func observeSystemAppearance() {
+        appearanceObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.systemIsDark = Self.readSystemIsDark() }
+        }
+    }
 
     /// The current palette's overrides, read and written by the Color Lab.
     var lab: LabOverrides {
@@ -302,6 +353,9 @@ public struct DesignCommands: Commands {
             Toggle("Track Pointer", isOn: $settings.trackPointer)
             Toggle("Window Glass", isOn: $settings.windowGlass)
             Toggle("Window Background", isOn: $settings.windowBackground)
+            Picker("Background Appearance", selection: $settings.backgroundAppearance) {
+                ForEach(BackgroundAppearance.allCases) { Text($0.title).tag($0) }
+            }
             Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
             Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
             Toggle("Quick Lift", isOn: $settings.quickLift)

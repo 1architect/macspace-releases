@@ -136,7 +136,7 @@ public final class ModuleHost: ObservableObject {
         hasScanned = true
         if !checkedHelper, let privileged {
             checkedHelper = true
-            await PrivilegedHelperInstaller.restartIfStale(channel: privileged)
+            await PrivilegedHelperInstaller.ensureAtLaunch(channel: privileged)
         }
         // Modules load side by side: a slow scan in one must not hold back the others, and each page appears as soon as it is ready.
         let loading = handles.map { handle in Task { await handle.activate() } }

@@ -218,7 +218,7 @@ struct GlassBackdrop: View {
         if design.windowBackground {
             ZStack {
                 if design.windowGlass {
-                    WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.isLight)
+                    WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.backgroundIsLight)
                     // The Color Lab's window fill, over the blur and under the glass.
                     if let fill = design.fill(.window) { shape.fill(fill.style(design.systemWindowColor)) }
                 }

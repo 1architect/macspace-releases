@@ -98,7 +98,7 @@ public struct StandardWindowView: View {
         .environment(\.design, design)
         // The window takes the palette's appearance (dark grounds, dark chrome), so its sidebar matches the pages.
         .preferredColorScheme(design.colorScheme)
-        .background(StandardWindowConfigurator(glass: designSettings.standardGlassBackground, reference: window))
+        .background(StandardWindowConfigurator(glass: designSettings.standardGlassBackground, background: NSColor(design.systemWindowColor), reference: window))
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .modifier(WindowKindSwitch(id: MacSpaceWindow.standard))
         .onAppear {
@@ -117,14 +117,14 @@ public struct StandardWindowView: View {
     private var windowBackground: some View {
         if designSettings.standardGlassBackground {
             ZStack {
-                WindowBlur(cornerRadius: 0, isLight: design.isLight)
+                WindowBlur(cornerRadius: 0, isLight: design.backgroundIsLight)
                 // Larger than the window, so the window cuts off the glass's lit rim: the glass itself shows, its edge does not shine
                 // along the window's border.
                 GlassPane(corners: .radius(0), style: .clear)
                     .padding(-Self.glassBleed)
             }
         } else {
-            Color(nsColor: .windowBackgroundColor)
+            design.systemWindowColor
         }
     }
 
@@ -294,12 +294,13 @@ final class WindowReference: ObservableObject {
 
 private struct StandardWindowConfigurator: NSViewRepresentable {
     let glass: Bool
+    let background: NSColor
     let reference: WindowReference
 
     func makeNSView(context: Context) -> NSView { NSView() }
 
     func updateNSView(_ view: NSView, context: Context) {
-        let glass = self.glass, reference = self.reference
+        let glass = self.glass, background = self.background, reference = self.reference
         DispatchQueue.main.async {
             guard let window = view.window else { return }
             reference.window = window
@@ -321,7 +322,7 @@ private struct StandardWindowConfigurator: NSViewRepresentable {
             window.titlebarAppearsTransparent = true
             window.isMovableByWindowBackground = true
             window.isOpaque = !glass
-            window.backgroundColor = glass ? .clear : .windowBackgroundColor
+            window.backgroundColor = glass ? .clear : background
         }
     }
 }

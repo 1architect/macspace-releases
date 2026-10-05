@@ -14,12 +14,14 @@ struct ScreenView: View {
     /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
     private var hasFooter: Bool {
         handle.screen?.primary != nil || handle.isCleaning || handle.lastResult != nil
+            || !Self.banners(in: handle.screen?.widgets ?? []).isEmpty
     }
 
     /// What the page shows: the module's screen, or while it loads, the tile's own blocks as the hero (pulsing), which then move to
     /// the page's figures as its rows come in under them. nil while there is nothing to show yet.
     private var content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)? {
-        if let screen = handle.screen { return (screen.hero, screen.widgets, true) }
+        // Banners are not drawn on the page: what they say is in the main button (`ActionDock`).
+        if let screen = handle.screen { return (screen.hero, Self.withoutBanners(screen.widgets), true) }
         if case let .blocks(segments)? = handle.tile?.graphic, !segments.isEmpty {
             return (UsageBar(id: "usage", title: "", segments: segments), [], false)
         }
@@ -31,6 +33,30 @@ struct ScreenView: View {
     private var openGroup: Row? {
         guard let id = handle.openGroup, let screen = handle.screen else { return nil }
         return Self.row(id, in: screen.widgets)
+    }
+
+    /// Every banner of a page, in page order, sections included.
+    static func banners(in widgets: [ScreenWidget]) -> [Banner] {
+        widgets.flatMap { widget -> [Banner] in
+            switch widget {
+            case let .banner(banner): return [banner]
+            case let .section(section): return banners(in: section.widgets)
+            default: return []
+            }
+        }
+    }
+
+    /// A page's widgets without its banners; a section left empty goes too.
+    static func withoutBanners(_ widgets: [ScreenWidget]) -> [ScreenWidget] {
+        widgets.compactMap { widget -> ScreenWidget? in
+            switch widget {
+            case .banner: return nil
+            case var .section(section):
+                section.widgets = withoutBanners(section.widgets)
+                return section.widgets.isEmpty ? nil : .section(section)
+            default: return widget
+            }
+        }
     }
 
     static func row(_ id: String, in widgets: [ScreenWidget]) -> Row? {
@@ -270,10 +296,18 @@ private struct PageSkeleton: View {
 /// outcome, and back into the action. No note of its own: the outcome is the pill's text for a moment.
 private struct ActionDock: View {
     @ObservedObject var handle: ModuleHandle
+    /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
+    @State private var showsPassingNotice = false
 
+    /// What the page has to say, from its banners: the first one.
+    private var notice: Banner? { ScreenView.banners(in: handle.screen?.widgets ?? []).first }
+
+    /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
+    /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     private var phase: ActionPill.Phase? {
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning { return .working(handle.progress) }
+        if let notice, notice.action != nil || handle.screen?.primary == nil || showsPassingNotice { return .notice(notice) }
         if let primary = handle.screen?.primary { return .idle(primary) }
         return nil
     }
@@ -281,7 +315,9 @@ private struct ActionDock: View {
     var body: some View {
         Group {
             if let phase {
-                ActionPill(phase: phase, dismiss: { handle.dismissResult() }) { [handle] action in
+                ActionPill(phase: phase, dismiss: {
+                    if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
+                }) { [handle] action in
                     if let confirmation = action.confirmation, !ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { return }
                     await handle.perform(action)
                 }
@@ -290,6 +326,12 @@ private struct ActionDock: View {
         }
         .frame(maxWidth: 360, alignment: .leading)
         .animation(Theme.layout, value: phase)
+        .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
+            guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
+            showsPassingNotice = true
+            try? await Task.sleep(for: .seconds(5))
+            if !Task.isCancelled { showsPassingNotice = false }
+        }
     }
 }
 
@@ -300,6 +342,8 @@ private struct ActionPill: View {
         case idle(Action)
         case working(ActionProgress?)
         case done(ActionResult)
+        /// One of the page's banners: its title, and its action when it has one.
+        case notice(Banner)
     }
 
     let phase: Phase
@@ -310,8 +354,11 @@ private struct ActionPill: View {
     @State private var hovering = false
 
     private var severity: Banner.Severity? {
-        guard case let .done(result) = phase else { return nil }
-        return result.outcome == .succeeded ? .success : (result.outcome == .failed ? .critical : .warning)
+        switch phase {
+        case let .done(result): return result.outcome == .succeeded ? .success : (result.outcome == .failed ? .critical : .warning)
+        case let .notice(banner): return banner.severity
+        default: return nil
+        }
     }
 
     private var text: String {
@@ -319,6 +366,7 @@ private struct ActionPill: View {
         case let .idle(action): return action.title
         case let .working(progress): return progress?.message ?? "Working…"
         case let .done(result): return result.restartRequired ? "Restart to finish" : result.message
+        case let .notice(banner): return banner.title
         }
     }
 
@@ -330,6 +378,8 @@ private struct ActionPill: View {
         Button {
             switch phase {
             case let .idle(action): Task { @MainActor in await run(action) }
+            case let .notice(banner):
+                if let action = banner.action { Task { @MainActor in await run(action) } } else { dismiss() }
             case .done: dismiss()
             case .working: break
             }

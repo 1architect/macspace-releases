@@ -197,3 +197,17 @@ final class AutoCleanerTests: XCTestCase {
         XCTAssertFalse(AutoCleaner.isDue(enabled: true, lastRun: now.addingTimeInterval(-90_000), frequency: .weekly, now: now))
     }
 }
+
+final class PageNoticeTests: XCTestCase {
+    func testBannersLeaveThePageForTheMainButton() {
+        let fda = Banner(id: "fda", severity: .info, title: "Allow Full Disk Access", action: Action(id: "open", title: "Allow"))
+        let note = Banner(id: "note", severity: .warning, title: "The helper did not answer")
+        let widgets: [ScreenWidget] = [
+            .banner(fda),
+            .section(SectionWidget(id: "only", title: "Only a banner", widgets: [.banner(note)])),
+            .section(SectionWidget(id: "list", title: "Rows", widgets: [.list(ListWidget(id: "l", rows: []))])),
+        ]
+        XCTAssertEqual(ScreenView.banners(in: widgets).map(\.id), ["fda", "note"], "page order, sections included")
+        XCTAssertEqual(ScreenView.withoutBanners(widgets).map(\.id), ["list"], "a section left empty goes too")
+    }
+}

@@ -15,6 +15,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // An app copied in by hand may be unknown to Launch Services, which makes the helper "not found" instead of "needs approval".
         if PrivilegedHelperInstaller.status == .notFound { PrivilegedHelperInstaller.registerAppWithLaunchServices() }
+        // A copy with pieces missing (copied while it was being built) must not be given permissions: macOS would tie them to this
+        // one build, and every update would lose them. Said once, plainly.
+        if !CodeIntegrity.isIntact(Bundle.main.bundleURL) {
+            let alert = NSAlert()
+            alert.messageText = "This copy of MacSpace is incomplete"
+            alert.informativeText = "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update."
+            alert.alertStyle = .critical
+            alert.addButton(withTitle: "Quit")
+            alert.addButton(withTitle: "Continue")
+            if alert.runModal() == .alertFirstButtonReturn { NSApp.terminate(nil) }
+        }
         Task { @MainActor in await AppModel.host.start() }
     }
 

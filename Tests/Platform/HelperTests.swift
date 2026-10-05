@@ -108,8 +108,6 @@ final class LazyChannelTests: XCTestCase {
         try Data("new build".utf8).write(to: file)
         XCTAssertTrue(HelperFingerprint.isStale(launched: launched, path: file.path), "the app was replaced: the helper steps down")
         XCTAssertFalse(HelperFingerprint.isStale(launched: launched, path: "/nonexistent"), "an app being copied is not a reason to quit")
-        XCTAssertFalse(PrivilegedHelperInstaller.needsRegistering(answered: true), "a helper that answers keeps its approval, even an old one")
-        XCTAssertTrue(PrivilegedHelperInstaller.needsRegistering(answered: false))
     }
 
     func testAFailedConnectionIsReplacedByANewOneOnTheNextTry() async throws {
@@ -187,5 +185,19 @@ final class ConfigurationProfilesTests: XCTestCase {
     /// This Mac, read-only: the profile check runs without root.
     func testReadsTheInstalledProfilesWithoutRoot() throws {
         XCTAssertNotNil(ConfigurationProfiles.readInstalled())
+    }
+}
+
+final class CodeIntegrityTests: XCTestCase {
+    func testAMissingOrUnsignedBundleIsNotIntact() throws {
+        XCTAssertFalse(CodeIntegrity.isIntact(URL(fileURLWithPath: "/nonexistent/MacSpace.app")))
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("unsigned-\(UUID().uuidString).app")
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("Contents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        XCTAssertFalse(CodeIntegrity.isIntact(folder))
+    }
+
+    func testASignedSystemAppIsIntact() {
+        XCTAssertTrue(CodeIntegrity.isIntact(URL(fileURLWithPath: "/System/Applications/Calculator.app")))
     }
 }

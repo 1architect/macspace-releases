@@ -5,7 +5,7 @@ import Foundation
 /// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
-///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png>
+///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
@@ -47,6 +47,8 @@ final class DebugRemote: ObservableObject {
             if values.count == 2 { DesignSettings.shared.tileRadius = values[0]; DesignSettings.shared.windowRadius = values[1] }
         } else if text.hasPrefix("standardWindow:") {
             DesignSettings.shared.standardWindow = text == "standardWindow:on"
+        } else if text.hasPrefix("background:"), let mode = BackgroundAppearance(rawValue: String(text.dropFirst("background:".count))) {
+            DesignSettings.shared.backgroundAppearance = mode
         } else if text.hasPrefix("glass:") {
             DesignSettings.shared.glass = text == "glass:on"
         } else if text.hasPrefix("palette:"), let scheme = PaletteScheme(rawValue: String(text.dropFirst("palette:".count))) {
