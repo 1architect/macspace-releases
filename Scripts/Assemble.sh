@@ -12,12 +12,18 @@
 #                                            names another), made once with
 #                                            xcrun notarytool store-credentials MacSpace --apple-id … --team-id … (app-specific password)
 #   NOTARY_PROFILE= Scripts/Assemble.sh      skip notarization (the app then opens only on the Mac that built it)
+#   OUT_DIR=Build/Test Scripts/Assemble.sh   build somewhere else than Build/ (development and test builds, so they never replace the
+#                                            app that is copied to /Applications)
+#
+# The app is assembled, signed and notarized in a staging folder and only moved to <OUT_DIR>/MacSpace.app once it verifies: that
+# path always holds a complete app. It used to be rebuilt in place, and a copy made while it was being signed came out with no
+# signature (the helper then failed with "Codesigning failure loading plist … -67056", 2026-10-05).
 #
 # Signing with a real identity enables the hardened runtime. The identity and any notarization credentials are
 # supplied by the release pipeline; nothing secret lives in this repository.
 set -euo pipefail
-# A failed step leaves Build/MacSpace.app half made (unsigned, say): say so, so it is not copied and run.
-trap 'echo "error: the build failed at line $LINENO; Build/MacSpace.app is incomplete, do not copy it" >&2' ERR
+# A failed step leaves only the staging copy half made; the app at <OUT_DIR>/MacSpace.app is the last complete build.
+trap 'echo "error: the build failed at line $LINENO; nothing was replaced" >&2' ERR
 cd "$(dirname "$0")/.."
 
 CONFIG=${CONFIG:-release}
@@ -66,8 +72,11 @@ ICON=${ICON:-App/Resources/MacSpace.icon}
 swift build -c "$CONFIG"
 BIN=$(swift build -c "$CONFIG" --show-bin-path)
 
-APP=Build/MacSpace.app
-rm -rf Build
+OUT_DIR=${OUT_DIR:-Build}
+FINAL="$OUT_DIR/MacSpace.app"
+STAGING="$OUT_DIR/.staging"
+APP="$STAGING/MacSpace.app"
+rm -rf "$STAGING"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources"
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
@@ -145,7 +154,7 @@ for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
 codesign "${FLAGS[@]}" --identifier com.macspace.cli "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
 codesign "${FLAGS[@]}" "$APP"
-codesign --verify --deep --strict "$APP" || { echo "error: the signed app does not verify; do not copy Build/MacSpace.app" >&2; exit 1; }
+codesign --verify --deep --strict "$APP" || { echo "error: the signed app does not verify; nothing was replaced" >&2; exit 1; }
 
 # Notarization: Gatekeeper opens a Developer ID app copied from elsewhere only once Apple has notarized it. The ticket is stapled to
 # the app, so it also opens offline.
@@ -174,6 +183,14 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
   xcrun stapler staple "$APP"
   spctl -a -vv "$APP"
 fi
+# Complete, signed (and notarized): it takes the place of the previous build in one move.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$PWD/$APP" 2>/dev/null || true
+rm -rf "$FINAL.old"
+[ -e "$FINAL" ] && mv "$FINAL" "$FINAL.old"
+mv "$APP" "$FINAL"
+rm -rf "$FINAL.old" "$STAGING"
+APP="$FINAL"
+
 # The helper daemon can only be registered from an app that sits in an Applications folder: from Build/ macOS reports it as
 # "not found". INSTALL=1 copies the build to /Applications, the one in Finder's sidebar (INSTALL_DIR chooses another), asking for
 # an administrator password when the folder is not writable, and removes the copy earlier builds put in ~/Applications.
