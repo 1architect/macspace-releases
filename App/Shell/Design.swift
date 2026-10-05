@@ -141,6 +141,8 @@ public final class DesignSettings: ObservableObject {
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
     /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
     @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
+    /// MacSpace in a standard macOS window with a sidebar instead of the glass window (`StandardWindowView`).
+    @Published public var standardWindow: Bool { didSet { defaults.set(standardWindow, forKey: "design.standardWindow") } }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
     @Published var colorLab: [String: LabOverrides] {
         didSet { if let data = try? JSONEncoder().encode(colorLab) { defaults.set(data, forKey: "design.colorLab") } }
@@ -162,6 +164,7 @@ public final class DesignSettings: ObservableObject {
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
         windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
+        standardWindow = defaults.bool(forKey: "design.standardWindow")
         colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
     }
 
@@ -186,6 +189,7 @@ public struct DesignCommands: Commands {
 
     public var body: some Commands {
         CommandMenu("Design") {
+            Toggle("Standard Window with Sidebar", isOn: $settings.standardWindow)
             Button("Color Lab…") { openWindow(id: ColorLabView.windowID) }
                 .keyboardShortcut("l", modifiers: [.command, .option])
             Divider()
@@ -222,6 +226,8 @@ struct DesignSettingsSection: View {
 
     var body: some View {
         Section("Design (temporary)") {
+            Toggle("Standard window with sidebar", isOn: $settings.standardWindow)
+                .help("A normal macOS window, with the modules in a sidebar, instead of the glass window.")
             Button("Open Color Lab…") { openWindow(id: ColorLabView.windowID) }
                 .help("Also in the Design menu: ⌥⌘L.")
             Toggle("Liquid Glass tiles", isOn: $settings.glass)

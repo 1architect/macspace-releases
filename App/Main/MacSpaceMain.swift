@@ -31,7 +31,7 @@ struct MacSpaceMain: App {
     @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
 
     var body: some Scene {
-        Window("MacSpace", id: "main") {
+        Window("MacSpace", id: MacSpaceWindow.glass) {
             MainView(host: host, updates: updates)
         }
         .windowStyle(.plain)
@@ -45,6 +45,12 @@ struct MacSpaceMain: App {
                 Button("Check for Updates…") { updates.checkForUpdates() }.disabled(!updates.canCheck)
             }
         }
+
+        // The same app in a standard macOS window with a sidebar (Settings > Design > Standard window with sidebar).
+        Window("MacSpace", id: MacSpaceWindow.standard) {
+            StandardWindowView(host: host, updates: updates)
+        }
+        .defaultSize(width: 900, height: 600)
 
         // Temporary: the Color Lab (Design menu, ⌥⌘L).
         Window("Color Lab", id: ColorLabView.windowID) {

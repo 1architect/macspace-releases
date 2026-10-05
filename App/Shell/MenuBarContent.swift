@@ -17,7 +17,7 @@ public struct MenuBarContent: View {
         if host.activeHandles.isEmpty { Text("No modules are on") }
         Divider()
         Button("Open MacSpace") {
-            openWindow(id: "main")
+            openWindow(id: MacSpaceWindow.current)
             NSApp.activate(ignoringOtherApps: true)
         }
         Button("Quit MacSpace") { NSApp.terminate(nil) }

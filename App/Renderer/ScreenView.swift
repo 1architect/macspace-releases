@@ -111,6 +111,12 @@ struct ScreenView: View {
     }
 }
 
+extension EnvironmentValues {
+    /// Where a page's scroll area starts: under the glass window's corner buttons and title, or right under a standard window's
+    /// toolbar (`StandardWindowView`).
+    @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
+}
+
 /// Room around a page's content: the corner button at the top left, the caption and the dock at the bottom.
 enum PageInsets {
     static let top: CGFloat = 70
@@ -139,6 +145,7 @@ enum PageInsets {
 struct PageScrollArea: ViewModifier {
     let hasFooter: Bool
     @Environment(\.design) private var design
+    @Environment(\.pageScrollTop) private var scrollTop
 
     /// How far the content takes to fade in, below the title and above the main action.
     static let fadeLength: CGFloat = 26
@@ -147,13 +154,13 @@ struct PageScrollArea: ViewModifier {
         if design.pageEdgeFade {
             let footer = hasFooter ? PageInsets.footer : 0
             content
-                .contentMargins(.top, PageInsets.scrollTop, for: .scrollContent)
+                .contentMargins(.top, scrollTop, for: .scrollContent)
                 .contentMargins(.bottom, footer + PageInsets.fade + 6, for: .scrollContent)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
                 .mask {
                     VStack(spacing: 0) {
-                        Color.clear.frame(height: PageInsets.headerBottom)
+                        Color.clear.frame(height: max(scrollTop - (PageInsets.scrollTop - PageInsets.headerBottom), 0))
                         LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
                         Color.black
                         LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
@@ -166,7 +173,7 @@ struct PageScrollArea: ViewModifier {
                 .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
-                .padding(.top, PageInsets.scrollTop)
+                .padding(.top, scrollTop)
                 .padding(.bottom, hasFooter ? PageInsets.footer : 0)
                 .clipped()
         }

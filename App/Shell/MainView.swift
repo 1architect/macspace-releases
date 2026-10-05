@@ -123,6 +123,7 @@ public struct MainView: View {
         .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + 2 * Theme.resizeMargin)
         .task { await host.start() }
         .task { await storage.refresh() }
+        .modifier(WindowKindSwitch(id: MacSpaceWindow.glass))
         .task {
             // A moment after the window appears, so the glass animates in instead of landing in the first frame.
             windowClosing = false
@@ -371,7 +372,7 @@ private struct ModulePageTitle: View {
 }
 
 /// Settings, or the page open over it, sliding in from the right as a group's page does.
-private struct SettingsPages: View {
+struct SettingsPages: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
 
