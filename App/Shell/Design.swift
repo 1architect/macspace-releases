@@ -135,6 +135,8 @@ public final class DesignSettings: ObservableObject {
     @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
     @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
+    /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
+    @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -151,6 +153,7 @@ public final class DesignSettings: ObservableObject {
         pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
+        windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
     }
 
     var design: Design { Design(scheme: scheme, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
@@ -181,6 +184,7 @@ public struct DesignCommands: Commands {
             Toggle("Tile Tilt", isOn: $settings.tilt)
             Toggle("Hover Shade", isOn: $settings.hoverShade)
             Toggle("Window Shadow", isOn: $settings.windowShadow)
+            Toggle("Window Border", isOn: $settings.windowBorder)
             Divider()
             Picker("Palette", selection: $settings.scheme) {
                 ForEach(Array(PaletteScheme.allCases.enumerated()), id: \.element) { index, scheme in
@@ -208,6 +212,7 @@ struct DesignSettingsSection: View {
             Toggle("Tile tilt", isOn: $settings.tilt)
             Toggle("Hover shade", isOn: $settings.hoverShade)
             Toggle("Window shadow", isOn: $settings.windowShadow)
+            Toggle("Window border", isOn: $settings.windowBorder)
             Toggle("Glass chart elements", isOn: $settings.glassElements)
             Toggle("Clip window corners", isOn: $settings.clipWindow)
             Toggle("Track pointer", isOn: $settings.trackPointer)
