@@ -11,7 +11,26 @@
     "privilegedHelper",
     "configurationProfile"
   ],
-  "options": [],
-  "backgroundTasks": [],
+  "options": [
+    {
+      "id": "notify",
+      "title": "Notify me when macOS undoes a change",
+      "detail": "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again.",
+      "kind": {
+        "toggle": {
+          "defaultValue": true
+        }
+      }
+    }
+  ],
+  "backgroundTasks": [
+    {
+      "id": "watch",
+      "title": "Keep features disabled",
+      "detail": "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on.",
+      "defaultEnabled": true,
+      "intervalSeconds": 900
+    }
+  ],
   "tileTint": "teal"
 }

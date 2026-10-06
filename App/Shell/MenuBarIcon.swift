@@ -1,44 +1,12 @@
 import AppKit
-import SwiftUI
 
 /// The menu bar icon: the nine circles of the app's design (Circles.svg), drawn as a template image so it takes the
 /// menu bar's color. While something is being cleaned the circles leave one after another, shrinking as they fade, and come back
-/// the same way, over and over; when the cleanup ends the current round finishes and the icon rests full.
-public struct MenuBarIcon: View {
-    @ObservedObject var host: ModuleHost
-    /// Where the animation is in its round, 0...1; 0 (and 1) is the full grid.
-    @State private var phase: Double = 0
-    @State private var animation: Task<Void, Never>?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    public init(host: ModuleHost) {
-        self.host = host
-    }
-
-    public var body: some View {
-        Image(nsImage: Self.image(phase: phase))
-            .accessibilityLabel(host.isCleaning ? "MacSpace, cleaning" : "MacSpace")
-            .onChange(of: host.isCleaning, initial: true) { _, cleaning in if cleaning { animate() } }
-    }
-
+/// the same way, over and over (`StatusItemController` plays it); when the cleanup ends the current round finishes and the icon rests
+/// full.
+enum MenuBarIcon {
     static let round: TimeInterval = 2.4
     static let frameRate: Double = 30
-
-    private func animate() {
-        guard animation == nil, !reduceMotion else { return }
-        animation = Task { @MainActor in
-            let start = Date()
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1 / Self.frameRate))
-                let next = (Date().timeIntervalSince(start) / Self.round).truncatingRemainder(dividingBy: 1)
-                // Once the cleanup is over, the round in progress plays to its end (the phase wraps), so the icon rests full.
-                if !host.isCleaning, next < phase { break }
-                phase = next
-            }
-            phase = 0
-            animation = nil
-        }
-    }
 
     // MARK: Drawing
 

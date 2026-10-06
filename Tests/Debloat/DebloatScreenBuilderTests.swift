@@ -100,13 +100,18 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(reapply.parameters["ids"], "telemetry.on-device-speech-policy")
         XCTAssertNil(reapply.symbol, "words only")
 
-        let approving = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(profileControl.id, .awaitingApproval)]))
+        // The one profile changed: approving it is the fix, whether it switches policies off or back on.
+        var approvingSnapshot = snapshot([status(verifiedControl.id, .stock), status(profileControl.id, .awaitingApproval)])
+        approvingSnapshot.profileWork = .approve([profileControl.id])
+        let approving = DebloatScreenBuilder.screen(approvingSnapshot)
         XCTAssertEqual(approving.primary?.id, "approvePending")
-        XCTAssertEqual(approving.primary?.title, "Approve the profile")
+        XCTAssertEqual(approving.primary?.title, "Approve in System Settings")
 
-        let removing = DebloatScreenBuilder.screen(snapshot([status(profileControl.id, .awaitingRemoval)]))
+        var removingSnapshot = snapshot([status(profileControl.id, .awaitingRemoval)])
+        removingSnapshot.profileWork = .remove([ConfigurationProfileBuilder.profileIdentifier])
+        let removing = DebloatScreenBuilder.screen(removingSnapshot)
         XCTAssertEqual(removing.primary?.id, "removePending")
-        XCTAssertEqual(removing.primary?.parameters["ids"], profileControl.id)
+        XCTAssertEqual(removing.primary?.requires, [.privilegedHelper], "removing a profile needs the helper, not approval")
 
         let running = DebloatScreenBuilder.screen(snapshot([status(verifiedControl.id, .stock), status(helperControl.id, .stock)]))
         XCTAssertEqual(Set(running.primary?.parameters["ids"]?.split(separator: ",").map(String.init) ?? []),

@@ -248,5 +248,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     func runBackgroundTask(_ taskID: String) async {
         guard state == .ready, let module else { return }
         await module.runBackgroundTask(taskID, context: context())
+        // A task may have changed something (the Debloat watch switching a feature off again): the tile and page show it.
+        await refresh(quiet: true)
     }
 }

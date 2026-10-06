@@ -12,7 +12,7 @@ A modular macOS 27 utility. One app shows widgets that **modules** describe; eac
 | **System Data** | Explains what fills System Data, frees what is safe (system caches, old reports, unused system assets), deletes the document version history on request, and guides the manual cleanup macOS and other apps own. |
 | **Siri & Apple Intelligence** | An off-switch for Apple Intelligence, a background watcher, and release of the models macOS keeps afterwards. Does nothing in a virtual machine. |
 | **Other System Files** | What macOS counts as purgeable, per purge service, and freeing the files apps marked purgeable now instead of when the disk is nearly full. |
-| **Debloat** | Fourteen switches for analytics, ads and background data collection macOS lets you control. |
+| **Debloat** | Fourteen switches for analytics, ads and background data collection macOS lets you control, and a background watch that switches off again what macOS turns back on, with a notification. |
 
 Third-party plug-ins are out of scope. The app is built with SwiftPM only (no Xcode project) and requires macOS 27.
 
@@ -89,9 +89,17 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    `debloat.*`, `systemdata.measure`, `systemdata.versions.delete`); `Helper/MacSpaceHelper.swift` registers them. The helper accepts
    only clients that satisfy a code-signing requirement passed on its command line and refuses to start without one.
 6. **Crash isolation.** Private Apple calls (CacheDelete) run in the CLI as a child process.
-7. **Settings.** General, the module switches, one Permissions section listing each permission once, then options and background tasks
-   per module. Sections are built directly in `SettingsView`; wrapping them in custom views inside a `ForEach` made them render inside
-   the wrong card.
+7. **Settings.** General (theme, appearance, a row opening the Permissions page, menu bar, login, updates), Cleanup (automatic cleanup
+   and the history), the module switches, then options and background tasks per module. Sections are built directly in
+   `SettingsView`; wrapping them in custom views inside a `ForEach` made them render inside the wrong card.
+8. **Look.** A theme is a night and day pair of palettes (`PaletteScheme.themes`); Settings chooses the theme and whether it follows the
+   system, or stays night or day. Whatever needs the user is drawn in the action color (amber, lime on Ink); the app has no red.
+9. **Menu bar.** An `NSStatusItem` (`StatusItemController`): a click opens the app, a right click opens its menu (each module with
+   its tile's status, opening its page). `AppRouter` opens the window from outside it; when no window has been open since launch it
+   opens `macspace://<window id>`, which the window scenes claim.
+10. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
+    or `MACSPACE_DESIGN=1`. `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with
+    the app's own Full Disk Access).
 
 ### Adding a module
 
@@ -132,7 +140,7 @@ error; `sudo sfltool dumpbtm | grep -i -B2 -A14 macspace` shows macOS's own reco
 
 ## What is verified, and what is not
 
-**Verified (automated):** about 190 tests: contract and registry behaviour, screen builders, parsers, the helper service and XPC round
+**Verified (automated):** 257 tests: contract and registry behaviour, screen builders, parsers, the helper service and XPC round
 trip in-process, the lazy channel, crash-isolation subprocesses, the version-store cleaner with a fake `launchctl`, update gating.
 
 **Verified by hand:** the three modules load and answer from the assembled app; System Data totals within about 1 GB of System
@@ -160,11 +168,12 @@ promotedcontentd, are started by launchd on demand and read the value then. A ru
 either candidate the frameworks hold (ADConfigurationDidChangeNotification, kADIDManager_ChangedNotification), and its log shows
 cfprefsd's generation check ("Contents Need Refresh"), so it gets the saved value on its next read.
 
-**Policies switched off together share one profile** (2026-10-04). macOS keeps a single downloaded profile waiting for approval, and
-each one opened replaced the one before: Switch all off left every policy but the last waiting forever (Game Center among them). The
-engine now puts every policy switched off in one run, plus any still waiting, in one profile; the journal records which profile
-carries each policy. Switching one back on removes that profile through the helper and stages the others that shared it again. The
-banner's "Show the profile" opens the profile of everything waiting again. Not verified yet: approval of the combined profile.
+**One profile for every policy** (2026-10-06). `com.macspace.policies` holds every policy switched off (`DebloatEngine.profileWork`).
+Any change stages it again under the same identifier and opens System Settings on it; approving it replaces the installed one. A
+policy switched back on stays enforced until then. The last one switched back on removes it through the helper, and profiles of
+earlier versions go through the helper once the one profile holds what they did. The page reads again whenever MacSpace becomes
+active, and forced values are read from `/Library/Managed Preferences`, so an approval shows at once. Verified on the development Mac:
+the installed profiles and their values are read correctly; the full approve-and-clean-up round has not been watched end to end.
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
@@ -196,5 +205,8 @@ if releases should run from GitHub Actions.
 - Siri screen: a button for "remove orphan subscriptions" through the helper (today it points to a command that needs `sudo`).
 - Debloat in a virtual machine still shows controls that cannot take effect there.
 - Per-document breakdown of the version history, so users can choose what to delete.
-- Notifications use `osascript`; a proper user-notification path is pending.
+- System Data reads higher than Settings (51 against 44.5 GB here) because Settings over-counts Apple Intelligence and takes the
+  difference from System Data (Research, section 1); decide whether the page should say so.
+- Time Machine's local snapshots are not measured.
+- Siri's iCloud sync state is read from the accounts database; not yet seen working in the app.
 - Documentation beyond this folder (README, user guide) once the first release exists.

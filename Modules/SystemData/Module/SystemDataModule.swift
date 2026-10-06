@@ -49,6 +49,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
+        case "openSoftwareUpdate":
+            if let url = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension") { NSWorkspace.shared.open(url) }
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "deleteStagedUpdate":
             progress(ActionProgress(message: "Freeing space…"))
             return await Self.deleteStagedUpdate(context.privileged)

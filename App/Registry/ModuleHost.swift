@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MacSpaceSdk
 import MacSpacePlatform
@@ -14,17 +15,6 @@ public final class ModuleHost: ObservableObject {
     /// What each module's tile says it can free, by module id. The dashboard gives the large tile to the most, so it must redraw when a
     /// module's figure arrives or changes; it does not observe each handle.
     @Published public private(set) var reclaimable: [String: UInt64] = [:]
-    /// What each module purges through macOS, by module id then CacheDelete service (`Tile.purgeableByService`), for the disk tile.
-    @Published public private(set) var purgeable: [String: [String: UInt64]] = [:]
-
-    /// The disk tile's "purgeable": every service once (the largest figure any module gives for it), summed.
-    public var purgeableTotal: UInt64 {
-        var byService: [String: UInt64] = [:]
-        for services in purgeable.values {
-            for (service, bytes) in services { byService[service] = max(byService[service] ?? 0, bytes) }
-        }
-        return byService.values.reduce(0, +)
-    }
 
     public let settings: SettingsStore
     public let permissions: any PermissionChecker
@@ -40,6 +30,7 @@ public final class ModuleHost: ObservableObject {
 
     public enum SettingsPage: String, Sendable {
         case cleanupHistory
+        case permissions
     }
     private var cleaningObservers: [AnyCancellable] = []
 
@@ -71,7 +62,6 @@ public final class ModuleHost: ObservableObject {
     private var startTask: Task<Void, Never>?
     private var stateObservers: [AnyCancellable] = []
     private var tileObservers: [AnyCancellable] = []
-    private var purgeableObservers: [AnyCancellable] = []
 
     /// `activeHandles` depends on each handle's state, which changes after the handles are created (off → ready). The views that list
     /// the active modules observe the host, so a module becoming ready must announce itself through the host too; without this the
@@ -81,7 +71,6 @@ public final class ModuleHost: ObservableObject {
             handle.$state.dropFirst().removeDuplicates().sink { [weak self] _ in self?.objectWillChange.send() }
         }
         reclaimable = reclaimable.filter { id, _ in handles.contains { $0.id == id } }
-        purgeable = purgeable.filter { id, _ in handles.contains { $0.id == id } }
         let states = handles.map { $0.$isCleaning.eraseToAnyPublisher() } + [autoCleaner.$isRunning.eraseToAnyPublisher()]
         cleaningObservers = [Publishers.MergeMany(states).sink { [weak self] _ in
             // The publishers fire before the value changes: read everyone's state on the next turn.
@@ -93,15 +82,6 @@ public final class ModuleHost: ObservableObject {
                 }
             }
         }]
-        purgeableObservers = handles.map { handle in
-            let id = handle.id
-            return handle.$tile.map { $0?.purgeableByService ?? [:] }.removeDuplicates().sink { [weak self] services in
-                MainActor.assumeIsolated {
-                    guard let self, self.purgeable[id] != services else { return }
-                    self.purgeable[id] = services
-                }
-            }
-        }
         tileObservers = handles.map { handle in
             let id = handle.id
             // Handles publish their tiles on the main actor.
@@ -117,8 +97,27 @@ public final class ModuleHost: ObservableObject {
     /// Loads the modules once, whoever asks first: the app at launch, the window, or the menu bar item. Later callers wait for the same
     /// load instead of starting another.
     public func start() async {
-        if startTask == nil { startTask = Task { await self.reload() } }
+        if startTask == nil {
+            startTask = Task { await self.reload() }
+            observeActivation()
+        }
         await startTask?.value
+    }
+
+    private var activationObserver: NSObjectProtocol?
+
+    /// Coming back to MacSpace (from System Settings, after approving a profile), the modules that depend on approvals given there
+    /// read the Mac again: without it, the page kept saying the profile was waiting.
+    private func observeActivation() {
+        activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                ConfigurationProfiles.shared.refresh()
+                for handle in self.activeHandles where handle.manifest.permissions.contains(.configurationProfile) {
+                    Task { await handle.refresh(reload: true, quiet: true) }
+                }
+            }
+        }
     }
 
     /// Scans the modules folder and activates every enabled module.

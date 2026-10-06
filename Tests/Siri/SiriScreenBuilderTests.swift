@@ -66,7 +66,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         var toggleIDs: [String] = []
         for case let .toggles(list) in screen.widgets { toggleIDs += list.rows.map(\.id) }
         XCTAssertFalse(toggleIDs.contains("icloud-sync"))
-        let row = SiriScreenBuilder.cloudSyncRow
+        let row = SiriScreenBuilder.cloudSyncRow(enabled: true)
         XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
     }
@@ -75,22 +75,33 @@ final class SiriScreenBuilderTests: XCTestCase {
     func testReleasedModelsOnDiskAreDeletedWithoutAsking() {
         var off = snapshot(.protected)
         off.installedModelBytes = 11_348_320_256
+        off.recordedModelBytes = 11_348_320_256
         XCTAssertTrue(SiriModule.releasedModelsOnDisk(off))
         var on = snapshot(.atRisk)
         on.installedModelBytes = 11_348_320_256
+        on.recordedModelBytes = 11_348_320_256
         XCTAssertFalse(SiriModule.releasedModelsOnDisk(on), "in use while Apple Intelligence is on")
         var elsewhere = snapshot(.protected, accounts: [other("tester")])
         elsewhere.installedModelBytes = 11_348_320_256
+        elsewhere.recordedModelBytes = 11_348_320_256
         XCTAssertFalse(SiriModule.releasedModelsOnDisk(elsewhere), "another account keeps them locked")
         var empty = snapshot(.protected)
         empty.installedModelBytes = 0
+        empty.recordedModelBytes = 0
         XCTAssertFalse(SiriModule.releasedModelsOnDisk(empty))
         XCTAssertTrue(SiriScreenBuilder.tile(off).graphic.map { "\($0)".contains("deleting") } ?? false)
         var kept = snapshot(.protected)
         kept.installedModelBytes = 367_300_000
+        kept.recordedModelBytes = 367_300_000
         kept.lockedModelBytes = 367_300_000
         XCTAssertFalse(SiriModule.releasedModelsOnDisk(kept), "assets macOS still locks are not purged over and over")
         XCTAssertTrue(SiriScreenBuilder.tile(kept).graphic.map { "\($0)".contains("kept by macOS") } ?? false)
+        // The folders can hold more than MobileAsset's records (19.89 GB against 11.35 GB, 2026-10-06): what a purge deletes is only
+        // what the records hold.
+        var untracked = snapshot(.protected)
+        untracked.installedModelBytes = 19_890_000_000
+        untracked.recordedModelBytes = 0
+        XCTAssertFalse(SiriModule.releasedModelsOnDisk(untracked), "nothing a purge would delete")
     }
 
     func testModelsBeingDownloadedAreNeverNoModel() {

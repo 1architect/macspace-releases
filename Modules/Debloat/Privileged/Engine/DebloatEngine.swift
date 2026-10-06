@@ -363,31 +363,43 @@ public final class DebloatEngine {
 
     // MARK: Execution
 
-    /// Runs the plans. Each change is journaled first (write-ahead) and verified by reading it back. Policies switched back on have
-    /// their profiles removed first; then every policy switched off, and every one still waiting for approval, goes in one profile,
-    /// opened once for approval (macOS keeps only one downloaded profile waiting, so one per policy left all but the last behind).
+    /// Runs the plans. Each change is journaled first (write-ahead) and verified by reading it back. Policies are not written: what
+    /// MacSpace keeps switched off goes in its one profile (`ProfileWork`), brought up to date once all the plans ran: staged again
+    /// for approval, or removed when no policy is left switched off.
     public func execute(_ plans: [ControlChangePlan]) -> [ControlChangeResult] {
         let privilege = system.environment().privilege
         var runs = plans.map(executeSteps)
-        var restage: Set<String> = []
-        for index in runs.indices where runs[index].profileTouched && runs[index].plan.action == .revert {
-            let (results, sharing) = removeProfiles(runs[index], privilege: privilege)
-            runs[index].results = results
-            restage.formUnion(sharing)
-        }
-        restage.subtract(runs.filter { $0.plan.action == .revert }.compactMap { $0.control?.id })
-        let applying = runs.indices.filter { runs[$0].profileTouched && runs[$0].plan.action == .apply }
-        if !applying.isEmpty || !restage.isEmpty {
-            let ids = restage.union(applying.compactMap { runs[$0].control?.id })
-            switch stageTogether(ids, privilege: privilege) {
-            case .success(let staged):
-                for index in applying { runs[index].results = Self.settle(runs[index].results, .pendingApproval, staged.message) }
-            case .failure(let error):
-                var log = journal.load(privilege)
-                let undone = Set(applying.flatMap { runs[$0].stagedEntries })
-                log.entries.removeAll { undone.contains($0.id) }
-                try? journal.save(log, privilege)
-                for index in applying { runs[index].results = Self.settle(runs[index].results, .failed, "\(error)") }
+        if runs.contains(where: \.profileTouched) {
+            switch profileWork() {
+            case .approve(let ids):
+                switch stageProfile(ids) {
+                case .success(let message):
+                    for index in runs.indices where runs[index].profileTouched {
+                        runs[index].results = Self.settle(runs[index].results, .pendingApproval, message)
+                    }
+                case .failure(let error):
+                    var log = journal.load(privilege)
+                    let undone = Set(runs.flatMap(\.stagedEntries))
+                    log.entries.removeAll { undone.contains($0.id) }
+                    try? journal.save(log, privilege)
+                    for index in runs.indices where runs[index].profileTouched {
+                        runs[index].results = Self.settle(runs[index].results, .failed, "\(error)")
+                    }
+                }
+            case .remove(let identifiers):
+                let outcome = removeProfiles(identifiers)
+                for index in runs.indices where runs[index].profileTouched {
+                    runs[index].results = Self.settle(runs[index].results, outcome.removed ? .changed : .pendingApproval, outcome.detail)
+                }
+            case .cleanUp(let identifiers):
+                let outcome = removeProfiles(identifiers)
+                for index in runs.indices where runs[index].profileTouched {
+                    runs[index].results = Self.settle(runs[index].results, outcome.removed ? .changed : .pendingApproval, outcome.detail)
+                }
+            case .none:
+                for index in runs.indices where runs[index].profileTouched {
+                    runs[index].results = Self.settle(runs[index].results, .changed, "The MacSpace profile already holds it.")
+                }
             }
         }
         return runs.map { run in
@@ -399,13 +411,70 @@ public final class DebloatEngine {
         }
     }
 
-    /// Opens the profile of every policy waiting for approval again, in one: for a profile that was replaced, expired, or dismissed.
-    /// Returns the policies it holds (none: nothing to approve).
-    public func stagePendingProfiles() throws -> [String] {
-        switch stageTogether([], privilege: system.environment().privilege) {
-        case .success(let staged): return staged.controlIDs
-        case .failure(let error): throw error
+    /// The policies MacSpace keeps switched off: those whose latest journal entry is an apply, and those a MacSpace profile enforces
+    /// that were never switched back on (applied by an earlier build, whose journal knows nothing). Never one switched back on.
+    public func wantedPolicies(installed: [InstalledProfile]? = nil) -> [DebloatControl] {
+        let entries = journal.load(system.environment().privilege).entries
+        let held = Set((installed ?? system.installedProfiles() ?? []).filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }
+            .flatMap(\.values.keys))
+        return controls.filter { control in
+            let managed = control.settings.filter { $0.kind == .managedPreference }
+            guard !managed.isEmpty else { return false }
+            let latest = entries.filter { entry in entry.controlID == control.id && managed.contains { $0.id == entry.settingID } }
+                .reduce(nil as JournalEntry?) { latest, entry in (latest?.at ?? .distantPast) <= entry.at ? entry : latest }
+            if let latest { return latest.action == .apply && latest.revertedAt == nil }
+            return managed.allSatisfy { setting in setting.managed.map { held.contains("\($0.payloadType):\($0.key)") } ?? false }
         }
+    }
+
+    /// What the one MacSpace profile needs, comparing the policies switched off with the profiles installed. Approving the profile
+    /// staged with the same identifier replaces the installed one, so there is never more than one; profiles of earlier versions
+    /// (one per policy, or per set) go once it holds everything.
+    public func profileWork() -> ProfileWork {
+        let all = system.installedProfiles() ?? []
+        let wanted = wantedPolicies(installed: all)
+        let installed = all.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }
+        if wanted.isEmpty {
+            return installed.isEmpty ? .none : .remove(installed.map(\.identifier).sorted())
+        }
+        let values = Dictionary(wanted.flatMap { $0.settings.compactMap(\.managed) }.map { ("\($0.payloadType):\($0.key)", InstalledProfile.text($0.desired)) },
+                                uniquingKeysWith: { first, _ in first })
+        guard installed.first(where: { $0.identifier == ConfigurationProfileBuilder.profileIdentifier })?.values == values else {
+            return .approve(wanted.map(\.id))
+        }
+        let others = installed.map(\.identifier).filter { $0 != ConfigurationProfileBuilder.profileIdentifier }.sorted()
+        return others.isEmpty ? .none : .cleanUp(others)
+    }
+
+    /// Stages the MacSpace profile with every policy switched off, for approval: for a profile that was replaced, expired, or
+    /// dismissed, and for the first approval after an update. Returns the policies it holds (none: nothing to approve).
+    public func stagePendingProfiles() throws -> [String] {
+        guard case let .approve(ids) = profileWork() else { return [] }
+        if case let .failure(error) = stageProfile(ids) { throw error }
+        return ids
+    }
+
+    /// The MacSpace profile holding the policies in `ids`, written and opened for approval.
+    private func stageProfile(_ ids: [String]) -> Result<String, any Error> {
+        let members = controls.filter { ids.contains($0.id) }
+        do {
+            let profile = try ConfigurationProfileBuilder.build(members.flatMap { $0.settings.compactMap(\.managed) },
+                                                                identifier: ConfigurationProfileBuilder.profileIdentifier,
+                                                                title: ConfigurationProfileBuilder.profileTitle)
+            return .success(try system.stageProfile(profile, fileName: ConfigurationProfileBuilder.fileName(forIdentifier: ConfigurationProfileBuilder.profileIdentifier)))
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    /// Removes MacSpace profiles, which needs root: outside the helper the detail says which, and the app asks the helper.
+    private func removeProfiles(_ identifiers: [String]) -> (removed: Bool, detail: String) {
+        var removed: [String] = []
+        for identifier in identifiers {
+            do { removed.append(try system.removeProfile(identifier: identifier)) }
+            catch { return (false, ConfigurationProfileBuilder.removalNeeded(identifiers)) }
+        }
+        return (true, removed.joined(separator: " "))
     }
 
     private static func settle(_ results: [StepResult], _ outcome: StepOutcome, _ detail: String) -> [StepResult] {
@@ -449,6 +518,11 @@ public final class DebloatEngine {
             if step.alreadySatisfied {
                 if plan.action == .revert { try? markReverted(controlID: control.id, settingID: id, privilege: privilege) }
                 if step.setting.kind == .managedPreference, plan.action == .revert { profileTouched = true }
+                // Forced by a MacSpace profile of an earlier version: journaled, so it goes in the one profile that replaces it.
+                if step.setting.kind == .managedPreference, plan.action == .apply, heldByMacSpaceProfile(step.setting) {
+                    let (_, entry) = journalManaged(step, control: control, action: .apply, privilege: privilege, build: build)
+                    if entry != nil { profileTouched = true }
+                }
                 // An already-disabled service may still be loaded from before; an immediate change stops it as well.
                 let session = plan.immediate && plan.action == .apply ? sessionChange(step, action: .apply) : nil
                 results.append(StepResult(settingID: id, outcome: .alreadySatisfied, detail: session ?? step.warning))
@@ -469,6 +543,14 @@ public final class DebloatEngine {
         return PlanRun(plan: plan, control: control, results: results, profileTouched: profileTouched, stagedEntries: stagedEntries)
     }
 
+    /// Whether an installed MacSpace profile holds this managed setting.
+    private func heldByMacSpaceProfile(_ setting: ControlSetting) -> Bool {
+        guard let managed = setting.managed else { return false }
+        return (system.installedProfiles() ?? []).contains { profile in
+            ConfigurationProfileBuilder.isMacSpaceProfile(profile.identifier) && profile.values["\(managed.payloadType):\(managed.key)"] != nil
+        }
+    }
+
     /// Journals a managed-preference change. The control's profile is staged or removed after its steps (`execute`).
     private func journalManaged(_ step: ChangeStep, control: DebloatControl, action: ChangeAction,
                                 privilege: DebloatPrivilege, build: String?) -> (StepResult, UUID?) {
@@ -487,53 +569,6 @@ public final class DebloatEngine {
             return (StepResult(settingID: id, outcome: .failed, detail: "Journal could not be written, so nothing was changed: \(error)"), nil)
         }
         return (StepResult(settingID: id, outcome: .pendingApproval, detail: nil), entry.id)
-    }
-
-    /// The policies in `ids` and every policy waiting for approval, in one profile opened for approval; each one's journal entries
-    /// record the profile, so switching one back on knows what to remove.
-    private func stageTogether(_ ids: Set<String>, privilege: DebloatPrivilege) -> Result<(controlIDs: [String], message: String), any Error> {
-        let entries = journal.load(privilege).entries
-        let members = controls.filter { control in
-            guard control.settings.contains(where: { $0.kind == .managedPreference }) else { return false }
-            return ids.contains(control.id) || status(of: control, entries: entries, processes: nil).state == .awaitingApproval
-        }
-        guard !members.isEmpty else { return .success((controlIDs: [], message: "")) }
-        let identifier = ConfigurationProfileBuilder.identifier(forSet: members.map(\.id))
-        do {
-            let profile = try ConfigurationProfileBuilder.build(members.flatMap { $0.settings.compactMap(\.managed) }, identifier: identifier,
-                                                                title: members.map(\.title).joined(separator: ", "))
-            let message = try system.stageProfile(profile, fileName: ConfigurationProfileBuilder.fileName(forIdentifier: identifier))
-            let memberIDs = Set(members.map(\.id))
-            var log = journal.load(privilege)
-            for index in log.entries.indices where memberIDs.contains(log.entries[index].controlID) && log.entries[index].action == .apply
-                && log.entries[index].revertedAt == nil && log.entries[index].setting.kind == .managedPreference {
-                log.entries[index].profile = identifier
-            }
-            try? journal.save(log, privilege)
-            return .success((controlIDs: members.map(\.id), message: message))
-        } catch {
-            return .failure(error)
-        }
-    }
-
-    /// Switching a policy back on: its own profile goes, with the profile it shared with others and the single profile of earlier
-    /// versions, which may hold it too. Removing needs root, so outside the helper the step says which profiles to remove and the app
-    /// asks the helper. Returns the policies that shared its profile: they lose it too and are staged again.
-    private func removeProfiles(_ run: PlanRun, privilege: DebloatPrivilege) -> ([StepResult], Set<String>) {
-        guard let control = run.control else { return (run.results, []) }
-        let entries = journal.load(privilege).entries
-        let own = [ConfigurationProfileBuilder.identifier(for: control.id), ConfigurationProfileBuilder.legacyIdentifier]
-        let shared = Set(entries.filter { $0.controlID == control.id && $0.action == .apply }.compactMap(\.profile)).subtracting(own)
-        let identifiers = own + shared.sorted()
-        let sharing = Set(entries.filter { entry in
-            entry.controlID != control.id && entry.action == .apply && entry.revertedAt == nil && entry.profile.map { shared.contains($0) } == true
-        }.map(\.controlID))
-        var removed: [String] = []
-        for identifier in identifiers {
-            do { removed.append(try system.removeProfile(identifier: identifier)) }
-            catch { return (Self.settle(run.results, .pendingApproval, ConfigurationProfileBuilder.removalNeeded(identifiers)), sharing) }
-        }
-        return (Self.settle(run.results, .changed, removed.joined(separator: " ")), sharing)
     }
 
     private func perform(_ step: ChangeStep, control: DebloatControl, action: ChangeAction,

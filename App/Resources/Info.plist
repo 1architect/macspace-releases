@@ -3,6 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key><string>com.macspace.app</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key><string>com.macspace.app</string>
+            <key>CFBundleURLSchemes</key><array><string>macspace</string></array>
+        </dict>
+    </array>
     <key>CFBundleName</key><string>MacSpace</string>
     <key>CFBundleDisplayName</key><string>MacSpace</string>
     <key>CFBundleIconFile</key><string>MacSpace</string>

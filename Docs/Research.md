@@ -40,6 +40,32 @@ System Data until Spotlight has indexed them. A reading taken straight after a d
 With the rules above the app's total came within about 0.9 GB of Settings (42.83 vs 41.95 GB). **Inferred:** the remainder is small
 items and rounding; no single missing source was found. The mapping was calibrated on one Mac and may be off on another.
 
+### How Settings attributes space (2026-10-06, 26B5091g)
+
+- **Measured.** The categories come from `spaceattributiond` (SpaceAttribution framework). It assigns paths to an *owner* app or
+  daemon, from rules in `/System/Library/SpaceAttribution/*.plist` (Spotlight owns `.Spotlight-V100` and `~/Library/Metadata/CoreSpotlight`;
+  `logd`, `mobileassetd`, `nsurlsessiond` and others are mapped to owners) and computes System Data last (`calculateSystemDataSize`).
+  An app cannot ask it: `SAAppSizer` answers `NSCocoaErrorDomain 4099` without Apple's entitlement, and its cache in
+  `/var/db/spaceattribution` is not readable.
+- **Measured.** Settings' "used" is capacity minus `volumeAvailableCapacityForImportantUsage`: purgeable space counts as free. With
+  plain free space the disk tile said 230.9 GB used against Settings' 203.28; with this key 203.24 (41.87 GB available against 41.83).
+- **Measured.** Settings' Applications (97.81 GB) is close to app bundles plus third-party containers and group containers (95.21 GB),
+  so apps' support files (`~/Library/Application Support`, 7.72 GB of third-party ones here) are mostly not in it. **Inferred:** they
+  are System Data.
+- **Measured – what the scan did not cover** (whole Data volume tallied with Full Disk Access against the scan): a prepared macOS update
+  on the Preboot volume (`<volume group>/cryptex1/proposed`, 10.70 GB counting each clone family once with `ATTR_CMNEXT_CLONEID`; the
+  images come in clone pairs, `os.dmg`/`os.clone.dmg`, and `du` reports double), apps' files for all users in `/Library` (3.06 GB),
+  Apple's per-user data in `~/Library` (Biome, DuetExpertCenter, HTTPStorages…, about 1.4 GB), tools' hidden folders in the home folder,
+  the rest of `/private/var/db`, system logs and temporary files. The scan now covers whole areas instead of a list from one Mac.
+- **Measured.** Files macOS may delete by itself carry the APFS flag `EF_IS_PURGEABLE` (`getattrlist`, `ATTR_CMNEXT_EXT_FLAGS`; file
+  attributes come before the extended ones in the buffer). System Data leaves them out, and the purgeable figures CacheDelete reports
+  for the Spotlight index and the system assets, as Settings counts them as free space.
+- **Inferred – why MacSpace now shows more than Settings (51.06 against 44.46 GB).** System Data is Settings' remainder, so whatever it
+  over-counts elsewhere comes off System Data. It counts Apple Intelligence at 19.89 GB where releasing the models gained 9.48 GB on
+  the volume (section 3). Rebuilt with the real model size: Data volume 48.2 GB for macOS and System Data, minus 11.35 GB of models,
+  plus the other volumes less macOS's own share (System volume 18.58 + the running system's Preboot copy 10.76) gives about 52.4 GB.
+  That split also matches Settings' macOS figure (49.2 against 48.52 GB).
+
 ## 2. What can actually be reclaimed
 
 ### System assets (`/System/Library/AssetsV2`)
@@ -99,6 +125,12 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
 - **Measured – urgency 3 then 4, from the app (2026-10-03, development Mac).** macOS reported 1.08 GB removed and the volume's free
   space rose by 1.08 GB; the estimate at urgency 3 then said 63.5 MB. What urgency 3 declined, urgency 4 removed.
 
+- **Measured – what `fspurgeable_document` is (2026-10-06).** 21.15 GB here, up from 9.96 GB the same morning: OneDrive's files.
+  File Provider apps flag the files they downloaded and keep in the cloud as purgeable (22.94 GB in 8,065 files of
+  `~/Library/CloudStorage/OneDrive-Pessoal`, nothing flagged in Downloads, Documents or Desktop). macOS may delete these local
+  copies; they download again when opened. Other System Files names the block after each cloud folder found, whichever provider it is,
+  and skips folders still only in the cloud (`SF_DATALESS`) so the scan never makes a provider fetch anything.
+
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
 **Measured.** 6.35 GB by `du`; deleting it freed about 5 GB on the volume (System Data fell about 5.05 GB). The folder is root-only
@@ -133,6 +165,15 @@ Telling the user to "install the waiting update" for such files was wrong, and t
   waits and fails. MacSpace shows a single explanation there and offers no controls.
 - **Measured (2026-10-04):** the Siri language preference syncs through iCloud to iOS devices on the same Apple Account, so switching
   Apple Intelligence off on the Mac changes the Siri language on the iPhone too, and so does the minute-long model release.
+- **Measured – the models' size (2026-10-06).** Settings' "Apple Intelligence" (`aiModelsSize` in its Storage extension) is the size of
+  `/System/Library/AssetsV2/com_apple_MobileAsset_UAF_FM_GenerativeModels` and `…_FM_Visual`: 19.89 GB. No app can open those folders,
+  not even with Full Disk Access. MobileAsset's records (`AutoAssetDescriptors`) say 11.35 GB; on 2026-10-05 releasing the models
+  gained 9.48 GB on the volume with about 0.37 GB kept locked, in line with the records. The models staged for the waiting update
+  (`AutoAssetStager`, target 26B5101f) are 0.22 GB. MacSpace shows the records' figure. Why Settings shows 8.5 GB more is
+  **unverified** (one guess: the grafted base model counted as image and as mounted content).
+- **Unverified – Siri's iCloud sync.** The switch is the `com.apple.Dataclass.Siri` data class of the iCloud account in
+  `~/Library/Accounts/Accounts4.sqlite`, which needs Full Disk Access; MacSpace reads it there. `Cloud Sync Enabled` in
+  `com.apple.assistant.backedup` is not the switch. Not yet seen working in the app.
 
 ## 4. The privileged helper
 
@@ -158,7 +199,9 @@ had to learn (all **measured** on a Mac and a VM):
    Developer ID identity so the requirement (identifier plus team) is the same on every build; ad-hoc builds change every time and
    lose the grant.
 6. The helper itself can read the root-only locations System Data needs (Spotlight index, version history, symbolication cache).
-   **Measured** on the development Mac with Full Disk Access granted to the app.
+   **Measured** on the development Mac with Full Disk Access granted to the app. It now measures anything under the system's folders
+   (`RootMeasuredLocations.allowedRoots`: `/private/var`, `/private/tmp`, `/Library`, `/System/Library`, the Data volume's root, `/opt`;
+   never a home folder), sizes and purgeable bytes only.
 
 ## 5. Debloat
 
@@ -166,6 +209,19 @@ Fourteen controls ship, each either verified on 26B5091g or enforced by a config
 (diagnostics, ads, advertising identifier, Siri server logging, on-device dictation, Spotlight internet results, Apple
 Intelligence features, Game Center, News). **Measured and left out:** nine launchd controls (SIP resets them at boot), and ten whose effect could
 not be confirmed. Profile controls need the user to approve the MacSpace configuration profile in System Settings.
+
+- **Measured – the advertising identifier is not a setting on macOS (2026-10-06).** `com.apple.AdLib allowIdentifierForAdvertising`
+  came back to 1 three times in two days (journal, 2026-10-04 to 10-06) while Personalized ads stayed off. LimitAdTracking says why:
+  "Cross App Tracking is not currently persisted on this platform", and the value is reconciled with the Apple Account. Only the
+  `allowIdentifierForAdvertising` restriction in a profile holds, so the control is a policy again.
+- **Measured – one profile (2026-10-06).** Profiles named after the set of policies they held piled up in Device Management (three at
+  once). There is now one, `com.macspace.policies`, holding every policy switched off; staging it again with the same identifier and
+  approving it replaces the installed one, its UUID following its content. Switching the last policy back on removes it through the
+  helper; the profiles of earlier versions are removed through the helper once the one profile holds everything they did.
+  Installed profiles and their values are read with `system_profiler SPConfigurationProfileDataType -json`, without root.
+- **Measured – reading forced values.** A long-running app's `CFPreferencesAppValueIsForced` kept the values from before a profile was
+  approved (the page said "waiting" while a fresh CLI process read every policy on). Forced values are read from
+  `/Library/Managed Preferences` (per user, then for the device) on every read.
 
 ## 6. Open questions
 
@@ -175,3 +231,5 @@ not be confirmed. Profile controls need the user to approve the MacSpace configu
 - Which Settings are behind Siri voices, dictation, dictionaries and the developer documentation asset?
 - Do the category mappings in section 1 hold on a Mac with different apps?
 - Is the document-version freeze safe while an app is saving? The confirmation tells the user to save and close documents first.
+- Why does Settings count Apple Intelligence at 19.89 GB when releasing the models frees about 10 GB?
+- How much do Time Machine's local snapshots hold, and does Settings count it as System Data? (Not measured; needs root.)

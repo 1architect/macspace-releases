@@ -5,7 +5,7 @@ import Foundation
 /// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
-///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png>
+///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png> | du:<depth>:<file.tsv>:<folder>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
@@ -53,6 +53,12 @@ final class DebugRemote: ObservableObject {
             DesignSettings.shared.glass = text == "glass:on"
         } else if text.hasPrefix("palette:"), let scheme = PaletteScheme(rawValue: String(text.dropFirst("palette:".count))) {
             DesignSettings.shared.scheme = scheme
+        } else if text.hasPrefix("du:") {
+            // du:<depth>:<file.tsv>:<folder>, sized with the app's own Full Disk Access (a shell usually has none).
+            let parts = text.dropFirst("du:".count).split(separator: ":", maxSplits: 2).map(String.init)
+            if parts.count == 3, let depth = Int(parts[0]) {
+                Task.detached(priority: .utility) { DiskTally.write(root: parts[2], depth: depth, to: parts[1]) }
+            }
         } else if text.hasPrefix("captureTitled:") {
             // captureTitled:<window title>:<file.png>
             let parts = text.dropFirst("captureTitled:".count).split(separator: ":", maxSplits: 1).map(String.init)
@@ -90,5 +96,48 @@ final class DebugRemote: ObservableObject {
             return
         }
         try? data.write(to: URL(fileURLWithPath: path))
+    }
+}
+
+/// For finding what the System Data scan leaves out: every folder down to `depth` under a root, with the space its files take
+/// (allocated size, other volumes skipped) and the folders that could not be listed. Written as `bytes<TAB>unreadable<TAB>path`,
+/// largest first, with a line `#done` at the end.
+enum DiskTally {
+    static func write(root: String, depth: Int, to path: String) {
+        let rootURL = URL(fileURLWithPath: root)
+        let rootComponents = rootURL.standardizedFileURL.pathComponents.count
+        let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .volumeIdentifierKey]
+        let rootVolume = (try? rootURL.resourceValues(forKeys: [.volumeIdentifierKey]))?.volumeIdentifier as? NSObject
+        var bytes: [String: UInt64] = [:]
+        var unreadable: [String: Int] = [:]
+        func bucket(_ url: URL) -> String {
+            let components = url.standardizedFileURL.pathComponents
+            return NSString.path(withComponents: Array(components.prefix(min(components.count, rootComponents + depth))))
+        }
+        let enumerator = FileManager.default.enumerator(at: rootURL, includingPropertiesForKeys: keys, options: []) { url, _ in
+            unreadable[bucket(url), default: 0] += 1
+            return true
+        }
+        while let url = enumerator?.nextObject() as? URL {
+            guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isSymbolicLink != true else { continue }
+            if values.isDirectory == true {
+                if let volume = values.volumeIdentifier as? NSObject, let rootVolume, !volume.isEqual(rootVolume) { enumerator?.skipDescendants() }
+                continue
+            }
+            let size = UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+            bytes[bucket(url.deletingLastPathComponent()), default: 0] += size
+        }
+        // Each folder's figure includes its subfolders' (down to `depth`).
+        var totals: [String: UInt64] = [:]
+        for (folder, size) in bytes {
+            var components = URL(fileURLWithPath: folder).pathComponents
+            while components.count >= rootComponents {
+                totals[NSString.path(withComponents: components), default: 0] += size
+                components.removeLast()
+            }
+        }
+        let lines = totals.sorted { $0.value > $1.value }.map { "\($0.value)\t\(unreadable[$0.key] ?? 0)\t\($0.key)" }
+            + unreadable.filter { totals[$0.key] == nil }.map { "0\t\($0.value)\t\($0.key)" } + ["#done"]
+        try? lines.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
     }
 }

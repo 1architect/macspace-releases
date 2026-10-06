@@ -28,8 +28,8 @@ struct TileInfo: Equatable {
     /// The disk: an arc filled as far as the disk is used. What macOS can purge by itself is not drawn: at a few gigabytes it was a
     /// sliver too thin to see.
     @MainActor
-    init(_ storage: StorageOverview, purgeable: UInt64) {
-        let status = storage.status(purgeable: purgeable)
+    init(_ storage: StorageOverview) {
+        let status = storage.status()
         // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
         var graphic = TileGraphic.gauge(value: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
@@ -159,17 +159,15 @@ struct TileFace: View {
             let area = Self.chartArea(in: size, info: info, captionSize: captionSize)
             let above = Self.legendAbove(in: size, info: info, captionSize: captionSize)
             let hovered = hoveredBlock.flatMap { id in segments.first { $0.id == id } }
-            BlocksView(segments: segments, tint: tint, labels: segments.contains { !$0.label.isEmpty }, hovered: hovered?.id, loading: info.loading)
+            // No names in the blocks: the one under the pointer is named in the line below.
+            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
-            // What the pointer is on, or what amber means.
+            // What the pointer is on, and nothing otherwise.
             HStack(spacing: 6) {
                 if let hovered {
                     RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(hovered, rank: segments.firstIndex(of: hovered) ?? 0, tint: tint, design: design)).frame(width: 9, height: 9)
                     Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))")
-                } else if segments.contains(where: { $0.tone == .caution }) {
-                    RoundedRectangle(cornerRadius: 2).fill(design.action).frame(width: 9, height: 9)
-                    Text("can be freed")
                 }
             }
             .font(.system(size: 11))
@@ -285,12 +283,12 @@ struct HomeView: View {
         CGFloat(rows) * minimumRowHeight + CGFloat(max(rows - 1, 0)) * Theme.spacing
     }
 
-    /// The disk is violet and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
+    /// The disk is rose and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
     static func tiles(for handles: [ModuleHandle], includesSettings: Bool = true) -> [DashboardTile] {
         let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
-        var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .violet)]
+        var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)]
         let spare: [TileTint] = [.blue, .teal, .graphite]
         var next = 0
         let ordered = handles.filter { $0.id == large } + handles.filter { $0.id != large }
@@ -629,7 +627,7 @@ struct TileContent: View {
         case let .module(id):
             if let handle = host.handle(for: id) { ModuleTileContent(handle: handle, content: self) }
         case .settings: layout(TileInfo.settings)
-        case .storage: layout(TileInfo(storage, purgeable: host.purgeableTotal))
+        case .storage: layout(TileInfo(storage))
         case .home: EmptyView()
         }
     }

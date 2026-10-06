@@ -40,6 +40,7 @@ struct WidgetForm<Top: View>: View {
             ForEach(items) { item in
                 section(for: item.widget, leading: showsTop && item.id == Item.leading)
             }
+            PageBottomRoom()
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
@@ -202,14 +203,18 @@ enum Tooltip {
 
 struct BadgeView: View {
     let badge: Badge
+    @Environment(\.design) private var design
+
+    /// What needs the user is drawn in the action color, with its deep form for the text.
+    private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
 
     var body: some View {
         Text(badge.text)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(.white)
-            .background(Palette.color(badge.tone).opacity(badge.tone == .neutral ? 0.3 : 0.55), in: Capsule())
+            .foregroundStyle(attention ? design.actionDeep : .white)
+            .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(Palette.color(badge.tone, design).opacity(badge.tone == .neutral ? 0.3 : 0.55)), in: Capsule())
     }
 }
 
@@ -217,10 +222,11 @@ struct BadgeView: View {
 struct BannerRow: View {
     let banner: Banner
     let handler: ActionHandler
+    @Environment(\.design) private var design
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity))
+            Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity, design))
             VStack(alignment: .leading, spacing: 2) {
                 Text(banner.title).fontWeight(.semibold)
                 if let message = banner.message { Text(message).font(.caption).foregroundStyle(.secondary) }
@@ -390,6 +396,7 @@ struct ButtonRow: View {
 
 struct UsageBarView: View {
     let usage: UsageBar
+    @Environment(\.design) private var design
 
     private var total: Double {
         Double(usage.totalBytes ?? usage.segments.reduce(0) { $0 + $1.bytes })
@@ -401,7 +408,7 @@ struct UsageBarView: View {
                 HStack(spacing: 1) {
                     ForEach(usage.segments) { segment in
                         Rectangle()
-                            .fill(Palette.color(segment.tone))
+                            .fill(Palette.color(segment.tone, design))
                             .frame(width: total > 0 ? max(2, proxy.size.width * Double(segment.bytes) / total) : 0)
                     }
                     Spacer(minLength: 0)
@@ -414,7 +421,7 @@ struct UsageBarView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)], alignment: .leading, spacing: 6) {
                 ForEach(usage.segments) { segment in
                     HStack(spacing: 6) {
-                        Circle().fill(Palette.color(segment.tone)).frame(width: 8, height: 8)
+                        Circle().fill(Palette.color(segment.tone, design)).frame(width: 8, height: 8)
                         Text(segment.label).font(.caption)
                         Text(ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary)
                     }
@@ -426,6 +433,7 @@ struct UsageBarView: View {
 
 struct BarChartView: View {
     let chart: BarChart
+    @Environment(\.design) private var design
 
     var body: some View {
         let maximum = max(chart.bars.map(\.value).max() ?? 0, .leastNonzeroMagnitude)
@@ -434,7 +442,7 @@ struct BarChartView: View {
                 HStack(spacing: 10) {
                     Text(bar.label).font(.callout).frame(width: 150, alignment: .leading).lineLimit(1)
                     GeometryReader { proxy in
-                        Capsule().fill(Palette.color(bar.tone))
+                        Capsule().fill(Palette.color(bar.tone, design))
                             .frame(width: max(3, proxy.size.width * bar.value / maximum))
                     }
                     .frame(height: 8)

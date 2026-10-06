@@ -50,7 +50,9 @@ final class FakeDebloatSystem: DebloatSystem {
         case .preference, .featureFlag, .systemTool:
             return .value(preferences[setting.id].map { .value($0) } ?? .absent)
         case .managedPreference:
-            return .value(forced[setting.id].map { .value($0) } ?? .absent)
+            let managed = setting.managed!
+            let fromProfile = installedValues.values.compactMap { $0["\(managed.payloadType):\(managed.key)"] }.first
+            return .value((forced[setting.id] ?? fromProfile).map { .value($0) } ?? .absent)
         case .launchdService:
             let service = setting.launchd!
             guard launchdJobs().job(service.domain, service.label) != nil else { return .unavailable("missing in test") }
@@ -99,7 +101,20 @@ final class FakeDebloatSystem: DebloatSystem {
     func removeProfile(identifier: String) throws -> String {
         guard removesProfiles else { throw DebloatSystemError.commandFailed("needs root in test") }
         removedProfiles.append(identifier)
+        installedValues[identifier] = nil
         return "removed \(identifier)"
+    }
+    /// Installed profiles, by identifier, with their managed values as payloadType:key -> value; their values read as forced.
+    var installedValues: [String: [String: PlistValue]] = [:]
+    func installedProfiles() -> [InstalledProfile]? {
+        installedValues.map { InstalledProfile(identifier: $0.key, values: $0.value.mapValues(InstalledProfile.text)) }
+    }
+    /// The user approving the last staged profile: it replaces the installed one with its identifier.
+    func approveLastProfile() {
+        guard let data = stagedProfiles.last,
+              let root = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+              let identifier = root["PayloadIdentifier"] as? String else { return }
+        installedValues[identifier] = lastProfileValues
     }
     /// The managed values in the last staged profile, as payloadType:key -> value.
     var lastProfileValues: [String: PlistValue] {

@@ -89,4 +89,6 @@ public enum TileTint: String, Codable, Sendable, CaseIterable {
     case teal
     case graphite
     case slate
+    /// The disk's. Like `graphite`, each palette draws it in a hue of its own, one its other tiles do not use: a rose by default.
+    case rose
 }

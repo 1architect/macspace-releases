@@ -390,16 +390,17 @@ enum PaletteRamp {
         let m = OKLab(main)
         let c = m.chroma, h = m.hue
         let lm = light ? min(max(m.l, 0.45), 0.72) : min(max(m.l, 0.5), 0.78)
-        let ground = light ? 0.95 : 0.27
+        // By day the ground is toned enough to stand off the system's white window.
+        let ground = light ? 0.88 : 0.27
         let end = light ? 0.3 : 0.92
         func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double { a + (b - a) * t }
         let levels = [lerp(ground, lm, 0.12), lerp(ground, lm, 0.3), lerp(ground, lm, 0.62), lm, lerp(lm, end, 0.5), lerp(lm, end, 0.8)]
         // Chroma peaks at the main color and fades toward the ground and the far end.
         let chromas = [0.6, 0.72, 0.88, 1, 0.62, 0.38].map { $0 * c }
         func color(_ l: Double, _ chroma: Double) -> Color { OKLab(l: l, chroma: chroma, hue: h).labColor.color }
-        return TintPalette(base: color(ground, c * (light ? 0.22 : 0.5)),
+        return TintPalette(base: color(ground, c * (light ? 0.32 : 0.5)),
                            steps: zip(levels, chromas).map { color($0, $1) },
-                           text: color(light ? 0.24 : 0.96, c * (light ? 0.5 : 0.1)))
+                           text: color(light ? 0.19 : 0.96, c * (light ? 0.5 : 0.1)))
     }
 
     /// The action color's lighter form (hover, progress) and its deep form (its text).

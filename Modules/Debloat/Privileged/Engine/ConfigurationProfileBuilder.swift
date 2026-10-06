@@ -1,18 +1,21 @@
 import Foundation
 import CryptoKit
 
-/// Builds the configuration profiles of the Debloat policies.
+/// Builds the configuration profile of the Debloat policies.
 ///
-/// Policies switched off together go in one profile, approved once: macOS keeps a single downloaded profile waiting for approval,
-/// and each one opened replaced the one before, so Switch all off left all but the last unapproved. A policy switched off alone has a
-/// profile of its own (`com.macspace.policies.<control id>`); several share `com.macspace.policies.set-<hash of their ids>`.
-/// Switching one back on removes its profile through the helper, which needs no approval; the others that shared it get a new
-/// profile to approve. Every policy waiting for approval is staged again with the next one, so none is left behind.
-/// Payload UUIDs are derived from their identifiers, so the same content always produces the same profile.
+/// There is one: `com.macspace.policies`, holding every policy switched off. Any change stages it again with the same identifier,
+/// and approving it replaces the one installed, so System Settings never lists more than one. Switching the last policy back on
+/// removes it through the helper, with nothing to approve. Earlier versions made one profile per policy
+/// (`com.macspace.policies.<control id>`) or per set switched off together (`com.macspace.policies.set-<hash>`); the helper removes
+/// those once the one profile holds everything (`DebloatEngine.profileWork`). The profile's UUID follows its content, so macOS sees
+/// each change as a new version of it.
 public enum ConfigurationProfileBuilder {
     /// The single profile of earlier versions, which held every policy. Removed when a policy is switched back on; the policies it
     /// still enforced then get profiles of their own (`DebloatModule`).
     public static let legacyIdentifier = "com.macspace.policies"
+    /// The one profile, and what System Settings calls it.
+    public static let profileIdentifier = legacyIdentifier
+    public static let profileTitle = "policies"
     /// What the helper may remove: MacSpace's profiles, and nothing else.
     public static func isMacSpaceProfile(_ identifier: String) -> Bool {
         identifier == legacyIdentifier || identifier.hasPrefix(legacyIdentifier + ".")
@@ -27,12 +30,9 @@ public enum ConfigurationProfileBuilder {
         return "\(legacyIdentifier).set-\(digest.prefix(12))"
     }
     public static func fileName(forIdentifier identifier: String) -> String {
-        "MacSpace-\(identifier.hasPrefix(legacyIdentifier + ".") ? String(identifier.dropFirst(legacyIdentifier.count + 1)) : identifier).mobileconfig"
+        if identifier == profileIdentifier { return "MacSpace.mobileconfig" }
+        return "MacSpace-\(identifier.hasPrefix(legacyIdentifier + ".") ? String(identifier.dropFirst(legacyIdentifier.count + 1)) : identifier).mobileconfig"
     }
-    /// Profiles of controls that now change a plain setting instead (Personalized ads, Advertising identifier, Siri logging), and the
-    /// single profile of earlier versions. Left installed, they would keep enforcing what the new controls switch.
-    public static let retiredIdentifiers = [legacyIdentifier] + ["ads.personalized-ads-policy", "ads.advertising-identifier-policy",
-                                                                   "telemetry.siri-server-logging-policy"].map(identifier(for:))
     public static func displayName(for title: String) -> String { "MacSpace: \(title)" }
 
     /// The step detail when a profile has to be removed and this process cannot (it needs root): the app asks the helper. It names
@@ -71,7 +71,7 @@ public enum ConfigurationProfileBuilder {
             "PayloadScope": "System",
             "PayloadRemovalDisallowed": false,
             "PayloadType": "Configuration",
-            "PayloadUUID": uuid(identifier),
+            "PayloadUUID": uuid(identifier + settings.map { "\($0.payloadType):\($0.key)=\($0.desired)" }.sorted().joined(separator: ",")),
             "PayloadVersion": 1,
             "PayloadContent": payloads,
         ]

@@ -453,12 +453,9 @@ struct StateView: View {
                         // The click is taken by the row below: the system switch does not claim it from SwiftUI's gestures, and
                         // it went through to the tile's button and opened the page.
                         .allowsHitTesting(false)
-                    Text(isOn.wrappedValue ? "on" : "off").font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(isOn.wrappedValue ? design.actionLight : palette.soft)
                 }
                 .opacity(switchOpacity)
-                .animation(Theme.hover, value: isOn.wrappedValue)
-                // The switch and its "on"/"off" flip it.
+                // No "on"/"off" beside it: the switch says so itself.
                 .contentShape(Rectangle())
                 .onTapGesture { if !disabled { isOn.wrappedValue.toggle() } }
                 .allowsHitTesting(flip != nil && part != .allButSwitch)

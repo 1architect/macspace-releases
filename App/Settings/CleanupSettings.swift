@@ -1,52 +1,32 @@
 import MacSpacePlatform
 import SwiftUI
 
-/// Automatic cleanup: on or off, how often, which modules take part, and when it last ran.
-struct AutoCleanSection: View {
+/// Cleanup in one section: automatic cleanup (on or off, how often, which modules take part), then what has been freed so far and a
+/// row that opens the page of every cleanup (`CleanupHistoryPage`).
+struct CleanupSection: View {
     @ObservedObject var cleaner: AutoCleaner
     @ObservedObject var host: ModuleHost
+    @State private var count = CleanupHistory.shared.entries.count
+    @State private var lifetime = CleanupHistory.shared.lifetimeBytes
 
     private var takingPart: [String] {
         host.activeHandles.filter { $0.manifest.autoClean == true }.map(\.manifest.name)
     }
 
     var body: some View {
-        Section("Automatic cleanup") {
+        Section("Cleanup") {
             Toggle("Clean automatically", isOn: $cleaner.isEnabled)
-                .help("While MacSpace runs (its window or the menu bar), it frees what is safe to free without asking: caches, old reports, purgeable app files and released system assets. Never version history or anything that cannot be undone.")
+                .help("While MacSpace runs (its window or the menu bar), it frees what is safe to free without asking: caches, old reports, purgeable app files and released system assets. Never version history or anything that cannot be undone. Modules taking part: \(takingPart.isEmpty ? "none" : takingPart.joined(separator: ", ")).")
             if cleaner.isEnabled {
                 Picker("How often", selection: $cleaner.frequency) {
                     ForEach(AutoCleaner.Frequency.allCases) { Text($0.title).tag($0) }
                 }
             }
-            LabeledContent("Modules") {
-                Text(takingPart.isEmpty ? "None is on" : takingPart.joined(separator: ", ")).foregroundStyle(.secondary).lineLimit(1)
-            }
-        }
-    }
-}
-
-/// The lifetime total, and a row that opens the page of every cleanup (`CleanupHistoryPage`).
-struct CleanupHistorySection: View {
-    @ObservedObject var host: ModuleHost
-    @State private var count = CleanupHistory.shared.entries.count
-    @State private var lifetime = CleanupHistory.shared.lifetimeBytes
-
-    var body: some View {
-        Section("Cleanup history") {
             LabeledContent("Freed in total") {
                 Text(ByteFormat.string(lifetime)).monospacedDigit().contentTransition(.numericText())
             }
             .help("Everything MacSpace has freed on this Mac, measured on the volume each time.")
-            Button { host.settingsPage = .cleanupHistory } label: {
-                HStack {
-                    TitleLine(title: "Recent cleanups", note: count == 1 ? "1 cleanup" : "\(count) cleanups")
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+            SettingsLinkRow(title: "Recent cleanups", note: count == 1 ? "1 cleanup" : "\(count) cleanups") { host.settingsPage = .cleanupHistory }
         }
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
             withAnimation(Theme.value) {
@@ -54,6 +34,25 @@ struct CleanupHistorySection: View {
                 lifetime = CleanupHistory.shared.lifetimeBytes
             }
         }
+    }
+}
+
+/// A row that opens a page over Settings, with a chevron.
+struct SettingsLinkRow: View {
+    let title: String
+    let note: String?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                TitleLine(title: title, note: note)
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -80,6 +79,7 @@ struct CleanupHistoryPage: View {
             } header: {
                 TitleLine(title: "Recent cleanups", note: "\(ByteFormat.string(lifetime)) freed in total")
             }
+            PageBottomRoom()
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)

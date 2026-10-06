@@ -721,3 +721,13 @@ public struct DebloatJournal: Codable, Equatable, Sendable {
         entries.filter { $0.action == .apply && $0.revertedAt == nil }.sorted { $0.at < $1.at }
     }
 }
+
+/// What the one MacSpace profile needs (`DebloatEngine.profileWork`): nothing; the user's approval of a new version holding these
+/// policies; the helper removing these profiles because no policy is switched off any more; or the helper removing profiles of
+/// earlier versions, now that the one profile holds everything (safe to do unasked: nothing switched off comes back on).
+public enum ProfileWork: Equatable, Sendable {
+    case none
+    case approve([String])
+    case remove([String])
+    case cleanUp([String])
+}

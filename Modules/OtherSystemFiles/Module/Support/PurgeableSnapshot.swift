@@ -9,6 +9,8 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// macOS kept the files apps marked purgeable when MacSpace asked, and MacSpace is asking it again in the background
     /// (`PurgeRetrier`). They still count as freeable.
     var retrying = false
+    /// The cloud folders holding the purgeable documents (`PurgeableDocuments`); empty when there are none or they were not looked for.
+    var documents: [PurgeableDocuments.Source] = []
 
     /// macOS's estimate of the files apps marked purgeable.
     var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
@@ -33,6 +35,8 @@ struct PurgeableService: Equatable {
                          detail: "macOS reports them, but purging freed under 100 MB at any urgency, and they keep being reported. Left alone.", symbol: "shippingbox"),
         PurgeableService(id: CacheDeleteService.fsPurgeableDocument, title: "Purgeable documents",
                          detail: "Most likely local copies of documents kept in the cloud. Not offered until it is measured what removing them does.", symbol: "icloud.and.arrow.down"),
+        PurgeableService(id: CacheDeleteService.spotlightIndex, title: "Spotlight index",
+                         detail: "Part of Spotlight's index macOS may drop when space runs low and rebuild later. Left alone.", symbol: "magnifyingglass"),
         PurgeableService(id: CacheDeleteService.quickLookThumbnails, title: "Quick Look thumbnails",
                          detail: "Previews of files. macOS reports them, but purging removed nothing. Left alone.", symbol: "photo.on.rectangle"),
         PurgeableService(id: CacheDeleteService.mobileAsset, title: "System assets",
@@ -40,7 +44,17 @@ struct PurgeableService: Equatable {
     ]
 
     static func describe(_ id: String) -> PurgeableService {
-        known.first { $0.id == id } ?? PurgeableService(id: id, title: id, detail: "Reported by macOS. MacSpace leaves it alone.", symbol: "internaldrive")
+        known.first { $0.id == id } ?? PurgeableService(id: id, title: readableName(id), detail: "Reported by macOS. MacSpace leaves it alone.", symbol: "internaldrive")
+    }
+
+    /// A service macOS reports that MacSpace does not know, named from its identifier ("com.apple.geod.cachedelete" -> "geod cache"),
+    /// so any service on any Mac reads as words.
+    static func readableName(_ id: String) -> String {
+        var name = id.hasPrefix("com.apple.") ? String(id.dropFirst("com.apple.".count)) : id
+        for suffix in [".cachedelete", ".cache-delete", ".CacheDelete", ".cacheDelete", "-cache-delete", ".CacheDeleteExtension", ".cache-delete_fspurgeable"] where name.hasSuffix(suffix) {
+            name = String(name.dropLast(suffix.count))
+        }
+        return "\(name.replacingOccurrences(of: ".", with: " ")) cache"
     }
 }
 
@@ -128,6 +142,8 @@ actor PurgeableStore {
         let services: [String: UInt64]?
         if let cli = ToolLocator.cli() { services = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
         else { services = CacheDeleteClient().purgeableByService(urgency: urgency) }
-        return PurgeableSnapshot(services: services, takenAt: Date())
+        // Where the purgeable documents are, only when macOS counts some: a few seconds for a large cloud folder.
+        let documents = (services?[CacheDeleteService.fsPurgeableDocument] ?? 0) >= 50_000_000 ? PurgeableDocuments.scan(maxAge: 600) : []
+        return PurgeableSnapshot(services: services, takenAt: Date(), documents: documents)
     }
 }

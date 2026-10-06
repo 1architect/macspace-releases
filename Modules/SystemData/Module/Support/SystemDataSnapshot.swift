@@ -8,6 +8,8 @@ struct SystemDataSnapshot: Sendable {
     var report: SystemDataReport
     /// Bytes mobileassetd would delete under disk pressure; nil when CacheDelete is unavailable or not validated.
     var purgeableAssetsBytes: UInt64?
+    /// What every CacheDelete service says it may purge, by service; empty when CacheDelete did not answer.
+    var purgeableServices: [String: UInt64] = [:]
     var reports: CleanupPlan
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
@@ -23,27 +25,31 @@ struct SystemDataSnapshot: Sendable {
 /// Measures the root-only locations through the helper and folds the sizes into the report.
 enum RootMeasurements {
     static func apply(to snapshot: SystemDataSnapshot, channel: any PrivilegedChannel) async -> SystemDataSnapshot {
-        let wanted = snapshot.report.unreadable.filter(RootMeasuredLocations.allowed.contains)
+        let wanted = snapshot.report.unreadable.filter(RootMeasuredLocations.isAllowed)
         var result = snapshot
         result.helperTried = true
         guard !wanted.isEmpty else { return result }
         do {
             let data = try await channel.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": wanted.joined(separator: "\n")])
             let response = try JSONDecoder().decode(RootMeasurementResponse.self, from: data)
-            return response.sizes.isEmpty ? result : merge(response.sizes, into: result)
+            return response.sizes.isEmpty ? result : merge(response.sizes, purgeable: response.purgeable ?? [:], into: result)
         } catch {
             result.helperError = error.localizedDescription
             return result
         }
     }
 
-    static func merge(_ sizes: [String: UInt64], into snapshot: SystemDataSnapshot) -> SystemDataSnapshot {
+    static func merge(_ sizes: [String: UInt64], purgeable: [String: UInt64] = [:], into snapshot: SystemDataSnapshot) -> SystemDataSnapshot {
         var result = snapshot
         var report = snapshot.report
-        for index in report.items.indices where report.items[index].bytes == nil {
-            let known = report.items[index].paths.compactMap { sizes[$0] }
-            guard !known.isEmpty else { continue }
-            report.items[index].bytes = known.reduce(0, +)
+        // The folders of each item this process could not read, measured by the helper, are added to what it did read: one item can
+        // span folders of both kinds (the system databases).
+        let unread = Set(report.unreadable)
+        for index in report.items.indices {
+            let paths = report.items[index].paths.filter { unread.contains($0) && sizes[$0] != nil }
+            guard !paths.isEmpty else { continue }
+            report.items[index].bytes = (report.items[index].bytes ?? 0) + paths.compactMap { sizes[$0] }.reduce(0, +)
+            report.items[index].purgeableBytes = (report.items[index].purgeableBytes ?? 0) + paths.compactMap { purgeable[$0] }.reduce(0, +)
             report.items[index].readable = true
         }
         report.unreadable = report.unreadable.filter { sizes[$0] == nil }
@@ -101,12 +107,21 @@ actor SystemDataStore {
 
     static func liveSnapshot() -> SystemDataSnapshot {
         let report = SystemDataInspector().inspect()
-        let purgeable = livePurgeable()
+        let services = livePurgeableServices()
+        let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        return SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
-                                  assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
+        var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
+                                          assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
+        snapshot.purgeableServices = services
+        return snapshot
+    }
+
+    /// Every CacheDelete service's figure, asked in the CLI child process; empty when CacheDelete did not answer.
+    static func livePurgeableServices() -> [String: UInt64] {
+        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) ?? [:] }
+        return CacheDeleteClient().purgeableByService() ?? [:]
     }
 
     /// How much is purgeable, asked in the CLI child process. Only mobileassetd's figure is used: the app-container-caches service

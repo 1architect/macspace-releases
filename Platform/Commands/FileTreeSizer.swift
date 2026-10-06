@@ -6,11 +6,15 @@ public struct FileTreeSize: Sendable, Equatable {
     /// Folders inside the tree that could not be listed (no permission, SIP). The sizes then leave them out: a tree with a folder it
     /// could not open is not known to be empty.
     public let unreadableFolders: Int
+    /// Of the allocated size, what files macOS may delete by itself take (flagged purgeable, `EF_IS_PURGEABLE`): System Settings
+    /// counts them as free space. Counted only when asked (`FileTreeSizer(countsPurgeable:)`), 0 otherwise.
+    public let purgeableBytes: UInt64
 
-    public init(logicalBytes: UInt64, allocatedBytesEstimate: UInt64?, unreadableFolders: Int = 0) {
+    public init(logicalBytes: UInt64, allocatedBytesEstimate: UInt64?, unreadableFolders: Int = 0, purgeableBytes: UInt64 = 0) {
         self.logicalBytes = logicalBytes
         self.allocatedBytesEstimate = allocatedBytesEstimate
         self.unreadableFolders = unreadableFolders
+        self.purgeableBytes = purgeableBytes
     }
 
     /// The best figure for what the tree takes on disk.
@@ -18,7 +22,24 @@ public struct FileTreeSize: Sendable, Equatable {
 }
 
 public struct FileTreeSizer: Sendable {
-    public init() {}
+    /// Also adds up the files flagged purgeable (`FileTreeSize.purgeableBytes`): one more system call per file.
+    public let countsPurgeable: Bool
+
+    public init(countsPurgeable: Bool = false) {
+        self.countsPurgeable = countsPurgeable
+    }
+
+    /// Whether APFS flags the file purgeable: macOS may delete it when space runs low.
+    public static func isPurgeable(_ path: String) -> Bool {
+        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0, fileattr: 0,
+                            forkattr: attrgroup_t(ATTR_CMNEXT_EXT_FLAGS))
+        var buffer = [UInt8](repeating: 0, count: 16)
+        let result = buffer.withUnsafeMutableBytes { getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
+        guard result == 0 else { return false }
+        // The length, then the extended flags.
+        let flags = buffer.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 4, as: UInt64.self) }
+        return flags & UInt64(EF_IS_PURGEABLE) != 0
+    }
 
     private var sizingKeys: Set<URLResourceKey> {
         [
@@ -68,6 +89,7 @@ public struct FileTreeSizer: Sendable {
 
             var logical: UInt64 = 0
             var allocated: UInt64 = 0
+            var purgeable: UInt64 = 0
             var sawAllocated = false
 
             for case let item as URL in enumerator {
@@ -86,13 +108,15 @@ public struct FileTreeSizer: Sendable {
                 if let value = allocatedSize(from: resource) {
                     allocated += value
                     sawAllocated = true
+                    if countsPurgeable, value > 0, Self.isPurgeable(item.path) { purgeable += value }
                 }
             }
 
             return FileTreeSize(
                 logicalBytes: logical,
                 allocatedBytesEstimate: sawAllocated ? allocated : nil,
-                unreadableFolders: errors.value
+                unreadableFolders: errors.value,
+                purgeableBytes: purgeable
             )
         } catch {
             return nil

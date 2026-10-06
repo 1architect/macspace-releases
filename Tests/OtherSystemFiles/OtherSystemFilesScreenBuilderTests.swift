@@ -86,4 +86,28 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertNil(screen.primary)
         guard case .banner? = screen.widgets.first else { return XCTFail("a banner explains why") }
     }
+
+    /// Purgeable documents are named after the cloud service that holds them, whichever it is; each is a plain row that opens in place
+    /// onto its folders, never a page inside the group's page; what no cloud folder accounts for keeps a row of its own.
+    func testCloudFilesAreRowsOfTheirOwnWhateverTheProvider() throws {
+        var snap = snapshot([CacheDeleteService.fsPurgeableDocument: 30_000_000_000, CacheDeleteService.quickLookThumbnails: 100_000_000])
+        snap.documents = [
+            PurgeableDocuments.Source(name: "Dropbox", path: "/h/Library/CloudStorage/Dropbox", bytes: 18_000_000_000, files: 900,
+                                      folders: [PurgeableDocuments.Folder(name: "Photos", bytes: 18_000_000_000, files: 900)]),
+            PurgeableDocuments.Source(name: "GoogleDrive (me@example.com)", path: "/h/Library/CloudStorage/GoogleDrive-me@example.com", bytes: 7_000_000_000,
+                                      files: 30, folders: []),
+        ]
+        let screen = OtherSystemFilesScreenBuilder.screen(snap)
+        var rows: [Row] = []
+        for case let .list(list) in screen.widgets { rows += list.rows.flatMap { $0.children.isEmpty ? [$0] : $0.children } }
+        let cloud = rows.filter { $0.id.hasPrefix("documents:") }
+        XCTAssertEqual(cloud.map(\.title), ["Dropbox files on this Mac", "GoogleDrive (me@example.com) files on this Mac"])
+        XCTAssertTrue(cloud.allSatisfy { $0.children.isEmpty }, "no page inside a page")
+        XCTAssertEqual(cloud.first?.steps.count, 1, "its folders open in place")
+        XCTAssertTrue(rows.contains { $0.title == "Other purgeable documents" }, "5 GB no cloud folder holds")
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.title(CacheDeleteService.fsPurgeableDocument, snap), "Cloud files on this Mac")
+        XCTAssertEqual(PurgeableService.describe("com.apple.geod.cachedelete").title, "geod cache", "an unknown service still reads as words")
+        XCTAssertEqual(PurgeableDocuments.displayName("OneDrive-Pessoal"), "OneDrive (Pessoal)")
+        XCTAssertEqual(PurgeableDocuments.displayName("Dropbox"), "Dropbox")
+    }
 }

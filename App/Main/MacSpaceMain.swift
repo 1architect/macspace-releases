@@ -27,6 +27,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if alert.runModal() == .alertFirstButtonReturn { NSApp.terminate(nil) }
         }
         Task { @MainActor in await AppModel.host.start() }
+        StatusItemController.shared.install(host: AppModel.host)
+    }
+
+    /// Clicking the Dock icon with no window open opens it again.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows { Task { @MainActor in AppRouter.shared.open() } }
+        return true
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -39,7 +46,6 @@ struct MacSpaceMain: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var host = AppModel.host
     @StateObject private var updates = UpdateController()
-    @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
 
     var body: some Scene {
         // Only the window of the chosen kind opens at launch, and neither is restored: both opening, then one closing itself,
@@ -49,6 +55,8 @@ struct MacSpaceMain: App {
         }
         .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .suppressed : .presented)
         .restorationBehavior(.disabled)
+        // Opened by `macspace://main` when no window has been open yet (`AppRouter.open`).
+        .handlesExternalEvents(matching: [MacSpaceWindow.glass])
         .windowStyle(.plain)
         .windowBackgroundDragBehavior(.enabled)
         // The glass's default size (`Theme.defaultSize`) and the invisible resize band around it (`Theme.resizeMargin`).
@@ -67,22 +75,18 @@ struct MacSpaceMain: App {
         }
         // MacSpace draws the window's buttons and its band (`StandardWindowView`); the content reaches the top of the window.
         .windowStyle(.hiddenTitleBar)
+        .handlesExternalEvents(matching: [MacSpaceWindow.standard])
         .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .presented : .suppressed)
         .restorationBehavior(.disabled)
         .defaultSize(width: 900, height: 600)
 
-        // Temporary: the Color Lab (Design menu, ⌥⌘L).
+        // Temporary: the Shader Studio (Design menu, ⌥⌘L), only reachable with the design tools on (`DesignTools`).
         Window("Shader Studio", id: ColorLabView.windowID) {
             ColorLabView()
         }
         .defaultSize(width: 520, height: 820)
+        .handlesExternalEvents(matching: [])
         // Over the main window, so it stays in view while parts are picked there.
         .windowLevel(.floating)
-
-        MenuBarExtra(isInserted: $showInMenuBar) {
-            MenuBarContent(host: host)
-        } label: {
-            MenuBarIcon(host: host)
-        }
     }
 }

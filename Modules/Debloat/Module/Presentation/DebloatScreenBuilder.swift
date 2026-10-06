@@ -42,8 +42,7 @@ enum DebloatScreenBuilder {
             // Switched off but never tested: says so, so it gets tested, also once it is off.
             default: return control.tested ? nil : Badge("Not tested", tone: .caution)
             }
-        case .awaitingApproval: return Badge("Waiting for approval", tone: .caution)
-        case .awaitingRemoval: return Badge("Profile still installed", tone: .caution)
+        case .awaitingApproval, .awaitingRemoval: return Badge("Waiting for approval", tone: .caution)
         case .drifted: return Badge("Undone by macOS", tone: .critical)
         case .partial: return Badge("Partly off", tone: .caution)
         case .unavailable: return Badge("Not on this macOS")
@@ -150,17 +149,18 @@ enum DebloatScreenBuilder {
             return Action(id: "reapply", title: counts.drifted.count == 1 ? "Disable \(counts.drifted[0].title) again" : "Disable \(counts.drifted.count) features again",
                           role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")], requires: [.privilegedHelper])
         }
-        // One profile holds every policy waiting for approval, opened again on demand (macOS drops a downloaded profile after a while).
-        if counts.awaiting.contains(where: { snapshot.status($0.id)?.state == .awaitingApproval }) {
-            return Action(id: "approvePending", title: "Approve the profile", role: .prominent)
+        // The one MacSpace profile, changed: approving it is what switches policies off or back on. Opened again on demand (macOS
+        // drops a downloaded profile after a while).
+        switch snapshot.profileWork {
+        case .approve:
+            return Action(id: "approvePending", title: "Approve in System Settings", role: .prominent)
+        case .remove, .cleanUp:
+            // Removing needs no approval, only the helper: it happens with the switch (or, for earlier versions' profiles, by itself
+            // when the page is read). The button is for when that could not happen, and asks for the helper if it is missing.
+            return Action(id: "removePending", title: "Finish", role: .prominent, requires: [.privilegedHelper])
+        case .none:
+            return nil
         }
-        // Enabled again while macOS still enforces their profile: the helper removes it, with nothing to approve.
-        let removing = counts.awaiting.filter { snapshot.status($0.id)?.state == .awaitingRemoval }
-        if !removing.isEmpty {
-            return Action(id: "removePending", title: "Finish enabling", role: .prominent,
-                          parameters: ["ids": removing.map(\.id).joined(separator: ",")], requires: [.privilegedHelper])
-        }
-        return nil
     }
 
     /// Controls switched off, policies included, whose values MacSpace can restore (including those macOS partly undid or waiting
@@ -179,7 +179,7 @@ enum DebloatScreenBuilder {
         return Action(id: "restoreAll", title: "Enable all", symbol: "arrow.uturn.backward", role: .prominent,
                       parameters: ["ids": controls.map(\.id).joined(separator: ",")],
                       confirmation: Confirmation(title: "Enable all \(controls.count) features again?",
-                                                 message: controls.map { "• \($0.title)" }.joined(separator: "\n") + "\n\nMacSpace restores the values it saved before it changed them.",
+                                                 message: "MacSpace restores the settings it saved before disabling them.",
                                                  confirmTitle: "Enable"),
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
     }
@@ -188,23 +188,31 @@ enum DebloatScreenBuilder {
     static func switchOffRecommended(_ snapshot: DebloatSnapshot) -> Action? {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
-        let untested = recommended.filter { !$0.tested }
-        let policies = recommended.filter(isPolicy)
-        var message = recommended.map { "• \($0.title)\($0.tested ? "" : " (not tested yet)")" }.joined(separator: "\n")
-        if !policies.isEmpty {
-            message += "\n\nmacOS asks you to approve the profile of each policy (\(policies.map(\.title).joined(separator: ", "))) once, in System Settings > General > Device Management."
-        }
-        if !untested.isEmpty { message += "\n\nCheck afterwards that the ones not tested yet took effect." }
-        message += "\n\nEverything is written to an undo journal, so you can enable any of it again."
+        // Short: what happens, and only what the user has to do or check.
+        var message = "Each one can be enabled again."
+        if recommended.contains(where: isPolicy) { message += " macOS asks you to approve the policy profile once." }
+        if recommended.contains(where: { !$0.tested }) { message += " Some are not tested yet." }
         return Action(id: "applyRecommended", title: "Disable all", symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
                       confirmation: Confirmation(title: "Disable \(recommended.count) features?", message: message, confirmTitle: "Disable"),
                       requires: [.privilegedHelper])
     }
 
+    /// What the background watch switched off again lately: macOS switched it back on, MacSpace switched it off.
+    static func reappliedNotice(_ snapshot: DebloatSnapshot) -> Banner? {
+        guard let latest = snapshot.reapplied.first else { return nil }
+        var titles: [String] = []
+        for title in snapshot.reapplied.flatMap(\.titles) where !titles.contains(title) { titles.append(title) }
+        let when = latest.at.formatted(.relative(presentation: .named))
+        return Banner(id: "reapplied", severity: .info,
+                      title: titles.count == 1 ? "\(titles[0]) was turned back on by macOS" : "\(titles.count) features were turned back on by macOS",
+                      message: "MacSpace disabled \(titles.count == 1 ? "it" : "them") again, most recently \(when).")
+    }
+
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
         let counts = counts(snapshot)
         var widgets: [ScreenWidget] = []
+        if let notice = reappliedNotice(snapshot) { widgets.append(.banner(notice)) }
         for category in categoryOrder {
             let controls = snapshot.controls.filter { $0.category == category && !isPolicy($0) }
             guard !controls.isEmpty else { continue }

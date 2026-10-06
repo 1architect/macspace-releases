@@ -153,11 +153,13 @@ final class ShadowWindow: NSWindow {
         guard redraw else { return }
         let bounds = CGRect(origin: .zero, size: frame.size)
         let inner = CGRect(x: glass.minX - frame.minX, y: glass.minY - frame.minY, width: glass.width, height: glass.height)
-        let radius = min(Theme.windowRadius, inner.width / 2, inner.height / 2)
-        let shape = CGPath(roundedRect: inner, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        // The glass's own continuous corners: a circular corner of the same radius reaches outside them where the curve meets the
+        // edge, and in that sliver there was neither glass nor shadow, a line of bare desktop between the shadow and the border. The
+        // hole is a pixel smaller than the glass, so the shadow runs under its edge and no seam opens where the two are antialiased.
+        let shape = Self.glassPath(inner)
         let outside = CGMutablePath()
         outside.addRect(bounds)
-        outside.addPath(shape)
+        outside.addPath(Self.glassPath(inner.insetBy(dx: 1 / backingScaleFactor, dy: 1 / backingScaleFactor)))
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         container.frame = bounds
@@ -168,6 +170,11 @@ final class ShadowWindow: NSWindow {
         cutout.frame = bounds
         cutout.path = outside
         CATransaction.commit()
+    }
+
+    /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.
+    static func glassPath(_ rect: CGRect) -> CGPath {
+        RoundedRectangle(cornerRadius: min(Theme.windowRadius, rect.width / 2, rect.height / 2), style: .continuous).path(in: rect).cgPath
     }
 }
 
@@ -288,15 +295,17 @@ struct WindowBlur: NSViewRepresentable {
         if view.appearance?.name != appearance { view.appearance = NSAppearance(named: appearance) }
     }
 
-    /// A rounded rectangle that stretches to any size, the way the visual effect view takes a shape.
+    /// A rounded rectangle that stretches to any size, the way the visual effect view takes a shape. Its corners are continuous, as
+    /// the glass's are; a continuous corner bends over about 1.53 times its radius, so the corner part of the image is that long.
     private static func mask(radius: CGFloat) -> NSImage {
-        let side = radius * 2 + 1
+        let corner = (radius * 1.53).rounded(.up)
+        let side = corner * 2 + 1
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
             NSColor.black.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            NSBezierPath(cgPath: RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect).cgPath).fill()
             return true
         }
-        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.capInsets = NSEdgeInsets(top: corner, left: corner, bottom: corner, right: corner)
         image.resizingMode = .stretch
         return image
     }

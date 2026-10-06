@@ -65,13 +65,16 @@ public enum DebloatCatalog {
             notes: ["Self-tested on 26B5091g (2026-10-03): off stores 0, on stores 1."],
             validatedBuilds: ["26B5091g"]
         ),
+        // A policy, not the plain com.apple.AdLib value: macOS has no switch of its own for it ("Cross App Tracking is not currently
+        // persisted on this platform", LimitAdTracking), and reconciles the plain value with the Apple Account, back to allowed: on
+        // 26B5091g it came back on within a day, three times (2026-10-04 to 10-06), while Personalized ads stayed off.
         DebloatControl(
-            id: "ads.advertising-identifier",
+            id: "ads.advertising-identifier-policy",
             title: "Advertising identifier",
-            summary: "Stop apps from using the advertising identifier (com.apple.AdLib allowIdentifierForAdvertising).",
-            category: .advertising, mechanism: .userPreference, risk: .low, restart: .appRelaunch,
-            settings: [.preference(.user, "com.apple.AdLib", "allowIdentifierForAdvertising", desired: .bool(false), fallback: .value(.bool(true)))],
-            notes: ["Self-tested on 26B5091g (2026-10-03): off stores 0, on stores 1."],
+            summary: "Stop apps from using the advertising identifier, and from asking to track you, with the allowIdentifierForAdvertising restriction.",
+            category: .advertising, mechanism: .configurationProfile, risk: .low, restart: .appRelaunch,
+            settings: [.managed("com.apple.applicationaccess", "allowIdentifierForAdvertising", desired: .bool(false))],
+            notes: [policyNote],
             validatedBuilds: ["26B5091g"]
         ),
         DebloatControl(

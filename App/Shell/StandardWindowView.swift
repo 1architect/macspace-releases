@@ -56,7 +56,9 @@ public struct StandardWindowView: View {
     @ObservedObject var updates: UpdateController
     @ObservedObject private var designSettings = DesignSettings.shared
     @ObservedObject private var remote = DebugRemote.shared
+    @ObservedObject private var router = AppRouter.shared
     @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.openWindow) private var openWindow
     @StateObject private var navigator = CanvasNavigator()
     @StateObject private var window = WindowReference()
     @State private var sidebarShown = true
@@ -109,6 +111,15 @@ public struct StandardWindowView: View {
         .onChange(of: designSettings.standardTitleBar) { _, shown in navigator.showsTitle = shown }
         .onChange(of: remote.command?.id) { _, _ in
             if remote.command?.text == "sidebar" { toggleSidebar() }
+        }
+        .onAppear { AppRouter.shared.openWindow = { [openWindow] id in openWindow(id: id) } }
+        // A page asked for from the menu bar.
+        .onChange(of: router.request?.id, initial: true) { _, _ in
+            guard let destination = router.take() else { return }
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                navigator.go(destination)
+            }
         }
     }
 

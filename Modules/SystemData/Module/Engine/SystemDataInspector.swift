@@ -48,6 +48,14 @@ public enum SystemDataKind: String, Codable, Sendable {
     case virtualMachine
     /// A home folder left behind by a deleted account (`/Users/<name>` owned by no account, or `/Users/Deleted Users/*`).
     case orphanedHome
+    /// A macOS update downloaded and prepared, waiting for a restart: its system images on the Preboot volume
+    /// (`<volume group>/cryptex1/proposed`).
+    case pendingUpdate
+    /// macOS's own data outside the places above: per-user databases in `~/Library` (Biome, DuetExpertCenter…), the rest of
+    /// `/private/var/db`, system logs and temporary files.
+    case systemLibrary
+    /// What apps install for every user in `/Library` (support files, frameworks, plug-ins, fonts).
+    case sharedAppFiles
 }
 
 public struct SystemDataCleanup: Codable, Equatable, Sendable {
@@ -83,6 +91,8 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     public let notes: [String]
     /// What cleaning is expected to free. For APFS clones this is ~0 even though `bytes` is large.
     public var expectedReclaimBytes: UInt64? = nil
+    /// Of `bytes`, files macOS may delete by itself (flagged purgeable). System Settings counts them as free space, not System Data.
+    public var purgeableBytes: UInt64? = nil
     /// Steps the user takes in the owning app when MacSpace cannot clean it.
     public var guide: ManualCleanupGuide? = nil
 }
@@ -143,7 +153,35 @@ public struct SystemDataLocations: Sendable {
         "powerlog": "/private/var/db/powerlog",
         "swap": "/private/var/vm",
         "users": "/Users",
+        "library": "/Library",
+        "systemDatabases": "/private/var/db",
+        "systemLogs": "/private/var/log",
+        "preboot": "/System/Volumes/Preboot",
+        "dataRoot": "/System/Volumes/Data",
+        "privateVar": "/private/var",
+        "privateTmp": "/private/tmp",
+        "opt": "/opt",
+        "dataSystemLibrary": "/System/Volumes/Data/System/Library",
     ]
+
+    /// Folders at the root of the Data volume that other entries measure, or that System Settings counts in another category (home
+    /// folders, apps, the volumes of other disks).
+    static let dataRootCountedElsewhere: Set<String> = ["Users", "Applications", "Library", "System", "private", "opt", "usr", "Volumes", "home",
+                                                        ".Spotlight-V100", ".DocumentRevisions-V100", "macOS Install Data", ".Trashes", "dev"]
+    /// `/private/var` folders other entries measure: the system databases, the per-user folders, swap, the system logs.
+    static let privateVarCountedElsewhere: Set<String> = ["db", "folders", "vm", "log"]
+    /// Hidden folders of the home folder other entries measure (the Trash, command-line caches).
+    static let homeHiddenCountedElsewhere: Set<String> = [".Trash", ".cache"]
+
+    /// `~/Library` folders other entries already measure, or that System Settings counts in another category (Mail, Messages,
+    /// iCloud Drive, Developer).
+    static let libraryFoldersCountedElsewhere: Set<String> = ["Containers", "Group Containers", "Daemon Containers", "Metadata", "CloudStorage",
+                                                             "Application Support", "Caches", "Logs", "Mail", "Messages", "Mobile Documents",
+                                                             "Developer", "Photos"]
+    /// `/private/var/db` folders other entries measure.
+    static let databaseFoldersCountedElsewhere: Set<String> = ["diagnostics", "uuidtext", "powerlog"]
+    /// `/Library` folders other entries measure (the Command Line Tools, the diagnostic reports).
+    static let sharedFoldersCountedElsewhere: Set<String> = ["Developer", "Logs"]
 
     public static func live() -> SystemDataLocations {
         var buffer = [CChar](repeating: 0, count: Int(PATH_MAX))
@@ -166,7 +204,7 @@ public struct SystemDataInspector {
     private let runningApps: () -> [RunningApp]
     private let volumes: () -> [VolumeUsage]
     private let accountExists: (uid_t) -> Bool
-    private let sizer = FileTreeSizer()
+    private let sizer = FileTreeSizer(countsPurgeable: true)
 
     public init(locations: SystemDataLocations = .live(), fileManager: FileManager = .default,
                 runningApps: @escaping () -> [RunningApp] = SystemDataInspector.liveRunningApps,
@@ -215,13 +253,13 @@ public struct SystemDataInspector {
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return SizeMeasurement(bytes: nil) }
             guard isDirectory.boolValue else {
                 let bytes = (try? fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber)?.uint64Value
-                return SizeMeasurement(bytes: bytes, readable: bytes != nil)
+                return SizeMeasurement(bytes: bytes, readable: bytes != nil, purgeable: FileTreeSizer.isPurgeable(path) ? bytes ?? 0 : 0)
             }
             guard (try? fileManager.contentsOfDirectory(atPath: path)) != nil else {
                 return SizeMeasurement(bytes: nil, unreadableEntry: path)
             }
             let measured = sizer.size(at: URL(fileURLWithPath: path))
-            return SizeMeasurement(bytes: measured?.allocatedBytesEstimate ?? measured?.logicalBytes, readable: true)
+            return SizeMeasurement(bytes: measured?.allocatedBytesEstimate ?? measured?.logicalBytes, readable: true, purgeable: measured?.purgeableBytes ?? 0)
         }
         func children(_ directory: String) -> [String] {
             ((try? fileManager.contentsOfDirectory(atPath: directory)) ?? []).sorted().map { (directory as NSString).appendingPathComponent($0) }
@@ -259,6 +297,7 @@ public struct SystemDataInspector {
             var next = 0
             for entry in pending {
                 var total: UInt64 = 0
+                var purgeable: UInt64 = 0
                 var readable = false
                 var measured = false
                 // A folder whose subfolders this process cannot read would be undercounted silently; report it unmeasured.
@@ -268,13 +307,14 @@ public struct SystemDataInspector {
                         let result = results.get(next)
                         next += 1
                         if let entryPath = result.unreadableEntry, !unreadable.contains(entryPath) { unreadable.append(entryPath) }
-                        if let bytes = result.bytes { total += bytes; measured = true }
+                        if let bytes = result.bytes { total += bytes; purgeable += result.purgeable; measured = true }
                         readable = readable || result.readable
                     }
                 }
                 guard entry.paths.contains(where: fileManager.fileExists(atPath:)) else { continue }
-                // Listed entries (minimum > 0) are shown only when measurable and large enough.
-                if entry.minimum > 0, !measured || total < entry.minimum {
+                // Listed entries (minimum > 0) are shown only when large enough. One this process cannot read stays, without a size,
+                // for the helper to measure (`RootMeasurements`).
+                if entry.minimum > 0, measured, total < entry.minimum {
                     // Not listed, but System Settings counts it, so it stays in the totals.
                     if measured, total > 0 { smallBytes[entry.kind, default: 0] += total }
                     continue
@@ -282,6 +322,7 @@ public struct SystemDataInspector {
                 var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
                                           readable: readable, owners: entry.owners, inUse: isRunning(entry.owners), cleanup: entry.cleanup, notes: entry.notes)
                 item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
+                item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
                 item.guide = entry.id == "update:staged" && entry.cleanup.kind == .managedByMacOS ? nil : ManualCleanupGuides.guide(for: item)
                 items.append(item)
@@ -464,7 +505,90 @@ public struct SystemDataInspector {
         add("trash:user", "Trash", .trash, paths: [(home as NSString).appendingPathComponent(".Trash")],
             cleanup: SystemDataCleanup(kind: .review, description: "Empty the Trash in Finder; macOS can also do it automatically after 30 days.", command: nil))
 
+        // macOS's own data outside the places above, and what apps install for every user. Found by measuring the whole Data volume
+        // with Full Disk Access against this scan (2026-10-06): about 5 GB on the development Mac that System Settings counts as
+        // System Data.
+        let systemOwned = SystemDataCleanup(kind: .managedByMacOS, description: "Kept by macOS for its own services; it manages the size.", command: nil)
+        for path in children((home as NSString).appendingPathComponent("Library"))
+        where !SystemDataLocations.libraryFoldersCountedElsewhere.contains((path as NSString).lastPathComponent) {
+            let name = (path as NSString).lastPathComponent
+            add("library:\(name)", "\(name) (your Library)", .systemLibrary, paths: [path], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+        }
+        if let path = system["systemDatabases"] {
+            let databases = children(path).filter { !SystemDataLocations.databaseFoldersCountedElsewhere.contains(($0 as NSString).lastPathComponent) }
+            add("system:databases", "System databases", .systemLibrary, paths: databases, cleanup: systemOwned, minimum: Self.minimumItemBytes)
+        }
+        if let path = system["systemLogs"] {
+            add("logs:system", "System logs", .logs, paths: [path], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+        }
+        if let userDir = locations.userSystemDirectory?.path {
+            add("temporary:user", "Temporary files", .systemLibrary, paths: [(userDir as NSString).appendingPathComponent("T")],
+                cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "Apps' temporary files; macOS clears them at restart.", command: nil),
+                minimum: Self.minimumItemBytes)
+        }
+        // Everything else, wherever it is, so nothing that System Settings counts as System Data goes unmeasured on any Mac: the home
+        // folder's hidden folders (tools' data and downloads, such as `.npm` or `.ollama`), the rest of `/private/var` and
+        // `/private/tmp`, packages in `/opt` other than Homebrew, the rest of the Data volume's `/System/Library`, and whatever else
+        // sits at the root of the Data volume.
+        let toolData = SystemDataCleanup(kind: .review, description: "Kept by a command-line tool or developer tool in your home folder; remove it with that tool.", command: nil)
+        var isDirectory: ObjCBool = false
+        for path in children(home) where (path as NSString).lastPathComponent.hasPrefix(".")
+            && !SystemDataLocations.homeHiddenCountedElsewhere.contains((path as NSString).lastPathComponent)
+            && fileManager.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue {
+            let name = (path as NSString).lastPathComponent
+            add("home:\(name)", "\(name) (your home folder)", .appSupport, paths: [path], cleanup: toolData, minimum: Self.minimumItemBytes)
+        }
+        if let path = system["privateVar"] {
+            for folder in children(path) where !SystemDataLocations.privateVarCountedElsewhere.contains((folder as NSString).lastPathComponent) {
+                add("var:\((folder as NSString).lastPathComponent)", folder, .systemLibrary, paths: [folder], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+            }
+        }
+        if let path = system["privateTmp"] {
+            add("system:tmp", "Shared temporary files", .systemLibrary, paths: [path],
+                cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "Temporary files; macOS clears them at restart.", command: nil),
+                minimum: Self.minimumItemBytes)
+        }
+        if let path = system["opt"] {
+            for folder in children(path) where folder != system["homebrew"] {
+                add("opt:\((folder as NSString).lastPathComponent)", folder, .packageManager, paths: [folder], cleanup: toolData, minimum: Self.minimumItemBytes)
+            }
+        }
+        if let path = system["dataSystemLibrary"] {
+            for folder in children(path) where (folder as NSString).lastPathComponent != "AssetsV2" {
+                add("systemlibrary:\((folder as NSString).lastPathComponent)", "/System/Library/\((folder as NSString).lastPathComponent)", .systemLibrary,
+                    paths: [folder], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+            }
+        }
+        if let path = system["dataRoot"] {
+            for folder in children(path) where !SystemDataLocations.dataRootCountedElsewhere.contains((folder as NSString).lastPathComponent) {
+                add("dataroot:\((folder as NSString).lastPathComponent)", "/\((folder as NSString).lastPathComponent)", .systemLibrary,
+                    paths: [folder], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+            }
+        }
+        if let path = system["library"] {
+            for folder in children(path) where !SystemDataLocations.sharedFoldersCountedElsewhere.contains((folder as NSString).lastPathComponent) {
+                let name = (folder as NSString).lastPathComponent
+                add("shared:\(name)", Self.sharedTitle(name), .sharedAppFiles, paths: [folder],
+                    cleanup: SystemDataCleanup(kind: .review, description: "Installed for every user by apps and installers; removed with the app that installed it.", command: nil),
+                    minimum: Self.minimumItemBytes)
+            }
+        }
+
         finish()
+        // A macOS update downloaded and prepared, on the Preboot volume: its images, each counted once (they come in clone pairs).
+        if let preboot = system["preboot"] {
+            for group in children(preboot) {
+                let proposed = (group as NSString).appendingPathComponent("cryptex1/proposed")
+                guard let bytes = Self.uniqueAllocatedBytes(proposed), bytes > 0 else { continue }
+                let manifest = NSDictionary(contentsOfFile: (proposed as NSString).appendingPathComponent("BuildManifest.plist"))
+                let version = [manifest?["ProductVersion"] as? String, (manifest?["ProductBuildVersion"] as? String).map { "(\($0))" }]
+                    .compactMap { $0 }.joined(separator: " ")
+                items.append(SystemDataItem(id: "update:prepared", title: version.isEmpty ? "macOS update, ready to install" : "macOS \(version), ready to install",
+                                            kind: .pendingUpdate, paths: [proposed], bytes: bytes, readable: true, owners: [], inUse: false,
+                                            cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "Downloaded and prepared by Software Update; it installs at the next restart, and macOS removes it then.", command: nil),
+                                            notes: ["On the Preboot volume, beside the running system's own copy; System Settings counts it in System Data."]))
+            }
+        }
         for (kind, bytes) in smallBytes.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             items.append(SystemDataItem(id: "small:\(kind.rawValue)", title: "Smaller items", kind: kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
                                         cleanup: SystemDataCleanup(kind: .review, description: "Many small entries, each below the listing size.", command: nil), notes: []))
@@ -480,6 +604,46 @@ public struct SystemDataInspector {
                                       unreadable: unreadable, warnings: warnings)
         report.fullDiskAccess = hasFullDiskAccess
         return report
+    }
+}
+
+extension SystemDataInspector {
+    /// What `/Library/<name>` holds, in words.
+    static func sharedTitle(_ name: String) -> String {
+        switch name {
+        case "Application Support": return "Apps' support files for all users"
+        case "Fonts": return "Installed fonts"
+        case "Frameworks": return "Shared frameworks"
+        case "Audio": return "Audio plug-ins and sounds"
+        case "Caches": return "Caches for all users"
+        case "SystemExtensions": return "System extensions"
+        default: return "\(name) (installed for all users)"
+        }
+    }
+
+    /// The space a folder's files take, each clone family once: macOS keeps its images in clone pairs (`os.dmg` and `os.clone.dmg`),
+    /// and counting both doubled the update's size. nil when the folder cannot be read.
+    static func uniqueAllocatedBytes(_ folder: String) -> UInt64? {
+        guard FileManager.default.fileExists(atPath: folder), let root = strdup(folder) else { return nil }
+        defer { free(root) }
+        var paths: [UnsafeMutablePointer<CChar>?] = [root, nil]
+        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return nil }
+        defer { fts_close(fts) }
+        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0,
+                            fileattr: attrgroup_t(ATTR_FILE_ALLOCSIZE), forkattr: attrgroup_t(ATTR_CMNEXT_CLONEID))
+        var buffer = [UInt8](repeating: 0, count: 32)
+        var families: [UInt64: UInt64] = [:]
+        var loose: UInt64 = 0
+        while let entry = fts_read(fts) {
+            guard Int32(entry.pointee.fts_info) == FTS_F, let path = entry.pointee.fts_path else { continue }
+            // Length, then the allocated size (file attributes), then the clone id (extended common attributes).
+            let result = buffer.withUnsafeMutableBytes { getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
+            guard result == 0 else { continue }
+            let allocated = buffer.withUnsafeBytes { UInt64(max($0.loadUnaligned(fromByteOffset: 4, as: Int64.self), 0)) }
+            let clone = buffer.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 12, as: UInt64.self) }
+            if clone == 0 { loose += allocated } else { families[clone] = max(families[clone] ?? 0, allocated) }
+        }
+        return loose + families.values.reduce(0, +)
     }
 }
 
@@ -556,6 +720,7 @@ struct SizeMeasurement {
     var bytes: UInt64?
     var readable = false
     var unreadableEntry: String?
+    var purgeable: UInt64 = 0
 }
 
 /// Collects parallel measurements; each index is written once.

@@ -18,8 +18,12 @@ struct SiriSnapshot: Sendable {
     var isVirtualMachine = false
     /// MacSpace is releasing leftover models by itself right now (`ModelAutoReleaser`).
     var releasingAutomatically = false
-    /// What the Apple Intelligence models take on disk now (the 3B base model and its adapters); nil if it cannot be read.
+    /// What the Apple Intelligence models take on disk now (the 3B base model and its adapters), from MobileAsset's records; nil if
+    /// they cannot be read. System Settings shows more (19.89 GB against 11.35 GB on 26B5091g, 2026-10-06), from folders no app can
+    /// open, even with Full Disk Access; releasing the models gained 9.48 GB on the volume (2026-10-05), in line with the records.
     var installedModelBytes: UInt64?
+    /// The same figure, kept apart for what a purge works from.
+    var recordedModelBytes: UInt64?
     /// What macOS is downloading for those models right now (its staging folder).
     var downloadingModelBytes: UInt64 = 0
     /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
@@ -28,6 +32,8 @@ struct SiriSnapshot: Sendable {
     var purgingModels = false
     /// The part of the installed models macOS still holds a lock on (`ModelDescriptors.Usage.lockedBytes`).
     var lockedModelBytes: UInt64 = 0
+    /// Siri's iCloud sync is on (`SiriCloudSync.isEnabled`); nil when it cannot be read.
+    var cloudSyncEnabled: Bool?
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -102,10 +108,12 @@ actor SiriStore {
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
         let models = modelBytes()
+        snapshot.recordedModelBytes = models.installed
         snapshot.installedModelBytes = models.installed
         snapshot.downloadingModelBytes = models.downloading
         snapshot.lockedModelBytes = models.locked
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
+        snapshot.cloudSyncEnabled = SiriCloudSync.isEnabled()
         return snapshot
     }
 
@@ -113,9 +121,8 @@ actor SiriStore {
     /// while the 3B model came back).
     static let stagingFolder = "/System/Library/AssetsV2/staging"
 
-    /// What the models take now, installed and still downloading, from MobileAsset's own records (`ModelDescriptors`), as System
-    /// Settings' Storage counts them. The staging folder also shows a download whose records have not caught up. `installed` is nil
-    /// only when the records cannot be read.
+    /// What the models take now, installed and still downloading, from MobileAsset's own records (`ModelDescriptors`). The staging
+    /// folder also shows a download whose records have not caught up. `installed` is nil only when the records cannot be read.
     static func modelBytes(fileManager: FileManager = .default) -> (installed: UInt64?, downloading: UInt64, locked: UInt64) {
         let usage = ModelDescriptors.usage(fileManager: fileManager)
         let staged = ((try? fileManager.contentsOfDirectory(atPath: stagingFolder)) ?? [])

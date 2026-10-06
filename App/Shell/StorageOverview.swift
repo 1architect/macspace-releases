@@ -1,11 +1,7 @@
 import Foundation
 import MacSpacePlatform
 
-/// The startup disk at a glance, for the first tile: how much is used, and what the app's modules can purge.
-///
-/// "Purgeable" is not asked of macOS here: it is what the modules report they free through macOS's purge
-/// (`Tile.purgeableByService`, summed by `ModuleHost.purgeableTotal`), so the disk tile always says the same as the pages that
-/// free it. macOS's own estimate counts services MacSpace does not purge, which made the tile promise space no page offered.
+/// The startup disk at a glance, for the first tile: how much is used, out of how much. What can be freed is on the modules' tiles.
 @MainActor
 final class StorageOverview: ObservableObject {
     @Published private(set) var usedBytes: UInt64?
@@ -19,19 +15,20 @@ final class StorageOverview: ObservableObject {
         return Double(usedBytes) / Double(totalBytes)
     }
 
-    func status(purgeable: UInt64) -> (title: String, detail: String) {
+    func status() -> (title: String, detail: String) {
         guard let usedBytes else { return ("disk", "reading…") }
-        let used = "\(ByteFormat.string(usedBytes)) used"
-        if purgeable >= 50_000_000 { return (used, "\(ByteFormat.string(purgeable)) purgeable") }
-        if let totalBytes, totalBytes > usedBytes { return (used, "\(ByteFormat.string(totalBytes - usedBytes)) free") }
-        return (used, "")
+        let percent = usedFraction.map { "\(Int(($0 * 100).rounded()))% " } ?? ""
+        return ("\(ByteFormat.string(usedBytes)) used", totalBytes.map { "\(percent)of \(ByteFormat.string($0))" } ?? "")
     }
 
     func refresh() async {
         let reading = await Task.detached(priority: .utility) { () -> (UInt64?, UInt64?) in
-            let values = try? URL(fileURLWithPath: DataVolume.path).resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
-            guard let capacity = values?.volumeTotalCapacity, let free = values?.volumeAvailableCapacity, capacity >= free else { return (nil, nil) }
-            return (UInt64(capacity - free), UInt64(capacity))
+            // Space macOS frees by itself when it is needed (purgeable) counts as available, as System Settings counts it: with the
+            // plain free space the tile said 230.9 GB used where System Settings said 203.3 GB (2026-10-06).
+            let values = try? URL(fileURLWithPath: DataVolume.path).resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
+            guard let capacity = values?.volumeTotalCapacity, let available = values?.volumeAvailableCapacityForImportantUsage,
+                  available >= 0, Int64(capacity) >= available else { return (nil, nil) }
+            return (UInt64(Int64(capacity) - available), UInt64(capacity))
         }.value
         usedBytes = reading.0
         totalBytes = reading.1

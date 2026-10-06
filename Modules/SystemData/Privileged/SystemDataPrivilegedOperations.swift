@@ -5,8 +5,13 @@ import MacSpacePlatform
 /// sizes a path a caller makes up.
 public struct RootMeasurementResponse: Codable, Equatable, Sendable {
     public let sizes: [String: UInt64]
+    /// Of each size, the files flagged purgeable; absent from a helper of an earlier version.
+    public let purgeable: [String: UInt64]?
 
-    public init(sizes: [String: UInt64]) { self.sizes = sizes }
+    public init(sizes: [String: UInt64], purgeable: [String: UInt64]? = nil) {
+        self.sizes = sizes
+        self.purgeable = purgeable
+    }
 }
 
 public enum RootMeasuredLocations {
@@ -21,6 +26,16 @@ public enum RootMeasuredLocations {
         "/System/Volumes/Data/macOS Install Data",
         "/Library/Logs/DiagnosticReports",
     ]
+
+    /// Anything under these roots may be measured too: the scan covers whatever is there, on any Mac, and part of it only root can
+    /// read. Sizes only, and never outside the system's own folders (no home folder).
+    public static let allowedRoots = ["/private/var/", "/private/tmp/", "/Library/", "/System/Library/", "/System/Volumes/Data/", "/opt/"]
+
+    public static func isAllowed(_ path: String) -> Bool {
+        if allowed.contains(path) { return true }
+        guard !path.contains("/../"), !path.hasSuffix("/.."), !path.hasPrefix("/System/Volumes/Data/Users") else { return false }
+        return allowedRoots.contains { path.hasPrefix($0) && path.count > $0.count }
+    }
 }
 
 public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
@@ -37,13 +52,15 @@ public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
         if operation == Self.deleteVersions { return try JSONEncoder().encode(VersionStoreCleaner().execute()) }
         guard operation == Self.measure else { throw PrivilegedOperationError("Unknown operation \(operation).") }
         let requested = (arguments["paths"] ?? "").split(separator: "\n").map(String.init)
-        let sizer = FileTreeSizer()
+        let sizer = FileTreeSizer(countsPurgeable: true)
         var sizes: [String: UInt64] = [:]
-        for path in requested where RootMeasuredLocations.allowed.contains(path) {
+        var purgeable: [String: UInt64] = [:]
+        for path in requested where RootMeasuredLocations.isAllowed(path) {
             guard FileManager.default.fileExists(atPath: path), (try? FileManager.default.contentsOfDirectory(atPath: path)) != nil,
                   let measured = sizer.size(at: URL(fileURLWithPath: path)) else { continue }
             sizes[path] = measured.allocatedBytesEstimate ?? measured.logicalBytes
+            purgeable[path] = measured.purgeableBytes
         }
-        return try JSONEncoder().encode(RootMeasurementResponse(sizes: sizes))
+        return try JSONEncoder().encode(RootMeasurementResponse(sizes: sizes, purgeable: purgeable))
     }
 }

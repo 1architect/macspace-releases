@@ -22,6 +22,8 @@ public enum CacheDeleteService {
     public static let purgeable: Set<String> = [mobileAsset, appContainerCaches, fsPurgeableData]
     /// Documents marked purgeable; 633 MB at urgency 3 on the development Mac.
     public static let fsPurgeableDocument = "com.apple.fspurgeable_document"
+    /// The part of the Spotlight index macOS may drop and rebuild (0.76 GB on the development Mac, 2026-10-06).
+    public static let spotlightIndex = "com.apple.metadata.mds.cachedelete"
     /// Quick Look thumbnails; 330 MB at urgency 3 on the development Mac.
     public static let quickLookThumbnails = "com.apple.quicklook.ThumbnailsAgent.CacheDelete"
     /// Services under measurement: purged only from the CLI with `--experiment`, never from the app, until a measured purge shows

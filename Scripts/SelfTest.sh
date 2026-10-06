@@ -105,14 +105,13 @@ switch_now() {
 stored_value() {
   case "$1" in
     ads.personalized-ads) defaults read com.apple.AdLib allowApplePersonalizedAdvertising 2>/dev/null ;;
-    ads.advertising-identifier) defaults read com.apple.AdLib allowIdentifierForAdvertising 2>/dev/null ;;
     telemetry.siri-improvement) defaults read com.apple.assistant.support "Siri Data Sharing Opt-In Status" 2>/dev/null ;;
   esac
 }
 expected_value() { # control, on|off
   case "$1/$2" in
-    ads.personalized-ads/off|ads.advertising-identifier/off) echo 0 ;;
-    ads.personalized-ads/on|ads.advertising-identifier/on) echo 1 ;;
+    ads.personalized-ads/off) echo 0 ;;
+    ads.personalized-ads/on) echo 1 ;;
     telemetry.siri-improvement/off) echo 2 ;;
     telemetry.siri-improvement/on) echo 1 ;;
   esac

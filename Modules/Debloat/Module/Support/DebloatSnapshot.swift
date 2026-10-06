@@ -10,6 +10,10 @@ struct DebloatSnapshot: Sendable {
     /// Controls macOS ignores on this Mac, by id (see `DebloatEngine.cannotTakeEffect`).
     var cannotTakeEffect: Set<String>
     var takenAt: Date
+    /// What the background watch switched off again lately, newest first.
+    var reapplied: [DebloatReapplied] = []
+    /// What the one MacSpace profile needs: approval of a new version, or the helper removing profiles.
+    var profileWork: ProfileWork = .none
 
     func status(_ id: String) -> ControlStatus? { statuses[id] }
 }
@@ -48,6 +52,13 @@ actor DebloatStore {
         return fresh
     }
 
+    private var cleanedUp: Set<[String]> = []
+
+    /// Whether these profiles have not been cleaned up yet in this run of the app.
+    func firstCleanUp(_ identifiers: [String]) -> Bool {
+        cleanedUp.insert(identifiers).inserted
+    }
+
     func invalidate() {
         cached = nil
         inflight = nil
@@ -66,6 +77,7 @@ actor DebloatStore {
         let statuses = controls.map(engine.status(of:))
         return DebloatSnapshot(controls: controls, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
                                environment: environment,
-                               cannotTakeEffect: Set(controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date())
+                               cannotTakeEffect: Set(controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date(),
+                               reapplied: DebloatWatchStore().recent(), profileWork: engine.profileWork())
     }
 }

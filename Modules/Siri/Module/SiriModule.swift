@@ -70,8 +70,8 @@ public struct SiriModule: MacSpaceModule {
     static func releasedModelsOnDisk(_ snapshot: SiriSnapshot) -> Bool {
         guard !snapshot.isVirtualMachine, !snapshot.releasingAutomatically, snapshot.status.state == .protected || snapshot.status.state == .releasing,
               snapshot.accounts?.enabledElsewhere.isEmpty ?? true else { return false }
-        let installed = snapshot.installedModelBytes ?? 0
-        let released = installed > snapshot.lockedModelBytes ? installed - snapshot.lockedModelBytes : 0
+        let recorded = snapshot.recordedModelBytes ?? 0
+        let released = recorded > snapshot.lockedModelBytes ? recorded - snapshot.lockedModelBytes : 0
         return released >= SiriScreenBuilder.purgeThreshold
     }
 

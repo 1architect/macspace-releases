@@ -43,10 +43,12 @@ public protocol DebloatSystem: AnyObject {
     func startService(_ service: LaunchdServiceSetting) throws -> Bool
     /// The flag value libfeatureflags reports to processes now (computed at boot); nil if unreadable.
     func liveFeatureFlag(domain: String, feature: String) -> Bool?
-    /// Writes a MacSpace configuration profile (one control's) and opens it for approval; returns a description for the user.
+    /// Writes the MacSpace configuration profile and opens it for approval; returns a description for the user.
     func stageProfile(_ profile: Data, fileName: String) throws -> String
     /// Removes an installed MacSpace profile (needs root); returns a description for the user.
     func removeProfile(identifier: String) throws -> String
+    /// The configuration profiles installed now, each with the managed values it holds; nil if they cannot be read.
+    func installedProfiles() -> [InstalledProfile]?
     /// Labels whose launchd overrides survive with SIP enabled (`RemovableServices` in launchd's rootless
     /// policy); nil if the policy cannot be read.
     func sipRemovableServices() -> Set<String>?
@@ -61,6 +63,56 @@ public protocol DebloatSystem: AnyObject {
 public extension DebloatSystem {
     /// Systems that cannot remove a profile (the app, test doubles) say so; the app then asks the helper.
     func removeProfile(identifier: String) throws -> String { throw DebloatSystemError.commandFailed("Removing a profile needs root.") }
+}
+
+/// An installed configuration profile: its identifier, and its managed values as "payloadType:key" -> the value as text ("0" for
+/// false, "1" for true), the way `system_profiler` reports them.
+public struct InstalledProfile: Equatable, Sendable {
+    public var identifier: String
+    public var values: [String: String]
+
+    public init(identifier: String, values: [String: String]) {
+        self.identifier = identifier
+        self.values = values
+    }
+
+    /// A managed value as `values` holds it.
+    public static func text(_ value: PlistValue) -> String {
+        switch value {
+        case .bool(let flag): return flag ? "1" : "0"
+        case .int(let number): return String(number)
+        case .string(let text): return text
+        }
+    }
+
+    /// Reads `system_profiler SPConfigurationProfileDataType -json`: every profile (device and user), with its payloads' values,
+    /// which come as old-style property list text.
+    public static func parse(systemProfilerJSON data: Data) -> [InstalledProfile]? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) else { return nil }
+        var profiles: [InstalledProfile] = []
+        func walk(_ object: Any) {
+            if let item = object as? [String: Any] {
+                if let identifier = item["spconfigprofile_profile_identifier"] as? String {
+                    var values: [String: String] = [:]
+                    for payload in item["_items"] as? [[String: Any]] ?? [] {
+                        guard let type = payload["_name"] as? String, let text = payload["spconfigprofile_payload_data"] as? String,
+                              let plist = try? PropertyListSerialization.propertyList(from: Data(text.utf8), format: nil) as? [String: Any] else { continue }
+                        for (key, value) in plist where !key.hasPrefix("Payload") && !key.hasPrefix("_") {
+                            if let number = value as? NSNumber { values["\(type):\(key)"] = number.stringValue }
+                            else { values["\(type):\(key)"] = "\(value)" }
+                        }
+                    }
+                    profiles.append(InstalledProfile(identifier: identifier, values: values))
+                    return
+                }
+                item.values.forEach(walk)
+            } else if let list = object as? [Any] {
+                list.forEach(walk)
+            }
+        }
+        walk(root)
+        return profiles
+    }
 }
 
 /// The user whose preferences and gui launchd domain are targeted: the current user, or `SUDO_USER` under sudo.
@@ -267,6 +319,21 @@ public final class LiveDebloatSystem: DebloatSystem {
             }
         case .managedPreference:
             let managed = setting.managed!
+            // Read from the files profiles write, each time: a long-running app's CFPreferences kept the values from before a profile
+            // was approved, and the page said it was still waiting.
+            let base = URL(fileURLWithPath: "/Library/Managed Preferences")
+            let files = [targetUser.map { base.appendingPathComponent($0.name).appendingPathComponent("\(managed.payloadType).plist") },
+                         base.appendingPathComponent("\(managed.payloadType).plist")].compactMap { $0 }
+            if fileManager.isReadableFile(atPath: base.path) {
+                for file in files {
+                    guard let data = try? Data(contentsOf: file),
+                          let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+                          let object = plist[managed.key] else { continue }
+                    guard let value = PlistValue(propertyList: object as CFPropertyList) else { return .unreadable("Unsupported managed value for \(managed.key).") }
+                    return .value(.value(value))
+                }
+                return .value(.absent)
+            }
             let domain = managed.payloadType as CFString
             CFPreferencesAppSynchronize(domain)
             guard CFPreferencesAppValueIsForced(managed.key as CFString, domain),
@@ -422,6 +489,12 @@ public final class LiveDebloatSystem: DebloatSystem {
             throw DebloatSystemError.commandFailed("profiles remove -identifier \(identifier) failed: \(message)")
         }
         return "Removed \(identifier)."
+    }
+
+    public func installedProfiles() -> [InstalledProfile]? {
+        guard let result = try? runner.run("/usr/sbin/system_profiler", ["SPConfigurationProfileDataType", "-json"], timeout: 30),
+              result.exitCode == 0 else { return nil }
+        return InstalledProfile.parse(systemProfilerJSON: result.stdout)
     }
 
     public func stageProfile(_ profile: Data, fileName: String) throws -> String {

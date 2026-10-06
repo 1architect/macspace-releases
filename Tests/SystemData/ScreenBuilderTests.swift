@@ -2,6 +2,7 @@ import XCTest
 import MacSpaceSdk
 import MacSpacePlatform
 @testable import MacSpaceSystemData
+import MacSpaceSystemDataPrivileged
 
 final class SystemDataScreenBuilderTests: XCTestCase {
     private func item(_ id: String, kind: SystemDataKind, bytes: UInt64, cleanup: SystemDataCleanup.Kind = .review, reclaim: UInt64? = nil,
@@ -147,6 +148,39 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(blocks.reduce(0) { $0 + $1.bytes }, 2_900_000_000, "the total stays the same")
         XCTAssertEqual(SystemDataScreenBuilder.tile(snapshot(items: [])).status, "nothing to free")
     }
+    /// What macOS deletes by itself when space runs low (files flagged purgeable, the purgeable system assets) is free space for
+    /// System Settings, so it is not counted in System Data, and the bar says so.
+    func testPurgeableSpaceIsNotCountedInSystemData() {
+        var support = item("support", kind: .appSupport, bytes: 1_000_000_000)
+        support.purgeableBytes = 400_000_000
+        let snap = snapshot(items: [support, item("assets:system", kind: .systemAssets, bytes: 2_000_000_000, cleanup: .command)], purgeable: 500_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.total(snap), 600_000_000 + 1_500_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data \(ByteFormat.string(2_100_000_000))", "the total is back on the tile")
+        XCTAssertNotNil(SystemDataScreenBuilder.screen(snap).hero?.footnote, "the bar says what it leaves out")
+    }
+
+    /// A macOS update downloaded and waiting for a restart is its own row on the page, not one of the items MacSpace leaves alone.
+    func testAPreparedUpdateHasItsOwnRow() throws {
+        let items = [item("update:prepared", kind: .pendingUpdate, bytes: 10_700_000_000, cleanup: .managedByMacOS),
+                     item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS),
+                     item("other", kind: .systemLibrary, bytes: 200_000_000, cleanup: .managedByMacOS)]
+        let screen = SystemDataScreenBuilder.screen(snapshot(items: items))
+        guard case let .list(groups)? = screen.widgets.last else { return XCTFail("the groups are one list") }
+        XCTAssertEqual(groups.rows.first?.id, "update:prepared")
+        XCTAssertFalse(SystemDataScreenBuilder.leftAlone(snapshot(items: items)).contains { $0.kind == .pendingUpdate })
+        XCTAssertTrue(groups.rows.dropFirst().allSatisfy { !$0.children.contains { $0.id == "update:prepared" } })
+    }
+
+    /// The helper measures what only root can read anywhere under the system's folders, on any Mac, and never a home folder.
+    func testTheHelperMeasuresSystemFoldersOnly() {
+        XCTAssertTrue(RootMeasuredLocations.isAllowed("/private/var/db/CoreDuet"))
+        XCTAssertTrue(RootMeasuredLocations.isAllowed("/Library/Application Support/Vendor"))
+        XCTAssertTrue(RootMeasuredLocations.isAllowed("/System/Volumes/Data/.fseventsd"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/System/Volumes/Data/Users/someone"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/Users/someone/Library"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/private/var/../etc"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/private/var/"))
+    }
 }
 
 final class SystemDataStoreTests: XCTestCase {
@@ -193,4 +227,5 @@ final class SystemDataStoreTests: XCTestCase {
         let snapshot = await waiting.value
         XCTAssertEqual(snapshot.report.measuredBytes, 2, "the waiting caller got the scan started after the invalidate")
     }
+
 }

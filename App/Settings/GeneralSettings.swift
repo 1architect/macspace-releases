@@ -12,19 +12,29 @@ public enum GeneralSettings {
 }
 
 struct GeneralSettingsSection: View {
+    @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
+    @ObservedObject private var design = DesignSettings.shared
     @AppStorage(GeneralSettings.showInMenuBarKey) private var showInMenuBar = true
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
 
     var body: some View {
         Section("General") {
+            Picker("Theme", selection: Binding(get: { design.theme }, set: { design.theme = $0 })) {
+                ForEach(PaletteScheme.themes) { Text($0.themeTitle).tag($0) }
+            }
+            Picker("Appearance", selection: $design.appearanceMode) {
+                ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
+            }
+            .help("Night draws the theme on deep grounds, Day on light ones; Follow System switches with macOS.")
+            SettingsLinkRow(title: "Permissions", note: permissionsNote) { host.settingsPage = .permissions }
             Toggle("Show in the menu bar", isOn: $showInMenuBar)
                 .help("Keeps MacSpace running when you close the window, so background tasks keep working.")
             Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Open at login")
-                    if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+                    if let loginError { Text(loginError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
                 }
             }
             .help("Starts MacSpace when you log in.")
@@ -33,7 +43,7 @@ struct GeneralSettingsSection: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
                     if !SupportedReleases.isSupported() {
-                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(.orange)
+                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
                     }
                 }
             }
@@ -49,6 +59,12 @@ struct GeneralSettingsSection: View {
                 LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
             }
         }
+    }
+
+    /// How many permissions the active modules still need, or that all are given.
+    private var permissionsNote: String? {
+        let missing = PermissionsPage.permissions(host).filter { host.permissions.status(of: $0.permission) == .missing && $0.permission != .configurationProfile }.count
+        return missing == 0 ? nil : (missing == 1 ? "1 needed" : "\(missing) needed")
     }
 
     private func setOpensAtLogin(_ enabled: Bool) {

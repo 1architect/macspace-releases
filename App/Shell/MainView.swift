@@ -81,6 +81,7 @@ public struct MainView: View {
     @ObservedObject var updates: UpdateController
     @StateObject private var storage = StorageOverview()
     @ObservedObject private var remote = DebugRemote.shared
+    @ObservedObject private var router = AppRouter.shared
     @ObservedObject private var designSettings = DesignSettings.shared
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.openWindow) private var openWindow
@@ -197,6 +198,15 @@ public struct MainView: View {
         }
         .onDisappear { windowShown = false; windowClosing = false }
         .onChange(of: remote.command?.id) { _, _ in handleRemote() }
+        .onAppear { AppRouter.shared.openWindow = { [openWindow] id in openWindow(id: id) } }
+        // A page asked for from the menu bar; a window that has just opened waits for its tiles first.
+        .onChange(of: router.request?.id, initial: true) { _, _ in
+            guard let destination = router.take() else { return }
+            Task {
+                if !windowShown || host.dashboardHandles.isEmpty { try? await Task.sleep(for: .milliseconds(700)) }
+                present(destination)
+            }
+        }
     }
 
     private func handleRemote() {
@@ -267,7 +277,12 @@ public struct MainView: View {
                 return "\(handle.manifest.name) › \(row.title)"
             }
             return handle.manifest.name
-        case .settings: return host.settingsPage == .cleanupHistory ? "Settings › Recent cleanups" : "Settings"
+        case .settings:
+            switch host.settingsPage {
+            case .cleanupHistory?: return "Settings › Recent cleanups"
+            case .permissions?: return "Settings › Permissions"
+            case nil: return "Settings"
+            }
         case .home, .storage: return ""
         }
     }
@@ -476,10 +491,15 @@ struct SettingsPages: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            if host.settingsPage == .cleanupHistory {
-                CleanupHistoryPage()
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
-                                            removal: .move(edge: .trailing).combined(with: .opacity)))
+            if let page = host.settingsPage {
+                Group {
+                    switch page {
+                    case .cleanupHistory: CleanupHistoryPage()
+                    case .permissions: PermissionsPage(host: host)
+                    }
+                }
+                .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                        removal: .move(edge: .trailing).combined(with: .opacity)))
             } else {
                 SettingsView(host: host, updates: updates)
                     .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),

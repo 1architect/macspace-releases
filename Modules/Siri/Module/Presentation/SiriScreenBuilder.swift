@@ -100,7 +100,9 @@ enum SiriScreenBuilder {
         // The state cannot be read: the size, without saying what happens to it.
         else if onDisk >= purgeThreshold, snapshot.status.state == .unknown { detail = "\(ByteFormat.string(onDisk)) of models on disk" }
         else if onDisk >= purgeThreshold {
-            let released = onDisk > snapshot.lockedModelBytes ? onDisk - snapshot.lockedModelBytes : 0
+            // What a purge deletes is what MobileAsset's records hold, less what is locked; the folders can hold more.
+            let recorded = (snapshot.recordedModelBytes ?? 0) + snapshot.downloadingModelBytes
+            let released = recorded > snapshot.lockedModelBytes ? recorded - snapshot.lockedModelBytes : 0
             if released >= purgeThreshold { detail = "deleting \(ByteFormat.string(released)) of models" }
             else { detail = "\(ByteFormat.string(onDisk)) of models kept by macOS" }
         }
@@ -133,7 +135,7 @@ enum SiriScreenBuilder {
         var widgets: [ScreenWidget] = []
         if let banner = statusBanner(snapshot) { widgets.append(.banner(banner)) }
         widgets.append(.toggles(switchList(snapshot)))
-        widgets.append(.list(ListWidget(id: "icloud", rows: [cloudSyncRow])))
+        widgets.append(.list(ListWidget(id: "icloud", rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
         if let models = modelsSection(snapshot) { widgets.append(models) }
         return Screen(title: "Siri & Apple Intelligence", primary: purge(snapshot), widgets: widgets)
@@ -143,7 +145,7 @@ enum SiriScreenBuilder {
         // No button while MacSpace is already asking macOS again in the background.
         guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold, !snapshot.assetsRetrying else { return nil }
         return Action(id: "purgeAssets", title: "Free up to \(ByteFormat.string(bytes))", symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: "Free up to \(ByteFormat.string(bytes))?", message: "macOS deletes the downloads it no longer needs, including Apple Intelligence models it has released. \(ByteFormat.string(bytes)) is macOS's estimate: MacSpace asks it again just before and reports what the disk actually gained. Anything needed again is downloaded again.", confirmTitle: "Free"))
+                      confirmation: Confirmation(title: "Free up to \(ByteFormat.string(bytes))?", message: "macOS deletes downloads it no longer needs, including released Apple Intelligence models. Anything needed again is downloaded again.", confirmTitle: "Free"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {
@@ -156,11 +158,11 @@ enum SiriScreenBuilder {
             subtitle = failure.message
             enabled = false
         }
-        let state = snapshot.status.state
-        let detail = ([subtitle, "Applies to this account.", languageReach(snapshot)] + snapshot.status.reasons).joined(separator: " ")
+        let detail = ([subtitle, "Applies to this account.", languageReach(snapshot),
+                       "System Settings can show a larger figure for Apple Intelligence; the size here is what switching it off frees."]
+                      + snapshot.status.reasons).joined(separator: " ")
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why.
         let rows = [ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
-                              badge: state == .atRisk ? Badge("On", tone: .caution) : nil,
                               detail: detail,
                               action: switchAction)]
         return ToggleList(id: "switch", rows: rows)
@@ -169,10 +171,20 @@ enum SiriScreenBuilder {
     /// Switches Apple Intelligence, from the page's switch row and the tile's switch alike.
     static let switchAction = Action(id: "toggle", title: "Apple Intelligence", parameters: ["id": "ai"], requires: [.fullDiskAccess])
 
-    /// Siri's iCloud sync, which only the user can turn off: what it does, the steps, and a button to the page that has it.
-    static let cloudSyncRow = Row(id: "icloud-sync", title: "Siri's iCloud sync", subtitle: "set in System Settings", symbol: "icloud",
-                                  detail: SiriCloudSync.reach + " macOS lets only System Settings change it.", steps: SiriCloudSync.steps,
-                                  actions: [Action(id: "openICloudSettings", title: "Open")])
+    /// Siri's iCloud sync, which only the user can turn off: whether it is on now, in the title (when it can be read), what it does,
+    /// the steps while it is on, and a button to the page that has it.
+    static func cloudSyncRow(enabled: Bool?) -> Row {
+        let title: String
+        switch enabled {
+        case true?: title = "Siri's iCloud sync is currently on"
+        case false?: title = "Siri's iCloud sync is currently off"
+        case nil: title = "Siri's iCloud sync"
+        }
+        return Row(id: "icloud-sync", title: title, subtitle: enabled == nil ? "set in System Settings" : nil,
+                   symbol: enabled == false ? "checkmark.icloud" : "icloud",
+                   detail: SiriCloudSync.reach + " macOS lets only System Settings change it.", steps: enabled == false ? [] : SiriCloudSync.steps,
+                   actions: [Action(id: "openICloudSettings", title: "Open")])
+    }
 
     static func accountsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {
         guard let elsewhere = snapshot.accounts?.enabledElsewhere, !elsewhere.isEmpty else { return nil }

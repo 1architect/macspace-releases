@@ -59,10 +59,19 @@ struct ScreenView: View {
         }
     }
 
+    /// The group row with this id, wherever it is: in a list, a section, or among another group's items (a group inside a group
+    /// opens too, instead of leaving the page).
     static func row(_ id: String, in widgets: [ScreenWidget]) -> Row? {
+        func find(_ rows: [Row]) -> Row? {
+            for row in rows {
+                if row.id == id && !row.children.isEmpty { return row }
+                if let found = find(row.children) { return found }
+            }
+            return nil
+        }
         for widget in widgets {
             switch widget {
-            case let .list(list): if let row = list.rows.first(where: { $0.id == id && !$0.children.isEmpty }) { return row }
+            case let .list(list): if let row = find(list.rows) { return row }
             case let .section(section): if let row = row(id, in: section.widgets) { return row }
             default: continue
             }
@@ -186,7 +195,8 @@ struct PageScrollArea: ViewModifier {
             // The content is not faded: it goes on under the title and the action, and the glass blurs it there.
             content
                 .contentMargins(.top, scrollTop, for: .scrollContent)
-                .contentMargins(.bottom, footer + PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.bottom, 0, for: .scrollContent)
+                .environment(\.pageBottomRoom, footer + PageInsets.fade + 6)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
                 .overlay(alignment: .top) { EdgeGlass(edge: .top).frame(height: top + Self.fadeLength * 1.5) }
@@ -195,7 +205,8 @@ struct PageScrollArea: ViewModifier {
             let footer = hasFooter ? PageInsets.footer : 0
             content
                 .contentMargins(.top, scrollTop, for: .scrollContent)
-                .contentMargins(.bottom, footer + PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.bottom, 0, for: .scrollContent)
+                .environment(\.pageBottomRoom, footer + PageInsets.fade + 6)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
                 .mask {
@@ -210,13 +221,30 @@ struct PageScrollArea: ViewModifier {
         } else {
             content
                 .contentMargins(.top, 0, for: .scrollContent)
-                .contentMargins(.bottom, PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.bottom, 0, for: .scrollContent)
+                .environment(\.pageBottomRoom, PageInsets.fade + 6)
                 .contentMargins(.horizontal, 10, for: .scrollContent)
                 .scrollEdgeEffectHidden(true, for: .all)
                 .padding(.top, scrollTop)
                 .padding(.bottom, hasFooter ? PageInsets.footer : 0)
                 .clipped()
         }
+    }
+}
+
+extension EnvironmentValues {
+    /// Room the page leaves under its last row (`PageScrollArea`), for `PageBottomRoom`.
+    @Entry var pageBottomRoom: CGFloat = 0
+}
+
+/// The room under a page's last row, so it can scroll clear of the fade and the main action. Content, not the scroll view's bottom
+/// margin: macOS keeps a band over a scroll view's margin that takes the clicks, and the rows that scrolled into it, just above the
+/// fade, could not be clicked. Goes last in each page's form.
+struct PageBottomRoom: View {
+    @Environment(\.pageBottomRoom) private var room
+
+    var body: some View {
+        Section {} footer: { Color.clear.frame(height: max(room - 20, 0)) }
     }
 }
 
@@ -284,9 +312,8 @@ struct HeroBlocks: View {
                         .fill(BlockColor.fill(hoveredSegment, rank: segments.firstIndex(of: hoveredSegment) ?? 0, tint: tint, design: design))
                         .frame(width: 9, height: 9)
                     Text("\(hoveredSegment.label) · \(ByteFormat.string(hoveredSegment.bytes))")
-                } else if segments.contains(where: { $0.tone == .caution }) {
-                    RoundedRectangle(cornerRadius: 2).fill(design.action).frame(width: 9, height: 9)
-                    Text("can be freed")
+                } else if !segments.isEmpty {
+                    Text("\(ByteFormat.string(usage.totalBytes ?? segments.reduce(0) { $0 + $1.bytes })) in total")
                 }
             }
             .font(.system(size: 11))
@@ -407,9 +434,9 @@ private struct ActionPill: View {
         }
     }
 
-    /// A failure is drawn in red; everything else in the action color.
-    private var fill: Color { severity == .critical ? Palette.color(Tone.critical) : design.action }
-    private var ink: Color { severity == .critical ? .white : design.actionDeep }
+    /// Everything, a failure included, is drawn in the action color: the app has no red.
+    private var fill: Color { design.action }
+    private var ink: Color { design.actionDeep }
 
     var body: some View {
         Button {
@@ -445,7 +472,7 @@ private struct ActionPill: View {
 
     private var background: some View {
         ZStack(alignment: .leading) {
-            if severity != .critical, design.fill(.mainButton) != nil || design.shading(.mainButton) != nil {
+            if design.fill(.mainButton) != nil || design.shading(.mainButton) != nil {
                 ShadedFill(shape: Self.shape, color: hovering && !isWorking ? lighter : fill, accent: design.actionLight,
                            fill: design.fill(.mainButton), shading: design.shading(.mainButton), light: design.isLight)
             } else {
@@ -475,7 +502,7 @@ private struct ActionPill: View {
     static let shape = RoundedRectangle(cornerRadius: 15.5, style: .continuous)
 
     private var isWorking: Bool { if case .working = phase { return true } else { return false } }
-    private var lighter: Color { severity == .critical ? fill.opacity(0.85) : design.actionLight }
+    private var lighter: Color { design.actionLight }
 }
 
 /// The glass around the pill, when the window is glass.
