@@ -299,12 +299,35 @@ struct RowView: View {
 }
 
 /// A switch row, as in Settings. It never asks and never waits: the switch moves as soon as it is flipped, then the module makes the
-/// change. Flipped again while a change runs, it moves at once too, and the latest position is applied as soon as the running change
-/// ends. If a change fails, the switch moves back to what the Mac really has and the page says why; the rest of the page is not
-/// reloaded around it.
+/// change (`LiveSwitch`).
 struct ToggleRowView: View {
     let row: ToggleRow
     let handler: ActionHandler
+
+    var body: some View {
+        LiveSwitch(isOn: row.isOn, apply: { value in
+            let result = await handler(row.action, ["value": value ? "true" : "false"], true)
+            return result.map { $0.outcome != .failed } ?? false
+        }) { isOn in
+            Toggle(isOn: isOn) {
+                HStack(spacing: 8) {
+                    Text(row.title)
+                    if let badge = row.badge { BadgeView(badge: badge) }
+                }
+            }
+        }
+        .disabled(!row.isEnabled)
+        .help(Tooltip.join(row.subtitle, row.detail) ?? "")
+    }
+}
+
+/// A switch that moves as soon as it is flipped, then has the change made by `apply` (true when it was made). Flipped again while a
+/// change runs, it moves at once too, and the latest position is applied as soon as the running change ends. If a change fails, the
+/// switch moves back to what the Mac really has; the module's own reading (`isOn`) takes over once nothing runs.
+struct LiveSwitch<Content: View>: View {
+    let isOn: Bool
+    let apply: @MainActor (Bool) async -> Bool
+    @ViewBuilder let content: (Binding<Bool>) -> Content
     /// What the switch shows ahead of the module's answer.
     @State private var shown: Bool?
     @State private var running = false
@@ -312,33 +335,25 @@ struct ToggleRowView: View {
     @State private var queued: Bool?
 
     var body: some View {
-        Toggle(isOn: Binding(get: { shown ?? row.isOn }, set: flip)) {
-            HStack(spacing: 8) {
-                Text(row.title)
-                if let badge = row.badge { BadgeView(badge: badge) }
-            }
-        }
-        .disabled(!row.isEnabled)
-        .help(Tooltip.join(row.subtitle, row.detail) ?? "")
-        .onChange(of: row.isOn) { _, _ in if !running { shown = nil } }
+        content(Binding(get: { shown ?? isOn }, set: flip))
+            .onChange(of: isOn) { _, _ in if !running { shown = nil } }
     }
 
     private func flip(to value: Bool) {
-        guard value != (shown ?? row.isOn) else { return }
+        guard value != (shown ?? isOn) else { return }
         withAnimation(Theme.toggle) { shown = value }
-        if running { queued = value } else { apply(value) }
+        if running { queued = value } else { run(value) }
     }
 
-    private func apply(_ value: Bool) {
+    private func run(_ value: Bool) {
         running = true
         Task { @MainActor in
-            let result = await handler(row.action, ["value": value ? "true" : "false"], true)
-            let applied = result.map { $0.outcome != .failed } ?? false
+            let applied = await apply(value)
             // Where the Mac is now: the new position, or, after a failure, the one before it.
             let actual = applied ? value : !value
             if let next = queued {
                 queued = nil
-                if next != actual { return apply(next) }
+                if next != actual { return run(next) }
             }
             running = false
             // Done: the module's own reading takes over. Failed: back to where the Mac is.

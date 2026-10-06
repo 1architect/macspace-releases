@@ -395,40 +395,29 @@ struct DotsView: View {
 
 // MARK: State
 
-/// A switch drawn as macOS draws one: a capsule track, grey when off and colored when on, and a white knob with a soft shadow that
-/// slides across. It only shows a state (the tile opens on a click), so it is drawn rather than a real `Toggle`, which would also
-/// grey out with the window inactive. On is the action color, as everywhere that something can be acted on.
-struct SwitchMark: View {
-    let on: Bool
-    static let size = CGSize(width: 40, height: 24)
-    private static let inset: CGFloat = 2
-    @Environment(\.design) private var design
-
-    var body: some View {
-        let knob = Self.size.height - 2 * Self.inset
-        ZStack(alignment: on ? .trailing : .leading) {
-            Capsule().fill(on ? design.action : (design.isLight ? Color.black.opacity(0.1) : Color.white.opacity(0.18)))
-            // The knob's shadow is a darker disc just under it, not a blurred shadow, which is redrawn on every frame the tile moves.
-            Circle()
-                .fill(.white)
-                .background { Circle().fill(.black.opacity(0.2)).padding(-0.5).offset(y: 0.75) }
-                .frame(width: knob, height: knob)
-                .padding(Self.inset)
-        }
-        .frame(width: Self.size.width, height: Self.size.height)
-        .animation(.spring(duration: 0.3, bounce: 0.15), value: on)
-    }
-}
-
 /// A feature that should stay off, as a switch: off and quiet, or on and glowing. Below it one line of detail and, when there is
 /// something to remove, a meter.
 struct StateView: View {
+    /// What of it is drawn. On the dashboard the switch is drawn over the tile's button, apart from the rest (`TileSwitch`): inside the
+    /// button, a click on it also opened the tile.
+    enum Part {
+        case all
+        /// Everything but the switch, whose place is kept empty for the one drawn over it.
+        case allButSwitch
+        case switchOnly
+    }
+
     let on: Bool
     let detail: String
     let meter: Double?
     let meterIsActionable: Bool
     let tint: TileTint
     var loading = false
+    var part = Part.all
+    /// Makes the change when the switch is flipped (true when it was made). nil only shows the state.
+    var flip: (@MainActor (Bool) async -> Bool)?
+    /// The module offers no change: the switch is dimmed, as a page's switch row that cannot be flipped.
+    var disabled = false
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fill: CGFloat = 0
@@ -443,27 +432,46 @@ struct StateView: View {
     private func content(_ wave: (Int) -> Double) -> some View {
         let palette = design.palette(tint)
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 9) {
-                SwitchMark(on: on)
-                    .opacity(wave(0))
-                Text(on ? "on" : "off").font(.system(size: 12, weight: .medium)).foregroundStyle(on ? design.actionLight : palette.soft)
-                    .opacity(wave(0))
-            }
-            .animation(Theme.hover, value: on)
-            Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
-                .opacity(wave(1))
-            if let meter {
-                // Read here: the geometry reader's closure outlives this call and cannot hold `wave`.
-                let strength = wave(2)
-                GeometryReader { proxy in
-                    Surface(shape: Capsule(), color: palette.step(1), strength: strength)
-                        .overlay(alignment: .leading) {
-                            Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: strength)
-                                .modifier(AnimatedLength(value: proxy.size.width * CGFloat(meter) * fill, kind: .width))
-                        }
+            // The system's switch, as on the page; it moves at once and the module follows (`LiveSwitch`). The wave is read here:
+            // the switch's closure outlives this call.
+            let switchOpacity = part == .allButSwitch ? 0 : wave(0)
+            LiveSwitch(isOn: on, apply: { value in await flip?(value) ?? false }) { isOn in
+                HStack(spacing: 9) {
+                    Toggle("", isOn: isOn)
+                        .toggleStyle(.switch)
+                        // The size a grouped form gives the page's switch rows.
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .disabled(disabled)
+                        // The click is taken by the row below: the system switch does not claim it from SwiftUI's gestures, and
+                        // it went through to the tile's button and opened the page.
+                        .allowsHitTesting(false)
+                    Text(isOn.wrappedValue ? "on" : "off").font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(isOn.wrappedValue ? design.actionLight : palette.soft)
                 }
-                .frame(height: 6)
-                .onAppear { withAnimation(.smooth(duration: 1).delay(0.3)) { fill = 1 } }
+                .opacity(switchOpacity)
+                .animation(Theme.hover, value: isOn.wrappedValue)
+                // The switch and its "on"/"off" flip it.
+                .contentShape(Rectangle())
+                .onTapGesture { if !disabled { isOn.wrappedValue.toggle() } }
+                .allowsHitTesting(flip != nil && part != .allButSwitch)
+            }
+            if part != .switchOnly {
+                Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
+                    .opacity(wave(1))
+                if let meter {
+                    // Read here: the geometry reader's closure outlives this call and cannot hold `wave`.
+                    let strength = wave(2)
+                    GeometryReader { proxy in
+                        Surface(shape: Capsule(), color: palette.step(1), strength: strength)
+                            .overlay(alignment: .leading) {
+                                Surface(shape: Capsule(), color: meterIsActionable ? design.action : palette.step(4), strength: strength)
+                                    .modifier(AnimatedLength(value: proxy.size.width * CGFloat(meter) * fill, kind: .width))
+                            }
+                    }
+                    .frame(height: 6)
+                    .onAppear { withAnimation(.smooth(duration: 1).delay(0.3)) { fill = 1 } }
+                }
             }
         }
     }

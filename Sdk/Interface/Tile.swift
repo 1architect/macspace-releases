@@ -27,9 +27,12 @@ public struct Tile: Codable, Equatable, Sendable {
     /// What the tile shows is changing (a download, a removal): the app asks again after this many seconds instead of its usual
     /// minute. nil for the usual pace.
     public var refreshAfter: Double?
+    /// What the switch of a `state` chart runs when it is flipped on the dashboard, with `value` "true" or "false", as a switch row on
+    /// the page. nil leaves the switch shown but not flippable.
+    public var switchAction: Action?
 
     public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil,
-                purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil) {
+                purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil, switchAction: Action? = nil) {
         self.title = title
         self.status = status
         self.needsAttention = needsAttention
@@ -37,9 +40,10 @@ public struct Tile: Codable, Equatable, Sendable {
         self.reclaimableBytes = reclaimableBytes
         self.purgeableByService = purgeableByService
         self.refreshAfter = refreshAfter
+        self.switchAction = switchAction
     }
 
-    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter }
+    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter, switchAction }
 
     /// `purgeableByService` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -51,6 +55,7 @@ public struct Tile: Codable, Equatable, Sendable {
         reclaimableBytes = try container.decodeIfPresent(UInt64.self, forKey: .reclaimableBytes)
         purgeableByService = try container.decodeIfPresent([String: UInt64].self, forKey: .purgeableByService) ?? [:]
         refreshAfter = try container.decodeIfPresent(Double.self, forKey: .refreshAfter)
+        switchAction = try container.decodeIfPresent(Action.self, forKey: .switchAction)
     }
 }
 

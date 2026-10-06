@@ -75,6 +75,8 @@ enum SiriScreenBuilder {
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         var tile = baseTile(snapshot)
         tile.refreshAfter = refreshAfter(snapshot)
+        // The tile's switch flips what the page's does, whenever the page's can be flipped.
+        if !snapshot.isVirtualMachine, switchList(snapshot).rows.first?.isEnabled == true { tile.switchAction = switchAction }
         return tile
     }
 
@@ -160,9 +162,12 @@ enum SiriScreenBuilder {
         let rows = [ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
                               badge: state == .atRisk ? Badge("On", tone: .caution) : nil,
                               detail: detail,
-                              action: Action(id: "toggle", title: "Apple Intelligence", parameters: ["id": "ai"], requires: [.fullDiskAccess]))]
+                              action: switchAction)]
         return ToggleList(id: "switch", rows: rows)
     }
+
+    /// Switches Apple Intelligence, from the page's switch row and the tile's switch alike.
+    static let switchAction = Action(id: "toggle", title: "Apple Intelligence", parameters: ["id": "ai"], requires: [.fullDiskAccess])
 
     /// Siri's iCloud sync, which only the user can turn off: what it does, the steps, and a button to the page that has it.
     static let cloudSyncRow = Row(id: "icloud-sync", title: "Siri's iCloud sync", subtitle: "set in System Settings", symbol: "icloud",

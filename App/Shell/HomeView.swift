@@ -10,6 +10,8 @@ struct TileInfo: Equatable {
     var needsAttention = false
     var graphic: TileGraphic?
     var loading = false
+    /// What the switch of a `state` chart runs; nil when it cannot be flipped.
+    var switchAction: Action?
 
     static let settings = TileInfo(title: "MacSpace", status: "settings")
 
@@ -17,7 +19,7 @@ struct TileInfo: Equatable {
     init(_ handle: ModuleHandle) {
         if let tile = handle.tile {
             self.init(title: tile.title, status: tile.status, needsAttention: tile.needsAttention, graphic: tile.graphic,
-                      loading: handle.tileIsStale || handle.isRefreshing)
+                      loading: handle.tileIsStale || handle.isRefreshing, switchAction: tile.switchAction)
         } else {
             self.init(title: handle.manifest.name.lowercased(), status: "looking…", loading: true)
         }
@@ -36,12 +38,14 @@ struct TileInfo: Equatable {
         self.init(title: status.title, status: status.detail, graphic: graphic, loading: !storage.isLoaded)
     }
 
-    init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, loading: Bool = false) {
+    init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, loading: Bool = false,
+         switchAction: Action? = nil) {
         self.title = title
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
         self.loading = loading
+        self.switchAction = switchAction
     }
 }
 
@@ -58,6 +62,8 @@ struct TileFace: View {
     /// On the dashboard the tiles' grounds are drawn together, in a layer of their own under all the faces (`HomeView`); the zoom's card
     /// draws its own.
     var drawsBackdrop = true
+    /// The switch of a `state` chart is drawn over the tile, apart from the face (`TileSwitch`); the face keeps its place.
+    var switchOverlaid = false
     @Environment(\.design) private var design
 
     /// Room left under the chart for the caption.
@@ -189,7 +195,8 @@ struct TileFace: View {
             .padding(.top, 16)
             .padding(.trailing, 14)
         case let .state(on, _, detail, meter, actionable):
-            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading)
+            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
+                      part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil)
                 .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
                 .padding(.leading, 14)
                 .padding(.top, 16)
@@ -463,10 +470,18 @@ struct DashboardTileView: View {
         Button(action: open) {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
-                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false)
+                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true)
                 .contentShape(shape)
         }
         .buttonStyle(TilePressStyle())
+        .pointerStyle(tile.opens ? .link : nil)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(tile.opens ? .isButton : [])
+        // Over the button, not in it: a click on the switch flips it and does not open the tile. A control of its own for
+        // VoiceOver too, not merged into the tile.
+        .overlay(alignment: .topLeading) {
+            if case let .module(id) = tile.destination, let handle = host.handle(for: id) { TileSwitch(handle: handle, tint: tile.tint) }
+        }
         .allowsHitTesting(tile.opens)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onContinuousHover { phase in
@@ -482,9 +497,6 @@ struct DashboardTileView: View {
             }
         }
         .onChange(of: isHidden) { _, hidden in if hidden { resetPointer() } }
-        .pointerStyle(tile.opens ? .link : nil)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(tile.opens ? .isButton : [])
     }
 
     private func resetPointer() {
@@ -608,6 +620,8 @@ struct TileContent: View {
     var showsCaption = true
     /// The caption leaves as the tile opens: the page names itself at the top.
     var captionOpacity: CGFloat = 1
+    /// The dashboard draws a `state` chart's switch over the tile itself (`TileSwitch`).
+    var switchOverlaid = false
 
     var body: some View {
         switch destination {
@@ -622,7 +636,7 @@ struct TileContent: View {
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
-                                      drawsBackdrop: drawsBackdrop, captionSize: captionSize) } else { Color.clear }
+                                      drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
                     .padding(captionPadding)
@@ -653,5 +667,27 @@ private struct TilePressStyle: ButtonStyle {
                     .allowsHitTesting(false)
             }
             .animation(Theme.press, value: configuration.isPressed)
+    }
+}
+
+/// A `state` chart's switch on the dashboard, drawn where the face leaves its place. Flipped, it runs the tile's `switchAction` as the
+/// page's switch row does.
+private struct TileSwitch: View {
+    @ObservedObject var handle: ModuleHandle
+    let tint: TileTint
+
+    var body: some View {
+        let info = TileInfo(handle)
+        if case let .state(on, _, detail, meter, actionable)? = info.graphic {
+            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading, part: .switchOnly,
+                      flip: info.switchAction.map { action in { [handle] value in
+                          // Quiet, as the page's switch: it has already moved.
+                          let result = await handle.perform(action, extraParameters: ["value": value ? "true" : "false"], quiet: true)
+                          return result.map { $0.outcome != .failed } ?? false
+                      } },
+                      disabled: info.switchAction == nil)
+                .padding(.leading, 14)
+                .padding(.top, 16)
+        }
     }
 }
