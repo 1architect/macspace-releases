@@ -219,8 +219,11 @@ struct GlassBackdrop: View {
             ZStack {
                 if design.windowGlass {
                     WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.backgroundIsLight)
-                    // The Color Lab's window fill, over the blur and under the glass.
-                    if let fill = design.fill(.window) { shape.fill(fill.style(design.systemWindowColor)) }
+                    // The Color Lab's window fill and the studio's shading, over the blur and under the glass.
+                    if design.fill(.window) != nil || design.shading(.window) != nil {
+                        ShadedFill(shape: shape, color: design.fill(.window) == nil ? .clear : design.systemWindowColor, accent: design.action,
+                                   fill: design.fill(.window), shading: design.shading(.window), light: design.backgroundIsLight)
+                    }
                 }
                 if !showsGlass {
                     Color.clear
@@ -229,10 +232,12 @@ struct GlassBackdrop: View {
                         .modifier(GlassFade(progress: glassFade))
                 } else {
                     // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
-                    LabFill(shape: shape, color: design.systemWindowColor, fill: design.fill(.window))
+                    ShadedFill(shape: shape, color: design.systemWindowColor, accent: design.action, fill: design.fill(.window),
+                               shading: design.shading(.window), light: design.backgroundIsLight)
                 }
             }
             .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
+            .studioPickable(.window, in: shape)
         } else {
             // Nothing drawn behind the widgets (Design menu > Window Background); the empty ground still takes the window drag.
             Color.clear.contentShape(Rectangle())

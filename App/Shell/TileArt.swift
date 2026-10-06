@@ -22,10 +22,14 @@ struct TileBackdrop: View {
             // flat color never looking alike. The window's own glass gives way under it instead (`MainView`), so a page is still
             // one layer of glass.
             let cover = design.isLight ? 0.5 : 0.62
-            if let fill = design.fill(.tile(tint)), fill.kind != .solid {
-                // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
+            let shading = design.lab.shading(.tile(tint))
+            if design.fill(.tile(tint)).map({ $0.kind != .solid }) ?? false || shading != nil {
+                // The Color Lab's gradient or the studio's shading, under clear glass: AppKit's glass takes one color, so they lie
+                // behind it.
                 ZStack {
-                    shape.fill(fill.style(palette.base)).opacity(cover)
+                    ShadedFill(shape: shape, color: palette.base, accent: palette.step(3), fill: design.fill(.tile(tint)), shading: shading,
+                               light: design.isLight)
+                        .opacity(cover)
                     GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
                               color: .clear, opacity: 0, shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
                 }
@@ -35,11 +39,10 @@ struct TileBackdrop: View {
                           shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
             }
         } else {
-            // Rounded itself: the tiles are no longer clipped to their shape.
-            LabFill(shape: shape, color: palette.base, fill: design.fill(.tile(tint)))
-                .overlay {
-                    shape.fill(RadialGradient(colors: [.white.opacity(design.isLight ? 0.5 : 0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 420))
-                }
+            // Rounded itself: the tiles are no longer clipped to their shape. Lit by the studio's shading, by default the faint light
+            // from the top left.
+            ShadedFill(shape: shape, color: palette.base, accent: palette.step(3), fill: design.fill(.tile(tint)),
+                       shading: design.shading(.tile(tint)), light: design.isLight)
         }
     }
 }
@@ -85,11 +88,14 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
             let dark = highlighted && design.hoverShade && design.glass
             let base = color
             let shown = dark ? base.mix(with: .black, by: Theme.highlightDarkening) : base
-            let tinted = LabFill(shape: shape, color: shown, fill: design.fill(.chartElements)).opacity(0.7 * strength)
+            let tinted = ShadedFill(shape: shape, color: shown, accent: shown.mix(with: .white, by: 0.4), fill: design.fill(.chartElements),
+                                    shading: design.shading(.chartElements), light: design.isLight)
+                .opacity(0.7 * strength)
                 .animation(Theme.highlight, value: highlighted)
             if !glass {
                 tinted
-            } else if let corners = Self.corners(of: shape), let fill = design.fill(.chartElements), fill.kind != .solid {
+            } else if let corners = Self.corners(of: shape),
+                      design.fill(.chartElements).map({ $0.kind != .solid }) ?? false || design.shading(.chartElements) != nil {
                 // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
                 ZStack {
                     tinted
@@ -104,7 +110,8 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
             }
         } else {
             // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
-            LabFill(shape: shape, color: color, fill: design.fill(.chartElements))
+            ShadedFill(shape: shape, color: color, accent: color.mix(with: .white, by: 0.4), fill: design.fill(.chartElements),
+                       shading: design.shading(.chartElements), light: design.isLight)
                 .overlay { shape.fill(.white.opacity(highlighted ? Self.flatHighlight : 0)) }
                 .animation(Theme.highlight, value: highlighted)
                 .opacity(strength)

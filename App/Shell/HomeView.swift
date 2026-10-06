@@ -482,6 +482,7 @@ struct DashboardTileView: View {
         .overlay(alignment: .topLeading) {
             if case let .module(id) = tile.destination, let handle = host.handle(for: id) { TileSwitch(handle: handle, tint: tile.tint) }
         }
+        .studioPickable(.tile(tile.tint), in: shape)
         .allowsHitTesting(tile.opens)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onContinuousHover { phase in

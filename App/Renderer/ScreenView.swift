@@ -99,6 +99,7 @@ struct ScreenView: View {
         }
         .disabled(handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
+        .environment(\.pageGround, design.palette(tint).base)
         // A refresh that no longer has the open group (its items were freed) goes back to the module's page.
         .onChange(of: openGroup == nil) { _, gone in if gone, handle.openGroup != nil { handle.openGroup = nil } }
     }
@@ -141,6 +142,8 @@ extension EnvironmentValues {
     /// Where a page's scroll area starts: under the glass window's corner buttons and title, or right under a standard window's
     /// toolbar (`StandardWindowView`).
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
+    /// The page's own color, which the glass along its edges is tinted with so it does not lighten it (`EdgeGlass`).
+    @Entry var pageGround: Color?
 }
 
 /// Room around a page's content: the corner button at the top left, the caption and the dock at the bottom.
@@ -177,7 +180,18 @@ struct PageScrollArea: ViewModifier {
     static let fadeLength: CGFloat = 26
 
     func body(content: Content) -> some View {
-        if design.pageEdgeFade {
+        if design.pageEdgeFade && design.pageEdgeBlur {
+            let footer = hasFooter ? PageInsets.footer : 0
+            let top = max(scrollTop - (PageInsets.scrollTop - PageInsets.headerBottom), 0)
+            // The content is not faded: it goes on under the title and the action, and the glass blurs it there.
+            content
+                .contentMargins(.top, scrollTop, for: .scrollContent)
+                .contentMargins(.bottom, footer + PageInsets.fade + 6, for: .scrollContent)
+                .contentMargins(.horizontal, 10, for: .scrollContent)
+                .scrollEdgeEffectHidden(true, for: .all)
+                .overlay(alignment: .top) { EdgeGlass(edge: .top).frame(height: top + Self.fadeLength * 1.5) }
+                .overlay(alignment: .bottom) { EdgeGlass(edge: .bottom).frame(height: footer + Self.fadeLength * 1.5) }
+        } else if design.pageEdgeFade {
             let footer = hasFooter ? PageInsets.footer : 0
             content
                 .contentMargins(.top, scrollTop, for: .scrollContent)
@@ -203,6 +217,29 @@ struct PageScrollArea: ViewModifier {
                 .padding(.bottom, hasFooter ? PageInsets.footer : 0)
                 .clipped()
         }
+    }
+}
+
+/// A band of Liquid Glass along a page's top or bottom edge, solid at the edge and fading out toward the page, so what scrolls under it
+/// blurs more the closer it gets to the edge. It never takes the pointer: the page scrolls through it.
+private struct EdgeGlass: View {
+    let edge: VerticalEdge
+    @Environment(\.pageGround) private var ground
+    @Environment(\.design) private var design
+
+    var body: some View {
+        // Glass lightens a deep page: the page's own color, a little darker, tinted into it brings it back to the page's brightness
+        // (measured within 3 levels). On a light page the glass adds no light and is left as it is.
+        // A page that does not say its color gets black, which comes close too (within 7 levels).
+        let tint = ground.map { $0.mix(with: .black, by: 0.15).opacity(0.6) } ?? .black.opacity(0.35)
+        let glass: Glass = design.isLight ? .regular : .regular.tint(tint)
+        Color.clear
+            .glassEffect(glass, in: Rectangle())
+            .mask {
+                LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.45), .init(color: .clear, location: 1)],
+                               startPoint: edge == .top ? .top : .bottom, endPoint: edge == .top ? .bottom : .top)
+            }
+            .allowsHitTesting(false)
     }
 }
 
@@ -395,6 +432,7 @@ private struct ActionPill: View {
             .contentShape(Self.shape)
         }
         .buttonStyle(.plain)
+        .studioPickable(.mainButton, in: Self.shape)
         .onHover { hovering = $0 }
         .animation(Theme.hover, value: hovering)
         .task(id: phase) {
@@ -407,8 +445,9 @@ private struct ActionPill: View {
 
     private var background: some View {
         ZStack(alignment: .leading) {
-            if severity != .critical, let lab = design.fill(.mainButton) {
-                Self.shape.fill(lab.style(hovering && !isWorking ? lighter : fill))
+            if severity != .critical, design.fill(.mainButton) != nil || design.shading(.mainButton) != nil {
+                ShadedFill(shape: Self.shape, color: hovering && !isWorking ? lighter : fill, accent: design.actionLight,
+                           fill: design.fill(.mainButton), shading: design.shading(.mainButton), light: design.isLight)
             } else {
                 Self.shape.fill(hovering && !isWorking ? lighter : fill)
             }

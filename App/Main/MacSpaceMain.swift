@@ -72,10 +72,12 @@ struct MacSpaceMain: App {
         .defaultSize(width: 900, height: 600)
 
         // Temporary: the Color Lab (Design menu, ⌥⌘L).
-        Window("Color Lab", id: ColorLabView.windowID) {
+        Window("Shader Studio", id: ColorLabView.windowID) {
             ColorLabView()
         }
-        .defaultSize(width: 480, height: 760)
+        .defaultSize(width: 520, height: 820)
+        // Over the main window, so it stays in view while parts are picked there.
+        .windowLevel(.floating)
 
         MenuBarExtra(isInserted: $showInMenuBar) {
             MenuBarContent(host: host)

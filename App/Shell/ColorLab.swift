@@ -159,8 +159,14 @@ enum ColorRole: Hashable, Sendable {
 struct LabOverrides: Codable, Equatable, Sendable {
     var colors: [String: LabColor] = [:]
     var fills: [String: FillSpec] = [:]
+    /// The Shader Studio's main color per tile color (`TileTint.rawValue`): the whole palette is worked out from it (`PaletteRamp`).
+    var mains: [String: LabColor] = [:]
+    /// The Shader Studio's shading per part of the app (`FillTarget.key`).
+    var shadings: [String: ShadingSpec] = [:]
 
-    var isEmpty: Bool { colors.isEmpty && fills.isEmpty }
+    init() {}
+
+    var isEmpty: Bool { colors.isEmpty && fills.isEmpty && mains.isEmpty && shadings.isEmpty }
 
     func color(_ role: ColorRole) -> Color? { colors[role.key]?.color }
 
@@ -169,15 +175,34 @@ struct LabOverrides: Codable, Equatable, Sendable {
         if case .tile = target { return fills[target.key] ?? fills[FillTarget.tiles.key] }
         return fills[target.key]
     }
+
+    /// A tile's ground: its own shading, else the one for every tile.
+    func shading(_ target: FillTarget) -> ShadingSpec? {
+        if case .tile = target { return shadings[target.key] ?? shadings[FillTarget.tiles.key] }
+        return shadings[target.key]
+    }
+
+    private enum CodingKeys: String, CodingKey { case colors, fills, mains, shadings }
+
+    /// Overrides saved before the studio have no main colors or shadings.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        colors = try c.decodeIfPresent([String: LabColor].self, forKey: .colors) ?? [:]
+        fills = try c.decodeIfPresent([String: FillSpec].self, forKey: .fills) ?? [:]
+        mains = try c.decodeIfPresent([String: LabColor].self, forKey: .mains) ?? [:]
+        shadings = try c.decodeIfPresent([String: ShadingSpec].self, forKey: .shadings) ?? [:]
+    }
 }
 
 extension TintPalette {
-    /// The palette with the lab's colors for `tint` laid over it.
-    func applying(_ lab: LabOverrides, tint: TileTint) -> TintPalette {
-        guard !lab.colors.isEmpty else { return self }
-        return TintPalette(base: lab.color(.base(tint)) ?? base,
-                           steps: steps.indices.map { lab.color(.step(tint, $0)) ?? steps[$0] },
-                           text: lab.color(.text(tint)) ?? text)
+    /// The palette with the lab's colors for `tint` laid over it: the one worked out from its main color, then any single color.
+    func applying(_ lab: LabOverrides, tint: TileTint, light: Bool) -> TintPalette {
+        var palette = self
+        if let main = lab.mains[tint.rawValue] { palette = PaletteRamp.palette(main: main, light: light) }
+        guard !lab.colors.isEmpty else { return palette }
+        return TintPalette(base: lab.color(.base(tint)) ?? palette.base,
+                           steps: palette.steps.indices.map { lab.color(.step(tint, $0)) ?? palette.steps[$0] },
+                           text: lab.color(.text(tint)) ?? palette.text)
     }
 }
 

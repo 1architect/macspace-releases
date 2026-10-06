@@ -74,6 +74,8 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
+        // Settings is drawn on the slate tile's color.
+        .environment(\.pageGround, design.palette(.slate).base)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // A profile approved in System Settings meanwhile shows at once.
             ConfigurationProfiles.shared.refresh()

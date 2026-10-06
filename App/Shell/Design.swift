@@ -176,6 +176,9 @@ struct Design: Equatable {
     /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
     /// or cut it off cleanly.
     var pageEdgeFade = false
+    /// With the fade: the content scrolls on under the title and the main action, blurred by a band of Liquid Glass that fades out
+    /// toward the page, instead of fading away.
+    var pageEdgeBlur = false
     /// Temporary, for measuring GPU use and comparing looks: tiles of the lighter `.clear` glass instead of `.regular`; a shorter lift
     /// and lean with less bounce.
     var clearTileGlass = false
@@ -190,10 +193,11 @@ struct Design: Equatable {
     var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
     var leanAnimation: Animation { quickLift ? Theme.quickLean : .interactiveSpring(duration: 0.25) }
 
-    func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint).applying(lab, tint: tint) }
+    func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint).applying(lab, tint: tint, light: isLight) }
     var action: Color { lab.color(.action) ?? scheme.action.fill }
-    var actionLight: Color { lab.color(.actionLight) ?? scheme.action.light }
-    var actionDeep: Color { lab.color(.actionDeep) ?? scheme.action.deep }
+    /// Worked out from the studio's action color when it has one, unless set apart.
+    var actionLight: Color { lab.color(.actionLight) ?? lab.colors[ColorRole.action.key].map { PaletteRamp.action($0, light: isLight).light } ?? scheme.action.light }
+    var actionDeep: Color { lab.color(.actionDeep) ?? lab.colors[ColorRole.action.key].map { PaletteRamp.action($0, light: isLight).deep } ?? scheme.action.deep }
     var isLight: Bool { scheme.isLight }
     /// Whether the window's background is light: the palette's, the system's, or the one chosen.
     var backgroundIsLight: Bool {
@@ -208,6 +212,14 @@ struct Design: Equatable {
     var ink: Color { lab.color(.ink) ?? (isLight ? Color(hex: 0x1C1C1E) : .white) }
     /// The Color Lab's fill for a part of the app; nil draws it as before.
     func fill(_ target: FillTarget) -> FillSpec? { lab.fill(target) }
+    /// The Shader Studio's shading for a part of the app; tile grounds default to their faint light from the top left, the rest to none.
+    func shading(_ target: FillTarget) -> ShadingSpec? {
+        if let shading = lab.shading(target) { return shading }
+        switch target {
+        case .tiles, .tile: return .classic(light: isLight)
+        default: return nil
+        }
+    }
     /// The color scheme pages and their controls are drawn in.
     var colorScheme: ColorScheme { isLight ? .light : .dark }
     /// macOS's own window background in the light or dark the background follows (`backgroundIsLight`): the solid window (Window
@@ -247,6 +259,7 @@ public final class DesignSettings: ObservableObject {
     @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
     @Published public var windowBackground: Bool { didSet { defaults.set(windowBackground, forKey: "design.windowBackground") } }
     @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
+    @Published public var pageEdgeBlur: Bool { didSet { defaults.set(pageEdgeBlur, forKey: "design.pageEdgeBlur") } }
     @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
     @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
     /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
@@ -262,6 +275,9 @@ public final class DesignSettings: ObservableObject {
     /// MacSpace in a standard macOS window with a sidebar instead of the glass window (`StandardWindowView`).
     @Published public var standardWindow: Bool { didSet { defaults.set(standardWindow, forKey: "design.standardWindow") } }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
+    /// The Shader Studio is picking what to edit by a click in the window, and what it edits. Not kept.
+    @Published var studioPicking = false
+    @Published var studioTarget: FillTarget = .tiles
     @Published var colorLab: [String: LabOverrides] {
         didSet { if let data = try? JSONEncoder().encode(colorLab) { defaults.set(data, forKey: "design.colorLab") } }
     }
@@ -281,6 +297,7 @@ public final class DesignSettings: ObservableObject {
         windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
         windowBackground = defaults.object(forKey: "design.windowBackground") as? Bool ?? true
         pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
+        pageEdgeBlur = defaults.bool(forKey: "design.pageEdgeBlur")
         clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
         quickLift = defaults.bool(forKey: "design.quickLift")
         windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
@@ -297,7 +314,7 @@ public final class DesignSettings: ObservableObject {
     var design: Design { Design(scheme: scheme, backgroundAppearance: backgroundAppearance, systemIsDark: systemIsDark, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, windowBackground: windowBackground, pageEdgeFade: pageEdgeFade,
-                                  clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
+                                  pageEdgeBlur: pageEdgeBlur, clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
                                   tileRadius: tileRadius, windowRadius: windowRadius) }
 
     /// The system's setting, global for the user: "Dark" while the appearance is dark, absent while it is light.
@@ -343,7 +360,7 @@ public struct DesignCommands: Commands {
                 ForEach(CornerRadii.choices, id: \.self) { Text("\(Int($0)) pt" + ($0 == CornerRadii.defaultWindow ? " (default)" : "")).tag($0) }
             }
             Divider()
-            Button("Color Lab…") { openWindow(id: ColorLabView.windowID) }
+            Button("Shader Studio…") { openWindow(id: ColorLabView.windowID) }
                 .keyboardShortcut("l", modifiers: [.command, .option])
             Divider()
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
@@ -357,6 +374,8 @@ public struct DesignCommands: Commands {
                 ForEach(BackgroundAppearance.allCases) { Text($0.title).tag($0) }
             }
             Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
+            Toggle("Page Edge Glass Blur", isOn: $settings.pageEdgeBlur)
+                .disabled(!settings.pageEdgeFade)
             Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
             Toggle("Quick Lift", isOn: $settings.quickLift)
             Divider()

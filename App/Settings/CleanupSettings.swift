@@ -85,6 +85,8 @@ struct CleanupHistoryPage: View {
         .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
+        // Settings is drawn on the slate tile's color.
+        .environment(\.pageGround, design.palette(.slate).base)
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
             withAnimation(Theme.layout) {
                 entries = CleanupHistory.shared.entries
