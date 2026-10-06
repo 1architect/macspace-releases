@@ -18,19 +18,20 @@ struct ZoomLayer: Equatable {
 /// The window: a pane of glass holding a bento grid of tiles. Opening a tile makes it grow until it fills the glass, its caption
 /// staying in the corner, while the other tiles recede; then the page comes in on it. Back reverses all of it and can interrupt it.
 /// The glass circle in the top-left corner closes the window on the dashboard and goes back from a page.
-/// The edge macOS draws around its windows: a dark hairline outside that separates the window from what is behind it, and a light
-/// one just inside, brighter at the top, as if lit from above.
+/// The edge macOS draws around its windows, measured on a standard window: a black line one pixel wide (not one point) at the very
+/// edge, and in dark mode a faint white line one point wide just inside it, as bright at the bottom as at the top.
 private struct WindowBorder: View {
     let cornerRadius: CGFloat
     let light: Bool
+    @Environment(\.pixelLength) private var pixel
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         ZStack {
-            shape.strokeBorder(Color.black.opacity(light ? 0.22 : 0.55), lineWidth: 1)
-            shape.inset(by: 1)
-                .strokeBorder(LinearGradient(colors: [.white.opacity(light ? 0.5 : 0.24), .white.opacity(light ? 0.2 : 0.08)],
-                                             startPoint: .top, endPoint: .bottom), lineWidth: 1)
+            shape.strokeBorder(Color.black.opacity(light ? 0.19 : 0.83), lineWidth: pixel)
+            if !light {
+                shape.inset(by: pixel).strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+            }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
