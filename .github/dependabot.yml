@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # Sparkle, the only package dependency. An update needs a test of the update path before it is merged.
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly

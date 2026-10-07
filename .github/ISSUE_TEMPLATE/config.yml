@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/1architect/macspace-releases/security/advisories/new
+    about: Report it privately in a security advisory. Never open a public issue for a security problem.
+  - name: Email
+    url: mailto:dev@giomantovani.com.br
+    about: Write to the maintainer about anything that does not fit an issue form.

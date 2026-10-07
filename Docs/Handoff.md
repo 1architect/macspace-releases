@@ -36,7 +36,8 @@ Folders start with a capital letter. Everything here is public; signing material
 | `Scripts/` | `Assemble.sh` builds the `.app`; `MakeIcon.swift` makes the icon. |
 | `Packaging/` | The helper's launchd plist template. |
 | `Tests/` | One test target per area. |
-| `Docs/` | This folder. |
+| `Docs/` | This folder; `Screenshots/<language>/` holds the README images. |
+| `ReleaseNotes/` | `<version>/<language>.md`: the notes on each GitHub release and in the app's update window. |
 
 `Sdk` and `Platform` are separate packages on purpose: SwiftPM links a target's dependencies into every dynamic library that uses it,
 which gave each module its own copy of the SDK types and broke type casts across the app/module boundary.
@@ -189,6 +190,9 @@ state; all of it on macOS 27 build 26B5091g, and the helper install and Siri mes
 **Verified 2026-10-03 (27.2, 26B5091g, `Scripts/TestUntested.sh release`):** Developer ID signature with the hardened runtime,
 notarization and the stapled ticket (Gatekeeper accepts the app), the helper installed from a notarized build and answering.
 
+**Verified 2026-10-06 (27.2, 26B5091g):** a 1.0.0 build with the macOS 27.0 minimum signed, notarized and stapled by
+`Scripts/Assemble.sh`; Gatekeeper accepts it (`spctl`: Notarized Developer ID).
+
 **Self-tested 2026-10-03 (27.2, 26B5091g, `Scripts/SelfTest.sh`, 28 passed):** the helper answering the CLI; CacheDelete's
 self-test and every service; every module's page and tile; every Debloat control that is not a policy switched off and back on
 through the app's code, checked against the page and the stored values, and left as found.
@@ -220,13 +224,17 @@ measured on any build counts as tested. Untested controls work and say "Not test
 
 ## Releasing
 
-The release pipeline (build, sign with Developer ID, notarize, staple, Sparkle signature, appcast, draft GitHub release) lives in a
-separate **private** repository so the signing identity and keys never become public. It builds this repository at a given ref. A
-release is only ever created as a **draft**; publishing is a manual step on GitHub.
+How a version is tagged, built, tried, published and stopped is in [Releasing.md](Releasing.md). In short: the release commit
+dates the [changelog](../CHANGELOG.md) and adds `ReleaseNotes/<version>/` in the five languages, a tag `vX.Y.Z` is pushed, and the
+**private** repository's `Release.sh` builds that tag (sign with Developer ID, notarize, staple, Sparkle signature, appcast) into a
+**draft** GitHub release; its `Publish.sh` publishes the draft, which is when installed copies are offered the update, and updates
+the Homebrew cask. The signing identity and keys never touch this repository. The project is MIT-licensed ([LICENSE](../LICENSE)).
 
-Still needed from the maintainer before the first release: notarization credentials, the Sparkle EdDSA key (back up the private
-half; losing it strands every installed copy), a repository token for publishing, a license for this repository, and a macOS 27 runner
-if releases should run from GitHub Actions.
+The minimum is macOS 27.0 everywhere (`Package.swift`, the three packages, `Info.plist`, every module's `Info.plist` and
+`Manifest.json`, the icon's deployment target), since 2026-10-06. MacSpace's own Sparkle key exists since 2026-10-07, in the
+maintainer's keychain under the account `macspace` (MacBat's key is the default account and must not sign MacSpace); its public
+half is `V/z4pnoOR4BnUss4chVEq0asKI1UssXuWoNHuuH+Jik=`, which release builds carry as `SUPublicEDKey`. Still needed before the
+first release: the Homebrew tap and the pre-release round (Releasing.md, Pre-releases).
 
 ## Conventions
 
@@ -249,4 +257,3 @@ if releases should run from GitHub Actions.
 - Per-document breakdown of the version history, so users can choose what to delete.
 - Settings counts about 3.9 GB of the Data volume as macOS, and MacSpace's clone-aware items still exceed its remainder by 0.62 GB (Research, section 1): both are stated on the page and unexplained.
 - Time Machine's local snapshots are not measured.
-- Documentation beyond this folder (README, user guide) once the first release exists.

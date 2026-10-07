@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # A new push replaces the run it supersedes, except on a tag: a release check always runs to the end.
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  test:
+    name: Build and test
+    # GitHub-hosted only. This repository is public, so it never runs on a self-hosted runner.
+    # MacSpace needs the macOS 27 SDK. The macos-26 image ships Xcode 26 only; the xcode-27 image ships Xcode 27
+    # on macOS 27. Change the label when GitHub moves Xcode 27 to a macos-27 image.
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode 27 or later
+        id: xcode
+        run: |
+          set -euo pipefail
+          best_version=""
+          best_app=""
+          for app in /Applications/Xcode*.app; do
+            [ -d "$app/Contents/Developer" ] || continue
+            version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null || true)
+            case "$version" in
+              [0-9]*) ;;
+              *) continue ;;
+            esac
+            [ "${version%%.*}" -ge 27 ] || continue
+            if [ -z "$best_version" ] || [ "$(printf '%s\n%s\n' "$best_version" "$version" | sort -V | tail -n 1)" = "$version" ]; then
+              best_version=$version
+              best_app=$app
+            fi
+          done
+          if [ -z "$best_app" ]; then
+            echo "::error title=Xcode 27 not found::MacSpace needs the macOS 27 SDK (Xcode 27 or later), and this runner has none. Use a runner image that ships it."
+            echo "Xcode installs on this runner:"
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$best_app/Contents/Developer" >> "$GITHUB_ENV"
+          echo "version=$best_version" >> "$GITHUB_OUTPUT"
+          echo "Using Xcode $best_version at $best_app"
+
+      - name: Show the toolchain
+        run: |
+          sw_vers
+          swift --version
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-version
+
+      # The translations are generated from Localization/*.json and committed. Generating them again must change nothing.
+      - name: Check that the generated translations are committed
+        run: |
+          swift Scripts/Localize.swift
+          if [ -n "$(git status --porcelain -- '*.lproj/*')" ]; then
+            echo "::error title=Translations are out of date::Run 'swift Scripts/Localize.swift' and commit the changed .strings files."
+            git status --short -- '*.lproj/*'
+            exit 1
+          fi
+
+      - name: Cache the Swift build
+        uses: actions/cache@v6
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ runner.arch }}-xcode${{ steps.xcode.outputs.version }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ runner.arch }}-xcode${{ steps.xcode.outputs.version }}-
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      # Builds the package again with the compiler's string extraction and fails on any text no table translates.
+      - name: Check that every text has a translation
+        run: swift Scripts/Localize.swift --check
+
+  release-metadata:
+    name: Release metadata
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag, the changelog and the release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          pattern='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'
+          if ! [[ "$TAG" =~ $pattern ]]; then
+            echo "::error title=Invalid tag::The tag '$TAG' must look like v1.2.3 or v1.2.3-beta.1."
+            exit 1
+          fi
+          version=${TAG#v}
+          if [[ "$version" == *-* ]]; then
+            echo "$TAG is a pre-release. The changelog and release notes are not checked."
+            exit 0
+          fi
+
+          failed=0
+          escaped=${version//./\\.}
+          if grep -Eq "^## \[$escaped\] - [0-9]{4}-[0-9]{2}-[0-9]{2}\$" CHANGELOG.md; then
+            echo "CHANGELOG.md has an entry for $version."
+          elif grep -Eq "^## \[$escaped\] - Unreleased\$" CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md,title=Changelog has no date::The entry for $version still says Unreleased. Write the release date as ## [$version] - YYYY-MM-DD."
+            failed=1
+          else
+            echo "::error file=CHANGELOG.md,title=Changelog entry missing::CHANGELOG.md has no line '## [$version] - YYYY-MM-DD'."
+            failed=1
+          fi
+
+          for language in en pt-BR fr es de; do
+            file="ReleaseNotes/$version/$language.md"
+            if [ -s "$file" ]; then
+              echo "$file exists."
+            else
+              echo "::error file=$file,title=Release notes missing::$file does not exist or is empty."
+              failed=1
+            fi
+          done
+          exit "$failed"

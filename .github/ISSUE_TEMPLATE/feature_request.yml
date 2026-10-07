@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest a change or an addition to MacSpace.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the idea. MacSpace is a System Data and Apple Intelligence cleaner for macOS. Requests that help with those two jobs are the easiest to take in.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I searched the existing issues, and this request is not there yet.
+          required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which part of MacSpace is it about?
+      options:
+        - System Data
+        - Siri & Apple Intelligence
+        - Other System Files
+        - Debloat
+        - App / Settings
+        - Updates
+        - A new module
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem do you want to solve?
+      description: Describe what you are trying to do and what stops you.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like MacSpace to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other ways you considered (optional)
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version (optional)
+      description: Say it if the request depends on a macOS release.
+      placeholder: "27.0"

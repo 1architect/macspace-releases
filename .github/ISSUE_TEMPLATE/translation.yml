@@ -1,0 +1,53 @@
+name: Translation
+description: A text in MacSpace is missing, wrong or unclear in one of its languages.
+title: "[Translation]: "
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping MacSpace speak your language. To fix it yourself, edit the table in `Localization/` and open a pull request. [CONTRIBUTING.md](https://github.com/1architect/macspace-releases/blob/main/CONTRIBUTING.md#localization) explains how.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - Portuguese (Brazil), pt-BR
+        - French, fr
+        - Spanish, es
+        - German, de
+        - English, en
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: MacSpace version
+      description: Open the MacSpace menu and choose About MacSpace.
+      placeholder: "1.0.0"
+  - type: input
+    id: where
+    attributes:
+      label: Where do you see the text?
+      description: Name the screen, the module and the button, row or message.
+      placeholder: "System Data > Free now, the confirmation of Delete version history"
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current text
+      description: Copy the text as MacSpace shows it. Write "none" if a text is missing.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested text
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Why is it better? (optional)
+      description: For example, the current text is wrong, too long, or not how people in your country say it.

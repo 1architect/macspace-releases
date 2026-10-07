@@ -1,0 +1,107 @@
+name: Bug report
+description: Something in MacSpace does not work as it should.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. The more exactly you describe the problem, the faster we can fix it.
+
+        Is it a security problem? Do not use this form. [Report it privately](https://github.com/1architect/macspace-releases/security/advisories/new).
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I use the latest version of MacSpace.
+          required: true
+        - label: I searched the existing issues, and this problem is not there yet.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: MacSpace version
+      description: Open the MacSpace menu and choose About MacSpace.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and build
+      description: Run `sw_vers` in Terminal and write ProductVersion and BuildVersion here.
+      placeholder: "27.0 (26A428)"
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model
+      description: Apple menu > About This Mac.
+      placeholder: "MacBook Pro (14-inch, 2024), Apple M4 Pro"
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language of MacSpace
+      options:
+        - English
+        - Portuguese (Brazil)
+        - French
+        - Spanish
+        - German
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Where does it happen?
+      options:
+        - System Data
+        - Siri & Apple Intelligence
+        - Other System Files
+        - Debloat
+        - App / Settings
+        - Updates
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Say what you saw. Include any message MacSpace or macOS showed.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open MacSpace.
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics (optional)
+      description: |
+        For problems with the helper, permissions or measuring, run this in Terminal and paste the output. It names folders on your Mac, so remove anything private first.
+
+        `/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper`
+      render: shell
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (optional)
+      description: Drag images into this box.
