@@ -24,8 +24,9 @@ final class SystemDataTests: XCTestCase {
                             systemPaths: ["commandLineTools": root.appendingPathComponent("clt").path])
     }
 
-    private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true) -> SystemDataInspector {
-        var inspector = SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] })
+    private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true, apps: [String] = []) -> SystemDataInspector {
+        var inspector = SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] },
+                                            claimedPlaces: { apps })
         inspector.hasFullDiskAccess = fullDiskAccess
         return inspector
     }
@@ -76,6 +77,62 @@ final class SystemDataTests: XCTestCase {
         XCTAssertLessThan(report.cleanableBytes, 100_000_000)
     }
 
+    /// Electron and Chromium apps keep their web caches in Application Support. Found in any app's profile by name, cleaned while the
+    /// app is closed, and taken off the app's own figure so nothing counts twice; a folder named Cache outside a profile is data.
+    func testChromiumCachesInApplicationSupportAreCleanableAndCountedOnce() throws {
+        try file("home/Library/Application Support/Chatty/Network Persistent State", mb: 0)
+        try file("home/Library/Application Support/Chatty/Cache/Cache_Data/blob", mb: 60)
+        try file("home/Library/Application Support/Chatty/Code Cache/js/blob", mb: 20)
+        try file("home/Library/Application Support/Chatty/Local Storage/leveldb/data", mb: 40)
+        try file("home/Library/Application Support/Chatty/IndexedDB/data", mb: 30)
+        try file("home/Library/Application Support/Google/Chrome/Local State", mb: 0)
+        try file("home/Library/Application Support/Google/Chrome/Default/Network Persistent State", mb: 0)
+        try file("home/Library/Application Support/Google/Chrome/Default/GPUCache/data", mb: 55)
+        try file("home/Library/Application Support/Plain/Cache/project.db", mb: 120)
+
+        let report = inspector().inspect()
+        let byID = Dictionary(uniqueKeysWithValues: report.items.map { ($0.id, $0) })
+        let chatty = try XCTUnwrap(byID["supportcache:Chatty"])
+        XCTAssertEqual(chatty.cleanup.kind, .deleteWhenNotRunning)
+        XCTAssertEqual(Set(chatty.paths.map { ($0 as NSString).lastPathComponent }), ["Cache", "Code Cache"], "never Local Storage or IndexedDB")
+        let support = try XCTUnwrap(byID["appsupport:Chatty"]?.bytes)
+        XCTAssertLessThan(support, 75_000_000, "the app's own figure no longer holds its caches")
+        XCTAssertEqual(byID["supportcache:Google"]?.paths.map { ($0 as NSString).lastPathComponent }, ["GPUCache"], "a profile two levels down")
+        XCTAssertTrue(byID["supportcache:Google"]?.owners.contains("Google Chrome") == true, "the running check finds the browser by its name")
+        XCTAssertNil(byID["supportcache:Plain"], "a folder named Cache outside a Chromium profile is the app's data")
+
+        let closed = inspector(running: [RunningApp(bundleIdentifier: "com.example.chatty", name: "Chatty")]).inspect()
+        XCTAssertEqual(closed.items.first { $0.id == "supportcache:Chatty" }?.inUse, true, "not offered while the app runs")
+
+        let cleaner = SystemDataCleaner(runningApps: { [] }, freeSpace: { nil })
+        let roots = SystemDataCleaner.allowedRoots(locations)
+        XCTAssertTrue(cleaner.clean([chatty], allowedRoots: roots).results.allSatisfy(\.deleted))
+        XCTAssertFalse(fm.fileExists(atPath: chatty.paths[0]))
+        XCTAssertTrue(fm.fileExists(atPath: root.appendingPathComponent("home/Library/Application Support/Chatty/Local Storage/leveldb/data").path))
+        // Anything else in Application Support is refused, whatever an item says.
+        var data = chatty
+        data = SystemDataItem(id: "x", title: "x", kind: .appCache, paths: [root.appendingPathComponent("home/Library/Application Support/Chatty/IndexedDB").path],
+                              bytes: 1, readable: true, owners: [], inUse: false, cleanup: data.cleanup, notes: [])
+        XCTAssertFalse(cleaner.clean([data], allowedRoots: roots).results[0].deleted)
+    }
+
+    /// What System Settings lists in another category is not System Data: an app inside a measured folder (an installer's helper
+    /// app, a tool's own app) is taken off it, an item in a claimed place or in the home folder outside ~/Library (Documents) is left
+    /// out whole, and the apps Spotlight finds are counted once even when they nest.
+    func testWhatSettingsListsElsewhereIsNotSystemData() throws {
+        try file("home/Library/Application Support/Tool/data.db", mb: 70)
+        try file("home/Library/Application Support/Tool/1.2/Tool.app/Contents/MacOS/Tool", mb: 60)
+        try file("home/.toolcache/blob", mb: 80)
+        let support = root.appendingPathComponent("home/Library/Application Support/Tool").path
+        let items = inspector(apps: ["\(support)/1.2/Tool.app"]).inspect().items
+        let tool = try XCTUnwrap(items.first { $0.id == "appsupport:Tool" })
+        XCTAssertEqual(Double(tool.elsewhereBytes ?? 0), 60_000_000, accuracy: 2_000_000, "the app inside is Applications")
+        let dotFolder = try XCTUnwrap(items.first { $0.id == "home:.toolcache" })
+        XCTAssertEqual(dotFolder.elsewhereBytes, dotFolder.bytes, "the home folder outside ~/Library is Documents")
+        XCTAssertNil(try XCTUnwrap(inspector().inspect().items.first { $0.id == "appsupport:Tool" }).elsewhereBytes)
+        XCTAssertEqual(IndexedApps.outermost(["/a/X.app", "/a/X.app/Contents/Helpers/Y.app", "/System/Applications/Mail.app"]), ["/a/X.app"])
+    }
+
     func testStagedUpdateDataOlderThanTheInstalledSystemIsALeftoverNotAWaitingUpdate() throws {
         try file("installdata/UpdateBundle/pkg", mb: 60)
         try file("system/SystemVersion.plist", mb: 0)
@@ -85,7 +142,7 @@ final class SystemDataTests: XCTestCase {
             let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil,
                                                 systemPaths: ["installData": root.appendingPathComponent("installdata").path,
                                                               "systemVersion": root.appendingPathComponent("system/SystemVersion.plist").path])
-            var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] })
+            var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
             inspector.hasFullDiskAccess = true
             return try XCTUnwrap(inspector.inspect().items.first { $0.id == "update:staged" })
         }
@@ -189,7 +246,7 @@ final class SystemDataTests: XCTestCase {
 
         func inspect(root canRead: Bool) -> SystemDataReport {
             var inspector = SystemDataInspector(locations: SystemDataLocations(home: home, userSystemDirectory: nil, systemPaths: ["users": root.path]),
-                                                runningApps: { [] }, volumes: { [] }, accountExists: { _ in false })
+                                                runningApps: { [] }, volumes: { [] }, accountExists: { _ in false }, claimedPlaces: { [] })
             inspector.canReadOtherHomes = canRead
             return inspector.inspect()
         }

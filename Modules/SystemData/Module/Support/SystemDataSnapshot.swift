@@ -20,6 +20,8 @@ struct SystemDataSnapshot: Sendable {
     var helperTried = false
     /// Why the helper could not measure (it was not reachable), when that is the reason.
     var helperError: String?
+    /// The disk as System Settings divides it; System Data's total is its remainder. nil when it could not be read.
+    var settings: SettingsStorage?
 }
 
 /// Measures the root-only locations through the helper and folds the sizes into the report.
@@ -115,6 +117,11 @@ actor SystemDataStore {
         var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         snapshot.purgeableServices = services
+        snapshot.settings = SettingsStorageMeter().measure()
+        // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
+        if ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1", let data = try? JSONEncoder().encode(report) {
+            try? data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("macspace-systemdata-report.json"))
+        }
         return snapshot
     }
 

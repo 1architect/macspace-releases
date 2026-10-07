@@ -37,7 +37,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
                                                                             effect: EffectStatus(state: .effective, detail: "no submissions"))]))
         XCTAssertTrue(on.isOn, "Disable <feature> is on once MacSpace switched the feature off")
         XCTAssertNil(on.badge, "working as intended needs no badge")
-        XCTAssertTrue(on.detail?.contains("Measured off") == true)
+        XCTAssertFalse(on.detail?.contains("no submissions") == true, "a measurement is shown only when something is wrong")
         XCTAssertNil(on.action.confirmation, "a switch never asks: it moves, then the change follows")
 
         let off = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .stock)]))
@@ -55,7 +55,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
                                                                                     tested: false, appliedAt: nil)]))
         XCTAssertEqual(untested.badge?.text, "Not tested")
         XCTAssertTrue(untested.isEnabled, "an untested control can be switched, to test it")
-        XCTAssertTrue(untested.detail?.contains("Not tested yet") == true, "what a switch changes is in its tooltip")
+        XCTAssertEqual(untested.detail, "s", "what a switch does, behind its (i); the badge says it is not tested")
     }
 
     func testStatesThatNeedAttentionAreVisible() {

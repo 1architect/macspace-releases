@@ -229,8 +229,14 @@ private struct ShadingLight: View {
         case .flat:
             EmptyView()
         case .lit:
-            Rectangle().fill(RadialGradient(colors: [.white.opacity(shading.brightness), .clear],
-                                            center: UnitPoint(x: shading.x, y: shading.y), startRadius: 0, endRadius: long * 1.6 * shading.size + 1))
+            // The same radial light as a gradient from white at `brightness` to clear, drawn from a dithered texture
+            // (`DitheredLight`): a gradient this faint has a dozen or so levels across a tile and showed as rings.
+            let radius = long * 1.6 * shading.size + 1
+            Image(decorative: DitheredLight.image(peak: shading.brightness), scale: 1)
+                .resizable()
+                .interpolation(.medium)
+                .frame(width: radius * 2, height: radius * 2)
+                .position(x: w * shading.x, y: h * shading.y)
         case .glow:
             // Breathes and sways a little when animated.
             let sway = sin(time) * 0.08
@@ -280,6 +286,54 @@ private struct ShadingLight: View {
                 }
             }
         }
+    }
+}
+
+/// A round light, white at `peak` in the middle and clear at the edge, falling off evenly: what `RadialGradient` drew for the lit
+/// style, without its bands. Each pixel's level is rounded up or down at random (triangular noise of one level), so the levels in
+/// between show as their average instead of as steps. One texture per strength, stretched to the light's size; a stretched texel
+/// keeps its noise, so the light stays smooth on a page as large as the window.
+enum DitheredLight {
+    private static let side = 1024
+    @MainActor private static var cache: [Int: CGImage] = [:]
+
+    @MainActor static func image(peak: Double) -> CGImage {
+        let key = Int((min(max(peak, 0), 1) * 1000).rounded())
+        if let image = cache[key] { return image }
+        let image = make(peak: Double(key) / 1000)
+        cache[key] = image
+        return image
+    }
+
+    /// White, premultiplied: gray and alpha are the same level.
+    static func make(peak: Double) -> CGImage {
+        let center = Double(side) / 2
+        var pixels = [UInt8](repeating: 0, count: side * side * 2)
+        // xorshift: the system generator made a texture take a tenth of a second.
+        var state: UInt64 = 0x9E37_79B9_7F4A_7C15
+        func random() -> Double {
+            state ^= state << 13
+            state ^= state >> 7
+            state ^= state << 17
+            return Double(state >> 11) / Double(1 << 53)
+        }
+        for y in 0..<side {
+            for x in 0..<side {
+                let dx = Double(x) + 0.5 - center, dy = Double(y) + 0.5 - center
+                let t = (dx * dx + dy * dy).squareRoot() / center
+                guard t < 1 else { continue }
+                let level = peak * (1 - t) * 255 + random() + random() - 1
+                let value = UInt8(min(max(level.rounded(), 0), 255))
+                let index = (y * side + x) * 2
+                pixels[index] = value
+                pixels[index + 1] = value
+            }
+        }
+        let provider = CGDataProvider(data: Data(pixels) as CFData)!
+        return CGImage(width: side, height: side, bitsPerComponent: 8, bitsPerPixel: 16, bytesPerRow: side * 2,
+                       space: CGColorSpace(name: CGColorSpace.genericGrayGamma2_2)!,
+                       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: provider,
+                       decode: nil, shouldInterpolate: true, intent: .defaultIntent)!
     }
 }
 

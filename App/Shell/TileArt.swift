@@ -174,6 +174,36 @@ enum LoadingWave {
 /// Squarified treemap: rectangles with areas proportional to the values, kept as close to square as the space allows. Values are laid
 /// out in the order given (largest first reads best).
 enum Treemap {
+    /// The squarified layout whose thinnest block is widest, over the orders of the blocks after the largest: laid out largest first,
+    /// the last block took whatever strip was left (25 points wide and full height on a page, too narrow for its size). Returns where
+    /// each value goes, in the order given. Up to seven values every order is tried; past that, the given one.
+    static func arranged(_ values: [Double], in rect: CGRect) -> [CGRect] {
+        guard values.count > 2, values.count <= 7 else { return layout(values, in: rect) }
+        func thinnest(_ rects: [CGRect]) -> CGFloat {
+            rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map { min($0.width, $0.height) }.min() ?? 0
+        }
+        var best: (order: [Int], rects: [CGRect], score: CGFloat)?
+        func visit(_ order: [Int], _ rest: [Int]) {
+            guard !rest.isEmpty else {
+                let rects = layout(order.map { values[$0] }, in: rect)
+                let score = thinnest(rects)
+                // Only a clearly wider thinnest block replaces an earlier order: the given one first, so it wins ties.
+                if best == nil || score > best!.score + 0.5 { best = (order, rects, score) }
+                return
+            }
+            for (index, next) in rest.enumerated() {
+                var remaining = rest
+                remaining.remove(at: index)
+                visit(order + [next], remaining)
+            }
+        }
+        visit([0], Array(1..<values.count))
+        guard let best else { return layout(values, in: rect) }
+        var result = [CGRect](repeating: .zero, count: values.count)
+        for (position, index) in best.order.enumerated() { result[index] = best.rects[position] }
+        return result
+    }
+
     static func layout(_ values: [Double], in rect: CGRect) -> [CGRect] {
         let total = values.reduce(0, +)
         guard total > 0, rect.width > 0, rect.height > 0 else { return values.map { _ in .zero } }
@@ -228,19 +258,78 @@ enum Treemap {
     }
 }
 
-/// The color of a block: what can be freed is the action color; the rest step from close to the ground (the largest) to strong
-/// (the smallest).
-enum BlockColor {
-    static func fill(_ segment: UsageSegment, rank: Int, tint: TileTint, design: Design) -> Color {
-        if segment.tone == .caution { return design.action }
-        let steps = [1, 2, 2, 3, 3, 4]
-        return design.palette(tint).step(steps[min(rank, steps.count - 1)])
+/// What the blocks draw, so that every part can be seen and pointed at. Parts under 2% of the total are drawn as one block ("3
+/// smaller"), and every block takes at least a share of the area, more for what can be freed (the page's main action). The sizes
+/// shown stay the real ones; the legend still lists every part. Drawn to scale, a part was a sliver a pixel or two wide, or nothing
+/// at all (13.8 MB of 35 GB), and the amber block a thin strip at the far edge.
+enum BlockLayout {
+    static let mergeBelow = 0.02
+    /// A part this small with no other small part to join is left to the legend: drawn at the minimum share, 13.8 MB of 35 GB looked
+    /// like a gigabyte.
+    static let dropBelow = 0.005
+    static let minimumShare = 0.035
+    static let actionShare = 0.07
+    static let smallerID = "blocks.smaller"
+
+    /// The blocks in the order they are laid out, largest first, with what each one is drawn at.
+    static func blocks(_ segments: [UsageSegment]) -> [(segment: UsageSegment, weight: Double)] {
+        let total = Double(segments.map(\.bytes).reduce(0, +))
+        guard total > 0 else { return segments.map { ($0, Double($0.bytes)) } }
+        var shown = segments
+        let small = segments.filter { $0.tone != .caution && Double($0.bytes) < total * mergeBelow }
+        if small.count >= 2 {
+            let ids = Set(small.map(\.id))
+            shown = segments.filter { !ids.contains($0.id) }
+            shown.append(UsageSegment(id: smallerID, label: "\(small.count) smaller", bytes: small.map(\.bytes).reduce(0, +), tone: .series(segments.count)))
+        } else if let only = small.first, Double(only.bytes) < total * dropBelow {
+            shown = segments.filter { $0.id != only.id }
+        }
+        return shown.map { segment in
+            (segment, max(Double(segment.bytes), total * (segment.tone == .caution ? actionShare : minimumShare)))
+        }.sorted { $0.weight > $1.weight }
     }
 
-    static func label(_ segment: UsageSegment, rank: Int, tint: TileTint, design: Design) -> Color {
+    /// Where a block's color sits on its tile's ramp, 0 (the largest, close to the ground) to 1 (the smallest, the strongest):
+    /// spread evenly over the blocks drawn, so no two share a color however many there are. A fixed step per rank ran out after five,
+    /// and the sixth and seventh blocks took the colors of the fourth and fifth. What can be freed is the action color and takes no
+    /// place on the ramp.
+    static func shade(at index: Int, in blocks: [(segment: UsageSegment, weight: Double)]) -> Double {
+        let ramp = blocks.indices.filter { blocks[$0].segment.tone != .caution }
+        guard ramp.count > 1, let position = ramp.firstIndex(of: index) else { return 0 }
+        return Double(position) / Double(ramp.count - 1)
+    }
+
+    /// The shade of the block a part is drawn in: its own, or the block of the smaller ones. nil for a part left to the legend.
+    static func shade(of segment: UsageSegment, in blocks: [(segment: UsageSegment, weight: Double)]) -> Double? {
+        if let index = blocks.firstIndex(where: { $0.segment.id == segment.id }) { return shade(at: index, in: blocks) }
+        let drawnAlone = segments(drawnIn: blocks)
+        guard !drawnAlone.contains(segment.id), let smaller = blocks.firstIndex(where: { $0.segment.id == smallerID }) else { return nil }
+        return shade(at: smaller, in: blocks)
+    }
+
+    private static func segments(drawnIn blocks: [(segment: UsageSegment, weight: Double)]) -> Set<String> { Set(blocks.map(\.segment.id)) }
+}
+
+/// The color of a block: what can be freed is the action color; the rest go from close to the ground (the largest) to strong (the
+/// smallest), at their shade (`BlockLayout.shade`), mixed between the palette's steps.
+enum BlockColor {
+    /// Where a shade falls among the palette's steps: 1 (just off the ground) to 5.
+    static func position(_ shade: Double) -> Double { 1 + min(max(shade, 0), 1) * 4 }
+
+    static func fill(_ segment: UsageSegment, shade: Double, tint: TileTint, design: Design) -> Color {
+        if segment.tone == .caution { return design.action }
+        let palette = design.palette(tint)
+        let position = position(shade)
+        let lower = Int(position.rounded(.down))
+        guard lower < 5 else { return palette.step(5) }
+        return palette.step(lower).mix(with: palette.step(lower + 1), by: position - Double(lower), in: .perceptual)
+    }
+
+    static func label(_ segment: UsageSegment, shade: Double, tint: TileTint, design: Design) -> Color {
         if segment.tone == .caution { return design.actionDeep }
         let palette = design.palette(tint)
-        return rank >= 5 ? palette.base : palette.text
+        // The strong end of the ramp is light by night and dark by day: the ground color reads on it, the text color does not.
+        return position(shade) >= 3.6 ? palette.base : palette.text
     }
 }
 
@@ -260,27 +349,40 @@ struct BlocksView: View {
     /// The narrowest block drawn as glass (`Surface.glass`).
     static let smallestGlass: CGFloat = 12
 
+    /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
+    static func sizeParts(_ bytes: UInt64) -> [String] {
+        let text = ByteFormat.string(bytes)
+        guard let space = text.lastIndex(of: " ") else { return [text] }
+        return [String(text[..<space]), String(text[text.index(after: space)...])]
+    }
+
+    /// A block's corner radius: 6 points on a page's large blocks, less on a tile's small ones, where 6 made them pills.
+    static func radius(_ rect: CGRect) -> CGFloat { min(6, max(2, min(rect.width, rect.height) * 0.16)) }
+
     var body: some View {
         GeometryReader { proxy in
-            let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: proxy.size))
+            let blocks = BlockLayout.blocks(segments)
+            let shown = blocks.map(\.segment)
+            let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
+            let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
-                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
-                        let fill = BlockColor.fill(segment, rank: index, tint: tint, design: design)
-                        placed(Surface(shape: RoundedRectangle(cornerRadius: 6, style: .continuous), color: fill, highlighted: hovered == segment.id,
+                        let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
+                        placed(Surface(shape: RoundedRectangle(cornerRadius: Self.radius(rect), style: .continuous), color: fill, highlighted: hovered == segment.id,
                                        strength: appeared ? wave(context.date, index) : 0,
                                        glass: min(rect.width, rect.height) >= Self.smallestGlass),
                                index: index, rect: rect)
                     }
-                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
-                        placed(overlay(segment, index: index, rect: rect).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
+                        placed(overlay(segment, shade: shades[index], rect: rect).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
                     }
                 }
             }
-            .animation(Theme.layout, value: segments)
+            .animation(Theme.layout, value: shown)
             .animation(.smooth(duration: 0.4), value: loading)
         }
         .onAppear { appeared = true }
@@ -308,23 +410,40 @@ struct BlocksView: View {
 
     /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
     /// own edge; an outline would sit inside it).
-    private func overlay(_ segment: UsageSegment, index: Int, rect: CGRect) -> some View {
+    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect) -> some View {
         ZStack(alignment: .topLeading) {
             if !design.glassElements {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: Self.radius(rect), style: .continuous)
                     .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
                     .animation(Theme.highlight, value: hovered)
             }
-            // A name comes and goes as resizing the window gives its block room or takes it.
-            if labels, rect.width > 74, rect.height > 34 {
+            // A name comes and goes as resizing the window gives its block room or takes it: the name and size where they fit (the
+            // name on two lines in a tall block rather than cut short), the size alone in a narrow one.
+            if labels, rect.width > 46, rect.height > 34 {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
-                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).contentTransition(.numericText())
+                    // As many lines as the block has room for under the size, up to three, rather than a name cut short.
+                    Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(max(1, min(3, Int((rect.height - 26) / 14))))
+                        .minimumScaleFactor(0.8)
+                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).lineLimit(1).minimumScaleFactor(0.75)
+                        .contentTransition(.numericText())
                 }
-                .foregroundStyle(BlockColor.label(segment, rank: index, tint: tint, design: design))
+                .foregroundStyle(BlockColor.label(segment, shade: shade, tint: tint, design: design))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 5)
                 .transition(.opacity.combined(with: .scale(scale: 0.86, anchor: .topLeading)).animation(Theme.layout))
+            } else if labels, rect.width > 34, rect.height > 20 {
+                // The size alone: on one line, or the number over its unit in a narrow block; never cut.
+                ViewThatFits(in: .horizontal) {
+                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 10)).lineLimit(1).fixedSize()
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Self.sizeParts(segment.bytes), id: \.self) { Text($0).font(.system(size: 10)).lineLimit(1).fixedSize() }
+                    }
+                    Color.clear.frame(width: 0, height: 0)
+                }
+                .foregroundStyle(BlockColor.label(segment, shade: shade, tint: tint, design: design).opacity(0.85))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 4)
+                .transition(.opacity.animation(Theme.layout))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -332,10 +451,11 @@ struct BlocksView: View {
         .allowsHitTesting(false)
     }
 
-    /// The block under a point, for hover.
+    /// The block under a point, for hover: a part's own block, or the block of the smaller ones (`BlockLayout`).
     static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment]) -> UsageSegment? {
-        let rects = Treemap.layout(segments.map { Double($0.bytes) }, in: CGRect(origin: .zero, size: size))
-        return zip(segments, rects).first { $0.1.contains(point) }?.0
+        let blocks = BlockLayout.blocks(segments)
+        let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: size))
+        return zip(blocks, rects).first { $0.1.contains(point) }?.0.segment
     }
 }
 

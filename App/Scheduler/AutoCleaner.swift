@@ -85,9 +85,14 @@ public final class AutoCleaner: ObservableObject {
         guard !isRunning, let host else { return }
         isRunning = true
         defer { isRunning = false }
+        var freed: UInt64 = 0
+        var modules: [String] = []
         for handle in host.activeHandles where handle.manifest.autoClean == true {
-            await handle.autoClean()
+            guard let report = await handle.autoClean(), report.freedBytes > 0 else { continue }
+            freed += report.freedBytes
+            modules.append(handle.manifest.name)
         }
         lastRun = Date()
+        AppNotifications.shared.automaticCleanupFinished(freed: freed, modules: modules)
     }
 }

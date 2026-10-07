@@ -11,13 +11,20 @@ struct PurgeableSnapshot: Sendable, Equatable {
     var retrying = false
     /// The cloud folders holding the purgeable documents (`PurgeableDocuments`); empty when there are none or they were not looked for.
     var documents: [PurgeableDocuments.Source] = []
+    /// macOS updates downloaded and prepared, waiting for a restart (`PreparedUpdate`): System Settings counts them under macOS, so
+    /// they are other system files, not System Data.
+    var updates: [PreparedUpdate] = []
+    /// Removals of cloud downloads running now, by cloud folder (`CloudDownloadRemovals`).
+    var removing: [String: CloudDownloadRemovals.Progress] = [:]
 
     /// macOS's estimate of the files apps marked purgeable.
     var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
 
     /// What MacSpace frees: the files apps marked purgeable. The other services are listed, not purged (see `PurgeableService`).
     var freeableBytes: UInt64 { estimatedBytes }
+    /// What macOS counts as purgeable.
     var totalBytes: UInt64 { services?.values.reduce(0, +) ?? 0 }
+    var updateBytes: UInt64 { updates.map(\.bytes).reduce(0, +) }
 }
 
 /// The services worth naming, and why each is or is not freed. Measured on the development Mac, 2026-10-02 (Docs/Research.md, CacheDelete).
@@ -30,21 +37,21 @@ struct PurgeableService: Equatable {
 
     static let known: [PurgeableService] = [
         PurgeableService(id: CacheDeleteService.fsPurgeableData, title: "Purgeable app files",
-                         detail: "Caches and downloads apps told macOS it may delete. macOS deletes them only when the disk is nearly full; this does it now. Apps download again what they need.", symbol: "arrow.down.circle.dotted"),
+                         detail: "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.", symbol: "arrow.down.circle.dotted"),
         PurgeableService(id: CacheDeleteService.appContainerCaches, title: "App container caches",
-                         detail: "macOS reports them, but purging freed under 100 MB at any urgency, and they keep being reported. Left alone.", symbol: "shippingbox"),
+                         detail: "", symbol: "shippingbox"),
         PurgeableService(id: CacheDeleteService.fsPurgeableDocument, title: "Purgeable documents",
-                         detail: "Most likely local copies of documents kept in the cloud. Not offered until it is measured what removing them does.", symbol: "icloud.and.arrow.down"),
+                         detail: "", symbol: "icloud.and.arrow.down"),
         PurgeableService(id: CacheDeleteService.spotlightIndex, title: "Spotlight index",
-                         detail: "Part of Spotlight's index macOS may drop when space runs low and rebuild later. Left alone.", symbol: "magnifyingglass"),
+                         detail: "", symbol: "magnifyingglass"),
         PurgeableService(id: CacheDeleteService.quickLookThumbnails, title: "Quick Look thumbnails",
-                         detail: "Previews of files. macOS reports them, but purging removed nothing. Left alone.", symbol: "photo.on.rectangle"),
+                         detail: "", symbol: "photo.on.rectangle"),
         PurgeableService(id: CacheDeleteService.mobileAsset, title: "System assets",
-                         detail: "Assets macOS downloaded. The unused ones are removed from System Data.", symbol: "square.stack.3d.down.right"),
+                         detail: "", symbol: "square.stack.3d.down.right"),
     ]
 
     static func describe(_ id: String) -> PurgeableService {
-        known.first { $0.id == id } ?? PurgeableService(id: id, title: readableName(id), detail: "Reported by macOS. MacSpace leaves it alone.", symbol: "internaldrive")
+        known.first { $0.id == id } ?? PurgeableService(id: id, title: readableName(id), detail: "", symbol: "internaldrive")
     }
 
     /// A service macOS reports that MacSpace does not know, named from its identifier ("com.apple.geod.cachedelete" -> "geod cache"),
@@ -144,6 +151,6 @@ actor PurgeableStore {
         else { services = CacheDeleteClient().purgeableByService(urgency: urgency) }
         // Where the purgeable documents are, only when macOS counts some: a few seconds for a large cloud folder.
         let documents = (services?[CacheDeleteService.fsPurgeableDocument] ?? 0) >= 50_000_000 ? PurgeableDocuments.scan(maxAge: 600) : []
-        return PurgeableSnapshot(services: services, takenAt: Date(), documents: documents)
+        return PurgeableSnapshot(services: services, takenAt: Date(), documents: documents, updates: PreparedUpdate.find())
     }
 }

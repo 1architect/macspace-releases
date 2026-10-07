@@ -80,7 +80,10 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    then loaded through their principal class (`MacSpaceModuleEntry`). All modules load side by side.
 2. **Declarative UI.** A module returns a `Screen` of widgets (banner, usage bar, chart, list, toggles, button, steps, text,
    section) and a summary widget for the Home tile. The app draws them. Actions come back as `ActionRequest`s; the app checks the
-   action's `requires` permissions and shows its confirmation first.
+   action's `requires` permissions and shows its confirmation first. A row's subtitle is a short grey note after its title; its
+   detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
+   Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short
+   sentences: no (i) is drawn without one. Rows are drawn without symbols, and modules are named without theirs.
 3. **Switches show the feature.** On every toggle, on means the feature runs and off means MacSpace switched it off. Debloat follows
    this too; keep it for new modules.
 4. **Caching.** Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button
@@ -89,15 +92,33 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    `debloat.*`, `systemdata.measure`, `systemdata.versions.delete`); `Helper/MacSpaceHelper.swift` registers them. The helper accepts
    only clients that satisfy a code-signing requirement passed on its command line and refuses to start without one.
 6. **Crash isolation.** Private Apple calls (CacheDelete) run in the CLI as a child process.
-7. **Settings.** General (theme, appearance, a row opening the Permissions page, menu bar, login, updates), Cleanup (automatic cleanup
-   and the history), the module switches, then options and background tasks per module. Sections are built directly in
+7. **Settings.** General (theme, appearance, a row opening the Permissions page, what closing the window does, login, updates), Cleanup
+   (automatic cleanup and the history), Notifications, the module switches, then options and background tasks per module. Sections are built directly in
    `SettingsView`; wrapping them in custom views inside a `ForEach` made them render inside the wrong card.
 8. **Look.** A theme is a night and day pair of palettes (`PaletteScheme.themes`); Settings chooses the theme and whether it follows the
    system, or stays night or day. Whatever needs the user is drawn in the action color (amber, lime on Ink); the app has no red.
 9. **Menu bar.** An `NSStatusItem` (`StatusItemController`): a click opens the app, a right click opens its menu (each module with
    its tile's status, opening its page). `AppRouter` opens the window from outside it; when no window has been open since launch it
-   opens `macspace://<window id>`, which the window scenes claim.
-10. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
+   opens `macspace://<window id>`, which the window scenes claim. Closing the window quits MacSpace, keeps it in the menu bar, or
+   keeps it running in the background (`GeneralSettings.ClosedWindow`): with no menu bar item, and out of the Dock and the app
+   switcher (an accessory app) until a window opens again (`BackgroundPresence`); opening MacSpace again shows the window.
+   The old "Show in the menu bar" switch is read as menu bar (on) or quit (off) until a choice is made.
+   **Notifications** (`AppNotifications`): automatic cleanup that freed at least 100 MB, an action of 8 s or more that ends while
+   MacSpace is not in front, and the disk under 10 GB or 5% free (once a day at most). Each one can be switched off in Settings; a
+   click opens the page it is about (the modules' own notifications carry `"module": <id>` for that).
+10. **Window menu.** SwiftUI lists every window scene there, open or not ("MacSpace" twice and the Shader Studio). The standard
+    window and the Shader Studio scenes carry `.commandsRemoved()`, and with them the menu lists none (checked with System Events).
+    Not on the first scene: on all three it also removed Quit and the Edit, Window and Help menus. `CommandGroup(replacing:
+    .windowList)` removes Bring All to Front, not the scenes' items.
+11. **Disk tile.** One `StorageOverview.shared`, read again when a cleanup ends (and 5 and 20 s later), when a module's figures
+    change, when the app comes back to the front, and every 30 s while a window shows it.
+12. **System Data's total** is System Settings' own remainder, computed the way its Storage pane computes it (`SettingsStorage` in
+    Platform: used, less macOS and every other category, each a fixed set of places read from Settings' code; Research, "How System
+    Settings computes its categories"). Nothing has to list what System Data holds, so whatever a Mac has that MacSpace does not know
+    still lands in it. The page's items are only the breakdown: what they leave out of the total is a "Not identified" block, so a
+    rule that goes wrong shows as a measured amount instead of a wrong total. The same places decide which items are System Data
+    (`SystemDataItem.elsewhereBytes`). The debug command `settings:<file.json>` writes the reading.
+13. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
     or `MACSPACE_DESIGN=1`. `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with
     the app's own Full Disk Access).
 
@@ -140,7 +161,7 @@ error; `sudo sfltool dumpbtm | grep -i -B2 -A14 macspace` shows macOS's own reco
 
 ## What is verified, and what is not
 
-**Verified (automated):** 257 tests: contract and registry behaviour, screen builders, parsers, the helper service and XPC round
+**Verified (automated):** 280 tests: contract and registry behaviour, screen builders, parsers, the helper service and XPC round
 trip in-process, the lazy channel, crash-isolation subprocesses, the version-store cleaner with a fake `launchctl`, update gating.
 
 **Verified by hand:** the three modules load and answer from the assembled app; System Data totals within about 1 GB of System
@@ -201,12 +222,14 @@ if releases should run from GitHub Actions.
 ## Open work
 
 - Notarize a build and run the clean-VM checklist above, then a Sparkle update test.
-- Cache cleanup for other apps is deliberately not in System Data; it would be its own module.
+- Cache cleanup for other apps is deliberately not in System Data (`~/Library/Caches` is listed, not cleaned), except the Chromium
+  and Electron caches in Application Support, cleaned while the app is closed (asked for on 2026-10-06). The rest would be its own
+  module.
+- Remove Downloads (Other System Files) has not been run on a real cloud folder yet: check it with OneDrive, then iCloud Drive.
 - Siri screen: a button for "remove orphan subscriptions" through the helper (today it points to a command that needs `sudo`).
 - Debloat in a virtual machine still shows controls that cannot take effect there.
 - Per-document breakdown of the version history, so users can choose what to delete.
 - System Data reads higher than Settings (51 against 44.5 GB here) because Settings over-counts Apple Intelligence and takes the
   difference from System Data (Research, section 1); decide whether the page should say so.
 - Time Machine's local snapshots are not measured.
-- Siri's iCloud sync state is read from the accounts database; not yet seen working in the app.
 - Documentation beyond this folder (README, user guide) once the first release exists.

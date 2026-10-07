@@ -158,7 +158,8 @@ struct TileFace: View {
         case let .blocks(segments):
             let area = Self.chartArea(in: size, info: info, captionSize: captionSize)
             let above = Self.legendAbove(in: size, info: info, captionSize: captionSize)
-            let hovered = hoveredBlock.flatMap { id in segments.first { $0.id == id } }
+            let blocks = BlockLayout.blocks(segments)
+            let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
             // No names in the blocks: the one under the pointer is named in the line below.
             BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
@@ -166,7 +167,7 @@ struct TileFace: View {
             // What the pointer is on, and nothing otherwise.
             HStack(spacing: 6) {
                 if let hovered {
-                    RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(hovered, rank: segments.firstIndex(of: hovered) ?? 0, tint: tint, design: design)).frame(width: 9, height: 9)
+                    RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(hovered, shade: BlockLayout.shade(of: hovered, in: blocks) ?? 0, tint: tint, design: design)).frame(width: 9, height: 9)
                     Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))")
                 }
             }

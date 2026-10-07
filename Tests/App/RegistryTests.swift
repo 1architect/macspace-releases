@@ -221,6 +221,38 @@ final class GeneralSettingsTests: XCTestCase {
         defaults.set(false, forKey: GeneralSettings.showInMenuBarKey)
         XCTAssertFalse(GeneralSettings.showsInMenuBar(defaults))
     }
+
+    /// The menu bar switch becomes the closed-window choice: on keeps MacSpace in the menu bar, off quits; a choice made overrides it.
+    func testClosedWindowChoiceTakesOverTheMenuBarSwitch() {
+        let defaults = Fixtures.defaults()
+        XCTAssertEqual(GeneralSettings.closedWindow(defaults), .menuBar)
+        defaults.set(false, forKey: GeneralSettings.showInMenuBarKey)
+        XCTAssertEqual(GeneralSettings.closedWindow(defaults), .quit)
+        XCTAssertFalse(GeneralSettings.keepsRunning(defaults))
+        GeneralSettings.setClosedWindow(.background, defaults)
+        XCTAssertEqual(GeneralSettings.closedWindow(defaults), .background)
+        XCTAssertTrue(GeneralSettings.keepsRunning(defaults))
+        XCTAssertFalse(GeneralSettings.showsInMenuBar(defaults), "in the background there is no menu bar item")
+    }
+}
+
+final class AppNotificationsTests: XCTestCase {
+    /// Low: under 10 GB, or under 5% of a disk large enough for 5% to be more.
+    func testLowSpaceIsTenGigabytesOrFivePercent() {
+        XCTAssertTrue(AppNotifications.isLow(available: 9_000_000_000, capacity: 100_000_000_000))
+        XCTAssertFalse(AppNotifications.isLow(available: 11_000_000_000, capacity: 100_000_000_000))
+        XCTAssertTrue(AppNotifications.isLow(available: 40_000_000_000, capacity: 1_000_000_000_000), "5% of 1 TB is 50 GB")
+        XCTAssertFalse(AppNotifications.isLow(available: 60_000_000_000, capacity: 1_000_000_000_000))
+    }
+
+    /// A click opens the page the notification is about; a module's own notification names its module.
+    func testNotificationsLeadToTheirPage() {
+        XCTAssertEqual(AppNotifications.destination(["module": "com.macspace.debloat"]), .module("com.macspace.debloat"))
+        XCTAssertEqual(AppNotifications.destination(["destination": "module:com.macspace.siri"]), .module("com.macspace.siri"))
+        XCTAssertEqual(AppNotifications.destination(["destination": "storage"]), .storage)
+        XCTAssertNil(AppNotifications.destination(["destination": "home"]), "the window opens on the dashboard")
+        XCTAssertNil(AppNotifications.destination([:]))
+    }
 }
 
 @MainActor

@@ -14,7 +14,7 @@
   "options": [
     {
       "id": "notify",
-      "title": "Notify me when protection changes",
+      "title": "Notify me if Apple Intelligence turns back on",
       "detail": "Shows a notification if macOS makes Apple Intelligence available again.",
       "kind": {
         "toggle": {
@@ -26,7 +26,7 @@
   "backgroundTasks": [
     {
       "id": "watch",
-      "title": "Watch Apple Intelligence in the background",
+      "title": "Check that Apple Intelligence stays off",
       "detail": "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.",
       "defaultEnabled": false,
       "intervalSeconds": 900

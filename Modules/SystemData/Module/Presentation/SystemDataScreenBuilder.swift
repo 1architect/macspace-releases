@@ -15,19 +15,21 @@ enum SystemDataScreenBuilder {
     static let groups: [Group] = [
         Group(id: "versions", title: "Document versions", kinds: [.documentVersions]),
         Group(id: "appdata", title: "Apple app data", kinds: [.appContainer]),
+        Group(id: "cloud", title: "Cloud files on this Mac", kinds: [.cloudStorage]),
         Group(id: "caches", title: "Caches", kinds: [.appCache, .userSystemCache, .toolCache]),
         Group(id: "support", title: "App support files", kinds: [.appSupport]),
         Group(id: "leftovers", title: "Leftovers", kinds: [.orphanedHome, .trash, .stagedUpdate]),
-        Group(id: "developer", title: "Homebrew and packages", kinds: [.packageManager]),
-        Group(id: "update", title: "macOS update to install", kinds: [.pendingUpdate]),
-        Group(id: "shared", title: "Apps' files for all users", kinds: [.sharedAppFiles]),
+        Group(id: "developer", title: "Homebrew & packages", kinds: [.packageManager]),
+        Group(id: "shared", title: "Shared app files", kinds: [.sharedAppFiles]),
         Group(id: "macos", title: "Managed by macOS",
               kinds: [.logs, .symbolCache, .spotlightIndex, .spotlightMetadata, .systemAssets, .snapshot, .diagnosticReports, .systemLibrary]),
     ]
 
     /// Kinds System Settings lists in other categories: the Command Line Tools under Developer (1.42 GB there against 1.31-1.41 GB
-    /// measured) and swap, which sits on the VM volume. Counting them here overstated System Data by about 3.5 GB.
-    static let countedElsewhere: Set<SystemDataKind> = [.developerTools, .virtualMemory]
+    /// measured), swap, which sits on the VM volume, and a prepared macOS update, on the Preboot volume, which Settings counts under
+    /// macOS: its macOS figure is every volume but the Data volume (System 18.58 + Preboot 21.94 with the update + Recovery 3.04 =
+    /// 43.56 GB, against 47.45 GB there, 2026-10-06), and leaving the update in System Data put it 10.7 GB above Settings.
+    static let countedElsewhere: Set<SystemDataKind> = [.developerTools, .virtualMemory, .pendingUpdate]
 
     /// Whether System Settings files the item under another category: cloud copies, unfinished downloads, restore images and virtual
     /// machines under Documents, and third-party apps' containers under Applications. Measured on 26B5091g: Documents 6.7 GB ≈
@@ -36,9 +38,12 @@ enum SystemDataScreenBuilder {
     /// in System Data, used space unchanged). Apple's own containers stay in System Data.
     static func countedByAnotherCategory(_ item: SystemDataItem) -> Bool {
         switch item.kind {
-        case .cloudStorage, .partialDownload, .restoreImage, .virtualMachine: return true
-        case .appContainer: return item.cleanup.kind == .review
-        default: return false
+        case .partialDownload, .restoreImage, .virtualMachine: return true
+        case .appContainer where item.cleanup.kind == .review: return true
+        default:
+            // All of it in a place another category claims (`SystemDataItem.elsewhereBytes`).
+            guard let elsewhere = item.elsewhereBytes, let bytes = item.bytes else { return false }
+            return elsewhere >= bytes
         }
     }
 
@@ -50,22 +55,43 @@ enum SystemDataScreenBuilder {
     /// What an item adds to System Data: its size without what macOS may delete by itself, which System Settings counts as free
     /// space. Files flagged purgeable are measured with the item; the Spotlight index and the system assets are purged by services of
     /// their own, whose figures are taken off them.
+    /// The apps inside it are not counted either: System Settings lists them under Applications.
     static func counted(_ item: SystemDataItem, _ snapshot: SystemDataSnapshot) -> UInt64 {
         let bytes = item.bytes ?? 0
+        let out = purgeable(item, snapshot) + (item.elsewhereBytes ?? 0)
+        return bytes > out ? bytes - out : 0
+    }
+
+    /// What an item holds that macOS may delete by itself.
+    static func purgeable(_ item: SystemDataItem, _ snapshot: SystemDataSnapshot) -> UInt64 {
         var purgeable = item.purgeableBytes ?? 0
         if item.id == "index:spotlight" { purgeable = max(purgeable, snapshot.purgeableServices[CacheDeleteService.spotlightIndex] ?? 0) }
         if item.id == "assets:system" { purgeable = max(purgeable, snapshot.purgeableAssetsBytes ?? 0) }
-        return bytes > purgeable ? bytes - purgeable : 0
+        return min(purgeable, item.bytes ?? 0)
     }
 
     /// What the measured items hold that macOS may delete by itself: not counted.
     static func purgeableExcluded(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        measured(snapshot.report).map { ($0.bytes ?? 0) - counted($0, snapshot) }.reduce(0, +)
+        measured(snapshot.report).map { purgeable($0, snapshot) }.reduce(0, +)
     }
 
-    /// System Data as System Settings counts it: everything measured, without what macOS may delete by itself.
+    /// What the measured items hold that System Settings lists in another category (apps, developer files…): not counted.
+    static func appsExcluded(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        measured(snapshot.report).compactMap(\.elsewhereBytes).reduce(0, +)
+    }
+
+    /// System Data as System Settings counts it: what is left of the used space once macOS and every other category are taken off
+    /// (`SettingsStorage`). Without that reading, what the items add up to.
     static func total(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        blocks(snapshot).map(\.bytes).reduce(0, +)
+        snapshot.settings?.systemData ?? blocks(snapshot).map(\.bytes).reduce(0, +)
+    }
+
+    /// What System Settings counts in System Data beyond every folder MacSpace lists: files only macOS can read (the system's
+    /// protected stores, other apps' sealed data), the file system's own records, and what changed between the two readings.
+    static func notIdentified(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        guard let settings = snapshot.settings else { return 0 }
+        let listed = measured(snapshot.report).map { counted($0, snapshot) }.reduce(0, +)
+        return settings.systemData > listed ? settings.systemData - listed : 0
     }
 
     static func usage(_ snapshot: SystemDataSnapshot) -> UsageBar {
@@ -76,9 +102,11 @@ enum SystemDataScreenBuilder {
             if bytes > 0 { segments.append(UsageSegment(id: group.id, label: group.title, bytes: bytes, tone: .series(index))) }
         }
         let clones = snapshot.report.items.filter { $0.kind == .codeSignClone }.compactMap(\.bytes).reduce(0, +)
-        var footnote = "Measured on this Mac's Data volume, and a prepared macOS update on its Preboot volume."
+        var footnote = "Measured on this Mac's Data volume."
         let excluded = purgeableExcluded(snapshot)
         if excluded >= worthARow { footnote += " \(ByteFormat.string(excluded)) that macOS deletes by itself when space runs low is not counted: System Settings counts it as free space." }
+        let apps = appsExcluded(snapshot)
+        if apps >= worthARow { footnote += " \(ByteFormat.string(apps)) of apps inside these folders are not counted: System Settings lists them under Applications." }
         if clones > 0 { footnote += " \(ByteFormat.string(clones)) of code-signing copies share space with their apps and are not counted." }
         let elsewhere = snapshot.report.items.filter { countedElsewhere.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)
         let otherCategory = snapshot.report.items.filter(countedByAnotherCategory).compactMap(\.bytes).reduce(0, +)
@@ -141,6 +169,9 @@ enum SystemDataScreenBuilder {
         take(snapshot.reports.totalBytes, from: "macos")
         take(versionHistoryBytes(snapshot), from: "versions")
         if freeable >= worthARow { segments.append(UsageSegment(id: "freeable", label: "Can be freed", bytes: freeable, tone: .caution)) }
+        // The blocks add up to System Settings' figure: what no listed folder accounts for is a block of its own.
+        let unknown = notIdentified(snapshot)
+        if unknown >= worthARow { segments.append(UsageSegment(id: "unidentified", label: "Not identified", bytes: unknown, tone: .neutral)) }
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
@@ -160,17 +191,14 @@ enum SystemDataScreenBuilder {
             group(appDataSection(snapshot), symbol: "app.badge", total: leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }.map { counted($0, snapshot) }.reduce(0, +)),
             group(otherSection(snapshot), symbol: "gearshape.2", total: leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }.map { counted($0, snapshot) }.reduce(0, +)),
         ].compactMap { $0 }
-        // A prepared macOS update first, on its own: it is not something MacSpace leaves alone among the rest.
-        let rows = pendingUpdateRows(snapshot) + groups
+        let rows = groups
         if !rows.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: "What is in it", rows: rows))) }
-        // The bar says only what makes its total differ from what was measured: purgeable space left out, as System Settings does.
-        let excluded = purgeableExcluded(snapshot)
-        let hero = UsageBar(id: "usage", title: "What fills System Data", segments: blocks(snapshot),
-                            footnote: excluded >= worthARow ? "Not counted: \(ByteFormat.string(excluded)) macOS deletes by itself when space runs low, which System Settings counts as free space." : nil)
+        let blocks = blocks(snapshot)
+        let hero = UsageBar(id: "usage", title: "What fills System Data", totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
         return Screen(title: "System Data", hero: hero, primary: cleanAll(snapshot), widgets: widgets)
     }
 
-    /// A section of rows as one group row (named after the section, its description as the tooltip), or its only row.
+    /// A section of rows as one group row (named after the section, its description behind the (i)), or its only row.
     static func group(_ widget: ScreenWidget?, symbol: String, total: UInt64) -> Row? {
         guard case let .section(section)? = widget else { return nil }
         let rows = section.widgets.flatMap { inner -> [Row] in
@@ -179,7 +207,11 @@ enum SystemDataScreenBuilder {
         }
         guard !rows.isEmpty else { return nil }
         if rows.count == 1 { return rows[0] }
-        return Row.group(id: "group:\(section.id)", title: section.title, symbol: symbol, totalBytes: total, rows: rows, detail: section.subtitle)
+        var group = Row.group(id: "group:\(section.id)", title: section.title, symbol: symbol, totalBytes: total, rows: rows, detail: section.subtitle)
+        // The items, not the categories they are sorted into (Everything else).
+        let count = rows.map { max($0.children.count, 1) }.reduce(0, +)
+        group.subtitle = count == 1 ? "1 item" : "\(count) items"
+        return group
     }
 
 
@@ -187,7 +219,7 @@ enum SystemDataScreenBuilder {
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
         let total = cleanBytes(snapshot)
         guard total >= worthARow else { return nil }
-        var message = "Deletes caches, old reports and unused system assets. macOS recreates what it needs."
+        var message = "Deletes caches, old reports and unused system assets."
         if versionsRow(snapshot) != nil { message += " Version history stays." }
         return Action(id: "cleanAll", title: "Free \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
                       confirmation: Confirmation(title: "Free \(ByteFormat.string(total))?", message: message, confirmTitle: "Free"))
@@ -207,17 +239,17 @@ enum SystemDataScreenBuilder {
         }
         if snapshot.reports.totalBytes >= worthARow {
             rows.append(Row(id: "reports", title: "Old diagnostic and crash reports", trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
-                            detail: "\(snapshot.reports.candidates.count) report(s) older than \(snapshot.reports.olderThanDays) days. Nothing reads them back.",
+                            detail: "\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days.",
                             actions: [Action(id: "cleanReports", title: "Free", confirmation: Confirmation(
-                                title: "Delete old reports?", message: "This permanently deletes \(snapshot.reports.candidates.count) report file(s).", confirmTitle: "Delete"))]))
+                                title: "Delete old reports?", message: "This permanently deletes \(reportCount(snapshot)).", confirmTitle: "Delete"))]))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
             // While macOS is being asked again in the background, the row says so instead of offering the button.
             rows.append(Row(id: "assets", title: "Unused system assets", trailing: ByteFormat.string(assets),
                             badge: snapshot.assetsRetrying ? Badge("Freeing in the background", tone: .caution) : nil, symbol: "square.stack.3d.down.right",
-                            detail: "Downloads macOS no longer needs, such as Apple Intelligence models released by the off-switch. macOS deletes them only when the disk is nearly full; this does it now. Anything needed again is downloaded again.",
+                            detail: "Downloads macOS no longer needs, like released Apple Intelligence models.",
                             actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: "Free", confirmation: Confirmation(
-                                title: "Free up to \(ByteFormat.string(assets)) of unused system assets?", message: "macOS deletes the assets it no longer needs. If it keeps some for now, MacSpace asks it again in the background.", confirmTitle: "Free"))]))
+                                title: "Free up to \(ByteFormat.string(assets)) of unused system assets?", message: "macOS downloads them again if they're needed.", confirmTitle: "Free"))]))
         }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }
@@ -225,6 +257,10 @@ enum SystemDataScreenBuilder {
     }
 
     static let manualThreshold: UInt64 = 50_000_000
+
+    static func reportCount(_ snapshot: SystemDataSnapshot) -> String {
+        snapshot.reports.candidates.count == 1 ? "1 report" : "\(snapshot.reports.candidates.count) reports"
+    }
 
     /// Everything MacSpace leaves alone (it belongs to apps, to the user or to macOS), largest first.
     static func leftAlone(_ snapshot: SystemDataSnapshot) -> [SystemDataItem] {
@@ -241,33 +277,56 @@ enum SystemDataScreenBuilder {
         .sorted { counted($0, snapshot) > counted($1, snapshot) }
     }
 
-    /// A macOS update downloaded and prepared, waiting for a restart: its own row, apart from what MacSpace leaves alone.
-    static func pendingUpdateRows(_ snapshot: SystemDataSnapshot) -> [Row] {
-        snapshot.report.items.filter { $0.kind == .pendingUpdate && ($0.bytes ?? 0) > 0 }.map { item in
-            Row(id: item.id, title: item.title, subtitle: "installs at the next restart", trailing: ByteFormat.string(item.bytes ?? 0),
-                symbol: "arrow.down.circle", detail: ([item.cleanup.description] + item.notes).joined(separator: " "),
-                actions: [Action(id: "openSoftwareUpdate", title: "Open")])
-        }
-    }
-
     /// What apps keep for themselves (their support folders and containers), listed apart from the rest MacSpace leaves alone.
     static let appDataKinds: Set<SystemDataKind> = [.appSupport, .appContainer]
 
     static func appDataSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         let items = leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }
         guard !items.isEmpty else { return nil }
-        return .section(SectionWidget(id: "appdata", title: "App data", subtitle: "Kept by apps for themselves. MacSpace leaves it alone.",
+        return .section(SectionWidget(id: "appdata", title: "App data",
                                       widgets: [.list(ListWidget(id: "appdata-list", rows: leftAloneRows(items, snapshot)))]))
     }
 
+    /// The rest of what MacSpace leaves alone, sorted into the bar's categories (caches, cloud files, leftovers…), largest first: a
+    /// category of several items is a group with a page of its own, a category of one is that item's row.
     static func otherSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         let items = leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }
         guard !items.isEmpty else { return nil }
-        return .section(SectionWidget(id: "other", title: "Everything else", subtitle: "Used by macOS and your tools. MacSpace leaves it alone.",
-                                      widgets: [.list(ListWidget(id: "other-list", rows: leftAloneRows(items, snapshot)))]))
+        var categories: [(category: OtherCategory, items: [SystemDataItem])] = []
+        for item in items {
+            let category = OtherCategory.of(item.kind)
+            if let index = categories.firstIndex(where: { $0.category.id == category.id }) {
+                categories[index].items.append(item)
+            } else {
+                categories.append((category, [item]))
+            }
+        }
+        let rows = categories
+            .map { entry -> (row: Row, bytes: UInt64) in
+                let bytes = entry.items.map { counted($0, snapshot) }.reduce(0, +)
+                let rows = leftAloneRows(entry.items, snapshot)
+                if rows.count == 1 { return (rows[0], bytes) }
+                return (Row.group(id: "other:\(entry.category.id)", title: entry.category.title, totalBytes: bytes, rows: rows), bytes)
+            }
+            .sorted { $0.bytes > $1.bytes }
+            .map(\.row)
+        return .section(SectionWidget(id: "other", title: "Everything else", widgets: [.list(ListWidget(id: "other-list", rows: rows))]))
     }
 
-    /// Every item, largest first, with what it is and why it stays. A container's kind goes under its name: the group already says
+    /// How Everything else is sorted: the bar's categories.
+    struct OtherCategory {
+        let id: String
+        let title: String
+
+        static let other = OtherCategory(id: "other", title: "Other")
+
+        /// The bar's category that holds this kind, or Other.
+        static func of(_ kind: SystemDataKind) -> OtherCategory {
+            groups.first { $0.kinds.contains(kind) }.map { OtherCategory(id: $0.id, title: $0.title) } ?? other
+        }
+    }
+
+    /// Every item, largest first, with what the user can do about it when there is something. A container's kind goes under its name: the group already says
     /// it is app data.
     private static func leftAloneRows(_ items: [SystemDataItem], _ snapshot: SystemDataSnapshot) -> [Row] {
         items.map { item in
@@ -277,11 +336,9 @@ enum SystemDataScreenBuilder {
                 subtitle = String(prefix.dropLast(2))
                 title = String(title.dropFirst(prefix.count))
             }
-            let counted = counted(item, snapshot)
-            let excluded = (item.bytes ?? 0) - counted
-            let purgeableNote = excluded >= worthARow ? ["\(ByteFormat.string(excluded)) more in it macOS deletes by itself when space runs low, not counted."] : []
-            return Row(id: item.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(counted),
-                       detail: ([item.cleanup.description] + item.notes + purgeableNote).joined(separator: " "))
+            // What macOS manages needs no explanation: only what the user can do something about has one.
+            let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description
+            return Row(id: item.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(counted(item, snapshot)), detail: detail)
         }
     }
 
@@ -291,15 +348,14 @@ enum SystemDataScreenBuilder {
               let bytes = item.bytes, bytes > 0 else { return nil }
         let size = ByteFormat.string(bytes)
         let row = Row(id: "leftover-update", title: "Leftover macOS update files",
-                      subtitle: "Files of an earlier update that is already installed. No update is waiting.",
                       trailing: size, symbol: "arrow.down.app",
-                      detail: "macOS did not remove these after the update. A protected part of the folder stays; MacSpace deletes the rest.",
+                      detail: "From an update that's already installed.",
                       actions: [Action(id: "deleteStagedUpdate", title: "Delete", role: .destructive,
                                        confirmation: Confirmation(title: "Delete the leftover update files?",
-                                                                  message: "About \(size) from an update that is already installed. macOS downloads it again if it is ever needed.",
+                                                                  message: "About \(size) from an update that's already installed.",
                                                                   confirmTitle: "Delete"),
                                        requires: [.privilegedHelper])])
-        return .section(SectionWidget(id: "leftover-update", title: "Leftover update files", subtitle: "Left behind by an update that finished earlier.",
+        return .section(SectionWidget(id: "leftover-update", title: "Leftover update files",
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
     }
 
@@ -308,12 +364,12 @@ enum SystemDataScreenBuilder {
     static func versionsRow(_ snapshot: SystemDataSnapshot) -> Row? {
         guard let item = snapshot.report.items.first(where: { $0.id == "versions:documents" }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
-        return Row(id: "versions", title: "Document version history", subtitle: "Saved earlier versions of documents (File → Revert To → Browse All Versions).",
+        return Row(id: "versions", title: "Document version history",
                       trailing: size, badge: Badge("Cannot be undone", tone: .critical), symbol: "clock.arrow.circlepath",
-                      detail: "Deleting it removes the earlier versions of every document. The documents themselves stay. Versions share blocks with their documents, so the space freed can be less than \(size); MacSpace measures what the volume gains. Save your documents and quit apps that edit them first.",
+                      detail: "Earlier versions of your documents (File > Revert To). The documents themselves stay.",
                       actions: [Action(id: "deleteVersions", title: "Delete…", role: .destructive,
                                        confirmation: Confirmation(title: "Delete all version history?",
-                                                                  message: "Removes the earlier versions of every document (\(size)); you can no longer revert to them. The documents stay. Save and close them first.",
+                                                                  message: "You won't be able to revert any document to an earlier version. Save and close your documents first.",
                                                                   confirmTitle: "Delete version history"),
                                        requires: [.privilegedHelper])])
     }
@@ -324,10 +380,10 @@ enum SystemDataScreenBuilder {
         let families = snapshot.assetFamilies.filter { !$0.steps.isEmpty && $0.bytes >= 100_000_000 }
         guard !families.isEmpty else { return nil }
         let rows = families.map { family -> Row in
-            Row(id: "assets:\(family.id)", title: family.title, subtitle: family.heldBy, trailing: ByteFormat.string(family.bytes),
-                symbol: "square.stack.3d.down.right", detail: family.verified ? nil : "Menu names can differ between macOS versions.", steps: family.steps)
+            Row(id: "assets:\(family.id)", title: family.title, trailing: ByteFormat.string(family.bytes),
+                symbol: "square.stack.3d.down.right", steps: family.steps)
         }
-        return .section(SectionWidget(id: "assets", title: "Downloads you can turn off", subtitle: "Change the setting and restart; the downloads then show under Free now.",
+        return .section(SectionWidget(id: "assets", title: "Downloads you can turn off",
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))]))
     }
 
@@ -354,7 +410,7 @@ enum SystemDataScreenBuilder {
         let actionable = actionableUnreadable(snapshot)
         if !actionable.fullDiskAccess.isEmpty {
             return .banner(Banner(id: "partial", severity: .info, title: "Allow Full Disk Access to see everything",
-                                  message: "\(actionable.fullDiskAccess.count) places could not be measured, so the numbers are low.",
+                                  message: "\(actionable.fullDiskAccess.count) places couldn't be measured.",
                                   action: Action(id: "openFullDiskAccess", title: "Allow", role: .prominent)))
         }
         if !actionable.helper.isEmpty {
@@ -363,7 +419,7 @@ enum SystemDataScreenBuilder {
         }
         if !actionable.helperUnreachable.isEmpty {
             return .banner(Banner(id: "partial", severity: .warning, title: "The helper did not answer",
-                                  message: "\(actionable.helperUnreachable.count) places were not measured. Reopen MacSpace; if it persists, reinstall the helper in Settings."))
+                                  message: "\(actionable.helperUnreachable.count) places weren't measured. Reopen MacSpace."))
         }
         return nil
     }

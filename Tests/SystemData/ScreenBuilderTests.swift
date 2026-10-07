@@ -50,7 +50,28 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(appList.rows.map(\.id), ["app"])
     }
 
-    func testCloudCopiesAndThirdPartyAppDataAreLeftOutOfTheBar() {
+    /// Everything else is sorted into the bar's categories: several items make a group with its own page, one item is its own row,
+    /// and the group row counts the items, not the categories.
+    func testEverythingElseIsSortedIntoTheBarsCategories() throws {
+        let items = [item("logs", kind: .logs, bytes: 900_000_000, cleanup: .managedByMacOS),
+                     item("spotlight", kind: .spotlightIndex, bytes: 800_000_000, cleanup: .managedByMacOS),
+                     item("brew", kind: .packageManager, bytes: 2_000_000_000, cleanup: .command),
+                     item("tool", kind: .toolCache, bytes: 300_000_000, cleanup: .review),
+                     item("pip", kind: .toolCache, bytes: 200_000_000, cleanup: .review)]
+        let snap = snapshot(items: items)
+        guard case let .section(section)? = SystemDataScreenBuilder.otherSection(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        XCTAssertEqual(list.rows.map(\.id), ["brew", "other:macos", "other:caches"], "largest first; a category of one is its item")
+        let macos = try XCTUnwrap(list.rows.first { $0.id == "other:macos" })
+        XCTAssertEqual(macos.children.map(\.id), ["logs", "spotlight"])
+        XCTAssertEqual(macos.title, "Managed by macOS")
+        let group = try XCTUnwrap(SystemDataScreenBuilder.group(.section(section), symbol: "x", total: 0))
+        XCTAssertEqual(group.subtitle, "5 items")
+        XCTAssertEqual(SystemDataScreenBuilder.OtherCategory.of(.virtualMachine).id, "other", "a kind in no category goes to Other")
+    }
+
+    /// Downloads, virtual machines and third-party apps' data are Documents and Applications in Settings; cloud copies are System Data
+    /// (`~/Library` is left out of Documents: removing 21 GB of OneDrive downloads took Settings' System Data from 44.46 to 32.3 GB).
+    func testThirdPartyAppDataAndDownloadsAreLeftOutOfTheBarButCloudCopiesAreIn() {
         let report = snapshot(items: [
             item("cloud", kind: .cloudStorage, bytes: 2_000),
             item("whatsapp", kind: .appContainer, bytes: 9_000, cleanup: .review),
@@ -62,7 +83,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
             item("orphan", kind: .orphanedHome, bytes: 300),
         ])
         let usage = SystemDataScreenBuilder.usage(report)
-        XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata", "leftovers"], "downloads and virtual machines are Documents in Settings")
+        XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata", "cloud", "leftovers"], "downloads and virtual machines are Documents in Settings")
+        XCTAssertEqual(usage.segments.first { $0.id == "cloud" }?.bytes, 2_000)
         XCTAssertEqual(usage.segments.last?.bytes, 300)
         XCTAssertTrue(usage.footnote?.contains("not counted") == true)
     }
@@ -156,19 +178,34 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let snap = snapshot(items: [support, item("assets:system", kind: .systemAssets, bytes: 2_000_000_000, cleanup: .command)], purgeable: 500_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.total(snap), 600_000_000 + 1_500_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data \(ByteFormat.string(2_100_000_000))", "the total is back on the tile")
-        XCTAssertNotNil(SystemDataScreenBuilder.screen(snap).hero?.footnote, "the bar says what it leaves out")
+        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("not counted") == true, "the reading says what it leaves out")
     }
 
-    /// A macOS update downloaded and waiting for a restart is its own row on the page, not one of the items MacSpace leaves alone.
-    func testAPreparedUpdateHasItsOwnRow() throws {
-        let items = [item("update:prepared", kind: .pendingUpdate, bytes: 10_700_000_000, cleanup: .managedByMacOS),
-                     item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS),
-                     item("other", kind: .systemLibrary, bytes: 200_000_000, cleanup: .managedByMacOS)]
-        let screen = SystemDataScreenBuilder.screen(snapshot(items: items))
-        guard case let .list(groups)? = screen.widgets.last else { return XCTFail("the groups are one list") }
-        XCTAssertEqual(groups.rows.first?.id, "update:prepared")
-        XCTAssertFalse(SystemDataScreenBuilder.leftAlone(snapshot(items: items)).contains { $0.kind == .pendingUpdate })
-        XCTAssertTrue(groups.rows.dropFirst().allSatisfy { !$0.children.contains { $0.id == "update:prepared" } })
+    /// With System Settings' reading, the total is its System Data, and what no listed folder accounts for is a block of its own, so
+    /// the blocks still add up to the total.
+    func testTheTotalIsSettingsRemainderAndTheBlocksAddUpToIt() {
+        var snap = snapshot(items: [item("logs", kind: .logs, bytes: 3_000_000_000, cleanup: .managedByMacOS)])
+        snap.settings = SettingsStorage(capacity: 245_000_000_000, used: 190_000_000_000, macOS: 45_000_000_000,
+                                        categories: [SettingsStorage.Category(id: "applications", bytes: 100_000_000_000),
+                                                     SettingsStorage.Category(id: "documents", bytes: 40_000_000_000)])
+        XCTAssertEqual(SystemDataScreenBuilder.total(snap), 5_000_000_000)
+        let blocks = SystemDataScreenBuilder.blocks(snap)
+        XCTAssertEqual(blocks.first { $0.id == "unidentified" }?.bytes, 2_000_000_000)
+        XCTAssertEqual(blocks.map(\.bytes).reduce(0, +), 5_000_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data 5 GB")
+    }
+
+    /// The apps inside an item are not System Data (System Settings lists them under Applications), and are said apart from what
+    /// macOS deletes by itself.
+    func testAppsInsideAnItemAreNotCounted() {
+        var support = item("appsupport:Tool", kind: .appSupport, bytes: 1_000_000_000)
+        support.elsewhereBytes = 400_000_000
+        support.purgeableBytes = 100_000_000
+        let snap = snapshot(items: [support])
+        XCTAssertEqual(SystemDataScreenBuilder.total(snap), 500_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.purgeableExcluded(snap), 100_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.appsExcluded(snap), 400_000_000)
+        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("400 MB of apps inside these folders") == true)
     }
 
     /// The helper measures what only root can read anywhere under the system's folders, on any Mac, and never a home folder.

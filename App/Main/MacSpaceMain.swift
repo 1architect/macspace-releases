@@ -3,7 +3,8 @@ import MacSpaceApp
 import MacSpacePlatform
 import SwiftUI
 
-/// Closing the last window quits the app unless it lives in the menu bar, where it keeps running modules' background tasks.
+/// Closing the last window quits the app unless it keeps running (in the menu bar, or unseen in the background), where it goes on
+/// with the modules' background tasks and automatic cleanup.
 @MainActor
 enum AppModel {
     static let host = ModuleHost()
@@ -28,6 +29,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         Task { @MainActor in await AppModel.host.start() }
         StatusItemController.shared.install(host: AppModel.host)
+        AppNotifications.shared.install(host: AppModel.host)
+        BackgroundPresence.shared.install()
     }
 
     /// Clicking the Dock icon with no window open opens it again.
@@ -37,7 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        !GeneralSettings.showsInMenuBar()
+        !GeneralSettings.keepsRunning()
     }
 }
 
@@ -73,6 +76,10 @@ struct MacSpaceMain: App {
         Window("MacSpace", id: MacSpaceWindow.standard) {
             StandardWindowView(host: host, updates: updates)
         }
+        // SwiftUI lists every window scene in the Window menu, open or not: "MacSpace" twice and the Shader Studio even with the
+        // design tools off. The two other scenes leave out their item; the first keeps it, with the app's default menus (on all
+        // three, `commandsRemoved()` also took Quit and the Edit, Window and Help menus).
+        .commandsRemoved()
         // MacSpace draws the window's buttons and its band (`StandardWindowView`); the content reaches the top of the window.
         .windowStyle(.hiddenTitleBar)
         .handlesExternalEvents(matching: [MacSpaceWindow.standard])
@@ -84,6 +91,7 @@ struct MacSpaceMain: App {
         Window("Shader Studio", id: ColorLabView.windowID) {
             ColorLabView()
         }
+        .commandsRemoved()
         .defaultSize(width: 520, height: 820)
         .handlesExternalEvents(matching: [])
         // Over the main window, so it stays in view while parts are picked there.

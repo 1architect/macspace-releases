@@ -54,21 +54,38 @@ enum DebloatScreenBuilder {
     static func restartText(_ restart: RestartRequirement) -> String? {
         switch restart {
         case .none: return nil
-        case .appRelaunch: return "Apps need to be reopened for this to take effect."
-        case .logout: return "Log out and back in for this to take effect."
-        case .reboot: return "Restart the Mac for this to take effect."
+        case .appRelaunch: return "Reopen apps to apply."
+        case .logout: return "Log out to apply."
+        case .reboot: return "Restart to apply."
         }
     }
 
+    /// What each switch does for the user, and what stops working. The catalog's summaries and notes are for developers.
+    static let plain: [String: String] = [
+        "telemetry.diagnostics": "Stops sending usage and crash data to Apple and app developers.",
+        "telemetry.diagnostics-policy": "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.",
+        "telemetry.siri-improvement": "Stops sharing Siri and Dictation recordings with Apple.",
+        "telemetry.on-device-speech-policy": "Dictation and translation stay on this Mac. Languages without an on-device model stop working.",
+        "ads.personalized-ads": "Apple stops picking ads based on what you do.",
+        "ads.advertising-identifier-policy": "Apps can't track you with the advertising identifier or ask to.",
+        "siri.siri-ai-flag": "Turns off Siri AI. Spotlight goes back to classic search.",
+        "ai.visual-intelligence": "Turns off Visual Intelligence. Visual Look Up may stop working too.",
+        "ai.generative-indexing": "Stops Apple Intelligence from indexing your Mail and personal data.",
+        "ai.features-policy": "Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT.",
+        "suggestions.spotlight-internet-policy": "Spotlight stops sending your searches to Apple. No more web results in Spotlight.",
+        "diagnostics.tailspin": "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.",
+        "diagnostics.crash-reporter": "No more \"quit unexpectedly\" dialogs.",
+        "apps.game-center-policy": "Turns off Game Center.",
+        "apps.news-policy": "Hides Apple News and its widgets.",
+    ]
+
+    /// What the switch does, when to expect it, and why it is not working when it is not.
     static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
-        var lines: [String] = [control.summary]
-        if status?.effect?.state == .effective { lines.append("Measured off on this Mac.") }
-        if !control.tested { lines.append("Not tested yet: after switching it off, check that it took effect.") }
-        if !control.breaks.isEmpty { lines.append("Stops working while this is off: " + control.breaks.joined(separator: "; ") + ".") }
+        var lines: [String] = [plain[control.id] ?? control.summary]
         if let restart = restartText(control.restart) { lines.append(restart) }
-        if let effect = status?.effect?.detail, !effect.isEmpty { lines.append(effect) }
-        lines.append(contentsOf: control.notes)
-        return lines.joined(separator: "\n")
+        let problem: Set<EffectState> = [.ineffective, .notControllable]
+        if let effect = status?.effect, problem.contains(effect.state), !effect.detail.isEmpty { lines.append(effect.detail) }
+        return lines.joined(separator: " ")
     }
 
     /// What a switch is called: what switching it on does.
@@ -79,7 +96,7 @@ enum DebloatScreenBuilder {
         let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable
         let on = isOn(status)
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why. What a
-        // switch changes and breaks is in its tooltip.
+        // switch changes and breaks is behind its (i).
         var action = Action(id: "toggle", title: title(control), parameters: ["id": control.id])
         if needsHelper(control) { action.requires = [.privilegedHelper] }
         // The switch shows the protection, named as such: "Disable <feature>" on = MacSpace switched the feature off.
@@ -217,14 +234,14 @@ enum DebloatScreenBuilder {
             let controls = snapshot.controls.filter { $0.category == category && !isPolicy($0) }
             guard !controls.isEmpty else { continue }
             widgets.append(.toggles(ToggleList(id: "cat:\(category.rawValue)", title: title(category),
-                                               footnote: "Hover a row for what it changes.",
+                                               footnote: nil,
                                                rows: controls.map { row($0, snapshot) })))
         }
         // Apart, and last: these need a profile, which macOS asks the user to approve.
         let policies = categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category && isPolicy($0) } }
         if !policies.isEmpty {
-            widgets.append(.toggles(ToggleList(id: "policies", title: "Policies (need your approval)",
-                                               footnote: "macOS only applies these through a configuration profile. Disabling one asks you to approve its profile once in System Settings > General > Device Management; enabling it again asks nothing.",
+            widgets.append(.toggles(ToggleList(id: "policies", title: "Policies",
+                                               footnote: "Disabling one asks you to approve a profile in System Settings > General > Device Management.",
                                                rows: policies.map { row($0, snapshot) })))
         }
         return Screen(title: "Debloat", primary: primary(snapshot), widgets: widgets)

@@ -10,6 +10,70 @@ Where, and on what: macOS 27 build 26B5091g (Apple Silicon, SIP on) for almost e
 for the helper installation and Apple Intelligence checks. Other builds may differ. Private Apple interfaces are used in a few places
 and every one of them is guarded (see [CacheDelete](#cachedelete)).
 
+- **Measured – after the OneDrive downloads were removed (2026-10-06, 18:00).** Settings: used 188.68 GB = Applications 97.87 +
+  Developer 1.42 + Documents 8.77 + Photos, Mail, Messages, Music 0.88 + Other Users 0.0014 + macOS 47.45 + System Data 32.3 (no
+  Apple Intelligence row with it off). Volumes: System 18.58, Preboot 21.94 (the running system and the 10.70 GB prepared update),
+  Recovery 3.04, Data 145.44, VM 0. **Settings' macOS is every volume but Data, plus about 3.9 GB of the Data volume**, so the
+  prepared update is macOS there, not System Data; MacSpace had counted it in System Data (now left out of the total, still listed).
+  Removing 21 GB of OneDrive downloads took Settings' System Data from 44.46 to 32.3 GB and used space from 203.24 to 188.81 GB: about
+  12 GB of those downloads had been in Settings' System Data, not Documents. MacSpace never counted them, which the Apple Intelligence
+  over-count above had hidden.
+- **Measured – what is left: MacSpace 38.5 GB without the update against 32.3.** Settings' Applications (97.87) is 2.48 GB more than
+  app bundles (24.18) + third-party containers (65.19, of which UTM's virtual machine 64.57) + third-party group containers (6.02).
+  **Measured – not apps' support folders:** Firefox is 536 MB in Settings' Applications list, its bundle alone; its 2.31 GB profile
+  in Application Support is not counted with it. **Measured – apps elsewhere:** Spotlight indexes 2.16 GB of app bundles outside
+  /Applications (Autodesk installers' helper apps in `/Library/Application Support`, Claude Code's own `claude.app` in its
+  Application Support folder, the .NET runtimes in `/usr/local/share/dotnet`, development builds). **Inferred:** Settings lists every
+  app Spotlight has indexed under Applications, wherever it is; about 2.0 GB of them sat in folders MacSpace counted as System Data,
+  and are now taken off them (`SystemDataItem.appBundleBytes`). The other 3.9 GB are the Data-volume part of Settings' macOS;
+  **unverified** which, the system assets (`AssetsV2`, 9.0 GB, of which MacSoftwareUpdate 1.39) or the unified log (2.51) and the
+  Spotlight index the likeliest.
+
+### How System Settings computes its categories (decoded 2026-10-06, macOS 27.2 26B5091g)
+
+**Measured – from the code.** Read from `StorageManagementService` (`StorageManagement.framework/PlugIns`, the per-user agent
+`com.apple.StorageManagement.Service`) and the Storage pane (`/System/Library/ExtensionKit/Extensions/Storage.appex`), disassembled
+with selector stubs and CFStrings resolved. Nothing here can be asked from outside: the service answers only clients with
+`com.apple.storage-data`, and the pane's size messages are debug level (never in the log).
+
+- **System Data is a remainder:** `other = volume used − macOS − Σ every category item` (`-[STMStorageController
+  updateSystemSidebarItemSubtitle]`, then `updateSystemSize:otherSize:`).
+- **Used** for the Data volume: `in use − CacheDelete purgeable + system + hidden` (`-[SPInfoDiskAPFSVolume updateFreeSpace]`; the
+  purgeable figure is CacheDelete's volume dictionary, `CACHE_DELETE_AMOUNT` and the shared-purgeable keys). The pane logs the same
+  thing as `available = freespace + purgeableSpace` (class *Essential*): what `volumeAvailableCapacityForImportantUsage` returns.
+  Purgeable files therefore leave "used" only as far as CacheDelete's figure goes, not by their APFS flag: of 21 GB of OneDrive
+  downloads flagged purgeable, about 14 GB still counted as used.
+- **macOS** = every volume of the startup container but Data (System, Preboot with the prepared update, Recovery, Update, VM) **plus
+  the separate Recovery container on the same disk** (partition type `Apple_APFS_Recovery`). Measured twice, 1.5 hours apart: Settings
+  47.45 GB both times, volumes 44.8266 + 2.6191 = 47.4458 GB. Adding the ISC container would read 47.47; adding the Apple Intelligence
+  models (716.7 MB in the macOS detail) would read 48.16, so the models shown in macOS's detail are not added to it. Ruled out on the
+  way: CacheDelete's software update reserve (disabled, 0), `/private/var/.overprovisioning_file` (absent).
+- **Documents** = the home folder sized without `~/Library`, `~/Applications`, the system Photos library, `~/Music/iTunes/iTunes
+  Media/`, `~/Music/Music/Media/`, `~/Movies/Apple TV/Media/`, `~/Movies/TV/Media/`, `~/Movies/TV/TV Library/`, and every path a category
+  extension claims; `~/Desktop` and `~/Documents` only when iCloud Desktop & Documents is on (`+[SPInfoDocumentsStorageUsageReporter
+  defaultExcludedURLs]`, `operationDidFinish:`). So **anything in `~/Library` that no category claims is System Data**, including
+  `~/Library/CloudStorage` (the 12 GB drop above), and the home folder's hidden tool folders (`.claude`, `.config`…) are Documents.
+- **Checked against Settings here:** Mail = `~/Library/Mail` (541.0 MB, Settings 541 MB); Messages = `~/Library/Messages/Attachments`
+  only (25.1 MB, Settings 25 MB); Music = the library's media folder (58.6 MB, 58.6 MB); Other Users = `/Users/Shared` (1.4 MB, 1.4 MB);
+  Developer = the Command Line Tools (1.42 GB, 1.42 GB); Photos = the system library (257.1 MB, Settings 252.7 MB); Documents = home
+  9.29 GB without Library, less the Photos library and music media = 8.97 GB, and less the apps Spotlight finds in the home folder
+  (development builds, an app in Downloads) about 8.8 GB (Settings 8.77); Applications = app bundles in /Applications 24.18 + apps
+  elsewhere 2.16 + third-party containers 65.19 + third-party group containers 6.02 + Safari's container 0.30 = 97.85 GB (Settings 97.87).
+- **Measured side by side (19:32, 2026-10-06), MacSpace's `SettingsStorage` against Settings:** Developer 1.42/1.42 GB, Mail 541/541 MB,
+  Messages 25.1/25 MB, Music 58.8/58.6 MB, Other Users 1.5/1.4 MB, Photos 258/253.2 MB, Documents 10.18/10.09 GB (Settings' own figure
+  is also in `com.apple.StorageManagement.Service` `SPLastDocumentsSize`: 10 089 025 536), used 191.59/191.46 GB. Applications was
+  0.92 GB short: Settings counts **the whole `/Applications` folder** (0.77 GB there is beside the app bundles: Autodesk's and Chaos's
+  support folders) and Apple's team-prefixed group containers (`PTN9T2S29T.com.apple.videoProApps`, 0.1 GB); only `group.com.apple.…`
+  stays with macOS. macOS was 2.26 GB short until the Recovery container was counted.
+
+- **Measured – APFS clones (2026-10-06).** Counted per file, MacSpace's System Data items added up to 1.2 GB more than Settings'
+  remainder. Clones are stored once: `~/Library/Application Support` is 5.62 GB per file, 5.15 GB with each clone family once, 4.84 GB
+  of blocks no other file shares; the system assets 9.02 / 8.91 / 8.36 GB. Items are now sized with one `CloneLedger` per scan (the
+  first file of a family counts in full, later ones only `ATTR_CMNEXT_PRIVATESIZE`): 35.79 → 35.27 GB against a total of 34.65 GB.
+  The 0.62 GB left is stated on the page; not yet explained.
+- **Decided – a prepared macOS update is not System Data:** it is part of Settings' macOS (Preboot), so it is listed in Other System
+  Files ("Waiting to install"), not on the System Data page.
+
 ## 1. What "System Data" is
 
 **Measured.** System Settings does not measure System Data. It computes it as what is left of the used space after its named
@@ -131,6 +195,33 @@ live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db` (readable;
   copies; they download again when opened. Other System Files names the block after each cloud folder found, whichever provider it is,
   and skips folders still only in the cloud (`SF_DATALESS`) so the scan never makes a provider fetch anything.
 
+- **Measured and inferred – removing cloud downloads on request (2026-10-06).** Foundation sees OneDrive's files as cloud items
+  (`isUbiquitousItem` 1, downloading status current, `ubiquitousItemIsUploaded` 1, measured on one file), so the public
+  `FileManager.evictUbiquitousItem(at:)`, Finder's Free Up Space, is the way to remove a local copy, for iCloud Drive and every File
+  Provider app alike. `fileproviderctl` and `brctl` have no evict command on this build. Other System Files gives each cloud folder a
+  Remove Downloads button: only files APFS flags purgeable (Always Keep on This Device files are not), uploaded, not uploading and
+  without conflicts. **Not yet run:** an eviction was not tried here, so whether every provider answers it, and how fast for
+  8,000 files, is unknown. Purging `fspurgeable_document` through CacheDelete would do it for every provider at once, unasked;
+  not offered.
+
+### Caches in Application Support (2026-10-06, development Mac)
+
+**Measured.** Chromium and Electron apps keep their HTTP cache, compiled scripts and GPU shaders in their Application Support folder,
+not in `~/Library/Caches`: `Cache`, `Code Cache`, `GPUCache`, `Dawn*Cache` (and VS Code's `CachedData`), 326 MB here (Claude
+296 MB). A profile folder is recognised by its `Network Persistent State` or `Local State` file, so a folder named Cache in any
+other app is never taken. Their storage (Local Storage, IndexedDB, Service Worker) holds data and is left alone. System Data cleans
+these while the app is closed and takes them off the app's own figure.
+
+### Other candidates checked (2026-10-06, development Mac)
+
+- **App container caches (1.42 GB reported):** purging the service frees almost nothing (above); this terminal cannot read inside
+  `~/Library/Containers` to measure the caches directly. Not offered.
+- **The prepared macOS update (10.7 GB):** installs at the next restart and macOS removes it then; nothing safe deletes it before.
+- **Unified log (2.48 GB):** the helper could run `log erase --all`; it removes the diagnostic history. Not offered.
+- **Homebrew:** 37 MB of downloads and 401 MB in the Cellar; `brew cleanup` stops on an error in a third-party tap here.
+- **Aerial wallpaper (575 MB):** one video, the one in use.
+- **Time Machine local snapshots:** none; only the system's update snapshots.
+
 ### Document version history (`/System/Volumes/Data/.DocumentRevisions-V100`)
 
 **Measured.** 6.35 GB by `du`; deleting it freed about 5 GB on the volume (System Data fell about 5.05 GB). The folder is root-only
@@ -171,9 +262,12 @@ Telling the user to "install the waiting update" for such files was wrong, and t
   gained 9.48 GB on the volume with about 0.37 GB kept locked, in line with the records. The models staged for the waiting update
   (`AutoAssetStager`, target 26B5101f) are 0.22 GB. MacSpace shows the records' figure. Why Settings shows 8.5 GB more is
   **unverified** (one guess: the grafted base model counted as image and as mounted content).
-- **Unverified – Siri's iCloud sync.** The switch is the `com.apple.Dataclass.Siri` data class of the iCloud account in
-  `~/Library/Accounts/Accounts4.sqlite`, which needs Full Disk Access; MacSpace reads it there. `Cloud Sync Enabled` in
-  `com.apple.assistant.backedup` is not the switch. Not yet seen working in the app.
+- **Measured – Siri's iCloud sync (2026-10-06).** The switch is the `com.apple.Dataclass.Siri` data class among the iCloud account's
+  enabled ones in `~/Library/Accounts/Accounts4.sqlite` (Full Disk Access). On macOS 27.2 `ZDATACLASS` has no identifier column: the
+  name is a keyed archive of a string in `ZNAME`; the join table is `Z_2ENABLEDDATACLASSES` (`Z_2ENABLEDACCOUNTS`,
+  `Z_7ENABLEDDATACLASSES`) and the iCloud account is type `com.apple.account.AppleAccount`. Here the account has 16 classes enabled
+  (Mail, Notes, Keychain…) and not Siri, so the page says the sync is off; the earlier reader looked for a `ZIDENTIFIER` column and
+  read nothing. `Cloud Sync Enabled` in `com.apple.assistant.backedup` is not the switch.
 
 ## 4. The privileged helper
 

@@ -13,33 +13,6 @@ enum SiriScreenBuilder {
         }
     }
 
-    /// What the state means, for the switch's subtitle.
-    static func stateLine(_ snapshot: SiriSnapshot) -> String {
-        switch snapshot.status.state {
-        case .protected: return "Off. Its model is not installed."
-        case .releasing: return "Off. macOS is removing its model, which usually takes a few minutes."
-        case .atRisk: return "On. " + modelLine(snapshot)
-        case .unknown: return "MacSpace cannot read the state without Full Disk Access."
-        }
-    }
-
-    /// What the models take while Apple Intelligence is on, downloads included. Never "none" when the folders could not be read.
-    static func modelLine(_ snapshot: SiriSnapshot) -> String {
-        let downloading = snapshot.downloadingModelBytes >= purgeThreshold ? snapshot.downloadingModelBytes : nil
-        switch (snapshot.installedModelBytes, downloading) {
-        case let (installed?, downloading?) where installed >= purgeThreshold:
-            return "Its models take \(ByteFormat.string(installed)), and macOS is downloading \(ByteFormat.string(downloading)) more."
-        case let (_, downloading?):
-            return "macOS is downloading its models (\(ByteFormat.string(downloading)) so far)."
-        case let (installed?, nil) where installed >= purgeThreshold:
-            return "Its models take \(ByteFormat.string(installed)); switch it off to free them."
-        case (nil, nil):
-            return "Its models could not be measured (allow Full Disk Access)."
-        default:
-            return "No model is downloaded yet."
-        }
-    }
-
     /// A banner only when the user has something to do.
     static func statusBanner(_ snapshot: SiriSnapshot) -> Banner? {
         let elsewhere = snapshot.accounts?.enabledElsewhere ?? []
@@ -125,9 +98,6 @@ enum SiriScreenBuilder {
 
     static let purgeThreshold: UInt64 = 50_000_000
 
-    /// Where the Siri language goes.
-    static func languageReach(_ snapshot: SiriSnapshot) -> String { SiriCloudSync.reach }
-
     static func screen(_ snapshot: SiriSnapshot) -> Screen {
         if snapshot.isVirtualMachine {
             return Screen(title: "Siri & Apple Intelligence", widgets: [.banner(virtualMachineBanner())])
@@ -145,12 +115,12 @@ enum SiriScreenBuilder {
         // No button while MacSpace is already asking macOS again in the background.
         guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold, !snapshot.assetsRetrying else { return nil }
         return Action(id: "purgeAssets", title: "Free up to \(ByteFormat.string(bytes))", symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: "Free up to \(ByteFormat.string(bytes))?", message: "macOS deletes downloads it no longer needs, including released Apple Intelligence models. Anything needed again is downloaded again.", confirmTitle: "Free"))
+                      confirmation: Confirmation(title: "Free up to \(ByteFormat.string(bytes))?", message: "Deletes Apple Intelligence models and other downloads macOS no longer needs.", confirmTitle: "Free"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {
         let available = isAvailable(snapshot.status) ?? false
-        var subtitle = "Works by giving Siri a language different from your system language; Apple Intelligence then becomes unavailable."
+        var subtitle = "Switching it off sets Siri to a different language than your Mac."
         var enabled = true
         if snapshot.status.state == .protected || snapshot.status.state == .releasing {
             if case let .failure(failure) = snapshot.disablePlan, available { subtitle = failure.message; enabled = false }
@@ -158,11 +128,9 @@ enum SiriScreenBuilder {
             subtitle = failure.message
             enabled = false
         }
-        let detail = ([subtitle, "Applies to this account.", languageReach(snapshot),
-                       "System Settings can show a larger figure for Apple Intelligence; the size here is what switching it off frees."]
-                      + snapshot.status.reasons).joined(separator: " ")
+        let detail = subtitle + (snapshot.cloudSyncEnabled == false ? "" : " With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.")
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why.
-        let rows = [ToggleRow(id: "ai", title: "Apple Intelligence", subtitle: enabled ? stateLine(snapshot) : subtitle, isOn: available, isEnabled: enabled,
+        let rows = [ToggleRow(id: "ai", title: "Apple Intelligence", isOn: available, isEnabled: enabled,
                               detail: detail,
                               action: switchAction)]
         return ToggleList(id: "switch", rows: rows)
@@ -180,9 +148,9 @@ enum SiriScreenBuilder {
         case false?: title = "Siri's iCloud sync is currently off"
         case nil: title = "Siri's iCloud sync"
         }
-        return Row(id: "icloud-sync", title: title, subtitle: enabled == nil ? "set in System Settings" : nil,
+        return Row(id: "icloud-sync", title: title,
                    symbol: enabled == false ? "checkmark.icloud" : "icloud",
-                   detail: SiriCloudSync.reach + " macOS lets only System Settings change it.", steps: enabled == false ? [] : SiriCloudSync.steps,
+                   detail: enabled == false ? nil : "Turn it off to keep Siri's language change on this Mac.", steps: enabled == false ? [] : SiriCloudSync.steps,
                    actions: [Action(id: "openICloudSettings", title: "Open")])
     }
 
@@ -190,16 +158,16 @@ enum SiriScreenBuilder {
         guard let elsewhere = snapshot.accounts?.enabledElsewhere, !elsewhere.isEmpty else { return nil }
         let rows = elsewhere.map { account -> Row in
             let steps: [String] = account.name.map { name in
-                ["Log in as \(name) and switch Apple Intelligence off there (this page, or System Settings > Apple Intelligence & Siri).",
-                 "If \(name) is not needed, delete the account in System Settings > Users & Groups."]
-            } ?? ["The account no longer exists, but macOS keeps its subscriptions and a restart does not clear them.",
-                  "Remove them as an administrator (Terminal): sudo \"\(snapshot.cliPath)\" orphan-subscriptions --execute",
-                  "Restart the Mac; MacSpace then releases and deletes the leftover models by itself."]
-            return Row(id: "account:\(account.guid)", title: account.label, subtitle: "\(account.useCases.count) Apple Intelligence feature(s) subscribed",
+                ["Log in as \(name) and turn Apple Intelligence off there.",
+                 "Or delete the account in System Settings > Users & Groups."]
+            } ?? ["This account was deleted, but macOS still keeps its models. In Terminal, run:",
+                  "sudo \"\(snapshot.cliPath)\" orphan-subscriptions --execute",
+                  "Restart. MacSpace then deletes the models."]
+            return Row(id: "account:\(account.guid)", title: account.label, subtitle: account.useCases.count == 1 ? "1 feature" : "\(account.useCases.count) features",
                        badge: Badge("Keeps the models", tone: .caution), symbol: "person.crop.circle.badge.exclamationmark", steps: steps)
         }
         return .section(SectionWidget(id: "accounts", title: "Other accounts",
-                                      subtitle: "The models are stored once for the whole Mac. One account with Apple Intelligence on keeps them installed for everyone.",
+                                      subtitle: "One account with Apple Intelligence on keeps the models on this Mac.",
                                       widgets: [.list(ListWidget(id: "accounts-list", rows: rows))]))
     }
 
@@ -211,7 +179,7 @@ enum SiriScreenBuilder {
         if snapshot.releasingAutomatically {
             widget = .list(ListWidget(id: "models-list", rows: [
                 Row(id: "releasing", title: "Releasing the leftover models", symbol: "arrow.triangle.2.circlepath",
-                    detail: "For about a minute Apple Intelligence is available and Siri's language changes; both are restored afterwards. Then the models are deleted. " + languageReach(snapshot)),
+                    detail: "Takes about a minute."),
             ]))
         } else if !snapshot.releaseBlockers.isEmpty {
             widget = .steps(StepsWidget(id: "blockers", title: "Before MacSpace can release them", steps: snapshot.releaseBlockers))
@@ -219,7 +187,7 @@ enum SiriScreenBuilder {
             let minutes = Int(ModelAutoRelease.settleTime / 60)
             widget = .list(ListWidget(id: "models-list", rows: [
                 Row(id: "releasing", title: "macOS is removing the model", symbol: "arrow.triangle.2.circlepath",
-                    detail: "This usually takes a few minutes. If the models are still here after \(minutes) minutes, MacSpace releases and deletes them by itself."),
+                    detail: "Usually takes a few minutes. If it doesn't, MacSpace does it after \(minutes) minutes."),
             ]))
         }
         return .section(SectionWidget(id: "models", title: "Leftover models", widgets: [widget]))

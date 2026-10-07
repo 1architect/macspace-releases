@@ -21,12 +21,48 @@ public struct FileTreeSize: Sendable, Equatable {
     public var bytes: UInt64 { allocatedBytesEstimate ?? logicalBytes }
 }
 
+/// APFS clone families already counted, shared by every tree one scan sizes. A cloned file's blocks are stored once however many
+/// files share them; System Settings counts the disk's real use, so a per-file count overstated System Data (0.47 GB in
+/// `~/Library/Application Support` alone, measured 2026-10-06). The first file of a family counts in full, later ones only the bytes
+/// they do not share (`ATTR_CMNEXT_PRIVATESIZE`).
+public final class CloneLedger: @unchecked Sendable {
+    private let lock = NSLock()
+    private var seen = Set<UInt64>()
+
+    public init() {}
+
+    /// True the first time a family is seen.
+    func claim(_ family: UInt64) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return seen.insert(family).inserted
+    }
+}
+
 public struct FileTreeSizer: Sendable {
     /// Also adds up the files flagged purgeable (`FileTreeSize.purgeableBytes`): one more system call per file.
     public let countsPurgeable: Bool
+    /// Counts each APFS clone family's shared blocks once across every tree sized with this ledger.
+    public let clones: CloneLedger?
 
-    public init(countsPurgeable: Bool = false) {
+    public init(countsPurgeable: Bool = false, clones: CloneLedger? = nil) {
         self.countsPurgeable = countsPurgeable
+        self.clones = clones
+    }
+
+    /// A file's clone family, the bytes only it holds, and its extended flags. nil when they cannot be read.
+    static func extendedAttributes(_ path: String) -> (family: UInt64, privateBytes: UInt64, flags: UInt64)? {
+        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0, fileattr: 0,
+                            forkattr: attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS))
+        var buffer = [UInt8](repeating: 0, count: 32)
+        let result = buffer.withUnsafeMutableBytes { getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
+        guard result == 0 else { return nil }
+        // The length, then the extended attributes in bit order: private size, clone id, extended flags.
+        return buffer.withUnsafeBytes {
+            (family: $0.loadUnaligned(fromByteOffset: 12, as: UInt64.self),
+             privateBytes: UInt64(max($0.loadUnaligned(fromByteOffset: 4, as: Int64.self), 0)),
+             flags: $0.loadUnaligned(fromByteOffset: 20, as: UInt64.self))
+        }
     }
 
     /// Whether APFS flags the file purgeable: macOS may delete it when space runs low.
@@ -105,10 +141,14 @@ public struct FileTreeSizer: Sendable {
 
                 guard resource.isRegularFile == true else { continue }
                 logical += logicalSize(from: resource) ?? 0
-                if let value = allocatedSize(from: resource) {
+                if var value = allocatedSize(from: resource) {
+                    if countsPurgeable || clones != nil, value > 0, let extended = Self.extendedAttributes(item.path) {
+                        // A later member of a clone family adds only what it does not share.
+                        if let clones, extended.family != 0, !clones.claim(extended.family) { value = min(value, extended.privateBytes) }
+                        if countsPurgeable, extended.flags & UInt64(EF_IS_PURGEABLE) != 0 { purgeable += value }
+                    }
                     allocated += value
                     sawAllocated = true
-                    if countsPurgeable, value > 0, Self.isPurgeable(item.path) { purgeable += value }
                 }
             }
 

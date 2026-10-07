@@ -3,8 +3,9 @@ import MacSpacePlatform
 import SwiftUI
 
 /// One page, in this order: General (with the look, and a row opening the permissions the active modules need), Cleanup (automatic
-/// cleanup and its history), the module switches, then the options and background tasks of each module that has any. A system grouped form, as the module pages are: it keeps its look
-/// whatever the palette and glass settings. Descriptions are tooltips. Sections are built directly in this view: wrapping them in
+/// cleanup and its history), Notifications, the module switches, then the options and background tasks of each module that has
+/// any. A system grouped form, as the module pages are: it keeps its look whatever the palette and glass settings. Only the rows
+/// whose title is not enough have an (i) (`InfoButton`). Sections are built directly in this view: wrapping them in
 /// custom views inside a ForEach made them render inside the previous card.
 struct SettingsView: View {
     @ObservedObject var host: ModuleHost
@@ -21,6 +22,7 @@ struct SettingsView: View {
         Form {
             GeneralSettingsSection(host: host, updates: updates)
             CleanupSection(cleaner: host.autoCleaner, host: host)
+            NotificationSettingsSection()
             Section("Modules") {
                 ForEach(host.handles) { handle in
                     ModuleToggleRow(host: host, handle: handle)
@@ -36,15 +38,17 @@ struct SettingsView: View {
                         let options = host.settings.optionStore(for: handle.manifest)
                         Toggle(task.title, isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
                                                          set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 }))
-                            .help(task.detail ?? "")
                     }
                 }
             }
             if !host.problems.isEmpty {
                 Section("Modules that could not be used") {
                     ForEach(host.problems) { problem in
-                        LabeledContent(problem.bundleName) { Image(systemName: "exclamationmark.triangle").foregroundStyle(DesignSettings.shared.design.action) }
-                            .help(problem.reason)
+                        LabeledContent {
+                            Image(systemName: "exclamationmark.triangle").foregroundStyle(DesignSettings.shared.design.action)
+                        } label: {
+                            InfoTitle(title: problem.bundleName, info: problem.reason)
+                        }
                     }
                 }
             }
@@ -75,13 +79,11 @@ struct SettingsView: View {
         case .toggle:
             Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
                                                set: { host.settings.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
-                .help(option.detail ?? "")
         case let .choice(choices, _):
             Picker(option.title, selection: Binding(get: { options.string(option.id) },
                                                     set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
                 ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
             }
-            .help(option.detail ?? "")
         }
     }
 }
@@ -112,7 +114,7 @@ struct PermissionsPage: View {
             Section {
                 if permissions.isEmpty { Text("No module needs a permission.").foregroundStyle(.secondary) }
                 ForEach(permissions, id: \.permission) { entry in
-                    PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission), usedBy: entry.usedBy)
+                    PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission))
                 }
             }
             PageBottomRoom()
@@ -142,12 +144,11 @@ private struct ModuleToggleRow: View {
         let incompatible: String? = { if case let .incompatible(reason) = handle.state { return reason } else { return nil } }()
         Toggle(isOn: Binding(get: { handle.isEnabled }, set: { value in Task { await host.setEnabled(value, module: handle.id) } })) {
             VStack(alignment: .leading, spacing: 2) {
-                Label(handle.manifest.name, systemImage: handle.manifest.symbol)
+                Text(handle.manifest.name)
                 if let incompatible { Text(incompatible).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
                 if case let .failed(reason) = handle.state { Text(reason).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
             }
         }
-        .help(handle.manifest.summary)
         .disabled(incompatible != nil)
     }
 }
@@ -155,17 +156,15 @@ private struct ModuleToggleRow: View {
 private struct PermissionRow: View {
     let permission: Permission
     let status: PermissionStatus
-    var usedBy: [String] = []
     @State private var helperError: String?
     @State private var helperStatus: PermissionStatus?
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(permission.title)
+                InfoTitle(title: permission.title, info: permission.detail)
                 if let helperError { Text(helperError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
             }
-            .help(Tooltip.join(permission.detail, usedBy.isEmpty ? nil : "Used by \(usedBy.joined(separator: ", ")).") ?? "")
             Spacer()
             switch (permission == .privilegedHelper ? helperStatus : nil) ?? status {
             case .granted: Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green).labelStyle(.titleAndIcon)
@@ -182,7 +181,10 @@ private struct PermissionRow: View {
                 }
             case .unknown:
                 if permission == .privilegedHelper {
-                    helperButton.help(PrivilegedHelperInstaller.notFoundReason())
+                    HStack(spacing: 8) {
+                        InfoButton(text: PrivilegedHelperInstaller.notFoundReason())
+                        helperButton
+                    }
                 } else {
                     Text("Unknown").foregroundStyle(.secondary)
                 }

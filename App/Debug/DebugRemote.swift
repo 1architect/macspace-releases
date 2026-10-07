@@ -1,11 +1,13 @@
 import AppKit
 import Foundation
+import MacSpacePlatform
+import SQLite3
 
 /// Lets a development session drive the window and photograph it, without Screen Recording permission (an app may capture its own
 /// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
-///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png> | du:<depth>:<file.tsv>:<folder>
+///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png> | capturePopover:<file.png> | du:<depth>:<file.tsv>:<folder> | settings:<file.json> | sql:<out.txt>|<database>|<query>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
@@ -53,6 +55,21 @@ final class DebugRemote: ObservableObject {
             DesignSettings.shared.glass = text == "glass:on"
         } else if text.hasPrefix("palette:"), let scheme = PaletteScheme(rawValue: String(text.dropFirst("palette:".count))) {
             DesignSettings.shared.scheme = scheme
+        } else if text.hasPrefix("sql:") {
+            // sql:<out.txt>|<database>|<query>: one read-only query with the app's own access, rows tab-separated.
+            let parts = text.dropFirst("sql:".count).split(separator: "|", maxSplits: 2).map(String.init)
+            if parts.count == 3 { Task.detached(priority: .utility) { DebugSQL.run(parts[2], database: parts[1], to: parts[0]) } }
+        } else if text.hasPrefix("settings:") {
+            // settings:<file.json>, the disk as System Settings divides it (`SettingsStorage`), measured with the app's own access.
+            let file = String(text.dropFirst("settings:".count))
+            Task.detached(priority: .utility) {
+                guard let reading = SettingsStorageMeter().measure() else { return }
+                var json: [String: Any] = ["capacity": reading.capacity, "used": reading.used, "macOS": reading.macOS, "systemData": reading.systemData]
+                for category in reading.categories { json[category.id] = category.bytes }
+                if let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
+                    try? data.write(to: URL(fileURLWithPath: file))
+                }
+            }
         } else if text.hasPrefix("du:") {
             // du:<depth>:<file.tsv>:<folder>, sized with the app's own Full Disk Access (a shell usually has none).
             let parts = text.dropFirst("du:".count).split(separator: ":", maxSplits: 2).map(String.init)
@@ -63,6 +80,14 @@ final class DebugRemote: ObservableObject {
             // captureTitled:<window title>:<file.png>
             let parts = text.dropFirst("captureTitled:".count).split(separator: ":", maxSplits: 1).map(String.init)
             if parts.count == 2 { Self.capture(to: parts[1], title: parts[0]) }
+        } else if text.hasPrefix("capturePopover:") {
+            // The balloon an (i) opened (`InfoButton`): a window of its own.
+            let path = String(text.dropFirst("capturePopover:".count))
+            let windows = NSApp.windows.filter { $0.isVisible }
+            try? windows.map { "\(type(of: $0)) \($0.frame)" }.joined(separator: "\n").write(toFile: path + ".txt", atomically: true, encoding: .utf8)
+            if let popover = windows.filter({ String(describing: type(of: $0)).contains("Popover") }).max(by: { $0.frame.width < $1.frame.width }) {
+                Self.capture(to: path, window: popover)
+            }
         } else if text.hasPrefix("capture:") {
             Self.capture(to: String(text.dropFirst("capture:".count)))
         } else if text.hasPrefix("frames:") {
@@ -88,8 +113,8 @@ final class DebugRemote: ObservableObject {
         return unsafeBitCast(symbol, to: CreateImage.self)
     }()
 
-    static func capture(to path: String, title: String? = nil) {
-        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 300 && (title == nil || $0.title == title) }), let createImage,
+    static func capture(to path: String, title: String? = nil, window: NSWindow? = nil) {
+        guard let window = window ?? NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 300 && (title == nil || $0.title == title) }), let createImage,
               let image = createImage(.null, 1 << 3, UInt32(window.windowNumber), 0)?.takeRetainedValue(),
               let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
             NSLog("MacSpace debug: capture failed")
@@ -139,5 +164,28 @@ enum DiskTally {
         let lines = totals.sorted { $0.value > $1.value }.map { "\($0.value)\t\(unreadable[$0.key] ?? 0)\t\($0.key)" }
             + unreadable.filter { totals[$0.key] == nil }.map { "0\t\($0.value)\t\($0.key)" } + ["#done"]
         try? lines.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+    }
+}
+
+/// Read-only SQLite queries for development (`sql:`), with the app's Full Disk Access.
+enum DebugSQL {
+    static func run(_ query: String, database: String, to file: String) {
+        var db: OpaquePointer?
+        var output = ""
+        if sqlite3_open_v2("file:\(database)?mode=ro", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) != SQLITE_OK {
+            output = "open failed: \(String(cString: sqlite3_errmsg(db)))"
+        } else {
+            var statement: OpaquePointer?
+            if sqlite3_prepare_v2(db, query, -1, &statement, nil) != SQLITE_OK {
+                output = "prepare failed: \(String(cString: sqlite3_errmsg(db)))"
+            } else {
+                while sqlite3_step(statement) == SQLITE_ROW {
+                    output += (0..<sqlite3_column_count(statement)).map { sqlite3_column_text(statement, $0).map { String(cString: $0) } ?? "NULL" }.joined(separator: "\t") + "\n"
+                }
+            }
+            sqlite3_finalize(statement)
+        }
+        sqlite3_close(db)
+        try? output.write(toFile: file, atomically: true, encoding: .utf8)
     }
 }

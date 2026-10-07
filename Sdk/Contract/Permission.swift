@@ -20,9 +20,9 @@ public enum Permission: String, Codable, CaseIterable, Sendable {
 
     public var detail: String {
         switch self {
-        case .fullDiskAccess: return "Lets MacSpace read protected system locations to measure them."
-        case .privilegedHelper: return "A background service you approve once, for the few steps that need administrator rights."
-        case .configurationProfile: return "A profile you approve in System Settings that enforces the privacy policies you choose."
+        case .fullDiskAccess: return "Needed to measure everything on the disk."
+        case .privilegedHelper: return "Does the few things that need an administrator."
+        case .configurationProfile: return "Applies the Debloat policies you turn on."
         }
     }
 }

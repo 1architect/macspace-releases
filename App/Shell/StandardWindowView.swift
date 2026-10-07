@@ -147,7 +147,8 @@ public struct StandardWindowView: View {
                 row("Overview", symbol: "square.grid.2x2", .home)
                 Section("Modules") {
                     ForEach(host.dashboardHandles) { handle in
-                        row(handle.manifest.name, symbol: handle.manifest.symbol, .module(handle.id))
+                        // Modules by name only: their symbols are not shown anywhere.
+                        row(handle.manifest.name, symbol: nil, .module(handle.id))
                     }
                 }
             }
@@ -175,9 +176,9 @@ public struct StandardWindowView: View {
     }
 
     @ViewBuilder
-    private func row(_ title: String, symbol: String, _ destination: Destination) -> some View {
+    private func row(_ title: String, symbol: String?, _ destination: Destination) -> some View {
         Group {
-            if designSettings.standardSidebarIcons { Label(title, systemImage: symbol) } else { Text(title) }
+            if designSettings.standardSidebarIcons, let symbol { Label(title, systemImage: symbol) } else { Text(title) }
         }
         .tag(destination)
     }

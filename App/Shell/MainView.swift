@@ -79,7 +79,7 @@ public final class CanvasNavigator: ObservableObject {
 public struct MainView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
-    @StateObject private var storage = StorageOverview()
+    @ObservedObject private var storage = StorageOverview.shared
     @ObservedObject private var remote = DebugRemote.shared
     @ObservedObject private var router = AppRouter.shared
     @ObservedObject private var designSettings = DesignSettings.shared
@@ -134,7 +134,7 @@ public struct MainView: View {
                 .animation(.smooth(duration: 0.45), value: designSettings.design)
                 .background { shortcuts }
                 .task { await host.start() }
-                .task { await storage.refresh() }
+                .task { storage.follow(host); await storage.watch() }
                 .onAppear { windowShown = true }
                 .onChange(of: navigator.request) { _, request in if let request { follow(request.destination) } }
                 .onChange(of: remote.command?.id) { _, _ in handleRemote() }
@@ -188,7 +188,7 @@ public struct MainView: View {
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + 2 * Theme.resizeMargin)
         .task { await host.start() }
-        .task { await storage.refresh() }
+        .task { storage.follow(host); await storage.watch() }
         .modifier(WindowKindSwitch(id: MacSpaceWindow.glass))
         .task {
             // A moment after the window appears, so the glass animates in instead of landing in the first frame.

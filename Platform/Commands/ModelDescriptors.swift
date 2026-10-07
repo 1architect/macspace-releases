@@ -52,6 +52,22 @@ public enum ModelDescriptors {
         return readAny || names.isEmpty ? usage : nil
     }
 
+    /// Where MobileAsset records what it staged for the next macOS update (`AutoAssetStager_Entry_…`).
+    public static let stagerDirectory = "/System/Library/AssetsV2/persisted/AutoAssetStager"
+
+    /// What MobileAsset has staged for the next macOS update in these families: each entry's `assetContentBytes`. Staged models sit
+    /// in the families' folders, which System Settings counts (216.6 MB of the 716.7 MB it showed for Apple Intelligence, 2026-10-06).
+    public static func stagedBytes(directory: String = stagerDirectory, families: [String] = families, fileManager: FileManager = .default) -> UInt64 {
+        let names = (try? fileManager.contentsOfDirectory(atPath: directory)) ?? []
+        return names.filter { name in families.contains { name.contains("_\($0)_") } }.compactMap { name -> UInt64? in
+            guard let data = fileManager.contents(atPath: "\(directory)/\(name)"),
+                  let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+                  let fields = plist["SUCorePersistedStatePolicyFields"] as? [String: Any],
+                  let bytes = fields["assetContentBytes"] as? NSNumber else { return nil }
+            return bytes.uint64Value
+        }.reduce(0, +)
+    }
+
     /// The descriptor archived inside one record (a SUCore persisted-state property list).
     static func decode(_ data: Data) -> Descriptor? {
         guard let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],

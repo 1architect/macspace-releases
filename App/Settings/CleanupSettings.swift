@@ -1,7 +1,7 @@
 import MacSpacePlatform
 import SwiftUI
 
-/// Cleanup in one section: automatic cleanup (on or off, how often, which modules take part), then what has been freed so far and a
+/// Cleanup in one section: automatic cleanup (on or off, how often), then what has been freed so far and a
 /// row that opens the page of every cleanup (`CleanupHistoryPage`).
 struct CleanupSection: View {
     @ObservedObject var cleaner: AutoCleaner
@@ -9,14 +9,11 @@ struct CleanupSection: View {
     @State private var count = CleanupHistory.shared.entries.count
     @State private var lifetime = CleanupHistory.shared.lifetimeBytes
 
-    private var takingPart: [String] {
-        host.activeHandles.filter { $0.manifest.autoClean == true }.map(\.manifest.name)
-    }
-
     var body: some View {
         Section("Cleanup") {
-            Toggle("Clean automatically", isOn: $cleaner.isEnabled)
-                .help("While MacSpace runs (its window or the menu bar), it frees what is safe to free without asking: caches, old reports, purgeable app files and released system assets. Never version history or anything that cannot be undone. Modules taking part: \(takingPart.isEmpty ? "none" : takingPart.joined(separator: ", ")).")
+            Toggle(isOn: $cleaner.isEnabled) {
+                InfoTitle(title: "Clean automatically", info: "Frees caches, old reports and other files that are safe to delete. Never version history.")
+            }
             if cleaner.isEnabled {
                 Picker("How often", selection: $cleaner.frequency) {
                     ForEach(AutoCleaner.Frequency.allCases) { Text($0.title).tag($0) }
@@ -25,7 +22,6 @@ struct CleanupSection: View {
             LabeledContent("Freed in total") {
                 Text(ByteFormat.string(lifetime)).monospacedDigit().contentTransition(.numericText())
             }
-            .help("Everything MacSpace has freed on this Mac, measured on the volume each time.")
             SettingsLinkRow(title: "Recent cleanups", note: count == 1 ? "1 cleanup" : "\(count) cleanups") { host.settingsPage = .cleanupHistory }
         }
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
@@ -74,7 +70,6 @@ struct CleanupHistoryPage: View {
                         Spacer(minLength: 8)
                         Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
                     }
-                    .help(entry.summary)
                 }
             } header: {
                 TitleLine(title: "Recent cleanups", note: "\(ByteFormat.string(lifetime)) freed in total")

@@ -61,6 +61,8 @@ struct DebloatWatchStore {
             let content = UNMutableNotificationContent()
             content.title = title
             content.body = body
+            // Opens Debloat's page when clicked (`AppNotifications`).
+            content.userInfo = ["module": "com.macspace.debloat"]
             center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
         }
     }

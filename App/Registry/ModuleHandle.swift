@@ -189,6 +189,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             return result
         }
         performing = true
+        let started = Date()
         if !quiet { updateBusy(); isCleaning = true }
         defer { if !quiet { isCleaning = false } }
         if !quiet { progress = nil }
@@ -205,6 +206,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         if !quiet { progress = nil }
         if !quiet || result.outcome != .succeeded || result.restartRequired { lastResult = result }
+        // A long action that ends while the user is in another app says so in Notification Center.
+        if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
         if let freed = result.freedBytes {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: freed, trigger: .manual, summary: result.message)
         }

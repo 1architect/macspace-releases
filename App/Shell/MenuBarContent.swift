@@ -22,6 +22,8 @@ public final class AppRouter: ObservableObject {
 
     /// Brings MacSpace forward, opening its window if it is closed, and then the page for `destination`, if any.
     public func open(_ destination: Destination? = nil) {
+        // Running unseen in the background, MacSpace has no Dock icon: it comes back with the window.
+        BackgroundPresence.shared.show()
         NSApp.activate()
         if let window = Self.mainWindow {
             if window.isMiniaturized { window.deminiaturize(nil) }
@@ -53,8 +55,8 @@ public final class AppRouter: ObservableObject {
     }
 }
 
-/// The menu bar item. A click opens MacSpace; a right click (or Control-click) opens its menu: each module with what its tile says,
-/// opening that module's page, then Open, Settings and Quit. While something is being cleaned, the icon's circles leave and come back
+/// The menu bar item. A click opens MacSpace; a right click (or Control-click) opens its menu: each module by name (with a "!" when
+/// its tile needs attention), opening that module's page, then Open, Settings and Quit. While something is being cleaned, the icon's circles leave and come back
 /// (`MenuBarIcon`).
 @MainActor
 public final class StatusItemController: NSObject {
@@ -115,14 +117,9 @@ public final class StatusItemController: NSObject {
     private func menu() -> NSMenu {
         let menu = NSMenu()
         for handle in host?.activeHandles ?? [] {
-            let entry = NSMenuItem(title: handle.manifest.name, action: #selector(openModule(_:)), keyEquivalent: "")
-            entry.target = self
+            let entry = entry(handle.manifest.name, #selector(openModule(_:)), key: "")
             entry.representedObject = handle.id
-            entry.image = NSImage(systemSymbolName: handle.manifest.symbol, accessibilityDescription: nil)
-            if let tile = handle.tile {
-                entry.subtitle = tile.status
-                if tile.needsAttention { entry.badge = NSMenuItemBadge(string: "!") }
-            }
+            if handle.tile?.needsAttention == true { entry.badge = NSMenuItemBadge(string: "!") }
             menu.addItem(entry)
         }
         if host?.activeHandles.isEmpty ?? true {
@@ -131,14 +128,15 @@ public final class StatusItemController: NSObject {
         menu.addItem(.separator())
         menu.addItem(entry("Open MacSpace", #selector(openApp), key: "o"))
         menu.addItem(entry("Settings…", #selector(openSettings), key: ","))
-        menu.addItem(.separator())
         menu.addItem(entry("Quit MacSpace", #selector(quit), key: "q"))
         return menu
     }
 
+    /// Text only: macOS 27 gives some items a symbol of its own ("Settings…" a gear) unless told not to.
     private func entry(_ title: String, _ action: Selector, key: String) -> NSMenuItem {
         let entry = NSMenuItem(title: title, action: action, keyEquivalent: key)
         entry.target = self
+        if #available(macOS 27, *) { entry.preferredImageVisibility = .hidden }
         return entry
     }
 
@@ -166,6 +164,48 @@ public final class StatusItemController: NSObject {
             self?.phase = 0
             self?.item?.button?.image = MenuBarIcon.image(phase: 0)
             self?.animation = nil
+        }
+    }
+}
+
+/// Running in the background (`GeneralSettings.ClosedWindow.background`): once its last window closes, MacSpace leaves the Dock and
+/// the app switcher (an accessory app), and comes back as an ordinary app when a window opens again, whatever opened it
+/// (Applications, Spotlight, a notification, `AppRouter`).
+@MainActor
+public final class BackgroundPresence {
+    public static let shared = BackgroundPresence()
+    private var observers: [NSObjectProtocol] = []
+
+    public func install() {
+        guard observers.isEmpty else { return }
+        let center = NotificationCenter.default
+        observers.append(center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { notification in
+            let closing = notification.object as? NSWindow
+            // After the window is gone, so it no longer counts as open.
+            DispatchQueue.main.async { MainActor.assumeIsolated { BackgroundPresence.shared.hideIfUnseen(closing: closing) } }
+        })
+        observers.append(center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { BackgroundPresence.shared.show() }
+        })
+    }
+
+    /// Back in the Dock and the app switcher.
+    func show() {
+        if NSApp.activationPolicy() != .regular { NSApp.setActivationPolicy(.regular) }
+    }
+
+    private func hideIfUnseen(closing: NSWindow?) {
+        guard GeneralSettings.closedWindow() == .background, !Self.hasOpenWindow(besides: closing) else { return }
+        NSApp.setActivationPolicy(.accessory)
+    }
+
+    /// A window of MacSpace's own is on screen or in the Dock (menus, popovers and the status item's window do not count).
+    static func hasOpenWindow(besides closing: NSWindow?) -> Bool {
+        NSApp.windows.contains { window in
+            guard window !== closing, window.isVisible || window.isMiniaturized else { return false }
+            // The glass window has no title bar.
+            let id = window.identifier?.rawValue ?? ""
+            return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass) || id.hasPrefix(MacSpaceWindow.standard)
         }
     }
 }

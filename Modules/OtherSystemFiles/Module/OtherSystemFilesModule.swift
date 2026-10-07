@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
@@ -17,11 +18,18 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        OtherSystemFilesScreenBuilder.tile(await store.snapshot())
+        OtherSystemFilesScreenBuilder.tile(await snapshot())
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        OtherSystemFilesScreenBuilder.screen(await store.snapshot())
+        OtherSystemFilesScreenBuilder.screen(await snapshot())
+    }
+
+    /// The last reading, with how far the removals of cloud downloads running now are: read live, not cached with the figures.
+    private func snapshot() async -> PurgeableSnapshot {
+        var snapshot = await store.snapshot()
+        snapshot.removing = CloudDownloadRemovals.shared.current()
+        return snapshot
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -36,6 +44,11 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         switch request.actionID {
         case "purgeFiles":
             return await purgeAndKeepAsking(progress: progress).result
+        case "openSoftwareUpdate":
+            NSWorkspace.shared.open(PreparedUpdate.settingsURL)
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
+        case "removeDownloads":
+            return Self.removeDownloads(request.parameters["path"] ?? "", store: store)
         default:
             return .failed("Unknown action \(request.actionID).")
         }
@@ -77,6 +90,24 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             }
         }
         return (purge.result, purge.freed)
+    }
+
+    /// Starts removing the downloaded copies of one cloud service's files that are already in the cloud, in the background: with
+    /// thousands of files it takes minutes, and the page stays usable while the row shows how far it is. Only a folder the last scan
+    /// found (`PurgeableDocuments.isCloudFolder` checks it again). What it freed, measured on the volume, goes to the history.
+    static func removeDownloads(_ path: String, store: PurgeableStore) -> ActionResult {
+        guard PurgeableDocuments.isCloudFolder(path), let source = PurgeableDocuments.scan(maxAge: 600).first(where: { $0.path == path }) else {
+            return .failed("That cloud folder is no longer on this Mac")
+        }
+        let name = source.name
+        CloudDownloadRemovals.shared.start(URL(fileURLWithPath: path)) { removal, freed in
+            var summary = "\(name) downloads: \(removal.files) file(s) now only in the cloud"
+            if removal.kept > 0 { summary += ", \(removal.kept) kept (not uploaded yet, in conflict, or refused)" }
+            CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
+                                         trigger: .manual, summary: summary)
+            Task { await store.invalidate() }
+        }
+        return ActionResult(outcome: .succeeded, message: "", refresh: true)
     }
 
     /// Apple's own purge of the files apps marked purgeable, run in the CLI child process: first at the urgency the disk's

@@ -93,6 +93,10 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     public var expectedReclaimBytes: UInt64? = nil
     /// Of `bytes`, files macOS may delete by itself (flagged purgeable). System Settings counts them as free space, not System Data.
     public var purgeableBytes: UInt64? = nil
+    /// Of `bytes`, what System Settings lists in another category (`SettingsStorageMeter.claimedPlaces`): apps inside the folder (an
+    /// installer's helper app, a tool's own app, a runtime), apps' containers, developer files, iOS backups, or the whole item when it
+    /// is in such a place or in the home folder outside `~/Library` (Documents). Not System Data.
+    public var elsewhereBytes: UInt64? = nil
     /// Steps the user takes in the owning app when MacSpace cannot clean it.
     public var guide: ManualCleanupGuide? = nil
 }
@@ -196,6 +200,45 @@ public struct SystemDataInspector {
     public static let minimumItemBytes: UInt64 = 50 * 1_000_000
     static let partialDownloadSuffixes = [".part", ".partial", ".crdownload", ".download", ".opdownload", ".prlupd-part"]
     static let virtualMachineSuffixes = [".pvm", ".utm", ".vmwarevm"]
+    /// The folders a Chromium or Electron profile keeps its caches in, all rebuilt by the app: the HTTP cache, compiled JavaScript
+    /// (VS Code's `CachedData` too) and GPU shaders. Not its storage (Local Storage, IndexedDB, Service Worker), which holds data.
+    public static let chromiumCacheNames: Set<String> = ["Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache",
+                                                         "GrShaderCache", "ShaderCache", "CachedData"]
+    /// Files only a Chromium profile (or its root) has.
+    static let chromiumProfileMarkers = ["Network Persistent State", "Local State"]
+
+    /// The cache folders of the Chromium profiles in an app's Application Support folder, the folder itself or up to two levels
+    /// down (Chrome's `Google/Chrome/Default`). A folder named like a cache counts only beside a profile's own files.
+    static func chromiumCaches(in folder: String, fileManager: FileManager = .default) -> [String] {
+        var found: [String] = []
+        func visit(_ directory: String, depth: Int) {
+            let entries = (try? fileManager.contentsOfDirectory(atPath: directory)) ?? []
+            let isProfile = entries.contains { chromiumProfileMarkers.contains($0) }
+            for entry in entries.sorted() {
+                let path = (directory as NSString).appendingPathComponent(entry)
+                var isDirectory: ObjCBool = false
+                guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else { continue }
+                if isProfile, chromiumCacheNames.contains(entry) { found.append(path) }
+                else if depth > 0, !entry.hasPrefix(".") { visit(path, depth: depth - 1) }
+            }
+        }
+        visit(folder, depth: 2)
+        return found
+    }
+
+    /// Who must not be running while an app's caches go: the folder's name, and the folders the profile sits in ("Google",
+    /// "Chrome", "Google Chrome"), so the check finds the app whatever it is named after.
+    static func cacheOwners(_ name: String, caches: [String], under folder: String) -> [String] {
+        var owners = [name]
+        for cache in caches {
+            let inner = (cache as NSString).deletingLastPathComponent.dropFirst(folder.count).split(separator: "/").map(String.init)
+            owners += inner.filter { $0 != "Default" && !$0.hasPrefix("Profile ") }
+            if let first = inner.first { owners.append("\(name) \(first)") }
+        }
+        var seen = Set<String>()
+        return owners.filter { seen.insert($0.lowercased()).inserted }
+    }
+
     /// Cache folders of Apple daemons without a `com.apple.` prefix.
     static let appleCacheNames: Set<String> = ["GeoServices", "CloudKit", "familycircled", "features_config", "tvapp_bag", "menkaure.enabled"]
 
@@ -204,17 +247,21 @@ public struct SystemDataInspector {
     private let runningApps: () -> [RunningApp]
     private let volumes: () -> [VolumeUsage]
     private let accountExists: (uid_t) -> Bool
-    private let sizer = FileTreeSizer(countsPurgeable: true)
+    private let claimedPlaces: () -> [String]
+
 
     public init(locations: SystemDataLocations = .live(), fileManager: FileManager = .default,
                 runningApps: @escaping () -> [RunningApp] = SystemDataInspector.liveRunningApps,
                 volumes: @escaping () -> [VolumeUsage] = SystemDataInspector.liveVolumes,
-                accountExists: @escaping (uid_t) -> Bool = SystemDataInspector.liveAccountExists) {
+                accountExists: @escaping (uid_t) -> Bool = SystemDataInspector.liveAccountExists,
+                claimedPlaces: (() -> [String])? = nil) {
         self.locations = locations
         self.fileManager = fileManager
         self.runningApps = runningApps
         self.volumes = volumes
         self.accountExists = accountExists
+        let home = locations.home
+        self.claimedPlaces = claimedPlaces ?? { SettingsStorageMeter.liveClaimedPlaces(home: home) }
     }
 
     public static func liveAccountExists(_ uid: uid_t) -> Bool { getpwuid(uid) != nil }
@@ -242,6 +289,8 @@ public struct SystemDataInspector {
     // MARK: Inspect
 
     public func inspect(now: Date = Date()) -> SystemDataReport {
+        // Each scan counts an APFS clone family once across every item (`CloneLedger`).
+        let sizer = FileTreeSizer(countsPurgeable: true, clones: CloneLedger())
         let running = runningApps()
         var items: [SystemDataItem] = []
         var unreadable: [String] = []
@@ -278,6 +327,8 @@ public struct SystemDataInspector {
             var cleanup: SystemDataCleanup, notes: [String], minimum: UInt64, expectedReclaim: UInt64?, measurable: Bool
         }
         var pending: [Pending] = []
+        /// What each entry measured, listed or not.
+        var measuredTotals: [String: UInt64] = [:]
         func add(_ id: String, _ title: String, _ kind: SystemDataKind, paths: [String], owners: [String] = [],
                  cleanup: SystemDataCleanup, notes: [String] = [], minimum: UInt64 = 0, expectedReclaim: UInt64? = nil,
                  measurable: Bool = true) {
@@ -312,6 +363,7 @@ public struct SystemDataInspector {
                     }
                 }
                 guard entry.paths.contains(where: fileManager.fileExists(atPath:)) else { continue }
+                if measured { measuredTotals[entry.id] = total }
                 // Listed entries (minimum > 0) are shown only when large enough. One this process cannot read stays, without a size,
                 // for the helper to measure (`RootMeasurements`).
                 if entry.minimum > 0, measured, total < entry.minimum {
@@ -329,12 +381,12 @@ public struct SystemDataInspector {
             }
         }
         let deleteWhenClosed = { (what: String) in
-            SystemDataCleanup(kind: .deleteWhenNotRunning, description: "Safe to delete while \(what) is not running; it is recreated when needed.", command: nil)
+            SystemDataCleanup(kind: .deleteWhenNotRunning, description: "Safe to delete while \(what) is closed. It's rebuilt when needed.", command: nil)
         }
         // Apple's own caches belong to background daemons that are always running, which the app check cannot see.
         let appleManaged = SystemDataCleanup(kind: .managedByMacOS, description: "Apple system cache used by background services; macOS manages it.", command: nil)
         // Third-party app caches are listed because they fill System Data, but cleaning them is not this module's job.
-        let appCacheReview = SystemDataCleanup(kind: .review, description: "A cache of this app. Cleaning app caches is outside System Data cleanup; the app rebuilds it.", command: nil)
+        let appCacheReview = SystemDataCleanup(kind: .review, description: "", command: nil)
         func isAppleCache(_ name: String) -> Bool { name.hasPrefix("com.apple.") || Self.appleCacheNames.contains(name) }
 
         // Code-signing clones and the per-user system cache.
@@ -365,14 +417,22 @@ public struct SystemDataInspector {
         for path in children((home as NSString).appendingPathComponent(".cache")) {
             let name = (path as NSString).lastPathComponent
             add("toolcache:\(name)", "Tool cache: ~/.cache/\(name)", .toolCache, paths: [path], owners: [name],
-                cleanup: SystemDataCleanup(kind: .review, description: "A command-line tool's cache or runtime; the tool may download it again.", command: nil),
+                cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
                 minimum: Self.minimumItemBytes)
         }
         for path in children((home as NSString).appendingPathComponent("Library/Application Support")) {
             let name = (path as NSString).lastPathComponent
             add("appsupport:\(name)", name, .appSupport, paths: [path], owners: [name],
-                cleanup: SystemDataCleanup(kind: .review, description: "Data that belongs to the app (settings, libraries, downloads). Remove it with the app, not as junk.", command: nil),
+                cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
                 minimum: 100 * 1_000_000)
+            // Chromium and Electron apps (browsers, Slack, VS Code, Claude…) keep their web caches here rather than in Caches: the
+            // HTTP cache, compiled scripts and GPU shaders, which the app rebuilds. Found by their names inside a Chromium profile,
+            // whatever the app is called; taken off the app's own figure above once measured.
+            let caches = Self.chromiumCaches(in: path, fileManager: fileManager)
+            if !caches.isEmpty {
+                add("supportcache:\(name)", "App cache: \(name)", .appCache, paths: caches, owners: Self.cacheOwners(name, caches: caches, under: path),
+                    cleanup: deleteWhenClosed(name), minimum: Self.minimumItemBytes)
+            }
         }
 
         // Fixed locations.
@@ -383,7 +443,7 @@ public struct SystemDataInspector {
                 cleanup: SystemDataCleanup(kind: .review, description: "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.", command: nil))
         }
         add("packages:homebrew", "Homebrew", .packageManager, paths: [system["homebrew"], system["usrLocal"]].compactMap { $0 },
-            cleanup: SystemDataCleanup(kind: .command, description: "Installed packages. Running `brew cleanup` in Terminal removes old versions and downloads; most of this size is the packages themselves.", command: nil))
+            cleanup: SystemDataCleanup(kind: .command, description: "Run brew cleanup in Terminal to remove old versions.", command: nil))
         add("logs:unified", "Unified system log", .logs, paths: [system["unifiedLog"], system["uuidtext"]].compactMap { $0 },
             cleanup: managed("Rotated by logd; deleting it removes the logs needed for troubleshooting."))
         if let path = system["systemReports"] {
@@ -413,7 +473,7 @@ public struct SystemDataInspector {
                     cleanup: managed("Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone."))
             } else {
                 add("update:staged", "Staged macOS update", .stagedUpdate, paths: [path],
-                    cleanup: SystemDataCleanup(kind: .review, description: "A downloaded update that macOS installs or removes; check System Settings > General > Software Update.", command: nil))
+                    cleanup: SystemDataCleanup(kind: .review, description: "Check Software Update in System Settings.", command: nil))
             }
         }
         if let path = system["symbolCache"] {
@@ -432,7 +492,7 @@ public struct SystemDataInspector {
                 let apple = name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.")
                 add("container:\(name)", "\(folder == "Containers" ? "App container" : "App group data"): \(name)", .appContainer, paths: [path], owners: [name],
                     cleanup: apple ? managed("Data of an Apple app or service.")
-                                   : SystemDataCleanup(kind: .review, description: "Data of a sandboxed app (for messaging apps, mostly media); clean it from inside the app.", command: nil),
+                                   : SystemDataCleanup(kind: .review, description: "Mostly media. Clean it up from inside the app.", command: nil),
                     minimum: 100 * 1_000_000)
             }
         }
@@ -444,7 +504,7 @@ public struct SystemDataInspector {
         for path in children((library as NSString).appendingPathComponent("CloudStorage")) where hasFullDiskAccess {
             let name = (path as NSString).lastPathComponent
             add("cloud:\(name)", "Cloud storage: \(name)", .cloudStorage, paths: [path], owners: [name],
-                cleanup: SystemDataCleanup(kind: .review, description: "Local copies of cloud files; use \"Remove Download\" / \"Free Up Space\" in Finder to keep them online-only.", command: nil),
+                cleanup: SystemDataCleanup(kind: .review, description: "In Finder, select files and choose Remove Download. They stay in the cloud.", command: nil),
                 minimum: 100 * 1_000_000)
         }
         // Large files people forget: unfinished downloads, restore images and virtual machines.
@@ -488,7 +548,7 @@ public struct SystemDataInspector {
         // Home folders of deleted accounts: macOS keeps them when "Don't change the home folder" or "Save as disk image" is chosen.
         if let users = system["users"] {
             let canReadOtherHomes = self.canReadOtherHomes
-            let orphanCleanup = SystemDataCleanup(kind: .review, description: "The home folder of an account that no longer exists. Copy anything you need from it, then delete it (an administrator password is needed).", command: nil)
+            let orphanCleanup = SystemDataCleanup(kind: .review, description: "From a deleted account. Copy what you need, then delete it.", command: nil)
             for path in children(users) where !Self.usersFolderEntries.contains((path as NSString).lastPathComponent) {
                 guard let owner = (try? fileManager.attributesOfItem(atPath: path)[.ownerAccountID] as? NSNumber)?.uint32Value,
                       owner != 0, !accountExists(owner) else { continue }
@@ -503,7 +563,7 @@ public struct SystemDataInspector {
             }
         }
         add("trash:user", "Trash", .trash, paths: [(home as NSString).appendingPathComponent(".Trash")],
-            cleanup: SystemDataCleanup(kind: .review, description: "Empty the Trash in Finder; macOS can also do it automatically after 30 days.", command: nil))
+            cleanup: SystemDataCleanup(kind: .review, description: "Empty the Trash in Finder.", command: nil))
 
         // macOS's own data outside the places above, and what apps install for every user. Found by measuring the whole Data volume
         // with Full Disk Access against this scan (2026-10-06): about 5 GB on the development Mac that System Settings counts as
@@ -530,7 +590,7 @@ public struct SystemDataInspector {
         // folder's hidden folders (tools' data and downloads, such as `.npm` or `.ollama`), the rest of `/private/var` and
         // `/private/tmp`, packages in `/opt` other than Homebrew, the rest of the Data volume's `/System/Library`, and whatever else
         // sits at the root of the Data volume.
-        let toolData = SystemDataCleanup(kind: .review, description: "Kept by a command-line tool or developer tool in your home folder; remove it with that tool.", command: nil)
+        let toolData = SystemDataCleanup(kind: .review, description: "Remove it with the tool that made it.", command: nil)
         var isDirectory: ObjCBool = false
         for path in children(home) where (path as NSString).lastPathComponent.hasPrefix(".")
             && !SystemDataLocations.homeHiddenCountedElsewhere.contains((path as NSString).lastPathComponent)
@@ -569,29 +629,39 @@ public struct SystemDataInspector {
             for folder in children(path) where !SystemDataLocations.sharedFoldersCountedElsewhere.contains((folder as NSString).lastPathComponent) {
                 let name = (folder as NSString).lastPathComponent
                 add("shared:\(name)", Self.sharedTitle(name), .sharedAppFiles, paths: [folder],
-                    cleanup: SystemDataCleanup(kind: .review, description: "Installed for every user by apps and installers; removed with the app that installed it.", command: nil),
+                    cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
                     minimum: Self.minimumItemBytes)
             }
         }
 
         finish()
-        // A macOS update downloaded and prepared, on the Preboot volume: its images, each counted once (they come in clone pairs).
-        if let preboot = system["preboot"] {
-            for group in children(preboot) {
-                let proposed = (group as NSString).appendingPathComponent("cryptex1/proposed")
-                guard let bytes = Self.uniqueAllocatedBytes(proposed), bytes > 0 else { continue }
-                let manifest = NSDictionary(contentsOfFile: (proposed as NSString).appendingPathComponent("BuildManifest.plist"))
-                let version = [manifest?["ProductVersion"] as? String, (manifest?["ProductBuildVersion"] as? String).map { "(\($0))" }]
-                    .compactMap { $0 }.joined(separator: " ")
-                items.append(SystemDataItem(id: "update:prepared", title: version.isEmpty ? "macOS update, ready to install" : "macOS \(version), ready to install",
-                                            kind: .pendingUpdate, paths: [proposed], bytes: bytes, readable: true, owners: [], inUse: false,
-                                            cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "Downloaded and prepared by Software Update; it installs at the next restart, and macOS removes it then.", command: nil),
-                                            notes: ["On the Preboot volume, beside the running system's own copy; System Settings counts it in System Data."]))
+        // What System Settings lists in another category is not System Data: an item in such a place (or in the home folder outside
+        // ~/Library, which is Documents) is left out whole, and such a place inside an item is taken off it. The same places make
+        // Settings' categories (`SettingsStorageMeter`), so the page's items and its total agree on what is System Data.
+        let claimed = claimedPlaces()
+        func plain(_ path: String) -> String { path.hasPrefix("/System/Volumes/Data/") ? String(path.dropFirst("/System/Volumes/Data".count)) : path }
+        func isClaimed(_ path: String) -> Bool {
+            claimed.contains { path == $0 || path.hasPrefix($0 + "/") } || SettingsStorageMeter.isDocuments(path, home: home)
+        }
+        for index in items.indices where (items[index].bytes ?? 0) > 0 && !items[index].paths.isEmpty {
+            let roots = items[index].paths.map(plain)
+            if roots.allSatisfy(isClaimed) { items[index].elsewhereBytes = items[index].bytes; continue }
+            let inside = claimed.filter { place in roots.contains { place.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
+            let bytes = inside.map { AllocatedSize.allocatedBytes($0, excluding: []) }.reduce(0, +)
+            if bytes > 0 { items[index].elsewhereBytes = min(bytes, items[index].bytes ?? 0) }
+        }
+        // The caches inside an app's Application Support folder were measured twice: on their own and in the app's folder.
+        for (id, cache) in measuredTotals where id.hasPrefix("supportcache:") {
+            let folder = "appsupport:" + id.dropFirst("supportcache:".count)
+            if let index = items.firstIndex(where: { $0.id == folder }), let bytes = items[index].bytes {
+                items[index].bytes = bytes > cache ? bytes - cache : 0
+            } else if measuredTotals[folder] != nil, let small = smallBytes[.appSupport] {
+                smallBytes[.appSupport] = small > cache ? small - cache : 0
             }
         }
         for (kind, bytes) in smallBytes.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             items.append(SystemDataItem(id: "small:\(kind.rawValue)", title: "Smaller items", kind: kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
-                                        cleanup: SystemDataCleanup(kind: .review, description: "Many small entries, each below the listing size.", command: nil), notes: []))
+                                        cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: []))
         }
         items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         let volumeUsage = volumes()
@@ -619,31 +689,6 @@ extension SystemDataInspector {
         case "SystemExtensions": return "System extensions"
         default: return "\(name) (installed for all users)"
         }
-    }
-
-    /// The space a folder's files take, each clone family once: macOS keeps its images in clone pairs (`os.dmg` and `os.clone.dmg`),
-    /// and counting both doubled the update's size. nil when the folder cannot be read.
-    static func uniqueAllocatedBytes(_ folder: String) -> UInt64? {
-        guard FileManager.default.fileExists(atPath: folder), let root = strdup(folder) else { return nil }
-        defer { free(root) }
-        var paths: [UnsafeMutablePointer<CChar>?] = [root, nil]
-        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return nil }
-        defer { fts_close(fts) }
-        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0,
-                            fileattr: attrgroup_t(ATTR_FILE_ALLOCSIZE), forkattr: attrgroup_t(ATTR_CMNEXT_CLONEID))
-        var buffer = [UInt8](repeating: 0, count: 32)
-        var families: [UInt64: UInt64] = [:]
-        var loose: UInt64 = 0
-        while let entry = fts_read(fts) {
-            guard Int32(entry.pointee.fts_info) == FTS_F, let path = entry.pointee.fts_path else { continue }
-            // Length, then the allocated size (file attributes), then the clone id (extended common attributes).
-            let result = buffer.withUnsafeMutableBytes { getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
-            guard result == 0 else { continue }
-            let allocated = buffer.withUnsafeBytes { UInt64(max($0.loadUnaligned(fromByteOffset: 4, as: Int64.self), 0)) }
-            let clone = buffer.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 12, as: UInt64.self) }
-            if clone == 0 { loose += allocated } else { families[clone] = max(families[clone] ?? 0, allocated) }
-        }
-        return loose + families.values.reduce(0, +)
     }
 }
 
@@ -693,7 +738,9 @@ public struct SystemDataCleaner {
             }
             for path in item.paths {
                 let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
-                guard allowedRoots.contains(where: { standardized.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }) else {
+                guard allowedRoots.contains(where: { standardized.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }),
+                      !standardized.contains("/Library/Application Support/")
+                        || SystemDataInspector.chromiumCacheNames.contains((standardized as NSString).lastPathComponent) else {
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: "\(path) is outside the cleanable locations.")
                 }
                 do { try fileManager.removeItem(atPath: standardized) } catch {
@@ -712,6 +759,8 @@ public struct SystemDataCleaner {
             roots.append(userDir.appendingPathComponent("X").path)
             roots.append(userDir.appendingPathComponent("C").path)
         }
+        // Only the apps' cache folders in it (`chromiumCacheNames`), checked for each path in `clean`.
+        roots.append(locations.home.appendingPathComponent("Library/Application Support").path)
         return roots.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
     }
 }

@@ -288,7 +288,8 @@ struct HeroBlocks: View {
     var body: some View {
         let palette = design.palette(tint)
         let segments = usage.segments
-        let hoveredSegment = hovered.flatMap { id in segments.first { $0.id == id } }
+        let blocks = BlockLayout.blocks(segments)
+        let hoveredSegment = hovered.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
@@ -309,11 +310,13 @@ struct HeroBlocks: View {
             HStack(spacing: 6) {
                 if let hoveredSegment {
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(BlockColor.fill(hoveredSegment, rank: segments.firstIndex(of: hoveredSegment) ?? 0, tint: tint, design: design))
+                        .fill(BlockColor.fill(hoveredSegment, shade: BlockLayout.shade(of: hoveredSegment, in: blocks) ?? 0, tint: tint, design: design))
                         .frame(width: 9, height: 9)
                     Text("\(hoveredSegment.label) · \(ByteFormat.string(hoveredSegment.bytes))")
                 } else if !segments.isEmpty {
                     Text("\(ByteFormat.string(usage.totalBytes ?? segments.reduce(0) { $0 + $1.bytes })) in total")
+                    // How the total was reached, and what it leaves out.
+                    InfoButton(text: usage.footnote)
                 }
             }
             .font(.system(size: 11))
@@ -321,9 +324,18 @@ struct HeroBlocks: View {
             .frame(height: 14, alignment: .leading)
             .animation(Theme.hover, value: hovered)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
-                ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
+                // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
+                ForEach(usage.segments, id: \.id) { segment in
                     HStack(spacing: 6) {
-                        RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(segment, rank: index, tint: tint, design: design)).frame(width: 9, height: 9)
+                        // A part left out of the blocks (too small to draw) is an outline: it has no block to share a color with.
+                        Group {
+                            if let shade = BlockLayout.shade(of: segment, in: blocks) {
+                                RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(segment, shade: shade, tint: tint, design: design))
+                            } else {
+                                RoundedRectangle(cornerRadius: 2).strokeBorder(design.palette(tint).soft, lineWidth: 1)
+                            }
+                        }
+                        .frame(width: 9, height: 9)
                         Text(segment.label).font(.caption).lineLimit(1)
                         Text(ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                             .contentTransition(.numericText())

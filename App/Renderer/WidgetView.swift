@@ -3,8 +3,8 @@ import MacSpacePlatform
 import SwiftUI
 
 /// A module's widgets as a system grouped form, the same as Settings: a header above each group, one row per item with its control on
-/// the right. The form keeps its look whatever the palette and glass settings. Descriptions (subtitles, details, footnotes) are
-/// tooltips; only steps to follow stay visible, in rows that open.
+/// the right. The form keeps its look whatever the palette and glass settings. Descriptions (subtitles, details, footnotes) and steps
+/// to follow are behind a small (i) after the title (`InfoButton`), which opens them in a balloon.
 ///
 /// Sections are built in this view's own functions, not in wrapper views: the form only lays out sections it can see directly.
 struct WidgetForm<Top: View>: View {
@@ -92,7 +92,7 @@ struct WidgetForm<Top: View>: View {
                 DisclosureGroup(isExpanded: expansion(section)) {
                     ForEach(section.widgets) { inner in rows(for: inner) }
                 } label: {
-                    Text(section.title).help(section.subtitle ?? "")
+                    InfoTitle(title: section.title, info: section.subtitle)
                 }
             } else {
                 ForEach(section.widgets) { inner in rows(for: inner) }
@@ -102,7 +102,7 @@ struct WidgetForm<Top: View>: View {
         }
     }
 
-    /// A section's header: its title (the description as the tooltip), with the page's top above it on the first section.
+    /// A section's header: its title (with its description behind an (i)), with the page's top above it on the first section.
     @ViewBuilder
     private func header(_ title: String?, help: String? = nil, leading: Bool, shown: Bool = true) -> some View {
         let hasTitle = !(title ?? "").isEmpty
@@ -110,10 +110,10 @@ struct WidgetForm<Top: View>: View {
             // The top stays put; only the title rises in with its rows.
             VStack(alignment: .leading, spacing: 14) {
                 top
-                if hasTitle, let title { Text(title).help(help ?? "").modifier(Rise(shown: shown)) }
+                if hasTitle, let title { InfoTitle(title: title, info: help).modifier(Rise(shown: shown)) }
             }
         } else if hasTitle, let title {
-            Text(title).help(help ?? "").modifier(Rise(shown: shown))
+            InfoTitle(title: title, info: help).modifier(Rise(shown: shown))
         }
     }
 
@@ -191,7 +191,7 @@ extension EnvironmentValues {
     @Entry var openGroup: @MainActor (String) -> Void = { _ in }
 }
 
-/// Joins the parts of a description into one tooltip.
+/// Joins the parts of a description into one text, a paragraph each (`InfoButton`).
 enum Tooltip {
     static func join(_ parts: String?...) -> String? {
         let text = parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n\n")
@@ -237,68 +237,45 @@ struct BannerRow: View {
     }
 }
 
-/// A list row: symbol, title, badge, value and actions. Its subtitle and detail are the tooltip; when it has steps, it opens to show
-/// them.
+/// A list row: title and its note, its (i), badge, value and actions. Its detail and steps open from the (i), which only a row with
+/// something to say has. Rows are drawn without
+/// the module's symbols (`Row.symbol`): text alone, as Settings lists things.
 struct RowView: View {
     let row: Row
     let handler: ActionHandler
-    @State private var expanded = false
     @Environment(\.openGroup) private var openGroup
 
     var body: some View {
         if !row.children.isEmpty { groupRow } else { itemRow }
     }
 
-    /// A group: its count under the title, its total on the right, and a chevron; it opens the page of its items.
+    /// A group: its count after the title, its total on the right, and a chevron; a click anywhere but its (i) opens the page of its
+    /// items. Not a button: a button around the row would take the (i)'s click too.
     private var groupRow: some View {
-        Button { openGroup(row.id) } label: {
-            HStack(spacing: 10) {
-                if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                TitleLine(title: row.title, note: row.subtitle)
-                Spacer(minLength: 8)
-                if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
+        HStack(spacing: 10) {
+            TitleLine(title: row.title, note: row.subtitle)
+            InfoButton(text: row.detail)
+            Spacer(minLength: 8)
+            if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
+            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
         }
-        .buttonStyle(.plain)
-        .help(row.detail ?? "")
+        .contentShape(Rectangle())
+        .onTapGesture { openGroup(row.id) }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { openGroup(row.id) }
     }
 
     private var itemRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                if let symbol = row.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
-                // An item's description is in its tooltip, never on the row.
-                TitleLine(title: row.title, note: nil)
-                if let badge = row.badge { BadgeView(badge: badge) }
-                Spacer(minLength: 8)
-                if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
-                ForEach(Array(row.actions.enumerated()), id: \.offset) { _, action in
-                    ActionButton(action: action, compact: true, handler: handler)
-                }
-                if !row.steps.isEmpty {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                }
-            }
-            .contentShape(Rectangle())
-            .help(Tooltip.join(row.subtitle, row.detail) ?? "")
-            .onTapGesture { if !row.steps.isEmpty { withAnimation(Theme.hover) { expanded.toggle() } } }
-            if expanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(row.steps.enumerated()), id: \.offset) { index, step in
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("\(index + 1).").monospacedDigit().foregroundStyle(.secondary)
-                            Text(step)
-                        }
-                        .font(.callout)
-                    }
-                }
-                .padding(.leading, row.symbol == nil ? 0 : 28)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+        HStack(spacing: 10) {
+            // A short note after the title ("App container", "120 files"); the description and the steps are behind the (i).
+            TitleLine(title: row.title, note: row.subtitle)
+            InfoButton(text: row.detail, steps: row.steps)
+            if let badge = row.badge { BadgeView(badge: badge) }
+            Spacer(minLength: 8)
+            if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
+            ForEach(Array(row.actions.enumerated()), id: \.offset) { _, action in
+                ActionButton(action: action, compact: true, handler: handler)
             }
         }
     }
@@ -318,12 +295,12 @@ struct ToggleRowView: View {
             Toggle(isOn: isOn) {
                 HStack(spacing: 8) {
                     Text(row.title)
+                    InfoButton(text: Tooltip.join(row.subtitle, row.detail))
                     if let badge = row.badge { BadgeView(badge: badge) }
                 }
             }
         }
         .disabled(!row.isEnabled)
-        .help(Tooltip.join(row.subtitle, row.detail) ?? "")
     }
 }
 
@@ -372,21 +349,20 @@ struct LiveSwitch<Content: View>: View {
     }
 }
 
-/// A button on its own: the row names the action, the button on the right says the verb; its footnote is the tooltip.
+/// A button on its own: the row names the action, the button on the right says the verb; its footnote is behind the (i).
 struct ButtonRow: View {
     let button: ButtonWidget
     let handler: ActionHandler
 
     var body: some View {
         HStack(spacing: 10) {
-            if let symbol = button.action.symbol { Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18) }
             Text(button.action.title).lineLimit(1)
+            InfoButton(text: button.footnote)
             Spacer(minLength: 8)
             ActionButton(action: Action(id: button.action.id, title: verb, role: button.action.role, parameters: button.action.parameters,
                                         confirmation: button.action.confirmation, requires: button.action.requires),
                          compact: true, handler: handler)
         }
-        .help(button.footnote ?? "")
     }
 
     private var verb: String {

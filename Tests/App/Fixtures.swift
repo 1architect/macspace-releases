@@ -40,11 +40,12 @@ struct FakeModule: MacSpaceModule {
 }
 
 enum Fixtures {
+    /// A store of its own for one test, kept in a temporary folder: CFPreferences takes a path as a domain. A plain suite name left a
+    /// plist in ~/Library/Preferences for every test that ever ran (cfprefsd writes it back even after it is deleted).
     static func defaults() -> UserDefaults {
-        let name = "macspace-tests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("macspace-tests", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return UserDefaults(suiteName: folder.appendingPathComponent(UUID().uuidString).path)!
     }
 
     static func manifest(id: String = "com.test.fake", order: Int = 10, minimumMacOS: String? = nil, sdkVersion: Int = SdkVersion.current,
@@ -83,3 +84,4 @@ struct SlowModule: MacSpaceModule {
     }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("ok") }
 }
+

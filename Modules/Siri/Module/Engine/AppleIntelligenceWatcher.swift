@@ -162,6 +162,8 @@ public struct AppleIntelligenceWatchStore {
             let content = UNMutableNotificationContent()
             content.title = title
             content.body = message
+            // Opens the module's page when clicked (`AppNotifications`).
+            content.userInfo = ["module": "com.macspace.siri"]
             center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
         }
     }

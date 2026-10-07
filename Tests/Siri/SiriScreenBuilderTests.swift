@@ -44,7 +44,6 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.releasing)))
         XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.atRisk)), "the switch itself says it is on")
         XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.unknown))?.action?.id, "openFullDiskAccess")
-        XCTAssertTrue(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows[0].subtitle?.hasPrefix("On.") == true)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows[0].isOn, true)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.protected)).rows[0].isOn, false)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.unknown, match: true)).rows[0].isOn, true, "unknown falls back to the language match")
@@ -108,11 +107,10 @@ final class SiriScreenBuilderTests: XCTestCase {
         var downloading = snapshot(.atRisk)
         downloading.installedModelBytes = 0
         downloading.downloadingModelBytes = 2_000_000_000
-        XCTAssertTrue(SiriScreenBuilder.modelLine(downloading).contains("downloading"))
         XCTAssertFalse(SiriScreenBuilder.tile(downloading).graphic.map { "\($0)".contains("no model downloaded yet") } ?? true)
         var unreadable = snapshot(.atRisk)
         unreadable.installedModelBytes = nil
-        XCTAssertTrue(SiriScreenBuilder.modelLine(unreadable).contains("could not be measured"))
+        XCTAssertTrue(SiriScreenBuilder.tile(unreadable).graphic.map { "\($0)".contains("models not measured") } ?? false)
     }
 
     func testTileFlagsAppleIntelligenceWhenItIsOn() {
@@ -135,11 +133,9 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertTrue(isOn)
         XCTAssertFalse(alarming, "no glow")
         XCTAssertFalse(detail.contains("may download"))
-        XCTAssertTrue(SiriScreenBuilder.stateLine(on).contains("switch it off to free them"))
 
         on.installedModelBytes = 0
         XCTAssertEqual(SiriScreenBuilder.tile(on).status, "AI is on")
-        XCTAssertEqual(SiriScreenBuilder.stateLine(on), "On. No model is downloaded yet.")
         XCTAssertNil(SiriScreenBuilder.tile(snapshot(.protected)).reclaimableBytes, "off with nothing left: nothing to free")
     }
 
