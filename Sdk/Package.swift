@@ -5,7 +5,7 @@ import PackageDescription
 // (SwiftPM would otherwise embed a private copy in each module, and the app could not recognise their classes).
 let package = Package(
     name: "Sdk",
-    platforms: [.macOS("26.0")],
+    platforms: [.macOS("27.0")],
     products: [.library(name: "MacSpaceSdk", type: .dynamic, targets: ["MacSpaceSdk"])],
     targets: [.target(name: "MacSpaceSdk", path: ".", exclude: ["Package.swift"])]
 )

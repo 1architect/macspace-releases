@@ -14,6 +14,8 @@
 #   NOTARY_PROFILE= Scripts/Assemble.sh      skip notarization (the app then opens only on the Mac that built it)
 #   OUT_DIR=Build/Test Scripts/Assemble.sh   build somewhere else than Build/ (development and test builds, so they never replace the
 #                                            app that is copied to /Applications)
+#   FEED_URL=<url> Scripts/Assemble.sh       read updates from another appcast than the latest release's (a pre-release's feed, to
+#                                            test an update before it reaches users; Docs/Releasing.md)
 #
 # The app is assembled, signed and notarized in a staging folder and only moved to <OUT_DIR>/MacSpace.app once it verifies: that
 # path always holds a complete app. It used to be rebuilt in place, and a copy made while it was being signed came out with no
@@ -80,6 +82,10 @@ rm -rf "$STAGING"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources"
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
+if [ -n "${FEED_URL:-}" ]; then
+  plutil -replace SUFeedURL -string "$FEED_URL" "$APP/Contents/Info.plist"
+  echo "Update feed: $FEED_URL"
+fi
 cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MacSpace"
 # The Icon Composer document is compiled by actool into the asset catalog (the icon macOS 26 and later draw, with its light, dark
 # and tinted looks) and an .icns for older places; Info.plist names both. Without an icon the build stops: an app that names an icon
@@ -88,7 +94,7 @@ cp "$BIN/MacSpaceMain" "$APP/Contents/MacOS/MacSpace"
 ICON_NAME=$(basename "$ICON" .icon)
 PARTIAL=$(mktemp -d)
 xcrun actool "$ICON" --compile "$APP/Contents/Resources" --app-icon "$ICON_NAME" --include-all-app-icons \
-  --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 26.0 \
+  --output-partial-info-plist "$PARTIAL/Info.plist" --platform macosx --target-device mac --minimum-deployment-target 27.0 \
   --enable-on-demand-resources NO --development-region en --errors --warnings --output-format human-readable-text
 rm -rf "$PARTIAL"
 if [ ! -f "$APP/Contents/Resources/Assets.car" ] || [ ! -f "$APP/Contents/Resources/$ICON_NAME.icns" ]; then

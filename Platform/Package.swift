@@ -4,7 +4,7 @@ import PackageDescription
 // Shared plumbing for the app, the helper and the modules. A separate package for the same reason as Sdk.
 let package = Package(
     name: "Platform",
-    platforms: [.macOS("26.0")],
+    platforms: [.macOS("27.0")],
     products: [.library(name: "MacSpacePlatform", type: .dynamic, targets: ["MacSpacePlatform"])],
     dependencies: [.package(path: "../Sdk")],
     targets: [

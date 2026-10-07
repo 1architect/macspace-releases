@@ -40,7 +40,7 @@
 "Disable %lld features?" = "Désactiver %lld fonctions ?";
 "Disable all" = "Tout désactiver";
 "Disabled" = "Désactivé";
-"Disabling one asks you to approve a profile in System Settings > General > Device Management." = "En désactiver une vous demande d’approuver un profil dans Réglages Système > Général > Gestion des appareils.";
+"Disabling one asks you to approve a profile in System Settings > General > Device Management." = "En désactiver une vous demande d’approuver un profil dans Réglages Système > Général > Gestion de l’appareil.";
 "Disabling…" = "Désactivation…";
 "Each one can be enabled again." = "Chacune peut être réactivée.";
 "Enable" = "Activer";
@@ -56,7 +56,7 @@
 "Hides Apple News and its widgets." = "Masque Apple News et ses widgets.";
 "Improve Siri & Dictation" = "Améliorer Siri et Dictée";
 "Install the helper in Settings" = "Installez l’assistant dans Réglages";
-"Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "Impossible de supprimer son profil (%@) ; supprimez « %@ » dans Réglages Système > Général > Gestion des appareils.";
+"Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "Impossible de supprimer son profil (%@) ; supprimez « %@ » dans Réglages Système > Général > Gestion de l’appareil.";
 "Its profile was removed." = "Son profil a été supprimé.";
 "Keep features disabled" = "Garder les fonctions désactivées";
 "Log out to apply." = "Fermez la session pour appliquer.";

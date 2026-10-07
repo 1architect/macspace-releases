@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "MacSpace",
-    platforms: [.macOS("26.0")],
+    platforms: [.macOS("27.0")],
     products: [
         .library(name: "SystemData", type: .dynamic, targets: ["MacSpaceSystemData"]),
         .library(name: "Siri", type: .dynamic, targets: ["MacSpaceSiri"]),
