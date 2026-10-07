@@ -237,7 +237,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     /// A group of `rows` as one row: its count under the title and its total on the right.
     public static func group(id: String, title: String, symbol: String? = nil, totalBytes: UInt64, rows: [Row], detail: String? = nil) -> Row {
-        Row(id: id, title: title, subtitle: rows.count == 1 ? "1 item" : "\(rows.count) items",
+        Row(id: id, title: title, subtitle: rows.count == 1 ? String(localized: "1 item") : String(localized: "\(rows.count) items"),
             trailing: ByteCountFormatter.string(fromByteCount: Int64(clamping: totalBytes), countStyle: .file), symbol: symbol, detail: detail,
             children: rows)
     }

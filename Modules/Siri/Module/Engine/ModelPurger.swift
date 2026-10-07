@@ -28,10 +28,10 @@ actor ModelPurger {
         running = Task.detached(priority: .utility) {
             if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
             let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
-                SiriModule.recordBackground(freed, summary: "Released Apple Intelligence models")
+                SiriModule.recordBackground(freed, summary: loc("Released Apple Intelligence models"))
                 await done()
             }
-            SiriModule.recordBackground(outcome.freed, summary: "Released Apple Intelligence models")
+            SiriModule.recordBackground(outcome.freed, summary: loc("Released Apple Intelligence models"))
             await self.finish()
             await done()
         }

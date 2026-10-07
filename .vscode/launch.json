@@ -1,0 +1,64 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Debug MacSpaceMain",
+            "target": "MacSpaceMain",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MacSpaceMain"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Release MacSpaceMain",
+            "target": "MacSpaceMain",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MacSpaceMain"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Debug MacSpaceCli",
+            "target": "MacSpaceCli",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MacSpaceCli"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Release MacSpaceCli",
+            "target": "MacSpaceCli",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MacSpaceCli"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Debug MacSpaceHelper",
+            "target": "MacSpaceHelper",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MacSpaceHelper"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macspace-releases}",
+            "name": "Release MacSpaceHelper",
+            "target": "MacSpaceHelper",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MacSpaceHelper"
+        }
+    ]
+}

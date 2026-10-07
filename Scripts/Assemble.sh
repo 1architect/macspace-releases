@@ -99,6 +99,8 @@ fi
 plutil -replace CFBundleIconFile -string "$ICON_NAME" "$APP/Contents/Info.plist"
 plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
 echo "App icon: $ICON"
+# The app's translations, one folder per language (Scripts/Localize.swift writes them from Localization/).
+cp -R App/Resources/*.lproj "$APP/Contents/Resources/"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
@@ -131,6 +133,8 @@ for dir in Modules/*/; do
   reroot "$bundle/Contents/MacOS/$name" "@loader_path/../../../../Frameworks"
   cp "$dir/Bundle/Info.plist" "$bundle/Contents/Info.plist"
   cp "$dir/Bundle/Manifest.json" "$bundle/Contents/Resources/Manifest.json"
+  # The module's translations, which it reads from its own bundle.
+  for lproj in "$dir"/Bundle/*.lproj; do [ -d "$lproj" ] && cp -R "$lproj" "$bundle/Contents/Resources/"; done
   MODULES+=("$bundle")
 done
 

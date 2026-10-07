@@ -3,11 +3,13 @@
 MacSpace started on 20 September 2026 as a research project, not an app, and stayed one for ten days. This is a short account of
 what that research set out to do, what it found, what failed, and which parts became the app in this repository. The research
 itself (about 110 numbered checkpoints, more than 200 result files and folders, forensic notes and small experiment programs) lives in the maintainer's
-private repository. Findings about macOS from the app's own development are in [Research.md](Research.md); this document covers the
-work before it.
+private repository. Findings about macOS from the app's own development, including the ones that grew out of this research, are consolidated in
+[Research.md](Research.md); this document covers the work before it and why the app is shaped the way it is.
 
 Evidence labels used throughout: **measured** (observed, with numbers), **inferred** (follows from measurements), **unverified**.
 Builds: macOS 27.2 build 26B5086k at first, then 26B5091g from the update on 23 September. One Apple Silicon Mac, not enrolled in MDM.
+Apple Intelligence's eligibility depends on the account's Siri and system languages, so what held here may not on a Mac with other
+languages.
 System Integrity Protection (SIP) was **off** for part of the work and **on** again from 28 September; the sections below say which.
 
 ## 1. Where it started
@@ -126,7 +128,15 @@ surface, observation only for the network, and (excluded) SIP-off or sealed-volu
   on-device dictation, Spotlight internet results, Apple Intelligence features, Game Center, News). They need the user to approve
   the profile in System Settings, and several keys only apply to supervised or MDM Macs, so each was treated as unproven until
   measured.
-- The `tailspin` trace buffer and the crash reporter can be stopped with SIP on, and became controls.
+- The `tailspin` trace buffer stays off across a reboot with SIP on. The crash reporter does not stop: launchd keeps `ReportCrash`
+  force-enabled and ignores the override, so only the crash dialog and GPU-restart reporting became a control.
+- **A profile stops analytics where the setting does not.** On a prerelease build the Share Mac Analytics preference alone left
+  submission running (an upload of about 70 kB); a user-approved profile forcing both keys made the submission daemon decide to
+  opt out and upload nothing, across a reboot and a day of hourly runs. The success timestamp keeps advancing even for an opt-out
+  run, so the logged decision, not the timestamp, is the evidence.
+- **A restriction is not always a block.** With News restricted the app still launches by path; with Game Center restricted its
+  daemon still starts on demand. The advertising identifier was switched back on by macOS about once a day (see
+  [Research.md](Research.md#5-debloat)), which is why Debloat watches and re-applies.
 
 The effect check also had to learn that a respawn by KeepAlive is not a failure: an applied control is `pending` until the required
 logout or reboot has happened, and only `ineffective` if the process runs after that boundary.

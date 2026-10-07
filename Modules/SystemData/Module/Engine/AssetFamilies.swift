@@ -36,30 +36,30 @@ public struct AssetFamilyScanner {
     static let rules: [Rule] = [
         // No setting releases them: the Siri speech service, speech recognition and phone call features keep the model for the Siri
         // language and the system language whatever Siri's settings, so they are not listed among the downloads to turn off.
-        Rule(id: "siri-speech", title: "Siri speech models", tokens: ["siri.asr.assistant", "siri.asr.hammer"],
-             heldBy: "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them.",
+        Rule(id: "siri-speech", title: loc("Siri speech models"), tokens: ["siri.asr.assistant", "siri.asr.hammer"],
+             heldBy: loc("The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them."),
              steps: [], verified: true),
-        Rule(id: "siri-voices", title: "Siri voices", tokens: ["siri.tts"],
-             heldBy: "The Siri text-to-speech service, for the selected Siri voice and language.",
-             steps: ["In System Settings > Apple Intelligence & Siri > Siri Voice, pick a voice that isn't a premium download.",
-                     "Restart, then free them under Free now."], verified: false),
-        Rule(id: "speech-recognition", title: "Speech recognition (dictation and calls)", tokens: ["speech.asr", "transcription"],
-             heldBy: "Siri's speech service and phone call features, for the languages they transcribe.",
-             steps: ["In System Settings > Keyboard > Dictation, remove languages you don't use.",
-                     "Restart, then free them under Free now."], verified: false),
-        Rule(id: "language-data", title: "Language data (spelling, text analysis)", tokens: ["linguisticdata"],
-             heldBy: "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g).",
+        Rule(id: "siri-voices", title: loc("Siri voices"), tokens: ["siri.tts"],
+             heldBy: loc("The Siri text-to-speech service, for the selected Siri voice and language."),
+             steps: [loc("In System Settings > Apple Intelligence & Siri > Siri Voice, pick a voice that isn't a premium download."),
+                     loc("Restart, then free them under Free now.")], verified: false),
+        Rule(id: "speech-recognition", title: loc("Speech recognition (dictation and calls)"), tokens: ["speech.asr", "transcription"],
+             heldBy: loc("Siri's speech service and phone call features, for the languages they transcribe."),
+             steps: [loc("In System Settings > Keyboard > Dictation, remove languages you don't use."),
+                     loc("Restart, then free them under Free now.")], verified: false),
+        Rule(id: "language-data", title: loc("Language data (spelling, text analysis)"), tokens: ["linguisticdata"],
+             heldBy: loc("Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g)."),
              steps: [], verified: true),
-        Rule(id: "developer-docs", title: "Apple developer documentation", tokens: ["documentationasset"],
-             heldBy: "Downloaded for Xcode; macOS marks it precious and nothing subscribes to it.",
-             steps: ["In Xcode > Settings > Components, remove the documentation.",
-                     "Xcode downloads it again when you open the docs."], verified: false),
-        Rule(id: "photos-models", title: "Photos models (Spatial Photos)", tokens: ["spatialphotos"],
-             heldBy: "macOS's model catalog, for the Photos spatial effect.",
+        Rule(id: "developer-docs", title: loc("Apple developer documentation"), tokens: ["documentationasset"],
+             heldBy: loc("Downloaded for Xcode; macOS marks it precious and nothing subscribes to it."),
+             steps: [loc("In Xcode > Settings > Components, remove the documentation."),
+                     loc("Xcode downloads it again when you open the docs.")], verified: false),
+        Rule(id: "photos-models", title: loc("Photos models (Spatial Photos)"), tokens: ["spatialphotos"],
+             heldBy: loc("macOS's model catalog, for the Photos spatial effect."),
              steps: [], verified: false),
-        Rule(id: "dictionaries", title: "Dictionaries", tokens: ["dictionary", "portuguese", "oxford", "thesaurus"],
-             heldBy: "The Dictionary app and Look Up.",
-             steps: ["In Dictionary > Settings, turn off dictionaries you don't use."], verified: false),
+        Rule(id: "dictionaries", title: loc("Dictionaries"), tokens: ["dictionary", "portuguese", "oxford", "thesaurus"],
+             heldBy: loc("The Dictionary app and Look Up."),
+             steps: [loc("In Dictionary > Settings, turn off dictionaries you don't use.")], verified: false),
     ]
 
     let root: String
@@ -122,8 +122,8 @@ public struct AssetFamilyScanner {
                                         steps: rule.steps, verified: rule.verified))
         }
         if otherBytes > 0 {
-            families.append(AssetFamily(id: "other", title: "Other system downloads", assets: otherAssets.sorted(), bytes: otherBytes,
-                                        heldBy: "Assorted macOS features and the OS itself.", steps: [], verified: false))
+            families.append(AssetFamily(id: "other", title: loc("Other system downloads"), assets: otherAssets.sorted(), bytes: otherBytes,
+                                        heldBy: loc("Assorted macOS features and the OS itself."), steps: [], verified: false))
         }
         return families.filter { $0.bytes >= Self.minimumBytes }.sorted { $0.bytes > $1.bytes }
     }

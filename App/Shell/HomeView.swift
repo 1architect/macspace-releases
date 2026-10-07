@@ -13,7 +13,7 @@ struct TileInfo: Equatable {
     /// What the switch of a `state` chart runs; nil when it cannot be flipped.
     var switchAction: Action?
 
-    static let settings = TileInfo(title: "MacSpace", status: "settings")
+    static let settings = TileInfo(title: "MacSpace", status: String(localized: "settings"))
 
     @MainActor
     init(_ handle: ModuleHandle) {
@@ -21,7 +21,7 @@ struct TileInfo: Equatable {
             self.init(title: tile.title, status: tile.status, needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing, switchAction: tile.switchAction)
         } else {
-            self.init(title: handle.manifest.name.lowercased(), status: "looking…", loading: true)
+            self.init(title: handle.manifest.name.lowercased(), status: String(localized: "looking…"), loading: true)
         }
     }
 
@@ -33,7 +33,7 @@ struct TileInfo: Equatable {
         // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
         var graphic = TileGraphic.gauge(value: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
-            graphic = .gauge(value: used, label: "\(Int((used * 100).rounded()))%", sublabel: "of \(ByteFormat.string(total))")
+            graphic = .gauge(value: used, label: "\(Int((used * 100).rounded()))%", sublabel: String(localized: "of \(ByteFormat.string(total))"))
         }
         self.init(title: status.title, status: status.detail, graphic: graphic, loading: !storage.isLoaded)
     }
@@ -182,9 +182,9 @@ struct TileFace: View {
             VStack(alignment: .leading, spacing: 10) {
                 DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 28 - 6 * 7) / 7), loading: info.loading)
                 HStack(spacing: 10) {
-                    legend(Circle().fill(palette.step(5)), "disabled")
-                    legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), "enabled")
-                    if dots.contains(.attention) { legend(Circle().fill(design.action), "undone") }
+                    legend(Circle().fill(palette.step(5)), String(localized: "disabled"))
+                    legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), String(localized: "enabled"))
+                    if dots.contains(.attention) { legend(Circle().fill(design.action), String(localized: "undone")) }
                 }
                 .font(.system(size: 11))
                 .foregroundStyle(palette.soft)

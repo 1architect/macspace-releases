@@ -19,9 +19,9 @@ public enum GeneralSettings {
 
         public var title: String {
             switch self {
-            case .quit: return "Quit MacSpace"
-            case .menuBar: return "Keep running in the menu bar"
-            case .background: return "Keep running in the background"
+            case .quit: return String(localized: "Quit MacSpace")
+            case .menuBar: return String(localized: "Keep running in the menu bar")
+            case .background: return String(localized: "Keep running in the background")
             }
         }
     }
@@ -65,11 +65,11 @@ struct GeneralSettingsSection: View {
             Picker("Appearance", selection: $design.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
             }
-            SettingsLinkRow(title: "Permissions", note: permissionsNote) { host.settingsPage = .permissions }
+            SettingsLinkRow(title: String(localized: "Permissions"), note: permissionsNote) { host.settingsPage = .permissions }
             Picker(selection: Binding(get: { closedWindow }, set: { closedWindow = $0; GeneralSettings.setClosedWindow($0) })) {
                 ForEach(GeneralSettings.ClosedWindow.allCases) { Text($0.title).tag($0) }
             } label: {
-                InfoTitle(title: "When the window closes", info: "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications.")
+                InfoTitle(title: String(localized: "When the window closes"), info: String(localized: "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications."))
             }
             Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -102,7 +102,7 @@ struct GeneralSettingsSection: View {
     /// How many permissions the active modules still need, or that all are given.
     private var permissionsNote: String? {
         let missing = PermissionsPage.permissions(host).filter { host.permissions.status(of: $0.permission) == .missing && $0.permission != .configurationProfile }.count
-        return missing == 0 ? nil : (missing == 1 ? "1 needed" : "\(missing) needed")
+        return missing == 0 ? nil : (missing == 1 ? String(localized: "1 needed") : String(localized: "\(missing) needed"))
     }
 
     private func setOpensAtLogin(_ enabled: Bool) {

@@ -30,7 +30,7 @@ struct InfoButton: View {
             }
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
-            .accessibilityLabel("More about this")
+            .accessibilityLabel(String(localized: "More about this"))
             .popover(isPresented: $shown, arrowEdge: .bottom) {
                 InfoBalloon(paragraphs: paragraphs, steps: steps, note: note)
             }

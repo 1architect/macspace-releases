@@ -6,6 +6,7 @@
     <key>CFBundleName</key><string>OtherSystemFiles</string>
     <key>CFBundleExecutable</key><string>OtherSystemFiles</string>
     <key>CFBundlePackageType</key><string>BNDL</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>

@@ -50,7 +50,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         case "removeDownloads":
             return Self.removeDownloads(request.parameters["path"] ?? "", store: store)
         default:
-            return .failed("Unknown action \(request.actionID).")
+            return .failed(loc("Unknown action \(request.actionID)."))
         }
     }
 
@@ -60,7 +60,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         guard snapshot.freeableBytes >= OtherSystemFilesScreenBuilder.threshold, !snapshot.retrying else { return nil }
         let purge = await purgeAndKeepAsking(progress: { _ in })
         await store.invalidate()
-        return CleanupReport(freedBytes: purge.freed, summary: "Purgeable app files", details: purge.result.details)
+        return CleanupReport(freedBytes: purge.freed, summary: loc("Purgeable app files"), details: purge.result.details)
     }
 
     /// Purges, and when macOS keeps all or much of the files, asks it again in the background at the urgency of a critically full
@@ -84,7 +84,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
                     PurgeHoldouts.shared.clear(CacheDeleteService.fsPurgeableData)
                     await store.noteRemoved(freed, estimate: estimate)
                     CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
-                                                 trigger: .background, summary: "Purgeable app files")
+                                                 trigger: .background, summary: loc("Purgeable app files"))
                 }
                 await store.invalidate()
             }
@@ -97,7 +97,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// found (`PurgeableDocuments.isCloudFolder` checks it again). What it freed, measured on the volume, goes to the history.
     static func removeDownloads(_ path: String, store: PurgeableStore) -> ActionResult {
         guard PurgeableDocuments.isCloudFolder(path), let source = PurgeableDocuments.scan(maxAge: 600).first(where: { $0.path == path }) else {
-            return .failed("That cloud folder is no longer on this Mac")
+            return .failed(loc("That cloud folder is no longer on this Mac"))
         }
         let name = source.name
         CloudDownloadRemovals.shared.start(URL(fileURLWithPath: path)) { removal, freed in
@@ -120,8 +120,8 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         var reported: UInt64 = 0
         var elapsed: Double = 0
         var lastError: String?
-        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, "Freeing space…"),
-                     (CacheDeleteService.fsPurgeableDataForceUrgency, "Freeing space…")]
+        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, loc("Freeing space…")),
+                     (CacheDeleteService.fsPurgeableDataForceUrgency, loc("Freeing space…"))]
         for (index, step) in steps.enumerated() {
             progress(ActionProgress(fraction: Double(index) / Double(steps.count), message: step.1))
             let result: CacheDeletePurgeResult

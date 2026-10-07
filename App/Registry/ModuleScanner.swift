@@ -50,11 +50,37 @@ public enum ModuleScanner {
                 problems.append(ModuleProblem(bundleName: name, reason: "Another module already uses the id \(manifest.id)."))
                 continue
             }
-            modules.append(ModuleDescriptor(manifest: manifest, bundleURL: url,
+            modules.append(ModuleDescriptor(manifest: localized(manifest, bundle: Bundle(url: url)), bundleURL: url,
                                             compatibility: compatibility(of: manifest, systemVersion: systemVersion)))
         }
         modules.sort { ($0.manifest.order, $0.manifest.name) < ($1.manifest.order, $1.manifest.name) }
         return (modules, problems)
+    }
+
+    /// The manifest's words (name, summary, options, background tasks) in the user's language, from the module's own translations
+    /// (`<language>.lproj/Localizable.strings` in its bundle), looked up by their English. Reading them runs no module code.
+    static func localized(_ manifest: ModuleManifest, bundle: Bundle?) -> ModuleManifest {
+        guard let bundle else { return manifest }
+        func text(_ english: String) -> String { bundle.localizedString(forKey: english, value: english, table: nil) }
+        var manifest = manifest
+        manifest.name = text(manifest.name)
+        manifest.summary = text(manifest.summary)
+        manifest.options = manifest.options.map { option in
+            var option = option
+            option.title = text(option.title)
+            option.detail = option.detail.map(text)
+            if case let .choice(choices, defaultValue) = option.kind {
+                option.kind = .choice(options: choices.map { OptionChoice(id: $0.id, title: text($0.title)) }, defaultValue: defaultValue)
+            }
+            return option
+        }
+        manifest.backgroundTasks = manifest.backgroundTasks.map { task in
+            var task = task
+            task.title = text(task.title)
+            task.detail = task.detail.map(text)
+            return task
+        }
+        return manifest
     }
 
     static func compatibility(of manifest: ModuleManifest, systemVersion: OperatingSystemVersion) -> ModuleDescriptor.Compatibility {
@@ -62,7 +88,7 @@ public enum ModuleScanner {
             return .incompatible(reason: "Built for module contract \(manifest.sdkVersion); this app uses \(SdkVersion.current).")
         }
         if let minimum = manifest.minimumMacOS, let required = parse(minimum), isOlder(systemVersion, than: required) {
-            return .incompatible(reason: "Needs macOS \(minimum) or later.")
+            return .incompatible(reason: String(localized: "Needs macOS \(minimum) or later."))
         }
         return .compatible
     }

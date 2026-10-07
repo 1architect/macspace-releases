@@ -141,12 +141,12 @@ public enum AppleIntelligenceGuardError: Error, Equatable, CustomStringConvertib
 
     public var description: String {
         switch self {
-        case .systemLanguageUnavailable: return "The system language could not be read."
-        case .siriLanguageUnavailable: return "The current Siri language could not be read."
-        case .noMismatchedLanguageAvailable(let system): return "No supported Siri language with a base language different from \(system) is available."
-        case .unsupportedSiriLanguage(let code): return "\(code) is not a supported Siri language."
-        case .preferenceWriteFailed: return "Writing the Siri language preference failed."
-        case .verificationFailed(let answer): return "Apple Intelligence stayed eligible (answer \(answer.map(String.init) ?? "unreadable")) after the change; the previous Siri settings were restored."
+        case .systemLanguageUnavailable: return loc("The system language could not be read.")
+        case .siriLanguageUnavailable: return loc("The current Siri language could not be read.")
+        case .noMismatchedLanguageAvailable(let system): return loc("No supported Siri language with a base language different from \(system) is available.")
+        case .unsupportedSiriLanguage(let code): return loc("\(code) is not a supported Siri language.")
+        case .preferenceWriteFailed: return loc("Writing the Siri language preference failed.")
+        case .verificationFailed(let answer): return loc("Apple Intelligence stayed eligible (answer \(answer.map(String.init) ?? "unreadable")) after the change; the previous Siri settings were restored.")
         }
     }
 }

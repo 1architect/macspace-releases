@@ -20,11 +20,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // one build, and every update would lose them. Said once, plainly.
         if !CodeIntegrity.isIntact(Bundle.main.bundleURL) {
             let alert = NSAlert()
-            alert.messageText = "This copy of MacSpace is incomplete"
-            alert.informativeText = "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update."
+            alert.messageText = String(localized: "This copy of MacSpace is incomplete")
+            alert.informativeText = String(localized: "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update.")
             alert.alertStyle = .critical
-            alert.addButton(withTitle: "Quit")
-            alert.addButton(withTitle: "Continue")
+            alert.addButton(withTitle: String(localized: "Quit"))
+            alert.addButton(withTitle: String(localized: "Continue"))
             if alert.runModal() == .alertFirstButtonReturn { NSApp.terminate(nil) }
         }
         Task { @MainActor in await AppModel.host.start() }

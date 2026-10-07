@@ -34,7 +34,7 @@ enum ConfirmationAlert {
         alert.messageText = confirmation.title
         alert.informativeText = confirmation.message
         alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = destructive
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 }

@@ -13,7 +13,7 @@ public struct PreparedUpdate: Codable, Equatable, Sendable {
     /// "macOS 27.2 update": the name without its build, for a chart's legend.
     public var shortName: String {
         let version = name.replacingOccurrences(of: #" \(.*\)$"#, with: "", options: .regularExpression)
-        return version == "macOS update" ? version : "\(version) update"
+        return version == "macOS update" ? String(localized: "macOS update") : String(localized: "\(version) update")
     }
 
     public init(name: String, bytes: UInt64, path: String) {

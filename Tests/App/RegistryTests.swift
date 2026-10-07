@@ -231,6 +231,18 @@ final class SettingsTests: XCTestCase {
     }
 }
 
+final class LastTileTests: XCTestCase {
+    /// A saved tile is in the language it was shown in: after the language changes it is not shown, so the dashboard never mixes
+    /// languages while the modules read the Mac again.
+    func testASavedTileIsOnlyShownInItsLanguage() {
+        let store = SettingsStore(defaults: Fixtures.defaults())
+        let tile = Tile(title: "dados do sistema", status: "liberar 1 GB")
+        store.setLastTile(tile, module: "m", language: "pt-BR")
+        XCTAssertEqual(store.lastTile(module: "m", language: "pt-BR")?.title, "dados do sistema")
+        XCTAssertNil(store.lastTile(module: "m", language: "fr"))
+    }
+}
+
 final class GeneralSettingsTests: XCTestCase {
     func testMenuBarIsOnByDefaultAndFollowsTheUsersChoice() {
         let defaults = Fixtures.defaults()

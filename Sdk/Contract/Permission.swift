@@ -12,17 +12,17 @@ public enum Permission: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .fullDiskAccess: return "Full Disk Access"
-        case .privilegedHelper: return "Privileged helper"
-        case .configurationProfile: return "Configuration profile"
+        case .fullDiskAccess: return String(localized: "Full Disk Access")
+        case .privilegedHelper: return String(localized: "Privileged helper")
+        case .configurationProfile: return String(localized: "Configuration profile")
         }
     }
 
     public var detail: String {
         switch self {
-        case .fullDiskAccess: return "Needed to measure everything on the disk."
-        case .privilegedHelper: return "Does the few things that need an administrator."
-        case .configurationProfile: return "Applies the Debloat policies you turn on."
+        case .fullDiskAccess: return String(localized: "Needed to measure everything on the disk.")
+        case .privilegedHelper: return String(localized: "Does the few things that need an administrator.")
+        case .configurationProfile: return String(localized: "Applies the Debloat policies you turn on.")
         }
     }
 }

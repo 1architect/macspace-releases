@@ -117,8 +117,7 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
 11. **Disk tile.** One `StorageOverview.shared`, read again when a cleanup ends (and 5 and 20 s later), when a module's figures
     change, when the app comes back to the front, and every 30 s while a window shows it.
 12. **System Data's total** is System Settings' own remainder, computed the way its Storage pane computes it (`SettingsStorage` in
-    Platform: used, less macOS and every other category, each a fixed set of places read from Settings' code; Research, "How System
-    Settings computes its categories"). Nothing has to list what System Data holds, so whatever a Mac has that MacSpace does not know
+    Platform: used, less macOS and every other category, each a fixed set of places read from Settings' code; Research, section 1). Nothing has to list what System Data holds, so whatever a Mac has that MacSpace does not know
     still lands in it. The page's items are only the breakdown: what they leave out of the total is a "Not identified" block, so a
     rule that goes wrong shows as a measured amount instead of a wrong total. The same places decide which items are System Data
     (`SystemDataItem.elsewhereBytes`). The debug command `settings:<file.json>` writes the reading.
@@ -127,7 +126,17 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
     button. No welcome screen: it starts with what MacSpace needs. Steps already granted are left out (all granted: no onboarding);
     the symbol answers when a permission arrives. The step is kept across the relaunch System Settings asks for after Full Disk
     Access. Installs that ran before onboarding existed skip it; `open -a MacSpace --args --onboarding` shows it again.
-14. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
+14. **Languages.** English, Portuguese (Brazil), French, Spanish and German. The translations live in `Localization/<Table>.json`
+    (`App`, and one per module), each English text, exactly as the code has it, mapped to its four translations;
+    `swift Scripts/Localize.swift` writes them as `<language>.lproj/Localizable.strings` in `App/Resources` and in each module's
+    `Bundle/` (Assemble.sh copies them), and stops if a translation drops a placeholder. `--check` also builds with the compiler's
+    string extraction and lists every text the code shows that no table has: run it after changing any text. In the app, SwiftUI
+    literals are localized by themselves and other text goes through `String(localized:)`; a module's text goes through its own
+    `loc(...)` (`Support/Localization.swift`), which reads the module's bundle, and the names in Debloat's catalog (shared with the
+    helper) through `locKey`. Manifest names, options and tasks are looked up in the module's bundle when the app reads them
+    (`ModuleScanner.localized`). A saved tile is only shown in the language it was saved in. Only the developer tools, the CLI and
+    the helper stay in English.
+15. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
     or `MACSPACE_DESIGN=1`. `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with
     the app's own Full Disk Access).
 
@@ -238,7 +247,6 @@ if releases should run from GitHub Actions.
 - Siri screen: a button for "remove orphan subscriptions" through the helper (today it points to a command that needs `sudo`).
 - Debloat in a virtual machine still shows controls that cannot take effect there.
 - Per-document breakdown of the version history, so users can choose what to delete.
-- System Data reads higher than Settings (51 against 44.5 GB here) because Settings over-counts Apple Intelligence and takes the
-  difference from System Data (Research, section 1); decide whether the page should say so.
+- Settings counts about 3.9 GB of the Data volume as macOS, and MacSpace's clone-aware items still exceed its remainder by 0.62 GB (Research, section 1): both are stated on the page and unexplained.
 - Time Machine's local snapshots are not measured.
 - Documentation beyond this folder (README, user guide) once the first release exists.

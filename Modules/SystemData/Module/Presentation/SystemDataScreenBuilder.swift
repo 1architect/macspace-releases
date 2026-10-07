@@ -13,15 +13,15 @@ enum SystemDataScreenBuilder {
     }
 
     static let groups: [Group] = [
-        Group(id: "versions", title: "Document versions", kinds: [.documentVersions]),
-        Group(id: "appdata", title: "Apple app data", kinds: [.appContainer]),
-        Group(id: "cloud", title: "Cloud files on this Mac", kinds: [.cloudStorage]),
-        Group(id: "caches", title: "Caches", kinds: [.appCache, .userSystemCache, .toolCache]),
-        Group(id: "support", title: "App support files", kinds: [.appSupport]),
-        Group(id: "leftovers", title: "Leftovers", kinds: [.orphanedHome, .trash, .stagedUpdate]),
-        Group(id: "developer", title: "Homebrew & packages", kinds: [.packageManager]),
-        Group(id: "shared", title: "Shared app files", kinds: [.sharedAppFiles]),
-        Group(id: "macos", title: "Managed by macOS",
+        Group(id: "versions", title: loc("Document versions"), kinds: [.documentVersions]),
+        Group(id: "appdata", title: loc("Apple app data"), kinds: [.appContainer]),
+        Group(id: "cloud", title: loc("Cloud files on this Mac"), kinds: [.cloudStorage]),
+        Group(id: "caches", title: loc("Caches"), kinds: [.appCache, .userSystemCache, .toolCache]),
+        Group(id: "support", title: loc("App support files"), kinds: [.appSupport]),
+        Group(id: "leftovers", title: loc("Leftovers"), kinds: [.orphanedHome, .trash, .stagedUpdate]),
+        Group(id: "developer", title: loc("Homebrew & packages"), kinds: [.packageManager]),
+        Group(id: "shared", title: loc("Shared app files"), kinds: [.sharedAppFiles]),
+        Group(id: "macos", title: loc("Managed by macOS"),
               kinds: [.logs, .symbolCache, .spotlightIndex, .spotlightMetadata, .systemAssets, .snapshot, .diagnosticReports, .systemLibrary]),
     ]
 
@@ -114,7 +114,7 @@ enum SystemDataScreenBuilder {
         if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
         let skipped = quietlySkipped(snapshot)
         if skipped > 0 { footnote += skipped == 1 ? " 1 place macOS keeps private was skipped." : " \(skipped) places macOS keeps private were skipped." }
-        return UsageBar(id: "usage", title: "What fills System Data", segments: segments, footnote: footnote)
+        return UsageBar(id: "usage", title: loc("What fills System Data"), segments: segments, footnote: footnote)
     }
 
     /// Bytes Clean frees: caches, old reports and unused system assets. Caches of apps that are open are left out: they cannot be
@@ -143,8 +143,8 @@ enum SystemDataScreenBuilder {
     static func tile(_ snapshot: SystemDataSnapshot) -> Tile {
         let freeable = freeableBytes(snapshot)
         let total = total(snapshot)
-        return Tile(title: total > 0 ? "system data \(ByteFormat.string(total))" : "system data",
-                    status: freeable >= worthARow ? "free \(ByteFormat.string(freeable))" : "nothing to free",
+        return Tile(title: total > 0 ? loc("system data \(ByteFormat.string(total))") : loc("system data"),
+                    status: freeable >= worthARow ? loc("free \(ByteFormat.string(freeable))") : loc("nothing to free"),
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,
                     purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
@@ -168,10 +168,10 @@ enum SystemDataScreenBuilder {
         take(caches, from: "caches")
         take(snapshot.reports.totalBytes, from: "macos")
         take(versionHistoryBytes(snapshot), from: "versions")
-        if freeable >= worthARow { segments.append(UsageSegment(id: "freeable", label: "Can be freed", bytes: freeable, tone: .caution)) }
+        if freeable >= worthARow { segments.append(UsageSegment(id: "freeable", label: loc("Can be freed"), bytes: freeable, tone: .caution)) }
         // The blocks add up to System Settings' figure: what no listed folder accounts for is a block of its own.
         let unknown = notIdentified(snapshot)
-        if unknown >= worthARow { segments.append(UsageSegment(id: "unidentified", label: "Not identified", bytes: unknown, tone: .neutral)) }
+        if unknown >= worthARow { segments.append(UsageSegment(id: "unidentified", label: loc("Not identified"), bytes: unknown, tone: .neutral)) }
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
@@ -192,10 +192,10 @@ enum SystemDataScreenBuilder {
             group(otherSection(snapshot), symbol: "gearshape.2", total: leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }.map { counted($0, snapshot) }.reduce(0, +)),
         ].compactMap { $0 }
         let rows = groups
-        if !rows.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: "What is in it", rows: rows))) }
+        if !rows.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: loc("What is in it"), rows: rows))) }
         let blocks = blocks(snapshot)
-        let hero = UsageBar(id: "usage", title: "What fills System Data", totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
-        return Screen(title: "System Data", hero: hero, primary: cleanAll(snapshot), widgets: widgets)
+        let hero = UsageBar(id: "usage", title: loc("What fills System Data"), totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
+        return Screen(title: loc("System Data"), hero: hero, primary: cleanAll(snapshot), widgets: widgets)
     }
 
     /// A section of rows as one group row (named after the section, its description behind the (i)), or its only row.
@@ -210,7 +210,7 @@ enum SystemDataScreenBuilder {
         var group = Row.group(id: "group:\(section.id)", title: section.title, symbol: symbol, totalBytes: total, rows: rows, detail: section.subtitle)
         // The items, not the categories they are sorted into (Everything else).
         let count = rows.map { max($0.children.count, 1) }.reduce(0, +)
-        group.subtitle = count == 1 ? "1 item" : "\(count) items"
+        group.subtitle = count == 1 ? loc("1 item") : loc("\(count) items")
         return group
     }
 
@@ -219,10 +219,10 @@ enum SystemDataScreenBuilder {
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
         let total = cleanBytes(snapshot)
         guard total >= worthARow else { return nil }
-        var message = "Deletes caches, old reports and unused system assets."
-        if versionsRow(snapshot) != nil { message += " Version history stays." }
-        return Action(id: "cleanAll", title: "Free \(ByteFormat.string(total))", symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: "Free \(ByteFormat.string(total))?", message: message, confirmTitle: "Free"))
+        var message = loc("Deletes caches, old reports and unused system assets.")
+        if versionsRow(snapshot) != nil { message += " " + loc("Version history stays.") }
+        return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,
+                      confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")))
     }
 
     // MARK: Sections
@@ -235,31 +235,31 @@ enum SystemDataScreenBuilder {
             .sorted { ($0.expectedReclaimBytes ?? 0) > ($1.expectedReclaimBytes ?? 0) }
         var rows = cleanable.map { item -> Row in
             Row(id: item.id, title: item.title, trailing: ByteFormat.string(item.expectedReclaimBytes ?? 0), symbol: "internaldrive",
-                detail: item.cleanup.description, actions: [Action(id: "clean", title: "Free", parameters: ["id": item.id])])
+                detail: item.cleanup.description, actions: [Action(id: "clean", title: loc("Free"), parameters: ["id": item.id])])
         }
         if snapshot.reports.totalBytes >= worthARow {
-            rows.append(Row(id: "reports", title: "Old diagnostic and crash reports", trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
-                            detail: "\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days.",
-                            actions: [Action(id: "cleanReports", title: "Free", confirmation: Confirmation(
-                                title: "Delete old reports?", message: "This permanently deletes \(reportCount(snapshot)).", confirmTitle: "Delete"))]))
+            rows.append(Row(id: "reports", title: loc("Old diagnostic and crash reports"), trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
+                            detail: loc("\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days."),
+                            actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
+                                title: loc("Delete old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Delete")))]))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
             // While macOS is being asked again in the background, the row says so instead of offering the button.
-            rows.append(Row(id: "assets", title: "Unused system assets", trailing: ByteFormat.string(assets),
-                            badge: snapshot.assetsRetrying ? Badge("Freeing in the background", tone: .caution) : nil, symbol: "square.stack.3d.down.right",
-                            detail: "Downloads macOS no longer needs, like released Apple Intelligence models.",
-                            actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: "Free", confirmation: Confirmation(
-                                title: "Free up to \(ByteFormat.string(assets)) of unused system assets?", message: "macOS downloads them again if they're needed.", confirmTitle: "Free"))]))
+            rows.append(Row(id: "assets", title: loc("Unused system assets"), trailing: ByteFormat.string(assets),
+                            badge: snapshot.assetsRetrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: "square.stack.3d.down.right",
+                            detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
+                            actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
+                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))]))
         }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }
-        return .section(SectionWidget(id: "free", title: "Free now", widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
+        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
     }
 
     static let manualThreshold: UInt64 = 50_000_000
 
     static func reportCount(_ snapshot: SystemDataSnapshot) -> String {
-        snapshot.reports.candidates.count == 1 ? "1 report" : "\(snapshot.reports.candidates.count) reports"
+        snapshot.reports.candidates.count == 1 ? loc("1 report") : loc("\(snapshot.reports.candidates.count) reports")
     }
 
     /// Everything MacSpace leaves alone (it belongs to apps, to the user or to macOS), largest first.
@@ -283,7 +283,7 @@ enum SystemDataScreenBuilder {
     static func appDataSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         let items = leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }
         guard !items.isEmpty else { return nil }
-        return .section(SectionWidget(id: "appdata", title: "App data",
+        return .section(SectionWidget(id: "appdata", title: loc("App data"),
                                       widgets: [.list(ListWidget(id: "appdata-list", rows: leftAloneRows(items, snapshot)))]))
     }
 
@@ -310,7 +310,7 @@ enum SystemDataScreenBuilder {
             }
             .sorted { $0.bytes > $1.bytes }
             .map(\.row)
-        return .section(SectionWidget(id: "other", title: "Everything else", widgets: [.list(ListWidget(id: "other-list", rows: rows))]))
+        return .section(SectionWidget(id: "other", title: loc("Everything else"), widgets: [.list(ListWidget(id: "other-list", rows: rows))]))
     }
 
     /// How Everything else is sorted: the bar's categories.
@@ -318,7 +318,7 @@ enum SystemDataScreenBuilder {
         let id: String
         let title: String
 
-        static let other = OtherCategory(id: "other", title: "Other")
+        static let other = OtherCategory(id: "other", title: loc("Other"))
 
         /// The bar's category that holds this kind, or Other.
         static func of(_ kind: SystemDataKind) -> OtherCategory {
@@ -332,9 +332,11 @@ enum SystemDataScreenBuilder {
         items.map { item in
             var title = item.title
             var subtitle: String?
-            for prefix in ["App container: ", "App group data: "] where title.hasPrefix(prefix) {
-                subtitle = String(prefix.dropLast(2))
-                title = String(title.dropFirst(prefix.count))
+            // A container's name alone, and what kind it is in the note; read from its id and folder, not from its title, which is
+            // in the user's language.
+            if item.id.hasPrefix("container:") {
+                title = String(item.id.dropFirst("container:".count))
+                subtitle = item.paths.contains { $0.contains("/Group Containers/") } ? loc("App group data") : loc("App container")
             }
             // What macOS manages needs no explanation: only what the user can do something about has one.
             let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description
@@ -347,15 +349,15 @@ enum SystemDataScreenBuilder {
         guard let item = snapshot.report.items.first(where: { $0.id == "update:staged" && $0.kind == .stagedUpdate && $0.cleanup.kind == .managedByMacOS }),
               let bytes = item.bytes, bytes > 0 else { return nil }
         let size = ByteFormat.string(bytes)
-        let row = Row(id: "leftover-update", title: "Leftover macOS update files",
+        let row = Row(id: "leftover-update", title: loc("Leftover macOS update files"),
                       trailing: size, symbol: "arrow.down.app",
-                      detail: "From an update that's already installed.",
-                      actions: [Action(id: "deleteStagedUpdate", title: "Delete", role: .destructive,
-                                       confirmation: Confirmation(title: "Delete the leftover update files?",
-                                                                  message: "About \(size) from an update that's already installed.",
-                                                                  confirmTitle: "Delete"),
+                      detail: loc("From an update that's already installed."),
+                      actions: [Action(id: "deleteStagedUpdate", title: loc("Delete"), role: .destructive,
+                                       confirmation: Confirmation(title: loc("Delete the leftover update files?"),
+                                                                  message: loc("About \(size) from an update that's already installed."),
+                                                                  confirmTitle: loc("Delete")),
                                        requires: [.privilegedHelper])])
-        return .section(SectionWidget(id: "leftover-update", title: "Leftover update files",
+        return .section(SectionWidget(id: "leftover-update", title: loc("Leftover update files"),
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
     }
 
@@ -364,13 +366,13 @@ enum SystemDataScreenBuilder {
     static func versionsRow(_ snapshot: SystemDataSnapshot) -> Row? {
         guard let item = snapshot.report.items.first(where: { $0.id == "versions:documents" }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
-        return Row(id: "versions", title: "Document version history",
-                      trailing: size, badge: Badge("Cannot be undone", tone: .critical), symbol: "clock.arrow.circlepath",
-                      detail: "Earlier versions of your documents (File > Revert To). The documents themselves stay.",
-                      actions: [Action(id: "deleteVersions", title: "Delete…", role: .destructive,
-                                       confirmation: Confirmation(title: "Delete all version history?",
-                                                                  message: "You won't be able to revert any document to an earlier version. Save and close your documents first.",
-                                                                  confirmTitle: "Delete version history"),
+        return Row(id: "versions", title: loc("Document version history"),
+                      trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "clock.arrow.circlepath",
+                      detail: loc("Earlier versions of your documents (File > Revert To). The documents themselves stay."),
+                      actions: [Action(id: "deleteVersions", title: loc("Delete…"), role: .destructive,
+                                       confirmation: Confirmation(title: loc("Delete all version history?"),
+                                                                  message: loc("You won't be able to revert any document to an earlier version. Save and close your documents first."),
+                                                                  confirmTitle: loc("Delete version history")),
                                        requires: [.privilegedHelper])])
     }
 
@@ -383,7 +385,7 @@ enum SystemDataScreenBuilder {
             Row(id: "assets:\(family.id)", title: family.title, trailing: ByteFormat.string(family.bytes),
                 symbol: "square.stack.3d.down.right", steps: family.steps)
         }
-        return .section(SectionWidget(id: "assets", title: "Downloads you can turn off",
+        return .section(SectionWidget(id: "assets", title: loc("Downloads you can turn off"),
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))]))
     }
 
@@ -409,17 +411,17 @@ enum SystemDataScreenBuilder {
     static func partialBanner(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         let actionable = actionableUnreadable(snapshot)
         if !actionable.fullDiskAccess.isEmpty {
-            return .banner(Banner(id: "partial", severity: .info, title: "Allow Full Disk Access to see everything",
-                                  message: "\(actionable.fullDiskAccess.count) places couldn't be measured.",
-                                  action: Action(id: "openFullDiskAccess", title: "Allow", role: .prominent)))
+            return .banner(Banner(id: "partial", severity: .info, title: loc("Allow Full Disk Access to see everything"),
+                                  message: loc("\(actionable.fullDiskAccess.count) places couldn't be measured."),
+                                  action: Action(id: "openFullDiskAccess", title: loc("Allow"), role: .prominent)))
         }
         if !actionable.helper.isEmpty {
-            return .banner(Banner(id: "partial", severity: .info, title: "Turn on the helper to see everything",
-                                  message: "\(actionable.helper.count) places only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings."))
+            return .banner(Banner(id: "partial", severity: .info, title: loc("Turn on the helper to see everything"),
+                                  message: loc("\(actionable.helper.count) places only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings.")))
         }
         if !actionable.helperUnreachable.isEmpty {
-            return .banner(Banner(id: "partial", severity: .warning, title: "The helper did not answer",
-                                  message: "\(actionable.helperUnreachable.count) places weren't measured. Reopen MacSpace."))
+            return .banner(Banner(id: "partial", severity: .warning, title: loc("The helper did not answer"),
+                                  message: loc("\(actionable.helperUnreachable.count) places weren't measured. Reopen MacSpace.")))
         }
         return nil
     }
@@ -428,7 +430,7 @@ enum SystemDataScreenBuilder {
     static func unreadableList(_ paths: [String]) -> String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let shown = paths.prefix(4).map { $0.hasPrefix(home) ? "~" + $0.dropFirst(home.count) : $0 }
-        return shown.joined(separator: ", ") + (paths.count > 4 ? " and \(paths.count - 4) more" : "")
+        return shown.joined(separator: ", ") + (paths.count > 4 ? " " + loc("and \(paths.count - 4) more") : "")
     }
 
     static let assetsThreshold: UInt64 = 50_000_000

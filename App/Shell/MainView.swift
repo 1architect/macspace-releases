@@ -43,7 +43,7 @@ private struct RefreshButton: View {
     @ObservedObject var handle: ModuleHandle
 
     var body: some View {
-        GlassCircleButton(symbol: "arrow.clockwise", help: "Refresh", busy: handle.isBusy) {
+        GlassCircleButton(symbol: "arrow.clockwise", help: String(localized: "Refresh"), busy: handle.isBusy) {
             Task { await handle.refresh(reload: true) }
         }
     }
@@ -290,9 +290,9 @@ public struct MainView: View {
             return ([handle.manifest.name] + groups).joined(separator: " › ")
         case .settings:
             switch host.settingsPage {
-            case .cleanupHistory?: return "Settings › Recent cleanups"
-            case .permissions?: return "Settings › Permissions"
-            case nil: return "Settings"
+            case .cleanupHistory?: return String(localized: "Settings › Recent cleanups")
+            case .permissions?: return String(localized: "Settings › Permissions")
+            case nil: return String(localized: "Settings")
             }
         case .home, .storage: return ""
         }
@@ -303,13 +303,13 @@ public struct MainView: View {
         HStack(spacing: 8) {
             // In the standard window, ✕ only while the sidebar (and the window's own buttons above it) is hidden; Back on a page.
             if !embedded || isOpen || !navigator.sidebarShown {
-                GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? "Back" : "Close") {
+                GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? String(localized: "Back") : String(localized: "Close")) {
                     isOpen ? close() : closeWindow()
                 }
                 .transition(.opacity)
             }
             if embedded, !navigator.sidebarShown {
-                GlassCircleButton(symbol: "sidebar.left", help: "Show the sidebar") { navigator.toggleSidebar() }
+                GlassCircleButton(symbol: "sidebar.left", help: String(localized: "Show the sidebar")) { navigator.toggleSidebar() }
                     .transition(.opacity.combined(with: .offset(x: -14)))
             }
             if isOpen, !embedded || !navigator.showsTitle, let destination = layer?.destination {

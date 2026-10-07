@@ -36,17 +36,17 @@ struct PurgeableService: Equatable {
     let symbol: String
 
     static let known: [PurgeableService] = [
-        PurgeableService(id: CacheDeleteService.fsPurgeableData, title: "Purgeable app files",
-                         detail: "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.", symbol: "arrow.down.circle.dotted"),
-        PurgeableService(id: CacheDeleteService.appContainerCaches, title: "App container caches",
+        PurgeableService(id: CacheDeleteService.fsPurgeableData, title: loc("Purgeable app files"),
+                         detail: loc("Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full."), symbol: "arrow.down.circle.dotted"),
+        PurgeableService(id: CacheDeleteService.appContainerCaches, title: loc("App container caches"),
                          detail: "", symbol: "shippingbox"),
-        PurgeableService(id: CacheDeleteService.fsPurgeableDocument, title: "Purgeable documents",
+        PurgeableService(id: CacheDeleteService.fsPurgeableDocument, title: loc("Purgeable documents"),
                          detail: "", symbol: "icloud.and.arrow.down"),
-        PurgeableService(id: CacheDeleteService.spotlightIndex, title: "Spotlight index",
+        PurgeableService(id: CacheDeleteService.spotlightIndex, title: loc("Spotlight index"),
                          detail: "", symbol: "magnifyingglass"),
-        PurgeableService(id: CacheDeleteService.quickLookThumbnails, title: "Quick Look thumbnails",
+        PurgeableService(id: CacheDeleteService.quickLookThumbnails, title: loc("Quick Look thumbnails"),
                          detail: "", symbol: "photo.on.rectangle"),
-        PurgeableService(id: CacheDeleteService.mobileAsset, title: "System assets",
+        PurgeableService(id: CacheDeleteService.mobileAsset, title: loc("System assets"),
                          detail: "", symbol: "square.stack.3d.down.right"),
     ]
 
@@ -61,7 +61,7 @@ struct PurgeableService: Equatable {
         for suffix in [".cachedelete", ".cache-delete", ".CacheDelete", ".cacheDelete", "-cache-delete", ".CacheDeleteExtension", ".cache-delete_fspurgeable"] where name.hasSuffix(suffix) {
             name = String(name.dropLast(suffix.count))
         }
-        return "\(name.replacingOccurrences(of: ".", with: " ")) cache"
+        return loc("\(name.replacingOccurrences(of: ".", with: " ")) cache")
     }
 }
 

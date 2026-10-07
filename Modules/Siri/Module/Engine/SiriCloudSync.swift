@@ -16,9 +16,9 @@ public enum SiriCloudSync {
     public static let settingsURL = URL(string: "x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings:icloud")!
 
     public static let steps = [
-        "Open System Settings > Apple Account > iCloud.",
-        "Under Saved to iCloud, click See All, then Siri.",
-        "Turn off Sync this Mac and keep the data on this Mac.",
+        loc("Open System Settings > Apple Account > iCloud."),
+        loc("Under Saved to iCloud, click See All, then Siri."),
+        loc("Turn off Sync this Mac and keep the data on this Mac."),
     ]
 
     /// Whether the switch is on: the Siri data class among the iCloud account's enabled ones, read from accountsd's Core Data store

@@ -208,12 +208,12 @@ public struct PurgeRun: Sendable {
     }
 
     /// The words a cleanup shows the user, in its button, as few as possible: what it freed, measured on the volume.
-    public static func freedMessage(_ freed: UInt64) -> String { freed > 0 ? "Freed \(ByteFormat.string(freed))" : nothingMessage }
-    public static let nothingMessage = "Nothing to free"
+    public static func freedMessage(_ freed: UInt64) -> String { freed > 0 ? String(localized: "Freed \(ByteFormat.string(freed))") : nothingMessage }
+    public static let nothingMessage = String(localized: "Nothing to free")
     /// A purge that failed; why is in the details, not in front of the user.
-    public static let failedMessage = "Couldn't free space. Try again later."
+    public static let failedMessage = String(localized: "Couldn't free space. Try again later.")
     /// macOS kept the files; MacSpace asks it again in the background (`PurgeRetrier`).
-    public static let laterMessage = "Finishing in the background"
+    public static let laterMessage = String(localized: "Finishing in the background")
 
     static let retryNote = "MacSpace asks macOS again over the next hour; the figures update as soon as it lets them go."
 

@@ -12,7 +12,7 @@ struct CleanupSection: View {
     var body: some View {
         Section("Cleanup") {
             Toggle(isOn: $cleaner.isEnabled) {
-                InfoTitle(title: "Clean automatically", info: "Frees caches, old reports and other files that are safe to delete. Never version history.")
+                InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete. Never version history."))
             }
             if cleaner.isEnabled {
                 Picker("How often", selection: $cleaner.frequency) {
@@ -22,7 +22,7 @@ struct CleanupSection: View {
             LabeledContent("Freed in total") {
                 Text(ByteFormat.string(lifetime)).monospacedDigit().contentTransition(.numericText())
             }
-            SettingsLinkRow(title: "Recent cleanups", note: count == 1 ? "1 cleanup" : "\(count) cleanups") { host.settingsPage = .cleanupHistory }
+            SettingsLinkRow(title: String(localized: "Recent cleanups"), note: count == 1 ? String(localized: "1 cleanup") : String(localized: "\(count) cleanups")) { host.settingsPage = .cleanupHistory }
         }
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
             withAnimation(Theme.value) {
@@ -72,7 +72,7 @@ struct CleanupHistoryPage: View {
                     }
                 }
             } header: {
-                TitleLine(title: "Recent cleanups", note: "\(ByteFormat.string(lifetime)) freed in total")
+                TitleLine(title: String(localized: "Recent cleanups"), note: String(localized: "\(ByteFormat.string(lifetime)) freed in total"))
             }
             PageBottomRoom()
         }
@@ -92,9 +92,9 @@ struct CleanupHistoryPage: View {
 
     static func trigger(_ trigger: CleanupHistory.Trigger) -> String {
         switch trigger {
-        case .manual: return "by you"
-        case .automatic: return "automatic"
-        case .background: return "finished by MacSpace"
+        case .manual: return String(localized: "by you")
+        case .automatic: return String(localized: "automatic")
+        case .background: return String(localized: "finished by MacSpace")
         }
     }
 }

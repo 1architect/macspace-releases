@@ -280,7 +280,7 @@ enum BlockLayout {
         if small.count >= 2 {
             let ids = Set(small.map(\.id))
             shown = segments.filter { !ids.contains($0.id) }
-            shown.append(UsageSegment(id: smallerID, label: "\(small.count) smaller", bytes: small.map(\.bytes).reduce(0, +), tone: .series(segments.count)))
+            shown.append(UsageSegment(id: smallerID, label: String(localized: "\(small.count) smaller"), bytes: small.map(\.bytes).reduce(0, +), tone: .series(segments.count)))
         } else if let only = small.first, Double(only.bytes) < total * dropBelow {
             shown = segments.filter { $0.id != only.id }
         }
@@ -681,6 +681,6 @@ struct AttentionMark: View {
                 guard !reduceMotion else { return }
                 withAnimation(.easeOut(duration: 1.8).delay(1.6).repeatForever(autoreverses: false)) { pulsing = true }
             }
-            .accessibilityLabel("Needs attention")
+            .accessibilityLabel(String(localized: "Needs attention"))
     }
 }

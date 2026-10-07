@@ -123,12 +123,12 @@ public final class StatusItemController: NSObject {
             menu.addItem(entry)
         }
         if host?.activeHandles.isEmpty ?? true {
-            menu.addItem(NSMenuItem(title: "No modules are on", action: nil, keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: String(localized: "No modules are on"), action: nil, keyEquivalent: ""))
         }
         menu.addItem(.separator())
-        menu.addItem(entry("Open MacSpace", #selector(openApp), key: "o"))
-        menu.addItem(entry("Settings…", #selector(openSettings), key: ","))
-        menu.addItem(entry("Quit MacSpace", #selector(quit), key: "q"))
+        menu.addItem(entry(String(localized: "Open MacSpace"), #selector(openApp), key: "o"))
+        menu.addItem(entry(String(localized: "Settings…"), #selector(openSettings), key: ","))
+        menu.addItem(entry(String(localized: "Quit MacSpace"), #selector(quit), key: "q"))
         return menu
     }
 

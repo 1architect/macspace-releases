@@ -46,7 +46,7 @@ public struct DebloatModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         switch request.actionID {
         case "toggle":
-            guard let id = request.parameters["id"] else { return .failed("No control was named.") }
+            guard let id = request.parameters["id"] else { return .failed(loc("No control was named.")) }
             let apply = Self.appliesProtection(switchValue: request.parameters["value"])
             return await Self.change(apply ? .apply : .revert, [id], context: context, progress: progress)
         case "applyRecommended", "reapply":
@@ -60,24 +60,24 @@ public struct DebloatModule: MacSpaceModule {
             // profile holds everything), removed through the helper: nothing to approve.
             switch DebloatStore.liveEngine().profileWork() {
             case let .remove(identifiers), let .cleanUp(identifiers): return await Self.removeProfiles(identifiers, context: context)
-            default: return .succeeded("Nothing to remove")
+            default: return .succeeded(loc("Nothing to remove"))
             }
         case "approvePending":
             // The one profile, with every policy switched off, staged again for approval; System Settings shows it under Device
             // Management.
             do {
                 let ids = try DebloatStore.liveEngine().stagePendingProfiles()
-                guard !ids.isEmpty else { return .succeeded("Nothing to approve") }
+                guard !ids.isEmpty else { return .succeeded(loc("Nothing to approve")) }
                 Self.openDeviceManagement()
                 return ActionResult(outcome: .succeeded, message: "", refresh: true)
             } catch {
-                return .failed("Couldn't open the profile", details: [error.localizedDescription])
+                return .failed(loc("Couldn't open the profile"), details: [error.localizedDescription])
             }
         case "openProfiles":
             Self.openDeviceManagement()
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         default:
-            return .failed("Unknown action \(request.actionID).")
+            return .failed(loc("Unknown action \(request.actionID)."))
         }
     }
 
@@ -106,8 +106,8 @@ public struct DebloatModule: MacSpaceModule {
 
     static func change(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
-        guard !ids.isEmpty else { return .failed("No controls were selected.") }
-        progress(ActionProgress(message: action == .apply ? "Disabling…" : "Enabling…"))
+        guard !ids.isEmpty else { return .failed(loc("No controls were selected.")) }
+        progress(ActionProgress(message: action == .apply ? loc("Disabling…") : loc("Enabling…")))
         let engine = DebloatStore.liveEngine()
         let coordinator = DebloatCoordinator(engine: engine, channel: context.privileged)
         do {
@@ -146,15 +146,15 @@ public struct DebloatModule: MacSpaceModule {
 
     /// MacSpace profiles removed through the helper, which needs no approval.
     static func removeProfiles(_ identifiers: [String], context: ModuleContext) async -> ActionResult {
-        guard let channel = context.privileged else { return .failed("Install the helper in Settings") }
+        guard let channel = context.privileged else { return .failed(loc("Install the helper in Settings")) }
         do {
             let data = try await channel.perform(operation: DebloatPrivilegedOperations.removeProfile, arguments: ["identifiers": identifiers.joined(separator: ",")])
             let outcome = (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
             let failed = outcome.filter { $0.value != "removed" }
             return failed.isEmpty ? ActionResult(outcome: .succeeded, message: "", refresh: true)
-                : .failed("Couldn't remove a profile", details: failed.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)" })
+                : .failed(loc("Couldn't remove a profile"), details: failed.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)" })
         } catch {
-            return .failed("Couldn't remove the profile", details: [error.localizedDescription])
+            return .failed(loc("Couldn't remove the profile"), details: [error.localizedDescription])
         }
     }
 
@@ -176,9 +176,9 @@ public struct DebloatModule: MacSpaceModule {
             let back = after.state != .debloated && after.state != .awaitingRemoval
             let steps = result.steps.map { step -> StepResult in
                 guard ConfigurationProfileBuilder.identifiers(inRemovalNeeded: step.detail) != nil else { return step }
-                return back ? StepResult(settingID: step.settingID, outcome: .changed, detail: "Its profile was removed.")
+                return back ? StepResult(settingID: step.settingID, outcome: .changed, detail: loc("Its profile was removed."))
                     : StepResult(settingID: step.settingID, outcome: .failed,
-                                 detail: "Its profile could not be removed (\(helperError ?? "macOS still enforces it")); remove \"\(ConfigurationProfileBuilder.displayName(for: ConfigurationProfileBuilder.profileTitle))\" in System Settings > General > Device Management.")
+                                 detail: loc("Its profile could not be removed (\(helperError ?? "macOS still enforces it")); remove \"\(ConfigurationProfileBuilder.displayName(for: ConfigurationProfileBuilder.profileTitle))\" in System Settings > General > Device Management."))
             }
             return ControlChangeResult(plan: result.plan, executed: result.executed || back, steps: steps, statusAfter: after)
         }
@@ -201,12 +201,12 @@ public struct DebloatModule: MacSpaceModule {
             }
             if result.executed { changed += 1; restart = restart || result.plan.restart == .reboot }
         }
-        if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: "Couldn't change it", details: details, refresh: true) }
-        if changed == 0 { return .succeeded(action == .apply ? "Already disabled" : "Already enabled") }
+        if changed == 0 && !details.isEmpty { return ActionResult(outcome: .failed, message: loc("Couldn't change it"), details: details, refresh: true) }
+        if changed == 0 { return .succeeded(action == .apply ? loc("Already disabled") : loc("Already enabled")) }
         if approval {
-            return ActionResult(outcome: .needsAttention, message: "Approve the profile in System Settings",
+            return ActionResult(outcome: .needsAttention, message: loc("Approve the profile in System Settings"),
                                 details: ["Open System Settings > General > Device Management and approve the MacSpace profile there, once: it holds every policy switched off. Switching a policy back on later needs no approval."] + details, restartRequired: restart)
         }
-        return ActionResult(outcome: .succeeded, message: action == .apply ? "Disabled" : "Enabled", details: details, restartRequired: restart)
+        return ActionResult(outcome: .succeeded, message: action == .apply ? loc("Disabled") : loc("Enabled"), details: details, restartRequired: restart)
     }
 }

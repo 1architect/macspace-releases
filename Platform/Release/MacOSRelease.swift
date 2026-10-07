@@ -35,7 +35,7 @@ public struct MacOSRelease: Equatable, Hashable, Sendable, CustomStringConvertib
     public var description: String {
         var text = "macOS \(version)"
         if let build { text += " (\(build))" }
-        if isPrerelease { text += ", beta" }
+        if isPrerelease { text += String(localized: ", beta") }
         return text
     }
 

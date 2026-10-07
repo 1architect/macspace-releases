@@ -7,15 +7,15 @@ enum DebloatScreenBuilder {
 
     static func title(_ category: ControlCategory) -> String {
         switch category {
-        case .telemetry: return "Analytics and telemetry"
-        case .advertising: return "Advertising"
-        case .siri: return "Siri"
-        case .appleIntelligence: return "Apple Intelligence features"
-        case .suggestions: return "Suggestions and search"
-        case .experiments: return "Experiments"
-        case .backgroundAnalysis: return "Background analysis"
-        case .appServices: return "Apps"
-        case .diagnostics: return "Diagnostics"
+        case .telemetry: return loc("Analytics and telemetry")
+        case .advertising: return loc("Advertising")
+        case .siri: return loc("Siri")
+        case .appleIntelligence: return loc("Apple Intelligence features")
+        case .suggestions: return loc("Suggestions and search")
+        case .experiments: return loc("Experiments")
+        case .backgroundAnalysis: return loc("Background analysis")
+        case .appServices: return loc("Apps")
+        case .diagnostics: return loc("Diagnostics")
         }
     }
 
@@ -32,51 +32,51 @@ enum DebloatScreenBuilder {
     /// Only what is unusual gets a badge; a switch that is simply on or off says enough by itself.
     static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
         guard let status else { return nil }
-        if cannotTakeEffect { return Badge("Cannot take effect here", tone: .critical) }
+        if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical) }
         switch status.state {
         case .debloated:
             switch status.effect?.state {
-            case .ineffective?: return Badge("Not working", tone: .critical)
-            case .pending?: return Badge("After restart", tone: .caution)
-            case .notControllable?: return Badge("Cannot take effect here", tone: .critical)
+            case .ineffective?: return Badge(loc("Not working"), tone: .critical)
+            case .pending?: return Badge(loc("After restart"), tone: .caution)
+            case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical)
             // Switched off but never tested: says so, so it gets tested, also once it is off.
-            default: return control.tested ? nil : Badge("Not tested", tone: .caution)
+            default: return control.tested ? nil : Badge(loc("Not tested"), tone: .caution)
             }
-        case .awaitingApproval, .awaitingRemoval: return Badge("Waiting for approval", tone: .caution)
-        case .drifted: return Badge("Undone by macOS", tone: .critical)
-        case .partial: return Badge("Partly off", tone: .caution)
-        case .unavailable: return Badge("Not on this macOS")
-        case .unknown: return Badge("Cannot read")
-        case .stock: return status.tested ? nil : Badge("Not tested", tone: .caution)
+        case .awaitingApproval, .awaitingRemoval: return Badge(loc("Waiting for approval"), tone: .caution)
+        case .drifted: return Badge(loc("Undone by macOS"), tone: .critical)
+        case .partial: return Badge(loc("Partly off"), tone: .caution)
+        case .unavailable: return Badge(loc("Not on this macOS"))
+        case .unknown: return Badge(loc("Cannot read"))
+        case .stock: return status.tested ? nil : Badge(loc("Not tested"), tone: .caution)
         }
     }
 
     static func restartText(_ restart: RestartRequirement) -> String? {
         switch restart {
         case .none: return nil
-        case .appRelaunch: return "Reopen apps to apply."
-        case .logout: return "Log out to apply."
-        case .reboot: return "Restart to apply."
+        case .appRelaunch: return loc("Reopen apps to apply.")
+        case .logout: return loc("Log out to apply.")
+        case .reboot: return loc("Restart to apply.")
         }
     }
 
     /// What each switch does for the user, and what stops working. The catalog's summaries and notes are for developers.
     static let plain: [String: String] = [
-        "telemetry.diagnostics": "Stops sending usage and crash data to Apple and app developers.",
-        "telemetry.diagnostics-policy": "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.",
-        "telemetry.siri-improvement": "Stops sharing Siri and Dictation recordings with Apple.",
-        "telemetry.on-device-speech-policy": "Dictation and translation stay on this Mac. Languages without an on-device model stop working.",
-        "ads.personalized-ads": "Apple stops picking ads based on what you do.",
-        "ads.advertising-identifier-policy": "Apps can't track you with the advertising identifier or ask to.",
-        "siri.siri-ai-flag": "Turns off Siri AI. Spotlight goes back to classic search.",
-        "ai.visual-intelligence": "Turns off Visual Intelligence. Visual Look Up may stop working too.",
-        "ai.generative-indexing": "Stops Apple Intelligence from indexing your Mail and personal data.",
-        "ai.features-policy": "Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT.",
-        "suggestions.spotlight-internet-policy": "Spotlight stops sending your searches to Apple. No more web results in Spotlight.",
-        "diagnostics.tailspin": "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.",
-        "diagnostics.crash-reporter": "No more \"quit unexpectedly\" dialogs.",
-        "apps.game-center-policy": "Turns off Game Center.",
-        "apps.news-policy": "Hides Apple News and its widgets.",
+        "telemetry.diagnostics": loc("Stops sending usage and crash data to Apple and app developers."),
+        "telemetry.diagnostics-policy": loc("Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above."),
+        "telemetry.siri-improvement": loc("Stops sharing Siri and Dictation recordings with Apple."),
+        "telemetry.on-device-speech-policy": loc("Dictation and translation stay on this Mac. Languages without an on-device model stop working."),
+        "ads.personalized-ads": loc("Apple stops picking ads based on what you do."),
+        "ads.advertising-identifier-policy": loc("Apps can't track you with the advertising identifier or ask to."),
+        "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search."),
+        "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
+        "ai.generative-indexing": loc("Stops Apple Intelligence from indexing your Mail and personal data."),
+        "ai.features-policy": loc("Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT."),
+        "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
+        "diagnostics.tailspin": loc("Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory."),
+        "diagnostics.crash-reporter": loc("No more \"quit unexpectedly\" dialogs."),
+        "apps.game-center-policy": loc("Turns off Game Center."),
+        "apps.news-policy": loc("Hides Apple News and its widgets."),
     ]
 
     /// What the switch does, when to expect it, and why it is not working when it is not.
@@ -89,7 +89,11 @@ enum DebloatScreenBuilder {
     }
 
     /// What a switch is called: what switching it on does.
-    static func title(_ control: DebloatControl) -> String { "Disable \(control.title)" }
+    static func title(_ control: DebloatControl) -> String { loc("Disable \(name(control))") }
+
+    /// A control's name in the user's language. The catalog is shared with the helper, which has no translations, so its English is
+    /// looked up here.
+    static func name(_ control: DebloatControl) -> String { locKey(control.title) }
 
     static func row(_ control: DebloatControl, _ snapshot: DebloatSnapshot) -> ToggleRow {
         let status = snapshot.status(control.id)
@@ -134,9 +138,9 @@ enum DebloatScreenBuilder {
     static func tile(_ snapshot: DebloatSnapshot) -> Tile {
         let counts = counts(snapshot)
         let graphic = TileGraphic.dots(dots(snapshot))
-        if !counts.drifted.isEmpty { return Tile(title: "debloat", status: "\(counts.drifted.count) undone by macOS", needsAttention: true, graphic: graphic) }
-        if !counts.awaiting.isEmpty { return Tile(title: "debloat", status: "\(counts.awaiting.count) awaiting approval", needsAttention: true, graphic: graphic) }
-        return Tile(title: "debloat", status: "\(counts.on)/\(counts.total) disabled", graphic: graphic)
+        if !counts.drifted.isEmpty { return Tile(title: loc("debloat"), status: loc("\(counts.drifted.count) undone by macOS"), needsAttention: true, graphic: graphic) }
+        if !counts.awaiting.isEmpty { return Tile(title: loc("debloat"), status: loc("\(counts.awaiting.count) awaiting approval"), needsAttention: true, graphic: graphic) }
+        return Tile(title: loc("debloat"), status: loc("\(counts.on)/\(counts.total) disabled"), graphic: graphic)
     }
 
     /// One dot per control that can take effect here, in page order: done when switched off, attention when macOS undid it.
@@ -163,18 +167,18 @@ enum DebloatScreenBuilder {
     static func fix(_ snapshot: DebloatSnapshot) -> Action? {
         let counts = counts(snapshot)
         if !counts.drifted.isEmpty {
-            return Action(id: "reapply", title: counts.drifted.count == 1 ? "Disable \(counts.drifted[0].title) again" : "Disable \(counts.drifted.count) features again",
+            return Action(id: "reapply", title: counts.drifted.count == 1 ? loc("Disable \(name(counts.drifted[0])) again") : loc("Disable \(counts.drifted.count) features again"),
                           role: .prominent, parameters: ["ids": counts.drifted.map(\.id).joined(separator: ",")], requires: [.privilegedHelper])
         }
         // The one MacSpace profile, changed: approving it is what switches policies off or back on. Opened again on demand (macOS
         // drops a downloaded profile after a while).
         switch snapshot.profileWork {
         case .approve:
-            return Action(id: "approvePending", title: "Approve in System Settings", role: .prominent)
+            return Action(id: "approvePending", title: loc("Approve in System Settings"), role: .prominent)
         case .remove, .cleanUp:
             // Removing needs no approval, only the helper: it happens with the switch (or, for earlier versions' profiles, by itself
             // when the page is read). The button is for when that could not happen, and asks for the helper if it is missing.
-            return Action(id: "removePending", title: "Finish", role: .prominent, requires: [.privilegedHelper])
+            return Action(id: "removePending", title: loc("Finish"), role: .prominent, requires: [.privilegedHelper])
         case .none:
             return nil
         }
@@ -193,11 +197,11 @@ enum DebloatScreenBuilder {
     static func turnAllBackOn(_ snapshot: DebloatSnapshot) -> Action? {
         let controls = switchedOff(snapshot)
         guard !controls.isEmpty else { return nil }
-        return Action(id: "restoreAll", title: "Enable all", symbol: "arrow.uturn.backward", role: .prominent,
+        return Action(id: "restoreAll", title: loc("Enable all"), symbol: "arrow.uturn.backward", role: .prominent,
                       parameters: ["ids": controls.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Enable all \(controls.count) features again?",
-                                                 message: "MacSpace restores the settings it saved before disabling them.",
-                                                 confirmTitle: "Enable"),
+                      confirmation: Confirmation(title: loc("Enable all \(controls.count) features again?"),
+                                                 message: loc("MacSpace restores the settings it saved before disabling them."),
+                                                 confirmTitle: loc("Enable")),
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
     }
 
@@ -206,12 +210,12 @@ enum DebloatScreenBuilder {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
         // Short: what happens, and only what the user has to do or check.
-        var message = "Each one can be enabled again."
-        if recommended.contains(where: isPolicy) { message += " macOS asks you to approve the policy profile once." }
-        if recommended.contains(where: { !$0.tested }) { message += " Some are not tested yet." }
-        return Action(id: "applyRecommended", title: "Disable all", symbol: "checkmark.shield", role: .prominent,
+        var message = loc("Each one can be enabled again.")
+        if recommended.contains(where: isPolicy) { message += " " + loc("macOS asks you to approve the policy profile once.") }
+        if recommended.contains(where: { !$0.tested }) { message += " " + loc("Some are not tested yet.") }
+        return Action(id: "applyRecommended", title: loc("Disable all"), symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: "Disable \(recommended.count) features?", message: message, confirmTitle: "Disable"),
+                      confirmation: Confirmation(title: loc("Disable \(recommended.count) features?"), message: message, confirmTitle: loc("Disable")),
                       requires: [.privilegedHelper])
     }
 
@@ -219,11 +223,11 @@ enum DebloatScreenBuilder {
     static func reappliedNotice(_ snapshot: DebloatSnapshot) -> Banner? {
         guard let latest = snapshot.reapplied.first else { return nil }
         var titles: [String] = []
-        for title in snapshot.reapplied.flatMap(\.titles) where !titles.contains(title) { titles.append(title) }
+        for title in snapshot.reapplied.flatMap(\.titles).map(locKey) where !titles.contains(title) { titles.append(title) }
         let when = latest.at.formatted(.relative(presentation: .named))
         return Banner(id: "reapplied", severity: .info,
-                      title: titles.count == 1 ? "\(titles[0]) was turned back on by macOS" : "\(titles.count) features were turned back on by macOS",
-                      message: "MacSpace disabled \(titles.count == 1 ? "it" : "them") again, most recently \(when).")
+                      title: titles.count == 1 ? loc("\(titles[0]) was turned back on by macOS") : loc("\(titles.count) features were turned back on by macOS"),
+                      message: titles.count == 1 ? loc("MacSpace disabled it again, most recently \(when).") : loc("MacSpace disabled them again, most recently \(when)."))
     }
 
     static func screen(_ snapshot: DebloatSnapshot) -> Screen {
@@ -240,10 +244,10 @@ enum DebloatScreenBuilder {
         // Apart, and last: these need a profile, which macOS asks the user to approve.
         let policies = categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category && isPolicy($0) } }
         if !policies.isEmpty {
-            widgets.append(.toggles(ToggleList(id: "policies", title: "Policies",
-                                               footnote: "Disabling one asks you to approve a profile in System Settings > General > Device Management.",
+            widgets.append(.toggles(ToggleList(id: "policies", title: loc("Policies"),
+                                               footnote: loc("Disabling one asks you to approve a profile in System Settings > General > Device Management."),
                                                rows: policies.map { row($0, snapshot) })))
         }
-        return Screen(title: "Debloat", primary: primary(snapshot), widgets: widgets)
+        return Screen(title: loc("Debloat"), primary: primary(snapshot), widgets: widgets)
     }
 }

@@ -23,9 +23,9 @@ public final class AppNotifications: NSObject, UNUserNotificationCenterDelegate 
 
         public var title: String {
             switch self {
-            case .automaticCleanup: return "When automatic cleanup frees space"
-            case .actionFinished: return "When a cleanup finishes in the background"
-            case .lowSpace: return "When the disk is almost full"
+            case .automaticCleanup: return String(localized: "When automatic cleanup frees space")
+            case .actionFinished: return String(localized: "When a cleanup finishes in the background")
+            case .lowSpace: return String(localized: "When the disk is almost full")
             }
         }
     }
@@ -76,8 +76,8 @@ public final class AppNotifications: NSObject, UNUserNotificationCenterDelegate 
     func automaticCleanupFinished(freed: UInt64, modules: [String]) {
         guard freed >= Self.cleanupThreshold, isOn(.automaticCleanup) else { return }
         let names = ListFormatter.localizedString(byJoining: modules)
-        post(.automaticCleanup, title: "MacSpace freed \(ByteFormat.string(freed))",
-             body: modules.isEmpty ? "Automatic cleanup" : "Automatic cleanup: \(names)", destination: "storage")
+        post(.automaticCleanup, title: String(localized: "MacSpace freed \(ByteFormat.string(freed))"),
+             body: modules.isEmpty ? String(localized: "Automatic cleanup") : String(localized: "Automatic cleanup: \(names)"), destination: "storage")
     }
 
     /// After an action the user started, when it took a while and MacSpace is no longer in front.
@@ -99,9 +99,9 @@ public final class AppNotifications: NSObject, UNUserNotificationCenterDelegate 
         defaults.set(now, forKey: Self.lowSpaceLastKey)
         let freeable = host?.reclaimable.values.reduce(0, +) ?? 0
         let body = freeable >= Self.cleanupThreshold
-            ? "\(ByteFormat.string(reading.available)) left. MacSpace can free \(ByteFormat.string(freeable))."
-            : "\(ByteFormat.string(reading.available)) left."
-        post(.lowSpace, title: "Your disk is almost full", body: body, destination: "home")
+            ? String(localized: "\(ByteFormat.string(reading.available)) left. MacSpace can free \(ByteFormat.string(freeable)).")
+            : String(localized: "\(ByteFormat.string(reading.available)) left.")
+        post(.lowSpace, title: String(localized: "Your disk is almost full"), body: body, destination: "home")
     }
 
     nonisolated static func isLow(available: UInt64, capacity: UInt64) -> Bool {

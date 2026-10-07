@@ -144,7 +144,7 @@ public struct StandardWindowView: View {
     private var sidebar: some View {
         VStack(spacing: 0) {
             List(selection: selectionBinding) {
-                row("Overview", symbol: "square.grid.2x2", .home)
+                row(String(localized: "Overview"), symbol: "square.grid.2x2", .home)
                 Section("Modules") {
                     ForEach(host.dashboardHandles) { handle in
                         // Modules by name only: their symbols are not shown anywhere.
@@ -154,7 +154,7 @@ public struct StandardWindowView: View {
             }
             // Settings apart from the modules, at the foot of the sidebar.
             List(selection: selectionBinding) {
-                row("Settings", symbol: "gearshape", .settings)
+                row(String(localized: "Settings"), symbol: "gearshape", .settings)
             }
             .frame(height: 44)
             .scrollDisabled(true)
@@ -165,7 +165,7 @@ public struct StandardWindowView: View {
         // The sidebar's button where macOS puts it: at the sidebar's top right, level with the window's buttons. It slides away with
         // the sidebar.
         .overlay(alignment: .topTrailing) {
-            GlassCircleButton(symbol: "sidebar.left", help: "Hide the sidebar") { toggleSidebar() }
+            GlassCircleButton(symbol: "sidebar.left", help: String(localized: "Hide the sidebar")) { toggleSidebar() }
                 .padding(.top, max(window.buttonsCenterY - GlassCircleButton.diameter / 2, 4))
                 .padding(.trailing, 10)
         }
@@ -219,7 +219,7 @@ public struct StandardWindowView: View {
         switch destination {
         case .home, .storage: return "MacSpace"
         case let .module(id): return host.handle(for: id)?.manifest.name ?? ""
-        case .settings: return "Settings"
+        case .settings: return String(localized: "Settings")
         }
     }
 

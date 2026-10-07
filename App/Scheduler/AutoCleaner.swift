@@ -12,9 +12,9 @@ public final class AutoCleaner: ObservableObject {
         public var id: String { rawValue }
         public var title: String {
             switch self {
-            case .daily: return "Every day"
-            case .everyThreeDays: return "Every 3 days"
-            case .weekly: return "Every week"
+            case .daily: return String(localized: "Every day")
+            case .everyThreeDays: return String(localized: "Every 3 days")
+            case .weekly: return String(localized: "Every week")
             }
         }
         public var interval: TimeInterval {

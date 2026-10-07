@@ -22,14 +22,22 @@ public final class SettingsStore: @unchecked Sendable {
 
     // MARK: Last tile
 
-    /// The tile a module showed last time, so the dashboard has something true to show while the module reads the Mac again.
-    public func lastTile(module id: String) -> Tile? {
-        defaults.data(forKey: Self.key(id, "lastTile")).flatMap { try? JSONDecoder().decode(Tile.self, from: $0) }
+    /// The tile a module showed last time, so the dashboard has something true to show while the module reads the Mac again. Its
+    /// words are in the language it was shown in: after the language changes it is not shown (one saved before languages were kept
+    /// counts as English).
+    public func lastTile(module id: String, language: String = SettingsStore.language) -> Tile? {
+        guard (defaults.string(forKey: Self.key(id, "lastTileLanguage")) ?? "en") == language else { return nil }
+        return defaults.data(forKey: Self.key(id, "lastTile")).flatMap { try? JSONDecoder().decode(Tile.self, from: $0) }
     }
 
-    public func setLastTile(_ tile: Tile, module id: String) {
-        if let data = try? JSONEncoder().encode(tile) { defaults.set(data, forKey: Self.key(id, "lastTile")) }
+    public func setLastTile(_ tile: Tile, module id: String, language: String = SettingsStore.language) {
+        guard let data = try? JSONEncoder().encode(tile) else { return }
+        defaults.set(data, forKey: Self.key(id, "lastTile"))
+        defaults.set(language, forKey: Self.key(id, "lastTileLanguage"))
     }
+
+    /// The language the app is shown in.
+    public static var language: String { Bundle.main.preferredLocalizations.first ?? "en" }
 
     // MARK: Options and background tasks
 

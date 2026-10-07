@@ -384,7 +384,7 @@ private struct PageSkeleton: View {
                 }
             }
         }
-        .accessibilityLabel("Loading")
+        .accessibilityLabel(String(localized: "Loading"))
     }
 }
 
@@ -460,8 +460,8 @@ private struct ActionPill: View {
     private var text: String {
         switch phase {
         case let .idle(action): return action.title
-        case let .working(progress): return progress?.message ?? "Working…"
-        case let .done(result): return result.restartRequired ? "Restart to finish" : result.message
+        case let .working(progress): return progress?.message ?? String(localized: "Working…")
+        case let .done(result): return result.restartRequired ? String(localized: "Restart to finish") : result.message
         case let .notice(banner): return banner.title
         }
     }

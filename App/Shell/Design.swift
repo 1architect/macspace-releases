@@ -228,9 +228,9 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .system: return "Follow System"
-        case .night: return "Night"
-        case .day: return "Day"
+        case .system: return String(localized: "Follow System")
+        case .night: return String(localized: "Night")
+        case .day: return String(localized: "Day")
         }
     }
 }

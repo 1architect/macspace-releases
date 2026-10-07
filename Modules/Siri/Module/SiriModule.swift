@@ -31,7 +31,7 @@ public struct SiriModule: MacSpaceModule {
         var snapshot = await store.snapshot()
         let store = self.store
         let running = await ModelAutoReleaser.shared.check(snapshot, release: {
-            Self.recordBackground(Self.release(progress: { _ in }).freedBytes ?? 0, summary: "Leftover Apple Intelligence models")
+            Self.recordBackground(Self.release(progress: { _ in }).freedBytes ?? 0, summary: loc("Leftover Apple Intelligence models"))
         },
                                                            finished: { await store.invalidate() })
         if waits, let running { await running.value }
@@ -58,12 +58,12 @@ public struct SiriModule: MacSpaceModule {
         guard !snapshot.isVirtualMachine, offerable || Self.releasedModelsOnDisk(snapshot), !(await ModelPurger.shared.isRunning) else { return nil }
         let store = self.store
         let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
-            Self.recordBackground(freed, summary: "Released Apple Intelligence models")
+            Self.recordBackground(freed, summary: loc("Released Apple Intelligence models"))
             await store.invalidate()
         }
         await store.invalidate()
         guard outcome.error == nil else { return nil }
-        return CleanupReport(freedBytes: outcome.freed, summary: "Released Apple Intelligence models and unused system assets", details: PurgeRun.details(outcome))
+        return CleanupReport(freedBytes: outcome.freed, summary: loc("Released Apple Intelligence models and unused system assets"), details: PurgeRun.details(outcome))
     }
 
     /// Off and not being released by `ModelAutoReleaser` (which purges itself), with models still on disk.
@@ -84,7 +84,7 @@ public struct SiriModule: MacSpaceModule {
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        if Machine.isVirtualMachine { return .failed("Not available in a virtual machine") }
+        if Machine.isVirtualMachine { return .failed(loc("Not available in a virtual machine")) }
         switch request.actionID {
         case "toggle":
             let available = request.parameters["value"] == "true"
@@ -100,10 +100,10 @@ public struct SiriModule: MacSpaceModule {
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "purgeAssets":
-            progress(ActionProgress(message: "Freeing space…"))
+            progress(ActionProgress(message: loc("Freeing space…")))
             let store = self.store
             return Self.purge { freed in
-                Self.recordBackground(freed, summary: "Unused system assets")
+                Self.recordBackground(freed, summary: loc("Unused system assets"))
                 await store.invalidate()
             }
         case "openFullDiskAccess":
@@ -112,7 +112,7 @@ public struct SiriModule: MacSpaceModule {
         case "releaseModels":
             return await Task.detached(priority: .userInitiated) { Self.release(progress: progress) }.value
         default:
-            return .failed("Unknown action \(request.actionID).")
+            return .failed(loc("Unknown action \(request.actionID)."))
         }
     }
 
@@ -136,11 +136,11 @@ public struct SiriModule: MacSpaceModule {
         do {
             let plan = try guardian.plan(available ? .enable : .disable, context: environment.context(), scope: .thisMacOnly, saved: environment.loadSavedSettings())
             let result = try guardian.apply(plan, environment: environment)
-            if plan.noChangeNeeded { return .succeeded(available ? "Already on" : "Already off") }
+            if plan.noChangeNeeded { return .succeeded(available ? loc("Already on") : loc("Already off")) }
             let state = guardian.status().state
-            if available { return .succeeded("Apple Intelligence is on", details: plan.warnings) }
+            if available { return .succeeded(loc("Apple Intelligence is on"), details: plan.warnings) }
             let tail = state == .releasing ? "macOS is removing its model; this usually takes a few minutes." : "Verified: eligibility reads unavailable."
-            return .succeeded("Apple Intelligence is off", details: [tail] + (result.executed ? [] : []))
+            return .succeeded(loc("Apple Intelligence is off"), details: [tail] + (result.executed ? [] : []))
         } catch {
             return .failed("\(error)")
         }
@@ -162,7 +162,7 @@ public struct SiriModule: MacSpaceModule {
             count += 1
             progress(ActionProgress(fraction: min(0.9, Double(count) * 0.2), message: step.detail))
         }
-        if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: "Can't free it yet", details: result.blockers, refresh: true) }
+        if !result.blockers.isEmpty { return ActionResult(outcome: .needsAttention, message: loc("Can't free it yet"), details: result.blockers, refresh: true) }
         if let error = result.error { return .failed(PurgeRun.failedMessage, details: [error] + result.steps.map(\.detail)) }
         return .succeeded(PurgeRun.freedMessage(result.purge?.freedBytes ?? 0),
                           details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."],

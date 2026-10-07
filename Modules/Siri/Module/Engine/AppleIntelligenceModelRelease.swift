@@ -65,18 +65,18 @@ public struct AppleIntelligenceModelRelease {
         let context = environment.context()
         guard let system = context.systemLanguage.map(AppleIntelligenceLanguageGuard.normalize),
               let siri = context.siriLanguage.map(AppleIntelligenceLanguageGuard.normalize) else {
-            return ["The system or Siri language could not be read."]
+            return [loc("The system or Siri language could not be read.")]
         }
         if AppleIntelligenceLanguageGuard.baseLanguage(siri) == AppleIntelligenceLanguageGuard.baseLanguage(system) {
-            blockers.append("Apple Intelligence is not switched off in this account (Siri language \(siri) matches the system language); switch it off in MacSpace first.")
+            blockers.append(loc("Apple Intelligence is not switched off in this account (Siri language \(siri) matches the system language); switch it off in MacSpace first."))
         }
         let elsewhere = accounts()?.enabledElsewhere ?? []
         let existing = elsewhere.compactMap(\.name)
         if !existing.isEmpty {
-            blockers.append("Apple Intelligence is on in \(existing.joined(separator: ", ")); those accounts keep the models. Switch it off there or delete the accounts.")
+            blockers.append(loc("Apple Intelligence is on in \(existing.joined(separator: ", ")); those accounts keep the models. Switch it off there or delete the accounts."))
         }
         if elsewhere.contains(where: { $0.name == nil }) {
-            blockers.append("Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again.")
+            blockers.append(loc("Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again."))
         }
         return blockers
     }

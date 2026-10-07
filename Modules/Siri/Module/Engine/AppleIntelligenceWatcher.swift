@@ -70,17 +70,17 @@ public struct AppleIntelligenceWatcher: Sendable {
         if !alreadyAlerted {
             switch status.state {
             case .atRisk:
-                alert = .init(severity: .warning, title: "Apple Intelligence is back on",
-                              message: "Switch it off again in MacSpace.")
+                alert = .init(severity: .warning, title: loc("Apple Intelligence is back on"),
+                              message: loc("Switch it off again in MacSpace."))
             case .unknown where now.timeIntervalSince(since) >= Self.unknownGrace:
-                alert = .init(severity: .warning, title: "Couldn't check Apple Intelligence",
-                              message: "Open MacSpace to check.")
+                alert = .init(severity: .warning, title: loc("Couldn't check Apple Intelligence"),
+                              message: loc("Open MacSpace to check."))
             case .releasing where now.timeIntervalSince(since) >= releaseGrace:
-                alert = .init(severity: .warning, title: "Apple Intelligence models still on disk",
-                              message: "Open MacSpace to free them.")
+                alert = .init(severity: .warning, title: loc("Apple Intelligence models still on disk"),
+                              message: loc("Open MacSpace to free them."))
             case .protected where previous.map { $0.state != .protected && $0.warned } ?? false:
-                alert = .init(severity: .info, title: "Apple Intelligence is off",
-                              message: "Its models are gone.")
+                alert = .init(severity: .info, title: loc("Apple Intelligence is off"),
+                              message: loc("Its models are gone."))
             default:
                 break
             }

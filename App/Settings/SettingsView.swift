@@ -194,12 +194,12 @@ private struct PermissionRow: View {
 
     /// Installs the helper (Launch Services first, so a hand-copied app is found), then sends the user to the one switch that approves it.
     private var helperButton: some View {
-        Button(PrivilegedHelperInstaller.status == .requiresApproval ? "Approve in Settings" : "Install helper") {
+        Button(PrivilegedHelperInstaller.status == .requiresApproval ? String(localized: "Approve in Settings") : String(localized: "Install helper")) {
             helperError = nil
             if PrivilegedHelperInstaller.status != .requiresApproval {
                 // Registering reports an error while it waits for the user's approval; that is not a failure.
                 do { try PrivilegedHelperInstaller.register() } catch {
-                    if PrivilegedHelperInstaller.status != .requiresApproval { helperError = "Could not install the helper: \(error.localizedDescription)" }
+                    if PrivilegedHelperInstaller.status != .requiresApproval { helperError = String(localized: "Could not install the helper: \(error.localizedDescription)") }
                 }
             }
             if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }

@@ -1,0 +1,296 @@
+{
+ "%@ cache": [
+  "Cache de %@",
+  "Cache %@",
+  "Caché de %@",
+  "%@-Cache"
+ ],
+ "%@ files on this Mac": [
+  "Arquivos do %@ neste Mac",
+  "Fichiers %@ sur ce Mac",
+  "Archivos de %@ en este Mac",
+  "%@-Dateien auf diesem Mac"
+ ],
+ "%@, ready to install": [
+  "%@, pronto para instalar",
+  "%@, prêt à installer",
+  "%@, listo para instalar",
+  "%@, bereit zur Installation"
+ ],
+ "%lld files": [
+  "%lld arquivos",
+  "%lld fichiers",
+  "%lld archivos",
+  "%lld Dateien"
+ ],
+ "1 file": [
+  "1 arquivo",
+  "1 fichier",
+  "1 archivo",
+  "1 Datei"
+ ],
+ "App container caches": [
+  "Caches de contêineres de apps",
+  "Caches des conteneurs d’apps",
+  "Cachés de contenedores de apps",
+  "Caches von App-Containern"
+ ],
+ "Apps download them again if they need them.": [
+  "Os apps os baixam de novo se precisarem.",
+  "Les apps les retéléchargent si besoin.",
+  "Las apps los vuelven a descargar si los necesitan.",
+  "Apps laden sie bei Bedarf erneut."
+ ],
+ "Cloud files on this Mac": [
+  "Arquivos da nuvem neste Mac",
+  "Fichiers du cloud sur ce Mac",
+  "Archivos de la nube en este Mac",
+  "Cloud-Dateien auf diesem Mac"
+ ],
+ "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.": [
+  "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.",
+  "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.",
+  "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.",
+  "Kopien von Cloud-Dateien auf diesem Mac. Beim Entfernen bleiben die Dateien in der Cloud."
+ ],
+ "Counted by macOS": [
+  "Contabilizado pelo macOS",
+  "Comptabilisé par macOS",
+  "Contabilizado por macOS",
+  "Von macOS gezählt"
+ ],
+ "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.": [
+  "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.",
+  "Fichiers que les apps ont marqués comme supprimables. macOS ne les supprime que lorsque le disque est presque plein.",
+  "Archivos que las apps marcaron como seguros de eliminar. macOS solo los elimina cuando el disco está casi lleno.",
+  "Dateien, die Apps als löschbar markiert haben. macOS löscht sie erst, wenn der Speicher fast voll ist."
+ ],
+ "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available.": [
+  "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.",
+  "Fichiers que macOS supprime de lui-même quand l’espace manque. Réglages Système compte cet espace comme disponible.",
+  "Archivos que macOS elimina por su cuenta cuando falta espacio. Ajustes del Sistema cuenta este espacio como disponible.",
+  "Dateien, die macOS bei Platzmangel selbst löscht. Die Systemeinstellungen zählen diesen Speicher als verfügbar."
+ ],
+ "Free": [
+  "Liberar",
+  "Libérer",
+  "Liberar",
+  "Freigeben"
+ ],
+ "Free now": [
+  "Liberar agora",
+  "À libérer",
+  "Liberar ahora",
+  "Jetzt freigeben"
+ ],
+ "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full.": [
+  "Libere os arquivos que os apps marcaram como removíveis, que o macOS só apagaria com o disco quase cheio.",
+  "Libérez les fichiers que les apps ont marqués comme purgeables, que macOS ne supprime sinon que lorsque le disque est presque plein.",
+  "Libera los archivos que las apps marcaron como purgables, que macOS solo eliminaría con el disco casi lleno.",
+  "Gib Dateien frei, die Apps als löschbar markiert haben und die macOS sonst erst bei fast vollem Speicher löscht."
+ ],
+ "Free up to %@": [
+  "Liberar até %@",
+  "Libérer jusqu’à %@",
+  "Liberar hasta %@",
+  "Bis zu %@ freigeben"
+ ],
+ "Free up to %@ of purgeable app files?": [
+  "Liberar até %@ de arquivos removíveis de apps?",
+  "Libérer jusqu’à %@ de fichiers d’apps purgeables ?",
+  "¿Liberar hasta %@ de archivos purgables de apps?",
+  "Bis zu %@ an löschbaren App-Dateien freigeben?"
+ ],
+ "Freeing in the background": [
+  "Liberando em segundo plano",
+  "Libération en arrière-plan",
+  "Liberando en segundo plano",
+  "Wird im Hintergrund freigegeben"
+ ],
+ "Freeing space…": [
+  "Liberando espaço…",
+  "Libération d’espace…",
+  "Liberando espacio…",
+  "Speicher wird freigegeben …"
+ ],
+ "Left alone": [
+  "Mantido como está",
+  "Laissé tel quel",
+  "Sin tocar",
+  "Unangetastet"
+ ],
+ "Nothing can be measured right now. Try Refresh.": [
+  "Nada pode ser medido agora. Tente Atualizar.",
+  "Rien ne peut être mesuré pour l’instant. Essayez Actualiser.",
+  "Ahora no se puede medir nada. Prueba con Actualizar.",
+  "Gerade lässt sich nichts messen. Versuche „Aktualisieren“."
+ ],
+ "Open": [
+  "Abrir",
+  "Ouvrir",
+  "Abrir",
+  "Öffnen"
+ ],
+ "Other System Files": [
+  "Outros Arquivos do Sistema",
+  "Autres fichiers système",
+  "Otros archivos del sistema",
+  "Andere Systemdateien"
+ ],
+ "Other purgeable documents": [
+  "Outros documentos removíveis",
+  "Autres documents purgeables",
+  "Otros documentos purgables",
+  "Andere löschbare Dokumente"
+ ],
+ "Outside System Data": [
+  "Fora de Dados do Sistema",
+  "Hors de Données système",
+  "Fuera de Datos del sistema",
+  "Außerhalb von „Systemdaten“"
+ ],
+ "Purgeable app files": [
+  "Arquivos removíveis de apps",
+  "Fichiers d’apps purgeables",
+  "Archivos purgables de apps",
+  "Löschbare App-Dateien"
+ ],
+ "Purgeable documents": [
+  "Documentos removíveis",
+  "Documents purgeables",
+  "Documentos purgables",
+  "Löschbare Dokumente"
+ ],
+ "Quick Look thumbnails": [
+  "Miniaturas do Visualização Rápida",
+  "Vignettes Coup d’œil",
+  "Miniaturas de Vista rápida",
+  "Übersicht-Miniaturen"
+ ],
+ "Remove": [
+  "Remover",
+  "Supprimer",
+  "Eliminar",
+  "Entfernen"
+ ],
+ "Remove %@ of %@ downloads?": [
+  "Remover %@ de downloads do %@?",
+  "Supprimer %@ de téléchargements %@ ?",
+  "¿Eliminar %@ de descargas de %@?",
+  "%@ an %@-Downloads entfernen?"
+ ],
+ "Remove Downloads": [
+  "Remover Downloads",
+  "Supprimer les téléchargements",
+  "Eliminar descargas",
+  "Downloads entfernen"
+ ],
+ "Removing downloads": [
+  "Removendo downloads",
+  "Suppression des téléchargements",
+  "Eliminando descargas",
+  "Downloads werden entfernt"
+ ],
+ "Removing · %lld%%, %@": [
+  "Removendo · %lld%%, %@",
+  "Suppression · %lld %%, %@",
+  "Eliminando · %lld %%, %@",
+  "Wird entfernt · %lld %%, %@"
+ ],
+ "Spotlight index": [
+  "Índice do Spotlight",
+  "Index Spotlight",
+  "Índice de Spotlight",
+  "Spotlight-Index"
+ ],
+ "System assets": [
+  "Recursos do sistema",
+  "Ressources système",
+  "Recursos del sistema",
+  "Systemressourcen"
+ ],
+ "That cloud folder is no longer on this Mac": [
+  "Essa pasta da nuvem não está mais neste Mac",
+  "Ce dossier cloud n’est plus sur ce Mac",
+  "Esa carpeta de la nube ya no está en este Mac",
+  "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac"
+ ],
+ "The files stay in %@ and download again when you open them.": [
+  "Os arquivos continuam no %@ e são baixados de novo quando você os abre.",
+  "Les fichiers restent dans %@ et sont retéléchargés à l’ouverture.",
+  "Los archivos se quedan en %@ y se vuelven a descargar al abrirlos.",
+  "Die Dateien bleiben in %@ und werden beim Öffnen erneut geladen."
+ ],
+ "Unknown action %@.": [
+  "Ação desconhecida %@.",
+  "Action inconnue %@.",
+  "Acción desconocida %@.",
+  "Unbekannte Aktion %@."
+ ],
+ "Waiting to install": [
+  "Aguardando instalação",
+  "En attente d’installation",
+  "Pendiente de instalar",
+  "Wartet auf Installation"
+ ],
+ "free up to %@": [
+  "liberar até %@",
+  "libérer jusqu’à %@",
+  "liberar hasta %@",
+  "bis zu %@ freigeben"
+ ],
+ "freeing %@": [
+  "liberando %@",
+  "libération de %@",
+  "liberando %@",
+  "%@ werden freigegeben"
+ ],
+ "installs at the next restart": [
+  "instala no próximo reinício",
+  "s’installe au prochain redémarrage",
+  "se instala en el próximo reinicio",
+  "wird beim nächsten Neustart installiert"
+ ],
+ "macOS kept them when asked; MacSpace keeps asking it.": [
+  "O macOS os manteve quando solicitado; o MacSpace continua pedindo.",
+  "macOS les a conservés quand on lui a demandé ; MacSpace continue de demander.",
+  "macOS los conservó cuando se le pidió; MacSpace sigue pidiéndolo.",
+  "macOS hat sie auf Anfrage behalten; MacSpace fragt weiter nach."
+ ],
+ "macOS's purge service did not answer": [
+  "O serviço de limpeza do macOS não respondeu",
+  "Le service de purge de macOS n’a pas répondu",
+  "El servicio de purga de macOS no ha respondido",
+  "Der Bereinigungsdienst von macOS hat nicht geantwortet"
+ ],
+ "nothing to free": [
+  "nada a liberar",
+  "rien à libérer",
+  "nada que liberar",
+  "nichts freizugeben"
+ ],
+ "other system files": [
+  "outros arquivos do sistema",
+  "autres fichiers système",
+  "otros archivos del sistema",
+  "andere Systemdateien"
+ ],
+ "other system files %@": [
+  "outros arquivos do sistema %@",
+  "autres fichiers système %@",
+  "otros archivos del sistema %@",
+  "andere Systemdateien %@"
+ ],
+ "removing downloads · %lld%%": [
+  "removendo downloads · %lld%%",
+  "suppression des téléchargements · %lld %%",
+  "eliminando descargas · %lld %%",
+  "Downloads werden entfernt · %lld %%"
+ ],
+ "unavailable": [
+  "indisponível",
+  "indisponible",
+  "no disponible",
+  "nicht verfügbar"
+ ]
+}

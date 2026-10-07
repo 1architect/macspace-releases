@@ -21,9 +21,13 @@ final class StorageOverview: ObservableObject {
     }
 
     func status() -> (title: String, detail: String) {
-        guard let usedBytes else { return ("disk", "reading…") }
-        let percent = usedFraction.map { "\(Int(($0 * 100).rounded()))% " } ?? ""
-        return ("\(ByteFormat.string(usedBytes)) used", totalBytes.map { "\(percent)of \(ByteFormat.string($0))" } ?? "")
+        guard let usedBytes else { return (String(localized: "disk"), String(localized: "reading…")) }
+        let detail: String = totalBytes.map { total in
+            let size = ByteFormat.string(total)
+            guard let fraction = usedFraction else { return String(localized: "of \(size)") }
+            return String(localized: "\(Int((fraction * 100).rounded()))% of \(size)")
+        } ?? ""
+        return (String(localized: "\(ByteFormat.string(usedBytes)) used"), detail)
     }
 
     private var observers: [AnyCancellable] = []

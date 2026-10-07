@@ -11,6 +11,8 @@
         </dict>
     </array>
     <key>CFBundleName</key><string>MacSpace</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array><string>en</string><string>pt-BR</string><string>fr</string><string>es</string><string>de</string></array>
     <key>CFBundleDisplayName</key><string>MacSpace</string>
     <key>CFBundleIconFile</key><string>MacSpace</string>
     <key>CFBundleExecutable</key><string>MacSpace</string>

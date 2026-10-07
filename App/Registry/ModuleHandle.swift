@@ -195,7 +195,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !missing.isEmpty {
             // For a switch it counts as failed: nothing changed, so the switch goes back.
             let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
-                                      message: "Needs \(missing.map(\.title).joined(separator: ", "))",
+                                      message: String(localized: "Needs \(ListFormatter.localizedString(byJoining: missing.map(\.title)))"),
                                       refresh: false)
             lastResult = result
             return result

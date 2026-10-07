@@ -54,8 +54,11 @@ struct DebloatWatchStore {
     static func notify(_ event: DebloatReapplied) {
         guard Bundle.main.bundleURL.pathExtension == "app" else { return }
         let center = UNUserNotificationCenter.current()
-        let title = event.titles.count == 1 ? "\(event.titles[0]) was turned back on" : "\(event.titles.count) features were turned back on"
-        let body = "macOS switched \(event.titles.joined(separator: ", ")) back on. MacSpace disabled \(event.titles.count == 1 ? "it" : "them") again."
+        let names = event.titles.map(locKey)
+        let title = names.count == 1 ? loc("\(names[0]) was turned back on") : loc("\(names.count) features were turned back on")
+        let list = ListFormatter.localizedString(byJoining: names)
+        let body = names.count == 1 ? loc("macOS switched \(list) back on. MacSpace disabled it again.")
+            : loc("macOS switched \(list) back on. MacSpace disabled them again.")
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
