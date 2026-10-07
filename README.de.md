@@ -20,10 +20,12 @@ Open Source und **erfasst keine Daten über dich**.
 [Sicherheit](SECURITY.de.md) ·
 [Änderungsprotokoll](CHANGELOG.md) (auf Englisch)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/de/Home-Dark.png">
-  <img src="Docs/Screenshots/de/Home-Light.png" alt="Die Startseite von MacSpace: eine Kachel für den Speicher und eine Kachel für jedes der vier Module" width="820">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/de/Home-Dark.png">
+    <img src="Docs/Screenshots/de/Home-Light.png" alt="Die Startseite von MacSpace: eine Kachel für den Speicher und eine Kachel für jedes der vier Module" width="820">
+  </picture>
+</p>
 
 ---
 
@@ -48,7 +50,9 @@ von Dokumenten** (frühere Versionen deiner Dokumente; die Dokumente bleiben) un
 macOS-Update-Dateien** (Dateien eines bereits installierten Updates). Bei allem, was zu macOS oder
 zu anderen Apps gehört, sagt MacSpace, was es ist und was du von Hand tun kannst.
 
-<img src="Docs/Screenshots/de/SystemData.png" alt="Die Seite „Systemdaten“: ein Diagramm dessen, was „Systemdaten“ füllt, die Liste „Jetzt freigeben“ und die Schaltfläche „Freigeben“ mit ihrer Größe" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/SystemData.png" alt="Die Seite „Systemdaten“: ein Diagramm dessen, was „Systemdaten“ füllt, die Liste „Jetzt freigeben“ und die Schaltfläche „Freigeben“ mit ihrer Größe" width="720">
+</p>
 
 **Siri & Apple Intelligence.** Ein Schalter, **Apple Intelligence**, auf der Seite und auf der
 Kachel. Ist er ausgeschaltet, stellt MacSpace Siri auf eine andere Sprache als die deines Macs.
@@ -62,7 +66,9 @@ optionale Prüfung, **Prüfen, dass Apple Intelligence aus bleibt** in den Einst
 dir, wenn macOS es wieder einschaltet. In einer virtuellen Maschine bietet macOS Apple
 Intelligence nicht an, daher sagt die Seite nur das.
 
-<img src="Docs/Screenshots/de/Siri.png" alt="Die Seite „Siri & Apple Intelligence“: der Schalter „Apple Intelligence“, ausgeschaltet, und die Zeile zur iCloud-Synchronisierung von Siri" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/Siri.png" alt="Die Seite „Siri & Apple Intelligence“: der Schalter „Apple Intelligence“, ausgeschaltet, und die Zeile zur iCloud-Synchronisierung von Siri" width="720">
+</p>
 
 **Andere Systemdateien.** Speicher außerhalb von „Systemdaten“, den macOS als löschbar zählt.
 macOS gibt ihn frei, wenn der Speicher fast voll ist. **Bis zu … freigeben** bittet macOS, das
@@ -72,7 +78,9 @@ Zeile und eine eigene Schaltfläche, **Downloads entfernen**. Die Dateien bleibe
 werden beim Öffnen erneut geladen. Ein macOS-Update, das zur Installation bereit ist, steht unter
 **Wartet auf Installation**. MacSpace löscht es nicht.
 
-<img src="Docs/Screenshots/de/OtherSystemFiles.png" alt="Die Seite „Andere Systemdateien“: ein Diagramm dessen, was macOS als löschbar zählt, die Liste „Jetzt freigeben“ und die Schaltfläche „Bis zu … freigeben“" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/OtherSystemFiles.png" alt="Die Seite „Andere Systemdateien“: ein Diagramm dessen, was macOS als löschbar zählt, die Liste „Jetzt freigeben“ und die Schaltfläche „Bis zu … freigeben“" width="720">
+</p>
 
 **Debloat.** Vierzehn Schalter für Analyse, Werbung und Datensammlung im Hintergrund, die macOS
 dich steuern lässt. Jeder Schalter heißt **… deaktivieren**: Ist er an, hat MacSpace diese
@@ -104,7 +112,9 @@ Systemeinstellungen genehmigen (siehe [Berechtigungen](#erster-start-und-berecht
 einer Betaversion von macOS ist auch der Schalter für Analysedaten eine Richtlinie, weil macOS
 die Einstellung dort ignoriert.
 
-<img src="Docs/Screenshots/de/Debloat.png" alt="Die Seite „Debloat“: Deaktivieren-Schalter nach Kategorie gruppiert, alle eingeschaltet, und die Schaltfläche „Alle aktivieren“" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/Debloat.png" alt="Die Seite „Debloat“: Deaktivieren-Schalter nach Kategorie gruppiert, alle eingeschaltet, und die Schaltfläche „Alle aktivieren“" width="720">
+</p>
 
 **Außerdem in MacSpace.** **Automatisch bereinigen** (Einstellungen, aus, bis du es einschaltest)
 gibt frei, was die Module ohne Rückfrage freigeben können, täglich, alle 3 Tage oder
@@ -161,7 +171,9 @@ und Sparkle prüft die Signatur, bevor es etwas installiert. Mit Homebrew kannst
 `brew upgrade --cask macspace` ausführen (füge `--greedy` hinzu, wenn Homebrew es überspringt,
 weil sich MacSpace selbst aktualisiert).
 
-<img src="Docs/Screenshots/de/Settings.png" alt="Die Seite „Einstellungen“: Thema, Erscheinungsbild, Berechtigungen, was das Schließen des Fensters bewirkt, Beim Anmelden öffnen, Updates und automatische Bereinigung" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/Settings.png" alt="Die Seite „Einstellungen“: Thema, Erscheinungsbild, Berechtigungen, was das Schließen des Fensters bewirkt, Beim Anmelden öffnen, Updates und automatische Bereinigung" width="720">
+</p>
 
 ---
 
@@ -173,7 +185,9 @@ dann **Alles bereit**. Jeder Schritt kann warten (**Später**), und Schritte, di
 erledigt hast, werden übersprungen. Du findest sie wieder unter **Einstellungen >
 Berechtigungen**.
 
-<img src="Docs/Screenshots/de/Onboarding.png" alt="Der erste Schritt beim ersten Start, Festplattenvollzugriff, hier bereits erlaubt, mit der Schaltfläche „Fortfahren“" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/de/Onboarding.png" alt="Der erste Schritt beim ersten Start, Festplattenvollzugriff, hier bereits erlaubt, mit der Schaltfläche „Fortfahren“" width="720">
+</p>
 
 | Berechtigung | Wo du sie erteilst | Wozu MacSpace sie braucht | Module |
 |---|---|---|---|

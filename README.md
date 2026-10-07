@@ -19,10 +19,12 @@ macOS lets you control. It is free and open source, and it **collects no data ab
 [Security](SECURITY.md) ·
 [Changelog](CHANGELOG.md)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/en/Home-Dark.png">
-  <img src="Docs/Screenshots/en/Home-Light.png" alt="The MacSpace home page: a tile for the disk and a tile for each of the four modules" width="820">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/en/Home-Dark.png">
+    <img src="Docs/Screenshots/en/Home-Light.png" alt="The MacSpace home page: a tile for the disk and a tile for each of the four modules" width="820">
+  </picture>
+</p>
 
 ---
 
@@ -44,7 +46,9 @@ version history** (earlier versions of your documents; the documents stay) and *
 update files** (files of an update that is already installed). For everything that belongs to
 macOS or to other apps, MacSpace says what it is and what to do by hand.
 
-<img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
+</p>
 
 **Siri & Apple Intelligence.** One switch, **Apple Intelligence**, on the page and on the tile.
 Switched off, MacSpace sets Siri to a language other than your Mac's. That is how macOS decides
@@ -56,7 +60,9 @@ Intelligence on, because the models are shared by all accounts. An optional chec
 Apple Intelligence stays off** in Settings, tells you if macOS turns it back on. In a virtual
 machine macOS does not offer Apple Intelligence, so the page only says that.
 
-<img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
+</p>
 
 **Other System Files.** Space outside System Data that macOS counts as purgeable. macOS frees it
 when the disk is nearly full. **Free up to** asks it to do that now. The size is macOS's
@@ -65,7 +71,9 @@ Drive and other cloud folders) have a row and a button of their own, **Remove Do
 files stay in the cloud and download again when you open them. A macOS update that is ready to
 install is listed under **Waiting to install**. MacSpace does not delete it.
 
-<img src="Docs/Screenshots/en/OtherSystemFiles.png" alt="The Other System Files page: a chart of what macOS counts as purgeable, the Free now list and the Free up to button" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/OtherSystemFiles.png" alt="The Other System Files page: a chart of what macOS counts as purgeable, the Free now list and the Free up to button" width="720">
+</p>
 
 **Debloat.** Fourteen switches for analytics, advertising and background data collection that
 macOS lets you control. Each switch is named **Disable …**: on means MacSpace switched that
@@ -95,7 +103,9 @@ Six of these are policies. Disabling one asks you to approve a profile in System
 (see [Permissions](#first-launch-and-permissions)). On a beta of macOS, the analytics switch is a
 policy too, because macOS ignores the setting there.
 
-<img src="Docs/Screenshots/en/Debloat.png" alt="The Debloat page: Disable switches grouped by category, all switched on, and the Enable all button" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/Debloat.png" alt="The Debloat page: Disable switches grouped by category, all switched on, and the Enable all button" width="720">
+</p>
 
 **Also in MacSpace.** **Clean automatically** (Settings, off until you turn it on) frees what
 the modules can free without asking, every day, every 3 days or every week, while MacSpace is
@@ -150,7 +160,9 @@ check by itself. Every update is signed, and Sparkle checks the signature before
 anything. With Homebrew, you can also run `brew upgrade --cask macspace` (add `--greedy` if
 Homebrew skips it, because MacSpace updates itself).
 
-<img src="Docs/Screenshots/en/Settings.png" alt="The Settings page: theme, appearance, permissions, what closing the window does, open at login, updates and automatic cleanup" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/Settings.png" alt="The Settings page: theme, appearance, permissions, what closing the window does, open at login, updates and automatic cleanup" width="720">
+</p>
 
 ---
 
@@ -161,7 +173,9 @@ Access**, **Approve the helper**, **Get notified**, then **You're all set**. Eac
 (**Later**), and steps you have already done are skipped. You can come back to them in
 **Settings > Permissions**.
 
-<img src="Docs/Screenshots/en/Onboarding.png" alt="The first step of the first launch, Full Disk Access, here already allowed, with a Continue button" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/en/Onboarding.png" alt="The first step of the first launch, Full Disk Access, here already allowed, with a Continue button" width="720">
+</p>
 
 | Permission | Where you give it | Why MacSpace needs it | Modules |
 |---|---|---|---|

@@ -20,10 +20,12 @@ nenhum dado sobre você**.
 [Segurança](SECURITY.pt-BR.md) ·
 [Histórico de alterações](CHANGELOG.md) (em inglês)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/pt-BR/Home-Dark.png">
-  <img src="Docs/Screenshots/pt-BR/Home-Light.png" alt="A página inicial do MacSpace: um bloco para o disco e um bloco para cada um dos quatro módulos" width="820">
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Docs/Screenshots/pt-BR/Home-Dark.png">
+    <img src="Docs/Screenshots/pt-BR/Home-Light.png" alt="A página inicial do MacSpace: um bloco para o disco e um bloco para cada um dos quatro módulos" width="820">
+  </picture>
+</p>
 
 ---
 
@@ -47,7 +49,9 @@ documentos continuam) e **Arquivos restantes de atualização do macOS** (arquiv
 atualização que já está instalada). Para tudo o que pertence ao macOS ou a outros apps, o MacSpace
 diz o que é e o que fazer manualmente.
 
-<img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
+</p>
 
 **Siri e Apple Intelligence.** Um interruptor, **Apple Intelligence**, na página e no bloco.
 Desativá-lo coloca a Siri num idioma diferente do seu Mac. É assim que o macOS decide que o Apple
@@ -60,7 +64,9 @@ todas as contas. Uma verificação opcional, **Verificar se o Apple Intelligence
 desativado**, nos Ajustes, avisa se o macOS o reativar. Numa máquina virtual, o macOS não oferece o
 Apple Intelligence, então a página só informa isso.
 
-<img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri com o iCloud" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri com o iCloud" width="720">
+</p>
 
 **Outros Arquivos do Sistema.** Espaço fora de Dados do Sistema que o macOS conta como removível.
 O macOS o libera quando o disco está quase cheio. **Liberar até** pede que ele faça isso agora. O
@@ -70,7 +76,9 @@ próprios, **Remover Downloads**. Os arquivos continuam na nuvem e são baixados
 os abre. Uma atualização do macOS pronta para instalar aparece em **Aguardando instalação**. O
 MacSpace não a apaga.
 
-<img src="Docs/Screenshots/pt-BR/OtherSystemFiles.png" alt="A página Outros Arquivos do Sistema: um gráfico do que o macOS conta como removível, a lista Liberar agora e o botão Liberar até" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/OtherSystemFiles.png" alt="A página Outros Arquivos do Sistema: um gráfico do que o macOS conta como removível, a lista Liberar agora e o botão Liberar até" width="720">
+</p>
 
 **Debloat.** Quatorze interruptores para análises, publicidade e coleta de dados em segundo plano
 que o macOS permite controlar. Cada interruptor se chama **Desativar …**: ligado significa que o
@@ -100,7 +108,9 @@ Seis deles são políticas. Desativar um deles pede que você aprove um perfil n
 uma única vez (veja [Permissões](#primeira-abertura-e-permissões)). Numa versão beta do macOS, o
 interruptor de análises também é uma política, porque o macOS ignora o ajuste ali.
 
-<img src="Docs/Screenshots/pt-BR/Debloat.png" alt="A página Debloat: interruptores Desativar agrupados por categoria, todos ligados, e o botão Ativar tudo" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/Debloat.png" alt="A página Debloat: interruptores Desativar agrupados por categoria, todos ligados, e o botão Ativar tudo" width="720">
+</p>
 
 **Também no MacSpace.** **Limpar automaticamente** (nos Ajustes, desativado até você ativá-lo)
 libera, sem perguntar, o que os módulos podem liberar, todos os dias, a cada 3 dias ou toda
@@ -157,7 +167,9 @@ assinada, e o Sparkle confere a assinatura antes de instalar qualquer coisa. Com
 também pode executar `brew upgrade --cask macspace` (acrescente `--greedy` se o Homebrew a ignorar,
 porque o MacSpace se atualiza sozinho).
 
-<img src="Docs/Screenshots/pt-BR/Settings.png" alt="A página Ajustes: tema, aparência, permissões, o que acontece ao fechar a janela, abrir ao iniciar sessão, atualizações e limpeza automática" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/Settings.png" alt="A página Ajustes: tema, aparência, permissões, o que acontece ao fechar a janela, abrir ao iniciar sessão, atualizações e limpeza automática" width="720">
+</p>
 
 ---
 
@@ -168,7 +180,9 @@ ao Disco**, **Aprove o auxiliar**, **Receba notificações** e, por fim, **Tudo 
 pode esperar (**Mais tarde**), e as etapas que você já fez são puladas. Você pode voltar a elas em
 **Ajustes > Permissões**.
 
-<img src="Docs/Screenshots/pt-BR/Onboarding.png" alt="A primeira etapa da primeira abertura, Acesso Total ao Disco, aqui já permitido, com um botão Continuar" width="720">
+<p align="center">
+  <img src="Docs/Screenshots/pt-BR/Onboarding.png" alt="A primeira etapa da primeira abertura, Acesso Total ao Disco, aqui já permitido, com um botão Continuar" width="720">
+</p>
 
 | Permissão | Onde concedê-la | Por que o MacSpace precisa | Módulos |
 |---|---|---|---|
