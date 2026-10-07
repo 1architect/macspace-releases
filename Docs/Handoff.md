@@ -193,6 +193,14 @@ notarization and the stapled ticket (Gatekeeper accepts the app), the helper ins
 **Verified 2026-10-06 (27.2, 26B5091g):** a 1.0.0 build with the macOS 27.0 minimum signed, notarized and stapled by
 `Scripts/Assemble.sh`; Gatekeeper accepts it (`spctl`: Notarized Developer ID).
 
+**Verified 2026-10-07 (27.2, 26B5101f, and GitHub's `xcode-27` runner):** CI passes on a clean hosted Mac. Its first runs found
+three tests that only passed on the development Mac: a size written with this Mac's decimal comma, Apple Intelligence records the
+runner cannot list, and a Debloat flag 26B5101f no longer declares (`GenerativeLearningPlatform/PlatformDaemons`: it reads
+disabled and hybridsearchd's launchd plist still tests it, so the other two flags decide; not measured with a reboot). It also
+found that a Mac without the models showed their size as unreadable instead of zero (fixed in `ModelDescriptors.usage`). The
+release pipeline built `v1.0.0-rc.2` from its tag: app and disk image notarized, the update signed with MacSpace's own key, the
+feed with notes in five languages. `v1.0.0-rc.1` is a tag without a release: its build stopped at those tests.
+
 **Self-tested 2026-10-03 (27.2, 26B5091g, `Scripts/SelfTest.sh`, 28 passed):** the helper answering the CLI; CacheDelete's
 self-test and every service; every module's page and tile; every Debloat control that is not a policy switched off and back on
 through the app's code, checked against the page and the stored values, and left as found.
