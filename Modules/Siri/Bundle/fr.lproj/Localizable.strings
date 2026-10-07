@@ -32,6 +32,7 @@
 "Free up to %@" = "Libérer jusqu’à %@";
 "Free up to %@?" = "Libérer jusqu’à %@ ?";
 "Freeing space…" = "Libération d’espace…";
+"If you turn it on, changes MacSpace makes to Siri, such as its language, also reach your other devices." = "Si vous l’activez, les modifications que MacSpace apporte à Siri, comme sa langue, s’appliquent aussi à vos autres appareils.";
 "Its models are gone." = "Ses modèles ont été supprimés.";
 "Keeps the models" = "Conserve les modèles";
 "Leftover Apple Intelligence models" = "Modèles Apple Intelligence restants";

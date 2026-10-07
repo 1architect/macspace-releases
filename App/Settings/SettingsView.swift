@@ -2,9 +2,9 @@ import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
 
-/// One page, in this order: General (with the look, and a row opening the permissions the active modules need), Cleanup (automatic
-/// cleanup and its history), Notifications, the module switches, then the options and background tasks of each module that has
-/// any. A system grouped form, as the module pages are: it keeps its look whatever the palette and glass settings. Only the rows
+/// One page, in this order: General (with the look, and a row opening the permissions the active modules need), Updates, Cleanup
+/// (automatic cleanup and its history), Notifications, the module switches, the options and background tasks of each module that
+/// has any, and last the macOS release. A system grouped form, as the module pages are: it keeps its look whatever the palette and glass settings. Only the rows
 /// whose title is not enough have an (i) (`InfoButton`). Sections are built directly in this view: wrapping them in
 /// custom views inside a ForEach made them render inside the previous card.
 struct SettingsView: View {
@@ -20,7 +20,8 @@ struct SettingsView: View {
     var body: some View {
         let _ = tick
         Form {
-            GeneralSettingsSection(host: host, updates: updates)
+            GeneralSettingsSection(host: host)
+            UpdatesSettingsSection(updates: updates)
             CleanupSection(cleaner: host.autoCleaner, host: host)
             NotificationSettingsSection()
             Section("Modules") {
@@ -52,6 +53,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            MacOSReleaseSection()
             PageBottomRoom()
         }
         .formStyle(.grouped)

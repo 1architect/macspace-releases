@@ -104,7 +104,7 @@ what each one freed. MacSpace notifies you when automatic cleanup frees at least
 action that took a while ends while MacSpace is not in front, and when the disk is almost full
 (once a day at most). Each notification can be switched off. **When the window closes**, MacSpace
 can quit, keep running in the menu bar (the default) or keep running unseen in the background.
-Right-click the menu bar icon for a menu with each module, **Open MacSpace**, **Settings…** and
+Right-click the menu bar icon for a menu with each module, **Settings…**, **Open Panel** and
 **Quit MacSpace**. MacSpace speaks English, Portuguese (Brazil), French, Spanish and German, and
 follows your system language.
 
@@ -143,7 +143,7 @@ for it only.
 ### Updates and settings
 
 MacSpace updates with [Sparkle](https://sparkle-project.org). Choose **Check for Updates…** in
-the MacSpace menu, or **Check Now** under **Settings > General > Updates**. **Check for updates
+the MacSpace menu, or **Check Now** under **Settings > Updates**. **Check for updates
 automatically**, in the same place, lets MacSpace look about once a day while it runs. Until you
 switch it on, or answer the question Sparkle asks once from the second launch, MacSpace does not
 check by itself. Every update is signed, and Sparkle checks the signature before it installs

@@ -115,7 +115,7 @@ Aktion, die eine Weile gedauert hat, endet, während MacSpace nicht im Vordergru
 der Speicher fast voll ist (höchstens einmal am Tag). Jede Mitteilung lässt sich ausschalten.
 **Beim Schließen des Fensters** kann sich MacSpace beenden, in der Menüleiste weiterlaufen
 (Standard) oder unsichtbar im Hintergrund weiterlaufen. Mit Rechtsklick auf das Symbol in der
-Menüleiste öffnet sich ein Menü mit jedem Modul, **MacSpace öffnen**, **Einstellungen …** und
+Menüleiste öffnet sich ein Menü mit jedem Modul, **Einstellungen …**, **Panel öffnen** und
 **MacSpace beenden**. MacSpace spricht Englisch, Portugiesisch (Brasilien), Französisch,
 Spanisch und Deutsch und folgt deiner Systemsprache.
 
@@ -154,8 +154,7 @@ nur dafür gebaut.
 ### Updates und Einstellungen
 
 MacSpace aktualisiert sich mit [Sparkle](https://sparkle-project.org). Wähle **Nach Updates
-suchen …** im Menü „MacSpace“ oder **Jetzt prüfen** unter **Einstellungen > Allgemein >
-Updates**. **Automatisch nach Updates suchen** an derselben Stelle lässt MacSpace etwa einmal am
+suchen …** im Menü „MacSpace“ oder **Jetzt prüfen** unter **Einstellungen > Updates**. **Automatisch nach Updates suchen** an derselben Stelle lässt MacSpace etwa einmal am
 Tag nachsehen, solange es läuft. Bis du es einschaltest oder die Frage beantwortest, die Sparkle
 ab dem zweiten Start einmal stellt, sucht MacSpace nicht von selbst. Jedes Update ist signiert,
 und Sparkle prüft die Signatur, bevor es etwas installiert. Mit Homebrew kannst du auch

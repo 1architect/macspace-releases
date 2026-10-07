@@ -51,7 +51,6 @@ public enum GeneralSettings {
 
 struct GeneralSettingsSection: View {
     @ObservedObject var host: ModuleHost
-    @ObservedObject var updates: UpdateController
     @ObservedObject private var design = DesignSettings.shared
     @State private var closedWindow = GeneralSettings.closedWindow()
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
@@ -77,25 +76,6 @@ struct GeneralSettingsSection: View {
                     if let loginError { Text(loginError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
                 }
             }
-            // The release the Mac runs, for reports and debugging: selectable, so it can be copied.
-            LabeledContent("macOS") {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
-                    if !SupportedReleases.isSupported() {
-                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
-                    }
-                }
-            }
-            if updates.isAvailable {
-                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
-                HStack {
-                    Text("Updates")
-                    Spacer()
-                    Button("Check Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
-                }
-            } else {
-                LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
-            }
         }
     }
 
@@ -113,6 +93,46 @@ struct GeneralSettingsSection: View {
             loginError = error.localizedDescription
         }
         opensAtLogin = SMAppService.mainApp.status == .enabled
+    }
+}
+
+/// Updates, in a section of their own after General: whether Sparkle checks by itself, and the version this is, with Check Now.
+struct UpdatesSettingsSection: View {
+    @ObservedObject var updates: UpdateController
+
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
+
+    var body: some View {
+        Section("Updates") {
+            if updates.isAvailable {
+                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
+                LabeledContent("Version") {
+                    HStack(spacing: 12) {
+                        Text(version).textSelection(.enabled).monospacedDigit()
+                        Button("Check Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
+                    }
+                }
+            } else {
+                LabeledContent("Version") { Text(version).textSelection(.enabled).monospacedDigit() }
+                LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
+            }
+        }
+    }
+}
+
+/// The release the Mac runs, for reports and debugging, at the end of Settings: selectable, so it can be copied.
+struct MacOSReleaseSection: View {
+    var body: some View {
+        Section {
+            LabeledContent("macOS") {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
+                    if !SupportedReleases.isSupported() {
+                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -39,15 +39,14 @@ enum DebloatScreenBuilder {
             case .ineffective?: return Badge(loc("Not working"), tone: .critical)
             case .pending?: return Badge(loc("After restart"), tone: .caution)
             case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical)
-            // Switched off but never tested: says so, so it gets tested, also once it is off.
-            default: return control.tested ? nil : Badge(loc("Not tested"), tone: .caution)
+            default: return nil
             }
         case .awaitingApproval, .awaitingRemoval: return Badge(loc("Waiting for approval"), tone: .caution)
         case .drifted: return Badge(loc("Undone by macOS"), tone: .critical)
         case .partial: return Badge(loc("Partly off"), tone: .caution)
         case .unavailable: return Badge(loc("Not on this macOS"))
         case .unknown: return Badge(loc("Cannot read"))
-        case .stock: return status.tested ? nil : Badge(loc("Not tested"), tone: .caution)
+        case .stock: return nil
         }
     }
 

@@ -90,6 +90,7 @@
 "Notifications" = "Notificações";
 "Open Login Items" = "Abrir Itens de Início";
 "Open MacSpace" = "Abrir o MacSpace";
+"Open Panel" = "Abrir Painel";
 "Open System Settings" = "Abrir Ajustes do Sistema";
 "Open at login" = "Abrir ao iniciar sessão";
 "Overview" = "Visão Geral";
@@ -116,6 +117,7 @@
 "Turn on MacSpace under Allow in the Background." = "Ative o MacSpace em Permitir em Segundo Plano.";
 "Unknown" = "Desconhecido";
 "Updates" = "Atualizações";
+"Version" = "Versão";
 "When MacSpace frees space, or your disk is almost full." = "Quando o MacSpace liberar espaço ou o disco estiver quase cheio.";
 "When a cleanup finishes in the background" = "Quando uma limpeza terminar em segundo plano";
 "When automatic cleanup frees space" = "Quando a limpeza automática liberar espaço";

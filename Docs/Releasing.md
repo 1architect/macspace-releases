@@ -68,7 +68,7 @@ Homebrew ignore it. Use pre-releases to test a version, and to test the update i
 
 ## How installed copies update
 
-Sparkle asks on the second launch whether to check automatically; the choice can be changed in Settings › General (*Check for
+Sparkle asks on the second launch whether to check automatically; the choice can be changed in Settings › Updates (*Check for
 updates automatically*, and *Check Now*), and *MacSpace › Check for Updates…* in the app menu checks at any time.
 An update is downloaded from GitHub, its EdDSA signature is checked against the public key inside the app (`SUPublicEDKey`),
 and Gatekeeper checks its Developer ID signature and notarization before it replaces the app. After an update the app compares

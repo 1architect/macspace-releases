@@ -114,7 +114,7 @@ action qui a pris du temps se termine alors que MacSpace n’est pas au premier 
 disque est presque plein (une fois par jour au plus). Chaque notification peut être désactivée.
 **À la fermeture de la fenêtre**, MacSpace peut quitter, rester dans la barre des menus (par
 défaut) ou rester actif en arrière-plan, sans rien afficher. Un clic droit sur l’icône de la barre
-des menus ouvre un menu avec chaque module, **Ouvrir MacSpace**, **Réglages…** et **Quitter
+des menus ouvre un menu avec chaque module, **Réglages…**, **Ouvrir le panneau** et **Quitter
 MacSpace**. MacSpace parle anglais, portugais (Brésil), français, espagnol et allemand, et suit la
 langue de votre système.
 
@@ -153,8 +153,7 @@ et MacSpace n’est conçu que pour lui.
 ### Mises à jour et réglages
 
 MacSpace se met à jour avec [Sparkle](https://sparkle-project.org). Choisissez **Rechercher des
-mises à jour…** dans le menu MacSpace, ou **Vérifier maintenant** sous **Réglages > Général > Mises
-à jour**. **Rechercher les mises à jour automatiquement**, au même endroit, permet à MacSpace de
+mises à jour…** dans le menu MacSpace, ou **Vérifier maintenant** sous **Réglages > Mises à jour**. **Rechercher les mises à jour automatiquement**, au même endroit, permet à MacSpace de
 vérifier environ une fois par jour tant qu’il est ouvert. Tant que vous ne l’activez pas, ou que
 vous ne répondez pas à la question que Sparkle pose une fois à partir du deuxième lancement,
 MacSpace ne vérifie rien de lui-même. Chaque mise à jour est signée, et Sparkle vérifie la

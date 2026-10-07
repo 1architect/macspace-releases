@@ -53,9 +53,9 @@ final class DebloatScreenBuilderTests: XCTestCase {
                                        risk: .low, restart: .none, settings: [.preference(.user, "com.example", "key", desired: .bool(false), fallback: nil)])
         let untested = DebloatScreenBuilder.row(candidate, snapshot([ControlStatus(controlID: candidate.id, state: .stock, effect: nil, settings: [],
                                                                                     tested: false, appliedAt: nil)]))
-        XCTAssertEqual(untested.badge?.text, "Not tested")
+        XCTAssertNil(untested.badge, "an untested control carries no badge (removed 2026-10-07)")
         XCTAssertTrue(untested.isEnabled, "an untested control can be switched, to test it")
-        XCTAssertEqual(untested.detail, "s", "what a switch does, behind its (i); the badge says it is not tested")
+        XCTAssertEqual(untested.detail, "s", "what a switch does, behind its (i)")
     }
 
     func testStatesThatNeedAttentionAreVisible() {

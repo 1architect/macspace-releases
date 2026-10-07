@@ -68,6 +68,9 @@ final class SiriScreenBuilderTests: XCTestCase {
         let row = SiriScreenBuilder.cloudSyncRow(enabled: true)
         XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
+        let off = SiriScreenBuilder.cloudSyncRow(enabled: false)
+        XCTAssertTrue(off.detail?.contains("other devices") == true, "off, its (i) says what turning it on would do")
+        XCTAssertTrue(off.steps.isEmpty)
     }
 
     /// Off with released models still on disk: MacSpace deletes them by itself (11 GB sat there after switching off, 2026-10-04).

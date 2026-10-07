@@ -5,7 +5,7 @@ import MacSpacePlatform
 ///
 /// Rules for entries:
 /// - `validatedBuilds` lists only builds where a before/after experiment showed the effect; one build is enough for every build.
-///   An empty list means the control was never tested: the app marks it "Not tested" so it gets tested.
+///   An empty list means the control was never tested (the engine warns about it; the app shows no badge).
 /// - Preference keys that come from community documentation rather than measurement say so in `notes`.
 /// - `breaks` names every feature known to depend on what the control switches off.
 public enum DebloatCatalog {

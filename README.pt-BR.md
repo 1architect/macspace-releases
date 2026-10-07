@@ -110,7 +110,7 @@ limpeza automática libera pelo menos 100 MB, quando uma ação demorada termina
 segundo plano e quando o disco está quase cheio (no máximo uma vez por dia). Cada notificação pode
 ser desativada. **Ao fechar a janela**, o MacSpace pode encerrar, continuar na barra de menus (o
 padrão) ou continuar em segundo plano, sem nenhum ícone. Clique com o botão direito no ícone da
-barra de menus para abrir um menu com cada módulo, **Abrir o MacSpace**, **Ajustes…** e **Encerrar
+barra de menus para abrir um menu com cada módulo, **Ajustes…**, **Abrir Painel** e **Encerrar
 o MacSpace**. O MacSpace está disponível em inglês, português (Brasil), francês, espanhol e alemão
 e acompanha o idioma do sistema.
 
@@ -149,7 +149,7 @@ só para ele.
 ### Atualizações e ajustes
 
 O MacSpace se atualiza com o [Sparkle](https://sparkle-project.org). Escolha **Buscar
-Atualizações…** no menu MacSpace ou **Verificar Agora** em **Ajustes > Geral > Atualizações**.
+Atualizações…** no menu MacSpace ou **Verificar Agora** em **Ajustes > Atualizações**.
 **Buscar atualizações automaticamente**, no mesmo lugar, faz o MacSpace procurar cerca de uma vez
 por dia enquanto está aberto. Até você ativar essa opção, ou responder à pergunta que o Sparkle faz
 uma vez, a partir da segunda abertura, o MacSpace não busca nada sozinho. Toda atualização é

@@ -29,6 +29,7 @@
  "Free up to %@": ["Liberar até %@", "Libérer jusqu’à %@", "Liberar hasta %@", "Bis zu %@ freigeben"],
  "Free up to %@?": ["Liberar até %@?", "Libérer jusqu’à %@ ?", "¿Liberar hasta %@?", "Bis zu %@ freigeben?"],
  "Freeing space…": ["Liberando espaço…", "Libération d’espace…", "Liberando espacio…", "Speicher wird freigegeben …"],
+ "If you turn it on, changes MacSpace makes to Siri, such as its language, also reach your other devices.": ["Se você a ativar, as mudanças que o MacSpace faz na Siri, como o idioma, também chegam aos seus outros dispositivos.", "Si vous l’activez, les modifications que MacSpace apporte à Siri, comme sa langue, s’appliquent aussi à vos autres appareils.", "Si la activas, los cambios que MacSpace hace en Siri, como su idioma, también llegan a tus otros dispositivos.", "Wenn du sie aktivierst, gelangen Änderungen, die MacSpace an Siri vornimmt, etwa die Sprache, auch auf deine anderen Geräte."],
  "Its models are gone.": ["Os modelos foram removidos.", "Ses modèles ont été supprimés.", "Sus modelos se han eliminado.", "Die Modelle sind entfernt."],
  "Keeps the models": ["Mantém os modelos", "Conserve les modèles", "Conserva los modelos", "Behält die Modelle"],
  "Leftover Apple Intelligence models": ["Modelos restantes do Apple Intelligence", "Modèles Apple Intelligence restants", "Modelos sobrantes de Apple Intelligence", "Übrige Apple Intelligence-Modelle"],

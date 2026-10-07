@@ -150,7 +150,9 @@ enum SiriScreenBuilder {
         }
         return Row(id: "icloud-sync", title: title,
                    symbol: enabled == false ? "checkmark.icloud" : "icloud",
-                   detail: enabled == false ? nil : loc("Turn it off to keep Siri's language change on this Mac."), steps: enabled == false ? [] : SiriCloudSync.steps,
+                   detail: enabled == false ? loc("If you turn it on, changes MacSpace makes to Siri, such as its language, also reach your other devices.")
+                                            : loc("Turn it off to keep Siri's language change on this Mac."),
+                   steps: enabled == false ? [] : SiriCloudSync.steps,
                    actions: [Action(id: "openICloudSettings", title: loc("Open"))])
     }
 

@@ -24,12 +24,18 @@ public final class AppRouter: ObservableObject {
     public func open(_ destination: Destination? = nil) {
         // Running unseen in the background, MacSpace has no Dock icon: it comes back with the window.
         BackgroundPresence.shared.show()
-        NSApp.activate()
+        Self.bringForward()
         if let window = Self.mainWindow {
             if window.isMiniaturized { window.deminiaturize(nil) }
+            window.orderFrontRegardless()
             window.makeKeyAndOrderFront(nil)
         } else if let openWindow {
             openWindow(MacSpaceWindow.current)
+            // SwiftUI opens the window a moment later, behind the app in front if MacSpace was not let forward.
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                Self.mainWindow?.orderFrontRegardless()
+            }
         } else {
             // No window has been open since launch (MacSpace started in the menu bar), so none could hand over `openWindow`. The
             // window scenes claim `macspace://<window id>` (`handlesExternalEvents`); opening it with this very app opens the window.
@@ -41,6 +47,14 @@ public final class AppRouter: ObservableObject {
         pending = destination
         counter += 1
         request = Request(id: counter, destination: destination)
+    }
+
+    /// From a click on the menu bar icon, the cooperative `NSApp.activate()` is refused while another app is in front: the window
+    /// stayed behind it, open or reopened (macOS 27.2, 26B5101f, 2026-10-07). The older call still brings MacSpace forward, and the
+    /// window is also ordered front regardless, so it shows even if activation is refused.
+    private static func bringForward() {
+        NSApp.unhide(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     /// The page asked for, once: the window that shows it takes it.
@@ -56,7 +70,7 @@ public final class AppRouter: ObservableObject {
 }
 
 /// The menu bar item. A click opens MacSpace; a right click (or Control-click) opens its menu: each module by name (with a "!" when
-/// its tile needs attention), opening that module's page, then Open, Settings and Quit. While something is being cleaned, the icon's circles leave and come back
+/// its tile needs attention), opening that module's page, then Settings, then Open Panel and Quit. While something is being cleaned, the icon's circles leave and come back
 /// (`MenuBarIcon`).
 @MainActor
 public final class StatusItemController: NSObject {
@@ -126,8 +140,9 @@ public final class StatusItemController: NSObject {
             menu.addItem(NSMenuItem(title: String(localized: "No modules are on"), action: nil, keyEquivalent: ""))
         }
         menu.addItem(.separator())
-        menu.addItem(entry(String(localized: "Open MacSpace"), #selector(openApp), key: "o"))
         menu.addItem(entry(String(localized: "Settings…"), #selector(openSettings), key: ","))
+        menu.addItem(.separator())
+        menu.addItem(entry(String(localized: "Open Panel"), #selector(openApp), key: "o"))
         menu.addItem(entry(String(localized: "Quit MacSpace"), #selector(quit), key: "q"))
         return menu
     }

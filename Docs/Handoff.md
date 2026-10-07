@@ -97,13 +97,16 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    `debloat.*`, `systemdata.measure`, `systemdata.versions.delete`); `Helper/MacSpaceHelper.swift` registers them. The helper accepts
    only clients that satisfy a code-signing requirement passed on its command line and refuses to start without one.
 6. **Crash isolation.** Private Apple calls (CacheDelete) run in the CLI as a child process.
-7. **Settings.** General (theme, appearance, a row opening the Permissions page, what closing the window does, login, updates), Cleanup
-   (automatic cleanup and the history), Notifications, the module switches, then options and background tasks per module. Sections are built directly in
+7. **Settings.** General (theme, appearance, a row opening the Permissions page, what closing the window does, login), Updates
+   (automatic checks, the version and Check Now), Cleanup (automatic cleanup and the history), Notifications, the module switches,
+   options and background tasks per module, and last the macOS release. Sections are built directly in
    `SettingsView`; wrapping them in custom views inside a `ForEach` made them render inside the wrong card.
 8. **Look.** A theme is a night and day pair of palettes (`PaletteScheme.themes`); Settings chooses the theme and whether it follows the
    system, or stays night or day. Whatever needs the user is drawn in the action color (amber, lime on Ink); the app has no red.
 9. **Menu bar.** An `NSStatusItem` (`StatusItemController`): a click opens the app, a right click opens its menu (each module with
-   its tile's status, opening its page). `AppRouter` opens the window from outside it; when no window has been open since launch it
+   its tile's status, opening its page; then Settings…; then Open Panel and Quit). `AppRouter` opens the window from outside it and
+   brings it in front of the app in front: from the icon, the cooperative `NSApp.activate()` was refused and the window stayed
+   behind (2026-10-07), so it uses `activate(ignoringOtherApps:)` and orders the window front regardless; when no window has been open since launch it
    opens `macspace://<window id>`, which the window scenes claim. Closing the window quits MacSpace, keeps it in the menu bar, or
    keeps it running in the background (`GeneralSettings.ClosedWindow`): with no menu bar item, and out of the Dock and the app
    switcher (an accessory app) until a window opens again (`BackgroundPresence`); opening MacSpace again shows the window.
@@ -208,7 +211,7 @@ through the app's code, checked against the page and the stored values, and left
 **Not verified:** Gatekeeper on a clean Mac with a notarized build; a Sparkle update from an older build (needs a published release
 and SPARKLE_PUBLIC_KEY); the helper through an update; the automatic release of leftover Apple Intelligence models and the purge after switching it off;
 Debloat profile approval beyond the development Mac; analytics on a release build (`telemetry.diagnostics`, the only control
-marked "Not tested"). The policies were tested in the research (profile-policies-2026-09-29: every key forced once approved).
+never tested). The policies were tested in the research (profile-policies-2026-09-29: every key forced once approved).
 
 **Plain settings are written as System Settings writes them** (research, mechanism ladder #1): `CFPreferences` on the owning domain,
 then the setting's change notification. Improve Siri & Dictation posts `kAFPreferencesDidChangeDarwinNotification`, read from
@@ -228,7 +231,7 @@ the installed profiles and their values are read correctly; the full approve-and
 
 **No build gating.** What was tested on one macOS build counts on every build: CacheDelete is used wherever its functions exist
 (crashes are contained in the CLI child process, and a purge first checks that the service filter is honored), and a Debloat control
-measured on any build counts as tested. Untested controls work and say "Not tested", so they get tested.
+measured on any build counts as tested. Untested controls work; the page shows no badge for them (removed 2026-10-07).
 
 ## Releasing
 

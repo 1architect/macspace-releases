@@ -7,6 +7,26 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Added
+
+- Siri & Apple Intelligence: an (i) on the iCloud sync row while it is off, saying that if it is turned on, changes MacSpace makes
+  to Siri also reach your other devices.
+- Settings: the version of MacSpace, next to Check Now.
+
+### Changed
+
+- Settings: updates have a section of their own, and the macOS release is at the end of the page.
+- The menu bar menu: Settings… on its own, then Open Panel (it was Open MacSpace) and Quit MacSpace.
+
+### Fixed
+
+- A click on the menu bar icon brings the MacSpace window in front of other apps, open or closed. It stayed behind the app in
+  front.
+
+### Removed
+
+- Debloat's "Not tested" badge.
+
 ## [1.0.0] - 2026-10-07
 
 The first public release. MacSpace is a System Data and Apple Intelligence cleaner for macOS 27 or later on Apple Silicon.
