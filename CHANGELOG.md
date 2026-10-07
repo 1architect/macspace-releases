@@ -7,6 +7,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-07
+
 ### Added
 
 - Siri & Apple Intelligence: an (i) on the iCloud sync row while it is off, saying that if it is turned on, changes MacSpace makes
@@ -95,5 +97,6 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/1architect/macspace-releases/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/1architect/macspace-releases/releases/tag/v1.0.0
