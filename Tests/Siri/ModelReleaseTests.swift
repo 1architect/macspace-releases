@@ -203,6 +203,16 @@ final class ModelDescriptorsTests: XCTestCase {
         XCTAssertEqual(usage.assets, 3)
     }
 
+    func testOnlyOtherFamiliesMeansNoModelsNotUnknown() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Data("not a record".utf8).write(to: directory.appendingPathComponent("AutoAssetDescriptors_Entry_com.apple.MobileAsset.Font8_x"))
+        let usage = try XCTUnwrap(ModelDescriptors.usage(directory: directory.path, lockDirectory: directory.path), "a Mac without the models")
+        XCTAssertEqual(usage.installedBytes, 0)
+        XCTAssertEqual(usage.assets, 0)
+    }
+
     /// This Mac, read-only: MobileAsset's records are readable without Full Disk Access or root.
     func testReadsThisMacsRecords() throws {
         // A Mac where the folder cannot be listed (a CI runner) has nothing to read; usage() is nil there by design.

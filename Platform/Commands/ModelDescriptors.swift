@@ -29,7 +29,9 @@ public enum ModelDescriptors {
         public var releasedBytes: UInt64 { installedBytes > lockedBytes ? installedBytes - lockedBytes : 0 }
     }
 
-    /// nil when the records cannot be read at all (an unknown macOS layout).
+    /// nil when the records cannot be read at all (an unknown macOS layout): the folder cannot be listed, or it has records of these
+    /// families and none decodes. A Mac that never downloaded the models has none of them, and that is zero, not unknown (a CI
+    /// runner showed it: other families' records only, 2026-10-07).
     public static func usage(directory: String = directory, lockDirectory: String = lockDirectory, families: [String] = families,
                              fileManager: FileManager = .default) -> Usage? {
         guard let names = try? fileManager.contentsOfDirectory(atPath: directory) else { return nil }
@@ -37,7 +39,8 @@ public enum ModelDescriptors {
             .map { $0.replacingOccurrences(of: "AutoAssetLocker_Entry_", with: "") })
         var usage = Usage(installedBytes: 0, downloadingBytes: 0, assets: 0)
         var readAny = false
-        for name in names where families.contains(where: { name.contains("_\($0)_") }) {
+        let records = names.filter { name in families.contains(where: { name.contains("_\($0)_") }) }
+        for name in records {
             guard let data = fileManager.contents(atPath: "\(directory)/\(name)"), let descriptor = decode(data) else { continue }
             readAny = true
             guard families.contains(descriptor.assetType) else { continue }
@@ -49,7 +52,7 @@ public enum ModelDescriptors {
             }
             else { usage.downloadingBytes += UInt64(max(descriptor.networkBytes, 0)) }
         }
-        return readAny || names.isEmpty ? usage : nil
+        return readAny || records.isEmpty ? usage : nil
     }
 
     /// Where MobileAsset records what it staged for the next macOS update (`AutoAssetStager_Entry_…`).
