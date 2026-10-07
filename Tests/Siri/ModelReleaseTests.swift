@@ -205,7 +205,8 @@ final class ModelDescriptorsTests: XCTestCase {
 
     /// This Mac, read-only: MobileAsset's records are readable without Full Disk Access or root.
     func testReadsThisMacsRecords() throws {
-        guard FileManager.default.fileExists(atPath: ModelDescriptors.directory) else { throw XCTSkip("no AssetsV2 records here") }
+        // A Mac where the folder cannot be listed (a CI runner) has nothing to read; usage() is nil there by design.
+        guard (try? FileManager.default.contentsOfDirectory(atPath: ModelDescriptors.directory)) != nil else { throw XCTSkip("no readable AssetsV2 records here") }
         XCTAssertNotNil(ModelDescriptors.usage())
     }
 }

@@ -156,7 +156,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(list.rows.first?.title, "macOS 27.2 (26B5101f), ready to install")
         XCTAssertEqual(list.rows.first?.actions.first?.id, "openSoftwareUpdate")
         XCTAssertEqual(screen.hero?.segments.first?.bytes, 10_700_000_000, "the largest block")
-        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).title, "other system files 11,7 GB")
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).title, "other system files \(ByteFormat.string(11_700_000_000))")
         XCTAssertNil(OtherSystemFilesScreenBuilder.updatesSection(snapshot([:])), "no section without an update")
     }
 

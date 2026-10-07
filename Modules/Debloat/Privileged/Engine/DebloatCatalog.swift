@@ -121,6 +121,7 @@ public enum DebloatCatalog {
             breaks: ["Apple Intelligence search over Mail and personal context", "Other features behind these broad flags (unmeasured)"],
             notes: [
                 "hybridsearchd is Disabled only when all three flags are off (26B5091g).",
+                "26B5101f no longer declares PlatformDaemons in the GenerativeLearningPlatform domain; it reads disabled, and hybridsearchd's launchd plist still tests it, so the other two flags decide (read 2026-10-07, not measured with a reboot).",
                 "Measured on 26B5091g with SIP enabled: after the reboot all three flags read disabled and hybridsearchd was not loaded; intelligenceplatformd and intelligencetasksd still launched on demand.",
                 flagNote,
             ],

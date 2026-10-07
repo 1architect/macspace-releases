@@ -74,9 +74,13 @@ final class FeatureFlagControlTests: XCTestCase {
     func testCatalogFlagsExistOnMacOS27() throws {
         // The catalog's flags ship with macOS 27; older hosts (e.g. the macOS 15 CI runner) do not have them.
         try XCTSkipUnless(LiveDebloatSystem.systemFeatureExists(domain: "IntelligenceFlow", feature: "Campo"), "host predates macOS 27")
+        // A flag the host no longer declares reads disabled, which is what the control writes: it still holds (26B5101f dropped
+        // GenerativeLearningPlatform/PlatformDaemons from its domain, while hybridsearchd's launchd plist still tests it).
+        let system = LiveDebloatSystem(targetUser: nil)
         for control in DebloatCatalog.controls {
             for flag in control.settings.compactMap(\.featureFlag) {
-                XCTAssertTrue(LiveDebloatSystem.systemFeatureExists(domain: flag.domain, feature: flag.feature), "\(flag.domain)/\(flag.feature)")
+                let declared = LiveDebloatSystem.systemFeatureExists(domain: flag.domain, feature: flag.feature)
+                XCTAssertTrue(declared || system.liveFeatureFlag(domain: flag.domain, feature: flag.feature) == false, "\(flag.domain)/\(flag.feature)")
             }
         }
     }
