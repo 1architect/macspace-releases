@@ -241,8 +241,8 @@ the Homebrew cask. The signing identity and keys never touch this repository. Th
 The minimum is macOS 27.0 everywhere (`Package.swift`, the three packages, `Info.plist`, every module's `Info.plist` and
 `Manifest.json`, the icon's deployment target), since 2026-10-06. MacSpace's own Sparkle key exists since 2026-10-07, in the
 maintainer's keychain under the account `macspace` (MacBat's key is the default account and must not sign MacSpace); its public
-half is `V/z4pnoOR4BnUss4chVEq0asKI1UssXuWoNHuuH+Jik=`, which release builds carry as `SUPublicEDKey`. Still needed before the
-first release: the Homebrew tap and the pre-release round (Releasing.md, Pre-releases).
+half is `V/z4pnoOR4BnUss4chVEq0asKI1UssXuWoNHuuH+Jik=`, which release builds carry as `SUPublicEDKey`. MacSpace 1.0.0 was
+released on 2026-10-07: GitHub release `v1.0.0`, the update feed, and the cask `macspace` in `1architect/homebrew-macspace`.
 
 ## Conventions
 
