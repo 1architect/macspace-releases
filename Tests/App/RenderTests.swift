@@ -67,7 +67,7 @@ final class RenderTests: XCTestCase {
         let dots: [TileDot] = Array(repeating: .done, count: 11) + [.open, .open, .attention]
         let tiles: [(TileTint, TileInfo, Int)] = [
             (.rose, TileInfo(title: "147 GB used", status: "30% of 494 GB", graphic: .gauge(value: 0.3, label: "30%", sublabel: "of 494 GB")), 1),
-            (.blue, TileInfo(title: "system data", status: "415 MB can be freed", graphic: .blocks(blocks)), 2),
+            (.blue, TileInfo(title: "system data", status: "free 415 MB", graphic: .blocks(blocks)), 2),
             (.graphite, TileInfo(title: "siri & AI", status: "AI is on", needsAttention: true,
                                  graphic: .state(on: true, alarming: true, detail: "macOS may download its model", meter: nil, meterIsActionable: false)), 1),
             (.teal, TileInfo(title: "debloat", status: "1 undone by macOS", needsAttention: true, graphic: .dots(dots)), 1),
@@ -152,7 +152,7 @@ final class RenderTests: XCTestCase {
 
     func testBlocksLegendMovesOverALongCaption() {
         let short = TileInfo(title: "cache", status: "1 GB")
-        let long = TileInfo(title: "other system files", status: "63,9 MB can be freed")
+        let long = TileInfo(title: "other system files", status: "free up to 63,9 MB")
         let size = CGSize(width: 270, height: 220)
         XCTAssertFalse(TileFace.legendAbove(in: CGSize(width: 520, height: 220), info: long, captionSize: 22))
         XCTAssertFalse(TileFace.legendAbove(in: size, info: short, captionSize: 22))

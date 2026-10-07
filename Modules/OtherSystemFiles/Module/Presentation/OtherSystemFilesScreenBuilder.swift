@@ -14,7 +14,7 @@ enum OtherSystemFilesScreenBuilder {
         if let removal = snapshot.removing.values.first { status = "removing downloads · \(Int((removal.fraction * 100).rounded()))%" }
         else if freeable < threshold { status = "nothing to free" }
         else if snapshot.retrying { status = "freeing \(ByteFormat.string(freeable))" }
-        else { status = "up to \(ByteFormat.string(freeable)) can be freed" }
+        else { status = "free up to \(ByteFormat.string(freeable))" }
         // The total in the title: what is outside System Data. What macOS counts as purgeable matches the space System Settings counts
         // as available beyond the free space (27.49 GB here against 27.52 GB there, 2026-10-06); a prepared update it counts as macOS.
         let segments = segments(snapshot)

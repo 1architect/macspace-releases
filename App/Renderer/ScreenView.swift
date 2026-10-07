@@ -28,11 +28,16 @@ struct ScreenView: View {
         return nil
     }
 
-    /// The group row whose page is open (`ModuleHandle.openGroup`), as the module's screen has it now. nil once a refresh no longer
-    /// has it.
-    private var openGroup: Row? {
-        guard let id = handle.openGroup, let screen = handle.screen else { return nil }
-        return Self.row(id, in: screen.widgets)
+    /// The group pages open over the module's page (`ModuleHandle.groupPath`), as the module's screen has them now, bottom first. A
+    /// refresh that no longer has one (its items were freed) ends the stack there.
+    private var openGroups: [Row] {
+        guard let screen = handle.screen else { return [] }
+        var rows: [Row] = []
+        for id in handle.groupPath {
+            guard let row = Self.row(id, in: screen.widgets) else { break }
+            rows.append(row)
+        }
+        return rows
     }
 
     /// Every banner of a page, in page order, sections included.
@@ -84,20 +89,20 @@ struct ScreenView: View {
     }
 
     var body: some View {
+        let groups = openGroups
+        // A stack of pages: the module's page, then each group page opened over it. A new page slides in from the right over the one
+        // under it, which moves aside; Back slides the top one out to the right and the page under it comes back.
         ZStack(alignment: .topLeading) {
-            if let group = openGroup {
-                // A group's page slides in from the right over the module's page, and back out to the right.
+            mainPage
+                .modifier(StackedPage(covered: !groups.isEmpty))
+            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
                 groupPage(group)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
-                                            removal: .move(edge: .trailing).combined(with: .opacity)))
-            } else {
-                mainPage
-                    .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                                            removal: .move(edge: .leading).combined(with: .opacity)))
+                    .modifier(StackedPage(covered: index < groups.count - 1))
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .animation(Theme.push, value: openGroup?.id)
-        .environment(\.openGroup) { [handle] id in handle.openGroup = id }
+        .animation(Theme.push, value: groups.map(\.id))
+        .environment(\.openGroup) { [handle] id in handle.pushGroup(id) }
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
@@ -109,8 +114,10 @@ struct ScreenView: View {
         .disabled(handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
-        // A refresh that no longer has the open group (its items were freed) goes back to the module's page.
-        .onChange(of: openGroup == nil) { _, gone in if gone, handle.openGroup != nil { handle.openGroup = nil } }
+        // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
+        .onChange(of: groups.count) { _, count in
+            if count < handle.groupPath.count { handle.groupPath = Array(handle.groupPath.prefix(count)) }
+        }
     }
 
     @ViewBuilder
@@ -153,6 +160,19 @@ extension EnvironmentValues {
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
     /// The page's own color, which the glass along its edges is tinted with so it does not lighten it (`EdgeGlass`).
     @Entry var pageGround: Color?
+}
+
+/// A page with another page open over it: moved aside, faded out, and not taking clicks, until the page over it goes.
+private struct StackedPage: ViewModifier {
+    let covered: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: covered ? -80 : 0)
+            .opacity(covered ? 0 : 1)
+            .allowsHitTesting(!covered)
+            .accessibilityHidden(covered)
+    }
 }
 
 /// Room around a page's content: the corner button at the top left, the caption and the dock at the bottom.

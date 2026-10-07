@@ -55,6 +55,23 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    /// A group opened from a group's page goes on top of it, and Back returns to that page, then to the module's page.
+    func testGroupPagesStackAndBackReturnsToThePageUnder() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let host = try makeHost(modules: [(Fixtures.manifest(id: "com.test.a"), "A")], directory: directory)
+        await host.reload()
+        let handle = try XCTUnwrap(host.handles.first)
+        handle.pushGroup("group:other")
+        handle.pushGroup("other:macos")
+        handle.pushGroup("other:macos")
+        XCTAssertEqual(handle.groupPath, ["group:other", "other:macos"], "the same page is not opened twice")
+        handle.popGroup()
+        XCTAssertEqual(handle.openGroup, "group:other", "Back returns to Everything else, not to the module's page")
+        handle.popGroup()
+        XCTAssertNil(handle.openGroup)
+    }
+
     func testHostAnnouncesWhenAModuleBecomesReadySoListsRedraw() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

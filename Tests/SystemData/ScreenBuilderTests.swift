@@ -162,7 +162,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 600_000_000),
                                     item("l", kind: .logs, bytes: 2_000_000_000, cleanup: .managedByMacOS)])
         let tile = SystemDataScreenBuilder.tile(snap)
-        XCTAssertTrue(tile.status.hasSuffix("can be freed"))
+        XCTAssertTrue(tile.status.hasPrefix("free "))
         guard case let .blocks(blocks)? = tile.graphic else { return XCTFail() }
         XCTAssertEqual(blocks.map(\.id), ["macos", "freeable", "caches"], "largest first")
         XCTAssertEqual(blocks.first { $0.id == "freeable" }?.tone, .caution)

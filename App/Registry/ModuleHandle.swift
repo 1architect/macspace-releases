@@ -31,8 +31,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var lastResult: ActionResult?
     /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates.
     @Published public private(set) var isCleaning = false
-    /// The group row whose page is open over the module's page (`Row.children`), by id; nil on the module's own page.
-    @Published public var openGroup: String?
+    /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
+    /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
+    @Published public var groupPath: [String] = []
+    /// The group page on top, if any.
+    public var openGroup: String? { groupPath.last }
+
+    public func pushGroup(_ id: String) {
+        if groupPath.last != id { groupPath.append(id) }
+    }
+
+    /// Back from the group page on top, to the one under it or to the module's page.
+    public func popGroup() {
+        if !groupPath.isEmpty { groupPath.removeLast() }
+    }
 
     private var module: (any MacSpaceModule)?
     /// Refreshes under way, and whether an action is running: both make the module busy.
@@ -99,7 +111,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         tile = nil
         tileIsStale = false
         lastResult = nil
-        openGroup = nil
+        groupPath = []
     }
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.

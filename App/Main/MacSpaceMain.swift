@@ -31,6 +31,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         StatusItemController.shared.install(host: AppModel.host)
         AppNotifications.shared.install(host: AppModel.host)
         BackgroundPresence.shared.install()
+        // Onboarding needs the window. SwiftUI leaves it closed when MacSpace is opened with arguments (`--onboarding`) or as a login
+        // item, so it is opened here if it has not appeared by itself.
+        if Onboarding.shared.isShowing {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                if AppRouter.mainWindow == nil { AppRouter.shared.open() }
+            }
+        }
     }
 
     /// Clicking the Dock icon with no window open opens it again.

@@ -64,7 +64,7 @@ enum SiriScreenBuilder {
         let onDisk = (snapshot.installedModelBytes ?? 0) + snapshot.downloadingModelBytes
         let installed = on && onDisk >= purgeThreshold ? onDisk : nil
         let detail: String
-        if let purge { detail = snapshot.assetsRetrying ? "freeing \(ByteFormat.string(purge)) of models" : "up to \(ByteFormat.string(purge)) of models can be freed" }
+        if let purge { detail = snapshot.assetsRetrying ? "freeing \(ByteFormat.string(purge)) of models" : "free up to \(ByteFormat.string(purge)) of models" }
         else if on, snapshot.downloadingModelBytes >= purgeThreshold { detail = "downloading models: \(ByteFormat.string(onDisk)) so far" }
         else if let installed { detail = "\(ByteFormat.string(installed)) of models; switch it off to free them" }
         else if on { detail = snapshot.installedModelBytes == nil ? "models not measured" : "no model downloaded yet" }
@@ -85,7 +85,7 @@ enum SiriScreenBuilder {
         // No meter: what is left to purge is said in the detail line.
         let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)
         if let freeable = purge ?? installed {
-            return Tile(title: "siri & AI", status: "up to \(ByteFormat.string(freeable)) can be freed", needsAttention: installed != nil, graphic: graphic,
+            return Tile(title: "siri & AI", status: "free up to \(ByteFormat.string(freeable))", needsAttention: installed != nil, graphic: graphic,
                         reclaimableBytes: freeable, purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
         }
         switch snapshot.status.state {

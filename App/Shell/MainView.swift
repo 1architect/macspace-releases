@@ -83,6 +83,7 @@ public struct MainView: View {
     @ObservedObject private var remote = DebugRemote.shared
     @ObservedObject private var router = AppRouter.shared
     @ObservedObject private var designSettings = DesignSettings.shared
+    @ObservedObject private var onboarding = Onboarding.shared
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -212,10 +213,13 @@ public struct MainView: View {
     private func handleRemote() {
             guard let text = remote.command?.text else { return }
             if text == "close" { close() }
+            else if text == "onboarding" { onboarding.restart() }
+            else if text == "onboarding:next" { onboarding.next() }
+            else if text == "onboarding:finish" { onboarding.finish() }
             else if text == "open:settings" { present(.settings) }
             else if text == "open:colorLab" { openWindow(id: ColorLabView.windowID) }
             else if text == "back" { close() }
-            else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.openGroup = String(text.dropFirst(6)) }
+            else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.pushGroup(String(text.dropFirst(6))) }
             else if text.hasPrefix("open:") { present(.module(String(text.dropFirst(5)))) }
             else if text.hasPrefix("pill:"), case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
                 let parts = text.split(separator: ":").map(String.init)
@@ -232,10 +236,18 @@ public struct MainView: View {
 
     private func content(_ size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
-            HomeView(host: host, storage: storage, frames: frames, open: { present($0) }, hiddenTile: layer?.destination, closing: windowClosing,
-                     dormant: pageSettled, showsSettingsTile: !embedded)
-                .modifier(ZoomFade(progress: progress, scales: !designSettings.glass))
-                .allowsHitTesting(layer == nil)
+            if onboarding.isShowing {
+                // The first launch: onboarding in place of the dashboard, whose tiles come in once it ends.
+                OnboardingView(onboarding: onboarding, host: host)
+                    .opacity(windowClosing ? 0 : 1)
+                    .animation(Theme.windowOut, value: windowClosing)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            } else {
+                HomeView(host: host, storage: storage, frames: frames, open: { present($0) }, hiddenTile: layer?.destination, closing: windowClosing,
+                         dormant: pageSettled, showsSettingsTile: !embedded)
+                    .modifier(ZoomFade(progress: progress, scales: !designSettings.glass))
+                    .allowsHitTesting(layer == nil)
+            }
             if let layer, size.width > 0 {
                 // An open page covers the whole window, glass frame included. It is drawn larger than the dashboard, so it sits in a box of
                 // the dashboard's size: left loose, it made the stack larger, the dashboard was laid out at that size, and every tile
@@ -272,11 +284,10 @@ public struct MainView: View {
         switch destination {
         case let .module(id):
             guard let handle = host.handle(for: id) else { return "" }
-            // On a group's page: the module, then the group.
-            if let group = handle.openGroup, let screen = handle.screen, let row = ScreenView.row(group, in: screen.widgets) {
-                return "\(handle.manifest.name) › \(row.title)"
-            }
-            return handle.manifest.name
+            // On a group's page: the module, then each group page open, in order.
+            guard let screen = handle.screen else { return handle.manifest.name }
+            let groups = handle.groupPath.compactMap { ScreenView.row($0, in: screen.widgets)?.title }
+            return ([handle.manifest.name] + groups).joined(separator: " › ")
         case .settings:
             switch host.settingsPage {
             case .cleanupHistory?: return "Settings › Recent cleanups"
@@ -395,7 +406,7 @@ public struct MainView: View {
         if destination == .home || destination == .storage {
             guard let open = layer, isOpen else { return }
             returnTo = nil
-            if case let .module(id) = open.destination { host.handle(for: id)?.openGroup = nil }
+            if case let .module(id) = open.destination { host.handle(for: id)?.groupPath = [] }
             host.settingsPage = nil
             close()
             return
@@ -423,9 +434,9 @@ public struct MainView: View {
     /// The page goes first, then the card shrinks back into its tile. Works mid-opening too: the card turns around where it is.
     private func close() {
         guard let open = layer, isOpen else { return }
-        // A group's page goes back to its module's page.
-        if case let .module(id) = open.destination, let handle = host.handle(for: id), handle.openGroup != nil {
-            handle.openGroup = nil
+        // A group's page goes back to the page under it: another group's, or its module's.
+        if case let .module(id) = open.destination, let handle = host.handle(for: id), !handle.groupPath.isEmpty {
+            handle.popGroup()
             return
         }
         // A page over Settings goes back to Settings.
@@ -480,7 +491,7 @@ private struct ModulePageTitle: View {
     var body: some View {
         Text(text())
             .contentTransition(.opacity)
-            .animation(Theme.push, value: handle.openGroup)
+            .animation(Theme.push, value: handle.groupPath)
     }
 }
 

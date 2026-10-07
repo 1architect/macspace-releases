@@ -5,14 +5,18 @@ and what is still open. Findings about macOS itself are in [Research.md](Researc
 
 ## What MacSpace is
 
-A modular macOS 27 utility. One app shows widgets that **modules** describe; each module is a separate plug-in. Three ship today:
+**A System Data and Apple Intelligence cleaner for macOS 27.** It shows what fills System Data and frees what is safe to delete, and
+it switches Apple Intelligence off and deletes the models macOS keeps on disk afterwards. Everything else it does serves those two
+jobs.
+
+Inside, each job is a **module**, a separate plug-in that describes its widgets for the app to draw. Four ship today:
 
 | Module | What it does |
 |---|---|
-| **System Data** | Explains what fills System Data, frees what is safe (system caches, old reports, unused system assets), deletes the document version history on request, and guides the manual cleanup macOS and other apps own. |
-| **Siri & Apple Intelligence** | An off-switch for Apple Intelligence, a background watcher, and release of the models macOS keeps afterwards. Does nothing in a virtual machine. |
-| **Other System Files** | What macOS counts as purgeable, per purge service, and freeing the files apps marked purgeable now instead of when the disk is nearly full. |
-| **Debloat** | Fourteen switches for analytics, ads and background data collection macOS lets you control, and a background watch that switches off again what macOS turns back on, with a notification. |
+| **System Data** (the core) | Explains what fills System Data, frees what is safe (system caches, old reports, unused system assets), deletes the document version history on request, and guides the manual cleanup macOS and other apps own. |
+| **Siri & Apple Intelligence** (the core) | An off-switch for Apple Intelligence, a background watcher, and release of the models macOS keeps afterwards. Does nothing in a virtual machine. |
+| **Other System Files** | Space outside System Data that macOS counts as purgeable: what it is, per purge service, and freeing the files apps marked purgeable now instead of when the disk is nearly full. |
+| **Debloat** (extra) | Fourteen switches for analytics, ads and background data collection macOS lets you control, and a background watch that switches off again what macOS turns back on, with a notification. |
 
 Third-party plug-ins are out of scope. The app is built with SwiftPM only (no Xcode project) and requires macOS 27.
 
@@ -118,7 +122,12 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
     still lands in it. The page's items are only the breakdown: what they leave out of the total is a "Not identified" block, so a
     rule that goes wrong shows as a measured amount instead of a wrong total. The same places decide which items are System Data
     (`SystemDataItem.elsewhereBytes`). The debug command `settings:<file.json>` writes the reading.
-13. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
+13. **Onboarding** (`Onboarding`): on a new install, in place of the dashboard, one screen per missing permission (Full Disk Access,
+    the helper, notifications), then a last one saying how much can be freed; each an animated symbol, a headline, one line and one
+    button. No welcome screen: it starts with what MacSpace needs. Steps already granted are left out (all granted: no onboarding);
+    the symbol answers when a permission arrives. The step is kept across the relaunch System Settings asks for after Full Disk
+    Access. Installs that ran before onboarding existed skip it; `open -a MacSpace --args --onboarding` shows it again.
+14. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
     or `MACSPACE_DESIGN=1`. `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with
     the app's own Full Disk Access).
 

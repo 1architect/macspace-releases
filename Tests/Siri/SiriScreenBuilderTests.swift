@@ -128,7 +128,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         on.installedModelBytes = 12_000_000_000
         let tile = SiriScreenBuilder.tile(on)
         XCTAssertEqual(tile.reclaimableBytes, 12_000_000_000, "switching it off frees them")
-        XCTAssertTrue(tile.status.hasSuffix("can be freed"))
+        XCTAssertTrue(tile.status.hasPrefix("free up to"))
         guard case let .state(isOn, alarming, detail, _, _)? = tile.graphic else { return XCTFail() }
         XCTAssertTrue(isOn)
         XCTAssertFalse(alarming, "no glow")

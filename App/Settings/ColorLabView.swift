@@ -226,7 +226,7 @@ private struct StudioPreview: View {
                 if large {
                     VStack(alignment: .trailing, spacing: 0) {
                         Text("system data").font(.system(size: 18, weight: .bold))
-                        Text("2.3 GB can be freed").font(.system(size: 18, weight: .light))
+                        Text("free up to 2.3 GB").font(.system(size: 18, weight: .light))
                     }
                     .foregroundStyle(design.ink)
                     .padding(14)

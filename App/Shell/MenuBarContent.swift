@@ -50,7 +50,7 @@ public final class AppRouter: ObservableObject {
     }
 
     /// The window of the kind in use, if it is open.
-    static var mainWindow: NSWindow? {
+    public static var mainWindow: NSWindow? {
         NSApp.windows.first { $0.identifier?.rawValue.hasPrefix(MacSpaceWindow.current) == true && ($0.isVisible || $0.isMiniaturized) }
     }
 }

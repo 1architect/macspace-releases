@@ -144,7 +144,7 @@ enum SystemDataScreenBuilder {
         let freeable = freeableBytes(snapshot)
         let total = total(snapshot)
         return Tile(title: total > 0 ? "system data \(ByteFormat.string(total))" : "system data",
-                    status: freeable >= worthARow ? "\(ByteFormat.string(freeable)) can be freed" : "nothing to free",
+                    status: freeable >= worthARow ? "free \(ByteFormat.string(freeable))" : "nothing to free",
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,
                     purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
