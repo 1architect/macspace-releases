@@ -9,7 +9,7 @@
 "Apps download them again if they need them." = "Os apps os baixam de novo se precisarem.";
 "Cloud files on this Mac" = "Arquivos da nuvem neste Mac";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.";
-"Counted by macOS" = "Apagado pelo macOS quando o disco estiver cheio";
+"Deleted by macOS when the disk is full" = "Apagado pelo macOS quando o disco estiver cheio";
 "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.";
 "Free" = "Liberar";

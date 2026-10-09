@@ -53,11 +53,11 @@
   "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.",
   "Kopien von Cloud-Dateien auf diesem Mac. Beim Entfernen bleiben die Dateien in der Cloud."
  ],
- "Counted by macOS": [
+ "Deleted by macOS when the disk is full": [
   "Apagado pelo macOS quando o disco estiver cheio",
-  "Comptabilisé par macOS",
-  "Contabilizado por macOS",
-  "Von macOS gezählt"
+  "Supprimé par macOS quand le disque est plein",
+  "Eliminado por macOS cuando el disco está lleno",
+  "Von macOS gelöscht, wenn der Speicher voll ist"
  ],
  "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.": [
   "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.",

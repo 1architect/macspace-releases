@@ -53,7 +53,7 @@ enum OtherSystemFilesScreenBuilder {
             let total = keptServices(snapshot).map(\.value).reduce(0, +) - cloudBytes(snapshot)
             let row = list.rows.count == 1 ? list.rows[0]
                 : Row.group(id: "group:kept", title: kept.title, symbol: "tray.full", totalBytes: total, rows: list.rows, detail: kept.subtitle)
-            widgets.append(.list(ListWidget(id: "kept", title: loc("Counted by macOS"), rows: [row])))
+            widgets.append(.list(ListWidget(id: "kept", title: loc("Deleted by macOS when the disk is full"), rows: [row])))
         }
         let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: segments(snapshot),
                             footnote: loc("Files macOS deletes on its own when the disk runs low. System Settings counts this space as available."))

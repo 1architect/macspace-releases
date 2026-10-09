@@ -150,7 +150,7 @@ enum SiriScreenBuilder {
         }
         return Row(id: "icloud-sync", title: title,
                    symbol: enabled == false ? "checkmark.icloud" : "icloud",
-                   detail: enabled == false ? loc("If you turn it on, changes MacSpace makes to Siri, such as its language, also reach your other devices.")
+                   detail: enabled == false ? loc("If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.")
                                             : loc("Turn it off to keep Siri's language change on this Mac."),
                    steps: enabled == false ? [] : SiriCloudSync.steps,
                    actions: [Action(id: "openICloudSettings", title: loc("Open"))])

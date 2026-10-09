@@ -32,7 +32,7 @@
 "Free up to %@" = "Bis zu %@ freigeben";
 "Free up to %@?" = "Bis zu %@ freigeben?";
 "Freeing space…" = "Speicher wird freigegeben …";
-"If you turn it on, changes MacSpace makes to Siri, such as its language, also reach your other devices." = "Wenn du sie aktivierst, gelangen Änderungen, die MacSpace an Siri vornimmt, etwa die Sprache, auch auf deine anderen Geräte.";
+"If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri." = "Wenn du sie aktivierst, wirkt MacSpace auf allen deinen Geräten auf Apple Intelligence. Zum Ändern öffne die Systemeinstellungen, wähle oben in der Seitenleiste Apple Account, klicke unter „In iCloud gesichert“ auf „Alle anzeigen“ und deaktiviere dann Siri.";
 "Its models are gone." = "Die Modelle sind entfernt.";
 "Keeps the models" = "Behält die Modelle";
 "Leftover Apple Intelligence models" = "Übrige Apple Intelligence-Modelle";
