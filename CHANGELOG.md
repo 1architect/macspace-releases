@@ -7,17 +7,17 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-09
+
 ### Fixed
 
-- With "Keep running in the menu bar", closing the window now also takes MacSpace out of the Dock and the app switcher, leaving
-  only the menu bar icon; it stayed in the Dock. The window brings it back.
-- MacSpace no longer reads its modules again every minute while no window is open. With the window closed (menu bar or background),
-  System Data scanned the whole disk every two minutes, which kept MacSpace at about 30% CPU, with spikes. The modules are read
-  again when a window comes back; the background tasks and automatic cleanup are unchanged. (Issue 2)
-- The System Data scan, from Refresh and from the automatic readings, uses at most three workers and releases memory as it goes,
-  where it used every core (up to 800% CPU). (Issue 1)
-- System Data's figures are kept for ten minutes between automatic readings (two before). Refresh and every action still read them
-  again at once.
+- In menu bar mode, closing the window also leaves the Dock. Now only the menu bar icon stays active.
+- Fix high CPU usage when in background. CPU usage is now 0% for most of the time.
+
+### Changed
+
+- Lighter System Data scans. Now limited to 3 CPU cores.
+- Small UI and translation improvements.
 
 ## [1.0.1] - 2026-10-07
 
@@ -109,6 +109,7 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/1architect/macspace-releases/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/1architect/macspace-releases/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/1architect/macspace-releases/releases/tag/v1.0.0
