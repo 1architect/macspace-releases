@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- With "Keep running in the menu bar", closing the window now also takes MacSpace out of the Dock and the app switcher, leaving
+  only the menu bar icon; it stayed in the Dock. The window brings it back.
 - MacSpace no longer reads its modules again every minute while no window is open. With the window closed (menu bar or background),
   System Data scanned the whole disk every two minutes, which kept MacSpace at about 30% CPU, with spikes. The modules are read
   again when a window comes back; the background tasks and automatic cleanup are unchanged. (Issue 2)

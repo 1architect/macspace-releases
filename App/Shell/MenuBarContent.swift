@@ -183,9 +183,9 @@ public final class StatusItemController: NSObject {
     }
 }
 
-/// Running in the background (`GeneralSettings.ClosedWindow.background`): once its last window closes, MacSpace leaves the Dock and
-/// the app switcher (an accessory app), and comes back as an ordinary app when a window opens again, whatever opened it
-/// (Applications, Spotlight, a notification, `AppRouter`).
+/// Running on after the last window closes (`GeneralSettings.ClosedWindow.menuBar` and `.background`): MacSpace leaves the Dock and
+/// the app switcher (an accessory app), keeping only its menu bar item in the first case, and comes back as an ordinary app when a
+/// window opens again, whatever opened it (Applications, Spotlight, a notification, the menu bar item, `AppRouter`).
 @MainActor
 public final class BackgroundPresence {
     public static let shared = BackgroundPresence()
@@ -210,7 +210,7 @@ public final class BackgroundPresence {
     }
 
     private func hideIfUnseen(closing: NSWindow?) {
-        guard GeneralSettings.closedWindow() == .background, !Self.hasOpenWindow(besides: closing) else { return }
+        guard GeneralSettings.keepsRunning(), !Self.hasOpenWindow(besides: closing) else { return }
         NSApp.setActivationPolicy(.accessory)
     }
 
