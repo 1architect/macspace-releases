@@ -38,8 +38,7 @@ enum OtherSystemFilesScreenBuilder {
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
-    /// The bar, then what MacSpace frees, on its own and row by row, then everything else macOS counts as purgeable as one group
-    /// that opens a page of its own.
+    /// The bar, then what MacSpace frees, on its own and row by row, then everything else macOS counts as purgeable, row by row.
     static func screen(_ snapshot: PurgeableSnapshot) -> Screen {
         guard snapshot.services != nil || !snapshot.updates.isEmpty else {
             return Screen(title: loc("Other System Files"), widgets: [.banner(Banner(id: "unavailable", severity: .warning,
@@ -50,10 +49,7 @@ enum OtherSystemFilesScreenBuilder {
         if let free = freeNow(snapshot) { widgets.append(free) }
         if let updates = updatesSection(snapshot) { widgets.append(updates) }
         if case let .section(kept)? = keptSection(snapshot), case let .list(list)? = kept.widgets.first {
-            let total = keptServices(snapshot).map(\.value).reduce(0, +) - cloudBytes(snapshot)
-            let row = list.rows.count == 1 ? list.rows[0]
-                : Row.group(id: "group:kept", title: kept.title, symbol: "tray.full", totalBytes: total, rows: list.rows, detail: kept.subtitle)
-            widgets.append(.list(ListWidget(id: "kept", title: loc("Deleted by macOS when the disk is full"), rows: [row])))
+            widgets.append(.list(ListWidget(id: "kept", title: loc("Deleted by macOS when the disk is full"), rows: list.rows)))
         }
         let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: segments(snapshot),
                             footnote: loc("Files macOS deletes on its own when the disk runs low. System Settings counts this space as available."))
@@ -107,13 +103,6 @@ enum OtherSystemFilesScreenBuilder {
         return (documentsRows(bytes, snapshot) ?? []).filter { $0.id.hasPrefix("documents:") }
     }
 
-    /// Of macOS's purgeable documents, what the cloud rows account for.
-    static func cloudBytes(_ snapshot: PurgeableSnapshot) -> UInt64 {
-        let bytes = snapshot.services?[CacheDeleteService.fsPurgeableDocument] ?? 0
-        guard bytes >= threshold, !snapshot.documents.isEmpty else { return 0 }
-        return min(snapshot.documents.map(\.bytes).reduce(0, +), bytes)
-    }
-
     /// Removes one cloud service's downloads; the size is the row's.
     static func removeDownloadsAction(_ source: PurgeableDocuments.Source, bytes: UInt64) -> Action {
         Action(id: "removeDownloads", title: loc("Remove Downloads"), parameters: ["path": source.path],
@@ -129,7 +118,7 @@ enum OtherSystemFilesScreenBuilder {
     }
 
     /// The purgeable documents as rows: one per cloud service that holds them, opening in place onto its folders (no page of its
-    /// own: the row already sits in a group's page), and what no cloud folder accounts for. nil while none were found.
+    /// own), and what no cloud folder accounts for. nil while none were found.
     static func documentsRows(_ bytes: UInt64, _ snapshot: PurgeableSnapshot) -> [Row]? {
         guard !snapshot.documents.isEmpty else { return nil }
         let detail = loc("Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.")

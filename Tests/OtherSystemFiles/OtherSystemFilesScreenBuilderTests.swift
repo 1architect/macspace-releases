@@ -25,7 +25,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(list.rows.map(\.id), [CacheDeleteService.fsPurgeableData], "what can be freed has its own section, row by row")
         XCTAssertEqual(list.rows[0].actions.map(\.id), ["purgeFiles"])
         guard case let .list(kept)? = screen.widgets.last else { return XCTFail() }
-        XCTAssertEqual(kept.rows.map(\.id), ["group:kept"], "what macOS keeps is one group")
+        XCTAssertEqual(kept.rows.map(\.id), [CacheDeleteService.appContainerCaches, CacheDeleteService.fsPurgeableDocument,
+                                             CacheDeleteService.quickLookThumbnails], "what macOS keeps is listed row by row, not in a group")
         XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).purgeableByService, [CacheDeleteService.fsPurgeableData: 4_888_453_120],
                        "the disk tile counts what this page frees")
     }
@@ -88,7 +89,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
     }
 
     /// Purgeable documents are named after the cloud service that holds them, whichever it is; each is a plain row that opens in place
-    /// onto its folders, never a page inside the group's page; what no cloud folder accounts for keeps a row of its own.
+    /// onto its folders, never a page of its own; what no cloud folder accounts for keeps a row of its own.
     func testCloudFilesAreRowsOfTheirOwnWhateverTheProvider() throws {
         var snap = snapshot([CacheDeleteService.fsPurgeableDocument: 30_000_000_000, CacheDeleteService.quickLookThumbnails: 100_000_000])
         snap.documents = [
