@@ -153,7 +153,7 @@
  "Version history stays.": ["O histórico de versões é mantido.", "L’historique des versions est conservé.", "El historial de versiones se conserva.", "Der Versionsverlauf bleibt erhalten."],
  "Virtual machine: %@": ["Máquina virtual: %@", "Machine virtuelle : %@", "Máquina virtual: %@", "Virtuelle Maschine: %@"],
  "What fills System Data": ["O que ocupa Dados do Sistema", "Ce qui remplit Données système", "Qué ocupa Datos del sistema", "Was „Systemdaten“ füllt"],
- "What is in it": ["O que há nele", "Contenu", "Qué contiene", "Inhalt"],
+ "What is in it": ["Conteúdo", "Contenu", "Qué contiene", "Inhalt"],
  "Xcode Command Line Tools": ["Ferramentas de Linha de Comando do Xcode", "Outils de ligne de commande Xcode", "Herramientas de línea de comandos de Xcode", "Xcode-Befehlszeilentools"],
  "Xcode downloads it again when you open the docs.": ["O Xcode a baixa de novo quando você abre a documentação.", "Xcode la retélécharge quand vous ouvrez la documentation.", "Xcode la vuelve a descargar cuando abres la documentación.", "Xcode lädt sie erneut, wenn du die Dokumentation öffnest."],
  "You won't be able to revert any document to an earlier version. Save and close your documents first.": ["Você não poderá reverter nenhum documento para uma versão anterior. Salve e feche seus documentos primeiro.", "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.", "No podrás volver a una versión anterior de ningún documento. Guarda y cierra tus documentos primero.", "Du kannst kein Dokument mehr auf eine frühere Version zurücksetzen. Sichere und schließe zuerst deine Dokumente."],

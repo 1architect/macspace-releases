@@ -155,7 +155,7 @@
 "Version history stays." = "O histórico de versões é mantido.";
 "Virtual machine: %@" = "Máquina virtual: %@";
 "What fills System Data" = "O que ocupa Dados do Sistema";
-"What is in it" = "O que há nele";
+"What is in it" = "Conteúdo";
 "Xcode Command Line Tools" = "Ferramentas de Linha de Comando do Xcode";
 "Xcode downloads it again when you open the docs." = "O Xcode a baixa de novo quando você abre a documentação.";
 "You won't be able to revert any document to an earlier version. Save and close your documents first." = "Você não poderá reverter nenhum documento para uma versão anterior. Salve e feche seus documentos primeiro.";

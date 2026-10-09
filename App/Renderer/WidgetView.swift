@@ -232,7 +232,8 @@ struct BannerRow: View {
                 if let message = banner.message { Text(message).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer(minLength: 8)
-            if let action = banner.action { ActionButton(action: action, compact: true, handler: handler) }
+            // The button keeps its title on one line; the text beside it wraps instead.
+            if let action = banner.action { ActionButton(action: action, compact: true, handler: handler).fixedSize() }
         }
     }
 }
