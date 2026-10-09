@@ -4,17 +4,23 @@ import MacSpacePlatform
 import SQLite3
 
 /// Lets a development session drive the window and photograph it, without Screen Recording permission (an app may capture its own
-/// windows). Off unless the app was started with `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
+/// windows). Compiled only into debug builds (`#if DEBUG`): a release build has no listener, no `sql:` and no file-writing commands, so
+/// the shipped app cannot be driven this way whatever its environment. In a debug build it is also off unless the app was started with
+/// `MACSPACE_DEBUG=1`. Commands arrive as the object of the distributed notification
 /// `com.macspace.debug`:
 ///
 ///     open:<module id> | open:settings | group:<row id> | back | close | capture:<file.png> | frames:<folder>:<count>:<milliseconds> | info:<file.txt> | frame:<x>,<y>,<width>,<height> | glass:on|off | glassElements:on|off | palette:<deep|mono|sketch|nord|paper> | background:<palette|system|light|dark> | pill:<idle|working[:fraction]|done|later|fail|long> | open:colorLab | standardWindow:on|off | titleBar:on|off | sidebarIcons:on|off | standardGlass:on|off | sidebar | radius:<tile>:<window> | captureTitled:<window title>:<file.png> | capturePopover:<file.png> | onboarding | onboarding:next | onboarding:finish | du:<depth>:<file.tsv>:<folder> | settings:<file.json> | sql:<out.txt>|<database>|<query>
 @MainActor
 final class DebugRemote: ObservableObject {
     static let shared = DebugRemote()
-    static let isEnabled = ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1"
 
-    /// The latest navigation command, for the main view.
+    /// The latest navigation command, for the main view. Never set in a release build.
     @Published private(set) var command: (id: Int, text: String)?
+
+    func start() {}
+
+    #if DEBUG
+    static let isEnabled = ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1"
     private var counter = 0
 
     private init() {
@@ -24,8 +30,6 @@ final class DebugRemote: ObservableObject {
             MainActor.assumeIsolated { DebugRemote.shared.handle(text) }
         }
     }
-
-    func start() {}
 
     private func handle(_ text: String) {
         if text.hasPrefix("info:"), let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 300 }) {
@@ -122,8 +126,12 @@ final class DebugRemote: ObservableObject {
         }
         try? data.write(to: URL(fileURLWithPath: path))
     }
+    #else
+    private init() {}
+    #endif
 }
 
+#if DEBUG
 /// For finding what the System Data scan leaves out: every folder down to `depth` under a root, with the space its files take
 /// (allocated size, other volumes skipped) and the folders that could not be listed. Written as `bytes<TAB>unreadable<TAB>path`,
 /// largest first, with a line `#done` at the end.
@@ -189,3 +197,4 @@ enum DebugSQL {
         try? output.write(toFile: file, atomically: true, encoding: .utf8)
     }
 }
+#endif

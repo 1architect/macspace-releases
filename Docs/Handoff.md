@@ -141,8 +141,8 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
     (`ModuleScanner.localized`). A saved tile is only shown in the language it was saved in. Only the developer tools, the CLI and
     the helper stay in English.
 15. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
-    or `MACSPACE_DESIGN=1`. `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with
-    the app's own Full Disk Access).
+    or `MACSPACE_DESIGN=1`. In a debug build (`swift build`), `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes
+    folders with the app's own Full Disk Access). It is compiled out of release builds.
 
 ### Adding a module
 

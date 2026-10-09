@@ -123,9 +123,11 @@ actor SystemDataStore {
         snapshot.purgeableServices = services
         snapshot.settings = SettingsStorageMeter().measure()
         // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
+        #if DEBUG
         if ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1", let data = try? JSONEncoder().encode(report) {
             try? data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("macspace-systemdata-report.json"))
         }
+        #endif
         return snapshot
     }
 
