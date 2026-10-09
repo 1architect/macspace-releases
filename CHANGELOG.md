@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- Made the glass window easier to move with a persistent top drag handle, and easier to resize from every edge and corner.
+
 ## [1.0.3] - 2026-10-09
 
 ### Fixed

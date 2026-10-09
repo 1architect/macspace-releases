@@ -20,6 +20,8 @@ enum Theme {
     /// An invisible band around the glass that belongs to the window: the resize zone, where macOS puts it for other windows, just
     /// outside the visible edge. Without it, a drag started there (or on a rounded corner) went to the app behind.
     static let resizeMargin: CGFloat = 8
+    /// A permanent drag target above the dashboard, pages and onboarding.
+    static let dragHandleHeight: CGFloat = 24
     /// The tiles' corners, set in the Design menu (`DesignSettings.tileRadius`).
     static var tileRadius: CGFloat { CornerRadii.tile }
     static let defaultSize = CGSize(width: 700, height: 490)
