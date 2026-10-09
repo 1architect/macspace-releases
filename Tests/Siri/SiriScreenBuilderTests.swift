@@ -69,7 +69,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
         let off = SiriScreenBuilder.cloudSyncRow(enabled: false)
-        XCTAssertTrue(off.detail?.contains("other devices") == true, "off, its (i) says what turning it on would do")
+        XCTAssertTrue(off.detail?.contains("all your devices") == true, "off, its (i) says what turning it on would do")
         XCTAssertTrue(off.steps.isEmpty)
     }
 
