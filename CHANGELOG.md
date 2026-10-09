@@ -7,6 +7,16 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- MacSpace no longer reads its modules again every minute while no window is open. With the window closed (menu bar or background),
+  System Data scanned the whole disk every two minutes, which kept MacSpace at about 30% CPU, with spikes. The modules are read
+  again when a window comes back; the background tasks and automatic cleanup are unchanged. (Issue 2)
+- The System Data scan, from Refresh and from the automatic readings, uses at most three workers and releases memory as it goes,
+  where it used every core (up to 800% CPU). (Issue 1)
+- System Data's figures are kept for ten minutes between automatic readings (two before). Refresh and every action still read them
+  again at once.
+
 ## [1.0.1] - 2026-10-07
 
 ### Added

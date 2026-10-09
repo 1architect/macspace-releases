@@ -196,6 +196,8 @@ public struct SystemDataLocations: Sendable {
 }
 
 public struct SystemDataInspector {
+    /// How many paths are measured at the same time. Sizing is disk-bound; more workers only took cores from everything else.
+    static let scanWorkers = 3
     /// Dynamic entries smaller than this are summarized, not listed.
     public static let minimumItemBytes: UInt64 = 50 * 1_000_000
     static let partialDownloadSuffixes = [".part", ".partial", ".crdownload", ".download", ".opdownload", ".prlupd-part"]
@@ -341,9 +343,14 @@ public struct SystemDataInspector {
                 for path in entry.paths { jobs.append((index, path)) }
             }
             let results = MeasurementResults(count: jobs.count)
-            DispatchQueue.concurrentPerform(iterations: jobs.count) { index in
-                let job = jobs[index]
-                results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
+            // A few workers pull the next path as they finish one. One worker per path (`concurrentPerform` over the jobs) put every
+            // core of the Mac on the scan: 800% CPU on a 10-core M4, from the Refresh button and from the automatic readings.
+            let queue = JobQueue(count: jobs.count)
+            DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(jobs.count, 1))) { _ in
+                while let index = queue.next() {
+                    let job = jobs[index]
+                    results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
+                }
             }
             var next = 0
             for entry in pending {
@@ -770,6 +777,23 @@ struct SizeMeasurement {
     var readable = false
     var unreadableEntry: String?
     var purgeable: UInt64 = 0
+}
+
+/// Hands out the indexes 0..<count, each once, to the workers of a scan.
+final class JobQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private let count: Int
+    private var issued = 0
+
+    init(count: Int) { self.count = count }
+
+    func next() -> Int? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard issued < count else { return nil }
+        issued += 1
+        return issued - 1
+    }
 }
 
 /// Collects parallel measurements; each index is written once.

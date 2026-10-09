@@ -215,9 +215,10 @@ public final class BackgroundPresence {
     }
 
     /// A window of MacSpace's own is on screen or in the Dock (menus, popovers and the status item's window do not count).
-    static func hasOpenWindow(besides closing: NSWindow?) -> Bool {
+    /// `includingMiniaturized: false` counts only the ones on screen.
+    static func hasOpenWindow(besides closing: NSWindow?, includingMiniaturized: Bool = true) -> Bool {
         NSApp.windows.contains { window in
-            guard window !== closing, window.isVisible || window.isMiniaturized else { return false }
+            guard window !== closing, window.isVisible || (includingMiniaturized && window.isMiniaturized) else { return false }
             // The glass window has no title bar.
             let id = window.identifier?.rawValue ?? ""
             return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass) || id.hasPrefix(MacSpaceWindow.standard)

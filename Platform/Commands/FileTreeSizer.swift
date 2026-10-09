@@ -129,26 +129,29 @@ public struct FileTreeSizer: Sendable {
             var sawAllocated = false
 
             for case let item as URL in enumerator {
-                guard let resource = try? item.resourceValues(forKeys: sizingKeys) else { continue }
-                if resource.isSymbolicLink == true { continue }
+                // One pool per file: a tree of a million files otherwise keeps every URL and attribute it touched until the end.
+                autoreleasepool {
+                    guard let resource = try? item.resourceValues(forKeys: sizingKeys) else { return }
+                    if resource.isSymbolicLink == true { return }
 
-                if let rootVolumeID,
-                   let itemVolumeID = resource.volumeIdentifier.map({ String(describing: $0) }),
-                   itemVolumeID != rootVolumeID {
-                    enumerator.skipDescendants()
-                    continue
-                }
-
-                guard resource.isRegularFile == true else { continue }
-                logical += logicalSize(from: resource) ?? 0
-                if var value = allocatedSize(from: resource) {
-                    if countsPurgeable || clones != nil, value > 0, let extended = Self.extendedAttributes(item.path) {
-                        // A later member of a clone family adds only what it does not share.
-                        if let clones, extended.family != 0, !clones.claim(extended.family) { value = min(value, extended.privateBytes) }
-                        if countsPurgeable, extended.flags & UInt64(EF_IS_PURGEABLE) != 0 { purgeable += value }
+                    if let rootVolumeID,
+                       let itemVolumeID = resource.volumeIdentifier.map({ String(describing: $0) }),
+                       itemVolumeID != rootVolumeID {
+                        enumerator.skipDescendants()
+                        return
                     }
-                    allocated += value
-                    sawAllocated = true
+
+                    guard resource.isRegularFile == true else { return }
+                    logical += logicalSize(from: resource) ?? 0
+                    if var value = allocatedSize(from: resource) {
+                        if countsPurgeable || clones != nil, value > 0, let extended = Self.extendedAttributes(item.path) {
+                            // A later member of a clone family adds only what it does not share.
+                            if let clones, extended.family != 0, !clones.claim(extended.family) { value = min(value, extended.privateBytes) }
+                            if countsPurgeable, extended.flags & UInt64(EF_IS_PURGEABLE) != 0 { purgeable += value }
+                        }
+                        allocated += value
+                        sawAllocated = true
+                    }
                 }
             }
 

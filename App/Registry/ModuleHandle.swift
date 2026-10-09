@@ -137,6 +137,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         async let nextScreen = module.screen(context: context)
         let (newTile, newScreen) = await (nextTile, nextScreen)
         guard generation == refreshGeneration, state == .ready else { return }
+        lastRefreshed = Date()
         tile = newTile
         tileIsStale = false
         settings.setLastTile(newTile, module: id)
@@ -175,15 +176,34 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     static let autoRefreshInterval: TimeInterval = 60
     static let fastestAutoRefresh: TimeInterval = 3
     private var autoRefresh: Task<Void, Never>?
+    private var lastRefreshed: Date?
+    /// Whether a window of MacSpace is on screen. Without one nobody sees the tile or the page, so the module is not read again by
+    /// itself: with the window closed, those readings (a full scan of the disk for System Data, every two minutes) were what kept
+    /// MacSpace at 30% CPU in the background.
+    public private(set) var isWatched = true
+
+    /// Called by the host when the last window goes away or the first one comes back. Back in view, the module is read again at
+    /// once if its figures are old, which also starts the periodic readings again.
+    public func setWatched(_ watched: Bool) {
+        guard watched != isWatched else { return }
+        isWatched = watched
+        if !watched {
+            autoRefresh?.cancel()
+            autoRefresh = nil
+        } else if state == .ready {
+            let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
+            if age >= Self.fastestAutoRefresh { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
+        }
+    }
 
     /// Schedules the next quiet reading after the one that just finished.
     private func scheduleAutoRefresh() {
         autoRefresh?.cancel()
-        guard state == .ready else { return }
+        guard state == .ready, isWatched else { return }
         let delay = max(min(tile?.refreshAfter ?? Self.autoRefreshInterval, Self.autoRefreshInterval), Self.fastestAutoRefresh)
         autoRefresh = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
-            guard !Task.isCancelled, let self, self.state == .ready else { return }
+            guard !Task.isCancelled, let self, self.state == .ready, self.isWatched else { return }
             // Not while an action runs: it reads the module again itself when it ends.
             if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true) }
         }

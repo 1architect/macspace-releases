@@ -77,7 +77,11 @@ actor SystemDataStore {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 120, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
+    /// How old a scan may be when the tile or the page asks for it. A scan reads the whole disk; the Refresh button and every action
+    /// forget it (`invalidate`), so only the readings that follow the Mac by themselves wait this long.
+    static let defaultMaxAge: TimeInterval = 600
+
+    func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil { return cached }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.

@@ -100,6 +100,7 @@ public final class ModuleHost: ObservableObject {
         if startTask == nil {
             startTask = Task { await self.reload() }
             observeActivation()
+            observeVisibility()
         }
         await startTask?.value
     }
@@ -120,6 +121,41 @@ public final class ModuleHost: ObservableObject {
         }
     }
 
+    private var visibilityObservers: [NSObjectProtocol] = []
+    private var watched = true
+
+    /// Modules are read again by themselves only while a window of MacSpace is on screen (`ModuleHandle.setWatched`): running in the
+    /// menu bar or unseen in the background, nothing is shown, so nothing is measured. The background tasks and automatic cleanup
+    /// are unaffected; they are the work that should go on without a window.
+    private func observeVisibility() {
+        guard visibilityObservers.isEmpty else { return }
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [NSWindow.didBecomeKeyNotification, NSWindow.didBecomeMainNotification, NSWindow.didMiniaturizeNotification,
+                                          NSWindow.didDeminiaturizeNotification, NSApplication.didHideNotification, NSApplication.didUnhideNotification]
+        for name in names {
+            visibilityObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                // After the change has settled (a window just closing still counts as visible).
+                DispatchQueue.main.async { MainActor.assumeIsolated { self?.updateWatched(closing: nil) } }
+            })
+        }
+        visibilityObservers.append(center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] note in
+            let closing = note.object as? NSWindow
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.updateWatched(closing: closing) } }
+        })
+        // A window may not have appeared yet when the app starts; look once it has had time to.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            self?.updateWatched(closing: nil)
+        }
+    }
+
+    private func updateWatched(closing: NSWindow?) {
+        let now = !NSApp.isHidden && BackgroundPresence.hasOpenWindow(besides: closing, includingMiniaturized: false)
+        guard now != watched else { return }
+        watched = now
+        for handle in handles { handle.setWatched(now) }
+    }
+
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {
         guard let modulesDirectory else { handles = []; problems = []; hasScanned = true; return }
@@ -129,7 +165,9 @@ public final class ModuleHost: ObservableObject {
         let existing = Dictionary(uniqueKeysWithValues: handles.map { ($0.id, $0) })
         handles = found.modules.map { descriptor in
             if let known = existing[descriptor.id], known.descriptor == descriptor { return known }
-            return ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
+            let handle = ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
+            handle.setWatched(watched)
+            return handle
         }
         observeStates()
         hasScanned = true
