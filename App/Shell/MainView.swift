@@ -160,8 +160,21 @@ public struct MainView: View {
             .coordinateSpace(name: ZoomSpace.name)
             .onGeometryChange(for: CGSize.self) { $0.size } action: { container = $0 }
             .padding(Theme.frame)
+            .padding(.top, embedded ? 0 : Theme.dragHandleHeight)
             cornerControls
                 .padding(Theme.frame + GlassCircleButton.margin)
+                .padding(.top, embedded ? 0 : Theme.dragHandleHeight)
+            if !embedded {
+                Capsule()
+                    .fill(designSettings.design.ink.opacity(0.4))
+                    .frame(width: 40, height: 4)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Theme.dragHandleHeight)
+                    .contentShape(Rectangle())
+                    .gesture(WindowDragGesture())
+                    .allowsWindowActivationEvents(true)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -184,10 +197,11 @@ public struct MainView: View {
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
         .padding(Theme.resizeMargin)
+        .overlay { WindowResizeOverlay() }
         // The shadow comes in once the glass has grown in, and leaves before the glass shrinks away when the window closes.
         .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && windowShown && !windowClosing, radius: designSettings.windowRadius))
         .ignoresSafeArea()
-        .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + 2 * Theme.resizeMargin)
+        .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + Theme.dragHandleHeight + 2 * Theme.resizeMargin)
         .task { await host.start() }
         .task { storage.follow(host); await storage.watch() }
         .modifier(WindowKindSwitch(id: MacSpaceWindow.glass))

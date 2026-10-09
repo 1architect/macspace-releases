@@ -143,6 +143,11 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
 15. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
     or `MACSPACE_DESIGN=1`. In a debug build (`swift build`), `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes
     folders with the app's own Full Disk Access). It is compiled out of release builds.
+16. **Glass window interaction.** A 24-point strip above the canvas holds a persistent drag handle, including on Settings and
+    onboarding. `WindowResizeOverlay` handles the perimeter (the 8-point outside margin plus 4 points inside the glass), with
+    extended corner targets and directional cursors. Its interior passes clicks through. Resizing uses event coordinates and
+    clamps to the window's minimum and maximum sizes while keeping the opposite edge fixed. The standard window keeps its native
+    chrome. `WindowResizeTests` covers targets, clamping, control hit testing and mouse-event resizing.
 
 ### Adding a module
 
