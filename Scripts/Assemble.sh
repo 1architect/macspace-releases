@@ -29,7 +29,13 @@ trap 'echo "error: the build failed at line $LINENO; nothing was replaced" >&2' 
 cd "$(dirname "$0")/.."
 
 CONFIG=${CONFIG:-release}
-VERSION=${VERSION:-0.1.0}
+# A local build is named after the release it grew from, marked as a development build: 1.0.3-dev after v1.0.3 (0.1.0-dev before any
+# tag). Releases pass VERSION. Updates compare the build number, not this.
+if [ -z "${VERSION:-}" ]; then
+  LAST_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+  LAST_VERSION=${LAST_TAG#v}
+  VERSION="${LAST_VERSION:-0.1.0}-dev"
+fi
 # A local build gets a build number of its own, 1.<year and day>.<time>: macOS keeps an app's icon by its identity and build
 # number, and every build being "1" kept the icon it first cached (the generic one). It stays below any release build (2 and up).
 BUILD=${BUILD:-1.$(date +%y%j).$((10#$(date +%H%M%S)))}
