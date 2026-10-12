@@ -401,7 +401,7 @@ enum SystemDataScreenBuilder {
     /// has measured them or been reached. What macOS keeps closed even to Full Disk Access and the helper (some Apple containers, for
     /// example) is not something to warn about: no customer can fix it, so it only shows as a quiet note under the bar.
     static func actionableUnreadable(_ snapshot: SystemDataSnapshot) -> (fullDiskAccess: [String], helper: [String], helperUnreachable: [String]) {
-        let paths = snapshot.report.unreadable
+        let paths = places(snapshot.report.unreadable)
         let rootOnly = paths.filter(RootMeasuredLocations.isAllowed)
         let other = paths.filter { !RootMeasuredLocations.isAllowed($0) }
         let fda = snapshot.report.fullDiskAccess ? [] : other
@@ -412,7 +412,14 @@ enum SystemDataScreenBuilder {
     /// How many unreadable places stay silent because nothing can be done about them.
     static func quietlySkipped(_ snapshot: SystemDataSnapshot) -> Int {
         let actionable = actionableUnreadable(snapshot)
-        return snapshot.report.unreadable.count - actionable.fullDiskAccess.count - actionable.helper.count - actionable.helperUnreachable.count
+        return places(snapshot.report.unreadable).count - actionable.fullDiskAccess.count - actionable.helper.count - actionable.helperUnreachable.count
+    }
+
+    /// Unreadable paths as the user would name the places: the other accounts' folders in `/private/var/folders` (dozens of caches
+    /// and temporary folders, one per macOS service) are one place.
+    static func places(_ paths: [String]) -> [String] {
+        var seen = Set<String>()
+        return paths.map { $0.hasPrefix("/private/var/folders/") ? "/private/var/folders" : $0 }.filter { seen.insert($0).inserted }
     }
 
     /// nil when there is nothing the user can fix.

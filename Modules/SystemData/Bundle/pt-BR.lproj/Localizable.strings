@@ -18,6 +18,7 @@
 "A program is still using these files. Try again later." = "Um programa ainda está usando estes arquivos. Tente de novo mais tarde.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "O disco e o estado de uma máquina virtual. Apague as máquinas que você não usa mais no app de virtualização.";
 "About %@ from an update that's already installed." = "Cerca de %@ de uma atualização já instalada.";
+"Aerial wallpapers and screen savers that macOS is downloading. A large figure means downloads that got stuck." = "Fundos e protetores de tela aéreos que o macOS está baixando. Um valor grande indica downloads que travaram.";
 "Allow" = "Permitir";
 "Allow Full Disk Access to see everything" = "Permita o Acesso Total ao Disco para ver tudo";
 "Already gone" = "Já não existe";
@@ -40,6 +41,7 @@
 "Audio plug-ins and sounds" = "Plug-ins de áudio e sons";
 "Battery and energy history used by System Settings > Battery." = "Histórico de bateria e energia usado em Ajustes do Sistema > Bateria.";
 "Caches" = "Caches";
+"Caches and temporary files of macOS's services and of the other accounts on this Mac." = "Caches e arquivos temporários dos serviços do macOS e das outras contas deste Mac.";
 "Caches for all users" = "Caches para todos os usuários";
 "Caches, old reports and unused system assets" = "Caches, relatórios antigos e recursos do sistema sem uso";
 "Can be freed" = "Pode ser liberado";
@@ -109,6 +111,7 @@
 "Old diagnostic and crash reports" = "Relatórios antigos de diagnóstico e de falhas";
 "Old reports are deleted from Free now." = "Os relatórios antigos são apagados em Liberar agora.";
 "Other" = "Outros";
+"Other accounts' and macOS services' temporary files" = "Arquivos temporários de outras contas e dos serviços do macOS";
 "Other system downloads" = "Outros downloads do sistema";
 "Per-user Spotlight metadata" = "Metadados do Spotlight por usuário";
 "Photos models (Spatial Photos)" = "Modelos do Fotos (Fotos Espaciais)";
@@ -158,6 +161,7 @@
 "Unused system assets" = "Recursos do sistema sem uso";
 "Version history stays." = "O histórico de versões é mantido.";
 "Virtual machine: %@" = "Máquina virtual: %@";
+"Wallpaper and screen saver downloads" = "Downloads de fundos de tela e protetores de tela";
 "What fills System Data" = "O que ocupa Dados do Sistema";
 "What is in it" = "Conteúdo";
 "Xcode Command Line Tools" = "Ferramentas de Linha de Comando do Xcode";

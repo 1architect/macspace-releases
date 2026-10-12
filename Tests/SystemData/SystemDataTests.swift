@@ -280,6 +280,47 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(ProcessCheck.live.holdsOpen([root.appendingPathComponent("missing").path]), false, "nothing open in what does not exist")
     }
 
+    /// The per-user folders of the other accounts (root, macOS's services, deleted accounts) are one item, without the user's own,
+    /// which other items measure; the folder idleassetsd downloads into is named in advance for the helper.
+    func testOtherAccountsFoldersAreMeasuredAndWallpaperDownloadsNamed() throws {
+        try file("varfolders/58/mine/T/own", mb: 60)
+        try file("varfolders/zz/rootdir/C/cache", mb: 40)
+        try file("varfolders/zz/rootdir/T/com.apple.idleassetsd/CFNetworkDownload_a.tmp", mb: 30)
+        try file("varfolders/zz/spotlightdir/T/x", mb: 1)
+        let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: root.appendingPathComponent("varfolders/58/mine"),
+                                            systemPaths: ["varFolders": root.appendingPathComponent("varfolders").path])
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        inspector.processCheck = .none
+        let report = inspector.inspect()
+        let other = try XCTUnwrap(report.items.first { $0.id == "folders:other" })
+        XCTAssertEqual(Double(other.bytes ?? 0), 71_000_000, accuracy: 2_000_000, "root's and the services' folders, not the user's own")
+        XCTAssertFalse(other.paths.contains { $0.contains("/mine") })
+        XCTAssertEqual(Set(report.rootOnly.map(\.path)), [root.appendingPathComponent("varfolders/zz/rootdir/T/com.apple.idleassetsd").path,
+                                                          root.appendingPathComponent("varfolders/zz/spotlightdir/T/com.apple.idleassetsd").path])
+        XCTAssertTrue(report.rootOnly.allSatisfy { $0.within == "folders:other" })
+    }
+
+    /// An item too small to list from what this process can read stays when part of it waits for the helper, so the helper's sizes
+    /// have an item to go to; before, the item was dropped and root's caches and temporary files went unmeasured.
+    func testAnItemPartlyClosedToThisProcessWaitsForTheHelper() throws {
+        // The kernel's path (/private/var/…), which the helper may measure; the temporary folder's own path says /var.
+        let real = try XCTUnwrap(realpath(root.path, nil).map { defer { free($0) }; return String(cString: $0) })
+        try file("varfolders/zz/rootdir/X/small", mb: 1)
+        try file("varfolders/zz/rootdir/T/secret", mb: 1)
+        let closed = real + "/varfolders/zz/rootdir/T"
+        XCTAssertEqual(chmod(closed, 0), 0)
+        defer { chmod(closed, 0o755) }
+        let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil, systemPaths: ["varFolders": real + "/varfolders"])
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        inspector.processCheck = .none
+        let report = inspector.inspect()
+        XCTAssertTrue(report.unreadable.contains(closed))
+        let other = try XCTUnwrap(report.items.first { $0.id == "folders:other" }, "kept, though its readable part is under the minimum")
+        let merged = RootMeasurements.merge([closed: 900_000_000], into: SystemDataSnapshot(report: report, purgeableAssetsBytes: nil,
+            reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date()))
+        XCTAssertEqual(Double(merged.report.items.first { $0.id == other.id }?.bytes ?? 0), 901_000_000, accuracy: 2_000_000)
+    }
+
     func testHomeFoldersOfDeletedAccountsAreListed() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("macspace-users-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }

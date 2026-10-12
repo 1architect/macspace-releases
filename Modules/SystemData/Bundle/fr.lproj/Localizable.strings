@@ -18,6 +18,7 @@
 "A program is still using these files. Try again later." = "Un programme utilise encore ces fichiers. Réessayez plus tard.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "Le disque et l’état d’une machine virtuelle. Supprimez celles que vous n’utilisez plus depuis l’app de virtualisation.";
 "About %@ from an update that's already installed." = "Environ %@ d’une mise à jour déjà installée.";
+"Aerial wallpapers and screen savers that macOS is downloading. A large figure means downloads that got stuck." = "Fonds d’écran et économiseurs d’écran aériens que macOS télécharge. Une valeur élevée indique des téléchargements bloqués.";
 "Allow" = "Autoriser";
 "Allow Full Disk Access to see everything" = "Autorisez l’accès complet au disque pour tout voir";
 "Already gone" = "Déjà supprimé";
@@ -40,6 +41,7 @@
 "Audio plug-ins and sounds" = "Modules audio et sons";
 "Battery and energy history used by System Settings > Battery." = "Historique de batterie et d’énergie utilisé par Réglages Système > Batterie.";
 "Caches" = "Caches";
+"Caches and temporary files of macOS's services and of the other accounts on this Mac." = "Caches et fichiers temporaires des services de macOS et des autres comptes de ce Mac.";
 "Caches for all users" = "Caches pour tous les utilisateurs";
 "Caches, old reports and unused system assets" = "Caches, anciens rapports et ressources système inutilisées";
 "Can be freed" = "Peut être libéré";
@@ -109,6 +111,7 @@
 "Old diagnostic and crash reports" = "Anciens rapports de diagnostic et de plantage";
 "Old reports are deleted from Free now." = "Les anciens rapports sont supprimés depuis À libérer.";
 "Other" = "Autres";
+"Other accounts' and macOS services' temporary files" = "Fichiers temporaires des autres comptes et des services de macOS";
 "Other system downloads" = "Autres téléchargements système";
 "Per-user Spotlight metadata" = "Métadonnées Spotlight par utilisateur";
 "Photos models (Spatial Photos)" = "Modèles de Photos (photos spatiales)";
@@ -158,6 +161,7 @@
 "Unused system assets" = "Ressources système inutilisées";
 "Version history stays." = "L’historique des versions est conservé.";
 "Virtual machine: %@" = "Machine virtuelle : %@";
+"Wallpaper and screen saver downloads" = "Téléchargements de fonds d’écran et d’économiseurs d’écran";
 "What fills System Data" = "Ce qui remplit Données système";
 "What is in it" = "Contenu";
 "Xcode Command Line Tools" = "Outils de ligne de commande Xcode";

@@ -27,7 +27,7 @@ struct SystemDataSnapshot: Sendable {
 /// Measures the root-only locations through the helper and folds the sizes into the report.
 enum RootMeasurements {
     static func apply(to snapshot: SystemDataSnapshot, channel: any PrivilegedChannel) async -> SystemDataSnapshot {
-        let wanted = snapshot.report.unreadable.filter(RootMeasuredLocations.isAllowed)
+        let wanted = (snapshot.report.unreadable + snapshot.report.rootOnly.map(\.path)).filter(RootMeasuredLocations.isAllowed)
         var result = snapshot
         result.helperTried = true
         guard !wanted.isEmpty else { return result }
@@ -54,6 +54,21 @@ enum RootMeasurements {
             report.items[index].purgeableBytes = (report.items[index].purgeableBytes ?? 0) + paths.compactMap { purgeable[$0] }.reduce(0, +)
             report.items[index].readable = true
         }
+        // A place named in advance that the helper found becomes an item of its own, taken off the item that holds it.
+        for place in report.rootOnly {
+            guard let bytes = sizes[place.path], bytes >= SystemDataInspector.minimumItemBytes else { continue }
+            var item = SystemDataItem(id: place.id, title: place.title, kind: place.kind, paths: [place.path], bytes: bytes, readable: true, owners: [],
+                                      inUse: false, cleanup: place.cleanup, notes: place.notes)
+            item.purgeableBytes = purgeable[place.path]
+            item.guide = ManualCleanupGuides.guide(for: item)
+            if let index = report.items.firstIndex(where: { $0.id == place.within }) {
+                let parent = report.items[index].bytes ?? 0
+                report.items[index].bytes = parent - min(parent, bytes)
+                report.items[index].purgeableBytes = report.items[index].purgeableBytes.map { $0 - min($0, item.purgeableBytes ?? 0) }
+            }
+            report.items.append(item)
+        }
+        report.items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         report.unreadable = report.unreadable.filter { sizes[$0] == nil }
         report.warnings = report.unreadable.isEmpty ? [] : report.warnings
         report.measuredBytes = report.items.compactMap(\.bytes).reduce(0, +)

@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- System Data: the caches and temporary files of root, macOS's services and other accounts are measured (with the helper). Wallpaper and screen saver downloads that macOS left unfinished, which can grow to hundreds of GB, get a row of their own.
+- System Data: a small item that is partly closed to MacSpace is no longer dropped before the helper measures it.
 - System Data: a cache is no longer deleted while a command-line tool that owns it (such as the clang compiler), a helper of its app, or any other program is still using it. Clean and automatic cleaning check this again just before each deletion, and skip the cache when they can't tell.
 
 ### Changed

@@ -31,6 +31,37 @@ final class RootMeasurementTests: XCTestCase {
         XCTAssertEqual(merged.report.measuredBytes, 3_000_000_000)
     }
 
+    /// A place named in advance that the helper finds becomes an item, taken off the item that holds it; one it does not find, or a
+    /// small one, does not.
+    func testHelperFoundPlacesBecomeItemsOfTheirOwn() throws {
+        let rootT = "/private/var/folders/zz/rootdir/T"
+        let downloads = rootT + "/com.apple.idleassetsd"
+        let parent = SystemDataItem(id: "folders:other", title: "Other", kind: .systemLibrary, paths: [rootT], bytes: nil, readable: false, owners: [],
+                                    inUse: false, cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "d", command: nil), notes: [])
+        func place(_ id: String, _ path: String) -> RootOnlyPlace {
+            RootOnlyPlace(id: id, title: "Downloads", kind: .systemLibrary, path: path, cleanup: SystemDataCleanup(kind: .review, description: "why", command: nil),
+                          notes: [], within: "folders:other")
+        }
+        var snap = snapshot(unreadable: [rootT])
+        snap.report.items = [parent]
+        snap.report.rootOnly = [place("found", downloads), place("missing", "/private/var/folders/zz/other/T/com.apple.idleassetsd")]
+        let merged = RootMeasurements.merge([rootT: 300_000_000_000, downloads: 200_000_000_000], into: snap)
+        XCTAssertEqual(merged.report.items.map(\.id), ["found", "folders:other"], "largest first")
+        XCTAssertEqual(merged.report.items.first { $0.id == "found" }?.bytes, 200_000_000_000)
+        XCTAssertEqual(merged.report.items.first { $0.id == "folders:other" }?.bytes, 100_000_000_000, "counted once")
+        XCTAssertEqual(merged.report.measuredBytes, 300_000_000_000)
+        XCTAssertTrue(merged.report.unreadable.isEmpty)
+        XCTAssertEqual(RootMeasurements.merge([rootT: 1_000, downloads: 10], into: snap).report.items.map(\.id), ["folders:other"], "too small to list")
+        XCTAssertTrue(RootMeasuredLocations.isAllowed(downloads), "the helper may measure it")
+    }
+
+    /// The dozens of closed folders in /private/var/folders are one place in the banner.
+    func testBannerCountsTheOtherAccountsFoldersAsOnePlace() throws {
+        let snap = snapshot(unreadable: [spotlight, "/private/var/folders/zz/a/C", "/private/var/folders/zz/a/T", "/private/var/folders/zz/b/T"])
+        guard case let .banner(banner)? = SystemDataScreenBuilder.partialBanner(snap) else { return XCTFail() }
+        XCTAssertTrue(banner.message?.hasPrefix("2 places") == true, banner.message ?? "")
+    }
+
     func testBannerSaysWhatTheUserCanDoAboutEachPlace() throws {
         func message(_ snap: SystemDataSnapshot) -> String? {
             guard case let .banner(banner)? = SystemDataScreenBuilder.partialBanner(snap) else { return nil }

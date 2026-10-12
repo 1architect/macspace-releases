@@ -1,6 +1,7 @@
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
+import MacSpaceSystemDataPrivileged
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -116,6 +117,31 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     public var warnings: [String]
     /// Whether Full Disk Access was granted during the scan; decides whether an unreadable place is something the user can fix.
     public var fullDiskAccess: Bool = true
+    /// Places inside folders only root can list, so whether they exist is known only once the helper measures them; each becomes an
+    /// item then, taken off the item that holds it (`RootMeasurements`).
+    public var rootOnly: [RootOnlyPlace] = []
+}
+
+/// A place the scan cannot see into, named in advance; see `SystemDataReport.rootOnly`.
+public struct RootOnlyPlace: Codable, Equatable, Sendable {
+    public let id: String
+    public let title: String
+    public let kind: SystemDataKind
+    public let path: String
+    public let cleanup: SystemDataCleanup
+    public let notes: [String]
+    /// The item whose figure already holds it.
+    public let within: String
+
+    public init(id: String, title: String, kind: SystemDataKind, path: String, cleanup: SystemDataCleanup, notes: [String], within: String) {
+        self.id = id
+        self.title = title
+        self.kind = kind
+        self.path = path
+        self.cleanup = cleanup
+        self.notes = notes
+        self.within = within
+    }
 }
 
 public struct RunningApp: Equatable, Sendable {
@@ -163,6 +189,7 @@ public struct SystemDataLocations: Sendable {
         "preboot": "/System/Volumes/Preboot",
         "dataRoot": "/System/Volumes/Data",
         "privateVar": "/private/var",
+        "varFolders": "/private/var/folders",
         "privateTmp": "/private/tmp",
         "opt": "/opt",
         "dataSystemLibrary": "/System/Volumes/Data/System/Library",
@@ -362,22 +389,26 @@ public struct SystemDataInspector {
                 var purgeable: UInt64 = 0
                 var readable = false
                 var measured = false
+                var waitsForHelper = false
                 // A folder whose subfolders this process cannot read would be undercounted silently; report it unmeasured.
                 if !entry.measurable { unreadable.append(contentsOf: entry.paths.filter { !unreadable.contains($0) }) }
                 if entry.measurable {
                     for _ in entry.paths {
                         let result = results.get(next)
                         next += 1
-                        if let entryPath = result.unreadableEntry, !unreadable.contains(entryPath) { unreadable.append(entryPath) }
+                        if let entryPath = result.unreadableEntry {
+                            if !unreadable.contains(entryPath) { unreadable.append(entryPath) }
+                            waitsForHelper = waitsForHelper || RootMeasuredLocations.isAllowed(entryPath)
+                        }
                         if let bytes = result.bytes { total += bytes; purgeable += result.purgeable; measured = true }
                         readable = readable || result.readable
                     }
                 }
                 guard entry.paths.contains(where: fileManager.fileExists(atPath:)) else { continue }
                 if measured { measuredTotals[entry.id] = total }
-                // Listed entries (minimum > 0) are shown only when large enough. One this process cannot read stays, without a size,
-                // for the helper to measure (`RootMeasurements`).
-                if entry.minimum > 0, measured, total < entry.minimum {
+                // Listed entries (minimum > 0) are shown only when large enough. One this process cannot read, wholly or in part, stays
+                // for the helper to measure (`RootMeasurements`), which adds its sizes to the item: dropped, its folders' sizes were lost.
+                if entry.minimum > 0, measured, total < entry.minimum, !waitsForHelper {
                     // Not listed, but System Settings counts it, so it stays in the totals.
                     if measured, total > 0 { smallBytes[entry.kind, default: 0] += total }
                     continue
@@ -597,6 +628,21 @@ public struct SystemDataInspector {
                 cleanup: SystemDataCleanup(kind: .managedByMacOS, description: loc("Apps' temporary files; macOS clears them at restart."), command: nil),
                 minimum: Self.minimumItemBytes)
         }
+        // The same folders of every other account: root, macOS's services (`_spotlight`, `_softwareupdate`…) and deleted accounts.
+        // Their caches and temporary files are closed to the user, so the helper measures them. Root's holds the downloads of
+        // idleassetsd (Aerial wallpapers and screen savers), which a stuck download can grow to hundreds of GB (Mole issue #1253);
+        // whether that folder exists is known only to the helper, so it is named in advance (`rootOnly`).
+        var otherAccountFolders: [String] = []
+        if let path = system["varFolders"] {
+            let own = locations.userSystemDirectory?.lastPathComponent
+            for bucket in children(path) {
+                for folder in children(bucket) where (folder as NSString).lastPathComponent != own { otherAccountFolders.append(folder) }
+            }
+            add("folders:other", loc("Other accounts' and macOS services' temporary files"), .systemLibrary,
+                paths: otherAccountFolders.flatMap(children),
+                cleanup: SystemDataCleanup(kind: .managedByMacOS, description: loc("Caches and temporary files of macOS's services and of the other accounts on this Mac."), command: nil),
+                minimum: Self.minimumItemBytes)
+        }
         // Everything else, wherever it is, so nothing that System Settings counts as System Data goes unmeasured on any Mac: the home
         // folder's hidden folders (tools' data and downloads, such as `.npm` or `.ollama`), the rest of `/private/var` and
         // `/private/tmp`, packages in `/opt` other than Homebrew, the rest of the Data volume's `/System/Library`, and whatever else
@@ -684,6 +730,14 @@ public struct SystemDataInspector {
                                       measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
                                       unreadable: unreadable, warnings: warnings)
         report.fullDiskAccess = hasFullDiskAccess
+        report.rootOnly = otherAccountFolders.map { folder in
+            RootOnlyPlace(id: "downloads:idleassetsd:\((folder as NSString).lastPathComponent)", title: loc("Wallpaper and screen saver downloads"), kind: .systemLibrary,
+                          path: (folder as NSString).appendingPathComponent("T/com.apple.idleassetsd"),
+                          // Review, not managed by macOS, so the row says what a large figure means.
+                          cleanup: SystemDataCleanup(kind: .review, description: loc("Aerial wallpapers and screen savers that macOS is downloading. A large figure means downloads that got stuck."), command: nil),
+                          notes: ["CFNetworkDownload_*.tmp files of idleassetsd; Mole issue #1253 found hundreds of GB left by stuck downloads."],
+                          within: "folders:other")
+        }
         return report
     }
 }

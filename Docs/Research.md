@@ -247,6 +247,16 @@ any other app is never taken. Their storage (Local Storage, IndexedDB, Service W
 cleans these while the app is closed and takes them off the app's own figure. `~/Library/Caches` in general is listed, not
 cleaned.
 
+### Other accounts' folders in `/private/var/folders`
+
+**Measured** (26B5101f, 2026-10-12). `/private/var/folders` holds one folder per account that has ever run: the user's own, root's,
+one for each macOS service account that ran (`_spotlight`, `_softwareupdate`, `_nsurlsessiond`… 32 here) and those of deleted
+accounts (two of uid 502 here). Each folder is readable, but its `C` and `T` are mode 700 and owned by their account: 75 folders the
+user cannot open. The scan measured only the user's own `C`, `X` and `T`, so the rest of this area was in no item. It is now one
+item, measured by the helper. **Cited, not measured here:** idleassetsd runs as root and downloads Aerial wallpapers and screen
+savers into `T/com.apple.idleassetsd` of root's folder; a stuck download left hundreds of GB of `CFNetworkDownload_*.tmp` files there
+(Mole, issue #1253). That folder is named in advance and becomes its own row when the helper finds it.
+
 ### Who is using a cache before it is deleted
 
 **Measured** (26B5101f, 2026-10-12). The running apps (`NSWorkspace.runningApplications`) miss every process that is not an app:
