@@ -114,16 +114,22 @@ final class DitheredLightTests: XCTestCase {
 }
 
 final class TreemapRestingOrderTests: XCTestCase {
-    /// A tile lifted under the pointer, or on its way to another cell, keeps the order its blocks have at rest: they only stretch.
-    /// Chosen at every size, two orders that score alike took turns and the blocks jumped places.
-    func testBlocksKeepTheirRestingOrderWhileTheTileMoves() {
+    /// A tile on its way to another cell keeps the arrangement its blocks have at rest: they only stretch. Arranged at every size, the
+    /// blocks re-flowed into another arrangement and back.
+    func testBlocksKeepTheirRestingArrangementWhileTheTileMoves() {
         let values = [6.0, 3, 2, 1.4, 1]
         let rest = CGRect(x: 0, y: 0, width: 400, height: 90)
-        let order = Treemap.order(values, in: rest)
+        let atRest = Treemap.arranged(values, in: rest)
         for size in [CGSize(width: 407, height: 92), CGSize(width: 300, height: 160), CGSize(width: 820, height: 330)] {
             let rects = Treemap.arranged(values, in: CGRect(origin: .zero, size: size), orderIn: rest)
-            let expected = Treemap.layout(order.map { values[$0] }, in: CGRect(origin: .zero, size: size))
-            XCTAssertEqual(order.map { rects[$0] }, expected)
+            let sx = size.width / rest.width, sy = size.height / rest.height
+            // The resting arrangement, stretched: the same blocks side by side, never another arrangement.
+            for (moved, resting) in zip(rects, atRest) {
+                XCTAssertEqual(moved.minX, resting.minX * sx, accuracy: 0.001)
+                XCTAssertEqual(moved.minY, resting.minY * sy, accuracy: 0.001)
+                XCTAssertEqual(moved.width, resting.width * sx, accuracy: 0.001)
+                XCTAssertEqual(moved.height, resting.height * sy, accuracy: 0.001)
+            }
         }
         XCTAssertEqual(Treemap.arranged(values, in: rest), Treemap.arranged(values, in: rest, orderIn: rest))
     }

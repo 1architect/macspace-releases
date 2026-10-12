@@ -99,10 +99,15 @@ enum CaptionFont {
         variation[opticalSizeAxis] = opticalSize
         return NSFont(descriptor: base.fontDescriptor.addingAttributes([.variation: variation]), size: size) ?? base
     }
+
+    /// The status line under the title: the system's body text, as the page's rows (SF Pro, 13 points on macOS), the same on every
+    /// tile whatever its size.
+    static var status: NSFont { NSFont.preferredFont(forTextStyle: .body) }
 }
 
-/// The bold title and the status line in a tile's bottom-right corner. The status is regular, not light: light read thin and washed out on
-/// the pale tiles. It rolls when its numbers change.
+/// The bold title and the status line in a tile's bottom-right corner. The title grows with the tile; the status is body text, as the
+/// page's rows are, on every tile (`CaptionFont.status`): sized with the tile, in light and then regular, it read thin and washed out
+/// on the pale tiles. It rolls when its numbers change.
 struct TileCaption: View, @preconcurrency Animatable {
     let title: String
     let status: String
@@ -121,7 +126,7 @@ struct TileCaption: View, @preconcurrency Animatable {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title).font(Font(CaptionFont.font(size: size, weight: .bold)))
             Text(status)
-                .font(Font(CaptionFont.font(size: size, weight: .regular)))
+                .font(Font(CaptionFont.status))
                 .contentTransition(.numericText())
                 .opacity(loading ? 0.65 : 1)
         }

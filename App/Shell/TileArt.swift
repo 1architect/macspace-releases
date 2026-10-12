@@ -178,15 +178,21 @@ enum Treemap {
     /// the last block took whatever strip was left (25 points wide and full height on a page, too narrow for its size). Returns where
     /// each value goes, in the order given. Up to seven values every order is tried; past that, the given one.
     ///
-    /// `orderIn` is where the order is chosen, when it is not `rect`: a tile's resting chart. Chosen anew in every frame of a tile
-    /// lifting under the pointer or growing into another cell, two orders that score alike took turns, and the blocks jumped places
-    /// and back. Chosen at rest, the blocks only stretch while the tile moves.
+    /// `orderIn` is where the blocks are arranged, when it is not `rect`: a tile's resting chart. The arrangement found there is
+    /// stretched to `rect`. Arranged anew in every frame of a tile growing into another cell, two orders that score alike took
+    /// turns, and even in one order the rows broke differently as the chart's proportions changed: the blocks re-flowed into another
+    /// arrangement and back (2026-10-12). Arranged at rest, they only stretch while the tile moves.
     static func arranged(_ values: [Double], in rect: CGRect, orderIn: CGRect? = nil) -> [CGRect] {
-        let order = order(values, in: orderIn ?? rect)
-        let rects = layout(order.map { values[$0] }, in: rect)
+        let base = orderIn ?? rect
+        let order = order(values, in: base)
+        let rects = layout(order.map { values[$0] }, in: base)
         var result = [CGRect](repeating: .zero, count: values.count)
         for (position, index) in order.enumerated() { result[index] = rects[position] }
-        return result
+        guard base != rect, base.width > 0, base.height > 0 else { return result }
+        let sx = rect.width / base.width, sy = rect.height / base.height
+        return result.map { r in
+            CGRect(x: rect.minX + (r.minX - base.minX) * sx, y: rect.minY + (r.minY - base.minY) * sy, width: r.width * sx, height: r.height * sy)
+        }
     }
 
     /// The order `arranged` lays the values out in, by index.
@@ -606,7 +612,8 @@ struct StateView: View {
                 .allowsHitTesting(flip != nil && part != .allButSwitch)
             }
             if part != .switchOnly {
-                Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(2)
+                // One line, as the other tiles' text: across the tile, a little smaller where it is long.
+                Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(1).minimumScaleFactor(0.8)
                     .opacity(wave(1))
                 if let meter {
                     // Read here: the geometry reader's closure outlives this call and cannot hold `wave`.
@@ -619,6 +626,7 @@ struct StateView: View {
                             }
                     }
                     .frame(height: 6)
+                    .frame(maxWidth: 200)
                     .onAppear { withAnimation(.smooth(duration: 1).delay(0.3)) { fill = 1 } }
                 }
             }

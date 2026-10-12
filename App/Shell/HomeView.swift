@@ -118,10 +118,10 @@ struct TileFace: View {
     /// The width left of the caption for the legend.
     static func legendRoom(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGFloat {
         let padding = CaptionSize.tilePadding
-        func width(_ text: String, _ weight: NSFont.Weight) -> CGFloat {
-            (text as NSString).size(withAttributes: [.font: CaptionFont.font(size: captionSize, weight: weight)]).width
+        func width(_ text: String, _ font: NSFont) -> CGFloat {
+            (text as NSString).size(withAttributes: [.font: font]).width
         }
-        let measured = max(width(info.title, .bold), width(info.status, .regular))
+        let measured = max(width(info.title, CaptionFont.font(size: captionSize, weight: .bold)), width(info.status, CaptionFont.status))
         // The caption shrinks to fit the tile rather than run past it.
         let caption = min(ceil(measured), max(size.width - 2 * padding, 0))
         return size.width - 14 - 12 - caption - padding
@@ -221,7 +221,8 @@ struct TileFace: View {
         case let .state(on, _, detail, meter, actionable):
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
                       part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil)
-                .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
+                // The tile's width, so the detail stays on one line; the meter keeps its own width (`StateView`).
+                .frame(width: max(size.width - 28, 0), alignment: .leading)
                 .padding(.leading, 14)
                 .padding(.top, Self.topInset)
         case let .gauge(value, _, _):
@@ -355,7 +356,7 @@ struct HomeView: View {
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
                     }
-                    .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
+                    .modifier(placed(tile, index: index, count: tiles.count, frame: frame, face: true))
                 }
             }
         }
@@ -368,14 +369,19 @@ struct HomeView: View {
 
     /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
     /// its place, the lift and lean (or tilt) under the pointer, and hiding under the zoom.
-    private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect) -> TilePlacement {
+    ///
+    /// The face (`face`) lifts and leans with its ground, but as a scale and an offset (`TilePlacement.liftsByTransform`), not laid
+    /// out: laid out again on every frame, its caption stepped from pixel to pixel (or, between pixels, blurred), and the blocks
+    /// re-flowed into another arrangement (2026-10-12).
+    private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect, face: Bool = false) -> TilePlacement {
         let moves = pointerTile == tile.destination
+        // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is drawn the expensive
+        // way and in its dimmed look, so glass elements darkened under the pointer.
+        let turns = !design.glass && !design.glassElements
         return TilePlacement(shown: appeared && !closing && !relayout, closing: closing || relayout, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
-                             // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is
-                             // drawn the expensive way and in its dimmed look, so glass elements darkened under the pointer.
-                             turns: !design.glass && !design.glassElements, reduceMotion: reduceMotion,
+                             turns: turns, liftsByTransform: face, reduceMotion: reduceMotion,
                              liftAnimation: design.liftAnimation, leanAnimation: design.leanAnimation,
                              hidden: hiddenTile == tile.destination)
     }
@@ -577,6 +583,9 @@ struct TilePlacement: ViewModifier {
     let lifted: Bool
     let lean: UnitPoint
     let turns: Bool
+    /// Lifted and leaning as a scale and an offset of what is drawn, at its resting size and place: a face, whose text and blocks must
+    /// not be laid out again on every frame. Its glass ground keeps being laid out (see below).
+    var liftsByTransform = false
     let reduceMotion: Bool
     let liftAnimation: Animation
     let leanAnimation: Animation
@@ -588,16 +597,22 @@ struct TilePlacement: ViewModifier {
     /// Coming in and leaving is laid out too, not a scale effect: a tile's glass ground (AppKit) followed a scale effect on its own
     /// timing, and while the tiles came in (when the charts load) a ghost of each ground showed beside its face.
     func body(content: Content) -> some View {
-        let grow: CGFloat = (lifted ? 1.018 : 1) * (shown || reduceMotion ? 1 : 0.86)
+        let lift: CGFloat = lifted ? 1.018 : 1
+        let grow: CGFloat = (liftsByTransform ? 1 : lift) * (shown || reduceMotion ? 1 : 0.86)
         let leanOffset = turns ? CGSize.zero : CGSize(width: (lean.x - 0.5) * 4, height: (lean.y - 0.5) * 4)
+        let laidOutLean = liftsByTransform ? CGSize.zero : leanOffset
         content
             .modifier(TileSize(size: CGSize(width: frame.width * grow, height: frame.height * grow)))
             .animation(liftAnimation, value: lifted)
+            .scaleEffect(liftsByTransform ? lift : 1)
+            .animation(liftAnimation, value: lifted)
+            .offset(liftsByTransform ? leanOffset : .zero)
+            .animation(leanAnimation, value: lean)
             .tilted(lean, active: turns)
             .opacity(shown ? 1 : 0)
             .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)
                                : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-            .modifier(TileCenter(center: CGPoint(x: frame.midX + leanOffset.width, y: frame.midY + leanOffset.height)))
+            .modifier(TileCenter(center: CGPoint(x: frame.midX + laidOutLean.width, y: frame.midY + laidOutLean.height)))
             .animation(leanAnimation, value: lean)
             .opacity(hidden ? 0 : 1)
             .transition(.scale(scale: 0.8).combined(with: .opacity))
@@ -688,7 +703,7 @@ struct TileContent: View {
     /// Room under the caption: its baseline is as far from the tile's bottom edge as the chart is from the top edge
     /// (`TileFace.topInset`), so the tile is framed alike above and below. The line's descent lies under the baseline.
     static func captionBottom(size: CGFloat) -> CGFloat {
-        max(TileFace.topInset + CaptionFont.font(size: size, weight: .regular).descender, 0)
+        max(TileFace.topInset + CaptionFont.status.descender, 0)
     }
 
     func layout(_ info: TileInfo) -> some View {
