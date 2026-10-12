@@ -69,11 +69,20 @@ actor DebloatStore {
         DebloatEngine(system: LiveDebloatSystem(), journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))
     }
 
+    /// Whether the page lists a control. A retired one is listed only while something of it is applied, so it can be switched back
+    /// on and removed; once it is, it goes away.
+    static func isShown(_ control: DebloatControl, in environment: DebloatEnvironment, status: () -> ControlStatus) -> Bool {
+        guard control.isOffered(in: environment) else { return false }
+        guard control.retired != nil else { return true }
+        return [.debloated, .awaitingApproval, .partial, .drifted, .awaitingRemoval].contains(status().state)
+    }
+
     static func liveSnapshot() -> DebloatSnapshot {
         let engine = liveEngine()
         let environment = engine.system.environment()
-        // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta).
-        let controls = engine.controls.filter { $0.isOffered(in: environment) }
+        // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta), and a retired
+        // one only where it is still applied.
+        let controls = engine.controls.filter { control in isShown(control, in: environment, status: { engine.status(of: control) }) }
         let statuses = controls.map(engine.status(of:))
         return DebloatSnapshot(controls: controls, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
                                environment: environment,

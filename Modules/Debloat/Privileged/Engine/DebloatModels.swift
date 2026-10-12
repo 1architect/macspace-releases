@@ -412,6 +412,9 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
     public let replacedBy: String?
     /// The builds the control is offered on; nil for every build.
     public let audience: Audience?
+    /// Why the control is no longer offered; nil while it is. A retired control is never applied again: the page shows it only on a
+    /// Mac where it is still applied, so it can be switched back on and its settings removed.
+    public let retired: String?
 
     public enum Audience: String, Codable, Sendable {
         /// Beta (seed) builds, where macOS can override what System Settings says.
@@ -433,7 +436,8 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
                 risk: ControlRisk, restart: RestartRequirement, settings: [ControlSetting], effect: EffectCheck? = nil,
                 breaks: [String] = [], notes: [String] = [], validatedBuilds: [String] = [],
                 ineffectiveWithSIPBuilds: [String] = [],
-                settingsURL: String? = nil, applyCommand: String? = nil, replacedBy: String? = nil, audience: Audience? = nil) {
+                settingsURL: String? = nil, applyCommand: String? = nil, replacedBy: String? = nil, audience: Audience? = nil,
+                retired: String? = nil) {
         self.id = id
         self.title = title
         self.summary = summary
@@ -451,6 +455,7 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
         self.applyCommand = applyCommand
         self.replacedBy = replacedBy
         self.audience = audience
+        self.retired = retired
     }
 }
 

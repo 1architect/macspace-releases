@@ -7,16 +7,19 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Changed
+
+- System Data: the Caches group under Everything else says, behind its (i), why MacSpace leaves app caches alone.
+
+### Removed
+
+- Debloat: the Apple Intelligence features switch. Apple deprecated its policies on macOS and their effect could not be verified; the Apple Intelligence switch on the Siri & Apple Intelligence page turns these features off. On a Mac where it is still on, it stays listed until you switch it off, which removes its policies.
+
 ### Fixed
 
 - System Data: the caches and temporary files of root, macOS's services and other accounts are measured (with the helper). Wallpaper and screen saver downloads that macOS left unfinished, which can grow to hundreds of GB, get a row of their own.
 - System Data: a small item that is partly closed to MacSpace is no longer dropped before the helper measures it.
 - System Data: a cache is no longer deleted while a command-line tool that owns it (such as the clang compiler), a helper of its app, or any other program is still using it. Clean and automatic cleaning check this again just before each deletion, and skip the cache when they can't tell.
-
-### Changed
-
-- System Data: the Caches group under Everything else says, behind its (i), why MacSpace leaves app caches alone.
-- Debloat: Apple Intelligence features now says what the switch does: it sets policies that Apple lists as deprecated on macOS, and their effect is not verified yet.
 
 ## [1.0.3] - 2026-10-09
 

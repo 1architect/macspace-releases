@@ -81,7 +81,7 @@ instalar**. MacSpace no la elimina.
   <img src="Docs/Screenshots/es/OtherSystemFiles.png" alt="La página Otros archivos del sistema: un gráfico de lo que macOS cuenta como purgable, la lista Liberar ahora y el botón Liberar hasta" width="720">
 </p>
 
-**Debloat.** Catorce interruptores para los análisis, la publicidad y la recogida de datos en
+**Debloat.** Trece interruptores para los análisis, la publicidad y la recogida de datos en
 segundo plano que macOS te deja controlar. Cada interruptor se llama **Desactivar …**: activado
 significa que MacSpace desactivó esa función. **Desactivar todo** desactiva todo lo que sigue
 activado. **Activar todo** restaura lo que MacSpace cambió, con los ajustes que guardó antes.
@@ -98,14 +98,13 @@ macOS haya activado de nuevo (salvo las políticas), y puede avisarte cuando lo 
 | Siri AI | Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. | Un reinicio |
 | Inteligencia visual | Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar. | Un reinicio |
 | Indexación para búsqueda generativa | Impide que Apple Intelligence indexe tu Mail y tus datos personales. | Un reinicio |
-| Funciones de Apple Intelligence | Aplica las políticas que desactivan Herramientas de Escritura, Genmoji, Image Playground, los resúmenes, las respuestas inteligentes y ChatGPT. Apple marca la mayoría como obsoletas en macOS, y su efecto aún no está verificado. | Volver a abrir las apps |
 | Resultados de internet en Spotlight | Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight. | Volver a abrir las apps |
 | Rastreo de bloqueos (tailspin) | Impide que macOS grabe la actividad sin parar para los informes de bloqueos. Libera unos 100 MB de memoria. | Nada |
 | Aviso de informe de fallos | Se acabaron los avisos de «se ha cerrado inesperadamente». | Un reinicio |
 | Game Center | Desactiva Game Center. | Cerrar sesión |
 | Apple News | Oculta Apple News y sus widgets. | Cerrar sesión |
 
-Seis de ellos son políticas. Desactivar una te pide aprobar un perfil en Ajustes del Sistema una
+Cinco de ellos son políticas. Desactivar una te pide aprobar un perfil en Ajustes del Sistema una
 vez (consulta [Permisos](#primer-arranque-y-permisos)). En una beta de macOS, el interruptor de
 análisis también es una política, porque macOS ignora ahí el ajuste.
 

@@ -264,6 +264,7 @@ public final class DebloatEngine {
             let command = action == .apply ? control.applyCommand : control.applyCommand?.replacingOccurrences(of: " disable", with: " enable")
             blockers.append("\(control.title) is \(action == .apply ? "applied" : "reverted") with `\(command ?? "its dedicated command")`, not by the catalog engine.")
         }
+        if action == .apply, let retired = control.retired { blockers.append("No longer offered: \(retired)") }
         let ignored = action == .apply ? ignoredLaunchdSettings(control) : [:]
         if action == .apply, control.measuredIneffective(in: environment) {
             blockers.append("Measured to have no effect while SIP is enabled: the change does not take effect.")

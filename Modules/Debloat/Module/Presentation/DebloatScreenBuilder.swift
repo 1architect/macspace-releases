@@ -70,7 +70,8 @@ enum DebloatScreenBuilder {
         "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         "ai.generative-indexing": loc("Stops Apple Intelligence from indexing your Mail and personal data."),
-        "ai.features-policy": loc("Sets the policies that turn off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. Apple lists most of them as deprecated on macOS, and their effect is not verified yet."),
+        // Retired: shown only where it is still applied (`DebloatStore.isShown`).
+        "ai.features-policy": loc("No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies."),
         "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
         "diagnostics.tailspin": loc("Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory."),
         "diagnostics.crash-reporter": loc("No more \"quit unexpectedly\" dialogs."),
@@ -96,8 +97,9 @@ enum DebloatScreenBuilder {
 
     static func row(_ control: DebloatControl, _ snapshot: DebloatSnapshot) -> ToggleRow {
         let status = snapshot.status(control.id)
-        let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable
         let on = isOn(status)
+        // A retired switch can only be switched off, which removes what it applied.
+        let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable || control.retired != nil && !on
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why. What a
         // switch changes and breaks is behind its (i).
         var action = Action(id: "toggle", title: title(control), parameters: ["id": control.id])
@@ -111,7 +113,7 @@ enum DebloatScreenBuilder {
     // MARK: Screens
 
     static func counts(_ snapshot: DebloatSnapshot) -> (on: Int, total: Int, awaiting: [DebloatControl], drifted: [DebloatControl]) {
-        let usable = snapshot.controls.filter { snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
+        let usable = snapshot.controls.filter { $0.retired == nil && snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
         let on = usable.filter { snapshot.status($0.id)?.state == .debloated }.count
         let awaiting = usable.filter { control in snapshot.status(control.id).map { [.awaitingApproval, .awaitingRemoval].contains($0.state) } ?? false }
         let drifted = usable.filter { snapshot.status($0.id)?.state == .drifted }
@@ -126,7 +128,7 @@ enum DebloatScreenBuilder {
     /// already off or waiting for approval is left out.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
+            guard control.retired == nil, let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
             switch status.state {
             case .stock, .partial, .drifted, .unknown, .awaitingRemoval: return true
             case .debloated, .awaitingApproval, .unavailable: return false
@@ -145,7 +147,7 @@ enum DebloatScreenBuilder {
     /// One dot per control that can take effect here, in page order: done when switched off, attention when macOS undid it.
     static func dots(_ snapshot: DebloatSnapshot) -> [TileDot] {
         categoryOrder.flatMap { category in snapshot.controls.filter { $0.category == category } }
-            .filter { snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
+            .filter { $0.retired == nil && snapshot.status($0.id)?.state != .unavailable && !snapshot.cannotTakeEffect.contains($0.id) }
             .map { control in
                 switch snapshot.status(control.id)?.state {
                 case .debloated?: return .done

@@ -16,12 +16,38 @@ final class DebloatScreenBuilderTests: XCTestCase {
     }
 
     private let environment = DebloatEnvironment(productVersion: "27.2", build: "26B5091g", isPrerelease: true, sip: .enabled, mdmEnrolled: false, depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
-    /// The controls a beta build is offered, as the live snapshot filters them.
-    private var offered: [DebloatControl] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) } }
+    /// The controls a beta build is offered, as the live snapshot filters them on a Mac where no retired control is applied.
+    private var offered: [DebloatControl] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) && $0.retired == nil } }
 
     private func snapshot(_ statuses: [ControlStatus], blocked: Set<String> = []) -> DebloatSnapshot {
         DebloatSnapshot(controls: offered, statuses: Dictionary(uniqueKeysWithValues: statuses.map { ($0.controlID, $0) }),
                         environment: environment, cannotTakeEffect: blocked, takenAt: Date())
+    }
+
+    /// A retired switch is listed only while it is applied, can then only be switched off, and is never counted, switched off by
+    /// Disable all or re-applied; Enable all removes it.
+    func testARetiredSwitchShowsOnlyWhereItIsAppliedAndOnlyToBeRemoved() throws {
+        let retired = try XCTUnwrap(DebloatCatalog.control("ai.features-policy"))
+        for state: ControlState in [.stock, .unavailable, .unknown] {
+            XCTAssertFalse(DebloatStore.isShown(retired, in: environment, status: { self.status(retired.id, state) }), "\(state)")
+        }
+        for state: ControlState in [.debloated, .awaitingApproval, .partial, .drifted, .awaitingRemoval] {
+            XCTAssertTrue(DebloatStore.isShown(retired, in: environment, status: { self.status(retired.id, state) }), "\(state)")
+        }
+        XCTAssertTrue(DebloatStore.isShown(mainControl, in: environment, status: { self.status(self.mainControl.id, .stock) }))
+
+        func snap(_ state: ControlState) -> DebloatSnapshot {
+            DebloatSnapshot(controls: offered + [retired], statuses: [retired.id: status(retired.id, state)], environment: environment,
+                            cannotTakeEffect: [], takenAt: Date())
+        }
+        let applied = DebloatScreenBuilder.row(retired, snap(.debloated))
+        XCTAssertTrue(applied.isOn && applied.isEnabled, "it can be switched off, which removes the policies")
+        XCTAssertTrue(applied.detail?.hasPrefix("No longer offered") == true)
+        XCTAssertFalse(DebloatScreenBuilder.row(retired, snap(.partial)).isEnabled, "never switched on again")
+        XCTAssertFalse(DebloatScreenBuilder.recommended(snap(.partial)).contains { $0.id == retired.id }, "not in Disable all")
+        XCTAssertTrue(DebloatScreenBuilder.counts(snap(.drifted)).drifted.isEmpty, "not offered to disable again")
+        XCTAssertEqual(DebloatScreenBuilder.counts(snap(.debloated)).total, offered.count, "not counted")
+        XCTAssertTrue(DebloatScreenBuilder.switchedOff(snap(.debloated)).contains { $0.id == retired.id }, "Enable all removes it")
     }
 
     func testEveryControlGetsOneToggleInItsCategory() {
@@ -144,15 +170,15 @@ final class DebloatScreenBuilderTests: XCTestCase {
 
     func testTile() {
         let none = DebloatScreenBuilder.tile(snapshot([]))
-        XCTAssertEqual(none.status, "0/14 disabled")
+        XCTAssertEqual(none.status, "0/13 disabled")
         XCTAssertFalse(none.needsAttention)
         let drift = DebloatScreenBuilder.tile(snapshot([status(verifiedControl.id, .drifted)]))
         XCTAssertEqual(drift.status, "1 undone by macOS")
         XCTAssertTrue(drift.needsAttention)
         guard case let .dots(dots)? = drift.graphic else { return XCTFail() }
-        XCTAssertEqual(dots.count, 14)
+        XCTAssertEqual(dots.count, 13)
         XCTAssertEqual(dots.filter { $0 == .attention }.count, 1, "the undone control is the amber dot")
-        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "14/14 disabled")
+        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "13/13 disabled")
     }
 
     func testSummarizingResultsMentionsApprovalRestartAndFailures() {

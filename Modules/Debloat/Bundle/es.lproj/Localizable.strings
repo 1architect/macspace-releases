@@ -65,6 +65,7 @@
 "MacSpace restores the settings it saved before disabling them." = "MacSpace restaura los ajustes que guardó antes de desactivarlas.";
 "No control was named." = "No se ha indicado ningún control.";
 "No controls were selected." = "No se ha seleccionado ningún control.";
+"No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies." = "Ya no se ofrece: Apple dejó obsoletas sus políticas en macOS. Para desactivar Apple Intelligence, usa la página Siri y Apple Intelligence. Desactiva este interruptor para quitar las políticas.";
 "No more \"quit unexpectedly\" dialogs." = "Se acabaron los avisos de «se ha cerrado inesperadamente».";
 "Not on this macOS" = "No existe en este macOS";
 "Not working" = "No funciona";
@@ -76,7 +77,6 @@
 "Policies" = "Políticas";
 "Reopen apps to apply." = "Vuelve a abrir las apps para aplicarlo.";
 "Restart to apply." = "Reinicia para aplicarlo.";
-"Sets the policies that turn off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. Apple lists most of them as deprecated on macOS, and their effect is not verified yet." = "Aplica las políticas que desactivan Herramientas de Escritura, Genmoji, Image Playground, los resúmenes, las respuestas inteligentes y ChatGPT. Apple marca la mayoría como obsoletas en macOS, y su efecto aún no está verificado.";
 "Share analytics with Apple" = "Compartir análisis con Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Muestra una notificación cuando macOS vuelve a activar una función desactivada y MacSpace la desactiva de nuevo.";
 "Siri" = "Siri";

@@ -82,7 +82,7 @@ werden beim Öffnen erneut geladen. Ein macOS-Update, das zur Installation berei
   <img src="Docs/Screenshots/de/OtherSystemFiles.png" alt="Die Seite „Andere Systemdateien“: ein Diagramm dessen, was macOS als löschbar zählt, die Liste „Jetzt freigeben“ und die Schaltfläche „Bis zu … freigeben“" width="720">
 </p>
 
-**Debloat.** Vierzehn Schalter für Analyse, Werbung und Datensammlung im Hintergrund, die macOS
+**Debloat.** Dreizehn Schalter für Analyse, Werbung und Datensammlung im Hintergrund, die macOS
 dich steuern lässt. Jeder Schalter heißt **… deaktivieren**: Ist er an, hat MacSpace diese
 Funktion ausgeschaltet. **Alle deaktivieren** schaltet alles aus, was noch an ist. **Alle
 aktivieren** stellt wieder her, was MacSpace geändert hat, anhand der Einstellungen, die es
@@ -100,14 +100,13 @@ Mitteilung zeigen.
 | Siri AI | Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück. | Nach einem Neustart |
 | Visuelle Intelligenz | Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr. | Nach einem Neustart |
 | Indizierung für generative Suche | Verhindert, dass Apple Intelligence Mail und deine persönlichen Daten indiziert. | Nach einem Neustart |
-| Apple Intelligence-Funktionen | Setzt die Richtlinien, die Schreibtools, Genmoji, Image Playground, Zusammenfassungen, intelligente Antworten und ChatGPT deaktivieren. Apple führt die meisten davon unter macOS als veraltet, und ihre Wirkung ist noch nicht überprüft. | Nach erneutem Öffnen der Apps |
 | Internetergebnisse in Spotlight | Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight. | Nach erneutem Öffnen der Apps |
 | Hänger-Aufzeichnung (tailspin) | Verhindert, dass macOS ständig Aktivität für Hängeberichte aufzeichnet. Gibt etwa 100 MB Arbeitsspeicher frei. | Sofort |
 | Absturzbericht-Dialog | Keine Dialoge „unerwartet beendet“ mehr. | Nach einem Neustart |
 | Game Center | Deaktiviert Game Center. | Nach dem Abmelden |
 | Apple News | Blendet Apple News und seine Widgets aus. | Nach dem Abmelden |
 
-Sechs davon sind Richtlinien. Beim Deaktivieren musst du einmal ein Profil in den
+Fünf davon sind Richtlinien. Beim Deaktivieren musst du einmal ein Profil in den
 Systemeinstellungen genehmigen (siehe [Berechtigungen](#erster-start-und-berechtigungen)). In
 einer Betaversion von macOS ist auch der Schalter für Analysedaten eine Richtlinie, weil macOS
 die Einstellung dort ignoriert.

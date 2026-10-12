@@ -224,7 +224,9 @@ public enum DebloatCatalog {
                 policyNote,
                 "Does not evict the on-device model: CP110 showed Screen Time/MDM restrictions leave ModelCatalog's selection unchanged; use ai.apple-intelligence for that.",
             ],
-            validatedBuilds: ["26B5091g"]
+            // 26B5091g validated that macOS forces the keys, not that the features turn off.
+            validatedBuilds: ["26B5091g"],
+            retired: "Apple's device-management schema lists 9 of these 12 keys as deprecated on macOS since 26.4, 2 as not applicable and 1 not at all, and their effect was never measured (the research Mac cannot run Apple Intelligence). The Siri page's Apple Intelligence switch, measured, makes macOS treat Apple Intelligence as unavailable, which takes these features with it. Retired 2026-10-12."
         ),
         DebloatControl(
             id: "apps.game-center-policy",

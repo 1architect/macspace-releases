@@ -410,11 +410,12 @@ happened, `ineffective` only if the process runs after that boundary. A KeepAliv
 | `launchctl disable` of Apple services, system and user domains | **Does not survive a boot**: launchd cleared every override (`Clearing enabled state`) and every targeted daemon ran again. With SIP on, `bootout` is refused (error 150). Owner-enforced overrides persist, because the owning daemon re-sets them each boot. A published tool that does the same for 296 labels states the same limit. |
 | SIP off, or sealed-volume changes | Excluded from the product. |
 
-### The fourteen controls
+### The thirteen controls
 
-The catalog has fifteen entries; on one build fourteen are shown, because analytics is one entry for release builds (a plain
+The catalog has fifteen entries; on one build thirteen are shown, because one is retired (Apple Intelligence features, below)
+and analytics is one entry for release builds (a plain
 setting) and another for beta builds (a profile policy). On a beta: three feature flags, two plain preferences (Personalized ads,
-Improve Siri & Dictation), tailspin, the crash dialog and seven profile policies; on a release build the analytics preference
+Improve Siri & Dictation), tailspin, the crash dialog and six profile policies; on a release build the analytics preference
 replaces one of the policies.
 
 - **Feature flags.** `IntelligenceFlow/Campo = false` stops the Siri AI app (launchd does not load `com.apple.campo`) after a
@@ -443,6 +444,12 @@ replaces one of the policies.
   talks to Apple (the effect is in the UI or `gamed`'s own logic, unmeasured). The behavioural effect of the other keys, Apple
   Intelligence's among them, is unmeasured here because Apple Intelligence is ineligible on the research Mac. Several keys apply
   only to supervised or MDM Macs on paper; each was treated as unproven until measured.
+- **Apple Intelligence features, retired (2026-10-12).** Apple's device-management schema (`com.apple.applicationaccess.yaml`)
+  lists 9 of its 12 keys as deprecated on macOS since 26.4, `allowImageWand` and `allowVisualIntelligenceSummary` as not applicable
+  on macOS, and `allowPhotorealisticImageGeneration` not at all; their effect could not be measured here. The Siri module's Apple
+  Intelligence switch, which was measured, makes macOS treat Apple Intelligence as unavailable, so the features go with it. The
+  control stays in the catalog marked `retired`: it is never applied again, and the page lists it only on a Mac where it is still
+  applied, so switching it back on removes its policies from the profile.
 - **The advertising identifier is not a setting on macOS.** `com.apple.AdLib allowIdentifierForAdvertising` came back to 1 three
   times in two days while Personalized ads stayed off. `adprivacyd`'s `com.apple.ap.adprivacyd.reconcile` XPC activity runs roughly
   daily (11:16 on 10-04 and 10-05) and when profiles change, and the plist changed three seconds after it began. LimitAdTracking

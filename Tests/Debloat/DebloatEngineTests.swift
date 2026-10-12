@@ -309,6 +309,19 @@ final class DebloatEngineTests: XCTestCase {
         XCTAssertEqual(status.effect?.detail, "Undone; running: exampleagent.")
     }
 
+    /// A retired control is never applied again, by the app, the helper or the watch, but what it applied can still be removed.
+    func testARetiredControlCanBeRemovedButNotApplied() throws {
+        let control = try XCTUnwrap(DebloatCatalog.control("ai.features-policy"))
+        XCTAssertNotNil(control.retired)
+        let system = FakeDebloatSystem(controls: [control])
+        let engine = DebloatEngine(controls: [control], system: system, journal: MemoryJournalStore())
+        let apply = try engine.plan(.apply, controlIDs: [control.id])[0]
+        XCTAssertFalse(apply.runnable)
+        XCTAssertTrue(apply.blockers.contains { $0.hasPrefix("No longer offered") })
+        XCTAssertTrue(try engine.plan(.revert, controlIDs: [control.id])[0].blockers.isEmpty, "switching it back on is never blocked")
+        XCTAssertEqual(DebloatCatalog.controls.filter { $0.retired != nil }.map(\.id), ["ai.features-policy"])
+    }
+
     func testControlMeasuredIneffectiveWithSIPIsBlockedAndNotControllable() throws {
         let control = DebloatControl(id: "test.cleared", title: "Cleared", summary: "", category: .siri, mechanism: .launchdOverride,
                                      risk: .medium, restart: .logout, settings: [agent], effect: .processesAbsent(["/usr/libexec/exampleagent"]),
