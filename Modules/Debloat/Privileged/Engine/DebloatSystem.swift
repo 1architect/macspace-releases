@@ -295,17 +295,9 @@ public final class LiveDebloatSystem: DebloatSystem {
             return .value(.value(value))
         case .featureFlag:
             let flag = setting.featureFlag!
-            guard Self.systemFeatureExists(domain: flag.domain, feature: flag.feature, fileManager: fileManager) else {
-                return .unavailable("No feature flag \(flag.domain)/\(flag.feature) in this macOS.")
-            }
-            guard let data = fileManager.contents(atPath: flag.overridePath) else {
-                return fileManager.fileExists(atPath: flag.overridePath) ? .unreadable("\(flag.overridePath) is not readable.") : .value(.absent)
-            }
-            guard let root = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-                return .unreadable("\(flag.overridePath) is not a property list.")
-            }
-            let enabled = ((root[flag.feature] as? [String: Any])?["Enabled"] as? NSNumber)?.boolValue
-            return .value(enabled.map { .value(.bool($0)) } ?? .absent)
+            return Self.readFeatureFlag(flag, declared: Self.systemFeatureExists(domain: flag.domain, feature: flag.feature, fileManager: fileManager),
+                                        overrideData: fileManager.contents(atPath: flag.overridePath),
+                                        overrideExists: fileManager.fileExists(atPath: flag.overridePath))
         case .systemTool:
             switch setting.tool!.tool {
             case .tailspin:
@@ -434,6 +426,24 @@ public final class LiveDebloatSystem: DebloatSystem {
     }
 
     public static let featureFlagDirectories = ["/System/Library/FeatureFlags/Domain", "/System/Library/FeatureFlags/Unified/Domain"]
+
+    /// A flag's override as MacSpace wrote it. A flag macOS no longer declares is unavailable, so it is never written; but one an
+    /// earlier build wrote while macOS still declared it is read as it is, so switching the control back on removes it. Before,
+    /// it read unavailable, the restore skipped it, and `GenerativeLearningPlatform/PlatformDaemons` stayed in the override file
+    /// after 26B5101f dropped it (2026-10-12).
+    public static func readFeatureFlag(_ flag: FeatureFlagSetting, declared: Bool, overrideData: Data?, overrideExists: Bool) -> SettingRead {
+        let unavailable = SettingRead.unavailable("No feature flag \(flag.domain)/\(flag.feature) in this macOS.")
+        guard let data = overrideData else {
+            if overrideExists { return .unreadable("\(flag.overridePath) is not readable.") }
+            return declared ? .value(.absent) : unavailable
+        }
+        guard let root = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
+            return .unreadable("\(flag.overridePath) is not a property list.")
+        }
+        let enabled = ((root[flag.feature] as? [String: Any])?["Enabled"] as? NSNumber)?.boolValue
+        if let enabled { return .value(.value(.bool(enabled))) }
+        return declared ? .value(.absent) : unavailable
+    }
 
     public static func systemFeatureExists(domain: String, feature: String, fileManager: FileManager = .default) -> Bool {
         featureFlagDirectories.contains { directory in

@@ -65,6 +65,21 @@ final class FeatureFlagControlTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: path), "an empty override file is deleted")
     }
 
+    /// A flag macOS no longer declares is never written, but an override an earlier build wrote is read as it is, so it can be removed.
+    func testAFlagMacOSNoLongerDeclaresIsReadWhileItsOverrideIsThere() throws {
+        let flag = FeatureFlagSetting(domain: "GenerativeLearningPlatform", feature: "PlatformDaemons", enabled: false)
+        let written = try PropertyListSerialization.data(fromPropertyList: ["PlatformDaemons": ["Enabled": false]], format: .xml, options: 0)
+        let other = try PropertyListSerialization.data(fromPropertyList: ["MailIndexing": ["Enabled": false]], format: .xml, options: 0)
+        func read(_ declared: Bool, _ data: Data?) -> SettingRead {
+            LiveDebloatSystem.readFeatureFlag(flag, declared: declared, overrideData: data, overrideExists: data != nil)
+        }
+        XCTAssertEqual(read(false, written), .value(.value(.bool(false))), "left by an earlier build: read, so it is removed")
+        XCTAssertEqual(read(false, nil), .unavailable("No feature flag GenerativeLearningPlatform/PlatformDaemons in this macOS."))
+        XCTAssertEqual(read(false, other), .unavailable("No feature flag GenerativeLearningPlatform/PlatformDaemons in this macOS."))
+        XCTAssertEqual(read(true, nil), .value(.absent))
+        XCTAssertEqual(read(true, written), .value(.value(.bool(false))))
+    }
+
     func testLiveFeatureFlagProbe() {
         let system = LiveDebloatSystem(targetUser: nil)
         XCTAssertEqual(system.liveFeatureFlag(domain: "MacSpaceNonexistent", feature: "Nothing"), false)

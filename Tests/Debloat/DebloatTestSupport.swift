@@ -24,6 +24,9 @@ final class FakeDebloatSystem: DebloatSystem {
     var liveFlags: [String: Bool] = [:]
     var stagedProfiles: [Data] = []
     var failStaging = false
+    /// Feature flags this macOS no longer declares, by setting id: unavailable unless an override is still written (as the live
+    /// system reads them, `LiveDebloatSystem.readFeatureFlag`).
+    var undeclaredFlags: Set<String> = []
     /// RemovableServices of the rootless policy; nil disables the SIP rule.
     var removable: Set<String>?
     var failSessionCalls = false
@@ -47,6 +50,8 @@ final class FakeDebloatSystem: DebloatSystem {
     func read(_ setting: ControlSetting) -> SettingRead {
         if unreadable.contains(setting.id) { return .unreadable("unreadable in test") }
         switch setting.kind {
+        case .featureFlag where undeclaredFlags.contains(setting.id) && preferences[setting.id] == nil:
+            return .unavailable("undeclared in test")
         case .preference, .featureFlag, .systemTool:
             return .value(preferences[setting.id].map { .value($0) } ?? .absent)
         case .managedPreference:

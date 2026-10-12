@@ -459,6 +459,11 @@ replaces one of the policies.
   kept on while the daemon stays stopped. The control is retired with `undoesWhenRetired`: wherever it is still applied, MacSpace
   switches it back on by itself (with the helper, once per run of the app, at launch and from the watch). The app shows nothing
   about it; the release notes do. It takes effect after a restart.
+  **Measured, 1.0.3's restore was incomplete:** switching it back on removed `MailIndexing` and `ObservationIndexing` but left
+  `PlatformDaemons = false` in `/Library/Preferences/FeatureFlags/Domain/GenerativeLearningPlatform.plist`, because 26B5101f no
+  longer declares that flag and it read as unavailable. Harmless (the daemon runs once any flag is on, and Mail search worked), but
+  MacSpace's own leftover. A flag macOS no longer declares is now read from the override file while an override is there, so the
+  restore removes it, and the automatic switch-back cleans up Macs that kept it.
 - **Apple Intelligence features, retired (2026-10-12).** Apple's device-management schema (`com.apple.applicationaccess.yaml`)
   lists 9 of its 12 keys as deprecated on macOS since 26.4, `allowImageWand` and `allowVisualIntelligenceSummary` as not applicable
   on macOS, and `allowPhotorealisticImageGeneration` not at all; their effect could not be measured here. The Siri module's Apple

@@ -325,6 +325,26 @@ final class DebloatEngineTests: XCTestCase {
         }
     }
 
+    /// Generative search indexing on 26B5101f: one of its flags is no longer declared after an update, and switching the control
+    /// back on removed the two others but left that one written. Now all three go.
+    func testSwitchingBackOnRemovesAFlagMacOSNoLongerDeclares() throws {
+        let control = try XCTUnwrap(DebloatCatalog.control("ai.generative-indexing"))
+        let applied = DebloatControl(id: control.id, title: control.title, summary: control.summary, category: control.category,
+                                     mechanism: control.mechanism, risk: control.risk, restart: control.restart, settings: control.settings)
+        let system = FakeDebloatSystem(controls: [applied])
+        system.env.runningAsRoot = true // flags are written by the helper
+        let journal = MemoryJournalStore()
+        let before = DebloatEngine(controls: [applied], system: system, journal: journal)
+        _ = before.execute(try before.plan(.apply, controlIDs: [applied.id]))
+        XCTAssertEqual(system.preferences.count, 3)
+        system.undeclaredFlags = ["flag:GenerativeLearningPlatform/PlatformDaemons"] // the update
+        let engine = DebloatEngine(controls: [control], system: system, journal: journal)
+        XCTAssertEqual(engine.status(of: control).state, .debloated, "still written, so still read")
+        _ = engine.execute(try engine.plan(.revert, controlIDs: [control.id], options: DebloatPlanOptions(restoreFallbacks: true)))
+        XCTAssertTrue(system.preferences.isEmpty, "nothing MacSpace wrote is left: \(system.preferences.keys.sorted())")
+        XCTAssertNotEqual(engine.status(of: control).state, .debloated)
+    }
+
     func testControlMeasuredIneffectiveWithSIPIsBlockedAndNotControllable() throws {
         let control = DebloatControl(id: "test.cleared", title: "Cleared", summary: "", category: .siri, mechanism: .launchdOverride,
                                      risk: .medium, restart: .logout, settings: [agent], effect: .processesAbsent(["/usr/libexec/exampleagent"]),
