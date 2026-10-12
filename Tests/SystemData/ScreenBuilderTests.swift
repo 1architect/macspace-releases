@@ -64,6 +64,9 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let macos = try XCTUnwrap(list.rows.first { $0.id == "other:macos" })
         XCTAssertEqual(macos.children.map(\.id), ["logs", "spotlight"])
         XCTAssertEqual(macos.title, "Managed by macOS")
+        XCTAssertNil(macos.detail, "the title says why")
+        XCTAssertTrue(list.rows.first { $0.id == "other:caches" }?.detail?.contains("leaves them alone") == true,
+                      "why the caches are not cleaned is behind their (i)")
         let group = try XCTUnwrap(SystemDataScreenBuilder.group(.section(section), symbol: "x", total: 0))
         XCTAssertEqual(group.subtitle, "5 items")
         XCTAssertEqual(SystemDataScreenBuilder.OtherCategory.of(.virtualMachine).id, "other", "a kind in no category goes to Other")

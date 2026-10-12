@@ -306,7 +306,7 @@ enum SystemDataScreenBuilder {
                 let bytes = entry.items.map { counted($0, snapshot) }.reduce(0, +)
                 let rows = leftAloneRows(entry.items, snapshot)
                 if rows.count == 1 { return (rows[0], bytes) }
-                return (Row.group(id: "other:\(entry.category.id)", title: entry.category.title, totalBytes: bytes, rows: rows), bytes)
+                return (Row.group(id: "other:\(entry.category.id)", title: entry.category.title, totalBytes: bytes, rows: rows, detail: entry.category.detail), bytes)
             }
             .sorted { $0.bytes > $1.bytes }
             .map(\.row)
@@ -317,12 +317,20 @@ enum SystemDataScreenBuilder {
     struct OtherCategory {
         let id: String
         let title: String
+        var detail: String? = nil
 
         static let other = OtherCategory(id: "other", title: loc("Other"))
 
+        /// Why a category is left alone, behind its (i), where the title does not say it. The caches here are the apps' own and
+        /// macOS's: an app rebuilds its cache as soon as it runs again, and clearing it is the app's job (the module's scope since
+        /// 2026-10-01). What MacSpace does clean, the per-user system cache and the apps' web caches, is under Free now.
+        static let details: [String: String] = [
+            "caches": loc("Apps and macOS manage these caches and rebuild them when they run, so MacSpace leaves them alone. To clear one, use the app's own setting."),
+        ]
+
         /// The bar's category that holds this kind, or Other.
         static func of(_ kind: SystemDataKind) -> OtherCategory {
-            groups.first { $0.kinds.contains(kind) }.map { OtherCategory(id: $0.id, title: $0.title) } ?? other
+            groups.first { $0.kinds.contains(kind) }.map { OtherCategory(id: $0.id, title: $0.title, detail: details[$0.id]) } ?? other
         }
     }
 

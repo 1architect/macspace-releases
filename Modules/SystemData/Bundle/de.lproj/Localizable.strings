@@ -33,6 +33,7 @@
 "Apple app data" = "Daten von Apple-Apps";
 "Apple developer documentation" = "Apple-Entwicklerdokumentation";
 "Apple system cache used by background services; macOS manages it." = "Apple-Systemcache für Hintergrunddienste; macOS verwaltet ihn.";
+"Apps and macOS manage these caches and rebuild them when they run, so MacSpace leaves them alone. To clear one, use the app's own setting." = "Apps und macOS verwalten diese Caches und legen sie bei der Ausführung neu an, daher lässt MacSpace sie in Ruhe. Um einen zu leeren, nutze die Einstellung der App.";
 "Apps' support files for all users" = "App-Supportdateien für alle Benutzer";
 "Apps' temporary files; macOS clears them at restart." = "Temporäre Dateien von Apps; macOS löscht sie beim Neustart.";
 "Assorted macOS features and the OS itself." = "Verschiedene macOS-Funktionen und das System selbst.";
