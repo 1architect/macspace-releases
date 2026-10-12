@@ -16,6 +16,8 @@ struct SystemDataSnapshot: Sendable {
     var takenAt: Date
     /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
     var assetsRetrying = false
+    /// Apple Intelligence is on, so MacSpace leaves the system assets alone (`SystemAssetGuard`): not offered, not cleaned.
+    var assetsHeld = false
     /// The helper was asked to measure the places only root can read.
     var helperTried = false
     /// Why the helper could not measure (it was not reachable), when that is the reason.
@@ -136,6 +138,7 @@ actor SystemDataStore {
         var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         snapshot.purgeableServices = services
+        snapshot.assetsHeld = SystemAssetGuard.holdsAssets
         snapshot.settings = SettingsStorageMeter().measure()
         // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
         #if DEBUG

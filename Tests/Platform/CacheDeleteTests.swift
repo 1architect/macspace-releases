@@ -33,6 +33,12 @@ final class CacheDeleteTests: XCTestCase {
 }
 
 final class CacheDeleteSubprocessTests: XCTestCase {
+    private var availability: (@Sendable () -> Bool?)!
+
+    // These purges must run whatever this Mac's Apple Intelligence is doing (`SystemAssetGuard`).
+    override func setUp() { availability = SystemAssetGuard.appleIntelligenceAvailable; SystemAssetGuard.appleIntelligenceAvailable = { false } }
+    override func tearDown() { SystemAssetGuard.appleIntelligenceAvailable = availability }
+
     private func script(_ body: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("macspace-cd-\(UUID().uuidString).sh")
         try "#!/bin/sh\n\(body)\n".write(to: url, atomically: true, encoding: .utf8)

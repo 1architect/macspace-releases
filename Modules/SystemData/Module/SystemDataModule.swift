@@ -92,7 +92,7 @@ public struct SystemDataModule: MacSpaceModule {
         progress(ActionProgress(fraction: 0.5, message: loc("Freeing space…")))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
         progress(ActionProgress(fraction: 0.7, message: loc("Freeing space…")))
-        if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying { details += purgeAssets(store: store).details }
+        if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying, !snapshot.assetsHeld { details += purgeAssets(store: store).details }
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
         return (freed, details)

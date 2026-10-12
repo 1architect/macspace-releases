@@ -31,6 +31,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Apple Intelligence downloads are no longer cut short by MacSpace: while Apple Intelligence is on, MacSpace never asks macOS to delete system assets, through which its models download and update. Clean, automatic cleaning and the background retries leave them out, and System Data lists them as kept. Switching Apple Intelligence off on the Siri & Apple Intelligence page still releases its models.
+- Debloat: where the retired Apple Intelligence features switch is still applied, MacSpace removes its policies by itself (with the helper). They made macOS treat Apple Intelligence as restricted: System Settings hid it, said extensions were disabled by the organization, and its download stood still.
 - System Data: the caches and temporary files of root, macOS's services and other accounts are measured (with the helper). Wallpaper and screen saver downloads that macOS left unfinished, which can grow to hundreds of GB, get a row of their own.
 - System Data: a small item that is partly closed to MacSpace is no longer dropped before the helper measures it.
 - System Data: a cache is no longer deleted while a command-line tool that owns it (such as the clang compiler), a helper of its app, or any other program is still using it. Clean and automatic cleaning check this again just before each deletion, and skip the cache when they can't tell.

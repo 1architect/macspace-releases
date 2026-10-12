@@ -100,6 +100,7 @@
 "Installed fonts" = "Polices installées";
 "Kept by macOS for its own services; it manages the size." = "Conservé par macOS pour ses propres services ; il en gère la taille.";
 "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history." = "Conservé par revisiond pour Fichier > Revenir à > Parcourir toutes les versions ; les anciennes versions d’un document peuvent y être supprimées. Supprimer le stockage efface tout l’historique.";
+"Kept while Apple Intelligence is on" = "Conservé tant qu’Apple Intelligence est activé";
 "Language data (spelling, text analysis)" = "Données linguistiques (orthographe, analyse de texte)";
 "Leftover macOS update files" = "Fichiers restants de mise à jour de macOS";
 "Leftover update files" = "Fichiers de mise à jour restants";
@@ -166,6 +167,7 @@
 "Wallpaper and screen saver downloads" = "Téléchargements de fonds d’écran et d’économiseurs d’écran";
 "What fills System Data" = "Ce qui remplit Données système";
 "What is in it" = "Contenu";
+"While Apple Intelligence is on, MacSpace leaves them alone: its models download and update through them." = "Tant qu’Apple Intelligence est activé, MacSpace n’y touche pas : ses modèles sont téléchargés et mis à jour par leur biais.";
 "Xcode Command Line Tools" = "Outils de ligne de commande Xcode";
 "Xcode downloads it again when you open the docs." = "Xcode la retélécharge quand vous ouvrez la documentation.";
 "You won't be able to revert any document to an earlier version. Save and close your documents first." = "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.";

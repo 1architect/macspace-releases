@@ -122,7 +122,8 @@ enum SystemDataScreenBuilder {
     static func cleanBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
         let caches = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse }
             .compactMap(\.expectedReclaimBytes).reduce(0, +)
-        return caches + (snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
+        // The system assets stay while Apple Intelligence is on (`SystemAssetGuard`).
+        return caches + (snapshot.assetsHeld ? 0 : snapshot.purgeableAssetsBytes ?? 0) + snapshot.reports.totalBytes
     }
 
     /// Document version history when it is offered under Free now (its own Delete button, not Clean).
@@ -280,11 +281,16 @@ enum SystemDataScreenBuilder {
                             paths: paths(of: "reports:diagnostic", snapshot)))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
-            // While macOS is being asked again in the background, the row says so instead of offering the button.
+            // While macOS is being asked again in the background, the row says so instead of offering the button; while Apple
+            // Intelligence is on, that the assets stay (its models download and update through them).
+            let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on"))
+                : snapshot.assetsRetrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil
+            var detail = loc("Downloads macOS no longer needs, like released Apple Intelligence models.")
+            if snapshot.assetsHeld { detail += " " + loc("While Apple Intelligence is on, MacSpace leaves them alone: its models download and update through them.") }
             rows.append(Row(id: "assets", title: loc("Unused system assets"), trailing: ByteFormat.string(assets),
-                            badge: snapshot.assetsRetrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: "square.stack.3d.down.right",
-                            detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
-                            actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
+                            badge: badge, symbol: "square.stack.3d.down.right",
+                            detail: detail,
+                            actions: snapshot.assetsRetrying || snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
                                 title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))],
                             paths: paths(of: "assets:system", snapshot)))
         }

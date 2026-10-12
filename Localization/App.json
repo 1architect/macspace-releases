@@ -142,5 +142,6 @@
  "reading…": ["lendo…", "lecture…", "leyendo…", "wird gelesen …"],
  "settings": ["ajustes", "réglages", "ajustes", "Einstellungen"],
  "undone": ["desfeito", "annulé", "deshecho", "rückgängig"],
- "working…": ["trabalhando…", "en cours…", "trabajando…", "wird ausgeführt …"]
+ "working…": ["trabalhando…", "en cours…", "trabajando…", "wird ausgeführt …"],
+ "Kept while Apple Intelligence is on": ["Mantido enquanto a Apple Intelligence estiver ativa", "Conservé tant qu’Apple Intelligence est activé", "Se conserva mientras Apple Intelligence esté activado", "Bleibt, solange Apple Intelligence aktiv ist"]
 }

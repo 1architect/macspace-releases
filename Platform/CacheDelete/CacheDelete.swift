@@ -192,7 +192,7 @@ public struct CacheDeleteClient {
     public func purge(services: [String], volume: String = dataVolume, urgency: Int = 1, amount: UInt64 = 100_000_000_000,
                       timeout: TimeInterval = 600, freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
-        if let refusal {
+        if let refusal = refusal ?? SystemAssetGuard.refusal(services) {
             return CacheDeletePurgeResult(services: services, purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: before,
                                           elapsedSeconds: nil, error: refusal)
         }
@@ -240,6 +240,9 @@ public struct CacheDeleteClient {
     public static func purgeInSubprocess(executable: URL, service: String = CacheDeleteService.mobileAsset,
                                          urgency: Int = 1, freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
+        if let held = SystemAssetGuard.refusal([service]) {
+            return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: before, elapsedSeconds: nil, error: held)
+        }
         let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service, "--urgency", "\(urgency)"])
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

@@ -184,6 +184,19 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("not counted") == true, "the reading says what it leaves out")
     }
 
+    /// While Apple Intelligence is on, the unused system assets are listed but not offered: no button, not in Clean or the tile's figure.
+    func testSystemAssetsAreKeptWhileAppleIntelligenceIsOn() throws {
+        var snap = snapshot(items: [], purgeable: 2_000_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.cleanBytes(snap), 2_000_000_000)
+        snap.assetsHeld = true
+        XCTAssertEqual(SystemDataScreenBuilder.cleanBytes(snap), 0)
+        XCTAssertNil(SystemDataScreenBuilder.cleanAll(snap))
+        guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
+        let row = try XCTUnwrap(list.rows.first { $0.id == "assets" })
+        XCTAssertTrue(row.actions.isEmpty)
+        XCTAssertEqual(row.badge?.text, "Kept while Apple Intelligence is on")
+    }
+
     /// Each block of the page lists what it is made of, sized as it counts in that block: what Clean frees is under "can be freed"
     /// (with its buttons), the rest of the caches under Caches. What no folder accounts for lists nothing, and the tile's blocks,
     /// which are saved, carry no items.

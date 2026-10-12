@@ -29,6 +29,12 @@ public final class PurgeRetrier: @unchecked Sendable {
             for delay in delays {
                 try? await Task.sleep(for: .seconds(delay))
                 if Task.isCancelled { return }
+                // Apple Intelligence came on meanwhile: no more requests (`SystemAssetGuard`). Not a refusal by macOS, so nothing is
+                // recorded as kept.
+                if SystemAssetGuard.refusal([service]) != nil {
+                    self?.finish(service)
+                    return
+                }
                 let result = attempt()
                 let gained = result.freedBytes ?? 0
                 if result.error == nil, (result.purgedBytes ?? 0) > 0 || gained >= PurgeRun.noise {
@@ -132,13 +138,16 @@ public struct PurgeRun: Sendable {
         public var error: String?
         /// Nothing was asked (kept for callers that decide not to purge).
         public var skipped: Bool
+        /// Nothing was asked because Apple Intelligence is on (`SystemAssetGuard`).
+        public var held: Bool
 
-        public init(estimate: UInt64?, reported: UInt64, freed: UInt64, error: String?, skipped: Bool) {
+        public init(estimate: UInt64?, reported: UInt64, freed: UInt64, error: String?, skipped: Bool, held: Bool = false) {
             self.estimate = estimate
             self.reported = reported
             self.freed = freed
             self.error = error
             self.skipped = skipped
+            self.held = held
         }
 
         /// macOS removed nothing at all.
@@ -176,6 +185,10 @@ public struct PurgeRun: Sendable {
     /// can delete (it read 0 with 11 GB of released Apple Intelligence models unlocked, and the purge then removed 11.08 GB,
     /// 2026-10-04). If macOS keeps everything, it is asked again in the background; `freedLater` is told when that frees something.
     public func run(freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> Outcome {
+        if SystemAssetGuard.refusal([service]) != nil {
+            retrier.cancel(service)
+            return Outcome(estimate: nil, reported: 0, freed: 0, error: nil, skipped: true, held: true)
+        }
         let fresh = estimate()
         retrier.cancel(service)
         let result = Self.purgeOnce(service: service, urgency: urgency)
@@ -196,6 +209,7 @@ public struct PurgeRun: Sendable {
     /// What to tell the user. `what` names the files ("unused system assets").
     public static func result(_ outcome: Outcome, what: String) -> ActionResult {
         if let error = outcome.error { return .failed(failedMessage, details: [error] + details(outcome)) }
+        if outcome.held { return ActionResult(outcome: .succeeded, message: heldMessage, details: [SystemAssetGuard.heldMessage]) }
         if outcome.skipped {
             return ActionResult(outcome: .succeeded, message: PurgeRun.nothingMessage,
                                 details: ["Asked again just before, macOS estimated \(ByteFormat.string(outcome.estimate ?? 0)) of \(what)."])
@@ -210,6 +224,8 @@ public struct PurgeRun: Sendable {
     /// The words a cleanup shows the user, in its button, as few as possible: what it freed, measured on the volume.
     public static func freedMessage(_ freed: UInt64) -> String { freed > 0 ? String(localized: "Freed \(ByteFormat.string(freed))") : nothingMessage }
     public static let nothingMessage = String(localized: "Nothing to free")
+    /// Apple Intelligence is on, so the system assets stay (`SystemAssetGuard`).
+    public static let heldMessage = String(localized: "Kept while Apple Intelligence is on")
     /// A purge that failed; why is in the details, not in front of the user.
     public static let failedMessage = String(localized: "Couldn't free space. Try again later.")
     /// macOS kept the files; MacSpace asks it again in the background (`PurgeRetrier`).
