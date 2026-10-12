@@ -417,11 +417,11 @@ happened, `ineffective` only if the process runs after that boundary. A KeepAliv
 | `launchctl disable` of Apple services, system and user domains | **Does not survive a boot**: launchd cleared every override (`Clearing enabled state`) and every targeted daemon ran again. With SIP on, `bootout` is refused (error 150). Owner-enforced overrides persist, because the owning daemon re-sets them each boot. A published tool that does the same for 296 labels states the same limit. |
 | SIP off, or sealed-volume changes | Excluded from the product. |
 
-### The thirteen controls
+### The twelve controls
 
-The catalog has fifteen entries; on one build thirteen are shown, because one is retired (Apple Intelligence features, below)
-and analytics is one entry for release builds (a plain
-setting) and another for beta builds (a profile policy). On a beta: three feature flags, two plain preferences (Personalized ads,
+The catalog has fifteen entries; on one build twelve are shown, because two are retired (Generative search indexing and Apple
+Intelligence features, below) and analytics is one entry for release builds (a plain
+setting) and another for beta builds (a profile policy). On a beta: two feature flags, two plain preferences (Personalized ads,
 Improve Siri & Dictation), tailspin, the crash dialog and six profile policies; on a release build the analytics preference
 replaces one of the policies.
 
@@ -451,6 +451,14 @@ replaces one of the policies.
   talks to Apple (the effect is in the UI or `gamed`'s own logic, unmeasured). The behavioural effect of the other keys, Apple
   Intelligence's among them, is unmeasured here because Apple Intelligence is ineligible on the research Mac. Several keys apply
   only to supervised or MDM Macs on paper; each was treated as unproven until measured.
+- **Generative search indexing, retired (2026-10-12), breaks Mail search.** **Measured** on 26B5101f (issue #6): with its three
+  `GenerativeLearningPlatform` flags off, every Mail search first asks `MailSearchClient`, which logs "Not ready since Generative
+  Search feature flags are disabled", then falls back to Mail's Spotlight donations (22,000 of about 70,000 headers and 830 bodies
+  donated here). A search for a name found 0 messages, with Apple Intelligence off and with it on. With the flags removed and a
+  restart, the same search found 59. `hybridsearchd` is disabled only when all three flags are off, so the Mail flag cannot be
+  kept on while the daemon stays stopped. The control is retired with `undoesWhenRetired`: wherever it is still applied, MacSpace
+  switches it back on by itself (with the helper, once per run of the app, at launch and from the watch). The app shows nothing
+  about it; the release notes do. It takes effect after a restart.
 - **Apple Intelligence features, retired (2026-10-12).** Apple's device-management schema (`com.apple.applicationaccess.yaml`)
   lists 9 of its 12 keys as deprecated on macOS since 26.4, `allowImageWand` and `allowVisualIntelligenceSummary` as not applicable
   on macOS, and `allowPhotorealisticImageGeneration` not at all; their effect could not be measured here. The Siri module's Apple

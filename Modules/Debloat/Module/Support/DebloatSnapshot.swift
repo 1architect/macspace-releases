@@ -69,12 +69,22 @@ actor DebloatStore {
         DebloatEngine(system: LiveDebloatSystem(), journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))
     }
 
+    /// The states in which something of a control is applied.
+    static let appliedStates: Set<ControlState> = [.debloated, .awaitingApproval, .partial, .drifted, .awaitingRemoval]
+
     /// Whether the page lists a control. A retired one is listed only while something of it is applied, so it can be switched back
     /// on and removed; once it is, it goes away.
     static func isShown(_ control: DebloatControl, in environment: DebloatEnvironment, status: () -> ControlStatus) -> Bool {
         guard control.isOffered(in: environment) else { return false }
         guard control.retired != nil else { return true }
-        return [.debloated, .awaitingApproval, .partial, .drifted, .awaitingRemoval].contains(status().state)
+        return appliedStates.contains(status().state)
+    }
+
+    private var undoneRetired: Set<[String]> = []
+
+    /// Whether MacSpace has not tried yet, in this run of the app, to switch these retired controls back on.
+    func firstRetiredUndo(_ ids: [String]) -> Bool {
+        undoneRetired.insert(ids).inserted
     }
 
     static func liveSnapshot() -> DebloatSnapshot {

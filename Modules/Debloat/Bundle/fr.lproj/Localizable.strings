@@ -66,6 +66,7 @@
 "No control was named." = "Aucun réglage n’a été indiqué.";
 "No controls were selected." = "Aucun réglage sélectionné.";
 "No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies." = "N’est plus proposé : Apple a rendu ses règles obsolètes sur macOS. Pour désactiver Apple Intelligence, utilisez la page Siri et Apple Intelligence. Désactivez cet interrupteur pour retirer les règles.";
+"No longer offered: it stops Mail search from working. Switch this off, then restart your Mac." = "N’est plus proposé : il empêche la recherche de Mail de fonctionner. Désactivez cet interrupteur, puis redémarrez votre Mac.";
 "No more \"quit unexpectedly\" dialogs." = "Plus de fenêtres « s’est fermé de façon inattendue ».";
 "Not on this macOS" = "Absent de ce macOS";
 "Not working" = "Inopérant";
@@ -84,7 +85,6 @@
 "Some are not tested yet." = "Certaines ne sont pas encore testées.";
 "Spotlight internet results" = "Résultats Internet dans Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight.";
-"Stops Apple Intelligence from indexing your Mail and personal data." = "Empêche Apple Intelligence d’indexer Mail et vos données personnelles.";
 "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory." = "Empêche macOS d’enregistrer en continu l’activité pour les rapports de blocage. Libère environ 100 Mo de mémoire.";
 "Stops sending usage and crash data to Apple and app developers." = "Cesse d’envoyer les données d’utilisation et de plantage à Apple et aux développeurs.";
 "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above." = "Cesse d’envoyer les données d’utilisation et de plantage à Apple, y compris sur les versions bêta de macOS, qui ignorent le réglage ci-dessus.";

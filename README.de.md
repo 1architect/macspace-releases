@@ -82,7 +82,7 @@ werden beim Öffnen erneut geladen. Ein macOS-Update, das zur Installation berei
   <img src="Docs/Screenshots/de/OtherSystemFiles.png" alt="Die Seite „Andere Systemdateien“: ein Diagramm dessen, was macOS als löschbar zählt, die Liste „Jetzt freigeben“ und die Schaltfläche „Bis zu … freigeben“" width="720">
 </p>
 
-**Debloat.** Dreizehn Schalter für Analyse, Werbung und Datensammlung im Hintergrund, die macOS
+**Debloat.** Zwölf Schalter für Analyse, Werbung und Datensammlung im Hintergrund, die macOS
 dich steuern lässt. Jeder Schalter heißt **… deaktivieren**: Ist er an, hat MacSpace diese
 Funktion ausgeschaltet. **Alle deaktivieren** schaltet alles aus, was noch an ist. **Alle
 aktivieren** stellt wieder her, was MacSpace geändert hat, anhand der Einstellungen, die es
@@ -99,7 +99,6 @@ Mitteilung zeigen.
 | Werbe-ID | Apps können dich nicht über die Werbe-ID tracken oder danach fragen. | Nach erneutem Öffnen der Apps |
 | Siri AI | Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück. | Nach einem Neustart |
 | Visuelle Intelligenz | Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr. | Nach einem Neustart |
-| Indizierung für generative Suche | Verhindert, dass Apple Intelligence Mail und deine persönlichen Daten indiziert. | Nach einem Neustart |
 | Internetergebnisse in Spotlight | Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight. | Nach erneutem Öffnen der Apps |
 | Hänger-Aufzeichnung (tailspin) | Verhindert, dass macOS ständig Aktivität für Hängeberichte aufzeichnet. Gibt etwa 100 MB Arbeitsspeicher frei. | Sofort |
 | Absturzbericht-Dialog | Keine Dialoge „unerwartet beendet“ mehr. | Nach einem Neustart |

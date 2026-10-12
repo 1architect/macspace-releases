@@ -50,6 +50,20 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertTrue(DebloatScreenBuilder.switchedOff(snap(.debloated)).contains { $0.id == retired.id }, "Enable all removes it")
     }
 
+    /// Generative search indexing stops Mail search, so where it is applied MacSpace switches it back on by itself; Apple
+    /// Intelligence features waits for the user.
+    func testARetiredSwitchThatDoesHarmIsUndone() throws {
+        let indexing = try XCTUnwrap(DebloatCatalog.control("ai.generative-indexing"))
+        let features = try XCTUnwrap(DebloatCatalog.control("ai.features-policy"))
+        func snap(_ states: [String: ControlState]) -> DebloatSnapshot {
+            DebloatSnapshot(controls: offered + [indexing, features], statuses: Dictionary(uniqueKeysWithValues: states.map { ($0.key, status($0.key, $0.value)) }),
+                            environment: environment, cannotTakeEffect: [], takenAt: Date())
+        }
+        XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .debloated, features.id: .debloated])).map(\.id), [indexing.id])
+        XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .partial])).map(\.id), [indexing.id], "part of it is enough")
+        XCTAssertTrue(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .stock])).isEmpty)
+    }
+
     func testEveryControlGetsOneToggleInItsCategory() {
         let screen = DebloatScreenBuilder.screen(snapshot([]))
         var ids: [String] = []
@@ -170,15 +184,15 @@ final class DebloatScreenBuilderTests: XCTestCase {
 
     func testTile() {
         let none = DebloatScreenBuilder.tile(snapshot([]))
-        XCTAssertEqual(none.status, "0/13 disabled")
+        XCTAssertEqual(none.status, "0/12 disabled")
         XCTAssertFalse(none.needsAttention)
         let drift = DebloatScreenBuilder.tile(snapshot([status(verifiedControl.id, .drifted)]))
         XCTAssertEqual(drift.status, "1 undone by macOS")
         XCTAssertTrue(drift.needsAttention)
         guard case let .dots(dots)? = drift.graphic else { return XCTFail() }
-        XCTAssertEqual(dots.count, 13)
+        XCTAssertEqual(dots.count, 12)
         XCTAssertEqual(dots.filter { $0 == .attention }.count, 1, "the undone control is the amber dot")
-        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "13/13 disabled")
+        XCTAssertEqual(DebloatScreenBuilder.tile(snapshot(offered.map { status($0.id, .debloated) })).status, "12/12 disabled")
     }
 
     func testSummarizingResultsMentionsApprovalRestartAndFailures() {

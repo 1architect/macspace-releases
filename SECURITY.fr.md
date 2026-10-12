@@ -78,7 +78,7 @@ Chaque modification est d’abord inscrite dans un journal, de sorte qu’elle p
 | Améliorer Siri et Dictée | `com.apple.assistant.support`, clé `Siri Data Sharing Opt-In Status` | L’app, avec vos droits |
 | Fenêtre de rapport de plantage | Une surcharge launchd pour `com.apple.DiagnosticsReporter` et `com.apple.ReportGPURestart` | L’app, avec vos droits |
 | Partager l’analyse avec Apple (versions finales de macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, clés `AutoSubmit` et `ThirdPartyDataSubmit` | L’assistant |
-| Siri AI, Intelligence visuelle, Indexation pour la recherche générative | Surcharges d’indicateurs de fonctionnalité dans `/Library/Preferences/FeatureFlags/Domain/` | L’assistant |
+| Siri AI, Intelligence visuelle | Surcharges d’indicateurs de fonctionnalité dans `/Library/Preferences/FeatureFlags/Domain/` | L’assistant |
 | Suivi des blocages (tailspin) | `tailspin disable`, et `tailspin enable` pour l’annuler | L’assistant |
 | Les règles (six ; sept sur une version bêta de macOS) | Un profil de configuration, `com.macspace.policies` (voir ci-dessous) | Vous l’approuvez dans Réglages Système |
 

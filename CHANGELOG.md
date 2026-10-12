@@ -17,6 +17,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Removed
 
+- Debloat: the Generative search indexing switch. It stopped Mail search from working, with or without Apple Intelligence ([#6](https://github.com/1architect/macspace-releases/issues/6)). If you had switched it off, MacSpace switches Generative search indexing back on by itself (with the helper); restart your Mac to finish.
 - Debloat: the Apple Intelligence features switch. Apple deprecated its policies on macOS and their effect could not be verified; the Apple Intelligence switch on the Siri & Apple Intelligence page turns these features off. On a Mac where it is still on, it stays listed until you switch it off, which removes its policies.
 
 ### Fixed

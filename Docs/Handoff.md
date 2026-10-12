@@ -16,7 +16,7 @@ Inside, each job is a **module**, a separate plug-in that describes its widgets 
 | **System Data** (the core) | Explains what fills System Data, frees what is safe (system caches, old reports, unused system assets), deletes the document version history on request, and guides the manual cleanup macOS and other apps own. |
 | **Siri & Apple Intelligence** (the core) | An off-switch for Apple Intelligence, a background watcher, and release of the models macOS keeps afterwards. Does nothing in a virtual machine. |
 | **Other System Files** | Space outside System Data that macOS counts as purgeable: what it is, per purge service, and freeing the files apps marked purgeable now instead of when the disk is nearly full. |
-| **Debloat** (extra) | Thirteen switches for analytics, ads and background data collection macOS lets you control, and a background watch that switches off again what macOS turns back on, with a notification. |
+| **Debloat** (extra) | Twelve switches for analytics, ads and background data collection macOS lets you control, and a background watch that switches off again what macOS turns back on, with a notification. |
 
 Third-party plug-ins are out of scope. The app is built with SwiftPM only (no Xcode project) and requires macOS 27.
 

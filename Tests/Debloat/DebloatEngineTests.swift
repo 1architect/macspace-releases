@@ -311,15 +311,18 @@ final class DebloatEngineTests: XCTestCase {
 
     /// A retired control is never applied again, by the app, the helper or the watch, but what it applied can still be removed.
     func testARetiredControlCanBeRemovedButNotApplied() throws {
-        let control = try XCTUnwrap(DebloatCatalog.control("ai.features-policy"))
-        XCTAssertNotNil(control.retired)
-        let system = FakeDebloatSystem(controls: [control])
-        let engine = DebloatEngine(controls: [control], system: system, journal: MemoryJournalStore())
-        let apply = try engine.plan(.apply, controlIDs: [control.id])[0]
-        XCTAssertFalse(apply.runnable)
-        XCTAssertTrue(apply.blockers.contains { $0.hasPrefix("No longer offered") })
-        XCTAssertTrue(try engine.plan(.revert, controlIDs: [control.id])[0].blockers.isEmpty, "switching it back on is never blocked")
-        XCTAssertEqual(DebloatCatalog.controls.filter { $0.retired != nil }.map(\.id), ["ai.features-policy"])
+        XCTAssertEqual(DebloatCatalog.controls.filter { $0.retired != nil }.map(\.id), ["ai.generative-indexing", "ai.features-policy"])
+        XCTAssertEqual(DebloatCatalog.controls.filter(\.undoesWhenRetired).map(\.id), ["ai.generative-indexing"],
+                       "only the one that does harm (Mail search) is switched back on without the user")
+        for id in ["ai.generative-indexing", "ai.features-policy"] {
+            let control = try XCTUnwrap(DebloatCatalog.control(id))
+            let system = FakeDebloatSystem(controls: [control])
+            let engine = DebloatEngine(controls: [control], system: system, journal: MemoryJournalStore())
+            let apply = try engine.plan(.apply, controlIDs: [control.id])[0]
+            XCTAssertFalse(apply.runnable, id)
+            XCTAssertTrue(apply.blockers.contains { $0.hasPrefix("No longer offered") }, id)
+            XCTAssertTrue(try engine.plan(.revert, controlIDs: [control.id])[0].blockers.isEmpty, "\(id): switching it back on is never blocked")
+        }
     }
 
     func testControlMeasuredIneffectiveWithSIPIsBlockedAndNotControllable() throws {

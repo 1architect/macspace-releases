@@ -69,7 +69,8 @@ enum DebloatScreenBuilder {
         "ads.advertising-identifier-policy": loc("Apps can't track you with the advertising identifier or ask to."),
         "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
-        "ai.generative-indexing": loc("Stops Apple Intelligence from indexing your Mail and personal data."),
+        // Retired, and switched back on by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
+        "ai.generative-indexing": loc("No longer offered: it stops Mail search from working. Switch this off, then restart your Mac."),
         // Retired: shown only where it is still applied (`DebloatStore.isShown`).
         "ai.features-policy": loc("No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies."),
         "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
@@ -218,6 +219,13 @@ enum DebloatScreenBuilder {
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
                       confirmation: Confirmation(title: loc("Disable \(recommended.count) features?"), message: message, confirmTitle: loc("Disable")),
                       requires: [.privilegedHelper])
+    }
+
+    /// Retired controls that do harm and are still applied here: MacSpace switches them back on by itself.
+    static func retiredToUndo(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
+        snapshot.controls.filter { control in
+            control.retired != nil && control.undoesWhenRetired && snapshot.status(control.id).map { DebloatStore.appliedStates.contains($0.state) } == true
+        }
     }
 
     /// What the background watch switched off again lately: macOS switched it back on, MacSpace switched it off.

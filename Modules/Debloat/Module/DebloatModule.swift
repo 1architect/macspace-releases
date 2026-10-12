@@ -26,13 +26,27 @@ public struct DebloatModule: MacSpaceModule {
     }
 
     /// The snapshot, after the helper removed the profiles of earlier versions once the one profile holds everything they did: no
-    /// approval, and nothing switched off comes back on. Tried once per set, so a failure does not repeat on every read.
+    /// approval, and nothing switched off comes back on. Tried once per set, so a failure does not repeat on every read. Retired
+    /// controls that do harm are switched back on first (`undoRetired`).
     private func snapshot(_ context: ModuleContext) async -> DebloatSnapshot {
-        let snapshot = await store.snapshot()
+        var snapshot = await store.snapshot()
+        if await undoRetired(snapshot, context: context) { snapshot = await store.snapshot() }
         guard case let .cleanUp(identifiers) = snapshot.profileWork, context.privileged != nil, await store.firstCleanUp(identifiers) else { return snapshot }
         _ = await Self.removeProfiles(identifiers, context: context)
         await store.invalidate()
         return await store.snapshot()
+    }
+
+    /// A retired control that does harm (Generative search indexing stops Mail search) is switched back on by MacSpace wherever it is
+    /// still applied, without waiting for the user: on the first read of the tile or the page, so at launch, and by the watch. Once
+    /// per run of the app, and only with the helper when the control needs it; until then the page lists it so the user can do it.
+    /// Nothing is shown about it: the release notes say so. Returns whether anything was tried.
+    func undoRetired(_ snapshot: DebloatSnapshot, context: ModuleContext) async -> Bool {
+        let controls = DebloatScreenBuilder.retiredToUndo(snapshot).filter { context.privileged != nil || !DebloatScreenBuilder.needsHelper($0) }
+        guard !controls.isEmpty, await store.firstRetiredUndo(controls.map(\.id)) else { return false }
+        _ = await Self.change(.revert, controls.map(\.id), context: context, progress: { _ in })
+        await store.invalidate()
+        return true
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -87,6 +101,7 @@ public struct DebloatModule: MacSpaceModule {
     public func runBackgroundTask(_ id: String, context: ModuleContext) async {
         guard id == "watch" else { return }
         await store.invalidate()
+        if await undoRetired(await store.snapshot(), context: context) { await store.invalidate() }
         let undone = DebloatScreenBuilder.counts(await store.snapshot()).drifted
             .filter { !DebloatScreenBuilder.isPolicy($0) && (context.privileged != nil || !DebloatScreenBuilder.needsHelper($0)) }
         guard !undone.isEmpty else { return }

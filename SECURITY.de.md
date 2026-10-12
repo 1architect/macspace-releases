@@ -76,7 +76,7 @@ durch Wiedereinschalten der Funktion rückgängig machen lässt.
 | Siri & Diktat verbessern | `com.apple.assistant.support`, Schlüssel `Siri Data Sharing Opt-In Status` | Die App, als du |
 | Absturzbericht-Dialog | Eine launchd-Überschreibung für `com.apple.DiagnosticsReporter` und `com.apple.ReportGPURestart` | Die App, als du |
 | Analysedaten mit Apple teilen (Release-Builds von macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, Schlüssel `AutoSubmit` und `ThirdPartyDataSubmit` | Das Hilfsprogramm |
-| Siri AI, Visuelle Intelligenz, Indizierung für generative Suche | Überschreibungen von Feature-Flags in `/Library/Preferences/FeatureFlags/Domain/` | Das Hilfsprogramm |
+| Siri AI, Visuelle Intelligenz | Überschreibungen von Feature-Flags in `/Library/Preferences/FeatureFlags/Domain/` | Das Hilfsprogramm |
 | Hänger-Aufzeichnung (tailspin) | `tailspin disable` und `tailspin enable`, um es rückgängig zu machen | Das Hilfsprogramm |
 | Die Richtlinien (sechs; sieben in einer Betaversion von macOS) | Ein Konfigurationsprofil, `com.macspace.policies` (siehe unten) | Du genehmigst es in den Systemeinstellungen |
 

@@ -415,6 +415,9 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
     /// Why the control is no longer offered; nil while it is. A retired control is never applied again: the page shows it only on a
     /// Mac where it is still applied, so it can be switched back on and its settings removed.
     public let retired: String?
+    /// For a retired control that does harm where it is applied: MacSpace switches it back on by itself, instead of waiting for the
+    /// user (`DebloatModule.undoRetired`).
+    public let undoesWhenRetired: Bool
 
     public enum Audience: String, Codable, Sendable {
         /// Beta (seed) builds, where macOS can override what System Settings says.
@@ -437,7 +440,7 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
                 breaks: [String] = [], notes: [String] = [], validatedBuilds: [String] = [],
                 ineffectiveWithSIPBuilds: [String] = [],
                 settingsURL: String? = nil, applyCommand: String? = nil, replacedBy: String? = nil, audience: Audience? = nil,
-                retired: String? = nil) {
+                retired: String? = nil, undoesWhenRetired: Bool = false) {
         self.id = id
         self.title = title
         self.summary = summary
@@ -456,6 +459,7 @@ public struct DebloatControl: Codable, Equatable, Sendable, Identifiable {
         self.replacedBy = replacedBy
         self.audience = audience
         self.retired = retired
+        self.undoesWhenRetired = undoesWhenRetired
     }
 }
 

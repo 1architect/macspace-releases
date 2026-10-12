@@ -80,7 +80,7 @@ MacSpace não a apaga.
   <img src="Docs/Screenshots/pt-BR/OtherSystemFiles.png" alt="A página Outros Arquivos do Sistema: um gráfico do que o macOS conta como removível, a lista Liberar agora e o botão Liberar até" width="720">
 </p>
 
-**Debloat.** Treze interruptores para análises, publicidade e coleta de dados em segundo plano
+**Debloat.** Doze interruptores para análises, publicidade e coleta de dados em segundo plano
 que o macOS permite controlar. Cada interruptor se chama **Desativar …**: ligado significa que o
 MacSpace desativou aquele recurso. **Desativar tudo** desativa tudo o que ainda está ativado.
 **Ativar tudo** devolve o que o MacSpace alterou, usando os ajustes que ele salvou antes. Enquanto
@@ -96,7 +96,6 @@ reativou (exceto as políticas), e pode avisar você quando isso acontece.
 | Identificador de publicidade | Os apps não podem rastrear você com o identificador de publicidade nem pedir para isso. | Reabrir os apps |
 | Siri AI | Desativa a Siri AI. O Spotlight volta à busca clássica. | Reiniciar |
 | Inteligência Visual | Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar. | Reiniciar |
-| Indexação para busca generativa | Impede que o Apple Intelligence indexe seu Mail e seus dados pessoais. | Reiniciar |
 | Resultados da internet no Spotlight | O Spotlight deixa de enviar suas buscas para a Apple. Sem resultados da web no Spotlight. | Reabrir os apps |
 | Rastreamento de travamentos (tailspin) | Impede o macOS de gravar a atividade o tempo todo para relatórios de travamento. Libera cerca de 100 MB de memória. | Nada |
 | Aviso de relatório de falhas | Chega de avisos de "encerrou inesperadamente". | Reiniciar |

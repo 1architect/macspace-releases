@@ -73,7 +73,7 @@ the feature back on.
 | Improve Siri & Dictation | `com.apple.assistant.support`, key `Siri Data Sharing Opt-In Status` | The app, as you |
 | Crash report dialog | A launchd override for `com.apple.DiagnosticsReporter` and `com.apple.ReportGPURestart` | The app, as you |
 | Share analytics with Apple (release builds of macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, keys `AutoSubmit` and `ThirdPartyDataSubmit` | The helper |
-| Siri AI, Visual Intelligence, Generative search indexing | Feature-flag overrides in `/Library/Preferences/FeatureFlags/Domain/` | The helper |
+| Siri AI, Visual Intelligence | Feature-flag overrides in `/Library/Preferences/FeatureFlags/Domain/` | The helper |
 | Hang tracing (tailspin) | `tailspin disable`, and `tailspin enable` to undo it | The helper |
 | The policies (six; seven on a beta of macOS) | One configuration profile, `com.macspace.policies` (see below) | You approve it in System Settings |
 

@@ -82,7 +82,7 @@ sous **En attente d’installation**. MacSpace ne la supprime pas.
   <img src="Docs/Screenshots/fr/OtherSystemFiles.png" alt="La page Autres fichiers système : un graphique de ce que macOS compte comme purgeable, la liste À libérer et le bouton Libérer jusqu’à" width="720">
 </p>
 
-**Debloat.** Treize interrupteurs pour l’analyse, la publicité et la collecte de données en
+**Debloat.** Douze interrupteurs pour l’analyse, la publicité et la collecte de données en
 arrière-plan que macOS vous laisse contrôler. Chaque interrupteur s’appelle **Désactiver …** :
 activé signifie que MacSpace a désactivé cette fonction. **Tout désactiver** désactive tout ce qui
 est encore activé. **Tout activer** rétablit ce que MacSpace a modifié, à partir des réglages
@@ -99,7 +99,6 @@ le fait.
 | Identifiant publicitaire | Les apps ne peuvent ni vous suivre avec l’identifiant publicitaire ni vous le demander. | Après réouverture des apps |
 | Siri AI | Désactive Siri AI. Spotlight revient à la recherche classique. | Après redémarrage |
 | Intelligence visuelle | Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner. | Après redémarrage |
-| Indexation pour la recherche générative | Empêche Apple Intelligence d’indexer Mail et vos données personnelles. | Après redémarrage |
 | Résultats Internet dans Spotlight | Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight. | Après réouverture des apps |
 | Suivi des blocages (tailspin) | Empêche macOS d’enregistrer en continu l’activité pour les rapports de blocage. Libère environ 100 Mo de mémoire. | Tout de suite |
 | Fenêtre de rapport de plantage | Plus de fenêtres « s’est fermé de façon inattendue ». | Après redémarrage |

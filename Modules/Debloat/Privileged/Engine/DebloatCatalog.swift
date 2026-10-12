@@ -123,9 +123,12 @@ public enum DebloatCatalog {
                 "hybridsearchd is Disabled only when all three flags are off (26B5091g).",
                 "26B5101f no longer declares PlatformDaemons in the GenerativeLearningPlatform domain; it reads disabled, and hybridsearchd's launchd plist still tests it, so the other two flags decide (read 2026-10-07, not measured with a reboot).",
                 "Measured on 26B5091g with SIP enabled: after the reboot all three flags read disabled and hybridsearchd was not loaded; intelligenceplatformd and intelligencetasksd still launched on demand.",
+                "Breaks Mail search (issue #6), measured on 26B5101f on 2026-10-12: with the flags off, Mail logs \"MailSearchClient: Not ready since Generative Search feature flags are disabled\" and falls back to its Spotlight index; a search for a name found 0 messages with Apple Intelligence off and on. With the flags back on and a restart, the same search found 59.",
                 flagNote,
             ],
-            validatedBuilds: ["26B5091g"]
+            validatedBuilds: ["26B5091g"],
+            retired: "It stops Mail search from working (issue #6): Mail's search client needs these flags, with or without Apple Intelligence, and hybridsearchd cannot be stopped without the Mail flag. Retired 2026-10-12, and switched back on by MacSpace wherever it is applied.",
+            undoesWhenRetired: true
         ),
         DebloatControl(
             id: "diagnostics.tailspin",

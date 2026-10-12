@@ -75,7 +75,7 @@ ativando o recurso de novo.
 | Melhorar Siri e Ditado | `com.apple.assistant.support`, chave `Siri Data Sharing Opt-In Status` | O app, como você |
 | Aviso de relatório de falhas | Uma substituição do launchd para `com.apple.DiagnosticsReporter` e `com.apple.ReportGPURestart` | O app, como você |
 | Compartilhar análises com a Apple (versões finais do macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, chaves `AutoSubmit` e `ThirdPartyDataSubmit` | O auxiliar |
-| Siri AI, Inteligência Visual, Indexação para busca generativa | Substituições de feature flags em `/Library/Preferences/FeatureFlags/Domain/` | O auxiliar |
+| Siri AI, Inteligência Visual | Substituições de feature flags em `/Library/Preferences/FeatureFlags/Domain/` | O auxiliar |
 | Rastreamento de travamentos (tailspin) | `tailspin disable` e, para desfazer, `tailspin enable` | O auxiliar |
 | As políticas (seis; sete numa versão beta do macOS) | Um perfil de configuração, `com.macspace.policies` (veja abaixo) | Você o aprova nos Ajustes do Sistema |
 

@@ -75,7 +75,7 @@ install is listed under **Waiting to install**. MacSpace does not delete it.
   <img src="Docs/Screenshots/en/OtherSystemFiles.png" alt="The Other System Files page: a chart of what macOS counts as purgeable, the Free now list and the Free up to button" width="720">
 </p>
 
-**Debloat.** Thirteen switches for analytics, advertising and background data collection that
+**Debloat.** Twelve switches for analytics, advertising and background data collection that
 macOS lets you control. Each switch is named **Disable …**: on means MacSpace switched that
 feature off. **Disable all** switches off everything still on. **Enable all** puts back what
 MacSpace changed, using the settings it saved first. While MacSpace runs, it checks every 15
@@ -91,7 +91,6 @@ you when it does.
 | Advertising identifier | Apps can't track you with the advertising identifier or ask to. | Reopening apps |
 | Siri AI | Turns off Siri AI. Spotlight goes back to classic search. | A restart |
 | Visual Intelligence | Turns off Visual Intelligence. Visual Look Up may stop working too. | A restart |
-| Generative search indexing | Stops Apple Intelligence from indexing your Mail and personal data. | A restart |
 | Spotlight internet results | Spotlight stops sending your searches to Apple. No more web results in Spotlight. | Reopening apps |
 | Hang tracing (tailspin) | Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory. | Nothing |
 | Crash report dialog | No more "quit unexpectedly" dialogs. | A restart |
