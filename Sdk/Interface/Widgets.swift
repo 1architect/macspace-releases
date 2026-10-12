@@ -133,7 +133,9 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public var bytes: UInt64
     public var tone: Tone
     /// What this part is made of, item by item. On a page's hero, clicking its block opens a page listing them, as a group row does
-    /// (`Row.children`). Empty: the block opens nothing. Leave it empty on a tile's chart, which is saved between launches.
+    /// (`Row.children`): the same page change, a "Page › Block" title and Back. The rows keep their actions, (i) and `paths`; size
+    /// each by what it adds to this block, so the page adds up to it. Empty: the block opens nothing, which is right when its only
+    /// row would repeat its name and size. Leave it empty on a tile's chart, which is saved between launches.
     public var items: [Row]
 
     public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = []) {
@@ -225,8 +227,10 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
     public var children: [Row]
-    /// Where the row's files are on disk. The app offers to show them in the Finder while the pointer is over the row; those that no
-    /// longer exist are left out.
+    /// Where the row's files are on disk: absolute paths to files or folders. The app draws a folder button beside the row's (i) that
+    /// shows them in the Finder, selected in one window, or opens the deepest folder holding them all when they lie in many folders.
+    /// Those that no longer exist are left out, and no button is drawn when none is left. Only list places the user can open: not a
+    /// folder macOS keeps closed even with Full Disk Access, nor a row with no files of its own (a setting, an account).
     public var paths: [String]
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, symbol: String? = nil,

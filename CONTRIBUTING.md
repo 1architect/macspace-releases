@@ -128,6 +128,9 @@ Each module is a separate bundle that describes its screens for the app to draw.
 - `Sdk` and `Platform` are separate packages on purpose. Do not merge them into the main package (the reason is in the Handoff).
 - Every switch shows the feature: on means the feature runs, off means MacSpace switched it off.
 - Give a row a description only when its title is not enough. Keep it to one or two short sentences.
+- When a row stands for files the user can open, list them in `Row.paths` (a folder button shows them in the Finder). When a page
+  has a hero chart, give each block the rows it is made of in `UsageSegment.items` (a click opens a page of them), and leave them
+  out on the tile. The doc comments in `Sdk/Interface/Widgets.swift` say how.
 - Commit titles start with a capital letter and say what changed. Naming the area first is fine ("Debloat: ...").
 - Do not commit signing material, keys, tokens or experiment results. The `.gitignore` covers the usual files.
 

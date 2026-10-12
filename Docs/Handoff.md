@@ -88,7 +88,12 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    action's `requires` permissions and shows its confirmation first. A row's subtitle is a short grey note after its title; its
    detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
    Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short
-   sentences: no (i) is drawn without one. Rows are drawn without symbols, and modules are named without theirs.
+   sentences: no (i) is drawn without one. Rows are drawn without symbols, and modules are named without theirs. A row with
+   `children` is a group that opens a page of its own. A row with `paths` gets a folder button beside its (i) that shows its files
+   in the Finder (`RevealTarget`); list only places the user can open. A block of the page's hero with `items` (`UsageSegment`)
+   opens a page of them through the same stack as a group (`ScreenView.row(_:in:)`), with the same page change and Back; a tile's
+   blocks carry none, since tiles are saved. System Data and Other System Files use both; Siri and Debloat have no files to show
+   and no hero.
 3. **Switches show the feature.** On every toggle, on means the feature runs and off means MacSpace switched it off. Debloat follows
    this too; keep it for new modules.
 4. **Caching.** Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button

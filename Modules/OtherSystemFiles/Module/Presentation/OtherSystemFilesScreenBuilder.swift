@@ -38,6 +38,36 @@ enum OtherSystemFilesScreenBuilder {
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
+    /// The page's blocks, each with the rows it is made of, so a click on it opens a page of them (`UsageSegment.items`): the
+    /// purgeable app files with their Free button, each cloud service's downloads with theirs and where they are, a waiting update
+    /// with its Open. A block whose row would only repeat its name and size (a service MacSpace leaves alone and says nothing about)
+    /// opens nothing. Not on the tile, which is saved.
+    static func blocksWithItems(_ snapshot: PurgeableSnapshot) -> [UsageSegment] {
+        let rows = [freeNow(snapshot), updatesSection(snapshot), keptSection(snapshot)].compactMap { $0 }.flatMap(rows(in:))
+        return segments(snapshot).map { segment in
+            var segment = segment
+            let items = segment.id == CacheDeleteService.fsPurgeableDocument
+                ? documentsRows(segment.bytes, snapshot) ?? []
+                : rows.filter { $0.id == segment.id }
+            segment.items = items.contains(where: saysMore) ? items : []
+            return segment
+        }
+    }
+
+    /// The rows of a section of the page.
+    private static func rows(in widget: ScreenWidget) -> [Row] {
+        switch widget {
+        case let .list(list): return list.rows
+        case let .section(section): return section.widgets.flatMap(rows(in:))
+        default: return []
+        }
+    }
+
+    /// A row says more than its block when it has an explanation, a button or files to show.
+    private static func saysMore(_ row: Row) -> Bool {
+        !(row.detail ?? "").isEmpty || !row.actions.isEmpty || !row.paths.isEmpty || !row.steps.isEmpty
+    }
+
     /// The bar, then what MacSpace frees, on its own and row by row, then everything else macOS counts as purgeable, row by row.
     static func screen(_ snapshot: PurgeableSnapshot) -> Screen {
         guard snapshot.services != nil || !snapshot.updates.isEmpty else {
@@ -51,7 +81,7 @@ enum OtherSystemFilesScreenBuilder {
         if case let .section(kept)? = keptSection(snapshot), case let .list(list)? = kept.widgets.first {
             widgets.append(.list(ListWidget(id: "kept", title: loc("Deleted by macOS when the disk is full"), rows: list.rows)))
         }
-        let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: segments(snapshot),
+        let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: blocksWithItems(snapshot),
                             footnote: loc("Files macOS deletes on its own when the disk runs low. System Settings counts this space as available."))
         return Screen(title: loc("Other System Files"), hero: hero, primary: freeAction(snapshot, prominent: true), widgets: widgets)
     }

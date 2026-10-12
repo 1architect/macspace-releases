@@ -171,4 +171,41 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertFalse(PurgeableDocuments.isCloudFolder("/Users/someone/Library/CloudStorage/../Caches", home: home))
         XCTAssertFalse(PurgeableDocuments.isCloudFolder("/Users/someone/Documents", home: home))
     }
+
+    /// Each block of the page lists what it is made of: the purgeable app files their row with its Free button, the cloud files one
+    /// row per cloud folder with where it is (and what no folder accounts for), the update its row. A service that has nothing to add
+    /// to its name and size opens nothing, and the tile's blocks, which are saved, carry no items.
+    func testEachBlockListsTheItemsItIsMadeOf() {
+        var snap = snapshot(measured.merging([CacheDeleteService.fsPurgeableDocument: 30_000_000_000]) { $1 })
+        let onedrive = "/h/Library/CloudStorage/OneDrive-Pessoal"
+        snap.documents = [PurgeableDocuments.Source(name: "OneDrive (Pessoal)", path: onedrive, bytes: 20_000_000_000, files: 8_000, folders: [])]
+        let update = "/System/Volumes/Preboot/X/cryptex1/proposed"
+        snap.updates = [PreparedUpdate(name: "macOS 27.2 (26B5101f)", bytes: 10_700_000_000, path: update)]
+        let blocks = OtherSystemFilesScreenBuilder.blocksWithItems(snap)
+        let files = blocks.first { $0.id == CacheDeleteService.fsPurgeableData }
+        XCTAssertEqual(files?.items.map(\.id), [CacheDeleteService.fsPurgeableData])
+        XCTAssertEqual(files?.items.first?.actions.map(\.id), ["purgeFiles"])
+        let cloud = blocks.first { $0.id == CacheDeleteService.fsPurgeableDocument }
+        XCTAssertEqual(cloud?.items.map(\.id), ["documents:\(onedrive)", CacheDeleteService.fsPurgeableDocument])
+        XCTAssertEqual(cloud?.items.map(\.paths), [[onedrive], []])
+        XCTAssertEqual(cloud?.items.first?.actions.map(\.id), ["removeDownloads"])
+        XCTAssertEqual(cloud?.group?.id, "segment:\(CacheDeleteService.fsPurgeableDocument)")
+        let waiting = blocks.first { $0.id == "update:\(update)" }
+        XCTAssertEqual(waiting?.items.map(\.paths), [[update]])
+        XCTAssertEqual(waiting?.items.first?.actions.map(\.id), ["openSoftwareUpdate"])
+        XCTAssertNil(blocks.first { $0.id == CacheDeleteService.appContainerCaches }?.group, "nothing to add to the block")
+        XCTAssertNil(blocks.first { $0.id == CacheDeleteService.quickLookThumbnails }?.group)
+        XCTAssertEqual(blocks.map(\.id), OtherSystemFilesScreenBuilder.segments(snap).map(\.id))
+        XCTAssertTrue(OtherSystemFilesScreenBuilder.segments(snap).allSatisfy(\.items.isEmpty))
+        guard case let .blocks(tile)? = OtherSystemFilesScreenBuilder.tile(snap).graphic else { return XCTFail() }
+        XCTAssertTrue(tile.allSatisfy(\.items.isEmpty))
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.screen(snap).hero?.segments, blocks)
+    }
+
+    /// Purgeable app files too few to free have no row, so their block opens nothing.
+    func testABlockWithNothingToListOpensNothing() {
+        let blocks = OtherSystemFilesScreenBuilder.blocksWithItems(snapshot([CacheDeleteService.fsPurgeableData: 1_000_000]))
+        XCTAssertEqual(blocks.map(\.id), [CacheDeleteService.fsPurgeableData])
+        XCTAssertNil(blocks.first?.group)
+    }
 }
