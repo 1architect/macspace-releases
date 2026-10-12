@@ -65,6 +65,20 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertTrue(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .stock])).isEmpty)
     }
 
+    /// A policy Screen Time or another profile sets is not offered: its row says who sets it, its switch cannot be flipped, and
+    /// "Disable all" leaves it out.
+    func testAPolicySetByAnotherProfileIsNotOffered() throws {
+        let control = try XCTUnwrap(DebloatCatalog.control("suggestions.spotlight-internet-policy"))
+        let elsewhere = ControlStatus(controlID: control.id, state: .stock, effect: nil, settings: [], tested: control.tested, appliedAt: nil,
+                                      managedElsewhere: true)
+        let snap = snapshot([elsewhere])
+        let row = DebloatScreenBuilder.row(control, snap)
+        XCTAssertFalse(row.isEnabled)
+        XCTAssertEqual(row.badge?.text, "Set by another profile")
+        XCTAssertTrue(row.detail?.contains("Screen Time or another profile already sets this.") == true)
+        XCTAssertFalse(DebloatScreenBuilder.recommended(snap).contains { $0.id == control.id })
+    }
+
     func testEveryControlGetsOneToggleInItsCategory() {
         let screen = DebloatScreenBuilder.screen(snapshot([]))
         var ids: [String] = []

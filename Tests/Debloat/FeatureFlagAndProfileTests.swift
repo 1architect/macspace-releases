@@ -220,6 +220,26 @@ final class ConfigurationProfileTests: XCTestCase {
         XCTAssertEqual(engine.status(of: controls[0]).state, .stock)
     }
 
+    /// A policy Screen Time or another profile enforces is not MacSpace's: it does not show as switched off by MacSpace, nor as partly
+    /// applied, and says who sets it. Held by MacSpace's own profile, it does.
+    func testAPolicyEnforcedByAnotherProfileIsNotMacSpaces() throws {
+        let system = FakeDebloatSystem(controls: controls)
+        let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())
+        system.forced[diagnostics[0].id] = .bool(false) // Screen Time, say: one of the two settings
+        let partly = engine.status(of: controls[0])
+        XCTAssertEqual(partly.state, .stock, "not partly applied: none of it is MacSpace's")
+        XCTAssertEqual(partly.managedElsewhere, true)
+        for setting in diagnostics { system.forced[setting.id] = .bool(false) }
+        XCTAssertEqual(engine.status(of: controls[0]).state, .stock)
+        system.forced = [:]
+        system.installedValues[ConfigurationProfileBuilder.profileIdentifier] = Dictionary(uniqueKeysWithValues: diagnostics.compactMap(\.managed).map {
+            ("\($0.payloadType):\($0.key)", PlistValue.bool(false))
+        })
+        let own = engine.status(of: controls[0])
+        XCTAssertEqual(own.state, .debloated)
+        XCTAssertEqual(own.managedElsewhere, false)
+    }
+
     func testAlreadyForcedValuesNeedNoProfile() throws {
         let system = FakeDebloatSystem(controls: controls)
         let engine = DebloatEngine(controls: controls, system: system, journal: MemoryJournalStore())

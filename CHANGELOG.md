@@ -16,6 +16,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Changed
 
+- Debloat: the Siri AI switch says what stays on: Apple Intelligence and its other features.
 - A tile says what its module is cleaning, and how far it is, in place of its status line while the cleanup runs.
 - While a page reads the Mac again, only its chart pulses: the legend and the rows fold away and come back with the new figures, and the main button says Loading.
 - The main button keeps a warning on one line wherever the page has room.
@@ -32,6 +33,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Debloat: a policy that Screen Time or another profile sets is no longer shown as switched off (or partly switched off) by MacSpace. Its row says "Set by another profile", its switch cannot be flipped, and Disable all leaves it out. MacSpace no longer tries to undo settings that are not its own.
 - Apple Intelligence downloads are no longer cut short by MacSpace: while Apple Intelligence is on, MacSpace never asks macOS to delete system assets, through which its models download and update. Clean, automatic cleaning and the background retries leave them out, and System Data lists them as kept. Switching Apple Intelligence off on the Siri & Apple Intelligence page still releases its models.
 - Debloat: where the retired Apple Intelligence features switch is still applied, MacSpace removes its policies by itself (with the helper). They made macOS treat Apple Intelligence as restricted: System Settings hid it, said extensions were disabled by the organization, and its download stood still.
 - System Data: the caches and temporary files of root, macOS's services and other accounts are measured (with the helper). Wallpaper and screen saver downloads that macOS left unfinished, which can grow to hundreds of GB, get a row of their own.

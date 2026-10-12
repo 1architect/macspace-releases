@@ -74,7 +74,7 @@
  "Stops sharing Siri and Dictation recordings with Apple.": ["Deixa de compartilhar gravações da Siri e do Ditado com a Apple.", "Cesse de partager les enregistrements de Siri et de la dictée avec Apple.", "Deja de compartir las grabaciones de Siri y del dictado con Apple.", "Teilt keine Aufnahmen von Siri und Diktat mehr mit Apple."],
  "Suggestions and search": ["Sugestões e busca", "Suggestions et recherche", "Sugerencias y búsqueda", "Vorschläge und Suche"],
  "Turns off Game Center.": ["Desativa o Game Center.", "Désactive Game Center.", "Desactiva Game Center.", "Deaktiviert Game Center."],
- "Turns off Siri AI. Spotlight goes back to classic search.": ["Desativa a Siri AI. O Spotlight volta à busca clássica.", "Désactive Siri AI. Spotlight revient à la recherche classique.", "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica.", "Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück."],
+ "Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on.": ["A Siri AI deixa de abrir e o Spotlight volta à busca clássica. A Apple Intelligence e os outros recursos dela continuam ativos.", "Siri AI ne se lance plus et Spotlight revient à la recherche classique. Apple Intelligence et ses autres fonctions restent activés.", "Siri AI deja de abrirse y Spotlight vuelve a la búsqueda clásica. Apple Intelligence y sus otras funciones siguen activados.", "Siri AI startet nicht mehr, und Spotlight kehrt zur klassischen Suche zurück. Apple Intelligence und seine anderen Funktionen bleiben aktiv."],
  "Turns off Visual Intelligence. Visual Look Up may stop working too.": ["Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar.", "Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner.", "Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar.", "Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr."],
  "Undone by macOS": ["Desfeito pelo macOS", "Annulé par macOS", "Deshecho por macOS", "Von macOS rückgängig gemacht"],
  "Unknown action %@.": ["Ação desconhecida %@.", "Action inconnue %@.", "Acción desconocida %@.", "Unbekannte Aktion %@."],
@@ -100,5 +100,7 @@
  "Dictation and translation on Apple servers": ["Ditado e tradução nos servidores da Apple", "Dictée et traduction sur les serveurs d’Apple", "Dictado y traducción en los servidores de Apple", "Diktat und Übersetzung auf Apple-Servern"],
  "Spotlight internet results": ["Resultados da internet no Spotlight", "Résultats Internet dans Spotlight", "Resultados de internet en Spotlight", "Internetergebnisse in Spotlight"],
  "Game Center": ["Game Center", "Game Center", "Game Center", "Game Center"],
- "Apple News": ["Apple News", "Apple News", "Apple News", "Apple News"]
+ "Apple News": ["Apple News", "Apple News", "Apple News", "Apple News"],
+ "Set by another profile": ["Definido por outro perfil", "Défini par un autre profil", "Definido por otro perfil", "Von einem anderen Profil festgelegt"],
+ "Screen Time or another profile already sets this. MacSpace cannot change it there.": ["O Tempo de Uso ou outro perfil já define isto. O MacSpace não pode alterar isso lá.", "Temps d’écran ou un autre profil le définit déjà. MacSpace ne peut pas le modifier à cet endroit.", "Tiempo de uso u otro perfil ya lo define. MacSpace no puede cambiarlo ahí.", "Bildschirmzeit oder ein anderes Profil legt dies bereits fest. MacSpace kann es dort nicht ändern."]
 }

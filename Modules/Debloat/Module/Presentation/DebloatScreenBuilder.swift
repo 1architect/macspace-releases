@@ -33,6 +33,8 @@ enum DebloatScreenBuilder {
     static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
         guard let status else { return nil }
         if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical) }
+        // Screen Time or an organization's profile enforces it, not MacSpace (`DebloatEngine.status`).
+        if status.managedElsewhere == true, status.state != .debloated { return Badge(loc("Set by another profile")) }
         switch status.state {
         case .debloated:
             switch status.effect?.state {
@@ -67,7 +69,7 @@ enum DebloatScreenBuilder {
         "telemetry.on-device-speech-policy": loc("Dictation and translation stay on this Mac. Languages without an on-device model stop working."),
         "ads.personalized-ads": loc("Apple stops picking ads based on what you do."),
         "ads.advertising-identifier-policy": loc("Apps can't track you with the advertising identifier or ask to."),
-        "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search."),
+        "siri.siri-ai-flag": loc("Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         // Retired, and switched back on by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
         "ai.generative-indexing": loc("No longer offered: it stops Mail search from working. Switch this off, then restart your Mac."),
@@ -86,6 +88,7 @@ enum DebloatScreenBuilder {
         if let restart = restartText(control.restart) { lines.append(restart) }
         let problem: Set<EffectState> = [.ineffective, .notControllable]
         if let effect = status?.effect, problem.contains(effect.state), !effect.detail.isEmpty { lines.append(effect.detail) }
+        if status?.managedElsewhere == true { lines.append(loc("Screen Time or another profile already sets this. MacSpace cannot change it there.")) }
         return lines.joined(separator: " ")
     }
 
@@ -100,7 +103,9 @@ enum DebloatScreenBuilder {
         let status = snapshot.status(control.id)
         let on = isOn(status)
         // A retired switch can only be switched off, which removes what it applied.
-        let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable || control.retired != nil && !on
+        // Set by Screen Time or another profile: switching it on here would change nothing.
+        let elsewhere = status?.managedElsewhere == true && !on
+        let blocked = snapshot.cannotTakeEffect.contains(control.id) || status?.state == .unavailable || control.retired != nil && !on || elsewhere
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why. What a
         // switch changes and breaks is behind its (i).
         var action = Action(id: "toggle", title: title(control), parameters: ["id": control.id])
@@ -129,7 +134,8 @@ enum DebloatScreenBuilder {
     /// already off or waiting for approval is left out.
     static func recommended(_ snapshot: DebloatSnapshot) -> [DebloatControl] {
         snapshot.controls.filter { control in
-            guard control.retired == nil, let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id) else { return false }
+            guard control.retired == nil, let status = snapshot.status(control.id), !snapshot.cannotTakeEffect.contains(control.id),
+                  status.managedElsewhere != true else { return false }
             switch status.state {
             case .stock, .partial, .drifted, .unknown, .awaitingRemoval: return true
             case .debloated, .awaitingApproval, .unavailable: return false

@@ -78,10 +78,13 @@
 "Policies" = "Políticas";
 "Reopen apps to apply." = "Vuelve a abrir las apps para aplicarlo.";
 "Restart to apply." = "Reinicia para aplicarlo.";
+"Screen Time or another profile already sets this. MacSpace cannot change it there." = "Tiempo de uso u otro perfil ya lo define. MacSpace no puede cambiarlo ahí.";
+"Set by another profile" = "Definido por otro perfil";
 "Share analytics with Apple" = "Compartir análisis con Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Muestra una notificación cuando macOS vuelve a activar una función desactivada y MacSpace la desactiva de nuevo.";
 "Siri" = "Siri";
 "Siri AI" = "Siri AI";
+"Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on." = "Siri AI deja de abrirse y Spotlight vuelve a la búsqueda clásica. Apple Intelligence y sus otras funciones siguen activados.";
 "Some are not tested yet." = "Algunas aún no se han probado.";
 "Spotlight internet results" = "Resultados de internet en Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight.";
@@ -92,7 +95,6 @@
 "Suggestions and search" = "Sugerencias y búsqueda";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "Desactiva los análisis, los anuncios y la recogida de datos en segundo plano que macOS te deja controlar.";
 "Turns off Game Center." = "Desactiva Game Center.";
-"Turns off Siri AI. Spotlight goes back to classic search." = "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar.";
 "Undone by macOS" = "Deshecho por macOS";
 "Unknown action %@." = "Acción desconocida %@.";

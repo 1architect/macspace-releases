@@ -78,10 +78,13 @@
 "Policies" = "Règles";
 "Reopen apps to apply." = "Rouvrez les apps pour appliquer.";
 "Restart to apply." = "Redémarrez pour appliquer.";
+"Screen Time or another profile already sets this. MacSpace cannot change it there." = "Temps d’écran ou un autre profil le définit déjà. MacSpace ne peut pas le modifier à cet endroit.";
+"Set by another profile" = "Défini par un autre profil";
 "Share analytics with Apple" = "Partager l’analyse avec Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Affiche une notification quand macOS réactive une fonction désactivée et que MacSpace la désactive de nouveau.";
 "Siri" = "Siri";
 "Siri AI" = "Siri AI";
+"Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on." = "Siri AI ne se lance plus et Spotlight revient à la recherche classique. Apple Intelligence et ses autres fonctions restent activés.";
 "Some are not tested yet." = "Certaines ne sont pas encore testées.";
 "Spotlight internet results" = "Résultats Internet dans Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight.";
@@ -92,7 +95,6 @@
 "Suggestions and search" = "Suggestions et recherche";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "Désactivez l’analyse, les publicités et la collecte de données en arrière-plan que macOS vous laisse contrôler.";
 "Turns off Game Center." = "Désactive Game Center.";
-"Turns off Siri AI. Spotlight goes back to classic search." = "Désactive Siri AI. Spotlight revient à la recherche classique.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner.";
 "Undone by macOS" = "Annulé par macOS";
 "Unknown action %@." = "Action inconnue %@.";

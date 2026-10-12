@@ -100,11 +100,21 @@ public final class DebloatEngine {
     public func status() -> [ControlStatus] {
         let entries = journal.allEntries
         let processes = system.processes()
-        return controls.map { status(of: $0, entries: entries, processes: processes) }
+        let held = controls.contains(where: Self.hasPolicy) ? macSpaceHeld() : nil
+        return controls.map { status(of: $0, entries: entries, processes: processes, held: held) }
     }
 
     public func status(of control: DebloatControl) -> ControlStatus {
-        status(of: control, entries: journal.allEntries, processes: system.processes())
+        status(of: control, entries: journal.allEntries, processes: system.processes(), held: Self.hasPolicy(control) ? macSpaceHeld() : nil)
+    }
+
+    static func hasPolicy(_ control: DebloatControl) -> Bool { control.settings.contains { $0.kind == .managedPreference } }
+
+    /// The managed settings MacSpace's own profiles hold, as "payloadType:key"; nil when the installed profiles cannot be read.
+    func macSpaceHeld() -> Set<String>? {
+        (system.installedProfiles()).map { profiles in
+            Set(profiles.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }.flatMap(\.values.keys))
+        }
     }
 
     func settingStatus(_ setting: ControlSetting) -> SettingStatus {
@@ -126,11 +136,23 @@ public final class DebloatEngine {
         }
     }
 
-    func status(of control: DebloatControl, entries: [JournalEntry], processes: [RunningProcess]?) -> ControlStatus {
+    /// `held` is what MacSpace's own profiles hold (`macSpaceHeld`). A policy macOS enforces but no MacSpace profile holds is set by
+    /// someone else (Screen Time, a school's or company's profile): it does not count as switched off by MacSpace, and the status
+    /// says so (`ControlStatus.managedElsewhere`). Read from what macOS enforces alone, Screen Time's Intelligence restrictions made
+    /// a retired MacSpace policy show as partly applied, and MacSpace offered to undo settings that were not its own (2026-10-12).
+    /// nil (the profiles cannot be read): every enforced value counts, as before.
+    func status(of control: DebloatControl, entries: [JournalEntry], processes: [RunningProcess]?, held: Set<String>? = nil) -> ControlStatus {
         let outstanding = entries.filter { $0.controlID == control.id && $0.action == .apply && $0.revertedAt == nil }
         let appliedAt = outstanding.map(\.at).max()
         let ignored = ignoredLaunchdSettings(control)
+        var elsewhere = false
         let settings = control.settings.map(settingStatus).map { status -> SettingStatus in
+            var status = status
+            if let held, status.matchesDesired == true, let managed = status.setting.managed, !held.contains("\(managed.payloadType):\(managed.key)") {
+                elsewhere = true
+                status = SettingStatus(setting: status.setting, availability: status.availability, current: status.current, desired: status.desired,
+                                       matchesDesired: false, detail: [status.detail, "enforced by a profile that is not MacSpace's"].compactMap { $0 }.joined(separator: "; "))
+            }
             guard let note = ignored[status.setting.id]?.explanation else { return status }
             return SettingStatus(setting: status.setting, availability: status.availability, current: status.current, desired: status.desired,
                                  matchesDesired: status.matchesDesired, detail: [status.detail, note].compactMap { $0 }.joined(separator: "; "))
@@ -161,7 +183,7 @@ public final class DebloatEngine {
 
         let effect = control.effect.map { evaluate($0, control: control, state: state, appliedAt: appliedAt, processes: processes) }
         return ControlStatus(controlID: control.id, state: state, effect: effect, settings: settings,
-                             tested: control.tested, appliedAt: appliedAt)
+                             tested: control.tested, appliedAt: appliedAt, managedElsewhere: elsewhere)
     }
 
     /// A policy switched back on whose value the installed profile still enforces: the latest journal entry for one of its managed

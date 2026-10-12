@@ -594,19 +594,24 @@ public struct ControlStatus: Codable, Equatable, Sendable {
     public let tested: Bool
     /// When MacSpace last applied the control and it has not been reverted since.
     public let appliedAt: Date?
+    /// Some of its policies are enforced by a profile that is not MacSpace's (Screen Time, an organization): they do not count in
+    /// `state`. nil from a build that did not tell.
+    public let managedElsewhere: Bool?
 
-    public init(controlID: String, state: ControlState, effect: EffectStatus?, settings: [SettingStatus], tested: Bool, appliedAt: Date?) {
+    public init(controlID: String, state: ControlState, effect: EffectStatus?, settings: [SettingStatus], tested: Bool, appliedAt: Date?,
+                managedElsewhere: Bool? = nil) {
         self.controlID = controlID
         self.state = state
         self.effect = effect
         self.settings = settings
         self.tested = tested
         self.appliedAt = appliedAt
+        self.managedElsewhere = managedElsewhere
     }
 
     // The key keeps its old name, so an app and a helper of different builds still read each other.
     enum CodingKeys: String, CodingKey {
-        case controlID, state, effect, settings, appliedAt
+        case controlID, state, effect, settings, appliedAt, managedElsewhere
         case tested = "validatedOnThisBuild"
     }
 }

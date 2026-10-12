@@ -78,10 +78,13 @@
 "Policies" = "Richtlinien";
 "Reopen apps to apply." = "Zum Anwenden Apps neu öffnen.";
 "Restart to apply." = "Zum Anwenden neu starten.";
+"Screen Time or another profile already sets this. MacSpace cannot change it there." = "Bildschirmzeit oder ein anderes Profil legt dies bereits fest. MacSpace kann es dort nicht ändern.";
+"Set by another profile" = "Von einem anderen Profil festgelegt";
 "Share analytics with Apple" = "Analysedaten mit Apple teilen";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Zeigt eine Mitteilung, wenn macOS eine deaktivierte Funktion wieder einschaltet und MacSpace sie erneut deaktiviert.";
 "Siri" = "Siri";
 "Siri AI" = "Siri AI";
+"Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on." = "Siri AI startet nicht mehr, und Spotlight kehrt zur klassischen Suche zurück. Apple Intelligence und seine anderen Funktionen bleiben aktiv.";
 "Some are not tested yet." = "Einige sind noch nicht getestet.";
 "Spotlight internet results" = "Internetergebnisse in Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight.";
@@ -92,7 +95,6 @@
 "Suggestions and search" = "Vorschläge und Suche";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "Schalte Analyse, Werbung und Datensammlung im Hintergrund aus, die macOS dich steuern lässt.";
 "Turns off Game Center." = "Deaktiviert Game Center.";
-"Turns off Siri AI. Spotlight goes back to classic search." = "Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr.";
 "Undone by macOS" = "Von macOS rückgängig gemacht";
 "Unknown action %@." = "Unbekannte Aktion %@.";
