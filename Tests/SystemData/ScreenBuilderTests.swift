@@ -184,6 +184,32 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("not counted") == true, "the reading says what it leaves out")
     }
 
+    /// Each block of the page lists what it is made of, sized as it counts in that block: what Clean frees is under "can be freed"
+    /// (with its buttons), the rest of the caches under Caches. What no folder accounts for lists nothing, and the tile's blocks,
+    /// which are saved, carry no items.
+    func testEachBlockListsTheItemsItIsMadeOf() {
+        let items = [item("usercache:clang", kind: .userSystemCache, bytes: 600_000_000, cleanup: .deleteWhenNotRunning, reclaim: 500_000_000),
+                     item("appcache:Safari", kind: .appCache, bytes: 300_000_000, cleanup: .review),
+                     item("logs", kind: .logs, bytes: 900_000_000, cleanup: .managedByMacOS)]
+        var snap = snapshot(items: items)
+        snap.settings = SettingsStorage(capacity: 245_000_000_000, used: 190_000_000_000, macOS: 45_000_000_000,
+                                        categories: [SettingsStorage.Category(id: "applications", bytes: 100_000_000_000),
+                                                     SettingsStorage.Category(id: "documents", bytes: 43_000_000_000)])
+        let blocks = SystemDataScreenBuilder.blocksWithItems(snap)
+        let caches = blocks.first { $0.id == "caches" }
+        XCTAssertEqual(caches?.items.map(\.id), ["appcache:Safari", "usercache:clang"])
+        XCTAssertEqual(caches?.items.map(\.trailing), ["300 MB", "100 MB"], "clang keeps only what Clean leaves")
+        XCTAssertEqual(caches?.group?.id, "segment:caches")
+        XCTAssertEqual(caches?.group?.trailing, "400 MB")
+        let freeable = blocks.first { $0.id == "freeable" }
+        XCTAssertEqual(freeable?.items.map(\.id), ["usercache:clang"])
+        XCTAssertEqual(freeable?.items.first?.actions.map(\.id), ["clean"])
+        XCTAssertEqual(blocks.first { $0.id == "macos" }?.items.map(\.paths), [["/x/logs"]])
+        XCTAssertNil(blocks.first { $0.id == "unidentified" }?.group, "nothing to list")
+        XCTAssertTrue(SystemDataScreenBuilder.blocks(snap).allSatisfy(\.items.isEmpty))
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).hero?.segments, blocks)
+    }
+
     /// With System Settings' reading, the total is its System Data, and what no listed folder accounts for is a block of its own, so
     /// the blocks still add up to the total.
     func testTheTotalIsSettingsRemainderAndTheBlocksAddUpToIt() {

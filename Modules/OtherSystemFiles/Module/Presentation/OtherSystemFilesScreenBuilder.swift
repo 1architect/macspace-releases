@@ -75,7 +75,7 @@ enum OtherSystemFilesScreenBuilder {
         let rows = snapshot.updates.map { update in
             Row(id: "update:\(update.path)", title: loc("\(update.name), ready to install"), subtitle: loc("installs at the next restart"),
                 trailing: ByteFormat.string(update.bytes), symbol: "arrow.down.circle",
-                actions: [Action(id: "openSoftwareUpdate", title: loc("Open"))])
+                actions: [Action(id: "openSoftwareUpdate", title: loc("Open"))], paths: [update.path])
         }
         return .section(SectionWidget(id: "updates", title: loc("Waiting to install"), widgets: [.list(ListWidget(id: "updates-list", rows: rows))]))
     }
@@ -135,7 +135,7 @@ enum OtherSystemFilesScreenBuilder {
                        trailing: ByteFormat.string(share(source)),
                        badge: removal.map { Badge($0.total == 0 ? loc("Removing downloads") : loc("Removing · \(Int(($0.fraction * 100).rounded()))%, \(ByteFormat.string($0.bytes))"), tone: .caution) },
                        symbol: "icloud.and.arrow.down", detail: detail + folderList(source),
-                       actions: removal == nil ? [removeDownloadsAction(source, bytes: share(source))] : [])
+                       actions: removal == nil ? [removeDownloadsAction(source, bytes: share(source))] : [], paths: [source.path])
         }
         // What no cloud folder accounts for is named.
         if bytes > found, bytes - found >= threshold * 10 {

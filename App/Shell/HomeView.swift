@@ -18,11 +18,24 @@ struct TileInfo: Equatable {
     @MainActor
     init(_ handle: ModuleHandle) {
         if let tile = handle.tile {
-            self.init(title: tile.title, status: tile.status, needsAttention: tile.needsAttention, graphic: tile.graphic,
-                      loading: handle.tileIsStale || handle.isRefreshing, switchAction: tile.switchAction)
+            self.init(title: tile.title, status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status,
+                      needsAttention: tile.needsAttention, graphic: tile.graphic,
+                      loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
         } else {
             self.init(title: handle.manifest.name.lowercased(), status: String(localized: "looking…"), loading: true)
         }
+    }
+
+    /// While a module cleans, its status line ("free up to 3.74 GB") says what it is doing and how far it is, as the page's pill
+    /// does, and its chart breathes: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's
+    /// lowercase, except in German, where the message starts with a noun.
+    static func cleaningStatus(_ progress: ActionProgress?) -> String {
+        var text = progress?.message ?? String(localized: "working…")
+        if Bundle.main.preferredLocalizations.first?.hasPrefix("de") != true, let first = text.first {
+            text = first.lowercased() + text.dropFirst()
+        }
+        if let fraction = progress?.fraction { text += " · \(Int((min(max(fraction, 0), 1) * 100).rounded()))%" }
+        return text
     }
 
     /// The disk: an arc filled as far as the disk is used. What macOS can purge by itself is not drawn: at a few gigabytes it was a
@@ -68,6 +81,12 @@ struct TileFace: View {
 
     /// Room left under the chart for the caption.
     static let captionBand: CGFloat = 62
+
+    /// How far below the tile's top edge its chart starts, whatever the chart. The caption's baseline sits as far above the bottom
+    /// edge (`TileContent`). The same for every chart: the dots and the switch started at 16, so their tiles' captions sat higher
+    /// than the others' in the same row.
+    static let topInset: CGFloat = 12
+
     /// How what comes and goes with the tile's size (resizing the window) comes and goes: as the tiles do when the window opens. The
     /// animation goes with the transition, not on the view: an animation on the view would also animate every frame of the live
     /// resize, and the tiles would trail the window.
@@ -75,6 +94,10 @@ struct TileFace: View {
 
     /// The caption's size, which sets how much room it leaves the legend under a blocks chart.
     var captionSize: CGFloat = 22
+    /// The tile's size at rest, in its cell, when the face is drawn at another: lifted under the pointer, or on its way to another
+    /// cell. What the chart decides by its size (the blocks' order, where the legend goes) is decided at rest, so it does not jump
+    /// back and forth while the tile moves. nil: at the size it is drawn.
+    var restingSize: CGSize?
 
     /// The line under a blocks chart (what amber means, or the block under the pointer): its height, and the least width it reads in.
     static let legendRow: CGFloat = 20
@@ -82,9 +105,10 @@ struct TileFace: View {
 
     /// Where a blocks chart sits in a tile of `size`. The legend goes left of the caption; where the caption leaves it too little room
     /// (a narrow tile, a long caption), it goes over the caption instead and the chart gives way. Side by side, the two overlapped.
-    static func chartArea(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGRect {
-        let band = captionBand + 14 + (legendAbove(in: size, info: info, captionSize: captionSize) ? legendRow : 0)
-        return CGRect(x: 12, y: 12, width: max(size.width - 24, 0), height: max(size.height - 12 - band, 0))
+    static func chartArea(in size: CGSize, info: TileInfo, captionSize: CGFloat, restingSize: CGSize? = nil) -> CGRect {
+        let band = captionBand + 14 + (legendAbove(in: restingSize ?? size, info: info, captionSize: captionSize) ? legendRow : 0)
+        let top = topInset
+        return CGRect(x: 12, y: top, width: max(size.width - 24, 0), height: max(size.height - top - band, 0))
     }
 
     static func legendAbove(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
@@ -95,9 +119,9 @@ struct TileFace: View {
     static func legendRoom(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGFloat {
         let padding = CaptionSize.tilePadding
         func width(_ text: String, _ weight: NSFont.Weight) -> CGFloat {
-            (text as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: captionSize, weight: weight)]).width
+            (text as NSString).size(withAttributes: [.font: CaptionFont.font(size: captionSize, weight: weight)]).width
         }
-        let measured = max(width(info.title, .bold), width(info.status, .light))
+        let measured = max(width(info.title, .bold), width(info.status, .regular))
         // The caption shrinks to fit the tile rather than run past it.
         let caption = min(ceil(measured), max(size.width - 2 * padding, 0))
         return size.width - 14 - 12 - caption - padding
@@ -156,12 +180,13 @@ struct TileFace: View {
         let palette = design.palette(tint)
         switch graphic {
         case let .blocks(segments):
-            let area = Self.chartArea(in: size, info: info, captionSize: captionSize)
-            let above = Self.legendAbove(in: size, info: info, captionSize: captionSize)
+            let area = Self.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
+            let above = Self.legendAbove(in: restingSize ?? size, info: info, captionSize: captionSize)
+            let restingArea = restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize) }
             let blocks = BlockLayout.blocks(segments)
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
             // No names in the blocks: the one under the pointer is named in the line below.
-            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading)
+            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading, orderSize: restingArea?.size)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, and nothing otherwise.
@@ -191,14 +216,14 @@ struct TileFace: View {
                 .lineLimit(1)
             }
             .padding(.leading, 14)
-            .padding(.top, 16)
+            .padding(.top, Self.topInset)
             .padding(.trailing, 14)
         case let .state(on, _, detail, meter, actionable):
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
                       part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil)
                 .frame(width: max(min(size.width - 28, 200), 0), alignment: .leading)
                 .padding(.leading, 14)
-                .padding(.top, 16)
+                .padding(.top, Self.topInset)
         case let .gauge(value, _, _):
             // A bar across the tile, centered in the room between the window's close button, in this tile's top-left corner, and
             // the caption, which says the figures.
@@ -325,7 +350,7 @@ struct HomeView: View {
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height),
+                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height), restingSize: frame.size,
                                       isHidden: hiddenTile == tile.destination, hovering: pointerTile == tile.destination,
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
@@ -451,6 +476,8 @@ struct DashboardTileView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var storage: StorageOverview
     let captionSize: CGFloat
+    /// Its size in its cell, without the lift (`TileFace.restingSize`).
+    let restingSize: CGSize
     /// The tile is under an open page: it ignores the pointer, so it comes back flat when the page closes onto it.
     var isHidden = false
     /// The pointer is over this tile (held by the dashboard).
@@ -469,11 +496,10 @@ struct DashboardTileView: View {
         Button(action: open) {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
-                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true)
+                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true, restingSize: restingSize)
                 .contentShape(shape)
         }
         .buttonStyle(TilePressStyle())
-        .pointerStyle(tile.opens ? .link : nil)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(tile.opens ? .isButton : [])
         // Over the button, not in it: a click on the switch flips it and does not open the tile. A control of its own for
@@ -508,8 +534,11 @@ struct DashboardTileView: View {
     private func block(at location: CGPoint) -> String? {
         guard case let .module(id) = tile.destination, let handle = host.handle(for: id),
               case let .blocks(segments)? = handle.tile?.graphic else { return nil }
-        let area = TileFace.chartArea(in: size, info: TileInfo(handle), captionSize: captionSize)
-        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
+        let info = TileInfo(handle)
+        let area = TileFace.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
+        let restingArea = TileFace.chartArea(in: restingSize, info: info, captionSize: captionSize)
+        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments,
+                                  orderSize: restingArea.size)?.id
     }
 }
 
@@ -576,8 +605,13 @@ struct TilePlacement: ViewModifier {
 }
 
 /// A tile's size, laid out on every frame while it changes.
+///
+/// In whole device pixels, and an even number of them, so that its middle (`TileCenter`) and its edges fall on pixels too. Lifted
+/// under the pointer, a tile is 1.8 % larger: at any fraction of a pixel, its caption, pinned to its corner, was drawn between pixels,
+/// softer and thinner than at rest, and moved by fractions while the tile lifted, which read as jitter (2026-10-12).
 private struct TileSize: ViewModifier, @preconcurrency Animatable {
     var size: CGSize
+    @Environment(\.displayScale) private var scale
 
     var animatableData: CGSize.AnimatableData {
         get { size.animatableData }
@@ -585,13 +619,14 @@ private struct TileSize: ViewModifier, @preconcurrency Animatable {
     }
 
     func body(content: Content) -> some View {
-        content.frame(width: max(size.width, 0), height: max(size.height, 0))
+        content.frame(width: PixelGrid.even(max(size.width, 0), scale: scale), height: PixelGrid.even(max(size.height, 0), scale: scale))
     }
 }
 
-/// Where a tile's middle is in the grid, laid out on every frame while it moves.
+/// Where a tile's middle is in the grid, laid out on every frame while it moves. On a whole device pixel (`TileSize`).
 private struct TileCenter: ViewModifier, @preconcurrency Animatable {
     var center: CGPoint
+    @Environment(\.displayScale) private var scale
 
     var animatableData: CGPoint.AnimatableData {
         get { center.animatableData }
@@ -599,7 +634,22 @@ private struct TileCenter: ViewModifier, @preconcurrency Animatable {
     }
 
     func body(content: Content) -> some View {
-        content.position(center)
+        content.position(x: PixelGrid.whole(center.x, scale: scale), y: PixelGrid.whole(center.y, scale: scale))
+    }
+}
+
+/// Lengths rounded to the screen's pixels.
+enum PixelGrid {
+    /// The nearest whole number of pixels, in points.
+    static func whole(_ length: CGFloat, scale: CGFloat) -> CGFloat {
+        let scale = max(scale, 1)
+        return (length * scale).rounded() / scale
+    }
+
+    /// The nearest even number of pixels, in points: half of it is whole pixels too.
+    static func even(_ length: CGFloat, scale: CGFloat) -> CGFloat {
+        let scale = max(scale, 1)
+        return ((length * scale / 2).rounded() * 2) / scale
     }
 }
 
@@ -622,6 +672,8 @@ struct TileContent: View {
     var captionOpacity: CGFloat = 1
     /// The dashboard draws a `state` chart's switch over the tile itself (`TileSwitch`).
     var switchOverlaid = false
+    /// The tile's size in its cell (`TileFace.restingSize`); nil where it is drawn at rest.
+    var restingSize: CGSize?
 
     var body: some View {
         switch destination {
@@ -633,13 +685,21 @@ struct TileContent: View {
         }
     }
 
+    /// Room under the caption: its baseline is as far from the tile's bottom edge as the chart is from the top edge
+    /// (`TileFace.topInset`), so the tile is framed alike above and below. The line's descent lies under the baseline.
+    static func captionBottom(size: CGFloat) -> CGFloat {
+        max(TileFace.topInset + CaptionFont.font(size: size, weight: .regular).descender, 0)
+    }
+
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
-                                      drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize) } else { Color.clear }
+                                      drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize,
+                                      restingSize: restingSize) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
-                    .padding(captionPadding)
+                    .padding([.top, .horizontal], captionPadding)
+                    .padding(.bottom, Self.captionBottom(size: captionSize))
                     .opacity(captionOpacity)
             }
         }
@@ -687,7 +747,7 @@ private struct TileSwitch: View {
                       } },
                       disabled: info.switchAction == nil)
                 .padding(.leading, 14)
-                .padding(.top, 16)
+                .padding(.top, TileFace.topInset)
         }
     }
 }

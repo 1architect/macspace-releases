@@ -132,12 +132,34 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public var label: String
     public var bytes: UInt64
     public var tone: Tone
+    /// What this part is made of, item by item. On a page's hero, clicking its block opens a page listing them, as a group row does
+    /// (`Row.children`). Empty: the block opens nothing. Leave it empty on a tile's chart, which is saved between launches.
+    public var items: [Row]
 
-    public init(id: String, label: String, bytes: UInt64, tone: Tone) {
+    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = []) {
         self.id = id
         self.label = label
         self.bytes = bytes
         self.tone = tone
+        self.items = items
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items }
+
+    /// `items` may be missing (a tile saved by an earlier version).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        bytes = try container.decode(UInt64.self, forKey: .bytes)
+        tone = try container.decode(Tone.self, forKey: .tone)
+        items = try container.decodeIfPresent([Row].self, forKey: .items) ?? []
+    }
+
+    /// The page its block opens: a group of its items, named and sized as the block. nil when it has none.
+    public var group: Row? {
+        guard !items.isEmpty else { return nil }
+        return Row.group(id: "segment:\(id)", title: label, totalBytes: bytes, rows: items)
     }
 }
 
@@ -203,9 +225,12 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
     public var children: [Row]
+    /// Where the row's files are on disk. The app offers to show them in the Finder while the pointer is over the row; those that no
+    /// longer exist are left out.
+    public var paths: [String]
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, symbol: String? = nil,
-                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = []) {
+                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [], paths: [String] = []) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -216,11 +241,12 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.steps = steps
         self.actions = actions
         self.children = children
+        self.paths = paths
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children }
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children, paths }
 
-    /// `children` may be missing (a screen written before groups existed).
+    /// `children` and `paths` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -233,6 +259,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
         actions = try container.decodeIfPresent([Action].self, forKey: .actions) ?? []
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
+        paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
     }
 
     /// A group of `rows` as one row: its count under the title and its total on the right.

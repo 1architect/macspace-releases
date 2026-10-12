@@ -61,6 +61,7 @@
  "Keep running in the menu bar": ["Continuar na barra de menus", "Rester dans la barre des menus", "Seguir en la barra de menús", "In der Menüleiste weiterlaufen"],
  "Later": ["Mais tarde", "Plus tard", "Más tarde", "Später"],
  "Loading": ["Carregando", "Chargement", "Cargando", "Wird geladen"],
+ "Loading…": ["Carregando…", "Chargement…", "Cargando…", "Wird geladen …"],
  "MacSpace": ["MacSpace", "MacSpace", "MacSpace", "MacSpace"],
  "MacSpace can now do the tasks that need an administrator.": ["Agora o MacSpace pode fazer as tarefas que exigem um administrador.", "MacSpace peut maintenant effectuer les tâches qui demandent un administrateur.", "MacSpace ya puede realizar las tareas que requieren un administrador.", "MacSpace kann jetzt die Aufgaben erledigen, die einen Administrator erfordern."],
  "MacSpace can now see everything in System Data.": ["Agora o MacSpace vê tudo em Dados do Sistema.", "MacSpace voit maintenant tout le contenu de Données système.", "MacSpace ya puede ver todo lo que hay en Datos del sistema.", "MacSpace sieht jetzt alles in „Systemdaten“."],
@@ -107,6 +108,7 @@
  "Settings › Recent cleanups": ["Ajustes › Limpezas recentes", "Réglages › Nettoyages récents", "Ajustes › Limpiezas recientes", "Einstellungen › Letzte Bereinigungen"],
  "Settings…": ["Ajustes…", "Réglages…", "Ajustes…", "Einstellungen …"],
  "Shader Studio": ["Shader Studio", "Shader Studio", "Shader Studio", "Shader Studio"],
+ "Show in Finder": ["Mostrar no Finder", "Afficher dans le Finder", "Mostrar en el Finder", "Im Finder zeigen"],
  "Show the sidebar": ["Mostrar a barra lateral", "Afficher la barre latérale", "Mostrar la barra lateral", "Seitenleiste einblenden"],
  "The helper couldn't be installed. Try again in Settings > Permissions.": ["Não foi possível instalar o auxiliar. Tente de novo em Ajustes > Permissões.", "Impossible d’installer l’assistant. Réessayez dans Réglages > Autorisations.", "No se ha podido instalar el asistente. Vuelve a intentarlo en Ajustes > Permisos.", "Das Hilfsprogramm konnte nicht installiert werden. Versuche es erneut unter Einstellungen > Berechtigungen."],
  "Theme": ["Tema", "Thème", "Tema", "Thema"],
@@ -139,5 +141,6 @@
  "of %@": ["de %@", "sur %@", "de %@", "von %@"],
  "reading…": ["lendo…", "lecture…", "leyendo…", "wird gelesen …"],
  "settings": ["ajustes", "réglages", "ajustes", "Einstellungen"],
- "undone": ["desfeito", "annulé", "deshecho", "rückgängig"]
+ "undone": ["desfeito", "annulé", "deshecho", "rückgängig"],
+ "working…": ["trabalhando…", "en cours…", "trabajando…", "wird ausgeführt …"]
 }

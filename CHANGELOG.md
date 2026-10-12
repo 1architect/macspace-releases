@@ -10,9 +10,18 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 ### Added
 
 - System Data: wallpaper and screen saver downloads that macOS left unfinished can be deleted from Free now, with the helper. Only the `CFNetworkDownload_*.tmp` files of idleassetsd that have not changed in 3 days go, so a download still in progress stays. Clean and automatic cleaning leave them out.
+- A folder button beside a row's (i) shows its files in the Finder, selected in one window. Modules list a row's files with `Row.paths`; System Data and Other System Files do.
+- System Data: a click on a block of the page's chart opens a page of the items it is made of, with the same page change and Back as a group. Modules list a block's items with `UsageSegment.items`.
 
 ### Changed
 
+- A tile says what its module is cleaning, and how far it is, in place of its status line while the cleanup runs.
+- While a page reads the Mac again, only its chart pulses: the legend and the rows fold away and come back with the new figures, and the main button says Loading.
+- The main button keeps a warning on one line wherever the page has room.
+- Tiles: the status line is regular weight, keeps one weight at any tile size, and lines up with the other tiles' (12 points from the bottom, as the charts are from the top). The text stays sharp, and the chart's blocks keep their places, while a tile lifts under the pointer or moves to another cell. No pointing hand over tiles and charts.
+- Debloat: the tile's dots are shared out evenly over their rows, and stay solid while they pulse.
+- The (i) and folder buttons are small capsules side by side, before the badge.
+- The close and refresh buttons keep their look when the window is not active.
 - System Data: the Caches group under Everything else says, behind its (i), why MacSpace leaves app caches alone.
 
 ### Removed

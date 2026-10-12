@@ -177,8 +177,21 @@ enum Treemap {
     /// The squarified layout whose thinnest block is widest, over the orders of the blocks after the largest: laid out largest first,
     /// the last block took whatever strip was left (25 points wide and full height on a page, too narrow for its size). Returns where
     /// each value goes, in the order given. Up to seven values every order is tried; past that, the given one.
-    static func arranged(_ values: [Double], in rect: CGRect) -> [CGRect] {
-        guard values.count > 2, values.count <= 7 else { return layout(values, in: rect) }
+    ///
+    /// `orderIn` is where the order is chosen, when it is not `rect`: a tile's resting chart. Chosen anew in every frame of a tile
+    /// lifting under the pointer or growing into another cell, two orders that score alike took turns, and the blocks jumped places
+    /// and back. Chosen at rest, the blocks only stretch while the tile moves.
+    static func arranged(_ values: [Double], in rect: CGRect, orderIn: CGRect? = nil) -> [CGRect] {
+        let order = order(values, in: orderIn ?? rect)
+        let rects = layout(order.map { values[$0] }, in: rect)
+        var result = [CGRect](repeating: .zero, count: values.count)
+        for (position, index) in order.enumerated() { result[index] = rects[position] }
+        return result
+    }
+
+    /// The order `arranged` lays the values out in, by index.
+    static func order(_ values: [Double], in rect: CGRect) -> [Int] {
+        guard values.count > 2, values.count <= 7 else { return Array(values.indices) }
         func thinnest(_ rects: [CGRect]) -> CGFloat {
             rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map { min($0.width, $0.height) }.min() ?? 0
         }
@@ -198,10 +211,7 @@ enum Treemap {
             }
         }
         visit([0], Array(1..<values.count))
-        guard let best else { return layout(values, in: rect) }
-        var result = [CGRect](repeating: .zero, count: values.count)
-        for (position, index) in best.order.enumerated() { result[index] = best.rects[position] }
-        return result
+        return best?.order ?? Array(values.indices)
     }
 
     static func layout(_ values: [Double], in rect: CGRect) -> [CGRect] {
@@ -342,6 +352,8 @@ struct BlocksView: View {
     var hovered: String?
     var gap: CGFloat = 3
     var loading = false
+    /// Where the blocks' order is chosen, when not at the size they are drawn: a tile's chart at rest (`Treemap.arranged`).
+    var orderSize: CGSize?
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -364,7 +376,8 @@ struct BlocksView: View {
             let blocks = BlockLayout.blocks(segments)
             let shown = blocks.map(\.segment)
             let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
-            let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size))
+            let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
+                                         orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
@@ -452,9 +465,10 @@ struct BlocksView: View {
     }
 
     /// The block under a point, for hover: a part's own block, or the block of the smaller ones (`BlockLayout`).
-    static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment]) -> UsageSegment? {
+    static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment], orderSize: CGSize? = nil) -> UsageSegment? {
         let blocks = BlockLayout.blocks(segments)
-        let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: size))
+        let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: size),
+                                     orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
         return zip(blocks, rects).first { $0.1.contains(point) }?.0.segment
     }
 }
@@ -495,15 +509,26 @@ struct DotsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
+    /// As many columns as make the rows even: up to `columns` a row, and the dots shared out over the rows that takes, so 12 dots are
+    /// two rows of 6, not 7 and 5.
+    static func columns(for count: Int, atMost columns: Int) -> Int {
+        guard count > 0, columns > 0 else { return max(columns, 1) }
+        let rows = (count + columns - 1) / columns
+        return (count + rows - 1) / rows
+    }
+
     var body: some View {
         let palette = design.palette(tint)
+        let columns = Self.columns(for: dots.count, atMost: columns)
         TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
                 ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
                     let wave = LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion)
                     ZStack {
+                        // Only an open dot is a ring. Under a filled one it showed through while the fill breathed (loading), and the
+                        // dot looked hollow.
                         Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
-                            .opacity(wave)
+                            .opacity(appeared && dot != .open ? 0 : wave)
                         Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5), strength: wave)
                             .scaleEffect(appeared && dot != .open ? 1 : 0.2)
                             .opacity(appeared && dot != .open ? 1 : 0)

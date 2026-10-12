@@ -1,3 +1,4 @@
+import AppKit
 import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
@@ -271,13 +272,76 @@ struct RowView: View {
         HStack(spacing: 10) {
             // A short note after the title ("App container", "120 files"); the description and the steps are behind the (i).
             TitleLine(title: row.title, note: row.subtitle)
-            InfoButton(text: row.detail, steps: row.steps)
-            if let badge = row.badge { BadgeView(badge: badge) }
+            // Its (i), where its files are, and its badge, close together.
+            HStack(spacing: 6) {
+                InfoButton(text: row.detail, steps: row.steps)
+                if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+                if let badge = row.badge { BadgeView(badge: badge) }
+            }
             Spacer(minLength: 8)
             if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
             ForEach(Array(row.actions.enumerated()), id: \.offset) { _, action in
                 ActionButton(action: action, compact: true, handler: handler)
             }
+        }
+    }
+}
+
+/// Shows a row's files in the Finder in one window: selected in their folder when they share one, else the folder that holds them
+/// all (`RevealTarget`). Only those still on disk; nothing is drawn when none is left. A folder alone, named in its help tag.
+struct RevealButton: View {
+    let paths: [String]
+    @State private var hovering = false
+
+    private var existing: [URL] {
+        paths.filter { FileManager.default.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
+    }
+
+    var body: some View {
+        if !existing.isEmpty {
+            Button { RevealTarget.show(existing) } label: {
+                Image(systemName: "folder").rowPill(active: hovering)
+            }
+            .buttonStyle(.plain)
+            .pointerStyle(.link)
+            .help(String(localized: "Show in Finder"))
+            .accessibilityLabel(String(localized: "Show in Finder"))
+            .onHover { hovering = $0 }
+            .animation(Theme.hover, value: hovering)
+        }
+    }
+}
+
+/// Where Show in Finder goes. The Finder opens a window per folder for the files it is asked to select: a row whose files lie in
+/// many folders (the temporary folders of every account under /private/var/folders) opened dozens of windows.
+enum RevealTarget: Equatable {
+    /// Files in one folder (or in a few with nothing but the root in common), selected there.
+    case select([URL])
+    /// Files in many folders: the deepest folder that holds them all, opened.
+    case open(URL)
+
+    static func of(_ urls: [URL]) -> RevealTarget? {
+        let urls = urls.map(\.standardizedFileURL)
+        guard let first = urls.first else { return nil }
+        let parents = Set(urls.map { $0.deletingLastPathComponent().path })
+        if parents.count == 1 { return .select(urls) }
+        var common = first.deletingLastPathComponent().pathComponents
+        for url in urls.dropFirst() {
+            let components = url.deletingLastPathComponent().pathComponents
+            common = Array(zip(common, components).prefix { $0 == $1 }.map(\.0))
+        }
+        // Only the disk's root in common (Homebrew in /opt/homebrew and /usr/local): a window on the root shows none of them, so a few
+        // places are each shown in their own window.
+        if common.count <= 1 && parents.count <= 3 { return .select(urls) }
+        return .open(URL(fileURLWithPath: NSString.path(withComponents: common.isEmpty ? ["/"] : common), isDirectory: true))
+    }
+
+    @MainActor
+    static func show(_ urls: [URL]) {
+        switch of(urls) {
+        case let .select(files)?: NSWorkspace.shared.activateFileViewerSelecting(files)
+        case let .open(folder)?: NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
+        case nil: break
         }
     }
 }

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// A small (i) after a title. A click opens a balloon of Liquid Glass (a popover, which macOS draws in glass) that says what the item
@@ -22,20 +23,65 @@ struct InfoButton: View {
     var body: some View {
         if hasContent {
             Button { shown.toggle() } label: {
-                Image(systemName: shown ? "info.circle.fill" : "info.circle")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(hovering || shown ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
-                    .frame(width: 16, height: 16)
-                    .contentShape(Circle())
+                // A ring as tall as the folder beside it and of its line (11 and 1 points at 12 points), with the letter in SF,
+                // as the app's text: the symbol's own "i" has serifs. The letter is centered on its own outline, not on a line of
+                // text, which left it off center.
+                ZStack {
+                    Circle().strokeBorder(lineWidth: 1)
+                    SFLetter(letter: "i").frame(height: 6)
+                }
+                .frame(width: 11, height: 11)
+                .rowPill(active: hovering || shown)
             }
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
+            .animation(Theme.hover, value: hovering || shown)
             .accessibilityLabel(String(localized: "More about this"))
             .popover(isPresented: $shown, arrowEdge: .bottom) {
                 InfoBalloon(paragraphs: paragraphs, steps: steps, note: note)
             }
         }
     }
+}
+
+/// A letter of the system font as a shape, scaled to the height it is given and centered on its own outline.
+struct SFLetter: Shape {
+    let letter: Character
+    var weight: NSFont.Weight = .regular
+
+    func path(in rect: CGRect) -> Path {
+        let font = NSFont.systemFont(ofSize: 100, weight: weight) as CTFont
+        var characters = Array(String(letter).utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: characters.count)
+        guard CTFontGetGlyphsForCharacters(font, &characters, &glyphs, characters.count),
+              let outline = CTFontCreatePathForGlyph(font, glyphs[0], nil) else { return Path() }
+        let box = outline.boundingBoxOfPath
+        guard box.height > 0 else { return Path() }
+        let scale = rect.height / box.height
+        // The font's y runs up, the view's down.
+        let transform = CGAffineTransform(translationX: rect.midX, y: rect.midY).scaledBy(x: scale, y: -scale)
+            .translatedBy(x: -box.midX, y: -box.midY)
+        return Path(outline.copy(using: [transform]) ?? outline)
+    }
+}
+
+/// The small buttons beside a row's title (its (i), its folder): a glyph in a soft capsule, all the same size, that darkens while the
+/// pointer is on it or what it opens is open.
+private struct RowPill: ViewModifier {
+    let active: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 12, weight: .regular))
+            .foregroundStyle(active ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            .frame(width: 28, height: 18)
+            .background(.primary.opacity(active ? 0.1 : 0.05), in: Capsule())
+            .contentShape(Capsule())
+    }
+}
+
+extension View {
+    func rowPill(active: Bool) -> some View { modifier(RowPill(active: active)) }
 }
 
 /// What the balloon holds: the description, paragraph by paragraph, then numbered steps, then the note.

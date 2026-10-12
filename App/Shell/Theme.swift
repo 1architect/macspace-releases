@@ -85,19 +85,43 @@ struct TintPalette {
 }
 
 
-/// The bold title and light status line in a tile's bottom-right corner. The status rolls when its numbers change.
-struct TileCaption: View {
+/// The caption's typeface at one optical size whatever its point size. The system font follows its size with its optical size (17
+/// at 17 points and below, 22 at 22): a caption sized to its tile (`CaptionSize`) changed its cut as the tile grew, and its strokes
+/// thinned out as the tile was resized. Pinned to the small sizes' cut, it keeps one weight from the smallest tile to the largest.
+enum CaptionFont {
+    static let opticalSize: NSNumber = 17
+    private static let opticalSizeAxis = NSNumber(value: 0x6F70_737A) // 'opsz'
+
+    static func font(size: CGFloat, weight: NSFont.Weight) -> NSFont {
+        let base = NSFont.systemFont(ofSize: size, weight: weight)
+        // The weight is part of the variation too: the new one is added to it, not put in its place.
+        var variation = (CTFontCopyVariation(base) as? [NSNumber: NSNumber]) ?? [:]
+        variation[opticalSizeAxis] = opticalSize
+        return NSFont(descriptor: base.fontDescriptor.addingAttributes([.variation: variation]), size: size) ?? base
+    }
+}
+
+/// The bold title and the status line in a tile's bottom-right corner. The status is regular, not light: light read thin and washed out on
+/// the pale tiles. It rolls when its numbers change.
+struct TileCaption: View, @preconcurrency Animatable {
     let title: String
     let status: String
     var size: CGFloat = 22
     var loading = false
     @Environment(\.design) private var design
 
+    /// The size follows the tile into another cell frame by frame, as the tile grows or shrinks: set at once, the text took its new
+    /// size at the start, squeezed into the tile on its way, and settled at the end.
+    var animatableData: CGFloat {
+        get { size }
+        set { size = newValue }
+    }
+
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            Text(title).font(.system(size: size, weight: .bold))
+            Text(title).font(Font(CaptionFont.font(size: size, weight: .bold)))
             Text(status)
-                .font(.system(size: size, weight: .light))
+                .font(Font(CaptionFont.font(size: size, weight: .regular)))
                 .contentTransition(.numericText())
                 .opacity(loading ? 0.65 : 1)
         }
@@ -226,6 +250,7 @@ private struct GlassCircleStyle: ButtonStyle {
     let diameter: CGFloat
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.controlActiveState) private var activeState
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
@@ -234,7 +259,17 @@ private struct GlassCircleStyle: ButtonStyle {
             .opacity(pressed ? 0.55 : 1)
             .background {
                 Group {
-                    if reduceTransparency {
+                    if activeState != .key && !reduceTransparency {
+                        // Glass in a window that is not key is drawn in its inactive look, a dark grey disc, by AppKit's glass and
+                        // SwiftUI's alike, whatever the view asks for (tried 2026-10-12). The buttons keep their look instead: the
+                        // active glass drawn as it shows: the page's color a little darker, a fine dark edge at the top left and a
+                        // bright one at the bottom right.
+                        Circle().fill(.black.opacity(0.05))
+                            .overlay {
+                                Circle().strokeBorder(LinearGradient(colors: [.black.opacity(0.18), .clear, .white.opacity(0.95)],
+                                                                     startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                            }
+                    } else if reduceTransparency {
                         // With Reduce Transparency the system draws glass as an opaque disc in its own default colors: one button came
                         // out near black and another white, its white symbol lost. A solid light over the page's color instead, the
                         // same for every button, with a fine edge.

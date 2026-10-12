@@ -34,7 +34,7 @@ struct ScreenView: View {
         guard let screen = handle.screen else { return [] }
         var rows: [Row] = []
         for id in handle.groupPath {
-            guard let row = Self.row(id, in: screen.widgets) else { break }
+            guard let row = Self.row(id, in: screen) else { break }
             rows.append(row)
         }
         return rows
@@ -62,6 +62,18 @@ struct ScreenView: View {
             default: return widget
             }
         }
+    }
+
+    /// The group page with this id on a page: a group row (`row(_:in:)` on its widgets), or a block of its hero that lists what it
+    /// is made of (`UsageSegment.group`).
+    static func row(_ id: String, in screen: Screen) -> Row? {
+        if let row = row(id, in: screen.widgets) { return row }
+        for segment in screen.hero?.segments ?? [] {
+            guard let group = segment.group else { continue }
+            if group.id == id { return group }
+            if let row = row(id, in: [.list(ListWidget(id: group.id, rows: group.children))]) { return row }
+        }
+        return nil
     }
 
     /// The group row with this id, wherever it is: in a list, a section, or among another group's items (a group inside a group
@@ -124,7 +136,10 @@ struct ScreenView: View {
     private var mainPage: some View {
         Group {
             if let content = self.content {
-                WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil) {
+                // While the module reads the Mac again (Refresh, or after an action), only the blocks stay, pulsing: the legend and the
+                // groups under them fold away and rise in again with the new figures, instead of showing figures about to change.
+                let refreshing = content.loaded && handle.isRefreshing
+                WidgetForm(widgets: refreshing ? [] : content.widgets, handler: handler, showsTop: content.hero != nil) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing)
                             .padding(.bottom, 4)
@@ -132,7 +147,7 @@ struct ScreenView: View {
                             .foregroundStyle(.primary)
                     }
                 }
-                .animation(Theme.layout, value: content.widgets.map(\.id))
+                .animation(Theme.layout, value: refreshing ? [] : content.widgets.map(\.id))
             } else {
                 PageSkeleton()
                     .padding(.top, PageInsets.top - PageInsets.scrollTop)
@@ -296,9 +311,11 @@ private struct EdgeGlass: View {
 struct HeroBlocks: View {
     let usage: UsageBar
     let tint: TileTint
-    /// The module is reading the Mac again: the blocks pulse, as a tile's do while it loads.
+    /// The module is reading the Mac again: the blocks pulse, as a tile's do while it loads, and the lines under them fold away until
+    /// the new figures arrive.
     var loading = false
     @Environment(\.design) private var design
+    @Environment(\.openGroup) private var openGroup
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
     @State private var hovered: String?
     @State private var blocksSize = CGSize.zero
@@ -306,7 +323,6 @@ struct HeroBlocks: View {
     static let gap: CGFloat = 3
 
     var body: some View {
-        let palette = design.palette(tint)
         let segments = usage.segments
         let blocks = BlockLayout.blocks(segments)
         let hoveredSegment = hovered.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
@@ -325,7 +341,25 @@ struct HeroBlocks: View {
                         if hovered != nil { hovered = nil }
                     }
                 }
+                // A block that lists what it is made of opens a page of them, as a group row does: the same stack, title and Back.
+                // Not while the figures are being read again.
+                .onTapGesture { location in
+                    guard !loading, let segment = BlocksView.segment(at: location, in: blocksSize, segments: segments),
+                          let group = segment.group else { return }
+                    openGroup(group.id)
+                }
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
+            if !loading {
+                legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(Theme.layout, value: loading)
+    }
+
+    private func legend(segments: [UsageSegment], blocks: [(segment: UsageSegment, weight: Double)], hoveredSegment: UsageSegment?) -> some View {
+        let palette = design.palette(tint)
+        return VStack(alignment: .leading, spacing: 10) {
             // What the pointer is on, or what amber means: the same line as under the tile's blocks.
             HStack(spacing: 6) {
                 if let hoveredSegment {
@@ -403,6 +437,8 @@ private struct ActionDock: View {
     private var phase: ActionPill.Phase? {
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning { return .working(handle.progress) }
+        // Reading the Mac again: the action waits for the new figures, and says so.
+        if handle.isRefreshing, handle.screen?.primary != nil { return .loading }
         if let notice, notice.action != nil || handle.screen?.primary == nil || showsPassingNotice { return .notice(notice) }
         if let primary = handle.screen?.primary { return .idle(primary) }
         return nil
@@ -420,7 +456,9 @@ private struct ActionDock: View {
                 .transition(.blurReplace)
             }
         }
-        .frame(maxWidth: 360, alignment: .leading)
+        // The page's width, less its margins: the pill keeps a warning on one line wherever it fits (`ActionPill`).
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.trailing, PageInsets.side)
         .animation(Theme.layout, value: phase)
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
             guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
@@ -437,6 +475,8 @@ private struct ActionPill: View {
     enum Phase: Equatable {
         case idle(Action)
         case working(ActionProgress?)
+        /// The module is reading the Mac again; the action comes back with the new figures.
+        case loading
         case done(ActionResult)
         /// One of the page's banners: its title, and its action when it has one.
         case notice(Banner)
@@ -461,6 +501,7 @@ private struct ActionPill: View {
         switch phase {
         case let .idle(action): return action.title
         case let .working(progress): return progress?.message ?? String(localized: "Working…")
+        case .loading: return String(localized: "Loading…")
         case let .done(result): return result.restartRequired ? String(localized: "Restart to finish") : result.message
         case let .notice(banner): return banner.title
         }
@@ -477,12 +518,18 @@ private struct ActionPill: View {
             case let .notice(banner):
                 if let action = banner.action { Task { @MainActor in await run(action) } } else { dismiss() }
             case .done: dismiss()
-            case .working: break
+            case .working, .loading: break
             }
         } label: {
-            // Words only, no symbol. Never cut: the whole message wraps, and the pill grows to hold it.
-            Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                .contentTransition(.interpolate)
+            // Words only, no symbol. On one line wherever the page has room for it: in a pill 360 points wide, a warning such as
+            // "Inteligência Visual foi reativado pelo macOS" broke onto two lines. Never cut: a message too long for the page wraps
+            // in a pill of that width, which grows to hold it.
+            ViewThatFits(in: .horizontal) {
+                Text(text).lineLimit(1).fixedSize()
+                Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: Self.wrapWidth, alignment: .leading)
+            }
+            .contentTransition(.interpolate)
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
@@ -510,7 +557,8 @@ private struct ActionPill: View {
             } else {
                 Self.shape.fill(hovering && !isWorking ? lighter : fill)
             }
-            if case let .working(progress) = phase {
+            if isWorking {
+                let progress: ActionProgress? = if case let .working(progress) = phase { progress } else { nil }
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
                     GeometryReader { geometry in
@@ -530,10 +578,18 @@ private struct ActionPill: View {
         .modifier(PillGlass(enabled: design.glass))
     }
 
+    /// How wide a message that does not fit on one line wraps.
+    static let wrapWidth: CGFloat = 330
+
     /// A capsule on one line (half its height), a rounded box once the message wraps.
     static let shape = RoundedRectangle(cornerRadius: 15.5, style: .continuous)
 
-    private var isWorking: Bool { if case .working = phase { return true } else { return false } }
+    private var isWorking: Bool {
+        switch phase {
+        case .working, .loading: return true
+        default: return false
+        }
+    }
     private var lighter: Color { design.actionLight }
 }
 

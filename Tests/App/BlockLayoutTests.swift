@@ -112,3 +112,19 @@ final class DitheredLightTests: XCTestCase {
         XCTAssertGreaterThan(values.count, 2, "neighbouring pixels are rounded differently")
     }
 }
+
+final class TreemapRestingOrderTests: XCTestCase {
+    /// A tile lifted under the pointer, or on its way to another cell, keeps the order its blocks have at rest: they only stretch.
+    /// Chosen at every size, two orders that score alike took turns and the blocks jumped places.
+    func testBlocksKeepTheirRestingOrderWhileTheTileMoves() {
+        let values = [6.0, 3, 2, 1.4, 1]
+        let rest = CGRect(x: 0, y: 0, width: 400, height: 90)
+        let order = Treemap.order(values, in: rest)
+        for size in [CGSize(width: 407, height: 92), CGSize(width: 300, height: 160), CGSize(width: 820, height: 330)] {
+            let rects = Treemap.arranged(values, in: CGRect(origin: .zero, size: size), orderIn: rest)
+            let expected = Treemap.layout(order.map { values[$0] }, in: CGRect(origin: .zero, size: size))
+            XCTAssertEqual(order.map { rects[$0] }, expected)
+        }
+        XCTAssertEqual(Treemap.arranged(values, in: rest), Treemap.arranged(values, in: rest, orderIn: rest))
+    }
+}

@@ -62,6 +62,7 @@
 "Keep running in the menu bar" = "Rester dans la barre des menus";
 "Later" = "Plus tard";
 "Loading" = "Chargement";
+"Loading…" = "Chargement…";
 "MacSpace" = "MacSpace";
 "MacSpace can now do the tasks that need an administrator." = "MacSpace peut maintenant effectuer les tâches qui demandent un administrateur.";
 "MacSpace can now see everything in System Data." = "MacSpace voit maintenant tout le contenu de Données système.";
@@ -108,6 +109,7 @@
 "Settings › Recent cleanups" = "Réglages › Nettoyages récents";
 "Settings…" = "Réglages…";
 "Shader Studio" = "Shader Studio";
+"Show in Finder" = "Afficher dans le Finder";
 "Show the sidebar" = "Afficher la barre latérale";
 "The helper couldn't be installed. Try again in Settings > Permissions." = "Impossible d’installer l’assistant. Réessayez dans Réglages > Autorisations.";
 "Theme" = "Thème";
@@ -141,3 +143,4 @@
 "reading…" = "lecture…";
 "settings" = "réglages";
 "undone" = "annulé";
+"working…" = "en cours…";

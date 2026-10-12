@@ -286,7 +286,7 @@ public struct MainView: View {
             guard let handle = host.handle(for: id) else { return "" }
             // On a group's page: the module, then each group page open, in order.
             guard let screen = handle.screen else { return handle.manifest.name }
-            let groups = handle.groupPath.compactMap { ScreenView.row($0, in: screen.widgets)?.title }
+            let groups = handle.groupPath.compactMap { ScreenView.row($0, in: screen)?.title }
             return ([handle.manifest.name] + groups).joined(separator: " › ")
         case .settings:
             switch host.settingsPage {

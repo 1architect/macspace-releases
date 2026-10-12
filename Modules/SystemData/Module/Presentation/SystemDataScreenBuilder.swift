@@ -175,6 +175,41 @@ enum SystemDataScreenBuilder {
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
+    /// The page's blocks, each with the items it is made of, so a click on it opens a page of them (`UsageSegment.items`). An item's
+    /// size there is what it adds to its block: what Clean frees is in the "can be freed" block instead, whose page is the rows of
+    /// Free now, buttons included. What no folder accounts for has no items and opens nothing. Not on the tile, which is saved.
+    static func blocksWithItems(_ snapshot: SystemDataSnapshot) -> [UsageSegment] {
+        let items = measured(snapshot.report)
+        let freeRows: [Row] = {
+            guard case let .section(section)? = freeNow(snapshot), case let .list(list)? = section.widgets.first else { return [] }
+            // The unused system assets and the wallpaper downloads are not in the blocks (`blocks`).
+            return list.rows.filter { $0.id != "assets" && $0.id != "wallpaper-downloads" }
+        }()
+        return blocks(snapshot).map { segment in
+            var segment = segment
+            if segment.id == "freeable" {
+                segment.items = freeRows
+            } else if let group = groups.first(where: { $0.id == segment.id }) {
+                let sized = items.filter { group.kinds.contains($0.kind) }
+                    .map { (item: $0, bytes: inBlock($0, snapshot)) }
+                    .filter { $0.bytes >= worthARow }
+                    .sorted { $0.bytes > $1.bytes }
+                segment.items = sized.map { itemRow($0.item, bytes: $0.bytes) }
+            }
+            return segment
+        }
+    }
+
+    /// What an item adds to its category's block: its counted size, less what `blocks` moved to the "can be freed" block.
+    static func inBlock(_ item: SystemDataItem, _ snapshot: SystemDataSnapshot) -> UInt64 {
+        let bytes = counted(item, snapshot)
+        var freed: UInt64 = 0
+        if item.cleanup.kind == .deleteWhenNotRunning && !item.inUse { freed = item.expectedReclaimBytes ?? 0 }
+        if item.id == "versions:documents" && versionsRow(snapshot) != nil { freed = bytes }
+        if item.id == "reports:diagnostic" { freed = snapshot.reports.totalBytes }
+        return bytes > freed ? bytes - freed : 0
+    }
+
     /// The page: the bar, one Clean for everything safe, then only what the user can act on. What MacSpace leaves alone is listed once,
     /// collapsed, so the total still adds up.
     /// Under the bar: what can be cleaned, in its own section and item by item (Free now, then leftover update files); then one row
@@ -193,7 +228,7 @@ enum SystemDataScreenBuilder {
         ].compactMap { $0 }
         let rows = groups
         if !rows.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: loc("What is in it"), rows: rows))) }
-        let blocks = blocks(snapshot)
+        let blocks = blocksWithItems(snapshot)
         let hero = UsageBar(id: "usage", title: loc("What fills System Data"), totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
         return Screen(title: loc("System Data"), hero: hero, primary: cleanAll(snapshot), widgets: widgets)
     }
@@ -235,13 +270,14 @@ enum SystemDataScreenBuilder {
             .sorted { ($0.expectedReclaimBytes ?? 0) > ($1.expectedReclaimBytes ?? 0) }
         var rows = cleanable.map { item -> Row in
             Row(id: item.id, title: item.title, trailing: ByteFormat.string(item.expectedReclaimBytes ?? 0), symbol: "internaldrive",
-                detail: item.cleanup.description, actions: [Action(id: "clean", title: loc("Free"), parameters: ["id": item.id])])
+                detail: item.cleanup.description, actions: [Action(id: "clean", title: loc("Free"), parameters: ["id": item.id])], paths: item.paths)
         }
         if snapshot.reports.totalBytes >= worthARow {
             rows.append(Row(id: "reports", title: loc("Old diagnostic and crash reports"), trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
                             detail: loc("\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days."),
                             actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Delete old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Delete")))]))
+                                title: loc("Delete old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Delete")))],
+                            paths: paths(of: "reports:diagnostic", snapshot)))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
             // While macOS is being asked again in the background, the row says so instead of offering the button.
@@ -249,7 +285,8 @@ enum SystemDataScreenBuilder {
                             badge: snapshot.assetsRetrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: "square.stack.3d.down.right",
                             detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
                             actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))]))
+                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))],
+                            paths: paths(of: "assets:system", snapshot)))
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
@@ -258,6 +295,11 @@ enum SystemDataScreenBuilder {
     }
 
     static let manualThreshold: UInt64 = 50_000_000
+
+    /// Where the scan found the item with this id, for the row's Show in Finder.
+    static func paths(of id: String, _ snapshot: SystemDataSnapshot) -> [String] {
+        snapshot.report.items.first { $0.id == id }?.paths ?? []
+    }
 
     static func reportCount(_ snapshot: SystemDataSnapshot) -> String {
         snapshot.reports.candidates.count == 1 ? loc("1 report") : loc("\(snapshot.reports.candidates.count) reports")
@@ -339,19 +381,22 @@ enum SystemDataScreenBuilder {
     /// Every item, largest first, with what the user can do about it when there is something. A container's kind goes under its name: the group already says
     /// it is app data.
     private static func leftAloneRows(_ items: [SystemDataItem], _ snapshot: SystemDataSnapshot) -> [Row] {
-        items.map { item in
-            var title = item.title
-            var subtitle: String?
-            // A container's name alone, and what kind it is in the note; read from its id and folder, not from its title, which is
-            // in the user's language.
-            if item.id.hasPrefix("container:") {
-                title = String(item.id.dropFirst("container:".count))
-                subtitle = item.paths.contains { $0.contains("/Group Containers/") } ? loc("App group data") : loc("App container")
-            }
-            // What macOS manages needs no explanation: only what the user can do something about has one.
-            let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description
-            return Row(id: item.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(counted(item, snapshot)), detail: detail)
+        items.map { itemRow($0, bytes: counted($0, snapshot)) }
+    }
+
+    /// An item as a row: its name, what kind of container it is, its size, what the user can do about it, and where its files are.
+    static func itemRow(_ item: SystemDataItem, bytes: UInt64) -> Row {
+        var title = item.title
+        var subtitle: String?
+        // A container's name alone, and what kind it is in the note; read from its id and folder, not from its title, which is
+        // in the user's language.
+        if item.id.hasPrefix("container:") {
+            title = String(item.id.dropFirst("container:".count))
+            subtitle = item.paths.contains { $0.contains("/Group Containers/") } ? loc("App group data") : loc("App container")
         }
+        // What macOS manages needs no explanation: only what the user can do something about has one.
+        let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description
+        return Row(id: item.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(bytes), detail: detail, paths: item.paths)
     }
 
     /// Files of an update that is already installed; shown only when the scan recognised them as a leftover (see the inspector).
@@ -366,7 +411,8 @@ enum SystemDataScreenBuilder {
                                        confirmation: Confirmation(title: loc("Delete the leftover update files?"),
                                                                   message: loc("About \(size) from an update that's already installed."),
                                                                   confirmTitle: loc("Delete")),
-                                       requires: [.privilegedHelper])])
+                                       requires: [.privilegedHelper])],
+                      paths: item.paths)
         return .section(SectionWidget(id: "leftover-update", title: loc("Leftover update files"),
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
     }
@@ -387,7 +433,8 @@ enum SystemDataScreenBuilder {
                                     confirmation: Confirmation(title: loc("Delete stalled wallpaper downloads?"),
                                                                message: loc("Deletes unfinished downloads (up to \(size)) that haven't changed in \(days) days. Downloads still in progress stay, and macOS downloads again what it still needs."),
                                                                confirmTitle: loc("Delete")),
-                                    requires: [.privilegedHelper])])
+                                    requires: [.privilegedHelper])],
+                   paths: snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.flatMap(\.paths))
     }
 
     /// The saved history behind File > Revert To > Browse All Versions, as a row of Free now. Deleting it is irreversible, so it keeps
@@ -402,7 +449,8 @@ enum SystemDataScreenBuilder {
                                        confirmation: Confirmation(title: loc("Delete all version history?"),
                                                                   message: loc("You won't be able to revert any document to an earlier version. Save and close your documents first."),
                                                                   confirmTitle: loc("Delete version history")),
-                                       requires: [.privilegedHelper])])
+                                       requires: [.privilegedHelper])],
+                      paths: item.paths)
     }
 
     /// System downloads the user can release by changing a setting. Families with no setting are not something to act on, so they
