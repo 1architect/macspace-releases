@@ -100,7 +100,7 @@ Mitteilung zeigen.
 | Siri AI | Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück. | Nach einem Neustart |
 | Visuelle Intelligenz | Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr. | Nach einem Neustart |
 | Indizierung für generative Suche | Verhindert, dass Apple Intelligence Mail und deine persönlichen Daten indiziert. | Nach einem Neustart |
-| Apple Intelligence-Funktionen | Deaktiviert Schreibtools, Genmoji, Image Playground, Zusammenfassungen, intelligente Antworten und ChatGPT. | Nach erneutem Öffnen der Apps |
+| Apple Intelligence-Funktionen | Setzt die Richtlinien, die Schreibtools, Genmoji, Image Playground, Zusammenfassungen, intelligente Antworten und ChatGPT deaktivieren. Apple führt die meisten davon unter macOS als veraltet, und ihre Wirkung ist noch nicht überprüft. | Nach erneutem Öffnen der Apps |
 | Internetergebnisse in Spotlight | Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight. | Nach erneutem Öffnen der Apps |
 | Hänger-Aufzeichnung (tailspin) | Verhindert, dass macOS ständig Aktivität für Hängeberichte aufzeichnet. Gibt etwa 100 MB Arbeitsspeicher frei. | Sofort |
 | Absturzbericht-Dialog | Keine Dialoge „unerwartet beendet“ mehr. | Nach einem Neustart |

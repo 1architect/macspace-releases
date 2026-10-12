@@ -70,7 +70,7 @@ enum DebloatScreenBuilder {
         "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         "ai.generative-indexing": loc("Stops Apple Intelligence from indexing your Mail and personal data."),
-        "ai.features-policy": loc("Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT."),
+        "ai.features-policy": loc("Sets the policies that turn off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. Apple lists most of them as deprecated on macOS, and their effect is not verified yet."),
         "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
         "diagnostics.tailspin": loc("Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory."),
         "diagnostics.crash-reporter": loc("No more \"quit unexpectedly\" dialogs."),

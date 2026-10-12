@@ -100,7 +100,7 @@ le fait.
 | Siri AI | Désactive Siri AI. Spotlight revient à la recherche classique. | Après redémarrage |
 | Intelligence visuelle | Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner. | Après redémarrage |
 | Indexation pour la recherche générative | Empêche Apple Intelligence d’indexer Mail et vos données personnelles. | Après redémarrage |
-| Fonctions d’Apple Intelligence | Désactive les outils d’écriture, Genmoji, Image Playground, les résumés, les réponses intelligentes et ChatGPT. | Après réouverture des apps |
+| Fonctions d’Apple Intelligence | Applique les règles qui désactivent les outils d’écriture, Genmoji, Image Playground, les résumés, les réponses intelligentes et ChatGPT. Apple indique que la plupart sont obsolètes sur macOS, et leur effet n’est pas encore vérifié. | Après réouverture des apps |
 | Résultats Internet dans Spotlight | Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight. | Après réouverture des apps |
 | Suivi des blocages (tailspin) | Empêche macOS d’enregistrer en continu l’activité pour les rapports de blocage. Libère environ 100 Mo de mémoire. | Tout de suite |
 | Fenêtre de rapport de plantage | Plus de fenêtres « s’est fermé de façon inattendue ». | Après redémarrage |

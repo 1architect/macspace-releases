@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Changed
+
+- Debloat: Apple Intelligence features now says what the switch does: it sets policies that Apple lists as deprecated on macOS, and their effect is not verified yet.
+
 ## [1.0.3] - 2026-10-09
 
 ### Fixed

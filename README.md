@@ -92,7 +92,7 @@ you when it does.
 | Siri AI | Turns off Siri AI. Spotlight goes back to classic search. | A restart |
 | Visual Intelligence | Turns off Visual Intelligence. Visual Look Up may stop working too. | A restart |
 | Generative search indexing | Stops Apple Intelligence from indexing your Mail and personal data. | A restart |
-| Apple Intelligence features | Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. | Reopening apps |
+| Apple Intelligence features | Sets the policies that turn off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. Apple lists most of them as deprecated on macOS, and their effect is not verified yet. | Reopening apps |
 | Spotlight internet results | Spotlight stops sending your searches to Apple. No more web results in Spotlight. | Reopening apps |
 | Hang tracing (tailspin) | Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory. | Nothing |
 | Crash report dialog | No more "quit unexpectedly" dialogs. | A restart |

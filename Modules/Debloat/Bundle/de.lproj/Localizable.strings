@@ -76,6 +76,7 @@
 "Policies" = "Richtlinien";
 "Reopen apps to apply." = "Zum Anwenden Apps neu öffnen.";
 "Restart to apply." = "Zum Anwenden neu starten.";
+"Sets the policies that turn off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT. Apple lists most of them as deprecated on macOS, and their effect is not verified yet." = "Setzt die Richtlinien, die Schreibtools, Genmoji, Image Playground, Zusammenfassungen, intelligente Antworten und ChatGPT deaktivieren. Apple führt die meisten davon unter macOS als veraltet, und ihre Wirkung ist noch nicht überprüft.";
 "Share analytics with Apple" = "Analysedaten mit Apple teilen";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Zeigt eine Mitteilung, wenn macOS eine deaktivierte Funktion wieder einschaltet und MacSpace sie erneut deaktiviert.";
 "Siri" = "Siri";
@@ -93,7 +94,6 @@
 "Turns off Game Center." = "Deaktiviert Game Center.";
 "Turns off Siri AI. Spotlight goes back to classic search." = "Deaktiviert Siri AI. Spotlight kehrt zur klassischen Suche zurück.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr.";
-"Turns off Writing Tools, Genmoji, Image Playground, summaries, smart replies and ChatGPT." = "Deaktiviert Schreibtools, Genmoji, Image Playground, Zusammenfassungen, intelligente Antworten und ChatGPT.";
 "Undone by macOS" = "Von macOS rückgängig gemacht";
 "Unknown action %@." = "Unbekannte Aktion %@.";
 "Visual Intelligence" = "Visuelle Intelligenz";

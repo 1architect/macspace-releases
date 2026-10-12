@@ -98,7 +98,7 @@ macOS haya activado de nuevo (salvo las políticas), y puede avisarte cuando lo 
 | Siri AI | Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. | Un reinicio |
 | Inteligencia visual | Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar. | Un reinicio |
 | Indexación para búsqueda generativa | Impide que Apple Intelligence indexe tu Mail y tus datos personales. | Un reinicio |
-| Funciones de Apple Intelligence | Desactiva Herramientas de Escritura, Genmoji, Image Playground, los resúmenes, las respuestas inteligentes y ChatGPT. | Volver a abrir las apps |
+| Funciones de Apple Intelligence | Aplica las políticas que desactivan Herramientas de Escritura, Genmoji, Image Playground, los resúmenes, las respuestas inteligentes y ChatGPT. Apple marca la mayoría como obsoletas en macOS, y su efecto aún no está verificado. | Volver a abrir las apps |
 | Resultados de internet en Spotlight | Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight. | Volver a abrir las apps |
 | Rastreo de bloqueos (tailspin) | Impide que macOS grabe la actividad sin parar para los informes de bloqueos. Libera unos 100 MB de memoria. | Nada |
 | Aviso de informe de fallos | Se acabaron los avisos de «se ha cerrado inesperadamente». | Un reinicio |
