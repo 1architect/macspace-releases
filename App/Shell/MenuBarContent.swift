@@ -110,6 +110,13 @@ public final class StatusItemController: NSObject {
         }
     }
 
+    /// A left click opens the panel; a right or Control-click opens the menu.
+    ///
+    /// Only the menu lights the item up. A left click opens no menu, so the item shows no press. Lighting it with
+    /// `button.highlight(true)` does nothing on macOS 27: tried on 2026-10-12 during the click, after it and from the press, and
+    /// reported to Apple by another developer as FB23330269 ("NSStatusItem button highlight cannot be set programmatically",
+    /// https://developer.apple.com/forums/thread/836113). Left as it is until Apple fixes it; a capsule drawn by MacSpace would only
+    /// look like the system's, and would double it once the fix ships.
     @objc private func clicked(_ sender: NSStatusBarButton) {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
