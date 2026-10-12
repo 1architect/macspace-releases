@@ -229,7 +229,8 @@ public enum DebloatCatalog {
             ],
             // 26B5091g validated that macOS forces the keys, not that the features turn off.
             validatedBuilds: ["26B5091g"],
-            retired: "Apple's device-management schema lists 9 of these 12 keys as deprecated on macOS since 26.4, 2 as not applicable and 1 not at all, and their effect was never measured (the research Mac cannot run Apple Intelligence). The Siri page's Apple Intelligence switch, measured, makes macOS treat Apple Intelligence as unavailable, which takes these features with it. Retired 2026-10-12."
+            retired: "Apple's device-management schema lists 9 of these 12 keys as deprecated on macOS since 26.4, 2 as not applicable and 1 not at all, and their effect was never measured (the research Mac cannot run Apple Intelligence). The Siri page's Apple Intelligence switch, measured, makes macOS treat Apple Intelligence as unavailable, which takes these features with it. Retired 2026-10-12. Removed by MacSpace wherever it is applied: on 26B5101f the profile made macOS mark Apple Intelligence restricted (_isAppleIntelligenceRestricted), System Settings hid Apple Intelligence and said extensions were disabled by the organization, and the Apple Intelligence download stood still until the policy was removed (2026-10-12).",
+            undoesWhenRetired: true
         ),
         DebloatControl(
             id: "apps.game-center-policy",

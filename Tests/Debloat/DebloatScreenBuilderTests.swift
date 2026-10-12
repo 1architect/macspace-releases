@@ -50,8 +50,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertTrue(DebloatScreenBuilder.switchedOff(snap(.debloated)).contains { $0.id == retired.id }, "Enable all removes it")
     }
 
-    /// Generative search indexing stops Mail search, so where it is applied MacSpace switches it back on by itself; Apple
-    /// Intelligence features waits for the user.
+    /// Generative search indexing stops Mail search, and the Apple Intelligence features policy makes macOS restrict Apple
+    /// Intelligence, so where either is applied MacSpace switches it back on by itself.
     func testARetiredSwitchThatDoesHarmIsUndone() throws {
         let indexing = try XCTUnwrap(DebloatCatalog.control("ai.generative-indexing"))
         let features = try XCTUnwrap(DebloatCatalog.control("ai.features-policy"))
@@ -59,7 +59,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
             DebloatSnapshot(controls: offered + [indexing, features], statuses: Dictionary(uniqueKeysWithValues: states.map { ($0.key, status($0.key, $0.value)) }),
                             environment: environment, cannotTakeEffect: [], takenAt: Date())
         }
-        XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .debloated, features.id: .debloated])).map(\.id), [indexing.id])
+        XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .debloated, features.id: .debloated])).map(\.id), [indexing.id, features.id])
+        XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([features.id: .awaitingApproval])).map(\.id), [features.id], "a profile still waiting for approval too")
         XCTAssertEqual(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .partial])).map(\.id), [indexing.id], "part of it is enough")
         XCTAssertTrue(DebloatScreenBuilder.retiredToUndo(snap([indexing.id: .stock])).isEmpty)
     }

@@ -312,8 +312,8 @@ final class DebloatEngineTests: XCTestCase {
     /// A retired control is never applied again, by the app, the helper or the watch, but what it applied can still be removed.
     func testARetiredControlCanBeRemovedButNotApplied() throws {
         XCTAssertEqual(DebloatCatalog.controls.filter { $0.retired != nil }.map(\.id), ["ai.generative-indexing", "ai.features-policy"])
-        XCTAssertEqual(DebloatCatalog.controls.filter(\.undoesWhenRetired).map(\.id), ["ai.generative-indexing"],
-                       "only the one that does harm (Mail search) is switched back on without the user")
+        XCTAssertEqual(DebloatCatalog.controls.filter(\.undoesWhenRetired).map(\.id), ["ai.generative-indexing", "ai.features-policy"],
+                       "both do harm (Mail search; Apple Intelligence restricted and its download stopped): switched back on without the user")
         for id in ["ai.generative-indexing", "ai.features-policy"] {
             let control = try XCTUnwrap(DebloatCatalog.control(id))
             let system = FakeDebloatSystem(controls: [control])

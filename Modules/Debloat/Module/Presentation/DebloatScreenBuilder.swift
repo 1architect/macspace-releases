@@ -71,7 +71,7 @@ enum DebloatScreenBuilder {
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         // Retired, and switched back on by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
         "ai.generative-indexing": loc("No longer offered: it stops Mail search from working. Switch this off, then restart your Mac."),
-        // Retired: shown only where it is still applied (`DebloatStore.isShown`).
+        // Retired, and removed by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
         "ai.features-policy": loc("No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies."),
         "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
         "diagnostics.tailspin": loc("Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory."),

@@ -37,7 +37,8 @@ public struct DebloatModule: MacSpaceModule {
         return await store.snapshot()
     }
 
-    /// A retired control that does harm (Generative search indexing stops Mail search) is switched back on by MacSpace wherever it is
+    /// A retired control that does harm (Generative search indexing stops Mail search; the Apple Intelligence features policy makes
+    /// macOS restrict Apple Intelligence and stops its download) is switched back on by MacSpace wherever it is
     /// still applied, without waiting for the user: on the first read of the tile or the page, so at launch, and by the watch. Once
     /// per run of the app, and only with the helper when the control needs it; until then the page lists it so the user can do it.
     /// Nothing is shown about it: the release notes say so. Returns whether anything was tried.
