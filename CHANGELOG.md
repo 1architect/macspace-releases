@@ -16,6 +16,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Changed
 
+- While a page with no chart loads (Debloat, Siri & Apple Intelligence), it shows the shape of its groups and rows, pulsing row by row, instead of a few grey boxes.
 - Debloat: the Siri AI switch says what stays on: Apple Intelligence and its other features.
 - A tile says what its module is cleaning, and how far it is, in place of its status line while the cleanup runs.
 - While a page reads the Mac again, only its chart pulses: the legend and the rows fold away and come back with the new figures, and the main button says Loading.
