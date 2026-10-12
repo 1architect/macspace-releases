@@ -55,6 +55,7 @@ and, for what the helper writes, `/Library/Application Support/MacSpace/`. The
 | Local copies of cloud files | One cloud folder at a time (`~/Library/CloudStorage/…` or iCloud Drive). Only files that are uploaded and have no conflict. The files stay in the cloud. | The app, as you |
 | Document version history | `/System/Volumes/Data/.DocumentRevisions-V100` | The helper |
 | Leftover macOS update files | `/System/Volumes/Data/macOS Install Data`, only if older than the installed system. The `Locked Files` folder stays. | The helper |
+| Unfinished wallpaper and screen saver downloads | `CFNetworkDownload_*.tmp` files directly in `/private/var/folders/*/*/T/com.apple.idleassetsd`, not changed for 3 days. Regular files only: links and subfolders are refused. | The helper |
 
 Nothing goes to the Trash. Caches, system assets and purgeable files are rebuilt or downloaded
 again when needed, and cloud copies download again when you open the file. Reports, version history
@@ -121,6 +122,7 @@ steps down so that the new one starts.
 | `systemdata.measure` | Sizes of folders | Read-only. Only under `/private/var`, `/private/tmp`, `/Library`, `/System/Library`, the Data volume's root and `/opt`, never a home folder. Sizes, never contents. |
 | `systemdata.versions.delete` | Deletes the document version history | Stops `revisiond` first, or pauses it if macOS refuses. Deletes the contents of the store, not the folder, then starts `revisiond` again. If it cannot stop it, it deletes nothing. |
 | `systemdata.staged-update.delete` | Deletes leftover update files | Only if the folder is older than the installed system. Keeps `Locked Files`. |
+| `systemdata.wallpaper-downloads.delete` | Deletes unfinished wallpaper and screen saver downloads | Takes no path: finds `/private/var/folders/*/*/T/com.apple.idleassetsd` itself, without following links. Deletes only regular files named `CFNetworkDownload_*.tmp` directly in it, not changed for 3 days. |
 | `debloat.status`, `.apply`, `.revert` | Reads, switches off and switches on Debloat items | Control identifiers only, from the built-in catalog. Nothing else. |
 | `debloat.removeProfile` | Removes a MacSpace profile | Only identifiers `com.macspace.policies` and `com.macspace.policies.…`. Any other profile is refused. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Finds and removes the Apple Intelligence subscriptions of accounts that no longer exist | Backs up the database to `/Library/Application Support/MacSpace/backups/` first, changes it in one transaction, touches only rows that match no local account, and refuses if the account list looks wrong. The app has no button for it yet. |

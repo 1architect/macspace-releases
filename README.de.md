@@ -224,7 +224,11 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   macOS an, den macOS selbst ausführt, wenn der Speicher fast voll ist. Sie werden bei Bedarf
   erneut geladen.
 - Nur wenn du die zugehörige Schaltfläche drückst: der Versionsverlauf von Dokumenten, die
-  übrigen Dateien eines installierten macOS-Updates und die lokalen Kopien von Cloud-Dateien.
+  übrigen Dateien eines installierten macOS-Updates, die Downloads von Hintergrundbildern und
+  Bildschirmschonern, die macOS unvollständig liegen ließ, und die lokalen Kopien von
+  Cloud-Dateien. Bei den Downloads löscht das Hilfsprogramm nur die Dateien
+  `CFNetworkDownload_*.tmp` in `/var/folders/…/T/com.apple.idleassetsd`, die sich seit 3 Tagen
+  nicht geändert haben; ein laufender Download bleibt.
 
 **Was es nie antastet.** MacSpace misst, wie viel Speicher deine Dokumente, Fotos, Mail und
 Nachrichten belegen. Es liest nicht, was darin steht, und löscht sie nie. Es listet große Objekte

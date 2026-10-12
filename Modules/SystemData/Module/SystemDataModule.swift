@@ -55,6 +55,9 @@ public struct SystemDataModule: MacSpaceModule {
         case "deleteStagedUpdate":
             progress(ActionProgress(message: loc("Freeing space…")))
             return await Self.deleteStagedUpdate(context.privileged)
+        case "deleteWallpaperDownloads":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            return await Self.deleteWallpaperDownloads(context.privileged)
         case "deleteVersions":
             progress(ActionProgress(message: loc("Freeing space…")))
             return await Self.deleteVersions(context.privileged)
@@ -143,6 +146,26 @@ public struct SystemDataModule: MacSpaceModule {
         let message = freedMessage(measuredFreed(before, DataVolume.freeBytes()) ?? stored)
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [],
                             freedBytes: measuredFreed(before, DataVolume.freeBytes()))
+    }
+
+    /// Deletes the wallpaper and screen saver downloads idleassetsd left unfinished, through the helper, which finds the folders and
+    /// picks the files itself (older than its retention window). Never part of Clean or automatic cleaning.
+    static func deleteWallpaperDownloads(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed(loc("Install the helper in Settings")) }
+        let before = DataVolume.freeBytes()
+        let result: WallpaperDownloadResult
+        do { result = try await channel.perform(WallpaperDownloadResult.self, operation: SystemDataPrivilegedOperations.deleteWallpaperDownloads) }
+        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
+        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
+        let measured = measuredFreed(before, result.removedFiles > 0 ? DataVolume.settledFreeBytes() : DataVolume.freeBytes())
+        var details = ["Removed \(result.removedFiles) unfinished download(s) from \(result.folders) folder(s), \(ByteFormat.string(result.removedBytes)) on disk."]
+        if result.keptRecentFiles > 0 {
+            details.append("Kept \(result.keptRecentFiles) download(s) newer than \(WallpaperDownloadCleaner.retentionDays) days.")
+        }
+        if result.refusedEntries > 0 { details.append("Refused \(result.refusedEntries) item(s) that are not regular files.") }
+        if let error = result.error { details.append(error) }
+        let message = freedMessage(measured ?? result.removedBytes)
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
     }
 
     /// macOS is asked again right before; if it keeps them, again in the background, and the page reads the Mac again once it lets

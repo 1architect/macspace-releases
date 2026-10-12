@@ -57,6 +57,7 @@ nenhum.
 | Cópias locais de arquivos da nuvem | Uma pasta da nuvem por vez (`~/Library/CloudStorage/…` ou iCloud Drive). Somente arquivos que já foram enviados e não têm conflito. Os arquivos continuam na nuvem. | O app, como você |
 | Histórico de versões de documentos | `/System/Volumes/Data/.DocumentRevisions-V100` | O auxiliar |
 | Arquivos restantes de atualização do macOS | `/System/Volumes/Data/macOS Install Data`, somente se for mais antigo que o sistema instalado. A pasta `Locked Files` permanece. | O auxiliar |
+| Downloads incompletos de fundos de tela e protetores de tela | Arquivos `CFNetworkDownload_*.tmp` diretamente em `/private/var/folders/*/*/T/com.apple.idleassetsd` que não mudam há 3 dias. Só arquivos comuns: links e subpastas são recusados. | O auxiliar |
 
 Nada vai para o Lixo. Caches, recursos do sistema e arquivos removíveis são recriados ou baixados de
 novo quando necessário, e as cópias da nuvem são baixadas de novo quando você abre o arquivo.
@@ -125,6 +126,7 @@ auxiliar percebe e se encerra para que o novo comece.
 | `systemdata.measure` | Tamanhos de pastas | Somente leitura. Apenas em `/private/var`, `/private/tmp`, `/Library`, `/System/Library`, na raiz do volume Data e em `/opt`, nunca em uma pasta pessoal. Tamanhos, nunca conteúdo. |
 | `systemdata.versions.delete` | Apaga o histórico de versões de documentos | Primeiro para o `revisiond` ou, se o macOS recusar, o pausa. Apaga o conteúdo do armazenamento, não a pasta, e depois inicia o `revisiond` de novo. Se não conseguir pará-lo, não apaga nada. |
 | `systemdata.staged-update.delete` | Apaga os arquivos restantes de atualização | Somente se a pasta for mais antiga que o sistema instalado. Mantém `Locked Files`. |
+| `systemdata.wallpaper-downloads.delete` | Apaga os downloads incompletos de fundos de tela e protetores de tela | Não recebe caminho: encontra `/private/var/folders/*/*/T/com.apple.idleassetsd` sozinho, sem seguir links. Apaga só arquivos comuns chamados `CFNetworkDownload_*.tmp` diretamente na pasta, que não mudam há 3 dias. |
 | `debloat.status`, `.apply`, `.revert` | Lê, desativa e ativa itens do Debloat | Somente identificadores de controle, do catálogo embutido. Nada além disso. |
 | `debloat.removeProfile` | Remove um perfil do MacSpace | Somente os identificadores `com.macspace.policies` e `com.macspace.policies.…`. Qualquer outro perfil é recusado. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Encontra e remove as assinaturas do Apple Intelligence de contas que não existem mais | Antes faz backup do banco de dados em `/Library/Application Support/MacSpace/backups/`, altera-o em uma única transação, mexe apenas em linhas que não correspondem a nenhuma conta local e recusa se a lista de contas parecer errada. O app ainda não tem botão para isso. |

@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Added
+
+- System Data: wallpaper and screen saver downloads that macOS left unfinished can be deleted from Free now, with the helper. Only the `CFNetworkDownload_*.tmp` files of idleassetsd that have not changed in 3 days go, so a download still in progress stays. Clean and automatic cleaning leave them out.
+
 ### Changed
 
 - System Data: the Caches group under Everything else says, behind its (i), why MacSpace leaves app caches alone.

@@ -257,6 +257,13 @@ item, measured by the helper. **Cited, not measured here:** idleassetsd runs as 
 savers into `T/com.apple.idleassetsd` of root's folder; a stuck download left hundreds of GB of `CFNetworkDownload_*.tmp` files there
 (Mole, issue #1253). That folder is named in advance and becomes its own row when the helper finds it.
 
+The row is under Free now with a button of its own, never part of Clean or automatic cleaning. The helper's
+`systemdata.wallpaper-downloads.delete` takes no path from the app: it opens `/private/var/folders/*/*/T/com.apple.idleassetsd`
+itself, one folder at a time without following links (`openat` with `O_NOFOLLOW`), reads each entry with `lstat`, and deletes only
+regular files named `CFNetworkDownload_*.tmp` directly in the folder whose modification time is more than 3 days old (Mole's
+default for temporary files), so a download still running stays. A link, a folder or anything else with that name is refused, and
+subfolders are not entered. Whether idleassetsd starts the same download again after its file is deleted is **not measured** here.
+
 ### Who is using a cache before it is deleted
 
 **Measured** (26B5101f, 2026-10-12). The running apps (`NSWorkspace.runningApplications`) miss every process that is not an app:

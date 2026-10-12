@@ -227,8 +227,8 @@ enum SystemDataScreenBuilder {
 
     // MARK: Sections
 
-    /// What Clean deletes, item by item, then document version history, which only its own button deletes. nil when there is nothing
-    /// worth a row.
+    /// What Clean deletes, item by item, then the stalled wallpaper downloads and document version history, which only their own
+    /// buttons delete. nil when there is nothing worth a row.
     static func freeNow(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         // The caches of an app that is open are not freeable now, so they are not listed: they come back once it quits.
         let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) >= worthARow }
@@ -251,6 +251,7 @@ enum SystemDataScreenBuilder {
                             actions: snapshot.assetsRetrying ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
                                 title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))]))
         }
+        if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
@@ -267,7 +268,8 @@ enum SystemDataScreenBuilder {
         let report = snapshot.report
         let handled: Set<String> = ["reports:diagnostic", "versions:documents", "update:staged", "assets:system"]
         return report.items.filter { item in
-            guard item.kind != .pendingUpdate, counted(item, snapshot) >= manualThreshold, !handled.contains(item.id), !item.id.hasPrefix("small:") else { return false }
+            guard item.kind != .pendingUpdate, counted(item, snapshot) >= manualThreshold, !handled.contains(item.id), !item.id.hasPrefix("small:"),
+                  !item.id.hasPrefix(wallpaperDownloadsPrefix) else { return false }
             switch item.cleanup.kind {
             case .review: return !countedByAnotherCategory(item)
             case .managedByMacOS, .command: return item.kind != .codeSignClone && !countedElsewhere.contains(item.kind)
@@ -367,6 +369,25 @@ enum SystemDataScreenBuilder {
                                        requires: [.privilegedHelper])])
         return .section(SectionWidget(id: "leftover-update", title: loc("Leftover update files"),
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
+    }
+
+    /// The folders of idleassetsd's downloads the helper found (`SystemDataReport.rootOnly`), one item per account folder.
+    static let wallpaperDownloadsPrefix = "downloads:idleassetsd:"
+
+    /// The wallpaper and screen saver downloads macOS left unfinished, as a row of Free now with a button of its own. Only the helper
+    /// can delete them, and only those older than its retention window, so Clean and automatic cleaning leave them out.
+    static func wallpaperDownloadsRow(_ snapshot: SystemDataSnapshot) -> Row? {
+        let bytes = snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.compactMap(\.bytes).reduce(0, +)
+        guard bytes >= manualThreshold else { return nil }
+        let size = ByteFormat.string(bytes)
+        let days = WallpaperDownloadCleaner.retentionDays
+        return Row(id: "wallpaper-downloads", title: loc("Wallpaper and screen saver downloads"), trailing: size, symbol: "photo.on.rectangle",
+                   detail: loc("Aerial wallpapers and screen savers that macOS is downloading. A large figure means downloads that got stuck."),
+                   actions: [Action(id: "deleteWallpaperDownloads", title: loc("Free"),
+                                    confirmation: Confirmation(title: loc("Delete stalled wallpaper downloads?"),
+                                                               message: loc("Deletes unfinished downloads (up to \(size)) that haven't changed in \(days) days. Downloads still in progress stay, and macOS downloads again what it still needs."),
+                                                               confirmTitle: loc("Delete")),
+                                    requires: [.privilegedHelper])])
     }
 
     /// The saved history behind File > Revert To > Browse All Versions, as a row of Free now. Deleting it is irreversible, so it keeps

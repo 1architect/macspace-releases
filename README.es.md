@@ -218,8 +218,11 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
   macOS, el que macOS ejecuta cuando el disco está casi lleno. Se vuelven a descargar si hacen
   falta.
 - Solo cuando pulsas su propio botón: el historial de versiones de documentos, los archivos
-  sobrantes de una actualización de macOS ya instalada y las copias locales de archivos de la
-  nube.
+  sobrantes de una actualización de macOS ya instalada, las descargas de fondos de pantalla y
+  salvapantallas que macOS dejó sin terminar y las copias locales de archivos de la nube. De las
+  descargas, el asistente elimina solo los archivos `CFNetworkDownload_*.tmp` de
+  `/var/folders/…/T/com.apple.idleassetsd` que no han cambiado en 3 días, así que una descarga en
+  curso se queda.
 
 **Qué no toca nunca.** MacSpace mide cuánto espacio ocupan tus documentos, Fotos, Mail y
 Mensajes. No lee lo que contienen y nunca los elimina. Muestra elementos grandes, como descargas

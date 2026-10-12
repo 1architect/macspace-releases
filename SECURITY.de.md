@@ -58,6 +58,7 @@ Datei auf. Nichts davon wird irgendwohin hochgeladen.
 | Lokale Kopien von Cloud-Dateien | Jeweils ein Cloud-Ordner (`~/Library/CloudStorage/…` oder iCloud Drive). Nur Dateien, die hochgeladen sind und keinen Konflikt haben. Die Dateien bleiben in der Cloud. | Die App, als du |
 | Versionsverlauf von Dokumenten | `/System/Volumes/Data/.DocumentRevisions-V100` | Das Hilfsprogramm |
 | Übrige macOS-Update-Dateien | `/System/Volumes/Data/macOS Install Data`, nur wenn älter als das installierte System. Der Ordner `Locked Files` bleibt. | Das Hilfsprogramm |
+| Unvollständige Downloads von Hintergrundbildern und Bildschirmschonern | Dateien `CFNetworkDownload_*.tmp` direkt in `/private/var/folders/*/*/T/com.apple.idleassetsd`, die sich seit 3 Tagen nicht geändert haben. Nur normale Dateien: Links und Unterordner werden abgelehnt. | Das Hilfsprogramm |
 
 Nichts landet im Papierkorb. Caches, Systemressourcen und löschbare Dateien werden bei Bedarf neu
 aufgebaut oder erneut geladen, und Cloud-Kopien werden beim Öffnen der Datei erneut geladen.
@@ -127,6 +128,7 @@ ersetzt, bemerkt das Hilfsprogramm es und beendet sich, damit das neue startet.
 | `systemdata.measure` | Größen von Ordnern | Nur lesend. Nur unter `/private/var`, `/private/tmp`, `/Library`, `/System/Library`, dem Stammverzeichnis des Datenvolumes und `/opt`, nie ein Benutzerordner. Größen, nie Inhalte. |
 | `systemdata.versions.delete` | Löscht den Versionsverlauf von Dokumenten | Beendet zuerst `revisiond` oder hält es an, wenn macOS das verweigert. Löscht den Inhalt des Speichers, nicht den Ordner, und startet `revisiond` dann wieder. Kann es `revisiond` nicht beenden, löscht es nichts. |
 | `systemdata.staged-update.delete` | Löscht übrige Update-Dateien | Nur wenn der Ordner älter ist als das installierte System. Behält `Locked Files`. |
+| `systemdata.wallpaper-downloads.delete` | Löscht unvollständige Downloads von Hintergrundbildern und Bildschirmschonern | Nimmt keinen Pfad an: findet `/private/var/folders/*/*/T/com.apple.idleassetsd` selbst, ohne Links zu folgen. Löscht nur normale Dateien namens `CFNetworkDownload_*.tmp` direkt im Ordner, die sich seit 3 Tagen nicht geändert haben. |
 | `debloat.status`, `.apply`, `.revert` | Liest Debloat-Objekte, schaltet sie aus und wieder ein | Nur Kennungen von Einstellungen aus dem eingebauten Katalog. Sonst nichts. |
 | `debloat.removeProfile` | Entfernt ein MacSpace-Profil | Nur die Kennungen `com.macspace.policies` und `com.macspace.policies.…`. Jedes andere Profil wird abgelehnt. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Findet und entfernt die Apple Intelligence-Abonnements von Accounts, die es nicht mehr gibt | Sichert zuerst die Datenbank in `/Library/Application Support/MacSpace/backups/`, ändert sie in einer einzigen Transaktion, berührt nur Zeilen, die zu keinem lokalen Account passen, und lehnt ab, wenn die Account-Liste falsch aussieht. Die App hat dafür noch keine Schaltfläche. |

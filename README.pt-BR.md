@@ -219,7 +219,10 @@ interruptores do Debloat que exigem um administrador e remover o perfil do MacSp
   mesmo que o macOS executa quando o disco está quase cheio. Eles são baixados de novo se forem
   necessários.
 - Somente quando você clica no botão próprio: o histórico de versões de documentos, os arquivos
-  restantes de uma atualização do macOS já instalada e as cópias locais de arquivos da nuvem.
+  restantes de uma atualização do macOS já instalada, os downloads de fundos de tela e protetores
+  de tela que o macOS deixou incompletos e as cópias locais de arquivos da nuvem. Nos downloads, o
+  auxiliar apaga só os arquivos `CFNetworkDownload_*.tmp` de `/var/folders/…/T/com.apple.idleassetsd`
+  que não mudam há 3 dias, então um download em andamento continua.
 
 **O que ele nunca toca.** O MacSpace mede quanto espaço ocupam os seus documentos, o Fotos, o Mail e
 o Mensagens. Ele não lê o que há neles e nunca os apaga. Ele lista itens grandes, como downloads

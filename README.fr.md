@@ -222,8 +222,11 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
   fichiers que les apps ont marqués comme purgeables. MacSpace les demande au service de purge de
   macOS, celui que macOS lance quand le disque est presque plein. Ils sont retéléchargés au besoin.
 - Seulement quand vous appuyez sur leur propre bouton : l’historique des versions des documents,
-  les fichiers restants d’une mise à jour de macOS installée, et les copies locales de fichiers du
-  cloud.
+  les fichiers restants d’une mise à jour de macOS installée, les téléchargements de fonds d’écran
+  et d’économiseurs d’écran que macOS a laissés inachevés, et les copies locales de fichiers du
+  cloud. Pour ces téléchargements, l’assistant ne supprime que les fichiers `CFNetworkDownload_*.tmp`
+  de `/var/folders/…/T/com.apple.idleassetsd` inchangés depuis 3 jours : un téléchargement en cours
+  reste.
 
 **Ce qu’il ne touche jamais.** MacSpace mesure l’espace que prennent vos documents, Photos, Mail et
 Messages. Il ne lit pas leur contenu et ne les supprime jamais. Il liste les gros éléments, comme

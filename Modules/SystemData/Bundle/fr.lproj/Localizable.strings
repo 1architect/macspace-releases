@@ -60,10 +60,12 @@
 "Delete" = "Supprimer";
 "Delete all version history?" = "Supprimer tout l’historique des versions ?";
 "Delete old reports?" = "Supprimer les anciens rapports ?";
+"Delete stalled wallpaper downloads?" = "Supprimer les téléchargements de fonds d’écran bloqués ?";
 "Delete the leftover update files?" = "Supprimer les fichiers de mise à jour restants ?";
 "Delete version history" = "Supprimer l’historique";
 "Deleted %@." = "%@ supprimé.";
 "Deletes caches, old reports and unused system assets." = "Supprime les caches, les anciens rapports et les ressources système inutilisées.";
+"Deletes unfinished downloads (up to %@) that haven't changed in %lld days. Downloads still in progress stay, and macOS downloads again what it still needs." = "Supprime les téléchargements inachevés (jusqu’à %@) qui n’ont pas changé depuis %lld jours. Les téléchargements en cours restent, et macOS télécharge à nouveau ce dont il a encore besoin.";
 "Delete…" = "Supprimer…";
 "Diagnostic and crash reports" = "Rapports de diagnostic et de plantage";
 "Dictionaries" = "Dictionnaires";

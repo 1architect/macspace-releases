@@ -210,7 +210,10 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
   purgeable. MacSpace asks macOS's own purge service for these, the one macOS runs when the disk
   is nearly full. They download again if they are needed.
 - Only when you press its own button: the document version history, the leftover files of an
-  installed macOS update, and the local copies of cloud files.
+  installed macOS update, the wallpaper and screen saver downloads that macOS left unfinished, and
+  the local copies of cloud files. For the downloads, the helper deletes only the
+  `CFNetworkDownload_*.tmp` files in `/var/folders/…/T/com.apple.idleassetsd` that have not
+  changed in 3 days, so a download still in progress stays.
 
 **What it never touches.** MacSpace measures how much space your documents, Photos, Mail and
 Messages take. It does not read what is in them and never deletes them. It lists large items such
