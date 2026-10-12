@@ -210,8 +210,8 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
 
 - Cachés que las apps vuelven a crear: las cachés de la carpeta de caché del sistema de cada
   usuario (`/var/folders/…/C`) y las cachés web (`Cache`, `Code Cache`, `GPUCache`) que las apps
-  de Chromium y Electron guardan en `~/Library/Application Support`. Solo mientras la app a la
-  que pertenecen está cerrada. `~/Library/Caches` se muestra, pero no se limpia.
+  de Chromium y Electron guardan en `~/Library/Application Support`. Solo mientras la app o la herramienta a la
+  que pertenecen está cerrada, con sus procesos auxiliares, y ningún programa tiene un archivo abierto en ellas. `~/Library/Caches` se muestra, pero no se limpia.
 - Informes de diagnóstico y de fallos con más de 7 días, en `/Library/Logs/DiagnosticReports` y
   `~/Library/Logs/DiagnosticReports`.
 - Recursos del sistema sin usar, modelos de Apple Intelligence que macOS ha liberado y archivos

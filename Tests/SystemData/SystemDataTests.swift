@@ -24,10 +24,11 @@ final class SystemDataTests: XCTestCase {
                             systemPaths: ["commandLineTools": root.appendingPathComponent("clt").path])
     }
 
-    private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true, apps: [String] = []) -> SystemDataInspector {
+    private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true, apps: [String] = [], processes: ProcessCheck = .none) -> SystemDataInspector {
         var inspector = SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] },
                                             claimedPlaces: { apps })
         inspector.hasFullDiskAccess = fullDiskAccess
+        inspector.processCheck = processes
         return inspector
     }
 
@@ -104,7 +105,7 @@ final class SystemDataTests: XCTestCase {
         let closed = inspector(running: [RunningApp(bundleIdentifier: "com.example.chatty", name: "Chatty")]).inspect()
         XCTAssertEqual(closed.items.first { $0.id == "supportcache:Chatty" }?.inUse, true, "not offered while the app runs")
 
-        let cleaner = SystemDataCleaner(runningApps: { [] }, freeSpace: { nil })
+        let cleaner = SystemDataCleaner(runningApps: { [] }, processCheck: .none, freeSpace: { nil })
         let roots = SystemDataCleaner.allowedRoots(locations)
         XCTAssertTrue(cleaner.clean([chatty], allowedRoots: roots).results.allSatisfy(\.deleted))
         XCTAssertFalse(fm.fileExists(atPath: chatty.paths[0]))
@@ -209,7 +210,7 @@ final class SystemDataTests: XCTestCase {
         let items = report.items.filter { ["clone:com.example.Big", "appcache:com.example.Tool", "appsupport:BigApp"].contains($0.id) }
 
         var free: UInt64 = 1_000
-        let blocked = SystemDataCleaner(runningApps: { [RunningApp(bundleIdentifier: "com.example.Big", name: "Big")] }, freeSpace: { free })
+        let blocked = SystemDataCleaner(runningApps: { [RunningApp(bundleIdentifier: "com.example.Big", name: "Big")] }, processCheck: .none, freeSpace: { free })
             .clean(items, allowedRoots: SystemDataCleaner.allowedRoots(locations))
         XCTAssertEqual(blocked.results.first { $0.itemID == "clone:com.example.Big" }?.deleted, false, "clones are not cleanable")
         XCTAssertEqual(blocked.results.first { $0.itemID == "appsupport:BigApp" }?.deleted, false, "review items are never deleted")
@@ -218,7 +219,7 @@ final class SystemDataTests: XCTestCase {
 
         try file("folders/C/clang/ModuleCache/a.pcm", mb: 60)
         let clang = try XCTUnwrap(inspector().inspect().items.first { $0.id == "usercache:clang" })
-        let cleaner = SystemDataCleaner(runningApps: { [] }, freeSpace: { defer { free += 60_000_000 }; return free })
+        let cleaner = SystemDataCleaner(runningApps: { [] }, processCheck: .none, freeSpace: { defer { free += 60_000_000 }; return free })
         let result = cleaner.clean([clang], allowedRoots: SystemDataCleaner.allowedRoots(locations))
         XCTAssertEqual(result.results.map(\.deleted), [true])
         XCTAssertFalse(fm.fileExists(atPath: root.appendingPathComponent("folders/C/clang").path))
@@ -230,6 +231,53 @@ final class SystemDataTests: XCTestCase {
                                      cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
         XCTAssertEqual(cleaner.clean([outside], allowedRoots: SystemDataCleaner.allowedRoots(locations)).results.first?.deleted, false)
         XCTAssertTrue(fm.fileExists(atPath: root.appendingPathComponent("home/Library/Application Support/BigApp").path))
+    }
+
+    /// The running apps miss what is not an app. A command-line tool with the owner's name, a helper running from inside the owner's
+    /// app, or any process holding a file open in the item keeps it; so does a check that cannot be made.
+    func testCleanerChecksProcessesAndOpenFilesBeforeEachItem() throws {
+        try file("folders/C/clang/ModuleCache/a.pcm", mb: 60)
+        try file("folders/C/com.example.chatty/blob", mb: 60)
+        let items = inspector().inspect().items
+        let clang = try XCTUnwrap(items.first { $0.id == "usercache:clang" })
+        let chatty = try XCTUnwrap(items.first { $0.id == "usercache:com.example.chatty" })
+        let roots = SystemDataCleaner.allowedRoots(locations)
+        func clean(_ item: SystemDataItem, _ check: ProcessCheck) -> SystemDataCleanupResult {
+            SystemDataCleaner(runningApps: { [] }, processCheck: check, freeSpace: { nil }).clean([item], allowedRoots: roots).results[0]
+        }
+        func check(_ processes: [RunningProcess]? = [], open: Bool? = false, app: String? = nil) -> ProcessCheck {
+            ProcessCheck(processes: { processes }, holdsOpen: { _ in open }, appPath: { _ in app })
+        }
+
+        let compiler = RunningProcess(pid: 10, name: "clang", executablePath: "/usr/bin/clang")
+        XCTAssertFalse(clean(clang, check([compiler])).deleted, "a compiler is not an app, but it is running")
+        XCTAssertTrue(inspector(processes: check([compiler])).inspect().items.first { $0.id == "usercache:clang" }?.inUse == true,
+                      "and the scan does not offer it either")
+
+        let helper = RunningProcess(pid: 11, name: "Chatty Helper", executablePath: "/Applications/Chatty.app/Contents/Frameworks/Chatty Helper.app/Contents/MacOS/Chatty Helper")
+        XCTAssertFalse(clean(chatty, check([helper], app: "/Applications/Chatty.app")).deleted, "a helper inside the app keeps its cache")
+        let other = RunningProcess(pid: 12, name: "Chatty Helper", executablePath: "/Applications/Chatty Two.app/Contents/MacOS/Chatty Helper")
+        XCTAssertFalse(clean(chatty, check([other], open: nil, app: "/Applications/Chatty.app")).deleted, "an open-file check that cannot be made keeps it")
+        XCTAssertFalse(clean(chatty, check(open: true)).deleted, "a process holding a file open keeps it")
+        XCTAssertFalse(clean(chatty, check(nil)).deleted, "processes that cannot be listed keep it")
+        XCTAssertTrue(fm.fileExists(atPath: chatty.paths[0]))
+
+        XCTAssertTrue(clean(chatty, check([other], app: "/Applications/Chatty.app")).deleted, "an app whose name only starts the same does not count")
+        XCTAssertTrue(clean(clang, check([RunningProcess(pid: 13, name: "clangd-helper", executablePath: nil)])).deleted, "a name must match exactly")
+        XCTAssertFalse(fm.fileExists(atPath: clang.paths[0]))
+    }
+
+    /// The live check, on this test process: it is one of the user's processes, and a file it holds open is seen until it is closed.
+    func testLiveProcessCheckSeesThisProcessAndItsOpenFiles() throws {
+        try file("folders/C/com.example.open/blob", mb: 1)
+        let folder = root.appendingPathComponent("folders/C/com.example.open").path
+        XCTAssertTrue(ProcessCheck.live.processes()?.contains { $0.pid == getpid() } == true)
+        XCTAssertEqual(ProcessCheck.live.holdsOpen([folder]), false)
+        let handle = try FileHandle(forReadingFrom: root.appendingPathComponent("folders/C/com.example.open/blob"))
+        XCTAssertEqual(ProcessCheck.live.holdsOpen([folder]), true, "found under /private/var, although the path says /var")
+        try handle.close()
+        XCTAssertEqual(ProcessCheck.live.holdsOpen([folder]), false)
+        XCTAssertEqual(ProcessCheck.live.holdsOpen([root.appendingPathComponent("missing").path]), false, "nothing open in what does not exist")
     }
 
     func testHomeFoldersOfDeletedAccountsAreListed() throws {

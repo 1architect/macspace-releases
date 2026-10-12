@@ -203,8 +203,8 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
 
 - Caches that apps rebuild: the caches in the per-user system cache folder (`/var/folders/…/C`)
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
-  `~/Library/Application Support`. Only while the app that owns them is closed.
-  `~/Library/Caches` is listed, not cleaned.
+  `~/Library/Application Support`. Only while the app or tool that owns them is closed, with its
+  helpers, and no program has a file open in them. `~/Library/Caches` is listed, not cleaned.
 - Diagnostic and crash reports older than 7 days, in `/Library/Logs/DiagnosticReports` and
   `~/Library/Logs/DiagnosticReports`.
 - Unused system assets, Apple Intelligence models that macOS has released, and files apps marked

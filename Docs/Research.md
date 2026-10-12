@@ -247,6 +247,19 @@ any other app is never taken. Their storage (Local Storage, IndexedDB, Service W
 cleans these while the app is closed and takes them off the app's own figure. `~/Library/Caches` in general is listed, not
 cleaned.
 
+### Who is using a cache before it is deleted
+
+**Measured** (26B5101f, 2026-10-12). The running apps (`NSWorkspace.runningApplications`) miss every process that is not an app:
+a compiler using its module cache in `/var/folders/…/C/clang`, an app's helpers and background agents. Without root, `libproc`
+lists all of the user's processes (`proc_listpids` with `PROC_UID_ONLY`: 440 here) and the open files and working folder of each
+(`PROC_PIDLISTFDS`, `PROC_PIDFDVNODEPATHINFO`, `PROC_PIDVNODEPATHINFO`) in about 20 ms. Eight of Apple's own programs refuse the
+paths of their files with `EPERM`, even to their own user: `lsd`, `nsurlsessiond`, `routined`, `dmd`, `UserEventAgent`,
+`progressd`, `ScreenTimeAgent` and the QuickLook thumbnails agent. The kernel reports real paths (`/private/var/folders/…`).
+Memory-mapped files whose descriptor was closed are not listed this way. The cleaner checks, before each item, for an owner
+running as an app, as a process of the same name, or from inside the owner's app, and for any open file in the item. A refusal
+from a program under `/System` or `/usr` is ignored, because those programs do not use third-party apps' caches. Any other
+refusal, or a process list that cannot be read, keeps the item.
+
 ### Document version history
 
 **Measured.** 6.35 GB by `du` (`/System/Volumes/Data/.DocumentRevisions-V100`); deleting it freed about 5 GB on the volume

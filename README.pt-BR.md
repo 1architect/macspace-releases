@@ -211,8 +211,8 @@ interruptores do Debloat que exigem um administrador e remover o perfil do MacSp
 
 - Caches que os apps recriam: os caches da pasta de cache do sistema de cada usuário
   (`/var/folders/…/C`) e os caches da web (`Cache`, `Code Cache`, `GPUCache`) que os apps Chromium
-  e Electron guardam em `~/Library/Application Support`. Somente enquanto o app dono deles está
-  fechado. A pasta `~/Library/Caches` é listada, mas não é limpa.
+  e Electron guardam em `~/Library/Application Support`. Somente enquanto o app ou a ferramenta dona
+  deles está fechada, com seus processos auxiliares, e nenhum programa tem um arquivo aberto neles. A pasta `~/Library/Caches` é listada, mas não é limpa.
 - Relatórios de diagnóstico e de falhas com mais de 7 dias, em `/Library/Logs/DiagnosticReports` e
   `~/Library/Logs/DiagnosticReports`.
 - Recursos do sistema sem uso, modelos do Apple Intelligence que o macOS liberou e arquivos que os

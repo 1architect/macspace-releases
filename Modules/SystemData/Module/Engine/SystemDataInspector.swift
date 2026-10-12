@@ -275,6 +275,9 @@ public struct SystemDataInspector {
     /// Other accounts' home folders can be measured only as root (the helper); injectable for tests.
     public var canReadOtherHomes: Bool = geteuid() == 0
 
+    /// The processes that are not apps, for the items deleted while their owner is closed; injectable for tests.
+    public var processCheck: ProcessCheck = .live
+
     /// Folders in `/Users` that are not home folders.
     static let usersFolderEntries: Set<String> = ["Shared", "Guest", "Deleted Users", ".localized"]
 
@@ -315,13 +318,14 @@ public struct SystemDataInspector {
         func children(_ directory: String) -> [String] {
             ((try? fileManager.contentsOfDirectory(atPath: directory)) ?? []).sorted().map { (directory as NSString).appendingPathComponent($0) }
         }
-        func isRunning(_ owners: [String]) -> Bool {
-            owners.contains { owner in
-                running.contains { app in
-                    app.bundleIdentifier?.caseInsensitiveCompare(owner) == .orderedSame
-                        || app.name.map { $0.caseInsensitiveCompare(owner) == .orderedSame || owner.lowercased().contains($0.lowercased()) && $0.count >= 4 } == true
-                }
+        // Listed once, and only if an item that is deleted while its owner is closed is found; the cleaner checks again before deleting.
+        var processes: [RunningProcess]?
+        func isRunning(_ owners: [String], cleanup: SystemDataCleanup.Kind) -> Bool {
+            guard cleanup == .deleteWhenNotRunning else {
+                return ProcessCheck.runningOwner(owners, apps: running, processes: [], appPath: { _ in nil }) != nil
             }
+            if processes == nil { processes = processCheck.processes() ?? [] }
+            return ProcessCheck.runningOwner(owners, apps: running, processes: processes ?? [], appPath: processCheck.appPath) != nil
         }
         // Entries are registered first and measured together afterwards, in parallel: sizing is disk-bound and independent per path.
         struct Pending {
@@ -379,7 +383,7 @@ public struct SystemDataInspector {
                     continue
                 }
                 var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
-                                          readable: readable, owners: entry.owners, inUse: isRunning(entry.owners), cleanup: entry.cleanup, notes: entry.notes)
+                                          readable: readable, owners: entry.owners, inUse: isRunning(entry.owners, cleanup: entry.cleanup.kind), cleanup: entry.cleanup, notes: entry.notes)
                 item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
                 item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
@@ -714,17 +718,21 @@ public struct SystemDataCleanupReport: Codable, Equatable, Sendable {
     public let freeBytesAfter: UInt64?
 }
 
-/// Deletes `deleteWhenNotRunning` items after re-checking that no owner is running. Not journaled: caches and
-/// clones are recreated by macOS or the app, not restored.
+/// Deletes `deleteWhenNotRunning` items after re-checking, for each item just before it is deleted, that no owner is running (an app,
+/// a process with the owner's name, or one running from inside the owner's app) and that no process of the user's holds a file open in
+/// it. When either cannot be checked, the item is not deleted. Not journaled: caches and clones are recreated by macOS or the app, not
+/// restored.
 public struct SystemDataCleaner {
     private let fileManager: FileManager
     private let runningApps: () -> [RunningApp]
+    private let processCheck: ProcessCheck
     private let freeSpace: () -> UInt64?
 
     public init(fileManager: FileManager = .default, runningApps: @escaping () -> [RunningApp] = SystemDataInspector.liveRunningApps,
-                freeSpace: @escaping () -> UInt64? = SystemDataCleaner.dataVolumeFreeBytes) {
+                processCheck: ProcessCheck = .live, freeSpace: @escaping () -> UInt64? = SystemDataCleaner.dataVolumeFreeBytes) {
         self.fileManager = fileManager
         self.runningApps = runningApps
+        self.processCheck = processCheck
         self.freeSpace = freeSpace
     }
 
@@ -732,17 +740,12 @@ public struct SystemDataCleaner {
 
     public func clean(_ items: [SystemDataItem], allowedRoots: [String]) -> SystemDataCleanupReport {
         let before = freeSpace()
-        let running = runningApps()
         let results = items.map { item -> SystemDataCleanupResult in
             guard item.cleanup.kind == .deleteWhenNotRunning else {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Not a cleanable item (\(item.cleanup.kind.rawValue))."))
             }
-            if let owner = item.owners.first(where: { owner in
-                running.contains { $0.bundleIdentifier?.caseInsensitiveCompare(owner) == .orderedSame
-                    || $0.name.map { $0.caseInsensitiveCompare(owner) == .orderedSame || owner.lowercased().contains($0.lowercased()) && $0.count >= 4 } == true }
-            }) {
-                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(owner) is running; quit it first."))
-            }
+            // Every path is checked before any is deleted, so an item is deleted whole or not at all.
+            var paths: [String] = []
             for path in item.paths {
                 let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
                 guard allowedRoots.contains(where: { standardized.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }),
@@ -750,7 +753,24 @@ public struct SystemDataCleaner {
                         || SystemDataInspector.chromiumCacheNames.contains((standardized as NSString).lastPathComponent) else {
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(path) is outside the cleanable locations."))
                 }
-                do { try fileManager.removeItem(atPath: standardized) } catch {
+                paths.append(standardized)
+            }
+            // Read again for each item: an app or a build can start while earlier items are deleted.
+            guard let processes = processCheck.processes() else {
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Couldn't check which programs are running, so nothing was deleted."))
+            }
+            if let owner = ProcessCheck.runningOwner(item.owners, apps: runningApps(), processes: processes, appPath: processCheck.appPath) {
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(owner) is running; quit it first."))
+            }
+            switch processCheck.holdsOpen(paths) {
+            case false?: break
+            case true?:
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("A program is still using these files. Try again later."))
+            case nil:
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Couldn't check which files are in use, so nothing was deleted."))
+            }
+            for path in paths {
+                do { try fileManager.removeItem(atPath: path) } catch {
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription)
                 }
             }

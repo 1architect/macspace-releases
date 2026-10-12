@@ -216,8 +216,8 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
 
 - Caches, die Apps neu aufbauen: die Caches im Systemcache-Ordner pro Benutzer
   (`/var/folders/…/C`) und die Web-Caches (`Cache`, `Code Cache`, `GPUCache`), die Chromium- und
-  Electron-Apps in `~/Library/Application Support` ablegen. Nur solange die App, der sie
-  gehören, geschlossen ist. `~/Library/Caches` wird aufgelistet, nicht bereinigt.
+  Electron-Apps in `~/Library/Application Support` ablegen. Nur solange die App oder das Werkzeug, dem
+  sie gehören, samt Hilfsprozessen geschlossen ist und kein Programm darin eine Datei geöffnet hat. `~/Library/Caches` wird aufgelistet, nicht bereinigt.
 - Diagnose- und Absturzberichte, die älter als 7 Tage sind, in `/Library/Logs/DiagnosticReports`
   und `~/Library/Logs/DiagnosticReports`.
 - Ungenutzte Systemressourcen, Apple Intelligence-Modelle, die macOS freigegeben hat, und

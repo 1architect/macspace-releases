@@ -215,8 +215,8 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
 
 - Les caches que les apps recréent : ceux du dossier de cache système de chaque utilisateur
   (`/var/folders/…/C`) et les caches web (`Cache`, `Code Cache`, `GPUCache`) que les apps Chromium
-  et Electron gardent dans `~/Library/Application Support`. Seulement quand l’app qui les possède
-  est fermée. `~/Library/Caches` est listé, pas nettoyé.
+  et Electron gardent dans `~/Library/Application Support`. Seulement quand l’app ou l’outil qui les
+  possède est fermé, avec ses processus auxiliaires, et qu’aucun programme n’y a de fichier ouvert. `~/Library/Caches` est listé, pas nettoyé.
 - Les rapports de diagnostic et de plantage de plus de 7 jours, dans
   `/Library/Logs/DiagnosticReports` et `~/Library/Logs/DiagnosticReports`.
 - Les ressources système inutilisées, les modèles Apple Intelligence que macOS a libérés, et les

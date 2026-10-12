@@ -15,6 +15,7 @@
 "1 item" = "1 Objekt";
 "1 report" = "1 Bericht";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "Ein macOS-Wiederherstellungsimage. Sobald der Mac, das Gerät oder die virtuelle Maschine eingerichtet ist, kann es gelöscht werden.";
+"A program is still using these files. Try again later." = "Ein Programm verwendet diese Dateien noch. Versuche es später erneut.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "Festplatte und Zustand einer virtuellen Maschine. Lösche nicht mehr genutzte Maschinen in der Virtualisierungs-App.";
 "About %@ from an update that's already installed." = "Etwa %@ von einem bereits installierten Update.";
 "Allow" = "Erlauben";
@@ -47,6 +48,8 @@
 "Cloud storage: %@" = "Cloud-Speicher: %@";
 "Code-signing copy of %@" = "Codesignatur-Kopie von %@";
 "CoreSpotlight indexes for apps' searchable content." = "CoreSpotlight-Indizes für durchsuchbare Inhalte von Apps.";
+"Couldn't check which files are in use, so nothing was deleted." = "Es konnte nicht geprüft werden, welche Dateien verwendet werden, daher wurde nichts gelöscht.";
+"Couldn't check which programs are running, so nothing was deleted." = "Es konnte nicht geprüft werden, welche Programme laufen, daher wurde nichts gelöscht.";
 "Couldn't free it" = "Konnte nicht freigegeben werden";
 "Daemon containers" = "Daemon-Container";
 "Data of Apple background services." = "Daten von Apple-Hintergrunddiensten.";
