@@ -100,16 +100,54 @@ enum CaptionFont {
         return NSFont(descriptor: base.fontDescriptor.addingAttributes([.variation: variation]), size: size) ?? base
     }
 
-    /// The status line under the title: the system's body text, as the page's rows (SF Pro, 13 points on macOS), the same on every
-    /// tile whatever its size.
-    static var status: NSFont { NSFont.preferredFont(forTextStyle: .body) }
+    /// The status line under a title: regular, at its title's size, as it first was. At the page rows' 13 points, or at the smallest
+    /// tile's title size on every tile, it read too small under a large tile's title (2026-10-12).
+    static func status(size: CGFloat) -> NSFont { font(size: size, weight: .regular) }
 }
 
-/// The bold title and the status line in a tile's bottom-right corner. The title grows with the tile; the status is body text, as the
-/// page's rows are, on every tile (`CaptionFont.status`): sized with the tile, in light and then regular, it read thin and washed out
-/// on the pale tiles. It rolls when its numbers change.
+/// How a tile's caption is laid out in `width`: the title and its figure on one line where they fit; otherwise the title, which may
+/// take two lines, with the figure on a line of its own under it. The text keeps its size either way: shrunk to fit, a long title ("outros
+/// arquivos do sistema 2,46 GB") came out smaller than its neighbours' (2026-10-12). `TileFace` keeps the chart clear of the lines.
+struct CaptionLayout {
+    let oneLine: Bool
+    /// Lines the title and its figure take.
+    let lines: Int
+    /// What those lines take beyond the one line a caption always has.
+    let extraHeight: CGFloat
+    /// What those lines take.
+    let titleHeight: CGFloat
+    /// The widest of those lines.
+    let titleWidth: CGFloat
+
+    init(info: TileInfo, size: CGFloat, width: CGFloat) {
+        let font = CaptionFont.font(size: size, weight: .bold)
+        func measure(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: [.font: font]).width) }
+        let available = max(width, 1)
+        let joined = TileCaption.joined(info.title, info.figure)
+        let full = measure(joined)
+        if full <= available || info.figure == nil && measure(info.title) <= available {
+            oneLine = true
+            lines = 1
+            titleWidth = full
+        } else {
+            oneLine = false
+            let title = measure(info.title)
+            let titleLines = min(2, Int(ceil(title / available)))
+            lines = (info.figure == nil ? 0 : 1) + titleLines
+            titleWidth = min(max(title, info.figure.map(measure) ?? 0), available)
+        }
+        let lineHeight = ceil(font.ascender - font.descender + font.leading)
+        extraHeight = CGFloat(max(lines - 1, 0)) * lineHeight
+        titleHeight = CGFloat(lines) * lineHeight
+    }
+}
+
+/// The bold title and the status line in a tile's bottom-right corner, both at the tile's caption size; the status in regular, not
+/// light, which read thin and washed out on the pale tiles (`CaptionFont.status`). The title's figure goes after it, or under it where the tile is too narrow (`CaptionLayout`). It rolls when
+/// its numbers change.
 struct TileCaption: View, @preconcurrency Animatable {
     let title: String
+    var figure: String?
     let status: String
     var size: CGFloat = 22
     var loading = false
@@ -122,17 +160,26 @@ struct TileCaption: View, @preconcurrency Animatable {
         set { size = newValue }
     }
 
+    static func joined(_ title: String, _ figure: String?) -> String { figure.map { "\(title) \($0)" } ?? title }
+
     var body: some View {
+        let bold = Font(CaptionFont.font(size: size, weight: .bold))
         VStack(alignment: .trailing, spacing: 0) {
-            Text(title).font(Font(CaptionFont.font(size: size, weight: .bold)))
+            ViewThatFits(in: .horizontal) {
+                Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(title).font(bold).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    if let figure { Text(figure).font(bold).lineLimit(1) }
+                }
+            }
+            .contentTransition(.numericText())
             Text(status)
-                .font(Font(CaptionFont.status))
+                .font(Font(CaptionFont.status(size: size)))
+                .lineLimit(1)
                 .contentTransition(.numericText())
                 .opacity(loading ? 0.65 : 1)
         }
         .multilineTextAlignment(.trailing)
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
         .foregroundStyle(design.ink)
         // No shadow behind the text: a blurred shadow of every caption was redrawn on every frame any tile moved.
         .animation(Theme.value, value: status)

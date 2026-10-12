@@ -6,6 +6,8 @@ import SwiftUI
 /// What a tile shows, whoever it belongs to.
 struct TileInfo: Equatable {
     var title: String
+    /// What goes with the title ("43.14 GB"), after it or above it (`TileCaption`).
+    var figure: String?
     var status: String
     var needsAttention = false
     var graphic: TileGraphic?
@@ -18,7 +20,7 @@ struct TileInfo: Equatable {
     @MainActor
     init(_ handle: ModuleHandle) {
         if let tile = handle.tile {
-            self.init(title: tile.title, status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status,
+            self.init(title: tile.title, figure: tile.figure, status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status,
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
         } else {
@@ -51,9 +53,10 @@ struct TileInfo: Equatable {
         self.init(title: status.title, status: status.detail, graphic: graphic, loading: !storage.isLoaded)
     }
 
-    init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, loading: Bool = false,
+    init(title: String, figure: String? = nil, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, loading: Bool = false,
          switchAction: Action? = nil) {
         self.title = title
+        self.figure = figure
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
@@ -105,10 +108,33 @@ struct TileFace: View {
 
     /// Where a blocks chart sits in a tile of `size`. The legend goes left of the caption; where the caption leaves it too little room
     /// (a narrow tile, a long caption), it goes over the caption instead and the chart gives way. Side by side, the two overlapped.
+    /// The room under the chart is the caption's own height (never less than `captionBand`), so a caption that takes more lines
+    /// (`CaptionLayout`) takes only what they need. Adding each extra line on top of the band, and the legend's row over it, left a
+    /// small tile's chart a few points tall (2026-10-12). The chart keeps `minimumChartHeight`: where the legend would take it
+    /// below that, the tile has no legend (`legendShown`).
     static func chartArea(in size: CGSize, info: TileInfo, captionSize: CGFloat, restingSize: CGSize? = nil) -> CGRect {
-        let band = captionBand + 14 + (legendAbove(in: restingSize ?? size, info: info, captionSize: captionSize) ? legendRow : 0)
+        let rest = restingSize ?? size
         let top = topInset
+        let band = captionHeight(in: rest, info: info, captionSize: captionSize) + 14
+            + (legendShown(in: rest, info: info, captionSize: captionSize) && legendAbove(in: rest, info: info, captionSize: captionSize) ? legendRow : 0)
         return CGRect(x: 12, y: top, width: max(size.width - 24, 0), height: max(size.height - top - band, 0))
+    }
+
+    static let minimumChartHeight: CGFloat = 40
+
+    /// What the caption takes from the tile's bottom edge up: its title lines, its status line and the room under it.
+    static func captionHeight(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGFloat {
+        let layout = CaptionLayout(info: info, size: captionSize, width: size.width - 2 * CaptionSize.tilePadding)
+        let status = CaptionFont.status(size: captionSize)
+        return max(captionBand, layout.titleHeight + ceil(status.ascender - status.descender + status.leading) + TileContent.captionBottom(size: captionSize))
+    }
+
+    /// Whether the line naming the block under the pointer has room: beside the caption, or above it while the chart keeps
+    /// `minimumChartHeight`.
+    static func legendShown(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
+        guard legendAbove(in: size, info: info, captionSize: captionSize) else { return true }
+        let chart = size.height - topInset - captionHeight(in: size, info: info, captionSize: captionSize) - 14 - legendRow
+        return chart >= minimumChartHeight
     }
 
     static func legendAbove(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
@@ -121,8 +147,9 @@ struct TileFace: View {
         func width(_ text: String, _ font: NSFont) -> CGFloat {
             (text as NSString).size(withAttributes: [.font: font]).width
         }
-        let measured = max(width(info.title, CaptionFont.font(size: captionSize, weight: .bold)), width(info.status, CaptionFont.status))
-        // The caption shrinks to fit the tile rather than run past it.
+        let layout = CaptionLayout(info: info, size: captionSize, width: size.width - 2 * padding)
+        let measured = max(layout.titleWidth, width(info.status, CaptionFont.status(size: captionSize)))
+        // The caption never runs past the tile: where it would, it takes more lines (`CaptionLayout`).
         let caption = min(ceil(measured), max(size.width - 2 * padding, 0))
         return size.width - 14 - 12 - caption - padding
     }
@@ -133,7 +160,8 @@ struct TileFace: View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
             if drawsBackdrop {
-                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, pageRadius ?? Theme.windowRadius, progress))
+                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, pageRadius ?? Theme.windowRadius, progress),
+                             loading: info.loading)
             } else {
                 Color.clear
             }
@@ -182,6 +210,7 @@ struct TileFace: View {
         case let .blocks(segments):
             let area = Self.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
             let above = Self.legendAbove(in: restingSize ?? size, info: info, captionSize: captionSize)
+            let legend = Self.legendShown(in: restingSize ?? size, info: info, captionSize: captionSize)
             let restingArea = restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize) }
             let blocks = BlockLayout.blocks(segments)
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
@@ -191,7 +220,7 @@ struct TileFace: View {
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, and nothing otherwise.
             HStack(spacing: 6) {
-                if let hovered {
+                if legend, let hovered {
                     RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(hovered, shade: BlockLayout.shade(of: hovered, in: blocks) ?? 0, tint: tint, design: design)).frame(width: 9, height: 9)
                     Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))")
                 }
@@ -345,8 +374,8 @@ struct HomeView: View {
             if !dormant {
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                    TileGround(tint: tile.tint, lifted: pointerTile == tile.destination && design.lift,
-                               hovering: pointerTile == tile.destination)
+                    DashboardGround(destination: tile.destination, host: host, storage: storage, tint: tile.tint,
+                                    lifted: pointerTile == tile.destination && design.lift, hovering: pointerTile == tile.destination)
                         .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
@@ -555,13 +584,15 @@ struct TileGround: View {
     let lifted: Bool
     /// The pointer is over the tile. A glass ground darkens its own tint, inside the glass, so the shade is the glass's own shape.
     var hovering = false
+    /// The tile is loading: its ground brightens and dims (`TileBackdrop.loading`).
+    var loading = false
     @Environment(\.design) private var design
 
     var body: some View {
         if design.glass {
-            TileBackdrop(tint: tint, darkened: hovering && design.hoverShade)
+            TileBackdrop(tint: tint, darkened: hovering && design.hoverShade, loading: loading)
         } else {
-            TileBackdrop(tint: tint)
+            TileBackdrop(tint: tint, loading: loading)
                 .background {
                     LabFill(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), color: design.palette(tint).base,
                             fill: design.fill(.tile(tint)))
@@ -570,6 +601,39 @@ struct TileGround: View {
                 .animation(design.liftAnimation, value: lifted)
         }
     }
+}
+
+/// A dashboard tile's ground, loading while its module or the disk is being read: it follows the module (or the disk) itself, as the
+/// tile's face does (`TileContent`).
+private struct DashboardGround: View {
+    let destination: Destination
+    @ObservedObject var host: ModuleHost
+    @ObservedObject var storage: StorageOverview
+    let tint: TileTint
+    let lifted: Bool
+    let hovering: Bool
+
+    var body: some View {
+        switch destination {
+        case let .module(id):
+            if let handle = host.handle(for: id) {
+                ModuleGround(handle: handle, tint: tint, lifted: lifted, hovering: hovering)
+            } else {
+                TileGround(tint: tint, lifted: lifted, hovering: hovering)
+            }
+        case .storage: TileGround(tint: tint, lifted: lifted, hovering: hovering, loading: !storage.isLoaded)
+        case .settings, .home: TileGround(tint: tint, lifted: lifted, hovering: hovering)
+        }
+    }
+}
+
+private struct ModuleGround: View {
+    @ObservedObject var handle: ModuleHandle
+    let tint: TileTint
+    let lifted: Bool
+    let hovering: Bool
+
+    var body: some View { TileGround(tint: tint, lifted: lifted, hovering: hovering, loading: TileInfo(handle).loading) }
 }
 
 /// Moves a tile's ground and face alike: in with the window one after another, out in reverse order, to its place, lifted and leaning
@@ -703,7 +767,7 @@ struct TileContent: View {
     /// Room under the caption: its baseline is as far from the tile's bottom edge as the chart is from the top edge
     /// (`TileFace.topInset`), so the tile is framed alike above and below. The line's descent lies under the baseline.
     static func captionBottom(size: CGFloat) -> CGFloat {
-        max(TileFace.topInset + CaptionFont.status.descender, 0)
+        max(TileFace.topInset + CaptionFont.status(size: size).descender, 0)
     }
 
     func layout(_ info: TileInfo) -> some View {
@@ -712,7 +776,7 @@ struct TileContent: View {
                                       drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize,
                                       restingSize: restingSize) } else { Color.clear }
             if showsCaption {
-                TileCaption(title: info.title, status: info.status, size: captionSize, loading: info.loading)
+                TileCaption(title: info.title, figure: info.figure, status: info.status, size: captionSize, loading: info.loading)
                     .padding([.top, .horizontal], captionPadding)
                     .padding(.bottom, Self.captionBottom(size: captionSize))
                     .opacity(captionOpacity)

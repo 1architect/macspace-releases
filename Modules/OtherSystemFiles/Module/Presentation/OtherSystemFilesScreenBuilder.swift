@@ -19,7 +19,7 @@ enum OtherSystemFilesScreenBuilder {
         // as available beyond the free space (27.49 GB here against 27.52 GB there, 2026-10-06); a prepared update it counts as macOS.
         let segments = segments(snapshot)
         let total = segments.reduce(0) { $0 + $1.bytes }
-        return Tile(title: total > 0 ? loc("other system files \(ByteFormat.string(total))") : loc("other system files"), status: status, graphic: .blocks(segments),
+        return Tile(title: loc("other system files"), figure: total > 0 ? ByteFormat.string(total) : nil, status: status, graphic: .blocks(segments),
                     reclaimableBytes: freeable >= threshold ? freeable : nil,
                     purgeableByService: [CacheDeleteService.fsPurgeableData: freeable],
                     // Read again every few seconds while downloads are being removed, so the row and the tile follow it.

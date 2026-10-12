@@ -13,6 +13,10 @@ public struct Tile: Codable, Equatable, Sendable {
 
     /// Short and lowercase by convention ("system data", "debloat").
     public var title: String
+    /// A figure that goes with the title, such as what the module measured ("43.14 GB"). The app draws it after the title, or on a
+    /// line of its own under it where the tile is too narrow for both, so the text keeps its size on every tile. Put it here rather
+    /// than in `title`.
+    public var figure: String?
     /// One line: what the module found or what is on ("2 GB can be freed", "3/14 off").
     public var status: String
     /// Something waits for the user (macOS undid a setting, an approval is pending). The app marks the tile.
@@ -31,9 +35,10 @@ public struct Tile: Codable, Equatable, Sendable {
     /// the page. nil leaves the switch shown but not flippable.
     public var switchAction: Action?
 
-    public init(title: String, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, reclaimableBytes: UInt64? = nil,
-                purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil, switchAction: Action? = nil) {
+    public init(title: String, figure: String? = nil, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil,
+                reclaimableBytes: UInt64? = nil, purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil, switchAction: Action? = nil) {
         self.title = title
+        self.figure = figure
         self.status = status
         self.needsAttention = needsAttention
         self.graphic = graphic
@@ -43,12 +48,13 @@ public struct Tile: Codable, Equatable, Sendable {
         self.switchAction = switchAction
     }
 
-    private enum CodingKeys: String, CodingKey { case title, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter, switchAction }
+    private enum CodingKeys: String, CodingKey { case title, figure, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter, switchAction }
 
     /// `purgeableByService` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         title = try container.decode(String.self, forKey: .title)
+        figure = try container.decodeIfPresent(String.self, forKey: .figure)
         status = try container.decode(String.self, forKey: .status)
         needsAttention = try container.decodeIfPresent(Bool.self, forKey: .needsAttention) ?? false
         graphic = try container.decodeIfPresent(TileGraphic.self, forKey: .graphic)

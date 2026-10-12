@@ -180,7 +180,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         support.purgeableBytes = 400_000_000
         let snap = snapshot(items: [support, item("assets:system", kind: .systemAssets, bytes: 2_000_000_000, cleanup: .command)], purgeable: 500_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.total(snap), 600_000_000 + 1_500_000_000)
-        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data \(ByteFormat.string(2_100_000_000))", "the total is back on the tile")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).figure, ByteFormat.string(2_100_000_000), "the total is back on the tile")
         XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("not counted") == true, "the reading says what it leaves out")
     }
 
@@ -234,7 +234,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let blocks = SystemDataScreenBuilder.blocks(snap)
         XCTAssertEqual(blocks.first { $0.id == "unidentified" }?.bytes, 2_000_000_000)
         XCTAssertEqual(blocks.map(\.bytes).reduce(0, +), 5_000_000_000)
-        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data 5 GB")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data")
+        XCTAssertEqual(SystemDataScreenBuilder.tile(snap).figure, "5 GB")
     }
 
     /// The apps inside an item are not System Data (System Settings lists them under Applications), and are said apart from what

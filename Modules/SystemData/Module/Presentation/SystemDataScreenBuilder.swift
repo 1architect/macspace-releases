@@ -144,7 +144,7 @@ enum SystemDataScreenBuilder {
     static func tile(_ snapshot: SystemDataSnapshot) -> Tile {
         let freeable = freeableBytes(snapshot)
         let total = total(snapshot)
-        return Tile(title: total > 0 ? loc("system data \(ByteFormat.string(total))") : loc("system data"),
+        return Tile(title: loc("system data"), figure: total > 0 ? ByteFormat.string(total) : nil,
                     status: freeable >= worthARow ? loc("free \(ByteFormat.string(freeable))") : loc("nothing to free"),
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,

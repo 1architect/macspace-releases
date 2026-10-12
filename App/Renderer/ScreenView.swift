@@ -401,43 +401,35 @@ struct HeroBlocks: View {
     }
 }
 
-/// The page's shape while the module reads the Mac, for a page with no chart to pulse (`HeroBlocks` stands in for one with blocks):
-/// groups of rows as the form will draw them, a heading over each and, in each row, a title and a switch. Each row pulses after the
-/// one above it, as the charts do while they load. A few large grey boxes stood in for it before, and looked like nothing the page
-/// then showed.
+/// The page's shape while the module reads the Mac, for a page with no chart (`HeroBlocks` stands in for one with blocks): groups of
+/// rows as the form will draw them, a heading over each and, in each row, a title and a switch. It stays still: the page's card
+/// brightens and dims while it loads (`TileBackdrop.loading`), as a tile does. A few large grey boxes stood in for it before.
 private struct PageSkeleton: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Rows per group, and how much of a row's width each title takes.
     private static let groups: [[CGFloat]] = [[0.42], [0.55, 0.36], [0.48], [0.38, 0.5]]
 
     var body: some View {
-        let count = Self.groups.reduce(0) { $0 + $1.count }
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
-            VStack(alignment: .leading, spacing: 22) {
-                ForEach(Array(Self.groups.enumerated()), id: \.offset) { group, rows in
-                    let first = Self.groups.prefix(group).reduce(0) { $0 + $1.count }
-                    VStack(alignment: .leading, spacing: 9) {
-                        // The group's heading, in the form's header indent.
-                        bar(width: 120 + CGFloat(group % 2) * 40, height: 11, wave: wave(context.date, first, count))
-                            .padding(.leading, 12)
-                        VStack(spacing: 0) {
-                            ForEach(Array(rows.enumerated()), id: \.offset) { index, share in
-                                let strength = wave(context.date, first + index, count)
-                                if index > 0 { Rectangle().fill(.primary.opacity(0.06)).frame(height: 1).padding(.horizontal, 12) }
-                                GeometryReader { proxy in
-                                    HStack {
-                                        bar(width: proxy.size.width * share, height: 11, wave: strength)
-                                        Spacer(minLength: 12)
-                                        Capsule().fill(.primary.opacity(0.06 + 0.08 * strength)).frame(width: 30, height: 18)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .frame(height: proxy.size.height)
+        VStack(alignment: .leading, spacing: 22) {
+            ForEach(Array(Self.groups.enumerated()), id: \.offset) { group, rows in
+                VStack(alignment: .leading, spacing: 9) {
+                    // The group's heading, in the form's header indent.
+                    bar(width: 120 + CGFloat(group % 2) * 40, height: 11).padding(.leading, 12)
+                    VStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.offset) { index, share in
+                            if index > 0 { Rectangle().fill(.primary.opacity(0.06)).frame(height: 1).padding(.horizontal, 12) }
+                            GeometryReader { proxy in
+                                HStack {
+                                    bar(width: proxy.size.width * share, height: 11)
+                                    Spacer(minLength: 12)
+                                    Capsule().fill(.primary.opacity(0.1)).frame(width: 30, height: 18)
                                 }
-                                .frame(height: 40)
+                                .padding(.horizontal, 12)
+                                .frame(height: proxy.size.height)
                             }
+                            .frame(height: 40)
                         }
-                        .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
+                    .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
             }
         }
@@ -445,13 +437,9 @@ private struct PageSkeleton: View {
         .accessibilityLabel(String(localized: "Loading"))
     }
 
-    private func wave(_ date: Date, _ index: Int, _ count: Int) -> Double {
-        LoadingWave.opacity(date, index: index, count: count, loading: true, reduceMotion: reduceMotion)
-    }
-
-    private func bar(width: CGFloat, height: CGFloat, wave: Double) -> some View {
+    private func bar(width: CGFloat, height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: height / 2, style: .continuous)
-            .fill(.primary.opacity(0.06 + 0.08 * wave))
+            .fill(.primary.opacity(0.1))
             .frame(width: max(width, 0), height: height)
     }
 }

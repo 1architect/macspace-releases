@@ -11,9 +11,22 @@ struct TileBackdrop: View {
     var darkened = false
     /// The corners: a tile's, growing to the window's as the tile becomes a page.
     var cornerRadius: CGFloat = Theme.tileRadius
+    /// The module is reading the Mac: the ground darkens and lifts, again and again (`LoadingGlow`).
+    var loading = false
     @Environment(\.design) private var design
 
     var body: some View {
+        ground
+            .overlay {
+                if loading {
+                    LoadingGlow(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                        .transition(.opacity.animation(.smooth(duration: 0.4)))
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var ground: some View {
         let palette = design.palette(tint)
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if design.glass {
@@ -377,6 +390,12 @@ struct BlocksView: View {
     /// A block's corner radius: 6 points on a page's large blocks, less on a tile's small ones, where 6 made them pills.
     static func radius(_ rect: CGRect) -> CGFloat { min(6, max(2, min(rect.width, rect.height) * 0.16)) }
 
+    /// One radius for every block of a chart: the smallest block's. Each block sized its own, and on a small tile the large blocks
+    /// were rounder than the small ones beside them (2026-10-12).
+    static func radius(for rects: [CGRect]) -> CGFloat {
+        rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map(radius).min() ?? 6
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let blocks = BlockLayout.blocks(segments)
@@ -384,20 +403,21 @@ struct BlocksView: View {
             let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
             let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
                                          orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
+            let corner = Self.radius(for: rects.map(inset))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
-                        placed(Surface(shape: RoundedRectangle(cornerRadius: Self.radius(rect), style: .continuous), color: fill, highlighted: hovered == segment.id,
+                        placed(Surface(shape: RoundedRectangle(cornerRadius: corner, style: .continuous), color: fill, highlighted: hovered == segment.id,
                                        strength: appeared ? wave(context.date, index) : 0,
                                        glass: min(rect.width, rect.height) >= Self.smallestGlass),
                                index: index, rect: rect)
                     }
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
-                        placed(overlay(segment, shade: shades[index], rect: rect).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
+                        placed(overlay(segment, shade: shades[index], rect: rect, corner: corner).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
                     }
                 }
             }
@@ -429,10 +449,10 @@ struct BlocksView: View {
 
     /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
     /// own edge; an outline would sit inside it).
-    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect) -> some View {
+    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, corner: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             if !design.glassElements {
-                RoundedRectangle(cornerRadius: Self.radius(rect), style: .continuous)
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
                     .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
                     .animation(Theme.highlight, value: hovered)
             }
@@ -498,6 +518,26 @@ private struct BlockFrame: ViewModifier, @preconcurrency Animatable {
         content
             .frame(width: max(rect.width * grown, 0), height: max(rect.height * grown, 0))
             .position(x: rect.midX, y: rect.midY)
+    }
+}
+
+/// A loading tile or page: a shade over its ground that deepens and lifts, again and again, while its chart pulses as it loads. A
+/// shade, not a light: brightening washed the pale grounds out. An animation the system repeats, not a timeline: nothing is redrawn
+/// by the app between frames.
+struct LoadingGlow<S: Shape>: View {
+    let shape: S
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.design) private var design
+    @State private var dark = false
+
+    var body: some View {
+        shape.fill(.black)
+            .opacity(reduceMotion ? 0.05 : (dark ? (design.isLight ? 0.09 : 0.18) : 0))
+            .allowsHitTesting(false)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { dark = true }
+            }
     }
 }
 
