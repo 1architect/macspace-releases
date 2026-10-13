@@ -13,6 +13,7 @@
 "/System/Library/%@" = "/System/Library/%@";
 "1 item" = "1 elemento";
 "1 report" = "1 informe";
+"A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "Una imagen de restauración de macOS. Cuando el Mac, el dispositivo o la máquina virtual para el que se descargó esté configurado, se puede eliminar.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "El disco y el estado de una máquina virtual. Elimina las que ya no uses desde la app de virtualización.";
 "About %@ from an update that's already installed." = "Unos %@ de una actualización ya instalada.";
@@ -75,11 +76,13 @@
 "Empties after 30 days" = "Se vacía a los 30 días";
 "Empty the Trash in Finder." = "Vacía la Papelera en el Finder.";
 "Everything else" = "Todo lo demás";
+"Everything in the Trash is deleted for good." = "Todo lo que hay en la Papelera se borra para siempre.";
 "File system metadata" = "Metadatos del sistema de archivos";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "Archivos de una actualización anterior de macOS ya instalada; no hay ninguna pendiente. macOS no los ha eliminado y están en una carpeta protegida, así que MacSpace no los toca.";
 "Folders no app can open: %@." = "Carpetas que ninguna app puede abrir: %@.";
 "Free" = "Liberar";
 "Free %@" = "Liberar %@";
+"Free %@ in the Trash?" = "¿Liberar %@ de la Papelera?";
 "Free %@?" = "¿Liberar %@?";
 "Free all version history?" = "¿Liberar todo el historial de versiones?";
 "Free now" = "Liberar ahora";
@@ -89,6 +92,8 @@
 "Free stuck wallpaper downloads?" = "¿Liberar las descargas de fondos de pantalla atascadas?";
 "Free the leftover update files?" = "¿Liberar los archivos restantes de la actualización?";
 "Free the selected caches?" = "¿Liberar las cachés seleccionadas?";
+"Free the symbols for crash reports?" = "¿Liberar los símbolos para informes de fallos?";
+"Free the system log?" = "¿Liberar el registro del sistema?";
 "Free up to %@ of unused system assets?" = "¿Liberar hasta %@ de recursos del sistema sin usar?";
 "Freeing in the background" = "Liberando en segundo plano";
 "Freeing space…" = "Liberando espacio…";
@@ -120,6 +125,7 @@
 "Leftover macOS update files" = "Archivos sobrantes de actualización de macOS";
 "Leftover update files" = "Archivos de actualización sobrantes";
 "Leftovers" = "Restos";
+"Log files" = "Archivos de registro";
 "Logs for all users" = "Registros para todos los usuarios";
 "Managed by macOS" = "Gestionado por macOS";
 "Managed by the kernel; shrinks after a restart." = "Lo gestiona el kernel; se reduce tras reiniciar.";
@@ -132,6 +138,7 @@
 "Nothing was freed: MacSpace couldn't check which apps are open." = "No se liberó nada: MacSpace no pudo comprobar qué apps están abiertas.";
 "Nothing was freed: MacSpace couldn't check which files are in use." = "No se liberó nada: MacSpace no pudo comprobar qué archivos están en uso.";
 "Old Homebrew versions" = "Versiones antiguas de Homebrew";
+"Old app copy" = "Copia antigua de app";
 "Old diagnostic and crash reports" = "Informes antiguos de diagnóstico y de fallos";
 "Old reports are deleted from Free now." = "Los informes antiguos se eliminan desde Liberar ahora.";
 "Older version" = "Versión antigua";
@@ -171,6 +178,7 @@
 "Swap and sleep files" = "Archivos de intercambio y de reposo";
 "Swift packages" = "Paquetes de Swift";
 "Symbolication cache" = "Caché de simbolización";
+"Symbols for crash reports" = "Símbolos para informes de fallos";
 "Symbols for crash reports and debugging; rebuilt on demand. Root-owned." = "Símbolos para informes de fallos y depuración; se recrean cuando hace falta. Pertenece a root.";
 "System Data" = "Datos del sistema";
 "System assets" = "Recursos del sistema";
@@ -178,6 +186,7 @@
 "System cache: %@" = "Caché del sistema: %@";
 "System databases" = "Bases de datos del sistema";
 "System extensions" = "Extensiones del sistema";
+"System log" = "Registro del sistema";
 "System logs" = "Registros del sistema";
 "Temporary files" = "Archivos temporales";
 "Temporary files of macOS and of other users on this Mac." = "Archivos temporales de macOS y de otros usuarios de este Mac.";
@@ -188,6 +197,8 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "El servicio de voz de Siri, el reconocimiento de voz y las funciones de llamada, para el idioma de Siri y el del sistema. Ningún ajuste los elimina.";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "El servicio de texto a voz de Siri, para la voz y el idioma elegidos.";
 "The helper did not answer" = "El asistente no ha respondido";
+"The history in Console is deleted. New entries are recorded as usual." = "Se borra el historial de Consola. Las nuevas entradas se registran como siempre.";
+"The system log stays." = "El registro del sistema se queda.";
 "This permanently deletes %@." = "Esto elimina para siempre %@.";
 "Tool cache" = "Caché de herramienta";
 "Tool cache: ~/.cache/%@" = "Caché de herramienta: ~/.cache/%@";
@@ -208,6 +219,8 @@
 "Web cache" = "Caché web";
 "What fills System Data" = "Qué ocupa Datos del sistema";
 "What is in it" = "Qué contiene";
+"What macOS keeps to read crash reports. It's rebuilt when needed." = "Lo que macOS guarda para leer informes de fallos. Se vuelve a crear cuando hace falta.";
+"What macOS records for troubleshooting, shown in Console. It starts again from empty." = "Lo que macOS registra para solucionar problemas, visible en Consola. Empieza de nuevo vacío.";
 "What the disk records about each file, plus changes since System Settings measured. This is System Settings' total minus everything listed." = "Lo que el disco registra de cada archivo, más lo que cambió desde la medición de Ajustes del Sistema. Es el total de Ajustes del Sistema menos todo lo listado.";
 "Xcode Command Line Tools" = "Herramientas de línea de comandos de Xcode";
 "Xcode builds: %@" = "Compilaciones de Xcode: %@";
@@ -218,6 +231,7 @@
 "Your home folder" = "Tu carpeta de inicio";
 "and %lld more" = "y %lld más";
 "free %@" = "liberar %@";
+"macOS builds them again the next time it reads a crash report." = "macOS los vuelve a crear la próxima vez que lea un informe de fallos.";
 "macOS databases no app can open: %@." = "Bases de datos de macOS que ninguna app puede abrir: %@.";
 "macOS downloads them again if they're needed." = "macOS los vuelve a descargar si hacen falta.";
 "macOS restore image: %@" = "Imagen de restauración de macOS: %@";

@@ -186,14 +186,33 @@ final class AppCacheTests: XCTestCase {
         XCTAssertFalse(HomebrewCleanup.isRunning("/opt/homebrew/bin/brew", processes: [RunningProcess(pid: 1, name: "ruby", executablePath: "/usr/bin/ruby")]))
     }
 
-    func testTheTrashRowOpensTheTrashAndNamesFindersOwnSetting() throws {
+    /// The Trash is freed with its own button, which cannot be undone, never with Clean; Open shows it in the Finder, and the row says
+    /// whether the Finder empties it by itself.
+    func testTheTrashRowFreesOrOpensTheTrashAndNamesFindersOwnSetting() throws {
         var snap = snapshot([], items: [SystemDataItem(id: "trash:user", title: "Trash", kind: .trash, paths: ["/t"], bytes: 5_000_000, readable: true,
                                                       owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])])
         let row = try XCTUnwrap(SystemDataScreenBuilder.trashRow(snap)?.row)
-        XCTAssertEqual(row.actions.map(\.id), ["openTrash"])
+        XCTAssertEqual(row.actions.map(\.id), ["emptyTrash", "openTrash"])
+        XCTAssertEqual(row.actions.first?.title, "Free")
+        XCTAssertNotNil(row.actions.first?.confirmation, "emptying the Trash asks first")
+        XCTAssertEqual(row.badge?.text, "Cannot be undone")
         XCTAssertTrue(row.detail?.contains("Finder > Settings > Advanced") == true)
+        XCTAssertEqual(SystemDataScreenBuilder.cleanBytes(snap), 0, "Clean never empties the Trash")
         snap.trashEmptiesItself = true
-        XCTAssertEqual(SystemDataScreenBuilder.trashRow(snap)?.row.badge?.text, "Empties after 30 days")
+        XCTAssertEqual(SystemDataScreenBuilder.trashRow(snap)?.row.badges.map(\.text), ["Cannot be undone", "Empties after 30 days"])
+    }
+
+    func testEmptyingTheTrashDeletesEverythingInIt() throws {
+        let trash = FileManager.default.temporaryDirectory.appendingPathComponent("trash-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: trash) }
+        try FileManager.default.createDirectory(at: trash.appendingPathComponent("Folder"), withIntermediateDirectories: true)
+        try Data(count: 1_000).write(to: trash.appendingPathComponent("Folder/a"))
+        try Data(count: 1_000).write(to: trash.appendingPathComponent("b.pdf"))
+        let result = SystemDataModule.emptyTrash(trash: trash)
+        XCTAssertNotEqual(result.outcome, .failed)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: trash.path), [])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: trash.path), "the Trash folder itself stays")
+        XCTAssertEqual(SystemDataModule.emptyTrash(trash: trash).outcome, .failed, "an empty Trash has nothing to free")
     }
 
     /// The file's and folder's dates set back, as an app that last used its cache weeks ago leaves them.

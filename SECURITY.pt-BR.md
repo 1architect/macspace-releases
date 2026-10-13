@@ -58,10 +58,17 @@ nenhum.
 | Histórico de versões de documentos | `/System/Volumes/Data/.DocumentRevisions-V100` | O auxiliar |
 | Arquivos restantes de atualização do macOS | `/System/Volumes/Data/macOS Install Data`, somente se for mais antigo que o sistema instalado. A pasta `Locked Files` permanece. | O auxiliar |
 | Downloads incompletos de fundos de tela e protetores de tela | Arquivos `CFNetworkDownload_*.tmp` diretamente em `/private/var/folders/*/*/T/com.apple.idleassetsd` que não mudam há 3 dias. Só arquivos comuns: links e subpastas são recusados. | O auxiliar |
+| Cópias que o macOS fez de um app ao verificá-lo | `/var/folders/…/X/<app>.code_sign_clone`, só quando ocupa espaço próprio (de uma versão anterior), com o app fechado e nada rodando a partir dela. | O app, como você |
+| O registro do sistema | `/private/var/db/diagnostics` e `/private/var/db/uuidtext`, com o `log erase --all` e o `log erase --uuidtext` da própria Apple. | O auxiliar |
+| Os símbolos para relatórios de falhas | Tudo o que está em `/System/Library/Caches/com.apple.coresymbolicationd`, a pasta fica; depois o `coresymbolicationd` é parado para o espaço voltar. O macOS recria o cache. | O auxiliar |
+| O Lixo | Tudo o que está em `~/.Trash`. Um item bloqueado ou de outra conta fica. | O app, como você |
+| Instantâneos locais do Time Machine | `tmutil deletelocalsnapshots <data>`, uma data por vez: todos menos o mais recente e o mais recente de um backup. Nunca durante um backup. | O app, como você |
+| Backups num disco de backup do Time Machine | `tmutil delete`, os que você escolher, nunca o mais recente, num disco conectado que o Time Machine usa. Nunca durante um backup. | O auxiliar |
 
 Nada vai para o Lixo. Caches, recursos do sistema e arquivos removíveis são recriados ou baixados de
 novo quando necessário, e as cópias da nuvem são baixadas de novo quando você abre o arquivo.
-Relatórios, histórico de versões e restos de atualização não voltam. Cada um desses itens pede
+Relatórios, histórico de versões, restos de atualização, o registro do sistema, itens do Lixo,
+instantâneos e backups não voltam. Cada um desses itens pede
 confirmação antes, exceto o botão **Liberar** dos caches de um único app.
 
 ### O que o MacSpace altera (Debloat)
@@ -127,6 +134,9 @@ auxiliar percebe e se encerra para que o novo comece.
 | `systemdata.versions.delete` | Apaga o histórico de versões de documentos | Primeiro para o `revisiond` ou, se o macOS recusar, o pausa. Apaga o conteúdo do armazenamento, não a pasta, e depois inicia o `revisiond` de novo. Se não conseguir pará-lo, não apaga nada. |
 | `systemdata.staged-update.delete` | Apaga os arquivos restantes de atualização | Somente se a pasta for mais antiga que o sistema instalado. Mantém `Locked Files`. |
 | `systemdata.wallpaper-downloads.delete` | Apaga os downloads incompletos de fundos de tela e protetores de tela | Não recebe caminho: encontra `/private/var/folders/*/*/T/com.apple.idleassetsd` sozinho, sem seguir links. Apaga só arquivos comuns chamados `CFNetworkDownload_*.tmp` diretamente na pasta, que não mudam há 3 dias. |
+| `systemdata.unified-log.erase` | Apaga o registro do sistema | Não recebe argumentos. Só executa o `/usr/bin/log erase --all` da Apple e depois `log erase --uuidtext`. |
+| `systemdata.symbolication-cache.delete` | Apaga os símbolos para relatórios de falhas | Não recebe argumentos. Só `/System/Library/Caches/com.apple.coresymbolicationd`, aberta sem seguir links; apaga o que há nela, nunca a pasta, e depois para o `coresymbolicationd` (`kill -TERM`, `-KILL` após 5 segundos). |
+| `timemachine.backups.delete` | Apaga backups de um disco de backup do Time Machine | Só num disco que o Time Machine lista como conectado, só datas que ele mesmo encontra lá, nunca o backup mais recente, nunca durante um backup ou quando isso não se sabe. Executa `/usr/bin/tmutil delete`. |
 | `debloat.status`, `.apply`, `.revert` | Lê, desativa e ativa itens do Debloat | Somente identificadores de controle, do catálogo embutido. Nada além disso. |
 | `debloat.removeProfile` | Remove um perfil do MacSpace | Somente os identificadores `com.macspace.policies` e `com.macspace.policies.…`. Qualquer outro perfil é recusado. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Encontra e remove as assinaturas do Apple Intelligence de contas que não existem mais | Antes faz backup do banco de dados em `/Library/Application Support/MacSpace/backups/`, altera-o em uma única transação, mexe apenas em linhas que não correspondem a nenhuma conta local e recusa se a lista de contas parecer errada. O app ainda não tem botão para isso. |

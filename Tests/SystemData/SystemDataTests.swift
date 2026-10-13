@@ -67,8 +67,16 @@ final class SystemDataTests: XCTestCase {
         XCTAssertTrue(withAccess.isSuperset(of: ["container:net.whatsapp.WhatsApp", "cloud:OneDrive-X", "ipsw:x.ipsw"]))
     }
 
+    /// A code-signing copy shares its blocks with the app: an APFS clone of it.
+    private func copy(ofApp relative: String, as clone: String) throws {
+        let source = root.appendingPathComponent(relative), destination = root.appendingPathComponent(clone)
+        try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        XCTAssertEqual(clonefile(source.path, destination.path, 0), 0, "the test folder is on APFS")
+    }
+
     func testClassifiesClonesCachesAndAppleCaches() throws {
-        try file("folders/X/com.example.Big.code_sign_clone/Contents/MacOS/Big", mb: 60)
+        try file("apps/Big.app/Contents/MacOS/Big", mb: 60)
+        try copy(ofApp: "apps/Big.app/Contents/MacOS/Big", as: "folders/X/com.example.Big.code_sign_clone/code_sign_clone.abc123/Big.app/Contents/MacOS/Big")
         try file("folders/C/clang/ModuleCache/a.pcm", mb: 55)
         try file("home/Library/Caches/com.example.Tool/blob", mb: 70)
         try file("home/Library/Caches/com.apple.Safari/blob", mb: 80)
@@ -79,8 +87,9 @@ final class SystemDataTests: XCTestCase {
 
         let report = inspector(running: [RunningApp(bundleIdentifier: "com.example.Big", name: "Big")]).inspect()
         let byID = Dictionary(uniqueKeysWithValues: report.items.map { ($0.id, $0) })
-        XCTAssertEqual(byID["clone:com.example.Big"]?.cleanup.kind, .managedByMacOS, "clones free ~nothing (measured)")
-        XCTAssertEqual(byID["clone:com.example.Big"]?.expectedReclaimBytes, 0)
+        XCTAssertEqual(byID["clone:com.example.Big"]?.cleanup.kind, .deleteWhenNotRunning)
+        XCTAssertLessThan(byID["clone:com.example.Big"]?.expectedReclaimBytes ?? .max, 1_000_000, "a copy that shares its app's blocks frees ~nothing (measured)")
+        XCTAssertEqual(byID["clone:com.example.Big"]?.title, "Big", "named after the app inside")
         XCTAssertEqual(byID["clone:com.example.Big"]?.inUse, true)
         XCTAssertEqual(byID["usercache:clang"]?.cleanup.kind, .deleteWhenNotRunning)
         XCTAssertEqual(byID["appcache:com.example.Tool"]?.cleanup.kind, .review, "third-party app caches are outside System Data cleanup")
@@ -91,7 +100,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(byID["developer:commandLineTools"]?.cleanup.kind, .review, "small fixed items are still shown")
         XCTAssertTrue(report.unreadable.isEmpty, "single files are not unreadable folders")
         XCTAssertEqual(report.volumes.first?.name, "Data")
-        XCTAssertGreaterThanOrEqual(report.cleanableBytes, 55_000_000, "only the system cache, not the clone or app caches")
+        XCTAssertGreaterThanOrEqual(report.cleanableBytes, 55_000_000, "the system cache, not the shared copy or app caches")
         XCTAssertLessThan(report.cleanableBytes, 100_000_000)
     }
 
@@ -269,7 +278,7 @@ final class SystemDataTests: XCTestCase {
         var free: UInt64 = 1_000
         let blocked = SystemDataCleaner(runningApps: { [RunningApp(bundleIdentifier: "com.example.Big", name: "Big")] }, processCheck: .none, freeSpace: { free })
             .clean(items, allowedRoots: SystemDataCleaner.allowedRoots(locations))
-        XCTAssertEqual(blocked.results.first { $0.itemID == "clone:com.example.Big" }?.deleted, false, "clones are not cleanable")
+        XCTAssertEqual(blocked.results.first { $0.itemID == "clone:com.example.Big" }?.deleted, false, "a copy stays while its app runs")
         XCTAssertEqual(blocked.results.first { $0.itemID == "appsupport:BigApp" }?.deleted, false, "review items are never deleted")
         XCTAssertEqual(blocked.results.first { $0.itemID == "appcache:com.example.Tool" }?.deleted, false, "app caches are not cleaned by this module")
         XCTAssertTrue(fm.fileExists(atPath: root.appendingPathComponent("folders/X/com.example.Big.code_sign_clone").path))

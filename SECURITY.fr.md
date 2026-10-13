@@ -60,10 +60,17 @@ chaque fichier. Rien n’est envoyé nulle part.
 | Historique des versions des documents | `/System/Volumes/Data/.DocumentRevisions-V100` | L’assistant |
 | Fichiers restants de mise à jour de macOS | `/System/Volumes/Data/macOS Install Data`, seulement s’il est plus ancien que le système installé. Le dossier `Locked Files` reste en place. | L’assistant |
 | Téléchargements inachevés de fonds d’écran et d’économiseurs d’écran | Fichiers `CFNetworkDownload_*.tmp` directement dans `/private/var/folders/*/*/T/com.apple.idleassetsd`, inchangés depuis 3 jours. Fichiers ordinaires seulement : les liens et les sous-dossiers sont refusés. | L’assistant |
+| Copies d’une app que macOS a faites en la vérifiant | `/var/folders/…/X/<app>.code_sign_clone`, seulement quand elle occupe de l’espace à elle (celui d’une version précédente), app fermée et rien ne s’exécutant depuis elle. | L’app, avec vos droits |
+| Le journal système | `/private/var/db/diagnostics` et `/private/var/db/uuidtext`, avec `log erase --all` et `log erase --uuidtext` d’Apple. | L’assistant |
+| Les symboles des rapports de plantage | Tout ce qui est dans `/System/Library/Caches/com.apple.coresymbolicationd`, le dossier reste ; puis `coresymbolicationd` est arrêté pour que l’espace revienne. macOS reconstruit le cache. | L’assistant |
+| La Corbeille | Tout ce qui est dans `~/.Trash`. Un élément verrouillé ou appartenant à un autre compte reste. | L’app, avec vos droits |
+| Instantanés locaux de Time Machine | `tmutil deletelocalsnapshots <date>`, une date à la fois : tous sauf le plus récent et le plus récent issu d’une sauvegarde. Jamais pendant une sauvegarde. | L’app, avec vos droits |
+| Sauvegardes sur un disque de sauvegarde Time Machine | `tmutil delete`, celles que vous choisissez, jamais la plus récente, sur un disque connecté utilisé par Time Machine. Jamais pendant une sauvegarde. | L’assistant |
 
 Rien ne va dans la Corbeille. Les caches, les ressources système et les fichiers purgeables sont
 recréés ou retéléchargés au besoin, et les copies cloud sont retéléchargées quand vous ouvrez le
-fichier. Les rapports, l’historique des versions et les restes de mises à jour ne reviennent pas.
+fichier. Les rapports, l’historique des versions, les restes de mises à jour, le journal système, les éléments
+de la Corbeille, les instantanés et les sauvegardes ne reviennent pas.
 Chacune de ces actions demande d’abord confirmation, sauf le bouton **Libérer** des caches d’une
 seule app.
 
@@ -130,6 +137,9 @@ l’assistant s’en aperçoit et s’efface pour que le nouveau démarre.
 | `systemdata.versions.delete` | Supprime l’historique des versions des documents | Arrête d’abord `revisiond`, ou le met en pause si macOS refuse. Supprime le contenu du stockage, pas le dossier, puis redémarre `revisiond`. S’il ne peut pas l’arrêter, il ne supprime rien. |
 | `systemdata.staged-update.delete` | Supprime les fichiers de mise à jour restants | Seulement si le dossier est plus ancien que le système installé. Conserve `Locked Files`. |
 | `systemdata.wallpaper-downloads.delete` | Supprime les téléchargements inachevés de fonds d’écran et d’économiseurs d’écran | Ne reçoit aucun chemin : trouve lui-même `/private/var/folders/*/*/T/com.apple.idleassetsd`, sans suivre de lien. Ne supprime que les fichiers ordinaires nommés `CFNetworkDownload_*.tmp` directement dans le dossier, inchangés depuis 3 jours. |
+| `systemdata.unified-log.erase` | Efface le journal système | Ne reçoit aucun argument. N’exécute que `/usr/bin/log erase --all` d’Apple, puis `log erase --uuidtext`. |
+| `systemdata.symbolication-cache.delete` | Supprime les symboles des rapports de plantage | Ne reçoit aucun argument. Seulement `/System/Library/Caches/com.apple.coresymbolicationd`, ouvert sans suivre de lien ; supprime son contenu, jamais le dossier, puis arrête `coresymbolicationd` (`kill -TERM`, `-KILL` après 5 secondes). |
+| `timemachine.backups.delete` | Supprime des sauvegardes d’un disque de sauvegarde Time Machine | Seulement sur un disque que Time Machine indique comme connecté, seulement des dates qu’il y trouve lui-même, jamais la sauvegarde la plus récente, jamais pendant une sauvegarde ni quand on ne le sait pas. Exécute `/usr/bin/tmutil delete`. |
 | `debloat.status`, `.apply`, `.revert` | Lit, désactive et réactive des éléments Debloat | Seulement des identifiants de contrôle, issus du catalogue intégré. Rien d’autre. |
 | `debloat.removeProfile` | Supprime un profil MacSpace | Seulement les identifiants `com.macspace.policies` et `com.macspace.policies.…`. Tout autre profil est refusé. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Trouve et supprime les abonnements Apple Intelligence de comptes qui n’existent plus | Sauvegarde d’abord la base de données dans `/Library/Application Support/MacSpace/backups/`, la modifie en une seule transaction, ne touche que les lignes qui ne correspondent à aucun compte local, et refuse si la liste des comptes semble erronée. L’app n’a pas encore de bouton pour cela. |

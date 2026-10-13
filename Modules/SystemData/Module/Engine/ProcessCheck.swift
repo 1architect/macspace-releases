@@ -57,6 +57,20 @@ public struct ProcessCheck: Sendable {
         }
     }
 
+    /// The name of a process whose program is at or under one of the paths, compared as the kernel reports paths
+    /// (`/private/var/folders/…`).
+    static func runningFromInside(_ paths: [String], processes: [RunningProcess]) -> String? {
+        let roots = paths.map { path -> String in
+            guard let real = realpath(path, nil) else { return path }
+            defer { free(real) }
+            return String(cString: real)
+        }
+        return processes.first { process in
+            guard let program = process.executablePath else { return false }
+            return roots.contains { program == $0 || program.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }
+        }?.name
+    }
+
     // MARK: Live
 
     static func userPIDs() -> [pid_t]? {

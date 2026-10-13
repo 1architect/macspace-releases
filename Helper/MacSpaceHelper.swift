@@ -1,5 +1,6 @@
 import Foundation
 import MacSpaceDebloatPrivileged
+import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
 import MacSpaceSiriPrivileged
 import MacSpaceSystemDataPrivileged
@@ -16,7 +17,8 @@ struct MacSpaceHelper {
             FileHandle.standardError.write(Data("MacSpaceHelper: refusing to start without --client-requirement <code signing requirement>\n".utf8))
             exit(78) // EX_CONFIG
         }
-        let service = PrivilegedHelperService(handlers: [SiriPrivilegedOperations(), DebloatPrivilegedOperations(), SystemDataPrivilegedOperations()])
+        let service = PrivilegedHelperService(handlers: [SiriPrivilegedOperations(), DebloatPrivilegedOperations(), SystemDataPrivilegedOperations(),
+                                                                    TimeMachinePrivilegedOperations()])
         let delegate = PrivilegedHelperListenerDelegate(service: service, clientRequirement: arguments[index + 1])
         let listener = NSXPCListener(machServiceName: PrivilegedHelperConstants.machServiceName)
         listener.delegate = delegate

@@ -13,7 +13,8 @@ struct MacSpaceCli {
         if arguments.first == "helper" {
             // Diagnostics for the privileged helper: `helper` prints the status, `helper --register` tries to register it and
             // `helper --unregister` removes the registration made from this copy of the app; `helper --repair` registers it again
-            // once launchd has dropped the old job, for a helper that is enabled but never answers.
+            // once launchd has dropped the old job, for a helper that is enabled but never answers. `helper --measure <path> …` asks
+            // it for the sizes of folders only root can read (read-only; the helper sizes only its allowed places).
             print("status: \(PrivilegedHelperInstaller.status.rawValue) (0 not registered, 1 enabled, 2 requires approval, 3 not found)")
             if PrivilegedHelperInstaller.status == .notFound { print("why: \(PrivilegedHelperInstaller.notFoundReason())") }
             if arguments.contains("--unregister") {
@@ -33,6 +34,13 @@ struct MacSpaceCli {
                     let data = try await LazyPrivilegedChannel().perform(operation: PrivilegedHelperService.pingOperation, arguments: [:])
                     print("ping ok; helper started from binary \(String(decoding: data, as: UTF8.self)); on disk \(HelperFingerprint.of(path: Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/MacSpaceHelper").path) ?? "?")")
                 } catch { print("ping failed: \(error)") }
+            }
+            if let index = arguments.firstIndex(of: "--measure") {
+                let paths = arguments.dropFirst(index + 1).filter { !$0.hasPrefix("--") }
+                do {
+                    let data = try await LazyPrivilegedChannel().perform(operation: "systemdata.measure", arguments: ["paths": paths.joined(separator: "\n")])
+                    print(String(decoding: data, as: UTF8.self))
+                } catch { print("measure failed: \(error)") }
             }
             exit(0)
         }

@@ -118,8 +118,11 @@ update left out, was 38.5 GB against 32.3, and the whole gap is accounted for as
   the system assets 9.02 / 8.91 / 8.36 GB. Items are now sized with one `CloneLedger` per scan (the first file of a family counts
   in full, later ones only `ATTR_CMNEXT_PRIVATESIZE`): 35.79 → 35.27 GB against a total of 34.65. The 0.62 GB left is stated on
   the page; not yet explained. Deleting a 6.12 GB code-signing clone of an app (`/var/folders/…/X/…code_sign_clone`) freed nothing
-  measurable, because it shared its blocks with the app; Settings counts it at full size in System Data. Such clones are shown as
-  managed by macOS with an expected reclaim of 0.
+  measurable, because it shared its blocks with the app; Settings counts it at full size in System Data. **Measured (26B5101f,
+  2026-10-13):** what a copy holds of its own is the sum of its files' `ATTR_CMNEXT_PRIVATESIZE`: SketchUp's and LayOut's copies,
+  2.42 and 0.97 GB by size, held 0.04 and 0.01 GB. A copy of an app that was updated afterwards keeps the older version's blocks,
+  which no other file shares (Mole deletes Chrome's for that reason). Copies are offered by that figure, from 50 MB, while the app is
+  closed and nothing runs from the copy; macOS makes a new one when it next checks the app.
 - **Measured: why total and breakdown differ.** Nothing has to list what System Data holds, because the total is Settings'
   remainder. The page's items are only the breakdown, and what they leave out of the total is a "Not identified" block, so a rule
   that goes wrong shows as a measured amount instead of a wrong total.
@@ -188,7 +191,19 @@ Two of MacSpace's own gaps were in the remainder too, about 0.85 GB, both fixed:
 attachments do not measure were measured by nothing (0.11 GB).
 
 **Measured, not System Data:** Time Machine's local snapshots do not exist on this Mac; the only snapshot is the sealed
-OS-update snapshot on the System volume (required, not purgeable). How much local snapshots hold elsewhere is **unmeasured**.
+OS-update snapshot on the System volume (required, not purgeable).
+
+**Measured, Time Machine's local snapshots (26B5101f, 2026-10-13, as an admin user without Full Disk Access, no backup disk set).**
+`tmutil localsnapshot`, `tmutil listlocalsnapshots /` and `tmutil deletelocalsnapshots <date>` all work without a password. Two
+snapshots were made, a 1 GB file between them, then the file was deleted. macOS's purge service for them, `com.apple.TMCacheDelete`
+(backupd-helper), reported nothing for about a minute, then 1.69 GB at urgency 3 and 4 and nothing at 1 and 2. Deleting the older
+snapshot freed 602 MB, the newer 1.12 GB: 1.72 GB in all, measured on the volume. The service still reported 1.72 GB once both were
+gone, so the page reads 0 whenever `tmutil` lists none. `diskutil apfs listSnapshots /System/Volumes/Data` lists them as purgeable;
+neither tool gives one snapshot's size. They are purgeable space (Other System Files), not System Data. Other System Files lists
+them and frees all but the newest and the newest ending in `.backup` (the one the next backup starts from), as Purge
+(jithin-sabu/purge-app) does. Backups on a backup disk are listed without root (an APFS disk's snapshots through `diskutil`, an older
+disk's `Backups.backupdb` folders); deleting one needs root and, by the man page, Full Disk Access (`tmutil delete`), so the helper
+does it. **Not yet tried on a Mac with a backup disk.**
 
 ---
 
@@ -352,11 +367,41 @@ subfolder carries the SIP `restricted` flag and stays. The helper only deletes w
 system's `SystemVersion.plist`. Deletion worked (confirmed by the maintainer; the freed amount was not recorded). Telling the
 user to "install the waiting update" for such files was wrong, and the row now says that no update is waiting.
 
+### The unified log (`/private/var/db/diagnostics`, `/private/var/db/uuidtext`)
+
+**Measured (26B5101f, 2026-10-13).** 2.9 GB: 1.6 GB of entries (Persist 501 MB, rotated by size, about a day here; Special 976 MB,
+kept by time-to-live up to 30 days; Signpost 106 MB) and 1.3 GB of format strings. Only 39 MB of entries were older than 7 days,
+which is all that Mole's rule (delete files older than 7 days, `lib/clean/system.sh`) would free here. logd registers a CacheDelete
+service, `com.apple.logd.cachedelete`, which reported 0 at every urgency: macOS never frees the log for space. Its purge, per the
+strings in `logd`, is "Purging UUID Cache", the same as `log erase --uuidtext` ("Prune uuids from the database"); logd copies a
+program's format strings again the next time it logs (`_logd_uuiddb_harvest`). `log erase` needs root. The page offers it: the helper
+runs `log erase --all`, then `log erase --uuidtext`, with its own button that cannot be undone, never in Clean. What it frees on a
+real erase: see the measurement below once it is taken.
+
+### Symbols for crash reports (`/System/Library/Caches/com.apple.coresymbolicationd`)
+
+**Measured.** One memory-mapped archive, `data`: 2.10 GB on 2026-09-30 (`MACSPACE/results/system-data-deep-2026-09-30`), 164 KB for
+the whole of `/System/Library/Caches` on 2026-10-13. The folder is root's (`drwx------`), with no SIP flag. **Read in the binary**
+(26B5101f): coresymbolicationd is started on demand by launchd (`MachServices`, `EnablePressuredExit`) and runs as root; its strings
+include "%s does not exist, resetting cache", "%s did not validate, resetting cache" and "Failed to mark storage purgeable", so it
+rebuilds a missing cache and may mark it purgeable. The page offers it from 50 MB of what it adds to System Data (a purgeable part is
+free space already): the helper deletes the folder's contents, then stops the daemon (`kill -TERM`, `-KILL` after five seconds) so
+the mapped archive's blocks come back; launchd starts it again on the next request. **Not yet measured:** a real deletion of a large
+cache (it is nearly empty on the development Mac now).
+
 ### Checked and not offered
 
+- **Quick Look thumbnails (169 MB by macOS's figure):** in a folder no app can open, even with Full Disk Access. Apple's
+  `qlmanage -r cache` resets them; on 26B5101f free space rose 145 MB right after, but macOS's figure stayed at 169.1 MB and other
+  activity may account for the rise. Not offered until a cleaner reading.
+- **Apple's own caches in `~/Library/Caches` and the per-user `C` folder:** the largest here were GeoServices (71 MB, Maps, read by an
+  always-running daemon) and a few of 20 to 46 MB. Too small to be worth the risk of pulling a cache from under a daemon.
+- **Apps' logs older than 7 days:** 0.15 MB in `~/Library/Logs`, 8.9 MB of root's in `/Library/Logs`. Not worth a button.
+- **`/private/var/log` (88 MB):** mostly power management (51 MB) and launchd (20 MB) logs that newsyslog rotates; the rotated
+  archives are kilobytes.
+
 - **The prepared macOS update (10.7 GB):** installs at the next restart and macOS removes it then; nothing safe deletes it before.
-- **Unified log (2.48 GB):** `log erase --all` removes the diagnostic history. Not offered.
-- **Swap, power log, symbolication cache:** in use or rotated by macOS. **Inferred.**
+- **Swap, power log:** in use or rotated by macOS. **Inferred.**
 - **Aerial wallpaper (575 MB):** one video, the one in use.
 - **Apps' own data** (messaging apps' group containers of several GB, cloud folders): guided manual cleanup, since the app owns it.
 
@@ -564,7 +609,8 @@ replaces one of the policies.
 - Is the document-version freeze safe while an app is saving?
 - Do feature-flag overrides survive an OS update? Do profile policies behave the same on another Mac and with Apple Intelligence
   eligible?
-- How much do Time Machine's local snapshots hold, and does Settings count them as System Data? (Needs root and a Mac that has them.)
+- Does deleting backups on a backup disk need Full Disk Access for the helper, as `tmutil`'s man page says? (Needs a Mac with a
+  backup disk.)
 - Does the Apple Intelligence off-switch hold online for days, and does a Siri re-enable or a language resync silently restore the
   match?
 - Do the deleted accounts' subscription rows ever expire on their own?

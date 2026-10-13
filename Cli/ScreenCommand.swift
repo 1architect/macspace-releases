@@ -4,7 +4,8 @@ import MacSpacePlatform
 import MacSpaceSdk
 
 /// `MacSpaceCli screen <module-id> [--dir <folder>] [--tile]` prints the screen (or dashboard tile) a module produces,
-/// as JSON, using this Mac's real state. For development and for checking what the app would draw.
+/// as JSON, using this Mac's real state, the helper's measurements included as the app has them (without it, the places only root
+/// can read were missing and their rows with them). For development and for checking what the app would draw.
 enum ScreenCommand {
     static func run(_ arguments: [String]) async -> Never {
         guard let id = arguments.first(where: { !$0.hasPrefix("--") && !$0.contains("/") }) else {
@@ -19,7 +20,8 @@ enum ScreenCommand {
         }
         do {
             let module = try ModuleLoader.load(descriptor)
-            let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker())
+            let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker(),
+                                        privileged: LazyPrivilegedChannel())
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = arguments.contains("--tile") ? try encoder.encode(await module.tile(context: context))

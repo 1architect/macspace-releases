@@ -1,4 +1,5 @@
 import Foundation
+import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
 
 /// What macOS counts as purgeable on the Data volume, per CacheDelete service, at the urgency the disk's "purgeable" figure uses (3).
@@ -16,6 +17,8 @@ struct PurgeableSnapshot: Sendable, Equatable {
     var updates: [PreparedUpdate] = []
     /// Removals of cloud downloads running now, by cloud folder (`CloudDownloadRemovals`).
     var removing: [String: CloudDownloadRemovals.Progress] = [:]
+    /// Time Machine: the local snapshots, whose space is macOS's purge figure for them, and the backup disks.
+    var timeMachine = TimeMachineState()
 
     /// macOS's estimate of the files apps marked purgeable.
     var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
@@ -25,6 +28,40 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// What macOS counts as purgeable.
     var totalBytes: UInt64 { services?.values.reduce(0, +) ?? 0 }
     var updateBytes: UInt64 { updates.map(\.bytes).reduce(0, +) }
+}
+
+/// What Time Machine keeps: local snapshots on this Mac, and backups on its backup disks.
+struct TimeMachineState: Sendable, Equatable {
+    /// nil when `tmutil` could not be asked.
+    var snapshots: TimeMachine.LocalSnapshots?
+    var disks: [BackupDisk] = []
+    /// A backup is running; nil when unknown. Nothing is freed then.
+    var backingUp: Bool?
+
+    struct BackupDisk: Sendable, Equatable {
+        var destination: TimeMachine.Destination
+        /// Oldest first; nil when the disk is not connected or its backups could not be read.
+        var backups: [TimeMachine.Backup]?
+        var totalBytes: UInt64?
+        var freeBytes: UInt64?
+
+        /// What the disk holds: its size less its free space.
+        var usedBytes: UInt64? {
+            guard let total = totalBytes, let free = freeBytes else { return nil }
+            return total > free ? total - free : 0
+        }
+    }
+
+    static func live() -> TimeMachineState {
+        var state = TimeMachineState(snapshots: TimeMachine.localSnapshots())
+        state.disks = (TimeMachine.destinations() ?? []).map { destination in
+            guard let mount = destination.mountPoint else { return BackupDisk(destination: destination) }
+            let capacity = TimeMachine.capacity(of: mount)
+            return BackupDisk(destination: destination, backups: TimeMachine.backups(at: mount), totalBytes: capacity?.total, freeBytes: capacity?.free)
+        }
+        state.backingUp = TimeMachine.isBackingUp()
+        return state
+    }
 }
 
 /// The services worth naming, and why each is or is not freed. Measured on the development Mac, 2026-10-02 (Docs/Research.md, CacheDelete).
@@ -48,6 +85,8 @@ struct PurgeableService: Equatable {
                          detail: "", symbol: "photo.on.rectangle"),
         PurgeableService(id: CacheDeleteService.mobileAsset, title: loc("System assets"),
                          detail: "", symbol: "square.stack.3d.down.right"),
+        PurgeableService(id: CacheDeleteService.timeMachineSnapshots, title: loc("Time Machine snapshots"),
+                         detail: "", symbol: "clock.arrow.circlepath"),
     ]
 
     static func describe(_ id: String) -> PurgeableService {
@@ -77,6 +116,10 @@ actor PurgeableStore {
 
     /// What MacSpace last freed, and macOS's estimate when it did.
     private var removed: (estimate: UInt64, bytes: UInt64)?
+    /// The same for Time Machine's snapshots: macOS's figure for them stayed at 971.4 MB for more than two minutes after 635 MB of
+    /// them were deleted (26B5101f, 2026-10-13).
+    private var snapshotsRemoved: (estimate: UInt64, bytes: UInt64)?
+    private var rawSnapshotsEstimate: UInt64 = 0
     /// macOS's own estimate in the last snapshot, before what was freed is taken off it.
     private var rawEstimate: UInt64 = 0
     /// One query at a time: the tile and the page asked together and started two CLI processes.
@@ -106,7 +149,9 @@ actor PurgeableStore {
         var fresh = raw
         fresh.retrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.fsPurgeableData)
         rawEstimate = fresh.services?[CacheDeleteService.fsPurgeableData] ?? 0
+        rawSnapshotsEstimate = fresh.services?[CacheDeleteService.timeMachineSnapshots] ?? 0
         fresh.services = Self.accounting(for: &removed, in: fresh.services)
+        fresh.services = Self.accounting(for: &snapshotsRemoved, in: fresh.services, service: CacheDeleteService.timeMachineSnapshots)
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
         if let estimate = fresh.services?[CacheDeleteService.fsPurgeableData] {
             fresh.services?[CacheDeleteService.fsPurgeableData] = PurgeHoldouts.shared.freeable(CacheDeleteService.fsPurgeableData, estimate: estimate)
@@ -117,14 +162,15 @@ actor PurgeableStore {
 
     /// macOS's estimate lags behind what it removed: right after freeing 1 GB it could still give the figure from before. While it
     /// gives that same figure, what was freed is taken off it; once the figure moves, macOS has measured again and is believed.
-    static func accounting(for removed: inout (estimate: UInt64, bytes: UInt64)?, in services: [String: UInt64]?) -> [String: UInt64]? {
-        guard var services, let freed = removed, let current = services[CacheDeleteService.fsPurgeableData] else { return services }
+    static func accounting(for removed: inout (estimate: UInt64, bytes: UInt64)?, in services: [String: UInt64]?,
+                           service: String = CacheDeleteService.fsPurgeableData) -> [String: UInt64]? {
+        guard var services, let freed = removed, let current = services[service] else { return services }
         let tolerance = max(freed.estimate / 50, 5_000_000)
         guard current + tolerance >= freed.estimate, current <= freed.estimate + tolerance else {
             removed = nil
             return services
         }
-        services[CacheDeleteService.fsPurgeableData] = current > freed.bytes ? current - freed.bytes : 0
+        services[service] = current > freed.bytes ? current - freed.bytes : 0
         return services
     }
 
@@ -136,6 +182,15 @@ actor PurgeableStore {
 
     /// MacSpace freed `bytes` while macOS estimated `estimate`.
     func noteRemoved(_ bytes: UInt64, estimate: UInt64) { removed = (estimate, bytes) }
+
+    /// macOS's own figure for Time Machine's snapshots, as it gave it last.
+    func currentRawSnapshotsEstimate() async -> UInt64 {
+        _ = await snapshot()
+        return rawSnapshotsEstimate
+    }
+
+    /// MacSpace freed `bytes` of Time Machine's snapshots while macOS's figure for them was `estimate`.
+    func noteSnapshotsRemoved(_ bytes: UInt64, estimate: UInt64) { snapshotsRemoved = (estimate, bytes) }
 
     func invalidate() {
         cached = nil
@@ -151,6 +206,12 @@ actor PurgeableStore {
         else { services = CacheDeleteClient().purgeableByService(urgency: urgency) }
         // Where the purgeable documents are, only when macOS counts some: a few seconds for a large cloud folder.
         let documents = (services?[CacheDeleteService.fsPurgeableDocument] ?? 0) >= 50_000_000 ? PurgeableDocuments.scan(maxAge: 600) : []
-        return PurgeableSnapshot(services: services, takenAt: Date(), documents: documents, updates: PreparedUpdate.find())
+        var snapshot = PurgeableSnapshot(services: services, takenAt: Date(), documents: documents, updates: PreparedUpdate.find())
+        snapshot.timeMachine = TimeMachineState.live()
+        // macOS's figure for the snapshots lags: it stayed at 1.72 GB after both were deleted (26B5101f). With none listed, it is 0.
+        if snapshot.timeMachine.snapshots?.all.isEmpty == true, snapshot.services?[CacheDeleteService.timeMachineSnapshots] != nil {
+            snapshot.services?[CacheDeleteService.timeMachineSnapshots] = 0
+        }
+        return snapshot
     }
 }

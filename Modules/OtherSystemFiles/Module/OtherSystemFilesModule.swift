@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
 import MacSpaceSdk
 
@@ -49,6 +50,16 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "removeDownloads":
             return Self.removeDownloads(request.parameters["path"] ?? "", store: store)
+        case "freeSnapshots":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            let estimate = await store.currentRawSnapshotsEstimate()
+            let result = Self.freeSnapshots()
+            if let freed = result.freedBytes, freed > 0 { await store.noteSnapshotsRemoved(freed, estimate: estimate) }
+            return result
+        case "deleteBackups":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            let stamps = Selection.ids(request.parameters["ids"]).compactMap { $0.hasPrefix("backup:") ? String($0.dropFirst("backup:".count)) : nil }
+            return await Self.deleteBackups(stamps, from: request.parameters["mountPoint"] ?? "", channel: context.privileged)
         default:
             return .failed(loc("Unknown action \(request.actionID)."))
         }
@@ -108,6 +119,55 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             Task { await store.invalidate() }
         }
         return ActionResult(outcome: .succeeded, message: "", refresh: true)
+    }
+
+    /// Deletes Time Machine's local snapshots except the two it still needs (`TimeMachine.LocalSnapshots`), read again first, one by
+    /// one with `tmutil`, as the user (no helper needed, measured on 26B5101f). Never while a backup runs or while that is unknown, and
+    /// never in automatic cleaning. The space freed is measured on the volume; what was deleted is read back from the list.
+    static func freeSnapshots() -> ActionResult {
+        guard let snapshots = TimeMachine.localSnapshots() else { return .failed(loc("Couldn't free it"), details: ["tmutil listlocalsnapshots did not answer."]) }
+        let removable = snapshots.removable
+        guard !removable.isEmpty else { return .failed(loc("Already gone")) }
+        guard TimeMachine.isBackingUp() == false else {
+            return .failed(loc("Time Machine is backing up. Try again when it's done."), details: ["tmutil status said a backup is running, or did not answer."])
+        }
+        let before = DataVolume.freeBytes()
+        let failures = TimeMachine.deleteLocalSnapshots(removable.map(\.stamp))
+        let left = Set((TimeMachine.localSnapshots() ?? snapshots).all.map(\.stamp))
+        let deleted = removable.filter { !left.contains($0.stamp) }
+        let freed = measuredFreed(before, deleted.isEmpty ? DataVolume.freeBytes() : DataVolume.settledFreeBytes())
+        var details = ["Deleted \(deleted.count) of \(removable.count) local snapshot(s); kept \(snapshots.kept.map(\.name).joined(separator: ", "))."]
+        details += failures.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)" }
+        guard !deleted.isEmpty else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
+        return ActionResult(outcome: deleted.count == removable.count ? .succeeded : .needsAttention, message: PurgeRun.freedMessage(freed ?? 0),
+                            details: details, freedBytes: freed)
+    }
+
+    /// Deletes the chosen backups from a connected backup disk through the helper, which checks each one itself
+    /// (`BackupDeleter`). The space is the backup disk's, not this Mac's, so it is not counted in what MacSpace freed on the Mac.
+    static func deleteBackups(_ stamps: [String], from mountPoint: String, channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed(loc("Install the helper in Settings")) }
+        guard !stamps.isEmpty else { return .failed(loc("Already gone")) }
+        let result: BackupDeletionResult
+        do {
+            result = try await channel.perform(BackupDeletionResult.self, operation: TimeMachinePrivilegedOperations.deleteBackups,
+                                               arguments: ["mountPoint": mountPoint, "stamps": stamps.joined(separator: "\n")])
+        } catch {
+            return .failed(loc("Couldn't free it"), details: [error.localizedDescription])
+        }
+        var details = ["Deleted \(result.deleted.count) backup(s) from \(mountPoint)."]
+        details += result.kept.sorted { $0.key < $1.key }.map { "Kept \($0.key): \($0.value)" }
+        if let error = result.error { details.append(error) }
+        guard result.executed else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
+        let freed = measuredFreed(result.freeBytesBefore, result.freeBytesAfter) ?? 0
+        let name = (mountPoint as NSString).lastPathComponent
+        return ActionResult(outcome: result.kept.isEmpty && result.error == nil ? .succeeded : .needsAttention,
+                            message: freed > 0 ? loc("Freed \(ByteFormat.string(freed)) on \(name)") : PurgeRun.nothingMessage, details: details, refresh: true)
+    }
+
+    static func measuredFreed(_ before: UInt64?, _ after: UInt64?) -> UInt64? {
+        guard let before, let after else { return nil }
+        return after > before ? after - before : 0
     }
 
     /// Apple's own purge of the files apps marked purgeable, run in the CLI child process: first at the urgency the disk's

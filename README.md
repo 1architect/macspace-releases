@@ -43,8 +43,10 @@ The main button, **Free** with a size, deletes what is safe: caches of apps that
 diagnostic and crash reports older than 7 days, and unused system assets. Under **Free now**,
 each item has its own button. Two items are kept apart because they need more care: **Document
 version history** (earlier versions of your documents; the documents stay) and **Leftover macOS
-update files** (files of an update that is already installed). For everything that belongs to
-macOS or to other apps, MacSpace says what it is and what to do by hand.
+update files** (files of an update that is already installed). The **System log** (what macOS
+records for troubleshooting) and the **Trash** have their own buttons too, never the main one.
+For everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by
+hand.
 
 <p align="center">
   <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
@@ -69,7 +71,10 @@ when the disk is nearly full. **Free up to** asks it to do that now. The size is
 estimate, which is why it says "up to". Copies of cloud files kept on this Mac (OneDrive, iCloud
 Drive and other cloud folders) have a row and a button of their own, **Remove Downloads**. The
 files stay in the cloud and download again when you open them. A macOS update that is ready to
-install is listed under **Waiting to install**. MacSpace does not delete it.
+install is listed under **Waiting to install**. MacSpace does not delete it. Time Machine's local
+snapshots (copies of your Mac it keeps for a day) have a row of their own: **Free** deletes all but
+the newest and the one the next backup starts from. A connected backup disk lists its backups, and
+you can choose old ones to free. The latest backup always stays.
 
 <p align="center">
   <img src="Docs/Screenshots/en/OtherSystemFiles.png" alt="The Other System Files page: a chart of what macOS counts as purgeable, the Free now list and the Free up to button" width="720">
@@ -186,12 +191,13 @@ Other System Files needs no permission of its own. macOS handles every authoriza
 MacSpace never sees your password. Without a permission, a module does less and says what is
 missing.
 
-The helper is a launch daemon, `com.macspace.helper`. It runs only named operations that are
-built into it, a caller cannot send it commands, and it accepts only clients signed by the same
-developer team as MacSpace. Among other things, it can measure the size of system
-folders (never of a home folder), delete the document version history and the leftover files of
-an installed macOS update, change the Debloat switches that need an administrator, and remove
-the MacSpace profile. [Security](SECURITY.md) has the full list.
+The helper is a launch daemon, `com.macspace.helper`. It runs only named operations that are built
+into it, a caller cannot send it commands, and it accepts only clients signed by the same developer
+team as MacSpace. Among other things, it can measure the size of system folders (never of a home
+folder), delete the document version history and the leftover files of an installed macOS update,
+erase the system log, delete the symbols for crash reports, delete the old Time Machine backups you
+choose, change the Debloat switches that need an administrator, and remove the MacSpace profile.
+[Security](SECURITY.md) has the full list.
 
 ---
 
@@ -203,6 +209,8 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
   `~/Library/Application Support`. Only while the app or tool that owns them is closed, with its
   helpers, and no program has a file open in them.
+- The copies macOS makes of an app when it checks it (`/var/folders/…/X`), for the space they hold
+  of their own once the app was updated, and only while the app is closed.
 - Diagnostic and crash reports older than 7 days, in `/Library/Logs/DiagnosticReports` and
   `~/Library/Logs/DiagnosticReports`.
 - Unused system assets, Apple Intelligence models that macOS has released, and files apps marked
@@ -213,13 +221,17 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
   the local copies of cloud files. For the downloads, the helper deletes only the
   `CFNetworkDownload_*.tmp` files in `/var/folders/…/T/com.apple.idleassetsd` that have not
   changed in 3 days, so a download still in progress stays.
+- Only when you press its own button: the system log, with Apple's own `log erase`; the symbols
+  macOS keeps to read crash reports, which it rebuilds; everything in the Trash; Time Machine's
+  local snapshots, all but the newest and the one the next backup starts from; and the backups you
+  choose on a connected backup disk, never the latest. Snapshots and backups are never deleted while
+  a backup runs.
 - Only the caches you choose under **App caches**: folders in `~/Library/Caches`. Those checked for
   you have not changed for a month, and their app has not been opened for as long or is not
   installed. Caches in use are listed unchecked and say that they come back. Caches of apps that are
   open, and folders that hold media or documents with names people give, are not offered.
 - Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
-  formulae, updating or sending Homebrew's analytics. MacSpace never empties the Trash: its row
-  opens it in the Finder.
+  formulae, updating or sending Homebrew's analytics.
 
 **What it never touches.** MacSpace measures how much space your documents, Photos, Mail and
 Messages take. It does not read what is in them and never deletes them. It lists large items such
@@ -228,14 +240,16 @@ leaves other apps' data alone and says how to clean it from inside the app. It d
 System Integrity Protection and does not change the sealed system volume.
 
 **What asks first.** Every button that deletes more than one app's caches asks for confirmation.
-**Delete…** on **Document version history** carries a **Cannot be undone** badge. The **Apple
+**Free** on the document version history, the system log, the Trash and Time Machine's snapshots
+and backups carries a **Cannot be undone** badge. The **Apple
 Intelligence** switch and the single Debloat switches act at once, and go back by themselves if
 the change fails.
 
 **What you can undo.** Debloat: switch a feature back on, or press **Enable all**. MacSpace
 restores the settings it saved before it changed them. Apple Intelligence: switch it on again.
 MacSpace restores your Siri language and voice, and macOS may download the models again. Deleted
-caches rebuild. Deleted reports and version history do not come back.
+caches rebuild. Deleted reports, version history, logs, items in the Trash, snapshots and backups
+do not come back.
 
 **Virtual machines.** In a virtual machine, **Siri & Apple Intelligence** does nothing and says
 why. Debloat still lists switches there that cannot take effect in a virtual machine.

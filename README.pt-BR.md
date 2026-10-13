@@ -46,8 +46,9 @@ fechados, relatórios de diagnóstico e de falhas com mais de 7 dias e recursos 
 Em **Liberar agora**, cada item tem o seu próprio botão. Dois itens ficam separados porque pedem
 mais cuidado: **Histórico de versões de documentos** (versões anteriores dos seus documentos; os
 documentos continuam) e **Arquivos restantes de atualização do macOS** (arquivos de uma
-atualização que já está instalada). Para tudo o que pertence ao macOS ou a outros apps, o MacSpace
-diz o que é e o que fazer manualmente.
+atualização que já está instalada). O **Registro do sistema** (o que o macOS registra para resolver
+problemas) e o **Lixo** também têm botões próprios, nunca o principal. Para tudo o que pertence ao
+macOS ou a outros apps, o MacSpace diz o que é e o que fazer manualmente.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
@@ -74,7 +75,10 @@ tamanho é uma estimativa do macOS, e é por isso que o botão diz "até". Cópi
 guardadas neste Mac (OneDrive, iCloud Drive e outras pastas da nuvem) têm uma linha e um botão
 próprios, **Remover Downloads**. Os arquivos continuam na nuvem e são baixados de novo quando você
 os abre. Uma atualização do macOS pronta para instalar aparece em **Aguardando instalação**. O
-MacSpace não a apaga.
+MacSpace não a apaga. Os instantâneos locais do Time Machine (cópias do seu Mac que ele guarda por um
+dia) têm uma linha própria: **Liberar** apaga todos, menos o mais recente e o que o próximo backup
+usa como ponto de partida. Um disco de backup conectado lista os seus backups, e você pode escolher
+os antigos para liberar. O backup mais recente sempre fica.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/OtherSystemFiles.png" alt="A página Outros Arquivos do Sistema: um gráfico do que o macOS conta como removível, a lista Liberar agora e o botão Liberar até" width="720">
@@ -197,9 +201,10 @@ O auxiliar é um daemon de inicialização (launch daemon), `com.macspace.helper
 operações nomeadas que estão embutidas nele, quem o chama não consegue enviar comandos a ele, e ele
 só aceita clientes assinados pela mesma equipe de desenvolvimento do MacSpace. Entre outras coisas,
 ele pode medir o tamanho de pastas do sistema (nunca de uma pasta pessoal), apagar o histórico de
-versões de documentos e os arquivos restantes de uma atualização do macOS já instalada, alterar os
-interruptores do Debloat que exigem um administrador e remover o perfil do MacSpace. O documento
-[Segurança](SECURITY.pt-BR.md) tem a lista completa.
+versões de documentos e os arquivos restantes de uma atualização do macOS já instalada, apagar o
+registro do sistema, apagar os símbolos para relatórios de falhas, apagar os backups antigos do Time
+Machine que você escolher, alterar os interruptores do Debloat que exigem um administrador e remover
+o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista completa.
 
 ---
 
@@ -211,6 +216,8 @@ interruptores do Debloat que exigem um administrador e remover o perfil do MacSp
   (`/var/folders/…/C`) e os caches da web (`Cache`, `Code Cache`, `GPUCache`) que os apps Chromium
   e Electron guardam em `~/Library/Application Support`. Somente enquanto o app ou a ferramenta dona
   deles está fechada, com seus processos auxiliares, e nenhum programa tem um arquivo aberto neles.
+- As cópias que o macOS faz de um app ao verificá-lo (`/var/folders/…/X`), pelo espaço que elas
+  ocupam sozinhas depois que o app foi atualizado, e só enquanto o app está fechado.
 - Relatórios de diagnóstico e de falhas com mais de 7 dias, em `/Library/Logs/DiagnosticReports` e
   `~/Library/Logs/DiagnosticReports`.
 - Recursos do sistema sem uso, modelos do Apple Intelligence que o macOS liberou e arquivos que os
@@ -222,13 +229,17 @@ interruptores do Debloat que exigem um administrador e remover o perfil do MacSp
   de tela que o macOS deixou incompletos e as cópias locais de arquivos da nuvem. Nos downloads, o
   auxiliar apaga só os arquivos `CFNetworkDownload_*.tmp` de `/var/folders/…/T/com.apple.idleassetsd`
   que não mudam há 3 dias, então um download em andamento continua.
+- Somente quando você clica no botão próprio: o registro do sistema, com o `log erase` da própria
+  Apple; os símbolos que o macOS guarda para ler relatórios de falhas, que ele recria; tudo o que
+  está no Lixo; os instantâneos locais do Time Machine, menos o mais recente e o
+  que o próximo backup usa como ponto de partida; e os backups que você escolher num disco de backup
+  conectado, nunca o mais recente. Instantâneos e backups nunca são apagados durante um backup.
 - Somente os caches que você escolhe em **Caches de apps**: pastas de `~/Library/Caches`. As que
   já vêm marcadas não mudam há um mês, e o app delas não é aberto há tanto tempo ou não está
   instalado. Caches em uso aparecem desmarcados e avisam que voltam. Caches de apps abertos e pastas
   com mídias ou documentos com nomes dados por pessoas não são oferecidos.
 - Somente pela linha **Homebrew**: o `brew cleanup` do próprio Homebrew, rodado como você, sem
-  desinstalar fórmulas, atualizar ou enviar as estatísticas do Homebrew. O MacSpace nunca esvazia o
-  Lixo: a linha dele o abre no Finder.
+  desinstalar fórmulas, atualizar ou enviar as estatísticas do Homebrew.
 
 **O que ele nunca toca.** O MacSpace mede quanto espaço ocupam os seus documentos, o Fotos, o Mail e
 o Mensagens. Ele não lê o que há neles e nunca os apaga. Ele lista itens grandes, como downloads
@@ -237,14 +248,15 @@ não mexe nos dados de outros apps e diz como limpá-los de dentro do próprio a
 Proteção de Integridade do Sistema e não altera o volume do sistema selado.
 
 **O que pede confirmação antes.** Todo botão que apaga os caches de mais de um app pede
-confirmação. **Apagar…** em **Histórico de versões de documentos** traz o selo **Não pode ser
-desfeito**. O interruptor **Apple Intelligence** e cada interruptor do Debloat agem na hora e
+confirmação. **Liberar** no histórico de versões de documentos, no registro do sistema, no Lixo e
+nos instantâneos e backups do Time Machine traz o selo **Não pode ser desfeito**. O interruptor **Apple Intelligence** e cada interruptor do Debloat agem na hora e
 voltam sozinhos ao estado anterior se a alteração falhar.
 
 **O que você pode desfazer.** Debloat: ative o recurso de novo ou clique em **Ativar tudo**. O
 MacSpace restaura os ajustes que salvou antes de alterá-los. Apple Intelligence: ative-o de novo. O
 MacSpace restaura o idioma e a voz da sua Siri, e o macOS pode baixar os modelos de novo. Os caches
-apagados são recriados. Relatórios e histórico de versões apagados não voltam.
+apagados são recriados. Relatórios, histórico de versões, registros, itens do Lixo, instantâneos e
+backups apagados não voltam.
 
 **Máquinas virtuais.** Numa máquina virtual, **Siri e Apple Intelligence** não faz nada e diz por
 quê. O Debloat ainda lista ali interruptores que não podem ter efeito numa máquina virtual.

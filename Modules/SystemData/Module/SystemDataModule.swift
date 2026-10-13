@@ -82,6 +82,15 @@ public struct SystemDataModule: MacSpaceModule {
         case "openTrash":
             NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
+        case "emptyTrash":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            return Self.emptyTrash()
+        case "eraseUnifiedLog":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            return await Self.eraseUnifiedLog(context.privileged)
+        case "deleteSymbolicationCache":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            return await Self.deleteSymbolicationCache(context.privileged)
         case "cleanAll":
             let cleaned = Self.cleanSafe(snapshot, store: store, progress: progress)
             return .succeeded(Self.freedMessage(cleaned.freed), details: cleaned.details, freedBytes: cleaned.freed)
@@ -139,7 +148,7 @@ public struct SystemDataModule: MacSpaceModule {
         var details: [String] = []
         let apps = chosen.filter { $0.source == .app }.map(\.id)
         if !apps.isEmpty { details += cleanAppCaches(apps, in: snapshot).details }
-        let items = snapshot.report.items.filter { item in chosen.contains { $0.id == item.id && ($0.source == .web || $0.source == .system) } }
+        let items = snapshot.report.items.filter { item in chosen.contains { $0.id == item.id && ($0.source == .web || $0.source == .system || $0.source == .appCopy) } }
         if !items.isEmpty { details += clean(items).details }
         let developer = snapshot.developerCaches.filter { ids.contains($0.id) }
         if !developer.isEmpty { details += DeveloperCaches.free(developer) }
@@ -271,6 +280,64 @@ public struct SystemDataModule: MacSpaceModule {
         if let error = result.error { details.append(error) }
         let message = freedMessage(measured ?? result.removedBytes)
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
+    }
+
+    /// Erases the unified log through the helper, with Apple's own `log erase` (`UnifiedLogCleaner`). Never part of Clean or automatic
+    /// cleaning: the history macOS keeps for troubleshooting goes for good.
+    static func eraseUnifiedLog(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed(loc("Install the helper in Settings")) }
+        let before = DataVolume.freeBytes()
+        let result: UnifiedLogResult
+        do { result = try await channel.perform(UnifiedLogResult.self, operation: SystemDataPrivilegedOperations.eraseUnifiedLog) }
+        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
+        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
+        let measured = measuredFreed(before, DataVolume.settledFreeBytes())
+        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
+        var details = ["log erase --all\(result.prunedFormatStrings ? " and --uuidtext" : ""): the log went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
+        if let error = result.error { details.append(error) }
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? stored), details: details,
+                            freedBytes: measured)
+    }
+
+    /// Empties the symbols cache coresymbolicationd keeps, through the helper (`SymbolicationCacheCleaner`), which stops the daemon
+    /// so its mapped archive is let go; macOS rebuilds the cache. Never part of Clean or automatic cleaning: only the helper can do it.
+    static func deleteSymbolicationCache(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+        guard let channel else { return .failed(loc("Install the helper in Settings")) }
+        let before = DataVolume.freeBytes()
+        let result: SymbolicationCacheResult
+        do { result = try await channel.perform(SymbolicationCacheResult.self, operation: SystemDataPrivilegedOperations.deleteSymbolicationCache) }
+        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
+        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
+        let measured = measuredFreed(before, DataVolume.settledFreeBytes())
+        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
+        var details = ["Removed \(result.removedEntries) item(s); the cache went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
+        if result.daemonStopped { details.append("coresymbolicationd was stopped; macOS starts it again when it is needed.") }
+        if let error = result.error { details.append(error) }
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? stored), details: details,
+                            freedBytes: measured)
+    }
+
+    /// Empties the Trash of the home folder, as the Finder's Empty Trash does: every item in it is deleted for good. Reading the Trash
+    /// needs Full Disk Access, without which the page shows no Trash row. An item the Finder locked, or one another account owns,
+    /// stays, and the result says how many.
+    static func emptyTrash(trash: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"),
+                           fileManager: FileManager = .default) -> ActionResult {
+        guard let names = try? fileManager.contentsOfDirectory(atPath: trash.path) else {
+            return .failed(loc("Couldn't free it"), details: ["The Trash could not be read."])
+        }
+        guard !names.isEmpty else { return .failed(loc("Already gone")) }
+        let before = DataVolume.freeBytes()
+        var removed = 0
+        var kept: [String] = []
+        for name in names {
+            do { try fileManager.removeItem(at: trash.appendingPathComponent(name)); removed += 1 }
+            catch { kept.append("\(name): \((error as NSError).localizedDescription)") }
+        }
+        let freed = measuredFreed(before, removed > 0 ? DataVolume.settledFreeBytes() : DataVolume.freeBytes())
+        var details = ["Deleted \(removed) item(s) from the Trash."]
+        if !kept.isEmpty { details.append("Kept \(kept.count) item(s) that could not be deleted (locked, or another account's): " + kept.joined(separator: "; ")) }
+        guard removed > 0 else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
+        return ActionResult(outcome: kept.isEmpty ? .succeeded : .needsAttention, message: freedMessage(freed), details: details, freedBytes: freed)
     }
 
     /// macOS is asked again right before; if it keeps them, again in the background, and the page reads the Mac again once it lets

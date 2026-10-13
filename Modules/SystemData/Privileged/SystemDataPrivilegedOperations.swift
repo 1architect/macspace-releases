@@ -51,14 +51,22 @@ public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
     public static let deleteVersions = "systemdata.versions.delete"
     public static let deleteStagedUpdate = "systemdata.staged-update.delete"
     public static let deleteWallpaperDownloads = "systemdata.wallpaper-downloads.delete"
+    public static let eraseUnifiedLog = "systemdata.unified-log.erase"
+    public static let deleteSymbolicationCache = "systemdata.symbolication-cache.delete"
 
     public init() {}
 
-    public var operations: Set<String> { [Self.measure, Self.deleteVersions, Self.deleteStagedUpdate, Self.deleteWallpaperDownloads] }
+    public var operations: Set<String> {
+        [Self.measure, Self.deleteVersions, Self.deleteStagedUpdate, Self.deleteWallpaperDownloads, Self.eraseUnifiedLog, Self.deleteSymbolicationCache]
+    }
     public var readOnlyOperations: Set<String> { [Self.measure] }
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
         if operation == Self.deleteStagedUpdate { return try JSONEncoder().encode(StagedUpdateCleaner().execute()) }
+        // Takes no arguments: only Apple's own `log erase` runs.
+        if operation == Self.eraseUnifiedLog { return try JSONEncoder().encode(UnifiedLogCleaner().execute()) }
+        // Takes no arguments: the cleaner knows its one folder.
+        if operation == Self.deleteSymbolicationCache { return try JSONEncoder().encode(SymbolicationCacheCleaner().execute()) }
         // Takes no arguments: the cleaner finds the folders itself.
         if operation == Self.deleteWallpaperDownloads { return try JSONEncoder().encode(WallpaperDownloadCleaner().execute()) }
         if operation == Self.deleteVersions { return try JSONEncoder().encode(VersionStoreCleaner().execute()) }

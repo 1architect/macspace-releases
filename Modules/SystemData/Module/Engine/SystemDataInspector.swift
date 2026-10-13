@@ -380,12 +380,13 @@ public struct SystemDataInspector {
         }
         // Listed once, and only if an item that is deleted while its owner is closed is found; the cleaner checks again before deleting.
         var processes: [RunningProcess]?
-        func isRunning(_ owners: [String], cleanup: SystemDataCleanup.Kind) -> Bool {
+        func isRunning(_ owners: [String], cleanup: SystemDataCleanup.Kind, paths: [String] = []) -> Bool {
             guard cleanup == .deleteWhenNotRunning else {
                 return ProcessCheck.runningOwner(owners, apps: running, processes: [], appPath: { _ in nil }) != nil
             }
             if processes == nil { processes = processCheck.processes() ?? [] }
             return ProcessCheck.runningOwner(owners, apps: running, processes: processes ?? [], appPath: processCheck.appPath) != nil
+                || ProcessCheck.runningFromInside(paths, processes: processes ?? []) != nil
         }
         // Entries are registered first and measured together afterwards, in parallel: sizing is disk-bound and independent per path.
         struct Pending {
@@ -449,7 +450,7 @@ public struct SystemDataInspector {
                     continue
                 }
                 var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
-                                          readable: readable, owners: entry.owners, inUse: isRunning(entry.owners, cleanup: entry.cleanup.kind), cleanup: entry.cleanup, notes: entry.notes)
+                                          readable: readable, owners: entry.owners, inUse: isRunning(entry.owners, cleanup: entry.cleanup.kind, paths: entry.paths), cleanup: entry.cleanup, notes: entry.notes)
                 item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
                 item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
@@ -468,12 +469,20 @@ public struct SystemDataInspector {
 
         // Code-signing clones and the per-user system cache.
         if let userDir = locations.userSystemDirectory?.path {
+            // A copy shares its blocks with the app until the app is updated; then the copy of the older version holds blocks of its
+            // own, which deleting it frees (Mole deletes Chrome's for the same reason). What it frees is what it does not share, so
+            // a copy of an app that was not updated frees almost nothing and is not offered (`CachesPage`). macOS makes a new one the
+            // next time it checks the app.
             for path in children((userDir as NSString).appendingPathComponent("X")) where path.hasSuffix(".code_sign_clone") {
                 let bundleID = String((path as NSString).lastPathComponent.dropLast(".code_sign_clone".count))
-                add("clone:\(bundleID)", loc("Code-signing copy of \(bundleID)"), .codeSignClone, paths: [path], owners: [bundleID],
-                    cleanup: SystemDataCleanup(kind: .managedByMacOS, description: loc("An APFS clone of the app that macOS keeps after validating it. It shares storage with the app, so deleting it frees almost nothing; it only lowers the System Data figure in System Settings."), command: nil),
+                // Named after the app inside (`code_sign_clone.<random>/SketchUp.app.bundle`), as the caches page lists it.
+                let app = children(path).lazy.flatMap(children).map { ($0 as NSString).lastPathComponent }
+                    .first { $0.hasSuffix(".app.bundle") || $0.hasSuffix(".app") }
+                let title = app.map { $0.replacingOccurrences(of: ".app.bundle", with: "").replacingOccurrences(of: ".app", with: "") } ?? bundleID
+                add("clone:\(bundleID)", title, .codeSignClone, paths: [path], owners: [bundleID],
+                    cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: loc("A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed."), command: nil),
                     notes: ["Measured on 26B5091g: deleting a 6.12 GB SketchUp clone freed no measurable space."],
-                    expectedReclaim: 0)
+                    expectedReclaim: FileTreeSizer.unsharedBytes(at: path) ?? 0)
             }
             for path in children((userDir as NSString).appendingPathComponent("C")) {
                 let name = (path as NSString).lastPathComponent
@@ -561,7 +570,7 @@ public struct SystemDataInspector {
             }
         }
         if let path = system["symbolCache"] {
-            add("cache:symbolication", loc("Symbolication cache"), .symbolCache, paths: [path],
+            add("cache:symbolication", loc("Symbols for crash reports"), .symbolCache, paths: [path],
                 cleanup: managed(loc("Symbols for crash reports and debugging; rebuilt on demand. Root-owned.")))
         }
         add("system:swap", loc("Swap and sleep files"), .virtualMemory, paths: [system["swap"]].compactMap { $0 },
@@ -667,7 +676,7 @@ public struct SystemDataInspector {
             add("system:databases", loc("System databases"), .systemLibrary, paths: databases, cleanup: systemOwned, minimum: Self.minimumItemBytes)
         }
         if let path = system["systemLogs"] {
-            add("logs:system", loc("System logs"), .logs, paths: [path], cleanup: systemOwned, minimum: Self.minimumItemBytes)
+            add("logs:system", loc("Log files"), .logs, paths: [path], cleanup: systemOwned, minimum: Self.minimumItemBytes)
         }
         if let userDir = locations.userSystemDirectory?.path {
             add("temporary:user", loc("Temporary files"), .systemLibrary, paths: [(userDir as NSString).appendingPathComponent("T")],
@@ -952,6 +961,11 @@ public struct SystemDataCleaner {
             }
             if let owner = ProcessCheck.runningOwner(item.owners, apps: runningApps(), processes: processes, appPath: processCheck.appPath) {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(owner) is running; quit it first."))
+            }
+            // A program started from inside the folder (an app run from its code-signing copy) has its code mapped from there, which
+            // the open-files check does not see.
+            if let running = ProcessCheck.runningFromInside(paths, processes: processes) {
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(running) is running; quit it first."))
             }
             switch processCheck.holdsOpen(paths) {
             case false?: break

@@ -56,10 +56,16 @@ and, for what the helper writes, `/Library/Application Support/MacSpace/`. The
 | Document version history | `/System/Volumes/Data/.DocumentRevisions-V100` | The helper |
 | Leftover macOS update files | `/System/Volumes/Data/macOS Install Data`, only if older than the installed system. The `Locked Files` folder stays. | The helper |
 | Unfinished wallpaper and screen saver downloads | `CFNetworkDownload_*.tmp` files directly in `/private/var/folders/*/*/T/com.apple.idleassetsd`, not changed for 3 days. Regular files only: links and subfolders are refused. | The helper |
+| Copies macOS made of an app when it checked it | `/var/folders/…/X/<app>.code_sign_clone`, only when it holds space of its own (an older version's), while the app is closed and nothing runs from it. | The app, as you |
+| The system log | `/private/var/db/diagnostics` and `/private/var/db/uuidtext`, with Apple's own `log erase --all` and `log erase --uuidtext`. | The helper |
+| The symbols for crash reports | Everything in `/System/Library/Caches/com.apple.coresymbolicationd`, the folder stays; then `coresymbolicationd` is stopped so its space comes back. macOS rebuilds the cache. | The helper |
+| The Trash | Everything in `~/.Trash`. An item that is locked or another account's stays. | The app, as you |
+| Time Machine's local snapshots | `tmutil deletelocalsnapshots <date>`, one date at a time: all but the newest and the newest from a backup. Never while a backup runs. | The app, as you |
+| Backups on a Time Machine backup disk | `tmutil delete`, the ones you choose, never the latest, on a connected disk Time Machine uses. Never while a backup runs. | The helper |
 
 Nothing goes to the Trash. Caches, system assets and purgeable files are rebuilt or downloaded
-again when needed, and cloud copies download again when you open the file. Reports, version history
-and update leftovers do not come back. Every one of these asks for confirmation first, except the
+again when needed, and cloud copies download again when you open the file. Reports, version history,
+update leftovers, the system log, items in the Trash, snapshots and backups do not come back. Every one of these asks for confirmation first, except the
 **Free** button of a single app's caches.
 
 ### What MacSpace changes (Debloat)
@@ -123,6 +129,9 @@ steps down so that the new one starts.
 | `systemdata.versions.delete` | Deletes the document version history | Stops `revisiond` first, or pauses it if macOS refuses. Deletes the contents of the store, not the folder, then starts `revisiond` again. If it cannot stop it, it deletes nothing. |
 | `systemdata.staged-update.delete` | Deletes leftover update files | Only if the folder is older than the installed system. Keeps `Locked Files`. |
 | `systemdata.wallpaper-downloads.delete` | Deletes unfinished wallpaper and screen saver downloads | Takes no path: finds `/private/var/folders/*/*/T/com.apple.idleassetsd` itself, without following links. Deletes only regular files named `CFNetworkDownload_*.tmp` directly in it, not changed for 3 days. |
+| `systemdata.unified-log.erase` | Erases the system log | Takes no argument. Runs only Apple's `/usr/bin/log erase --all`, then `log erase --uuidtext`. |
+| `systemdata.symbolication-cache.delete` | Deletes the symbols for crash reports | Takes no argument. Only `/System/Library/Caches/com.apple.coresymbolicationd`, opened without following links; deletes what is in it, never the folder, then stops `coresymbolicationd` (`kill -TERM`, `-KILL` after 5 seconds). |
+| `timemachine.backups.delete` | Deletes backups from a Time Machine backup disk | Only on a disk Time Machine lists as connected, only dates it finds there itself, never the latest backup, never while a backup runs or while that is unknown. Runs `/usr/bin/tmutil delete`. |
 | `debloat.status`, `.apply`, `.revert` | Reads, switches off and switches on Debloat items | Control identifiers only, from the built-in catalog. Nothing else. |
 | `debloat.removeProfile` | Removes a MacSpace profile | Only identifiers `com.macspace.policies` and `com.macspace.policies.…`. Any other profile is refused. |
 | `siri.orphan-subscriptions.plan`, `.execute` | Finds and removes the Apple Intelligence subscriptions of accounts that no longer exist | Backs up the database to `/Library/Application Support/MacSpace/backups/` first, changes it in one transaction, touches only rows that match no local account, and refuses if the account list looks wrong. The app has no button for it yet. |

@@ -26,6 +26,10 @@ public enum CacheDeleteService {
     public static let spotlightIndex = "com.apple.metadata.mds.cachedelete"
     /// Quick Look thumbnails; 330 MB at urgency 3 on the development Mac.
     public static let quickLookThumbnails = "com.apple.quicklook.ThumbnailsAgent.CacheDelete"
+    /// Time Machine's local snapshots (backupd-helper): what they hold together, at urgency 3 and 4 only (1.69 GB for two snapshots that
+    /// held 1.72 GB, 26B5101f, 2026-10-13). It is reported a minute or so after a snapshot is made, and is not lowered right after
+    /// snapshots are deleted. Never purged through CacheDelete: Other System Files deletes them one by one (`TimeMachine`).
+    public static let timeMachineSnapshots = "com.apple.TMCacheDelete"
     /// Services under measurement: purged only from the CLI with `--experiment`, never from the app, until a measured purge shows
     /// what they free and what they take away.
     public static let experimental: Set<String> = [fsPurgeableDocument, quickLookThumbnails]

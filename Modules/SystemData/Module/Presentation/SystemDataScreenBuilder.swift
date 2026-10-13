@@ -194,10 +194,19 @@ enum SystemDataScreenBuilder {
         return snapshot.report.items.first { $0.id == "versions:documents" }?.bytes ?? 0
     }
 
-    /// Bytes MacSpace can free right now without the user doing anything in another app: what Clean frees and the version history.
-    /// This is the tile's figure and its "can be freed" block.
+    /// The system log when it is offered under Free now (its own button, not Clean).
+    static func unifiedLogBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
+        guard unifiedLogRow(snapshot) != nil else { return 0 }
+        return snapshot.report.items.first { $0.id == unifiedLogID }?.bytes ?? 0
+    }
+
+    /// The symbols for crash reports when they are offered under Free now (their own button, not Clean).
+    static func symbolsBytes(_ snapshot: SystemDataSnapshot) -> UInt64 { symbolsRow(snapshot)?.bytes ?? 0 }
+
+    /// Bytes MacSpace can free right now without the user doing anything in another app: what Clean frees, the version history, the
+    /// system log and the symbols for crash reports. This is the tile's figure and its "can be freed" block.
     static func freeableBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        cleanBytes(snapshot) + versionHistoryBytes(snapshot)
+        cleanBytes(snapshot) + versionHistoryBytes(snapshot) + unifiedLogBytes(snapshot) + symbolsBytes(snapshot)
     }
 
     /// What a cleanup must reach to be worth a row: smaller amounts are noise.
@@ -233,6 +242,8 @@ enum SystemDataScreenBuilder {
         }
         take(snapshot.reports.totalBytes, from: "macos")
         take(versionHistoryBytes(snapshot), from: "versions")
+        take(unifiedLogBytes(snapshot), from: "macos")
+        take(symbolsBytes(snapshot), from: "macos")
         if freeable >= worthARow { segments.append(UsageSegment(id: "freeable", label: loc("Can be freed"), bytes: freeable, tone: .caution)) }
         // The blocks add up to System Settings' figure: what no listed folder accounts for is a block of its own.
         let unknown = notIdentified(snapshot)
@@ -295,6 +306,8 @@ enum SystemDataScreenBuilder {
         let bytes = counted(item, snapshot)
         var freed = (claimed ?? CachesPage.claimed(snapshot))[item.id] ?? 0
         if item.id == "versions:documents" && versionsRow(snapshot) != nil { freed = bytes }
+        if item.id == unifiedLogID && unifiedLogRow(snapshot) != nil { freed = bytes }
+        if item.id == symbolsID && symbolsRow(snapshot) != nil { freed = bytes }
         if item.id == "reports:diagnostic" { freed = snapshot.reports.totalBytes }
         return bytes > freed ? bytes - freed : 0
     }
@@ -345,6 +358,7 @@ enum SystemDataScreenBuilder {
         guard total >= worthARow else { return nil }
         var message = loc("Frees the chosen caches, old reports and unused system assets.")
         if versionsRow(snapshot) != nil { message += " " + loc("Version history stays.") }
+        if unifiedLogRow(snapshot) != nil { message += " " + loc("The system log stays.") }
         return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,
                       confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")))
     }
@@ -352,7 +366,8 @@ enum SystemDataScreenBuilder {
     // MARK: Sections
 
     /// Everything that can be freed, largest first: the caches page (`CachesPage`), old reports, unused system assets, stalled
-    /// wallpaper downloads, document version history and the Trash. nil when there is nothing worth a row.
+    /// wallpaper downloads, document version history, the system log, the symbols for crash reports and the Trash. nil when there is
+    /// nothing worth a row.
     static func freeNow(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
         var rows: [(row: Row, bytes: UInt64)] = []
         if let caches = CachesPage.row(snapshot) {
@@ -379,6 +394,8 @@ enum SystemDataScreenBuilder {
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
+        if let log = unifiedLogRow(snapshot) { rows.append(log) }
+        if let symbols = symbolsRow(snapshot) { rows.append(symbols) }
         if let trash = trashRow(snapshot) { rows.append(trash) }
         guard !rows.isEmpty else { return nil }
         let sorted = rows.sorted { $0.bytes > $1.bytes }.map(\.row)
@@ -387,14 +404,59 @@ enum SystemDataScreenBuilder {
 
     static let manualThreshold: UInt64 = 50_000_000
 
-    /// The Trash, which the Finder empties: a button that opens it there, and whether the Finder empties old items by itself. The Trash
-    /// is a category of its own in System Settings, not System Data, so it is not in the page's figures.
+    /// The Trash: Free empties it, as the Finder's Empty Trash does; Open shows it in the Finder; and whether the Finder empties old
+    /// items by itself. The Trash is a category of its own in System Settings, not System Data, so it is not in the page's figures, and
+    /// never part of Clean or automatic cleaning: what is in it is the user's.
     static func trashRow(_ snapshot: SystemDataSnapshot) -> (row: Row, bytes: UInt64)? {
         guard let bytes = snapshot.report.items.first(where: { $0.id == "trash:user" })?.bytes, bytes >= worthARow else { return nil }
         let empties = snapshot.trashEmptiesItself == true
-        return (Row(id: "trash", title: loc("Trash"), trailing: ByteFormat.string(bytes), badge: empties ? Badge(loc("Empties after 30 days")) : nil,
+        let size = ByteFormat.string(bytes)
+        return (Row(id: "trash", title: loc("Trash"), trailing: size,
+                    badges: [Badge(loc("Cannot be undone"), tone: .critical)] + (empties ? [Badge(loc("Empties after 30 days"))] : []),
                     detail: empties ? nil : loc("The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced."),
-                    actions: [Action(id: "openTrash", title: loc("Open"))]), bytes)
+                    actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
+                                     confirmation: Confirmation(title: loc("Free \(size) in the Trash?"),
+                                                                message: loc("Everything in the Trash is deleted for good."),
+                                                                confirmTitle: loc("Free"))),
+                              Action(id: "openTrash", title: loc("Open"))]), bytes)
+    }
+
+    /// The unified log's item: what Console shows, and the format strings it is read with.
+    static let unifiedLogID = "logs:unified"
+
+    /// The system log, as a row of Free now with a button of its own: only the helper can erase it, with Apple's `log erase`, and the
+    /// history macOS keeps for troubleshooting goes for good, so it keeps its pill and Clean leaves it out. Mole deletes its older
+    /// files; macOS itself never frees it (logd tells its purge service there is nothing to free, at every urgency).
+    static func unifiedLogRow(_ snapshot: SystemDataSnapshot) -> (row: Row, bytes: UInt64)? {
+        guard let item = snapshot.report.items.first(where: { $0.id == unifiedLogID }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
+        let size = ByteFormat.string(bytes)
+        return (Row(id: "system-log", title: loc("System log"), trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "list.bullet.rectangle",
+                    detail: loc("What macOS records for troubleshooting, shown in Console. It starts again from empty."),
+                    actions: [Action(id: "eraseUnifiedLog", title: loc("Free"), role: .destructive,
+                                     confirmation: Confirmation(title: loc("Free the system log?"),
+                                                                message: loc("The history in Console is deleted. New entries are recorded as usual."),
+                                                                confirmTitle: loc("Free")),
+                                     requires: [.privilegedHelper])],
+                    paths: item.paths), bytes)
+    }
+
+    /// The symbols cache's item (`/System/Library/Caches/com.apple.coresymbolicationd`).
+    static let symbolsID = "cache:symbolication"
+
+    /// The symbols coresymbolicationd keeps for crash reports and debugging, as a row of Free now with a button of its own: only the
+    /// helper can delete them, so Clean leaves them out. Sized by what they add to System Data: a part macOS marked purgeable is free
+    /// space already. A cache macOS rebuilds, so no pill. No folder button: the folder is root's, and the Finder cannot open it.
+    static func symbolsRow(_ snapshot: SystemDataSnapshot) -> (row: Row, bytes: UInt64)? {
+        guard let item = snapshot.report.items.first(where: { $0.id == symbolsID }) else { return nil }
+        let bytes = counted(item, snapshot)
+        guard bytes >= manualThreshold else { return nil }
+        return (Row(id: "symbols", title: loc("Symbols for crash reports"), trailing: ByteFormat.string(bytes), symbol: "ladybug",
+                    detail: loc("What macOS keeps to read crash reports. It's rebuilt when needed."),
+                    actions: [Action(id: "deleteSymbolicationCache", title: loc("Free"),
+                                     confirmation: Confirmation(title: loc("Free the symbols for crash reports?"),
+                                                                message: loc("macOS builds them again the next time it reads a crash report."),
+                                                                confirmTitle: loc("Free")),
+                                     requires: [.privilegedHelper])]), bytes)
     }
 
     /// Where the scan found the item with this id, for the row's Show in Finder.
@@ -410,7 +472,9 @@ enum SystemDataScreenBuilder {
     static func leftAlone(_ snapshot: SystemDataSnapshot) -> [SystemDataItem] {
         let report = snapshot.report
         let claimed = CachesPage.claimed(snapshot)
-        let handled: Set<String> = ["reports:diagnostic", "versions:documents", "update:staged", "assets:system"]
+        var handled: Set<String> = ["reports:diagnostic", "versions:documents", "update:staged", "assets:system", unifiedLogID]
+        // Listed under Free now while it is worth a row; until then, with the rest macOS manages.
+        if symbolsRow(snapshot) != nil { handled.insert(symbolsID) }
         return report.items.filter { item in
             guard item.kind != .pendingUpdate, listed(item, snapshot, claimed: claimed) >= manualThreshold, !handled.contains(item.id), !item.id.hasPrefix("small:"),
                   !item.id.hasPrefix(wallpaperDownloadsPrefix) else { return false }

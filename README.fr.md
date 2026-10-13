@@ -46,9 +46,10 @@ caches des apps fermées, les rapports de diagnostic et de plantage de plus de 7
 ressources système inutilisées. Sous **À libérer**, chaque élément a son propre bouton. Deux
 éléments sont mis à part, car ils demandent plus de précautions : **Historique des versions des
 documents** (versions précédentes de vos documents ; les documents restent) et **Fichiers
-restants de mise à jour de macOS** (fichiers d’une mise à jour déjà installée). Pour tout ce qui
-appartient à macOS ou à d’autres apps, MacSpace explique de quoi il s’agit et ce qu’il faut faire
-à la main.
+restants de mise à jour de macOS** (fichiers d’une mise à jour déjà installée). Le **Journal
+système** (ce que macOS enregistre pour le dépannage) et la **Corbeille** ont aussi leur propre
+bouton, jamais le bouton principal. Pour tout ce qui appartient à macOS ou à d’autres apps, MacSpace
+explique de quoi il s’agit et ce qu’il faut faire à la main.
 
 <p align="center">
   <img src="Docs/Screenshots/fr/SystemData.png" alt="La page Données système : un graphique de ce qui remplit Données système, la liste À libérer et le bouton Libérer avec sa taille" width="720">
@@ -76,7 +77,11 @@ faire tout de suite. La taille est une estimation de macOS, d’où « jusqu’�
 fichiers du cloud conservées sur ce Mac (OneDrive, iCloud Drive et autres dossiers cloud) ont une
 ligne et un bouton à part, **Supprimer les téléchargements**. Les fichiers restent dans le cloud
 et sont retéléchargés à leur ouverture. Une mise à jour de macOS prête à être installée figure
-sous **En attente d’installation**. MacSpace ne la supprime pas.
+sous **En attente d’installation**. MacSpace ne la supprime pas. Les instantanés locaux de Time
+Machine (des copies de votre Mac qu’il garde un jour) ont leur propre ligne : **Libérer** les
+supprime tous, sauf le plus récent et celui dont part la prochaine sauvegarde. Un disque de
+sauvegarde connecté liste ses sauvegardes, et vous pouvez choisir les anciennes à libérer. La
+sauvegarde la plus récente reste toujours.
 
 <p align="center">
   <img src="Docs/Screenshots/fr/OtherSystemFiles.png" alt="La page Autres fichiers système : un graphique de ce que macOS compte comme purgeable, la liste À libérer et le bouton Libérer jusqu’à" width="720">
@@ -200,10 +205,11 @@ dit ce qui manque.
 L’assistant est un démon de lancement, `com.macspace.helper`. Il n’exécute que des opérations
 nommées, intégrées à son code ; un appelant ne peut pas lui envoyer de commandes, et il n’accepte
 que les clients signés par la même équipe de développement que MacSpace. Entre autres, il peut
-mesurer la taille des dossiers système (jamais celle d’un dossier de départ), supprimer
-l’historique des versions des documents et les fichiers restants d’une mise à jour de macOS
-installée, modifier les interrupteurs Debloat qui demandent un administrateur, et supprimer le
-profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
+mesurer la taille des dossiers système (jamais celle d’un dossier de départ), supprimer l’historique
+des versions des documents et les fichiers restants d’une mise à jour de macOS installée, effacer le
+journal système, supprimer les symboles des rapports de plantage, supprimer les anciennes
+sauvegardes Time Machine que vous choisissez, modifier les interrupteurs Debloat qui demandent un
+administrateur, et supprimer le profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
 
 ---
 
@@ -215,6 +221,8 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
   (`/var/folders/…/C`) et les caches web (`Cache`, `Code Cache`, `GPUCache`) que les apps Chromium
   et Electron gardent dans `~/Library/Application Support`. Seulement quand l’app ou l’outil qui les
   possède est fermé, avec ses processus auxiliaires, et qu’aucun programme n’y a de fichier ouvert.
+- Les copies que macOS fait d’une app quand il la vérifie (`/var/folders/…/X`), pour l’espace
+  qu’elles occupent seules une fois l’app mise à jour, et seulement quand l’app est fermée.
 - Les rapports de diagnostic et de plantage de plus de 7 jours, dans
   `/Library/Logs/DiagnosticReports` et `~/Library/Logs/DiagnosticReports`.
 - Les ressources système inutilisées, les modèles Apple Intelligence que macOS a libérés, et les
@@ -226,14 +234,19 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
   cloud. Pour ces téléchargements, l’assistant ne supprime que les fichiers `CFNetworkDownload_*.tmp`
   de `/var/folders/…/T/com.apple.idleassetsd` inchangés depuis 3 jours : un téléchargement en cours
   reste.
+- Seulement quand vous appuyez sur leur propre bouton : le journal système, avec le `log erase`
+  d’Apple ; les symboles que macOS garde pour lire les rapports de plantage, qu’il reconstruit ;
+  tout ce qui est dans la Corbeille ; les instantanés locaux de Time Machine, sauf le plus récent et
+  celui dont part la prochaine sauvegarde ; et les sauvegardes que vous choisissez sur un disque de
+  sauvegarde connecté, jamais la plus récente. Instantanés et sauvegardes ne sont jamais supprimés
+  pendant une sauvegarde.
 - Seulement les caches que vous choisissez dans **Caches d’apps** : des dossiers de
   `~/Library/Caches`. Ceux cochés pour vous sont inchangés depuis un mois, et leur app n’a pas été
   ouverte depuis aussi longtemps ou n’est pas installée. Les caches utilisés sont listés non cochés
   et disent qu’ils reviennent. Les caches des apps ouvertes, et les dossiers qui contiennent des
   médias ou des documents nommés par des personnes, ne sont pas proposés.
 - Seulement depuis la ligne **Homebrew** : le `brew cleanup` de Homebrew, lancé en votre nom, sans
-  désinstaller de formules, mettre à jour ni envoyer les statistiques de Homebrew. MacSpace ne vide
-  jamais la corbeille : sa ligne l’ouvre dans le Finder.
+  désinstaller de formules, mettre à jour ni envoyer les statistiques de Homebrew.
 
 **Ce qu’il ne touche jamais.** MacSpace mesure l’espace que prennent vos documents, Photos, Mail et
 Messages. Il ne lit pas leur contenu et ne les supprime jamais. Il liste les gros éléments, comme
@@ -243,15 +256,16 @@ nettoyer depuis l’app elle-même. Il ne désactive pas la protection de l’in
 modifie pas le volume système scellé.
 
 **Ce qui demande avant d’agir.** Chaque bouton qui supprime les caches de plus d’une app demande
-une confirmation. **Supprimer…** sur **Historique des versions des documents** porte un badge
-**Irréversible**. L’interrupteur **Apple Intelligence** et les interrupteurs Debloat pris un à un
+une confirmation. **Libérer** sur l’historique des versions des documents, le journal système, la
+Corbeille et les instantanés et sauvegardes Time Machine porte un badge **Irréversible**. L’interrupteur **Apple Intelligence** et les interrupteurs Debloat pris un à un
 agissent tout de suite, et reviennent en arrière d’eux-mêmes si la modification échoue.
 
 **Ce que vous pouvez annuler.** Debloat : réactivez une fonction, ou appuyez sur **Tout activer**.
 MacSpace rétablit les réglages qu’il avait enregistrés avant de les modifier. Apple Intelligence :
 réactivez-le. MacSpace rétablit la langue et la voix de Siri, et macOS peut retélécharger les
-modèles. Les caches supprimés se reconstruisent. Les rapports et l’historique des versions
-supprimés ne reviennent pas.
+modèles. Les caches supprimés se reconstruisent. Les rapports, l’historique des versions, les
+journaux, les éléments de la Corbeille, les instantanés et les sauvegardes supprimés ne reviennent
+pas.
 
 **Machines virtuelles.** Dans une machine virtuelle, **Siri et Apple Intelligence** ne fait rien et
 dit pourquoi. Debloat y liste quand même des interrupteurs qui ne peuvent pas prendre effet dans

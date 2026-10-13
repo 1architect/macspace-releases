@@ -280,5 +280,161 @@
   "S’installe au prochain redémarrage",
   "Se instala al reiniciar",
   "Wird beim nächsten Neustart installiert"
+ ],
+ "%@ free": [
+  "%@ livres",
+  "%@ libres",
+  "%@ libres",
+  "%@ frei"
+ ],
+ "%lld backups": [
+  "%lld backups",
+  "%lld sauvegardes",
+  "%lld copias",
+  "%lld Backups"
+ ],
+ "%lld snapshots": [
+  "%lld instantâneos",
+  "%lld instantanés",
+  "%lld instantáneas",
+  "%lld Schnappschüsse"
+ ],
+ "1 backup": [
+  "1 backup",
+  "1 sauvegarde",
+  "1 copia",
+  "1 Backup"
+ ],
+ "1 snapshot": [
+  "1 instantâneo",
+  "1 instantané",
+  "1 instantánea",
+  "1 Schnappschuss"
+ ],
+ "Already gone": [
+  "Já não existe",
+  "Déjà disparu",
+  "Ya no está",
+  "Bereits weg"
+ ],
+ "Backing up now": [
+  "Fazendo backup agora",
+  "Sauvegarde en cours",
+  "Haciendo copia ahora",
+  "Backup läuft"
+ ],
+ "Backups not readable": [
+  "Backups ilegíveis",
+  "Sauvegardes illisibles",
+  "Copias ilegibles",
+  "Backups nicht lesbar"
+ ],
+ "Cannot be undone": [
+  "Não pode ser desfeito",
+  "Irréversible",
+  "No se puede deshacer",
+  "Nicht widerrufbar"
+ ],
+ "Connect it to see its backups and free old ones.": [
+  "Conecte-o para ver os backups e liberar os antigos.",
+  "Connectez-le pour voir ses sauvegardes et libérer les anciennes.",
+  "Conéctalo para ver sus copias y liberar las antiguas.",
+  "Schließe es an, um seine Backups zu sehen und alte freizugeben."
+ ],
+ "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.": [
+  "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar deixa o mais recente e o que o próximo backup usa como ponto de partida.",
+  "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont part la prochaine sauvegarde.",
+  "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar deja la más reciente y la que usa como punto de partida la próxima copia.",
+  "Kopien dieses Mac, die Time Machine einen Tag lang behält, damit Dateien ohne Backup-Volume wiederhergestellt werden können. Freigeben lässt die neueste und die, von der das nächste Backup ausgeht."
+ ],
+ "Couldn't free it": [
+  "Não foi possível liberar",
+  "Impossible de libérer",
+  "No se pudo liberar",
+  "Konnte nicht freigegeben werden"
+ ],
+ "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.": [
+  "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup ficam.",
+  "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.",
+  "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.",
+  "Dateien aus diesen Stunden lassen sich auf diesem Mac nicht mehr wiederherstellen. Die Backups auf dem Backup-Volume bleiben."
+ ],
+ "Free %lld Time Machine snapshots?": [
+  "Liberar %lld instantâneos do Time Machine?",
+  "Libérer %lld instantanés Time Machine ?",
+  "¿Liberar %lld instantáneas de Time Machine?",
+  "%lld Time Machine-Schnappschüsse freigeben?"
+ ],
+ "Free 1 Time Machine snapshot?": [
+  "Liberar 1 instantâneo do Time Machine?",
+  "Libérer 1 instantané Time Machine ?",
+  "¿Liberar 1 instantánea de Time Machine?",
+  "1 Time Machine-Schnappschuss freigeben?"
+ ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar selección",
+  "Auswahl freigeben"
+ ],
+ "Free the selected backups?": [
+  "Liberar os backups selecionados?",
+  "Libérer les sauvegardes sélectionnées ?",
+  "¿Liberar las copias seleccionadas?",
+  "Ausgewählte Backups freigeben?"
+ ],
+ "Freed %@ on %@": [
+  "%@ liberados em %@",
+  "%@ libérés sur %@",
+  "%@ liberados en %@",
+  "%@ auf %@ freigegeben"
+ ],
+ "Install the helper in Settings": [
+  "Instale o assistente nos Ajustes",
+  "Installez l’assistant dans les Réglages",
+  "Instala el asistente en Ajustes",
+  "Installiere den Helfer in den Einstellungen"
+ ],
+ "Latest": [
+  "Mais recente",
+  "La plus récente",
+  "La más reciente",
+  "Neuestes"
+ ],
+ "Not connected": [
+  "Não conectado",
+  "Non connecté",
+  "No conectado",
+  "Nicht verbunden"
+ ],
+ "They are deleted from %@ for good. Files that are only in them can't be restored.": [
+  "Eles são apagados de %@ de vez. Arquivos que só estão neles não poderão ser restaurados.",
+  "Elles sont supprimées définitivement de %@. Les fichiers qui ne sont que dans celles-ci ne pourront plus être restaurés.",
+  "Se borran de %@ para siempre. Los archivos que solo están en ellas no se podrán restaurar.",
+  "Sie werden endgültig von %@ gelöscht. Dateien, die nur darin sind, lassen sich nicht wiederherstellen."
+ ],
+ "Time Machine backup disks": [
+  "Discos de backup do Time Machine",
+  "Disques de sauvegarde Time Machine",
+  "Discos de copia de Time Machine",
+  "Time Machine-Backup-Volumes"
+ ],
+ "Time Machine is backing up. Try again when it's done.": [
+  "O Time Machine está fazendo backup. Tente de novo quando terminar.",
+  "Time Machine sauvegarde. Réessayez quand ce sera fini.",
+  "Time Machine está haciendo una copia. Inténtalo cuando termine.",
+  "Time Machine sichert gerade. Versuche es, wenn das Backup fertig ist."
+ ],
+ "Time Machine snapshots": [
+  "Instantâneos do Time Machine",
+  "Instantanés Time Machine",
+  "Instantáneas de Time Machine",
+  "Time Machine-Schnappschüsse"
+ ],
+ "kept": [
+  "mantido",
+  "conservé",
+  "se conserva",
+  "bleibt"
  ]
 }

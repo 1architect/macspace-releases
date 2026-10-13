@@ -322,7 +322,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 /// Without `save`, a choice is the user's until the group's page closes.
 public struct Selection: Codable, Equatable, Sendable {
     public var action: Action
-    /// The rows that can be chosen, by id, with the size each adds to the button's total.
+    /// The rows that can be chosen, by id, with the size each adds to the button's total. 0 is a row with no size of its own (a backup
+    /// on a backup disk, whose blocks other backups share): while no checked row has a size, the button carries its title alone.
     public var choices: [String: UInt64]
     /// The rows checked when the page opens: the saved choice, or what the module suggests.
     public var checked: [String]

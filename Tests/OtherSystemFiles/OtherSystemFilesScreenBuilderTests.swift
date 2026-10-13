@@ -61,6 +61,12 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(PurgeableStore.accounting(for: &removed, in: [service: 877_900_000])?[service], 77_900_000, "macOS still gives the old figure")
         XCTAssertNotNil(removed)
         XCTAssertEqual(PurgeableStore.accounting(for: &removed, in: [service: 60_000_000])?[service], 60_000_000, "macOS has measured again")
+        // Time Machine's snapshots, whose figure stayed put for minutes after 635 MB of them were deleted.
+        var snapshots: (estimate: UInt64, bytes: UInt64)? = (971_400_000, 635_400_000)
+        let figure = PurgeableStore.accounting(for: &snapshots, in: [CacheDeleteService.timeMachineSnapshots: 971_400_000, service: 5],
+                                               service: CacheDeleteService.timeMachineSnapshots)
+        XCTAssertEqual(figure?[CacheDeleteService.timeMachineSnapshots], 336_000_000)
+        XCTAssertEqual(figure?[service], 5, "only that service's figure changes")
         XCTAssertNil(removed, "and is believed from then on")
     }
 

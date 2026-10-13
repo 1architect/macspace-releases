@@ -46,8 +46,10 @@ cachés de apps que están cerradas, informes de diagnóstico y de fallos con m�
 recursos del sistema sin usar. En **Liberar ahora**, cada elemento tiene su propio botón. Dos
 elementos van aparte porque requieren más cuidado: **Historial de versiones de documentos**
 (versiones anteriores de tus documentos; los documentos se conservan) y **Archivos sobrantes de
-actualización de macOS** (archivos de una actualización que ya está instalada). Para todo lo que
-pertenece a macOS o a otras apps, MacSpace dice qué es y qué hacer a mano.
+actualización de macOS** (archivos de una actualización que ya está instalada). El **Registro del
+sistema** (lo que macOS registra para solucionar problemas) y la **Papelera** también tienen botón
+propio, nunca el principal. Para todo lo que pertenece a macOS o a otras apps, MacSpace dice qué es
+y qué hacer a mano.
 
 <p align="center">
   <img src="Docs/Screenshots/es/SystemData.png" alt="La página Datos del sistema: un gráfico de lo que ocupa Datos del sistema, la lista Liberar ahora y el botón Liberar con su tamaño" width="720">
@@ -75,7 +77,10 @@ ahora. La cifra es una estimación de macOS, por eso dice «hasta». Las copias 
 nube guardadas en este Mac (OneDrive, iCloud Drive y otras carpetas de la nube) tienen una fila
 y un botón propios, **Eliminar descargas**. Los archivos se quedan en la nube y se vuelven a
 descargar al abrirlos. Una actualización de macOS lista para instalar aparece en **Pendiente de
-instalar**. MacSpace no la elimina.
+instalar**. MacSpace no la elimina. Las instantáneas locales de Time Machine (copias de tu Mac que
+guarda un día) tienen una fila propia: **Liberar** las elimina todas menos la más reciente y la que
+usa como punto de partida la próxima copia. Un disco de copia conectado muestra sus copias, y puedes
+elegir las antiguas para liberarlas. La copia más reciente siempre se queda.
 
 <p align="center">
   <img src="Docs/Screenshots/es/OtherSystemFiles.png" alt="La página Otros archivos del sistema: un gráfico de lo que macOS cuenta como purgable, la lista Liberar ahora y el botón Liberar hasta" width="720">
@@ -193,12 +198,13 @@ Otros archivos del sistema no necesita ningún permiso propio. macOS gestiona ca
 así que MacSpace nunca ve tu contraseña. Sin un permiso, un módulo hace menos y dice qué falta.
 
 El asistente es un launch daemon, `com.macspace.helper`. Solo ejecuta operaciones con nombre que
-lleva integradas, quien lo llame no puede enviarle comandos, y solo acepta clientes firmados por
-el mismo equipo de desarrollo que MacSpace. Entre otras cosas, puede medir el tamaño de las
-carpetas del sistema (nunca de una carpeta de inicio), eliminar el historial de versiones de
-documentos y los archivos sobrantes de una actualización de macOS ya instalada, cambiar los
-interruptores de Debloat que requieren un administrador y eliminar el perfil de MacSpace.
-[Seguridad](SECURITY.es.md) tiene la lista completa.
+lleva integradas, quien lo llame no puede enviarle comandos, y solo acepta clientes firmados por el
+mismo equipo de desarrollo que MacSpace. Entre otras cosas, puede medir el tamaño de las carpetas
+del sistema (nunca de una carpeta de inicio), eliminar el historial de versiones de documentos y los
+archivos sobrantes de una actualización de macOS ya instalada, borrar el registro del sistema,
+eliminar los símbolos para informes de fallos, eliminar las copias antiguas de Time Machine que
+elijas, cambiar los interruptores de Debloat que requieren un administrador y eliminar el perfil de
+MacSpace. [Seguridad](SECURITY.es.md) tiene la lista completa.
 
 ---
 
@@ -210,6 +216,8 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
   usuario (`/var/folders/…/C`) y las cachés web (`Cache`, `Code Cache`, `GPUCache`) que las apps
   de Chromium y Electron guardan en `~/Library/Application Support`. Solo mientras la app o la herramienta a la
   que pertenecen está cerrada, con sus procesos auxiliares, y ningún programa tiene un archivo abierto en ellas.
+- Las copias que macOS hace de una app al comprobarla (`/var/folders/…/X`), por el espacio que
+  ocupan por sí solas cuando la app se actualizó, y solo mientras la app está cerrada.
 - Informes de diagnóstico y de fallos con más de 7 días, en `/Library/Logs/DiagnosticReports` y
   `~/Library/Logs/DiagnosticReports`.
 - Recursos del sistema sin usar, modelos de Apple Intelligence que macOS ha liberado y archivos
@@ -222,13 +230,17 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
   descargas, el asistente elimina solo los archivos `CFNetworkDownload_*.tmp` de
   `/var/folders/…/T/com.apple.idleassetsd` que no han cambiado en 3 días, así que una descarga en
   curso se queda.
+- Solo cuando pulsas su propio botón: el registro del sistema, con el `log erase` de Apple; los
+  símbolos que macOS guarda para leer informes de fallos, que vuelve a crear; todo lo que hay en la
+  Papelera; las instantáneas locales de Time Machine, menos la más reciente y la que usa como punto
+  de partida la próxima copia; y las copias que elijas en un disco de copia conectado, nunca la más
+  reciente. Instantáneas y copias nunca se eliminan durante una copia.
 - Solo las cachés que eliges en **Cachés de apps**: carpetas de `~/Library/Caches`. Las que vienen
   marcadas no cambian desde hace un mes, y su app no se abre desde hace tanto o no está instalada.
   Las cachés en uso aparecen sin marcar y avisan de que vuelven. No se ofrecen las cachés de apps
   abiertas ni las carpetas con archivos multimedia o documentos con nombres que les dan las personas.
 - Solo desde la fila **Homebrew**: el `brew cleanup` del propio Homebrew, ejecutado como tú, sin
-  desinstalar fórmulas, actualizar ni enviar las estadísticas de Homebrew. MacSpace nunca vacía la
-  Papelera: su fila la abre en el Finder.
+  desinstalar fórmulas, actualizar ni enviar las estadísticas de Homebrew.
 
 **Qué no toca nunca.** MacSpace mide cuánto espacio ocupan tus documentos, Fotos, Mail y
 Mensajes. No lee lo que contienen y nunca los elimina. Muestra elementos grandes, como descargas
@@ -237,15 +249,15 @@ los datos de otras apps y dice cómo limpiarlos desde la propia app. No desactiv
 integridad del sistema ni modifica el volumen del sistema sellado.
 
 **Qué pide confirmación antes.** Todo botón que elimina las cachés de más de una app pide
-confirmación. **Eliminar…** en **Historial de versiones de documentos** lleva una etiqueta **No
-se puede deshacer**. El interruptor **Apple Intelligence** y los interruptores sueltos de Debloat
+confirmación. **Liberar** en el historial de versiones de documentos, el registro del sistema, la
+Papelera y las instantáneas y copias de Time Machine lleva una etiqueta **No se puede deshacer**. El interruptor **Apple Intelligence** y los interruptores sueltos de Debloat
 actúan al instante, y vuelven solos atrás si el cambio falla.
 
 **Qué se puede deshacer.** Debloat: vuelve a activar una función, o pulsa **Activar todo**.
 MacSpace restaura los ajustes que guardó antes de cambiarlos. Apple Intelligence: actívalo de
 nuevo. MacSpace restaura tu idioma y tu voz de Siri, y macOS puede volver a descargar los
-modelos. Las cachés eliminadas se vuelven a crear. Los informes eliminados y el historial de
-versiones no se recuperan.
+modelos. Las cachés eliminadas se vuelven a crear. Los informes, el historial de versiones, los
+registros, los ítems de la Papelera, las instantáneas y las copias eliminados no se recuperan.
 
 **Máquinas virtuales.** En una máquina virtual, **Siri y Apple Intelligence** no hace nada y
 dice por qué. Debloat sigue mostrando allí interruptores que no pueden surtir efecto en una

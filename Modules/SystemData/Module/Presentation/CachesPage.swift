@@ -7,6 +7,8 @@ import MacSpaceSdk
 struct CacheEntry: Equatable {
     enum Source: Equatable {
         case app, web, system, developer, homebrew
+        /// A code-signing copy of an app (`SystemDataKind.codeSignClone`), sized by the space it does not share with the app.
+        case appCopy
 
         /// Its pill under Recommended, where caches of every kind are mixed.
         var title: String {
@@ -14,6 +16,7 @@ struct CacheEntry: Equatable {
             case .app: return loc("App cache")
             case .web: return loc("Web cache")
             case .system: return loc("System cache")
+            case .appCopy: return loc("Old app copy")
             case .developer: return loc("Developer")
             case .homebrew: return "Homebrew"
             }
@@ -81,13 +84,17 @@ enum CachesPage {
         }
 
         // The web caches of Chromium and Electron apps, and the per-user system caches of third-party tools: what Clean always freed
-        // while their app was closed, so recommended.
-        for item in report.items where item.cleanup.kind == .deleteWhenNotRunning && (item.id.hasPrefix("supportcache:") || item.id.hasPrefix("usercache:")) {
+        // while their app was closed, so recommended. With them, the code-signing copies of apps that hold space of their own (left by
+        // an older version of the app), sized by what they do not share with the app, named after the app.
+        for item in report.items where item.cleanup.kind == .deleteWhenNotRunning
+            && (item.id.hasPrefix("supportcache:") || item.id.hasPrefix("usercache:") || item.id.hasPrefix("clone:")) {
             let bytes = item.expectedReclaimBytes ?? item.bytes ?? 0
-            guard bytes >= SystemDataScreenBuilder.worthARow else { continue }
+            let copy = item.kind == .codeSignClone
+            // A copy that shares nearly everything with its app frees too little to offer.
+            guard bytes >= (copy ? SystemDataScreenBuilder.manualThreshold : SystemDataScreenBuilder.worthARow) else { continue }
             let web = item.id.hasPrefix("supportcache:")
-            var entry = CacheEntry(id: item.id, title: String(item.id.drop { $0 != ":" }.dropFirst()), bytes: bytes, paths: item.paths,
-                                   source: web ? .web : .system, recommended: true, within: item.id)
+            var entry = CacheEntry(id: item.id, title: copy ? item.title : String(item.id.drop { $0 != ":" }.dropFirst()), bytes: bytes, paths: item.paths,
+                                   source: web ? .web : (copy ? .appCopy : .system), recommended: true, within: item.id)
             if item.inUse { open(&entry) }
             entries.append(entry)
         }

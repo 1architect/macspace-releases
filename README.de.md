@@ -47,8 +47,10 @@ Caches von Apps, die geschlossen sind, Diagnose- und Absturzberichte, die älter
 und ungenutzte Systemressourcen. Unter **Jetzt freigeben** hat jedes Objekt eine eigene
 Schaltfläche. Zwei Objekte stehen für sich, weil sie mehr Vorsicht verlangen: **Versionsverlauf
 von Dokumenten** (frühere Versionen deiner Dokumente; die Dokumente bleiben) und **Übrige
-macOS-Update-Dateien** (Dateien eines bereits installierten Updates). Bei allem, was zu macOS oder
-zu anderen Apps gehört, sagt MacSpace, was es ist und was du von Hand tun kannst.
+macOS-Update-Dateien** (Dateien eines bereits installierten Updates). Das **Systemprotokoll** (was
+macOS zur Fehlersuche aufzeichnet) und der **Papierkorb** haben ebenfalls eigene Schaltflächen, nie
+die Hauptschaltfläche. Bei allem, was zu macOS oder zu anderen Apps gehört, sagt MacSpace, was es
+ist und was du von Hand tun kannst.
 
 <p align="center">
   <img src="Docs/Screenshots/de/SystemData.png" alt="Die Seite „Systemdaten“: ein Diagramm dessen, was „Systemdaten“ füllt, die Liste „Jetzt freigeben“ und die Schaltfläche „Freigeben“ mit ihrer Größe" width="720">
@@ -76,7 +78,11 @@ jetzt zu tun. Die Größe ist eine Schätzung von macOS, deshalb steht dort „b
 Cloud-Dateien auf diesem Mac (OneDrive, iCloud Drive und andere Cloud-Ordner) haben eine eigene
 Zeile und eine eigene Schaltfläche, **Downloads entfernen**. Die Dateien bleiben in der Cloud und
 werden beim Öffnen erneut geladen. Ein macOS-Update, das zur Installation bereit ist, steht unter
-**Wartet auf Installation**. MacSpace löscht es nicht.
+**Wartet auf Installation**. MacSpace löscht es nicht. Die lokalen Schnappschüsse von Time Machine
+(Kopien deines Mac, die es einen Tag lang behält) haben eine eigene Zeile: **Freigeben** löscht alle
+außer dem neuesten und dem, von dem das nächste Backup ausgeht. Ein angeschlossenes Backup-Volume
+listet seine Backups auf, und du kannst alte zum Freigeben auswählen. Das neueste Backup bleibt
+immer.
 
 <p align="center">
   <img src="Docs/Screenshots/de/OtherSystemFiles.png" alt="Die Seite „Andere Systemdateien“: ein Diagramm dessen, was macOS als löschbar zählt, die Liste „Jetzt freigeben“ und die Schaltfläche „Bis zu … freigeben“" width="720">
@@ -199,10 +205,11 @@ daher sieht MacSpace nie dein Passwort. Fehlt eine Berechtigung, leistet ein Mod
 sagt, was fehlt.
 
 Das Hilfsprogramm ist ein Launch-Daemon, `com.macspace.helper`. Es führt nur benannte Operationen
-aus, die fest in ihm eingebaut sind, ein Aufrufer kann ihm keine Befehle schicken, und es
-akzeptiert nur Clients, die vom selben Entwicklerteam wie MacSpace signiert sind. Unter anderem
-kann es die Größe von Systemordnern messen (nie die eines Benutzerordners), den Versionsverlauf
-von Dokumenten und die übrigen Dateien eines installierten macOS-Updates löschen, die
+aus, die fest in ihm eingebaut sind, ein Aufrufer kann ihm keine Befehle schicken, und es akzeptiert
+nur Clients, die vom selben Entwicklerteam wie MacSpace signiert sind. Unter anderem kann es die
+Größe von Systemordnern messen (nie die eines Benutzerordners), den Versionsverlauf von Dokumenten
+und die übrigen Dateien eines installierten macOS-Updates löschen, das Systemprotokoll löschen, die
+Symbole für Absturzberichte löschen, die alten Time Machine-Backups löschen, die du auswählst, die
 Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Profil entfernen.
 [Sicherheit](SECURITY.de.md) enthält die vollständige Liste.
 
@@ -216,6 +223,8 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   (`/var/folders/…/C`) und die Web-Caches (`Cache`, `Code Cache`, `GPUCache`), die Chromium- und
   Electron-Apps in `~/Library/Application Support` ablegen. Nur solange die App oder das Werkzeug, dem
   sie gehören, samt Hilfsprozessen geschlossen ist und kein Programm darin eine Datei geöffnet hat.
+- Die Kopien, die macOS beim Prüfen einer App anlegt (`/var/folders/…/X`), für den Speicher, den sie
+  allein belegen, wenn die App aktualisiert wurde, und nur solange die App geschlossen ist.
 - Diagnose- und Absturzberichte, die älter als 7 Tage sind, in `/Library/Logs/DiagnosticReports`
   und `~/Library/Logs/DiagnosticReports`.
 - Ungenutzte Systemressourcen, Apple Intelligence-Modelle, die macOS freigegeben hat, und
@@ -228,14 +237,19 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   Cloud-Dateien. Bei den Downloads löscht das Hilfsprogramm nur die Dateien
   `CFNetworkDownload_*.tmp` in `/var/folders/…/T/com.apple.idleassetsd`, die sich seit 3 Tagen
   nicht geändert haben; ein laufender Download bleibt.
+- Nur wenn du die zugehörige Schaltfläche drückst: das Systemprotokoll, mit Apples eigenem
+  `log erase`; die Symbole, die macOS zum Lesen von Absturzberichten aufbewahrt und neu aufbaut;
+  alles im Papierkorb; die lokalen Schnappschüsse von Time Machine außer dem neuesten
+  und dem, von dem das nächste Backup ausgeht; und die Backups, die du auf einem angeschlossenen
+  Backup-Volume auswählst, nie das neueste. Schnappschüsse und Backups werden nie gelöscht, während
+  ein Backup läuft.
 - Nur die Caches, die du unter **App-Caches** auswählst: Ordner in `~/Library/Caches`.
   Vorausgewählt sind die, die seit einem Monat unverändert sind und deren App so lange nicht
   geöffnet wurde oder nicht installiert ist. Genutzte Caches stehen ohne Häkchen da und sagen, dass
   sie zurückkommen. Caches geöffneter Apps und Ordner mit Medien oder Dokumenten, die Menschen
   benannt haben, werden nicht angeboten.
 - Nur über die Zeile **Homebrew**: das eigene `brew cleanup` von Homebrew, als du ausgeführt, ohne
-  Formeln zu deinstallieren, zu aktualisieren oder Homebrews Statistiken zu senden. MacSpace leert
-  den Papierkorb nie: seine Zeile öffnet ihn im Finder.
+  Formeln zu deinstallieren, zu aktualisieren oder Homebrews Statistiken zu senden.
 
 **Was es nie antastet.** MacSpace misst, wie viel Speicher deine Dokumente, Fotos, Mail und
 Nachrichten belegen. Es liest nicht, was darin steht, und löscht sie nie. Es listet große Objekte
@@ -245,15 +259,17 @@ bereinigst. Es schaltet den Systemintegritätsschutz nicht aus und ändert das v
 Systemvolume nicht.
 
 **Was zuerst nachfragt.** Jede Schaltfläche, die mehr als die Caches einer App löscht, fragt nach
-einer Bestätigung. **Löschen …** bei **Versionsverlauf von Dokumenten** trägt die Kennzeichnung
-**Nicht widerrufbar**. Der Schalter **Apple Intelligence** und die einzelnen Debloat-Schalter
+einer Bestätigung. **Freigeben** beim Versionsverlauf von Dokumenten, beim Systemprotokoll, beim
+Papierkorb und bei den Schnappschüssen und Backups von Time Machine trägt die Kennzeichnung **Nicht
+widerrufbar**. Der Schalter **Apple Intelligence** und die einzelnen Debloat-Schalter
 wirken sofort und gehen von selbst zurück, wenn die Änderung scheitert.
 
 **Was du rückgängig machen kannst.** Debloat: Schalte eine Funktion wieder ein oder klicke auf
 **Alle aktivieren**. MacSpace stellt die Einstellungen wieder her, die es vor der Änderung
 gesichert hat. Apple Intelligence: Schalte es wieder ein. MacSpace stellt deine Siri-Sprache und
 deine Siri-Stimme wieder her, und macOS lädt die Modelle möglicherweise erneut. Gelöschte Caches
-werden neu aufgebaut. Gelöschte Berichte und der gelöschte Versionsverlauf kommen nicht zurück.
+werden neu aufgebaut. Gelöschte Berichte, Versionsverläufe, Protokolle, Objekte im Papierkorb,
+Schnappschüsse und Backups kommen nicht zurück.
 
 **Virtuelle Maschinen.** In einer virtuellen Maschine tut **Siri & Apple Intelligence** nichts
 und sagt, warum. Debloat listet dort weiterhin Schalter auf, die in einer virtuellen Maschine

@@ -498,7 +498,8 @@ private struct ActionDock: View {
         // While the boxes are what the module suggests, the button says so ("Free recommended").
         let suggested = Set(selection.suggested).intersection(selection.choices.keys)
         let title = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title
-        action.title = title + " " + ByteFormat.string(total)
+        // Rows with no size of their own (`Selection.choices`) put none on the button.
+        action.title = total > 0 ? title + " " + ByteFormat.string(total) : title
         action.parameters["ids"] = Selection.parameter(ids.sorted())
         return action
     }

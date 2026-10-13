@@ -1,4 +1,5 @@
 import Foundation
+import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
 import MacSpaceSdk
 
@@ -78,6 +79,7 @@ enum OtherSystemFilesScreenBuilder {
         var widgets: [ScreenWidget] = []
         if let free = freeNow(snapshot) { widgets.append(free) }
         if let updates = updatesSection(snapshot) { widgets.append(updates) }
+        if let disks = backupDisksSection(snapshot) { widgets.append(disks) }
         if case let .section(kept)? = keptSection(snapshot), case let .list(list)? = kept.widgets.first {
             widgets.append(.list(ListWidget(id: "kept", title: loc("Deleted by macOS when the disk is full"), rows: list.rows)))
         }
@@ -110,23 +112,99 @@ enum OtherSystemFilesScreenBuilder {
         return .section(SectionWidget(id: "updates", title: loc("Waiting to install"), widgets: [.list(ListWidget(id: "updates-list", rows: rows))]))
     }
 
-    /// What MacSpace frees, as its own section on the page: the files apps marked purgeable, and each cloud service's downloads,
-    /// removed only with that row's own button (they are the user's documents, kept in the cloud).
+    /// What MacSpace frees, as its own section on the page, largest first: the files apps marked purgeable, each cloud service's
+    /// downloads, removed only with that row's own button (they are the user's documents, kept in the cloud), and Time Machine's older
+    /// local snapshots, with theirs.
     static func freeNow(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
-        // Largest first: the cloud rows are in the order of their folders' sizes (`documentsRows`), and the purgeable app files go
-        // before the first one smaller than them.
-        var rows = cloudRows(snapshot)
+        var rows = Array(zip(cloudRows(snapshot), cloudShares(snapshot)))
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
-            let shares = cloudShares(snapshot)
-            let index = shares.firstIndex { $0 < snapshot.freeableBytes } ?? rows.count
-            rows.insert(Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
-                            badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
-                            detail: snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail,
-                            actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), at: min(index, rows.count))
+            rows.append((Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
+                             badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
+                             detail: snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail,
+                             actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), snapshot.freeableBytes))
         }
+        if let snapshots = snapshotsRow(snapshot), snapshots.freeable { rows.append((snapshots.row, snapshots.bytes)) }
         guard !rows.isEmpty else { return nil }
-        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
+        let sorted = rows.enumerated().sorted { $0.element.1 != $1.element.1 ? $0.element.1 > $1.element.1 : $0.offset < $1.offset }.map(\.element.0)
+        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))]))
+    }
+
+    /// Time Machine's local snapshots as one row: how many, what they hold together (macOS's figure), and, when some can go, a Free
+    /// that deletes all but the two Time Machine still needs (`TimeMachine.LocalSnapshots`). nil when there are none. `freeable` puts
+    /// it under Free now; otherwise it is listed with what macOS deletes when the disk is full, as it is the same space.
+    static func snapshotsRow(_ snapshot: PurgeableSnapshot) -> (row: Row, bytes: UInt64, freeable: Bool)? {
+        guard let snapshots = snapshot.timeMachine.snapshots, !snapshots.all.isEmpty else { return nil }
+        let service = PurgeableService.describe(CacheDeleteService.timeMachineSnapshots)
+        let bytes = snapshot.services?[CacheDeleteService.timeMachineSnapshots] ?? 0
+        let removable = snapshots.removable
+        let backingUp = snapshot.timeMachine.backingUp == true
+        let count = snapshots.all.count == 1 ? loc("1 snapshot") : loc("\(snapshots.all.count) snapshots")
+        var badges: [Badge] = []
+        if !removable.isEmpty { badges.append(Badge(loc("Cannot be undone"), tone: .critical)) }
+        if backingUp { badges.append(Badge(loc("Backing up now"), tone: .caution)) }
+        let dates = snapshots.all.reversed().map { snapshot in
+            let kept = snapshots.keptStamps.contains(snapshot.stamp)
+            return snapshot.date.formatted(date: .abbreviated, time: .shortened) + (kept ? " · " + loc("kept") : "")
+        }
+        let detail = loc("Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.")
+            + "\n\n" + dates.joined(separator: "\n")
+        let size = ByteFormat.string(bytes)
+        let free = Action(id: "freeSnapshots", title: loc("Free"), role: .destructive,
+                          confirmation: Confirmation(title: removable.count == 1 ? loc("Free 1 Time Machine snapshot?") : loc("Free \(removable.count) Time Machine snapshots?"),
+                                                     message: loc("Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay."),
+                                                     confirmTitle: loc("Free")))
+        let row = Row(id: service.id, title: service.title, subtitle: count, trailing: bytes > 0 ? size : nil, badges: badges, symbol: service.symbol,
+                      detail: detail, actions: removable.isEmpty || backingUp ? [] : [free])
+        return (row, bytes, !removable.isEmpty)
+    }
+
+    /// Time Machine's backup disks: each connected one as a group whose page lists its backups, newest first, and lets the user choose
+    /// old ones to free (never the latest); one that is not connected says so. Their space is not this Mac's, so they are in no figure
+    /// of the page.
+    static func backupDisksSection(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
+        let disks = snapshot.timeMachine.disks
+        guard !disks.isEmpty else { return nil }
+        let backingUp = snapshot.timeMachine.backingUp == true
+        let entries: [(row: Row, used: UInt64)] = disks.map { (backupDiskRow($0, backingUp: backingUp), $0.usedBytes ?? 0) }
+        // Largest first; disks that are not connected have no size and come after, by name.
+        let rows = entries.sorted { first, second in
+            first.used != second.used ? first.used > second.used : first.row.title.localizedStandardCompare(second.row.title) == .orderedAscending
+        }.map(\.row)
+        return .section(SectionWidget(id: "backup-disks", title: loc("Time Machine backup disks"), widgets: [.list(ListWidget(id: "backup-disks-list", rows: rows))]))
+    }
+
+    static func backupDiskRow(_ disk: TimeMachineState.BackupDisk, backingUp: Bool) -> Row {
+        let destination = disk.destination
+        let symbol = "externaldrive.badge.timemachine"
+        guard let mount = destination.mountPoint else {
+            return Row(id: "backupdisk:\(destination.id)", title: destination.name, badge: Badge(loc("Not connected")), symbol: symbol,
+                       detail: loc("Connect it to see its backups and free old ones."))
+        }
+        guard let backups = disk.backups, let newest = backups.last else {
+            return Row(id: "backupdisk:\(destination.id)", title: destination.name, trailing: disk.usedBytes.map(ByteFormat.string),
+                       badge: Badge(loc("Backups not readable")), symbol: symbol, paths: [mount])
+        }
+        // Newest first, by date: a backup has no size of its own (its blocks are shared with the others), so there is no size to sort by.
+        let rows = backups.reversed().map { backup in
+            Row(id: "backup:\(backup.stamp)", title: backup.date.formatted(date: .abbreviated, time: .shortened),
+                badge: backup.stamp == newest.stamp ? Badge(loc("Latest")) : nil)
+        }
+        var group = Row.group(id: "backupdisk:\(destination.id)", title: destination.name, symbol: symbol, totalBytes: disk.usedBytes ?? 0, rows: rows)
+        group.subtitle = backups.count == 1 ? loc("1 backup") : loc("\(backups.count) backups")
+        group.badges = (disk.freeBytes.map { [Badge(loc("\(ByteFormat.string($0)) free"))] } ?? []) + (backingUp ? [Badge(loc("Backing up now"), tone: .caution)] : [])
+        group.paths = [mount]
+        let removable = backups.filter { $0.stamp != newest.stamp }
+        if !removable.isEmpty, !backingUp {
+            group.selection = Selection(
+                action: Action(id: "deleteBackups", title: loc("Free selected"), role: .destructive, parameters: ["mountPoint": mount],
+                               confirmation: Confirmation(title: loc("Free the selected backups?"),
+                                                          message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
+                                                          confirmTitle: loc("Free")),
+                               requires: [.privilegedHelper]),
+                choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }))
+        }
+        return group
     }
 
     /// One row per cloud service holding downloads, each with its button. Empty while none were found.
@@ -201,16 +279,20 @@ enum OtherSystemFilesScreenBuilder {
 
     /// Everything else macOS counts as purgeable, with why MacSpace leaves it, so the total adds up.
     static func keptSection(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
-        let kept = keptServices(snapshot)
-        guard !kept.isEmpty else { return nil }
-        let rows = kept.flatMap { entry -> [Row] in
+        // Time Machine's snapshots are one row of their own (`snapshotsRow`), here only while none can be freed, whatever their size:
+        // macOS's figure for them can lag at 0 while they are listed.
+        let snapshots = snapshotsRow(snapshot)
+        var rows = keptServices(snapshot).filter { $0.key != CacheDeleteService.timeMachineSnapshots || snapshots == nil }.map { entry -> (rows: [Row], bytes: UInt64) in
             let service = PurgeableService.describe(entry.key)
             if entry.key == CacheDeleteService.fsPurgeableDocument, let rows = documentsRows(entry.value, snapshot) {
-                return rows.filter { !$0.id.hasPrefix("documents:") }
+                return (rows.filter { !$0.id.hasPrefix("documents:") }, entry.value)
             }
-            return [Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: service.detail)]
+            return ([Row(id: entry.key, title: service.title, trailing: ByteFormat.string(entry.value), symbol: service.symbol, detail: service.detail)], entry.value)
         }
-        guard !rows.isEmpty else { return nil }
-        return .section(SectionWidget(id: "kept", title: loc("Left alone"),                                       widgets: [.list(ListWidget(id: "kept-list", rows: rows))]))
+        if let snapshots, !snapshots.freeable { rows.append(([snapshots.row], snapshots.bytes)) }
+        let sorted = rows.enumerated().sorted { $0.element.bytes != $1.element.bytes ? $0.element.bytes > $1.element.bytes : $0.offset < $1.offset }
+            .flatMap(\.element.rows)
+        guard !sorted.isEmpty else { return nil }
+        return .section(SectionWidget(id: "kept", title: loc("Left alone"), widgets: [.list(ListWidget(id: "kept-list", rows: sorted))]))
     }
 }

@@ -92,6 +92,24 @@ public struct FileTreeSizer: Sendable {
         return flags & UInt64(EF_IS_PURGEABLE) != 0
     }
 
+    /// What deleting the tree would free: the blocks of its files that no other file shares (`ATTR_CMNEXT_PRIVATESIZE`), each
+    /// hard-linked file once. A code-signing copy of an app is an APFS clone of it and shares every block until the app is updated;
+    /// then the copy of the older version holds blocks of its own. Measured on 26B5101f (2026-10-13): two copies of SketchUp's apps,
+    /// 3.39 GB by size, held 0.05 GB of their own. nil when the tree cannot be read.
+    public static func unsharedBytes(at path: String) -> UInt64? {
+        var info = stat()
+        guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else { return nil }
+        let links = CloneLedger()
+        let walk = DirectoryWalk.walk(path, extended: true, initial: UInt64(0)) { total, path, entry in
+            if entry.isDirectory { return entry.isDataless ? .skip : .descend }
+            guard entry.isRegularFile else { return .skip }
+            if entry.linkCount > 1, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
+            total += min(entry.allocatedBytes, entry.privateBytes)
+            return .skip
+        }
+        return walk.state
+    }
+
     /// Descriptive filesystem sizing only. This deliberately does not claim unique APFS block ownership.
     /// Descendants mounted from another filesystem are skipped to avoid obvious double counting, and so are folders still only in
     /// the cloud (`SF_DATALESS`): listing them would make the cloud app fetch them, and what they hold takes no space here.
