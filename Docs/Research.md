@@ -392,8 +392,12 @@ which is all that Mole's rule (delete files older than 7 days, `lib/clean/system
 service, `com.apple.logd.cachedelete`, which reported 0 at every urgency: macOS never frees the log for space. Its purge, per the
 strings in `logd`, is "Purging UUID Cache", the same as `log erase --uuidtext` ("Prune uuids from the database"); logd copies a
 program's format strings again the next time it logs (`_logd_uuiddb_harvest`). `log erase` needs root. The page offers it: the helper
-runs `log erase --all`, then `log erase --uuidtext`, with its own button that cannot be undone, never in Clean. What it frees on a
-real erase: see the measurement below once it is taken.
+runs `log erase --all`, then `log erase --uuidtext`, with its own button that cannot be undone, never in Clean.
+
+**Measured, a real erase (26B5101f, 2026-10-13, through the installed app's helper).** The two folders went from 3.11 GB to 555 MB:
+entries 1.70 GB to 7.4 MB, format strings 1.41 GB to 548 MB (logd keeps those of programs still running). Free space on the volume
+rose 2.72 GB. Logging went on at once: 8,383 entries in the next five minutes, none that `log show` failed to decode, the oldest a few
+seconds after the erase.
 
 ### Symbols for crash reports (`/System/Library/Caches/com.apple.coresymbolicationd`)
 
@@ -403,8 +407,21 @@ the whole of `/System/Library/Caches` on 2026-10-13. The folder is root's (`drwx
 include "%s does not exist, resetting cache", "%s did not validate, resetting cache" and "Failed to mark storage purgeable", so it
 rebuilds a missing cache and may mark it purgeable. The page offers it from 50 MB of what it adds to System Data (a purgeable part is
 free space already): the helper deletes the folder's contents, then stops the daemon (`kill -TERM`, `-KILL` after five seconds) so
-the mapped archive's blocks come back; launchd starts it again on the next request. **Not yet measured:** a real deletion of a large
-cache (it is nearly empty on the development Mac now).
+the mapped archive's blocks come back; launchd starts it again on the next request. **Measured (2026-10-13, through the helper):**
+1.55 GB, all of it flagged purgeable, so System Settings counts it as free space and Other System Files' purgeable app files free it;
+the page offers no row for it then. The earlier "164 KB" was what this account could read, not its size.
+
+### The Trash
+
+**Measured (2026-10-13).** Free on the Trash row, run through the installed app's command-line tool: 60 MB of test files in the
+Trash, 62.9 MB freed on the volume, the Trash empty after.
+
+### The helper measured nothing for a day
+
+**Measured.** From `6b2058f` to `f594593` (2026-10-13) the helper opened folders with `O_NOFOLLOW` and `O_NOFOLLOW_ANY` together,
+which `open` refuses on 26B5101f (EINVAL), so every place only root can read measured 0 bytes: the version history (86.4 MB), the
+Spotlight index (725 MB) and the symbols cache (1.55 GB) left the page, their space counted under Protected by macOS. A test now
+sizes a tree with every setting the scan and the helper use.
 
 ### Checked and not offered
 
