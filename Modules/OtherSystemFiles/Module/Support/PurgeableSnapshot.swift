@@ -1,6 +1,7 @@
 import Foundation
 import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
+import MacSpaceSdk
 
 /// What macOS counts as purgeable on the Data volume, per CacheDelete service, at the urgency the disk's "purgeable" figure uses (3).
 struct PurgeableSnapshot: Sendable, Equatable {
@@ -19,6 +20,8 @@ struct PurgeableSnapshot: Sendable, Equatable {
     var removing: [String: CloudDownloadRemovals.Progress] = [:]
     /// Time Machine: the local snapshots, whose space is macOS's purge figure for them, and the backup disks.
     var timeMachine = TimeMachineState()
+    /// Of the purgeable app files, the symbols macOS keeps for crash reports (`SymbolsCache`); nil when the helper did not say.
+    var symbolsBytes: UInt64?
 
     /// macOS's estimate of the files apps marked purgeable.
     var estimatedBytes: UInt64 { services?[CacheDeleteService.fsPurgeableData] ?? 0 }
@@ -28,6 +31,27 @@ struct PurgeableSnapshot: Sendable, Equatable {
     /// What macOS counts as purgeable.
     var totalBytes: UInt64 { services?.values.reduce(0, +) ?? 0 }
     var updateBytes: UInt64 { updates.map(\.bytes).reduce(0, +) }
+}
+
+/// The symbols coresymbolicationd keeps to read crash reports, a folder only root can read. The daemon flags its archive purgeable,
+/// so it is part of the purgeable app files, unnamed in macOS's figure. Measured on 26B5101f (2026-10-13): 1.55 GB, all of it flagged,
+/// of a 2.74 GB estimate; Free up to removed it with the rest (2.66 GB freed, the cache at 0 after). It grew back to that size within a
+/// day of the previous purge.
+enum SymbolsCache {
+    static let path = "/System/Library/Caches/com.apple.coresymbolicationd"
+
+    struct Measurement: Decodable {
+        let purgeable: [String: UInt64]?
+    }
+
+    /// Its purgeable part, asked of the helper with System Data's read-only measuring operation, which sizes this folder among the
+    /// system's own; nil without the helper or an answer.
+    static func purgeableBytes(_ channel: (any PrivilegedChannel)?) async -> UInt64? {
+        guard let channel,
+              let data = try? await channel.perform(operation: "systemdata.measure", arguments: ["paths": path]),
+              let measured = try? JSONDecoder().decode(Measurement.self, from: data) else { return nil }
+        return measured.purgeable?[path]
+    }
 }
 
 /// What Time Machine keeps: local snapshots on this Mac, and backups on its backup disks.

@@ -119,15 +119,23 @@ enum OtherSystemFilesScreenBuilder {
         var rows = Array(zip(cloudRows(snapshot), cloudShares(snapshot)))
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
+            var detail = snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail
+            if let symbols = symbolsLine(snapshot) { detail += "\n\n" + symbols }
             rows.append((Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
                              badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
-                             detail: snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail,
-                             actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), snapshot.freeableBytes))
+                             detail: detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), snapshot.freeableBytes))
         }
         if let snapshots = snapshotsRow(snapshot), snapshots.freeable { rows.append((snapshots.row, snapshots.bytes)) }
         guard !rows.isEmpty else { return nil }
         let sorted = rows.enumerated().sorted { $0.element.1 != $1.element.1 ? $0.element.1 > $1.element.1 : $0.offset < $1.offset }.map(\.element.0)
         return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))]))
+    }
+
+    /// What of the purgeable app files is the symbols for crash reports, when it is worth saying: the largest part of them on the
+    /// development Mac, and listed nowhere else (System Data leaves out what macOS may delete by itself). nil otherwise.
+    static func symbolsLine(_ snapshot: PurgeableSnapshot) -> String? {
+        guard let bytes = snapshot.symbolsBytes, bytes >= threshold, bytes <= snapshot.freeableBytes else { return nil }
+        return loc("\(ByteFormat.string(bytes)) of it is symbols for crash reports. macOS builds them again when it next reads one.")
     }
 
     /// Time Machine's local snapshots as one row: how many, what they hold together (macOS's figure), and, when some can go, a Free

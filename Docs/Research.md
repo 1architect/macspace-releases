@@ -408,8 +408,11 @@ include "%s does not exist, resetting cache", "%s did not validate, resetting ca
 rebuilds a missing cache and may mark it purgeable. The page offers it from 50 MB of what it adds to System Data (a purgeable part is
 free space already): the helper deletes the folder's contents, then stops the daemon (`kill -TERM`, `-KILL` after five seconds) so
 the mapped archive's blocks come back; launchd starts it again on the next request. **Measured (2026-10-13, through the helper):**
-1.55 GB, all of it flagged purgeable, so System Settings counts it as free space and Other System Files' purgeable app files free it;
-the page offers no row for it then. The earlier "164 KB" was what this account could read, not its size.
+1.55 GB, all of it flagged purgeable, so System Settings counts it as free space. Other System Files' Free up to (purgeable app
+files, 2.74 GB estimated) then freed 2.66 GB, measured on the volume, and the cache read 0 after, with coresymbolicationd still
+running: the purge takes it, and it was the largest part of that figure. It had grown back to 1.55 GB within a day of the previous
+purge. System Data offers no row for it while it is purgeable; the purgeable app files row names it. The earlier "164 KB" was what
+this account could read, not its size.
 
 ### The Trash
 

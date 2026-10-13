@@ -3,6 +3,7 @@
 "%@ cache" = "%@-Cache";
 "%@ files on this Mac" = "%@-Dateien auf diesem Mac";
 "%@ free" = "%@ frei";
+"%@ of it is symbols for crash reports. macOS builds them again when it next reads one." = "%@ davon sind Symbole für Absturzberichte. macOS baut sie wieder auf, wenn es den nächsten liest.";
 "%@, ready to install" = "%@, bereit zur Installation";
 "%lld backups" = "%lld Backups";
 "%lld files" = "%lld Dateien";

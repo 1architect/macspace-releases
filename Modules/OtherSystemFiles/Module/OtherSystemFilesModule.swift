@@ -22,8 +22,12 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         OtherSystemFilesScreenBuilder.tile(await snapshot())
     }
 
+    /// The page names the symbols for crash reports in the purgeable app files, which only the helper can size; the tile needs no
+    /// names, so it does not ask.
     public func screen(context: ModuleContext) async -> Screen {
-        OtherSystemFilesScreenBuilder.screen(await snapshot())
+        var snapshot = await snapshot()
+        if snapshot.freeableBytes >= OtherSystemFilesScreenBuilder.threshold { snapshot.symbolsBytes = await SymbolsCache.purgeableBytes(context.privileged) }
+        return OtherSystemFilesScreenBuilder.screen(snapshot)
     }
 
     /// The last reading, with how far the removals of cloud downloads running now are: read live, not cached with the figures.
