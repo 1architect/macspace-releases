@@ -73,7 +73,10 @@ enum DirectoryWalk {
 
         init(root: String, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, makeState: @escaping () -> State,
              visit: @escaping (inout State, () -> String, Entry) -> Step) {
-            openFlags = O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC | (refusesLinks ? O_NOFOLLOW_ANY : 0)
+            // One of the two: `open` refuses `O_NOFOLLOW` together with `O_NOFOLLOW_ANY` (EINVAL on 26B5101f), which made every folder
+            // unreadable to the helper and every place it measures 0 bytes (the version history, the Spotlight index and the system
+            // log vanished from the page). `O_NOFOLLOW_ANY` refuses a link in the last part of the path too.
+            openFlags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | (refusesLinks ? O_NOFOLLOW_ANY : O_NOFOLLOW)
             self.root = root
             self.device = device
             self.pool = pool
