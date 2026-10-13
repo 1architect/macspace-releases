@@ -68,6 +68,7 @@ public enum ScreenshotLaunch {
             let tool = ScreenshotTool()
             if let folder { tool.folder = folder }
             tool.settleSeconds = 10
+            tool.warmupSeconds = 40
             await tool.capture()
             NSLog("MacSpace screenshots: \(tool.status)")
             NSApp.terminate(nil)
@@ -85,13 +86,13 @@ struct Shot: Identifiable {
 @MainActor
 final class ScreenshotTool: ObservableObject {
     static let shots: [Shot] = [
-        Shot(id: "Home-Light", name: "Home, light", kind: .home(dark: false)),
-        Shot(id: "Home-Dark", name: "Home, dark", kind: .home(dark: true)),
         Shot(id: "SystemData", name: "System Data", kind: .page(.module("com.macspace.system-data"))),
         Shot(id: "OtherSystemFiles", name: "Other System Files", kind: .page(.module("com.macspace.other-system-files"))),
         Shot(id: "Siri", name: "Siri & Apple Intelligence", kind: .page(.module("com.macspace.siri"))),
         Shot(id: "Debloat", name: "Debloat", kind: .page(.module("com.macspace.debloat"))),
         Shot(id: "Settings", name: "Settings", kind: .page(.settings)),
+        Shot(id: "Home-Light", name: "Home, light", kind: .home(dark: false)),
+        Shot(id: "Home-Dark", name: "Home, dark", kind: .home(dark: true)),
         Shot(id: "Onboarding", name: "Onboarding (first step)", kind: .onboarding),
     ]
 
@@ -102,6 +103,8 @@ final class ScreenshotTool: ObservableObject {
     @Published var dither: Bool { didSet { defaults.set(dither, forKey: "screenshots.dither") } }
     @Published var settleSeconds: Int { didSet { defaults.set(settleSeconds, forKey: "screenshots.settle") } }
     @Published var selected: Set<String>
+    /// How long the first shot waits for the modules to read the Mac.
+    var warmupSeconds = 8
     @Published var isRunning = false
     @Published var status = ""
 
@@ -164,6 +167,10 @@ final class ScreenshotTool: ObservableObject {
             let frame = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: width, height: height))
             window.setFrame(NSRect(x: window.frame.minX, y: window.frame.maxY - frame.height, width: frame.width, height: frame.height), display: true)
         }
+        // The first shot waits for every module to finish reading the Mac: a tile that is still loading says so, and the tiles move
+        // into their places when the figures arrive.
+        status = "Waiting for the modules to read the Mac…"
+        try? await Task.sleep(for: .seconds(Double(warmupSeconds)))
         var written: [String] = []
         for shot in Self.shots where selected.contains(shot.id) {
             status = "Capturing \(shot.name)…"

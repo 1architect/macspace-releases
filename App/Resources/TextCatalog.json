@@ -1874,8 +1874,8 @@
     "key" : "Settings",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/ScreenshotToolView.swift:94",
-      "App\/Settings\/ScreenshotToolView.swift:94",
+      "App\/Settings\/ScreenshotToolView.swift:93",
+      "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Shell\/MainView.swift:298",
       "App\/Shell\/MainView.swift:347",
       "App\/Shell\/StandardWindowView.swift:157",
@@ -2977,8 +2977,8 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273",
-      "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Settings\/ScreenshotToolView.swift:93"
+      "App\/Settings\/ScreenshotToolView.swift:92",
+      "App\/Settings\/ScreenshotToolView.swift:92"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3796,7 +3796,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:12",
-      "App\/Settings\/ScreenshotToolView.swift:92"
+      "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4923,7 +4923,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:117",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:75",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:88",
-      "App\/Settings\/ScreenshotToolView.swift:91"
+      "App\/Settings\/ScreenshotToolView.swift:90"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6251,7 +6251,7 @@
       "Modules\/Siri\/Module\/SiriModule.swift:51",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:103",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111",
-      "App\/Settings\/ScreenshotToolView.swift:92"
+      "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9862,7 +9862,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:440",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:322",
-      "App\/Settings\/ScreenshotToolView.swift:90"
+      "App\/Settings\/ScreenshotToolView.swift:89"
     ],
     "table" : "SystemData",
     "translations" : {
