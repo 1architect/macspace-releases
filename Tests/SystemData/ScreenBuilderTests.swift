@@ -65,8 +65,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(macos.children.map(\.id), ["logs", "spotlight"])
         XCTAssertEqual(macos.title, "Managed by macOS")
         XCTAssertNil(macos.detail, "the title says why")
-        XCTAssertTrue(list.rows.first { $0.id == "other:caches" }?.detail?.contains("App caches") == true,
-                      "where the caches can be freed is behind their (i)")
+        XCTAssertEqual(list.rows.first { $0.id == "other:caches" }?.title, "Other caches",
+                       "the caches that can be freed are on the caches page, so these are the others")
         let group = try XCTUnwrap(SystemDataScreenBuilder.group(.section(section), symbol: "x", total: 0))
         XCTAssertEqual(group.subtitle, "5 items")
         XCTAssertEqual(SystemDataScreenBuilder.OtherCategory.of(.virtualMachine).id, "other", "a kind in no category goes to Other")
@@ -94,19 +94,23 @@ final class SystemDataScreenBuilderTests: XCTestCase {
 
     func testFreeNowOffersOnlySafeItemsAndCleanIsThePagesMainAction() throws {
         let snap = snapshot(items: [
-            item("small", kind: .appCache, bytes: 100_000_000, cleanup: .deleteWhenNotRunning, reclaim: 100_000_000),
-            item("big", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
-            item("open", kind: .appCache, bytes: 500_000_000, cleanup: .deleteWhenNotRunning, reclaim: 500_000_000, inUse: true, owners: ["Chrome"]),
-            item("crumbs", kind: .appCache, bytes: 5_000, cleanup: .deleteWhenNotRunning, reclaim: 5_000),
+            item("usercache:small", kind: .userSystemCache, bytes: 100_000_000, cleanup: .deleteWhenNotRunning, reclaim: 100_000_000),
+            item("supportcache:big", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
+            item("supportcache:open", kind: .appCache, bytes: 500_000_000, cleanup: .deleteWhenNotRunning, reclaim: 500_000_000, inUse: true, owners: ["Chrome"]),
+            item("usercache:crumbs", kind: .userSystemCache, bytes: 5_000, cleanup: .deleteWhenNotRunning, reclaim: 5_000),
         ], purgeable: 12_000_000_000, reports: 4_000_000)
         guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap), case let .list(list) = section.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows.map(\.id), ["big", "small", "reports", "assets"], "largest first, crumbs and the open app's cache hidden")
-        XCTAssertEqual(list.rows[0].actions.map(\.id), ["clean"])
-        XCTAssertNil(list.rows[0].badge, "an ordinary row needs no badge")
-        XCTAssertNotNil(list.rows[2].actions[0].confirmation, "deleting reports asks first")
-        XCTAssertNotNil(list.rows[3].actions[0].confirmation)
+        XCTAssertEqual(list.rows.map(\.id), ["assets", "caches", "reports"], "largest first; the caches are one page")
+        let caches = list.rows[1]
+        XCTAssertEqual(caches.children.map(\.id), ["supportcache:big", "usercache:small", "supportcache:open"],
+                       "recommended first, the open app's cache last with no box, crumbs hidden")
+        XCTAssertNil(caches.selection?.choices["supportcache:open"])
+        XCTAssertEqual(caches.children.first { $0.id == "supportcache:open" }?.badges.map(\.text), ["Open now"])
+        XCTAssertNotNil(list.rows[0].actions[0].confirmation)
+        XCTAssertNotNil(list.rows[2].actions[0].confirmation, "freeing reports asks first")
+        XCTAssertEqual(list.rows[2].actions[0].title, "Free", "one verb")
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).primary?.id, "cleanAll")
-        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_005_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_000_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
     }
 
     func testNothingToFreeShowsNoSectionAndNoMainAction() throws {
@@ -120,7 +124,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
     }
 
     func testScreenShowsAPartialBannerAndCollapsesTheRest() {
-        let items = [item("cache", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
+        let items = [item("supportcache:app", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
                      item("review", kind: .appSupport, bytes: 700_000_000), item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS)]
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
@@ -162,7 +166,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
     }
 
     func testTileStatesWhatCanBeFreedAndSplitsItOutOfTheCaches() {
-        let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 600_000_000),
+        let snap = snapshot(items: [item("supportcache:c", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 600_000_000),
                                     item("l", kind: .logs, bytes: 2_000_000_000, cleanup: .managedByMacOS)])
         let tile = SystemDataScreenBuilder.tile(snap)
         XCTAssertTrue(tile.status.hasPrefix("free "))
@@ -215,8 +219,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(caches?.group?.id, "segment:caches")
         XCTAssertEqual(caches?.group?.trailing, "400 MB")
         let freeable = blocks.first { $0.id == "freeable" }
-        XCTAssertEqual(freeable?.items.map(\.id), ["usercache:clang"])
-        XCTAssertEqual(freeable?.items.first?.actions.map(\.id), ["clean"])
+        XCTAssertEqual(freeable?.items.map(\.id), ["caches"], "the caches page, one click away")
+        XCTAssertEqual(freeable?.items.first?.children.map(\.id), ["usercache:clang"])
         XCTAssertEqual(blocks.first { $0.id == "macos" }?.items.map(\.paths), [["/x/logs"]])
         XCTAssertNil(blocks.first { $0.id == "unidentified" }?.group, "nothing to list")
         XCTAssertTrue(SystemDataScreenBuilder.blocks(snap).allSatisfy(\.items.isEmpty))
@@ -259,13 +263,12 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(block.items.allSatisfy { $0.paths.isEmpty && $0.trailing == nil })
         XCTAssertEqual(block.group?.id, "segment:unidentified")
         XCTAssertNil(block.items[0].badge)
-        XCTAssertTrue(block.items[0].detail?.contains("same folder as System assets") == true)
         // The system assets item says where the closed families are; with Apple Intelligence on, they are marked as kept.
         snap.report.items.append(item("assets:system", kind: .systemAssets, bytes: 500_000_000, cleanup: .command))
         snap.assetsHeld = true
         let blocks = SystemDataScreenBuilder.blocksWithItems(snap)
         let assets = try XCTUnwrap(blocks.first { $0.id == "macos" }?.items.first { $0.id == "assets:system" })
-        XCTAssertTrue(assets.detail?.contains("Without the 1 families macOS keeps closed") == true)
+        XCTAssertTrue(assets.detail?.contains("1 more, including Apple Intelligence models") == true)
         XCTAssertEqual(blocks.first { $0.id == "unidentified" }?.items.first?.badge?.text, "Kept while Apple Intelligence is on")
         snap.report.fullDiskAccess = false
         let unmeasured = try XCTUnwrap(SystemDataScreenBuilder.blocksWithItems(snap).first { $0.id == "unidentified" })

@@ -33,6 +33,8 @@ enum DebloatScreenBuilder {
     static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
         guard let status else { return nil }
         if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical) }
+        // A retired switch says why it is still shown.
+        if control.retired != nil { return Badge(retired[control.id] ?? loc("No longer works"), tone: .caution) }
         // Screen Time or an organization's profile enforces it, not MacSpace (`DebloatEngine.status`).
         if status.managedElsewhere == true, status.state != .debloated { return Badge(loc("Set by another profile")) }
         switch status.state {
@@ -52,6 +54,12 @@ enum DebloatScreenBuilder {
         }
     }
 
+    /// The pill of a retired switch: why to switch it off.
+    static let retired: [String: String] = [
+        "ai.generative-indexing": loc("Breaks Mail search"),
+        "ai.features-policy": loc("No longer works"),
+    ]
+
     static func restartText(_ restart: RestartRequirement) -> String? {
         switch restart {
         case .none: return nil
@@ -69,12 +77,12 @@ enum DebloatScreenBuilder {
         "telemetry.on-device-speech-policy": loc("Dictation and translation stay on this Mac. Languages without an on-device model stop working."),
         "ads.personalized-ads": loc("Apple stops picking ads based on what you do."),
         "ads.advertising-identifier-policy": loc("Apps can't track you with the advertising identifier or ask to."),
-        "siri.siri-ai-flag": loc("Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on."),
+        "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         // Retired, and switched back on by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
-        "ai.generative-indexing": loc("No longer offered: it stops Mail search from working. Switch this off, then restart your Mac."),
+        "ai.generative-indexing": loc("Switch it off, then restart your Mac."),
         // Retired, and removed by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
-        "ai.features-policy": loc("No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies."),
+        "ai.features-policy": loc("Switch it off. To turn off Apple Intelligence, use the Siri page."),
         "suggestions.spotlight-internet-policy": loc("Spotlight stops sending your searches to Apple. No more web results in Spotlight."),
         "diagnostics.tailspin": loc("Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory."),
         "diagnostics.crash-reporter": loc("No more \"quit unexpectedly\" dialogs."),
@@ -88,7 +96,6 @@ enum DebloatScreenBuilder {
         if let restart = restartText(control.restart) { lines.append(restart) }
         let problem: Set<EffectState> = [.ineffective, .notControllable]
         if let effect = status?.effect, problem.contains(effect.state), !effect.detail.isEmpty { lines.append(effect.detail) }
-        if status?.managedElsewhere == true { lines.append(loc("Screen Time or another profile already sets this. MacSpace cannot change it there.")) }
         return lines.joined(separator: " ")
     }
 

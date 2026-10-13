@@ -13,12 +13,14 @@
 "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.";
 "Free" = "Liberar";
+"Free %@ of %@ downloads?" = "Liberar %@ de downloads do %@?";
 "Free now" = "Liberar agora";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Libere os arquivos que os apps marcaram como removíveis, que o macOS só apagaria com o disco quase cheio.";
 "Free up to %@" = "Liberar até %@";
 "Free up to %@ of purgeable app files?" = "Liberar até %@ de arquivos removíveis de apps?";
 "Freeing in the background" = "Liberando em segundo plano";
 "Freeing space…" = "Liberando espaço…";
+"Installs at the next restart" = "Instala ao reiniciar";
 "Left alone" = "Mantido como está";
 "Nothing can be measured right now. Try Refresh." = "Nada pode ser medido agora. Tente Atualizar.";
 "Open" = "Abrir";
@@ -28,9 +30,6 @@
 "Purgeable app files" = "Arquivos removíveis de apps";
 "Purgeable documents" = "Documentos removíveis";
 "Quick Look thumbnails" = "Miniaturas do Visualização Rápida";
-"Remove" = "Remover";
-"Remove %@ of %@ downloads?" = "Remover %@ de downloads do %@?";
-"Remove Downloads" = "Remover Downloads";
 "Removing downloads" = "Removendo downloads";
 "Removing · %lld%%, %@" = "Removendo · %lld%%, %@";
 "Spotlight index" = "Índice do Spotlight";
@@ -41,7 +40,6 @@
 "Waiting to install" = "Aguardando instalação";
 "free up to %@" = "liberar até %@";
 "freeing %@" = "liberando %@";
-"installs at the next restart" = "instala no próximo reinício";
 "macOS kept them when asked; MacSpace keeps asking it." = "O macOS os manteve quando solicitado; o MacSpace continua pedindo.";
 "macOS's purge service did not answer" = "O serviço de limpeza do macOS não respondeu";
 "nothing to free" = "nada a liberar";

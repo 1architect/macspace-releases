@@ -13,12 +13,14 @@
 "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Dateien, die Apps als löschbar markiert haben. macOS löscht sie erst, wenn der Speicher fast voll ist.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Dateien, die macOS bei Platzmangel selbst löscht. Die Systemeinstellungen zählen diesen Speicher als verfügbar.";
 "Free" = "Freigeben";
+"Free %@ of %@ downloads?" = "%@ an Downloads von %@ freigeben?";
 "Free now" = "Jetzt freigeben";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Gib Dateien frei, die Apps als löschbar markiert haben und die macOS sonst erst bei fast vollem Speicher löscht.";
 "Free up to %@" = "Bis zu %@ freigeben";
 "Free up to %@ of purgeable app files?" = "Bis zu %@ an löschbaren App-Dateien freigeben?";
 "Freeing in the background" = "Wird im Hintergrund freigegeben";
 "Freeing space…" = "Speicher wird freigegeben …";
+"Installs at the next restart" = "Wird beim nächsten Neustart installiert";
 "Left alone" = "Unangetastet";
 "Nothing can be measured right now. Try Refresh." = "Gerade lässt sich nichts messen. Versuche „Aktualisieren“.";
 "Open" = "Öffnen";
@@ -28,9 +30,6 @@
 "Purgeable app files" = "Löschbare App-Dateien";
 "Purgeable documents" = "Löschbare Dokumente";
 "Quick Look thumbnails" = "Übersicht-Miniaturen";
-"Remove" = "Entfernen";
-"Remove %@ of %@ downloads?" = "%@ an %@-Downloads entfernen?";
-"Remove Downloads" = "Downloads entfernen";
 "Removing downloads" = "Downloads werden entfernt";
 "Removing · %lld%%, %@" = "Wird entfernt · %lld %%, %@";
 "Spotlight index" = "Spotlight-Index";
@@ -41,7 +40,6 @@
 "Waiting to install" = "Wartet auf Installation";
 "free up to %@" = "bis zu %@ freigeben";
 "freeing %@" = "%@ werden freigegeben";
-"installs at the next restart" = "wird beim nächsten Neustart installiert";
 "macOS kept them when asked; MacSpace keeps asking it." = "macOS hat sie auf Anfrage behalten; MacSpace fragt weiter nach.";
 "macOS's purge service did not answer" = "Der Bereinigungsdienst von macOS hat nicht geantwortet";
 "nothing to free" = "nichts freizugeben";

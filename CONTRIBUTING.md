@@ -101,7 +101,7 @@ How a text reaches the screen:
 - In a module, text goes through the module's own `loc(...)` (`Support/Localization.swift`), which reads the module's bundle.
 - The names in Debloat's catalog, which the helper shares, go through `locKey`.
 
-Write texts in plain language and keep them short. If you are not sure of a translation, say so in the pull request and a native
+Write texts by the [interface rules](#interface-rules). If you are not sure of a translation, say so in the pull request and a native
 speaker can review it. The translation issue form is the way to report a wrong text without changing code.
 
 ## Adding a module
@@ -128,6 +128,33 @@ Each module is a separate bundle that describes its screens for the app to draw.
 - `Sdk` and `Platform` are separate packages on purpose. Do not merge them into the main package (the reason is in the Handoff).
 - Every switch shows the feature: on means the feature runs, off means MacSpace switched it off.
 - Give a row a description only when its title is not enough. Keep it to one or two short sentences.
+- Follow the interface rules below. A pull request that breaks one needs a comment in the code saying why.
+
+## Interface rules
+
+These apply to the app and to every module.
+
+**Texts** (titles, notes, pills, descriptions, confirmations, footnotes):
+
+- As short as they can be. One sentence when one is enough.
+- Written for someone who is not technical. Name things the way the user sees them (the app, the Finder, System Settings),
+  not the way macOS does inside (daemons, services, containers, purge, urgency), unless there is no other name.
+- No telltale AI language: no "seamlessly", "simply", "just", "ensure", "robust", "leverage"; no em dashes; no "Note that";
+  no exclamation marks; no lists of three for rhythm; no sentence that repeats the title.
+- Say what happens and what it costs the user. Not how MacSpace works inside.
+
+**One item, one place.** An item (a folder, a cache, an app's files) is listed on one page only: the page where the user can
+act on it. Two ways to reach the same page are fine (a chart block and a row); two pages that list the same item are not. An
+exception must be agreed with the maintainer and explained in a comment where the row is built.
+
+**Order.** Lists are sorted by size, largest first. Rows without a size are sorted alphabetically. Any other order (steps, a
+fixed sequence) needs a comment saying why.
+
+**Facts are pills.** A short fact about a row (its state, why it is checked, what kind of item it is) is a pill (`Row.badge`),
+not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill.
+
+**One verb.** Every action that frees space is titled Free, on buttons and in confirmations ("Free", "Free 120 MB", "Free
+selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be undone keeps the "Cannot be undone" pill.
 - When a row stands for files the user can open, list them in `Row.paths` (a folder button shows them in the Finder). When a page
   has a hero chart, give each block the rows it is made of in `UsageSegment.items` (a click opens a page of them), and leave them
   out on the tile. The doc comments in `Sdk/Interface/Widgets.swift` say how.

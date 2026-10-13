@@ -167,24 +167,6 @@
   "Miniaturas de Vista rápida",
   "Übersicht-Miniaturen"
  ],
- "Remove": [
-  "Remover",
-  "Supprimer",
-  "Eliminar",
-  "Entfernen"
- ],
- "Remove %@ of %@ downloads?": [
-  "Remover %@ de downloads do %@?",
-  "Supprimer %@ de téléchargements %@ ?",
-  "¿Eliminar %@ de descargas de %@?",
-  "%@ an %@-Downloads entfernen?"
- ],
- "Remove Downloads": [
-  "Remover Downloads",
-  "Supprimer les téléchargements",
-  "Eliminar descargas",
-  "Downloads entfernen"
- ],
  "Removing downloads": [
   "Removendo downloads",
   "Suppression des téléchargements",
@@ -245,12 +227,6 @@
   "liberando %@",
   "%@ werden freigegeben"
  ],
- "installs at the next restart": [
-  "instala no próximo reinício",
-  "s’installe au prochain redémarrage",
-  "se instala en el próximo reinicio",
-  "wird beim nächsten Neustart installiert"
- ],
  "macOS kept them when asked; MacSpace keeps asking it.": [
   "O macOS os manteve quando solicitado; o MacSpace continua pedindo.",
   "macOS les a conservés quand on lui a demandé ; MacSpace continue de demander.",
@@ -292,5 +268,17 @@
   "indisponible",
   "no disponible",
   "nicht verfügbar"
+ ],
+ "Free %@ of %@ downloads?": [
+  "Liberar %@ de downloads do %@?",
+  "Libérer %@ de téléchargements de %@ ?",
+  "¿Liberar %@ de descargas de %@?",
+  "%@ an Downloads von %@ freigeben?"
+ ],
+ "Installs at the next restart": [
+  "Instala ao reiniciar",
+  "S’installe au prochain redémarrage",
+  "Se instala al reiniciar",
+  "Wird beim nächsten Neustart installiert"
  ]
 }

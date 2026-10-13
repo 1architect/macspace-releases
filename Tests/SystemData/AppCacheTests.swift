@@ -22,20 +22,17 @@ final class AppCacheTests: XCTestCase {
                  dataLikeBytes: dataLike, owner: owner)
     }
 
-    /// Time first, owner second: a month unchanged with its app not opened for as long (or not installed) is suggested; an owner that
-    /// cannot be told is only offered; a cache that changed this week, or whose app was opened this month, comes back.
-    func testTheOutcomeComesFromTheCachesDatesAndItsAppsLastLaunch() {
-        let old = now.addingTimeInterval(-60 * day), recent = now.addingTimeInterval(-3 * day)
-        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: old), unchangedDays: 45), now: now), .suggested)
-        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: recent), unchangedDays: 45), now: now), .comesBack,
-                       "an app opened this month may only read its cache, which leaves no date")
-        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: old), unchangedDays: 10), now: now), .offered)
-        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: nil), unchangedDays: 45), now: now), .offered)
-        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: nil), unchangedDays: 10), now: now), .comesBack)
-        XCTAssertEqual(AppCaches.outcome(cache(.notInstalled, unchangedDays: 45), now: now), .suggested)
-        XCTAssertEqual(AppCaches.outcome(cache(.notInstalled, unchangedDays: 10), now: now), .offered)
-        XCTAssertEqual(AppCaches.outcome(cache(.unknown, unchangedDays: 400), now: now), .offered, "an unknown owner is never suggested")
-        XCTAssertEqual(AppCaches.outcome(cache(.unknown, unchangedDays: 2), now: now), .comesBack)
+    /// Recommended once the app is gone or the cache was left alone for 3 days (a week when no app can be named for it); a cache
+    /// changed since comes back.
+    func testTheOutcomeComesFromTheCachesDatesAndItsOwner() {
+        let old = now.addingTimeInterval(-60 * day), recent = now.addingTimeInterval(-1 * day)
+        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: old), unchangedDays: 4), now: now), .suggested)
+        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: recent), unchangedDays: 4), now: now), .suggested,
+                       "opened yesterday, but its cache untouched for days: it rebuilds what it needs")
+        XCTAssertEqual(AppCaches.outcome(cache(.app(name: "A", lastOpened: nil), unchangedDays: 2), now: now), .comesBack)
+        XCTAssertEqual(AppCaches.outcome(cache(.notInstalled, unchangedDays: 0), now: now), .suggested)
+        XCTAssertEqual(AppCaches.outcome(cache(.unknown, unchangedDays: 5), now: now), .comesBack, "no app to ask: a week first")
+        XCTAssertEqual(AppCaches.outcome(cache(.unknown, unchangedDays: 8), now: now), .suggested)
         XCTAssertEqual(AppCaches.outcome(cache(.notInstalled, unchangedDays: 90, dataLike: 60_000_000), now: now), .heldBack)
     }
 
@@ -104,60 +101,77 @@ final class AppCacheTests: XCTestCase {
                                   takenAt: now)
     }
 
-    /// One group under Free now; its page lets the user choose, with the suggested ones checked: what nothing uses first, then the
-    /// caches in use (unchecked, saying they come back), and never one whose app is running.
-    func testAppCachesAreAGroupWhosePageLetsTheUserChoose() throws {
+    /// One group under Free now, in parts: Recommended (checked), the apps' caches (unchecked; one whose app is open has no box),
+    /// largest first in each, with pills instead of notes and no (i).
+    func testCachesPageIsInPartsWithTheRecommendedChecked() throws {
         var suggested = cache(.notInstalled, unchangedDays: 45, bytes: 30_000_000)
         suggested.id = "appcache:gone"
-        var offered = cache(.unknown, unchangedDays: 20, bytes: 10_000_000)
+        var offered = cache(.unknown, unchangedDays: 5, bytes: 10_000_000)
         offered.id = "appcache:tool"
         var inUse = cache(.unknown, unchangedDays: 1, bytes: 90_000_000)
         inUse.id = "appcache:busy"
-        inUse.recentBytes = 40_000_000
         var running = cache(.unknown, unchangedDays: 1, bytes: 300_000_000)
         running.id = "appcache:open"
         running.ownerRunning = true
-        let row = try XCTUnwrap(SystemDataScreenBuilder.appCachesRow(snapshot([offered, inUse, suggested, running]), now: now))
-        XCTAssertEqual(row.children.map(\.id), ["appcache:gone", "appcache:tool", "appcache:busy"])
-        XCTAssertEqual(row.selection?.checked, ["appcache:gone"])
-        XCTAssertEqual(row.selection?.choices["appcache:busy"], 90_000_000)
-        XCTAssertNil(row.selection?.choices["appcache:open"], "its app is open: the cleaner would refuse it")
-        XCTAssertEqual(row.selection?.action.id, "cleanAppCaches")
-        XCTAssertNotNil(row.selection?.action.confirmation)
-        XCTAssertEqual(row.children.first?.subtitle, "App not installed")
-        XCTAssertEqual(row.children.last?.subtitle, "Comes back as it is used")
-        XCTAssertTrue(row.children.last?.detail?.contains(ByteFormat.string(40_000_000)) == true)
-        XCTAssertEqual(row.children.first?.paths, ["/x"])
-        XCTAssertNil(SystemDataScreenBuilder.appCachesRow(snapshot([running]), now: now))
+        let row = try XCTUnwrap(CachesPage.row(snapshot([offered, inUse, suggested, running]), now: now))
+        let selection = try XCTUnwrap(row.selection)
+        XCTAssertEqual(selection.sections.map(\.id), ["recommended", "apps"])
+        XCTAssertEqual(selection.sections[1].rows, ["appcache:open", "appcache:busy", "appcache:tool"], "largest first")
+        XCTAssertEqual(selection.checked, ["appcache:gone"])
+        XCTAssertEqual(selection.suggested, ["appcache:gone"])
+        XCTAssertNil(selection.choices["appcache:open"], "its app is open: the cleaner would refuse it")
+        XCTAssertEqual(selection.action.id, "freeCaches")
+        XCTAssertNotNil(selection.save)
+        let gone = try XCTUnwrap(row.children.first { $0.id == "appcache:gone" })
+        XCTAssertEqual(gone.badges.map(\.text), ["App cache", "App not installed"])
+        XCTAssertNil(gone.detail)
+        XCTAssertEqual(row.children.first { $0.id == "appcache:open" }?.badges.map(\.text), ["Open now", "Unknown app"])
+        XCTAssertEqual(row.children.first { $0.id == "appcache:busy" }?.badges.map(\.text), ["Unknown app"],
+                       "the part's title says it comes back; the pill says only what it does not")
+        XCTAssertEqual(row.children.first { $0.id == "appcache:tool" }?.badges.map(\.text), ["Unknown app"])
     }
 
-    /// The rows with buttons of their own are not part of what Clean frees, so not of the "can be freed" block.
-    func testOwnButtonRowsAreNotInTheFreeableBlock() {
+    /// The user's choice is kept: what they checked, and every cache of a part whose box is on, newcomers too.
+    func testTheSavedChoiceDecidesWhatIsFreed() throws {
         var gone = cache(.notInstalled, unchangedDays: 45, bytes: 30_000_000)
         gone.id = "appcache:gone"
-        var snap = snapshot([gone], items: [SystemDataItem(id: "trash:user", title: "Trash", kind: .trash, paths: ["/t"], bytes: 5_000_000, readable: true,
-                                                          owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
-                                                          notes: [])])
-        snap.homebrew = HomebrewCleanup.Plan(brew: "/b", standard: .init(bytes: 33_000_000, error: nil), allDownloads: .init(bytes: 138_000_000, error: nil))
-        XCTAssertEqual(SystemDataScreenBuilder.cleanBytes(snap), 0)
-        let freeable = SystemDataScreenBuilder.blocksWithItems(snap).first { $0.id == "freeable" }
-        XCTAssertNil(freeable)
+        var busy = cache(.unknown, unchangedDays: 1, bytes: 90_000_000)
+        busy.id = "appcache:busy"
+        var other = cache(.unknown, unchangedDays: 2, bytes: 5_000_000)
+        other.id = "appcache:other"
+        var snap = snapshot([gone, busy, other])
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 30_000_000, "the recommendation until the user chooses")
+        snap.choices = CacheChoices(chosen: ["appcache:busy"], all: [])
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 90_000_000)
+        snap.choices = CacheChoices(chosen: [], all: ["apps"])
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 95_000_000, "the whole part")
+        XCTAssertEqual(CachesPage.row(snap, now: now)?.selection?.sections.map(\.all), [false, true])
     }
 
-    /// Homebrew's two ways, each with what its dry run said; when its default stops on a tap it does not trust, the other way stays,
-    /// with the reason.
-    func testHomebrewOffersBothWaysOrSaysWhyOneStopped() throws {
+    /// A cache listed on the caches page is not listed again in its block's page; what it is taken from goes to "can be freed".
+    func testCachesAreListedOnce() {
+        var gone = cache(.notInstalled, unchangedDays: 45, bytes: 60_000_000)
+        gone.id = "appcache:gone"
+        gone.path = "/c/gone"
+        let item = SystemDataItem(id: "appcache:gone", title: "App cache: gone", kind: .appCache, paths: ["/c/gone"], bytes: 60_000_000, readable: true,
+                                  owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])
+        let snap = snapshot([gone], items: [item])
+        let blocks = SystemDataScreenBuilder.blocksWithItems(snap)
+        XCTAssertNil(blocks.first { $0.id == "caches" }, "all of it is on the caches page")
+        XCTAssertEqual(blocks.first { $0.id == "freeable" }?.items.map(\.id), ["caches"])
+        XCTAssertTrue(SystemDataScreenBuilder.leftAlone(snap).isEmpty)
+    }
+
+    /// Homebrew's old versions are recommended; its downloads are offered on their own, saying they come back.
+    func testHomebrewIsTwoDeveloperCaches() {
         var snap = snapshot([])
         snap.homebrew = HomebrewCleanup.Plan(brew: "/b", standard: .init(bytes: 33_400_000, error: nil), allDownloads: .init(bytes: 138_200_000, error: nil))
-        let both = try XCTUnwrap(SystemDataScreenBuilder.homebrewRow(snap))
-        XCTAssertEqual(both.actions.map { $0.parameters["all"] }, ["false", "true"])
-        XCTAssertEqual(both.trailing, ByteFormat.string(33_400_000))
-        snap.homebrew?.standard = .init(bytes: nil, error: "Refusing to load cask 1architect/macspace/macspace from untrusted tap 1architect/macspace.")
-        let one = try XCTUnwrap(SystemDataScreenBuilder.homebrewRow(snap))
-        XCTAssertEqual(one.actions.map { $0.parameters["all"] }, ["true"])
-        XCTAssertTrue(one.detail?.contains("untrusted tap") == true)
-        snap.homebrew = nil
-        XCTAssertNil(SystemDataScreenBuilder.homebrewRow(snap))
+        let entries = CachesPage.entries(snap, now: now)
+        XCTAssertEqual(entries.map(\.id), [CachesPage.homebrewDownloads, CachesPage.homebrewOld])
+        XCTAssertEqual(entries.last?.recommended, true)
+        XCTAssertEqual(entries.first?.bytes, 104_800_000)
+        snap.homebrew?.standard = .init(bytes: nil, error: "Refusing to load cask")
+        XCTAssertEqual(CachesPage.entries(snap, now: now).map(\.id), [CachesPage.homebrewDownloads])
     }
 
     func testHomebrewsOutputIsRead() {
@@ -175,11 +189,11 @@ final class AppCacheTests: XCTestCase {
     func testTheTrashRowOpensTheTrashAndNamesFindersOwnSetting() throws {
         var snap = snapshot([], items: [SystemDataItem(id: "trash:user", title: "Trash", kind: .trash, paths: ["/t"], bytes: 5_000_000, readable: true,
                                                       owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])])
-        let row = try XCTUnwrap(SystemDataScreenBuilder.trashRow(snap))
+        let row = try XCTUnwrap(SystemDataScreenBuilder.trashRow(snap)?.row)
         XCTAssertEqual(row.actions.map(\.id), ["openTrash"])
         XCTAssertTrue(row.detail?.contains("Finder > Settings > Advanced") == true)
         snap.trashEmptiesItself = true
-        XCTAssertTrue(SystemDataScreenBuilder.trashRow(snap)?.detail?.contains("Finder deletes items") == true)
+        XCTAssertEqual(SystemDataScreenBuilder.trashRow(snap)?.row.badge?.text, "Empties after 30 days")
     }
 
     /// The file's and folder's dates set back, as an app that last used its cache weeks ago leaves them.

@@ -28,6 +28,10 @@ struct SystemDataSnapshot: Sendable {
     var homebrew: HomebrewCleanup.Plan?
     /// Finder's "Remove items from the Trash after 30 days" (`FXRemoveOldTrashItems`): on, off, or nil when unreadable.
     var trashEmptiesItself: Bool?
+    /// Developer tools' caches (`DeveloperCaches`).
+    var developerCaches: [DeveloperCache] = []
+    /// What the user chose on the caches page (`CacheChoices`), read when the page is built, not when the Mac is scanned.
+    var choices = CacheChoices()
 }
 
 /// Measures the root-only locations through the helper and folds the sizes into the report.
@@ -137,6 +141,9 @@ actor SystemDataStore {
         let homebrew = HomebrewBox()
         let brewDone = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .utility).async { homebrew.plan = HomebrewCleanup.plan(); brewDone.signal() }
+        let developer = DeveloperBox()
+        let developerDone = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .utility).async { developer.caches = DeveloperCaches.scan(); developerDone.signal() }
         let report = SystemDataInspector().inspect()
         let services = livePurgeableServices()
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -151,6 +158,8 @@ actor SystemDataStore {
         snapshot.trashEmptiesItself = CFPreferencesCopyAppValue("FXRemoveOldTrashItems" as CFString, "com.apple.finder" as CFString) as? Bool ?? false
         brewDone.wait()
         snapshot.homebrew = homebrew.plan
+        developerDone.wait()
+        snapshot.developerCaches = developer.caches
         // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
         #if DEBUG
         if ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1", let data = try? JSONEncoder().encode(report) {
@@ -180,4 +189,9 @@ actor SystemDataStore {
 /// Homebrew's plan, handed from the thread that asks Homebrew to the scan's.
 private final class HomebrewBox: @unchecked Sendable {
     var plan: HomebrewCleanup.Plan?
+}
+
+/// The developer caches, handed from the thread that scans them to the scan's.
+private final class DeveloperBox: @unchecked Sendable {
+    var caches: [DeveloperCache] = []
 }

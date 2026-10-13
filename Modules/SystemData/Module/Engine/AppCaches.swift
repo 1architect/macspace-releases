@@ -42,42 +42,36 @@ public struct AppCache: Codable, Equatable, Sendable {
 }
 
 public enum AppCacheOutcome: Equatable, Sendable {
-    /// Checked when the page opens: unchanged for a month and its app not opened for as long (or not installed).
+    /// Recommended: checked until the user chooses.
     case suggested
-    /// Listed, not checked: old enough, but who uses it cannot be told, or not old enough to suggest.
-    case offered
-    /// In use or recently used: listed, not checked, saying it comes back as the app is used (and how much it wrote lately).
+    /// Changed in the last days, or whose owner cannot be named and changed this week: listed, not checked. It comes back soon
+    /// after it is freed.
     case comesBack
     /// Holds what looks like data: never listed.
     case heldBack
 }
 
 public enum AppCaches {
-    /// Unchanged this long, a cache is not in use; its app not opened this long, it is not about to be.
-    static let unusedDays = 30.0
-    /// Changed within this, a cache is in use and not even offered.
-    static let recentDays = 7.0
+    /// Changed within this, a cache is in use: freeing it would only free the space until its app writes it again.
+    static let recentDays = 3.0
+    /// A cache no app can be named for is recommended only after this long untouched: who would miss it cannot be asked.
+    static let unknownDays = 7.0
     /// From this much data-like content, a folder is never offered.
     static let dataLikeLimit: UInt64 = 50_000_000
     static let mediaAndDocumentExtensions: Set<String> = ["mp3", "m4a", "m4b", "aac", "flac", "wav", "aif", "aiff", "ogg", "opus", "mp4", "m4v",
                                                           "mov", "mkv", "avi", "webm", "pdf", "doc", "docx", "pages", "key", "numbers", "xls",
                                                           "xlsx", "ppt", "pptx", "rtf", "epub"]
 
+    /// Every cache is recommended once its app is gone or it has been left alone for a few days; an app rebuilds what it needs, at
+    /// the cost of a slower first launch. Asked to be bolder on 2026-10-13: with a month untouched and the app unopened for a
+    /// month, only one cache of the development Mac's 18 qualified, since most change every week.
     public static func outcome(_ cache: AppCache, now: Date = Date()) -> AppCacheOutcome {
         if cache.dataLikeBytes >= dataLikeLimit { return .heldBack }
+        if cache.owner == .notInstalled { return .suggested }
         let unchanged = now.timeIntervalSince(cache.lastChange) / 86_400
         if unchanged < recentDays { return .comesBack }
-        switch cache.owner {
-        case let .app(_, lastOpened):
-            guard let lastOpened else { return unchanged >= unusedDays ? .offered : .comesBack }
-            // An app opened this month may use its cache only by reading it, which leaves no date behind (Middle, 2026-10-12).
-            if now.timeIntervalSince(lastOpened) / 86_400 < unusedDays { return .comesBack }
-            return unchanged >= unusedDays ? .suggested : .offered
-        case .notInstalled:
-            return unchanged >= unusedDays ? .suggested : .offered
-        case .unknown:
-            return .offered
-        }
+        if cache.owner == .unknown, unchanged < unknownDays { return .comesBack }
+        return .suggested
     }
 
     /// Days since the cache last changed, rounded down.
@@ -88,7 +82,7 @@ public enum AppCaches {
     // MARK: Reading the Mac
 
     /// The folder's dates and sizes, from the file system's records alone (`fts`, which reads no file's content).
-    static func measure(_ path: String, now: Date = Date()) -> (lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64)? {
+    static func measure(_ path: String, now: Date = Date()) -> (lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)? {
         guard let copy = strdup(path) else { return nil }
         defer { free(copy) }
         var paths: [UnsafeMutablePointer<CChar>?] = [copy, nil]
@@ -98,6 +92,7 @@ public enum AppCaches {
         var newest: TimeInterval = 0
         var recentBytes: UInt64 = 0
         var dataLike: UInt64 = 0
+        var total: UInt64 = 0
         func seconds(_ time: timespec) -> TimeInterval { TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9 }
         while let entry = fts_read(fts) {
             let info = Int32(entry.pointee.fts_info)
@@ -111,10 +106,11 @@ public enum AppCaches {
             let born = seconds(stat.st_birthtimespec)
             newest = max(newest, born, seconds(stat.st_mtimespec), seconds(stat.st_atimespec))
             let allocated = UInt64(max(stat.st_blocks, 0)) * 512
+            total += allocated
             if born >= recent { recentBytes += allocated }
             if let path = entry.pointee.fts_path, isDataLike((String(cString: path) as NSString).lastPathComponent) { dataLike += allocated }
         }
-        return (Date(timeIntervalSince1970: newest), recentBytes, dataLike)
+        return (Date(timeIntervalSince1970: newest), recentBytes, dataLike, total)
     }
 
     /// A media file or document with a name a person gave it ("Episode 12.mp3"), not a key or a hash ("a3f9…e1.mp4").

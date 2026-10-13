@@ -102,9 +102,9 @@ enum OtherSystemFilesScreenBuilder {
     /// A macOS update downloaded and prepared, waiting for a restart: Software Update installs it, and macOS removes it then.
     static func updatesSection(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
         guard !snapshot.updates.isEmpty else { return nil }
-        let rows = snapshot.updates.map { update in
-            Row(id: "update:\(update.path)", title: loc("\(update.name), ready to install"), subtitle: loc("installs at the next restart"),
-                trailing: ByteFormat.string(update.bytes), symbol: "arrow.down.circle",
+        let rows = snapshot.updates.sorted { $0.bytes > $1.bytes }.map { update in
+            Row(id: "update:\(update.path)", title: loc("\(update.name), ready to install"), trailing: ByteFormat.string(update.bytes),
+                badge: Badge(loc("Installs at the next restart")), symbol: "arrow.down.circle",
                 actions: [Action(id: "openSoftwareUpdate", title: loc("Open"))], paths: [update.path])
         }
         return .section(SectionWidget(id: "updates", title: loc("Waiting to install"), widgets: [.list(ListWidget(id: "updates-list", rows: rows))]))
@@ -113,15 +113,18 @@ enum OtherSystemFilesScreenBuilder {
     /// What MacSpace frees, as its own section on the page: the files apps marked purgeable, and each cloud service's downloads,
     /// removed only with that row's own button (they are the user's documents, kept in the cloud).
     static func freeNow(_ snapshot: PurgeableSnapshot) -> ScreenWidget? {
-        var rows: [Row] = []
+        // Largest first: the cloud rows are in the order of their folders' sizes (`documentsRows`), and the purgeable app files go
+        // before the first one smaller than them.
+        var rows = cloudRows(snapshot)
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
-            rows.append(Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
+            let shares = cloudShares(snapshot)
+            let index = shares.firstIndex { $0 < snapshot.freeableBytes } ?? rows.count
+            rows.insert(Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
                             badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
                             detail: snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail,
-                            actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []))
+                            actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), at: min(index, rows.count))
         }
-        rows += cloudRows(snapshot)
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
     }
@@ -133,12 +136,20 @@ enum OtherSystemFilesScreenBuilder {
         return (documentsRows(bytes, snapshot) ?? []).filter { $0.id.hasPrefix("documents:") }
     }
 
+    /// The sizes of the cloud rows, in their order.
+    static func cloudShares(_ snapshot: PurgeableSnapshot) -> [UInt64] {
+        let bytes = snapshot.services?[CacheDeleteService.fsPurgeableDocument] ?? 0
+        guard bytes >= threshold else { return [] }
+        let found = snapshot.documents.map(\.bytes).reduce(0, +)
+        return snapshot.documents.sorted { $0.bytes > $1.bytes }.map { found > bytes ? UInt64((Double(bytes) * Double($0.bytes) / Double(max(found, 1))).rounded()) : $0.bytes }
+    }
+
     /// Removes one cloud service's downloads; the size is the row's.
     static func removeDownloadsAction(_ source: PurgeableDocuments.Source, bytes: UInt64) -> Action {
-        Action(id: "removeDownloads", title: loc("Remove Downloads"), parameters: ["path": source.path],
-               confirmation: Confirmation(title: loc("Remove \(ByteFormat.string(bytes)) of \(source.name) downloads?"),
+        Action(id: "removeDownloads", title: loc("Free"), parameters: ["path": source.path],
+               confirmation: Confirmation(title: loc("Free \(ByteFormat.string(bytes)) of \(source.name) downloads?"),
                                           message: loc("The files stay in \(source.name) and download again when you open them."),
-                                          confirmTitle: loc("Remove")))
+                                          confirmTitle: loc("Free")))
     }
 
     /// A service's name; the purgeable documents are named after the cloud service that holds them, once it is known.
@@ -158,7 +169,7 @@ enum OtherSystemFilesScreenBuilder {
         func share(_ source: PurgeableDocuments.Source) -> UInt64 {
             found > bytes ? UInt64((Double(bytes) * Double(source.bytes) / Double(max(found, 1))).rounded()) : source.bytes
         }
-        var rows = snapshot.documents.map { source in
+        var rows = snapshot.documents.sorted { $0.bytes > $1.bytes }.map { source in
             // While its downloads are being removed: how far, and no button.
             let removal = snapshot.removing[source.path]
             return Row(id: "documents:\(source.path)", title: loc("\(source.name) files on this Mac"), subtitle: source.files == 1 ? loc("1 file") : loc("\(source.files) files"),

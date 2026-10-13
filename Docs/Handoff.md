@@ -85,8 +85,8 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    then loaded through their principal class (`MacSpaceModuleEntry`). All modules load side by side.
 2. **Declarative UI.** A module returns a `Screen` of widgets (banner, usage bar, chart, list, toggles, button, steps, text,
    section) and a summary widget for the Home tile. The app draws them. Actions come back as `ActionRequest`s; the app checks the
-   action's `requires` permissions and shows its confirmation first. A row's subtitle is a short grey note after its title; its
-   detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
+   action's `requires` permissions and shows its confirmation first. A row's subtitle is a count after its title, and its facts are pills
+   (`Row.badges`) right after it; its detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
    Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short
    sentences: no (i) is drawn without one. Rows are drawn without symbols, and modules are named without theirs. A row with
    `children` is a group that opens a page of its own. A row with `paths` gets a folder button beside its (i) that shows its files
@@ -260,13 +260,14 @@ released on 2026-10-07: GitHub release `v1.0.0`, the update feed, and the cask `
   [Research.md](Research.md) with an evidence label.
 - Do not change the bundle identifiers (`com.macspace.*`): Full Disk Access, the helper approval and update signatures depend on them.
 - Anything new that touches a private Apple interface needs a per-build guard and crash isolation like CacheDelete's.
+- Every page follows the [interface rules](../CONTRIBUTING.md#interface-rules): short texts for laymen, each item listed once,
+  largest first, facts as pills, and Free as the only verb for freeing space.
 
 ## Open work
 
 - Notarize a build and run the clean-VM checklist above, then a Sparkle update test.
-- Cache cleanup for other apps is deliberately not in System Data (`~/Library/Caches` is listed, not cleaned), except the Chromium
-  and Electron caches in Application Support, cleaned while the app is closed (asked for on 2026-10-06). The rest would be its own
-  module.
+- The caches page (System Data › Caches you can free, `CachesPage`) has not been clicked through yet: check a box and the header
+  boxes, then that the main Free button frees the saved choice.
 - Remove Downloads (Other System Files) has not been run on a real cloud folder yet: check it with OneDrive, then iCloud Drive.
 - Siri screen: a button for "remove orphan subscriptions" through the helper (today it points to a command that needs `sudo`).
 - Debloat in a virtual machine still shows controls that cannot take effect there.

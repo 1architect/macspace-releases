@@ -13,12 +13,14 @@
 "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Fichiers que les apps ont marqués comme supprimables. macOS ne les supprime que lorsque le disque est presque plein.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Fichiers que macOS supprime de lui-même quand l’espace manque. Réglages Système compte cet espace comme disponible.";
 "Free" = "Libérer";
+"Free %@ of %@ downloads?" = "Libérer %@ de téléchargements de %@ ?";
 "Free now" = "À libérer";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Libérez les fichiers que les apps ont marqués comme purgeables, que macOS ne supprime sinon que lorsque le disque est presque plein.";
 "Free up to %@" = "Libérer jusqu’à %@";
 "Free up to %@ of purgeable app files?" = "Libérer jusqu’à %@ de fichiers d’apps purgeables ?";
 "Freeing in the background" = "Libération en arrière-plan";
 "Freeing space…" = "Libération d’espace…";
+"Installs at the next restart" = "S’installe au prochain redémarrage";
 "Left alone" = "Laissé tel quel";
 "Nothing can be measured right now. Try Refresh." = "Rien ne peut être mesuré pour l’instant. Essayez Actualiser.";
 "Open" = "Ouvrir";
@@ -28,9 +30,6 @@
 "Purgeable app files" = "Fichiers d’apps purgeables";
 "Purgeable documents" = "Documents purgeables";
 "Quick Look thumbnails" = "Vignettes Coup d’œil";
-"Remove" = "Supprimer";
-"Remove %@ of %@ downloads?" = "Supprimer %@ de téléchargements %@ ?";
-"Remove Downloads" = "Supprimer les téléchargements";
 "Removing downloads" = "Suppression des téléchargements";
 "Removing · %lld%%, %@" = "Suppression · %lld %%, %@";
 "Spotlight index" = "Index Spotlight";
@@ -41,7 +40,6 @@
 "Waiting to install" = "En attente d’installation";
 "free up to %@" = "libérer jusqu’à %@";
 "freeing %@" = "libération de %@";
-"installs at the next restart" = "s’installe au prochain redémarrage";
 "macOS kept them when asked; MacSpace keeps asking it." = "macOS les a conservés quand on lui a demandé ; MacSpace continue de demander.";
 "macOS's purge service did not answer" = "Le service de purge de macOS n’a pas répondu";
 "nothing to free" = "rien à libérer";

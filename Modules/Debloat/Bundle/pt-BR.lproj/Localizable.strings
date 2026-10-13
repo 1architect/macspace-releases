@@ -21,6 +21,7 @@
 "Apps" = "Apps";
 "Apps can't track you with the advertising identifier or ask to." = "Os apps não podem rastrear você com o identificador de publicidade nem pedir para isso.";
 "Background analysis" = "Análise em segundo plano";
+"Breaks Mail search" = "Quebra a busca do Mail";
 "Cannot read" = "Não é possível ler";
 "Cannot take effect here" = "Não tem efeito aqui";
 "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on." = "Verifica a cada 15 minutos enquanto o MacSpace está aberto e desativa de novo qualquer recurso que o macOS tenha reativado.";
@@ -65,8 +66,7 @@
 "MacSpace restores the settings it saved before disabling them." = "O MacSpace restaura os ajustes que salvou antes de desativá-los.";
 "No control was named." = "Nenhum controle foi indicado.";
 "No controls were selected." = "Nenhum controle foi selecionado.";
-"No longer offered: Apple deprecated its policies on macOS. To turn Apple Intelligence off, use the Siri & Apple Intelligence page. Switch this off to remove the policies." = "Não é mais oferecido: a Apple tornou suas políticas obsoletas no macOS. Para desativar o Apple Intelligence, use a página Siri e Apple Intelligence. Desligue esta chave para remover as políticas.";
-"No longer offered: it stops Mail search from working. Switch this off, then restart your Mac." = "Não é mais oferecido: impede a busca do Mail de funcionar. Desligue esta chave e reinicie o Mac.";
+"No longer works" = "Não funciona mais";
 "No more \"quit unexpectedly\" dialogs." = "Chega de avisos de \"encerrou inesperadamente\".";
 "Not on this macOS" = "Não existe neste macOS";
 "Not working" = "Não funciona";
@@ -78,13 +78,11 @@
 "Policies" = "Políticas";
 "Reopen apps to apply." = "Reabra os apps para aplicar.";
 "Restart to apply." = "Reinicie para aplicar.";
-"Screen Time or another profile already sets this. MacSpace cannot change it there." = "O Tempo de Uso ou outro perfil já define isto. O MacSpace não pode alterar isso lá.";
 "Set by another profile" = "Definido por outro perfil";
 "Share analytics with Apple" = "Compartilhar análises com a Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Mostra uma notificação quando o macOS reativa um recurso desativado e o MacSpace o desativa de novo.";
 "Siri" = "Siri";
 "Siri AI" = "Siri AI";
-"Siri AI no longer starts, and Spotlight goes back to classic search. Apple Intelligence and its other features stay on." = "A Siri AI deixa de abrir e o Spotlight volta à busca clássica. A Apple Intelligence e os outros recursos dela continuam ativos.";
 "Some are not tested yet." = "Alguns ainda não foram testados.";
 "Spotlight internet results" = "Resultados da internet no Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "O Spotlight deixa de enviar suas buscas para a Apple. Sem resultados da web no Spotlight.";
@@ -93,8 +91,11 @@
 "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above." = "Deixa de enviar dados de uso e de falhas para a Apple, inclusive nas versões beta do macOS, que ignoram o ajuste acima.";
 "Stops sharing Siri and Dictation recordings with Apple." = "Deixa de compartilhar gravações da Siri e do Ditado com a Apple.";
 "Suggestions and search" = "Sugestões e busca";
+"Switch it off, then restart your Mac." = "Desligue e reinicie o Mac.";
+"Switch it off. To turn off Apple Intelligence, use the Siri page." = "Desligue. Para desativar a Apple Intelligence, use a página Siri.";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "Desative análises, anúncios e a coleta de dados em segundo plano que o macOS permite controlar.";
 "Turns off Game Center." = "Desativa o Game Center.";
+"Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on." = "Desativa a Siri AI. O Spotlight volta à busca clássica. Os outros recursos da Apple Intelligence continuam ativos.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar.";
 "Undone by macOS" = "Desfeito pelo macOS";
 "Unknown action %@." = "Ação desconhecida %@.";

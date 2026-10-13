@@ -42,7 +42,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
         }
         let applied = DebloatScreenBuilder.row(retired, snap(.debloated))
         XCTAssertTrue(applied.isOn && applied.isEnabled, "it can be switched off, which removes the policies")
-        XCTAssertTrue(applied.detail?.hasPrefix("No longer offered") == true)
+        XCTAssertEqual(applied.badge?.text, "No longer works", "the pill says why it is still shown")
+        XCTAssertTrue(applied.detail?.hasPrefix("Switch it off") == true)
         XCTAssertFalse(DebloatScreenBuilder.row(retired, snap(.partial)).isEnabled, "never switched on again")
         XCTAssertFalse(DebloatScreenBuilder.recommended(snap(.partial)).contains { $0.id == retired.id }, "not in Disable all")
         XCTAssertTrue(DebloatScreenBuilder.counts(snap(.drifted)).drifted.isEmpty, "not offered to disable again")
@@ -75,7 +76,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         let row = DebloatScreenBuilder.row(control, snap)
         XCTAssertFalse(row.isEnabled)
         XCTAssertEqual(row.badge?.text, "Set by another profile")
-        XCTAssertTrue(row.detail?.contains("Screen Time or another profile already sets this.") == true)
+        XCTAssertFalse(row.detail?.contains("Screen Time") == true, "the pill says it; the (i) does not repeat it")
         XCTAssertFalse(DebloatScreenBuilder.recommended(snap).contains { $0.id == control.id })
     }
 

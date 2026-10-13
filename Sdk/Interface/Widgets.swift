@@ -39,7 +39,8 @@ public enum ActionRole: String, Codable, Sendable {
     case destructive
 }
 
-/// Something the user can trigger. The app asks for confirmation first when `confirmation` is set, and for any missing
+/// Something the user can trigger. An action that frees space is titled Free ("Free", "Free 120 MB"), never Delete or Clean.
+/// The app asks for confirmation first when `confirmation` is set, and for any missing
 /// `requires` permission before it calls the module.
 public struct Action: Codable, Equatable, Sendable {
     public var id: String
@@ -212,12 +213,21 @@ public struct BarChart: Codable, Equatable, Sendable {
     }
 }
 
+/// A list row. The interface rules (CONTRIBUTING.md) apply: each item is listed on one page only, short facts go in `badges`, not
+/// `subtitle`, and `detail` never repeats a badge.
 public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var id: String
     public var title: String
+    /// A count the title needs ("12 items"). A fact about the row (its state, its kind, why it is checked) is a badge.
     public var subtitle: String?
     public var trailing: String?
-    public var badge: Badge?
+    /// Short facts about the row, drawn as pills right after its title, in this order.
+    public var badges: [Badge]
+    /// The first badge.
+    public var badge: Badge? {
+        get { badges.first }
+        set { badges = newValue.map { [$0] } ?? [] }
+    }
     public var symbol: String?
     /// Longer text shown when the row is expanded.
     public var detail: String?
@@ -235,14 +245,14 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// On a group: its page lets the user choose among its rows and act on the chosen ones (`Selection`).
     public var selection: Selection?
 
-    public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, symbol: String? = nil,
-                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [], paths: [String] = [],
-                selection: Selection? = nil) {
+    public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
+                symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
+                paths: [String] = [], selection: Selection? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.trailing = trailing
-        self.badge = badge
+        self.badges = (badge.map { [$0] } ?? []) + badges
         self.symbol = symbol
         self.detail = detail
         self.steps = steps
@@ -252,16 +262,20 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.selection = selection
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children, paths, selection }
+    private enum CodingKeys: String, CodingKey {
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, children, paths, selection
+    }
 
-    /// `children`, `paths` and `selection` may be missing (a screen written before they existed).
+    /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
+    /// written before `badges` has `badge`.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
         trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
-        badge = try container.decodeIfPresent(Badge.self, forKey: .badge)
+        badges = try container.decodeIfPresent([Badge].self, forKey: .badges)
+            ?? (try container.decodeIfPresent(Badge.self, forKey: .badge)).map { [$0] } ?? []
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
@@ -269,6 +283,22 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
         selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(subtitle, forKey: .subtitle)
+        try container.encodeIfPresent(trailing, forKey: .trailing)
+        try container.encode(badges, forKey: .badges)
+        try container.encodeIfPresent(symbol, forKey: .symbol)
+        try container.encodeIfPresent(detail, forKey: .detail)
+        try container.encode(steps, forKey: .steps)
+        try container.encode(actions, forKey: .actions)
+        try container.encode(children, forKey: .children)
+        try container.encode(paths, forKey: .paths)
+        try container.encodeIfPresent(selection, forKey: .selection)
     }
 
     /// A group of `rows` as one row: its count under the title and its total on the right.
@@ -281,19 +311,50 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
 /// A group whose page lets the user choose rows and act on the chosen ones (`Row.selection`). Each of the group's rows named in
 /// `choices` gets a checkbox, checked when the page opens if its id is in `checked`; rows not named have none. While at least one is
-/// checked, the page's bottom button is `action`, titled with its title and the checked rows' total ("Free 120 MB"), and runs with
-/// the checked ids, one per line, in the parameter `ids` (ids can hold commas, a folder's name for one). A choice is the user's until the group's page closes.
+/// checked, the page's bottom button is `action`, titled with its title and the checked rows' total ("Free selected 120 MB"), and runs
+/// with the checked ids, one per line, in the parameter `ids` (ids can hold commas, a folder's name for one). While the boxes are
+/// exactly `suggested`, the button is titled `suggestedTitle` instead ("Free recommended 1.2 GB").
+///
+/// With `sections`, the page lists the rows in those parts, in that order, each under its title ("Recommended · 3 items · 1.2 GB")
+/// and, when it has rows to choose, a box that checks or clears them all. With `save`, every change is sent to the module at once (`save` with the
+/// parameters `ids`, the checked rows, and `all`, the sections whose header box is on, one per line), so the module can keep the
+/// choice: it then decides what its other buttons and automatic cleaning free, and sends it back in `checked` and `SelectionSection.all`.
+/// Without `save`, a choice is the user's until the group's page closes.
 public struct Selection: Codable, Equatable, Sendable {
     public var action: Action
     /// The rows that can be chosen, by id, with the size each adds to the button's total.
     public var choices: [String: UInt64]
-    /// The rows checked when the page opens: what the module suggests.
+    /// The rows checked when the page opens: the saved choice, or what the module suggests.
     public var checked: [String]
+    /// What the module suggests, for the button's title.
+    public var suggested: [String]
+    public var suggestedTitle: String?
+    public var sections: [SelectionSection]
+    public var save: Action?
 
-    public init(action: Action, choices: [String: UInt64], checked: [String] = []) {
+    public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
+                sections: [SelectionSection] = [], save: Action? = nil) {
         self.action = action
         self.choices = choices
         self.checked = checked
+        self.suggested = suggested ?? checked
+        self.suggestedTitle = suggestedTitle
+        self.sections = sections
+        self.save = save
+    }
+
+    private enum CodingKeys: String, CodingKey { case action, choices, checked, suggested, suggestedTitle, sections, save }
+
+    /// The fields after `checked` may be missing (a screen written before they existed).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        action = try container.decode(Action.self, forKey: .action)
+        choices = try container.decode([String: UInt64].self, forKey: .choices)
+        checked = try container.decodeIfPresent([String].self, forKey: .checked) ?? []
+        suggested = try container.decodeIfPresent([String].self, forKey: .suggested) ?? checked
+        suggestedTitle = try container.decodeIfPresent(String.self, forKey: .suggestedTitle)
+        sections = try container.decodeIfPresent([SelectionSection].self, forKey: .sections) ?? []
+        save = try container.decodeIfPresent(Action.self, forKey: .save)
     }
 
     /// The `ids` parameter for these ids, and back.
@@ -303,6 +364,24 @@ public struct Selection: Codable, Equatable, Sendable {
     }
 }
 
+/// A part of a choosing page (`Selection.sections`): its title, its rows by id in the order drawn, and whether its header box is on,
+/// which keeps rows that join the part later checked too.
+public struct SelectionSection: Codable, Equatable, Sendable, Identifiable {
+    public var id: String
+    public var title: String
+    public var rows: [String]
+    public var all: Bool
+
+    public init(id: String, title: String, rows: [String], all: Bool = false) {
+        self.id = id
+        self.title = title
+        self.rows = rows
+        self.all = all
+    }
+}
+
+/// Rows are drawn in the order given: sort them by size, largest first, or alphabetically when they have no size. Any other order
+/// needs a comment where the list is built.
 public struct ListWidget: Codable, Equatable, Sendable {
     public var id: String
     public var title: String?

@@ -13,12 +13,14 @@
 "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Archivos que las apps marcaron como seguros de eliminar. macOS solo los elimina cuando el disco está casi lleno.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Archivos que macOS elimina por su cuenta cuando falta espacio. Ajustes del Sistema cuenta este espacio como disponible.";
 "Free" = "Liberar";
+"Free %@ of %@ downloads?" = "¿Liberar %@ de descargas de %@?";
 "Free now" = "Liberar ahora";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Libera los archivos que las apps marcaron como purgables, que macOS solo eliminaría con el disco casi lleno.";
 "Free up to %@" = "Liberar hasta %@";
 "Free up to %@ of purgeable app files?" = "¿Liberar hasta %@ de archivos purgables de apps?";
 "Freeing in the background" = "Liberando en segundo plano";
 "Freeing space…" = "Liberando espacio…";
+"Installs at the next restart" = "Se instala al reiniciar";
 "Left alone" = "Sin tocar";
 "Nothing can be measured right now. Try Refresh." = "Ahora no se puede medir nada. Prueba con Actualizar.";
 "Open" = "Abrir";
@@ -28,9 +30,6 @@
 "Purgeable app files" = "Archivos purgables de apps";
 "Purgeable documents" = "Documentos purgables";
 "Quick Look thumbnails" = "Miniaturas de Vista rápida";
-"Remove" = "Eliminar";
-"Remove %@ of %@ downloads?" = "¿Eliminar %@ de descargas de %@?";
-"Remove Downloads" = "Eliminar descargas";
 "Removing downloads" = "Eliminando descargas";
 "Removing · %lld%%, %@" = "Eliminando · %lld %%, %@";
 "Spotlight index" = "Índice de Spotlight";
@@ -41,7 +40,6 @@
 "Waiting to install" = "Pendiente de instalar";
 "free up to %@" = "liberar hasta %@";
 "freeing %@" = "liberando %@";
-"installs at the next restart" = "se instala en el próximo reinicio";
 "macOS kept them when asked; MacSpace keeps asking it." = "macOS los conservó cuando se le pidió; MacSpace sigue pidiéndolo.";
 "macOS's purge service did not answer" = "El servicio de purga de macOS no ha respondido";
 "nothing to free" = "nada que liberar";

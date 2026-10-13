@@ -159,16 +159,40 @@ struct ScreenView: View {
         .modifier(PageScrollArea(hasFooter: hasFooter))
     }
 
-    /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total.
+    /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
+    /// page is in parts (`Selection.sections`) lists each part under a header of its own, with a box that checks the whole part.
     private func groupPage(_ group: Row) -> some View {
-        let list = ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
-                              rows: group.children)
-        return WidgetForm(widgets: [.list(list)], handler: handler, showsTop: false) { EmptyView() }
+        let widgets: [ScreenWidget]
+        if let selection = group.selection, !selection.sections.isEmpty {
+            let byID = Dictionary(group.children.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            widgets = selection.sections.compactMap { section -> ScreenWidget? in
+                let rows = section.rows.compactMap { byID[$0] }
+                guard !rows.isEmpty else { return nil }
+                return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows))
+            }
+        } else {
+            widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
+                                        rows: group.children))]
+        }
+        return WidgetForm(widgets: widgets, handler: handler, showsTop: false) { EmptyView() }
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
             .environment(\.rowChoice, group.selection.map { selection in
-                RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in handle.toggle(id, in: group) }
+                RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in
+                    withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
+                }
             })
+            .environment(\.sectionChoice, group.selection.flatMap { selection in
+                selection.sections.isEmpty ? nil : SectionChoice(selection: selection, checked: handle.checked(group), all: handle.allChecked(group)) { [handle] id in
+                    withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
+                }
+            })
+    }
+
+    /// A box clicked: the boxes it changes (a whole part's, from its header) and the button's title and total move together, springing
+    /// as a press does. None with Reduce Motion.
+    static var choiceAnimation: Animation? {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? nil : Theme.press
     }
 }
 
@@ -471,7 +495,10 @@ private struct ActionDock: View {
         guard !ids.isEmpty else { return nil }
         var action = selection.action
         let total = ids.compactMap { selection.choices[$0] }.reduce(0, +)
-        action.title = selection.action.title + " " + ByteFormat.string(total)
+        // While the boxes are what the module suggests, the button says so ("Free recommended").
+        let suggested = Set(selection.suggested).intersection(selection.choices.keys)
+        let title = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title
+        action.title = title + " " + ByteFormat.string(total)
         action.parameters["ids"] = Selection.parameter(ids.sorted())
         return action
     }

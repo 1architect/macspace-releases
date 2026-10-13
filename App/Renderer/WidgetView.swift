@@ -16,6 +16,7 @@ struct WidgetForm<Top: View>: View {
     var showsTop = true
     /// Drawn above the first group, without a group of its own (the page's hero).
     @ViewBuilder var top: Top
+    @Environment(\.sectionChoice) private var sectionChoice
     /// Collapsible sections the user has flipped from how they start.
     @State private var flipped: Set<String> = []
     /// The widgets that are in. Those already there when the page opens come in with the page; those that arrive later (when the
@@ -68,7 +69,7 @@ struct WidgetForm<Top: View>: View {
         return Section {
             if let widget { content(of: widget).modifier(Rise(shown: shown)) }
         } header: {
-            header(title.text, help: title.help, leading: leading, shown: shown)
+            header(title.text, help: title.help, leading: leading, shown: shown, part: widget.flatMap(Self.part))
         }
     }
 
@@ -105,18 +106,41 @@ struct WidgetForm<Top: View>: View {
 
     /// A section's header: its title (with its description behind an (i)), with the page's top above it on the first section.
     @ViewBuilder
-    private func header(_ title: String?, help: String? = nil, leading: Bool, shown: Bool = true) -> some View {
+    private func header(_ title: String?, help: String? = nil, leading: Bool, shown: Bool = true, part: String? = nil) -> some View {
         let hasTitle = !(title ?? "").isEmpty
         if leading {
             // The top stays put; only the title rises in with its rows.
             VStack(alignment: .leading, spacing: 14) {
                 top
-                if hasTitle, let title { InfoTitle(title: title, info: help).modifier(Rise(shown: shown)) }
+                if hasTitle, let title { titled(title, help: help, part: part).modifier(Rise(shown: shown)) }
             }
         } else if hasTitle, let title {
-            InfoTitle(title: title, info: help).modifier(Rise(shown: shown))
+            titled(title, help: help, part: part).modifier(Rise(shown: shown))
         }
     }
+
+    /// A header's title, after the box that checks its whole part on a choosing page (`Selection.sections`).
+    @ViewBuilder
+    private func titled(_ title: String, help: String?, part: String?) -> some View {
+        if let part, let choice = sectionChoice, choice.hasChoices(part) {
+            HStack(spacing: 8) {
+                Toggle(title, isOn: Binding(get: { choice.isOn(part) }, set: { _ in choice.toggle(part) }))
+                    .toggleStyle(.checkbox)
+                    .labelsHidden()
+                InfoTitle(title: title, info: help)
+            }
+        } else {
+            InfoTitle(title: title, info: help)
+        }
+    }
+
+    /// The part of a choosing page a list is (`ScreenView.groupPage`), by its section's id.
+    private static func part(_ widget: ScreenWidget) -> String? {
+        guard case let .list(list) = widget, list.id.hasPrefix(sectionPrefix) else { return nil }
+        return String(list.id.dropFirst(sectionPrefix.count))
+    }
+
+    static var sectionPrefix: String { "group-section:" }
 
     /// The rows a widget contributes to a group.
     @ViewBuilder
@@ -192,6 +216,28 @@ extension EnvironmentValues {
     @Entry var openGroup: @MainActor (String) -> Void = { _ in }
     /// On the page of a group that lets the user choose (`Row.selection`): which rows have a box and which are checked.
     @Entry var rowChoice: RowChoice? = nil
+    /// On a choosing page in parts (`Selection.sections`): the header boxes.
+    @Entry var sectionChoice: SectionChoice? = nil
+}
+
+/// The header boxes of a choosing page in parts: a part's box is on when the user turned it on (new rows then join checked), or when
+/// every row of it that can be chosen is checked.
+struct SectionChoice {
+    let selection: Selection
+    let checked: Set<String>
+    let all: Set<String>
+    let toggle: @MainActor (String) -> Void
+
+    private func choosable(_ part: String) -> Set<String> {
+        Set(selection.sections.first { $0.id == part }?.rows ?? []).intersection(selection.choices.keys)
+    }
+
+    func hasChoices(_ part: String) -> Bool { !choosable(part).isEmpty }
+
+    func isOn(_ part: String) -> Bool {
+        let rows = choosable(part)
+        return all.contains(part) || (!rows.isEmpty && rows.isSubset(of: checked))
+    }
 }
 
 /// The boxes of a group page that lets the user choose (`Row.selection`).
@@ -266,6 +312,7 @@ struct RowView: View {
     private var groupRow: some View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
+            ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
             InfoButton(text: row.detail)
             Spacer(minLength: 8)
             if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -285,14 +332,19 @@ struct RowView: View {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
+            } else if rowChoice != nil {
+                // A row that cannot be chosen now (its app is open): a dimmed box keeps the titles in line, and its pill says why.
+                Toggle(row.title, isOn: .constant(false))
+                    .toggleStyle(.checkbox)
+                    .labelsHidden()
+                    .disabled(true)
             }
-            // A short note after the title ("App container", "120 files"); the description and the steps are behind the (i).
+            // A count after the title; the row's facts as pills right after it; then its (i) and where its files are, close together.
             TitleLine(title: row.title, note: row.subtitle)
-            // Its (i), where its files are, and its badge, close together.
             HStack(spacing: 6) {
+                ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
                 InfoButton(text: row.detail, steps: row.steps)
                 if !row.paths.isEmpty { RevealButton(paths: row.paths) }
-                if let badge = row.badge { BadgeView(badge: badge) }
             }
             Spacer(minLength: 8)
             if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }

@@ -35,7 +35,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
     @Published public var groupPath: [String] = [] {
         // What was chosen on a page is forgotten once the page closes, however it closed (Back, Home, a refresh that dropped it).
-        didSet { if chosen.keys.contains(where: { !groupPath.contains($0) }) { chosen = chosen.filter { groupPath.contains($0.key) } } }
+        didSet {
+            if chosen.keys.contains(where: { !groupPath.contains($0) }) { chosen = chosen.filter { groupPath.contains($0.key) } }
+            if chosenAll.keys.contains(where: { !groupPath.contains($0) }) { chosenAll = chosenAll.filter { groupPath.contains($0.key) } }
+        }
     }
     /// The group page on top, if any.
     public var openGroup: String? { groupPath.last }
@@ -52,6 +55,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// What the user checked on group pages that let them choose (`Row.selection`), by group id; nil until a box is clicked, when
     /// the module's suggestion (`Selection.checked`) stands.
     @Published public private(set) var chosen: [String: Set<String>] = [:]
+    /// The sections whose header box the user turned on or off, by group id (`SelectionSection.all`); nil until one is clicked.
+    @Published public private(set) var chosenAll: [String: Set<String>] = [:]
 
     /// The rows checked on a group's page: the user's choice, or the module's suggestion, among the rows that can still be chosen.
     public func checked(_ group: Row) -> Set<String> {
@@ -59,10 +64,48 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         return (chosen[group.id] ?? Set(selection.checked)).intersection(selection.choices.keys)
     }
 
+    /// The sections of a group's page whose header box is on.
+    public func allChecked(_ group: Row) -> Set<String> {
+        guard let selection = group.selection else { return [] }
+        return chosenAll[group.id] ?? Set(selection.sections.filter(\.all).map(\.id))
+    }
+
     public func toggle(_ id: String, in group: Row) {
         var ids = checked(group)
-        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        var all = allChecked(group)
+        if ids.contains(id) {
+            ids.remove(id)
+            // A row cleared by hand turns its section's box off: new rows there are no longer checked by themselves.
+            for section in group.selection?.sections ?? [] where section.rows.contains(id) { all.remove(section.id) }
+        } else {
+            ids.insert(id)
+        }
+        choose(ids, all: all, in: group)
+    }
+
+    /// The header box of a section: checks every row of it that can be chosen, or clears them.
+    public func toggleAll(_ sectionID: String, in group: Row) {
+        guard let selection = group.selection, let section = selection.sections.first(where: { $0.id == sectionID }) else { return }
+        var ids = checked(group)
+        var all = allChecked(group)
+        let rows = Set(section.rows).intersection(selection.choices.keys)
+        if all.contains(sectionID) || (!rows.isEmpty && rows.isSubset(of: ids)) {
+            ids.subtract(rows)
+            all.remove(sectionID)
+        } else {
+            ids.formUnion(rows)
+            all.insert(sectionID)
+        }
+        choose(ids, all: all, in: group)
+    }
+
+    /// Keeps the choice for the page and, when the module keeps it (`Selection.save`), sends it, quietly.
+    private func choose(_ ids: Set<String>, all: Set<String>, in group: Row) {
         chosen[group.id] = ids
+        chosenAll[group.id] = all
+        guard let save = group.selection?.save else { return }
+        let parameters = ["ids": Selection.parameter(ids.sorted()), "all": Selection.parameter(all.sorted())]
+        Task { await perform(save, extraParameters: parameters, quiet: true) }
     }
 
     private var module: (any MacSpaceModule)?

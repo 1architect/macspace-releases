@@ -19,14 +19,25 @@ public struct SystemDataModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        SystemDataScreenBuilder.tile(await store.snapshot(privileged: context.privileged))
+        SystemDataScreenBuilder.tile(await snapshot(privileged: context.privileged))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SystemDataScreenBuilder.screen(await store.snapshot(privileged: context.privileged))
+        SystemDataScreenBuilder.screen(await snapshot(privileged: context.privileged))
     }
 
+    /// The scan, with what the user chose on the caches page, which changes without the Mac changing.
+    private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, privileged: (any PrivilegedChannel)?) async -> SystemDataSnapshot {
+        var snapshot = await store.snapshot(maxAge: maxAge, privileged: privileged)
+        snapshot.choices = CacheChoices.load()
+        return snapshot
+    }
+
+    /// Actions that change only what the user chose, not the Mac: the scan is kept.
+    static let choiceActions: Set<String> = ["saveCacheChoice"]
+
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        if Self.choiceActions.contains(request.actionID) { return Self.choose(request) }
         let result = await handle(request, context: context, progress: progress)
         // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
         // and a cache dropped later (in a task of its own) gave it the figures from before the action.
@@ -35,7 +46,7 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let snapshot = await store.snapshot(maxAge: 600, privileged: context.privileged)
+        let snapshot = await snapshot(maxAge: 600, privileged: context.privileged)
         switch request.actionID {
         case "clean":
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
@@ -64,13 +75,10 @@ public struct SystemDataModule: MacSpaceModule {
         case "purgeAssets":
             progress(ActionProgress(message: loc("Freeing space…")))
             return Self.purgeAssets(store: store)
-        case "cleanAppCaches":
+        case "freeCaches":
             progress(ActionProgress(message: loc("Freeing space…")))
-            return Self.cleanAppCaches(Selection.ids(request.parameters["ids"]), in: snapshot)
-        case "cleanHomebrew":
-            guard let plan = snapshot.homebrew else { return .failed(loc("Homebrew is not installed")) }
-            progress(ActionProgress(message: loc("Running Homebrew's cleanup…")))
-            return Self.cleanHomebrew(plan.brew, allDownloads: request.parameters["all"] == "true")
+            let ids = Set(Selection.ids(request.parameters["ids"]))
+            return Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot)
         case "openTrash":
             NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -82,10 +90,10 @@ public struct SystemDataModule: MacSpaceModule {
         }
     }
 
-    /// Automatic cleanup: what Clean frees (caches of apps that are not open, old reports, unused system assets). Never the version
-    /// history or anything else that cannot be undone.
+    /// Automatic cleanup: what the main Free button frees (the caches chosen on the caches page, old reports, unused system assets).
+    /// Never the version history or anything else that cannot be undone.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
-        let snapshot = await store.snapshot(maxAge: 0, privileged: context.privileged)
+        let snapshot = await snapshot(maxAge: 0, privileged: context.privileged)
         guard SystemDataScreenBuilder.cleanBytes(snapshot) >= SystemDataScreenBuilder.worthARow else { return nil }
         let cleaned = Self.cleanSafe(snapshot, store: store, progress: { _ in })
         await store.invalidate()
@@ -96,9 +104,9 @@ public struct SystemDataModule: MacSpaceModule {
     static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, progress: ProgressSink) -> (freed: UInt64, details: [String]) {
         var details: [String] = []
         let before = DataVolume.freeBytes()
-        let cleanable = snapshot.report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning && !$0.inUse && ($0.expectedReclaimBytes ?? 0) > 0 }
+        let caches = CachesPage.chosen(snapshot)
         progress(ActionProgress(fraction: 0.1, message: loc("Freeing space…")))
-        if !cleanable.isEmpty { details += clean(cleanable).details }
+        if !caches.isEmpty { details += freeCaches(caches, in: snapshot).details }
         progress(ActionProgress(fraction: 0.5, message: loc("Freeing space…")))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
         progress(ActionProgress(fraction: 0.7, message: loc("Freeing space…")))
@@ -109,6 +117,41 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     // MARK: Actions
+
+    /// Keeps what the user chose on the caches page (`CacheChoices`): the checked caches and header boxes. The page is built again
+    /// from the scan already made.
+    static func choose(_ request: ActionRequest) -> ActionResult {
+        var choices = CacheChoices.load()
+        choices.chosen = Set(Selection.ids(request.parameters["ids"]))
+        choices.all = Set(Selection.ids(request.parameters["all"]))
+        choices.save()
+        return ActionResult(outcome: .succeeded, message: "", refresh: true)
+    }
+
+    /// Frees caches of the caches page, each its own way: app caches read again first (`cleanAppCaches`), web and system caches
+    /// through the cleaner, developer caches through `DeveloperCaches.free`, Homebrew's through its own cleanup. One whose app is
+    /// open is skipped. The space freed is measured on the volume over the whole run.
+    static func freeCaches(_ entries: [CacheEntry], in snapshot: SystemDataSnapshot) -> ActionResult {
+        let chosen = entries.filter { !$0.open }
+        guard !chosen.isEmpty else { return .failed(loc("Already gone")) }
+        let ids = Set(chosen.map(\.id))
+        let before = DataVolume.freeBytes()
+        var details: [String] = []
+        let apps = chosen.filter { $0.source == .app }.map(\.id)
+        if !apps.isEmpty { details += cleanAppCaches(apps, in: snapshot).details }
+        let items = snapshot.report.items.filter { item in chosen.contains { $0.id == item.id && ($0.source == .web || $0.source == .system) } }
+        if !items.isEmpty { details += clean(items).details }
+        let developer = snapshot.developerCaches.filter { ids.contains($0.id) }
+        if !developer.isEmpty { details += DeveloperCaches.free(developer) }
+        if let plan = snapshot.homebrew, ids.contains(CachesPage.homebrewOld) || ids.contains(CachesPage.homebrewDownloads) {
+            details += cleanHomebrew(plan.brew, allDownloads: ids.contains(CachesPage.homebrewDownloads)).details
+        }
+        let freed = measuredFreed(before, DataVolume.settledFreeBytes())
+        if !details.contains(where: { $0.hasPrefix("Deleted") || $0.hasPrefix("brew cleanup") }) {
+            return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
+        }
+        return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
+    }
 
     static func clean(_ items: [SystemDataItem]) -> ActionResult {
         let inspector = SystemDataInspector()
@@ -160,8 +203,8 @@ public struct SystemDataModule: MacSpaceModule {
 
     /// Runs Homebrew's cleanup (`HomebrewCleanup`), unless Homebrew is busy: a cleanup then would delete what an install is unpacking.
     static func cleanHomebrew(_ brew: String, allDownloads: Bool) -> ActionResult {
-        guard let processes = ProcessCheck.live.processes() else { return .failed(loc("Couldn't check which programs are running, so nothing was deleted.")) }
-        if HomebrewCleanup.isRunning(brew, processes: processes) { return .failed(loc("Homebrew is running; try again when it is done.")) }
+        guard let processes = ProcessCheck.live.processes() else { return .failed(loc("Nothing was freed: MacSpace couldn't check which apps are open.")) }
+        if HomebrewCleanup.isRunning(brew, processes: processes) { return .failed(loc("Homebrew is busy. Try again when it's done.")) }
         let before = DataVolume.freeBytes()
         let run = HomebrewCleanup.clean(brew, allDownloads: allDownloads)
         let freed = measuredFreed(before, DataVolume.settledFreeBytes())
@@ -169,7 +212,7 @@ public struct SystemDataModule: MacSpaceModule {
         if let reported = run.freed { details.append("Homebrew reported \(ByteFormat.string(reported)).") }
         guard run.succeeded else {
             if let error = run.error { details.append(error) }
-            return ActionResult(outcome: .failed, message: loc("Homebrew's cleanup stopped"), details: details, refresh: true)
+            return ActionResult(outcome: .failed, message: loc("Homebrew's cleanup failed"), details: details, refresh: true)
         }
         return .succeeded(freedMessage(freed ?? run.freed), details: details, freedBytes: freed)
     }
