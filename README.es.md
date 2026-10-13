@@ -41,15 +41,20 @@ las demás categorías), así que la cifra se acerca a la que ves allí. Despué
 cachés, registros, informes, recursos del sistema, datos de apps, historial de versiones de
 documentos. Lo que no puede nombrar aparece como **Sin identificar**. Nunca se deja fuera.
 
-El botón principal, **Liberar** con un tamaño, elimina lo que se puede eliminar sin riesgo:
-cachés de apps que están cerradas, informes de diagnóstico y de fallos con más de 7 días, y
-recursos del sistema sin usar. En **Liberar ahora**, cada elemento tiene su propio botón. Dos
-elementos van aparte porque requieren más cuidado: **Historial de versiones de documentos**
-(versiones anteriores de tus documentos; los documentos se conservan) y **Archivos sobrantes de
-actualización de macOS** (archivos de una actualización que ya está instalada). El **Registro del
-sistema** (lo que macOS registra para solucionar problemas) y la **Papelera** también tienen botón
-propio, nunca el principal. Para todo lo que pertenece a macOS o a otras apps, MacSpace dice qué es
-y qué hacer a mano.
+El botón principal, **Liberar** con un tamaño, elimina lo que se puede eliminar sin riesgo: cachés
+de apps que están cerradas, informes de diagnóstico y de fallos con más de 7 días, y recursos del
+sistema sin usar. En **Liberar ahora**, cada elemento tiene su propio botón. Dos elementos van
+aparte porque requieren más cuidado: **Historial de versiones de documentos** (versiones anteriores
+de tus documentos; solo se conserva la última versión) y **Archivos sobrantes de actualización de
+macOS** (archivos de una actualización que ya está instalada). El **Registro del sistema** (lo que
+macOS registra para solucionar problemas) y la **Papelera** también tienen botón propio, nunca el
+principal. Para todo lo que pertenece a macOS o a otras apps, MacSpace dice qué es y qué hacer a
+mano. Un clic en un bloque del gráfico abre los elementos de los que está hecho, y el botón de
+carpeta de una fila muestra sus archivos en el Finder. Lo que macOS mantiene cerrado a todas las
+apps se llama **Protegido por macOS**. En **Liberar ahora**, las cachés de apps abiertas también se
+pueden marcar: **Liberar** cierra esas apps antes. Con **Limpiador de cachés**, en Ajustes, otra app
+(CleanMyMac, Mole, OnyX, Pearcleaner, Purge o Sensei, si está instalada) puede liberar las cachés en
+lugar de MacSpace.
 
 <p align="center">
   <img src="Docs/Screenshots/es/SystemData.png" alt="La página Datos del sistema: un gráfico de lo que ocupa Datos del sistema, la lista Liberar ahora y el botón Liberar con su tamaño" width="720">
@@ -116,17 +121,19 @@ análisis también es una política, porque macOS ignora ahí el ajuste.
   <img src="Docs/Screenshots/es/Debloat.png" alt="La página Debloat: interruptores Desactivar agrupados por categoría, todos activados, y el botón Activar todo" width="720">
 </p>
 
-**También en MacSpace.** **Limpiar automáticamente** (en Ajustes, desactivada hasta que la
-actives) libera sin preguntar lo que los módulos pueden liberar, cada día, cada 3 días o cada
-semana, mientras MacSpace está abierto. Debloat no participa, y el historial de versiones nunca
-se elimina. **Limpiezas recientes** enumera lo que liberó cada una. MacSpace te avisa cuando la
-limpieza automática libera al menos 100 MB, cuando termina una acción que tardó un rato mientras
-MacSpace no está en primer plano, y cuando el disco está casi lleno (como máximo una vez al
-día). Cada aviso se puede desactivar. **Al cerrar la ventana**, MacSpace puede salir, seguir en
-la barra de menús (lo predeterminado) o seguir en segundo plano, fuera de la vista. Haz clic
-derecho en el icono de la barra de menús para ver un menú con cada módulo, **Ajustes…**,
-**Abrir panel** y **Salir de MacSpace**. MacSpace está disponible en inglés, portugués (Brasil),
-francés, español y alemán, y sigue el idioma del sistema.
+**También en MacSpace.** **Limpiar automáticamente** (en Ajustes, desactivada hasta que la actives)
+libera sin preguntar lo que los módulos pueden liberar, cada día, cada 3 días o cada semana,
+mientras MacSpace está abierto. Debloat no participa, y el historial de versiones nunca se elimina.
+**Limpiezas recientes** enumera lo que liberó cada una. MacSpace te avisa cuando la limpieza
+automática libera al menos 100 MB, cuando termina una acción que tardó un rato mientras MacSpace no
+está en primer plano, y cuando el disco está casi lleno (como máximo una vez al día). Cada aviso se
+puede desactivar. **Al cerrar la ventana**, MacSpace puede salir, seguir en la barra de menús (lo
+predeterminado) o seguir en segundo plano, fuera de la vista. Haz clic derecho en el icono de la
+barra de menús para ver un menú con cada módulo, **Ajustes…**, **Abrir panel** y **Salir de
+MacSpace**. MacSpace está disponible en inglés, portugués (Brasil), francés, español y alemán, y
+sigue el idioma del sistema. Cuando termina una limpieza, **Listo** dice cuánto se liberó. La
+ventana conserva su tamaño y su posición y, en la página de inicio, al apuntar a la ✕ aparecen
+**Minimizar** y **Maximizar**.
 
 ---
 
@@ -239,8 +246,10 @@ MacSpace. [Seguridad](SECURITY.es.md) tiene la lista completa.
   total al disco, lo que hay en la carpeta de cachés del contenedor de cada app
   (`~/Library/Containers/<app>/Data/Library/Caches`), salvo lo que macOS guarda allí. Nunca las de
   Apple. Las que vienen marcadas no cambian desde hace un mes, y su app no se abre desde hace tanto
-  o no está instalada. Las cachés en uso aparecen sin marcar y avisan de que vuelven. No se ofrecen
-  las cachés de apps abiertas ni las carpetas con archivos multimedia o documentos con nombres que
+  o no está instalada. Las cachés en uso aparecen sin marcar y avisan de que vuelven. Las cachés de
+  una app abierta también se pueden marcar: **Liberar** nombra la app, le pide que se cierre (puede
+  pedirte que guardes, y puedes cancelar) y después libera su caché. La limpieza automática nunca
+  cierra una app. No se ofrecen las carpetas con archivos multimedia o documentos con nombres que
   les dan las personas.
 - Solo desde la fila **Homebrew**: el `brew cleanup` del propio Homebrew, ejecutado como tú, sin
   desinstalar fórmulas, actualizar ni enviar las estadísticas de Homebrew.

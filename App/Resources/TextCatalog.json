@@ -4,7 +4,7 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:501"
+      "App\/Renderer\/ScreenView.swift:505"
     ],
     "table" : "App",
     "translations" : {
@@ -36,7 +36,7 @@
     "key" : "%@ in total",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:423"
+      "App\/Renderer\/ScreenView.swift:424"
     ],
     "table" : "App",
     "translations" : {
@@ -260,7 +260,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:494"
+      "App\/Renderer\/ScreenView.swift:498"
     ],
     "table" : "App",
     "translations" : {
@@ -276,7 +276,7 @@
     "key" : "Allow Full Disk Access",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:235"
+      "App\/Shell\/Onboarding.swift:244"
     ],
     "table" : "App",
     "translations" : {
@@ -292,7 +292,7 @@
     "key" : "Allow Notifications",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:264"
+      "App\/Shell\/Onboarding.swift:273"
     ],
     "table" : "App",
     "translations" : {
@@ -356,7 +356,7 @@
     "key" : "Approve the helper",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:253"
+      "App\/Shell\/Onboarding.swift:262"
     ],
     "table" : "App",
     "translations" : {
@@ -420,8 +420,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:311",
-      "App\/Shell\/MainView.swift:343"
+      "App\/Shell\/MainView.swift:314",
+      "App\/Shell\/MainView.swift:346"
     ],
     "table" : "App",
     "translations" : {
@@ -501,7 +501,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:79"
+      "App\/Main\/MacSpaceMain.swift:83"
     ],
     "table" : "App",
     "translations" : {
@@ -566,7 +566,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Shell\/WindowControls.swift:17",
-      "App\/Shell\/MainView.swift:311"
+      "App\/Shell\/MainView.swift:314"
     ],
     "table" : "App",
     "translations" : {
@@ -582,7 +582,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:345"
+      "App\/Shell\/MainView.swift:348"
     ],
     "table" : "App",
     "translations" : {
@@ -614,9 +614,9 @@
     "key" : "Continue",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:236",
-      "App\/Shell\/Onboarding.swift:254",
-      "App\/Shell\/Onboarding.swift:264",
+      "App\/Shell\/Onboarding.swift:245",
+      "App\/Shell\/Onboarding.swift:263",
+      "App\/Shell\/Onboarding.swift:273",
       "App\/Main\/MacSpaceMain.swift:27"
     ],
     "table" : "App",
@@ -698,7 +698,7 @@
     "key" : "Drag into the Full Disk Access list",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/Onboarding.swift:362"
+      "App\/Shell\/Onboarding.swift:371"
     ],
     "table" : "App",
     "translations" : {
@@ -762,7 +762,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:229"
+      "App\/Shell\/MainView.swift:232"
     ],
     "table" : "App",
     "translations" : {
@@ -822,19 +822,19 @@
     }
   },
   {
-    "id" : "App|Frees caches, old reports and other files that are safe to delete. Never version history.",
-    "key" : "Frees caches, old reports and other files that are safe to delete. Never version history.",
+    "id" : "App|Frees caches, old reports and other files that are safe to delete.",
+    "key" : "Frees caches, old reports and other files that are safe to delete.",
     "kind" : "Message",
     "places" : [
       "App\/Settings\/CleanupSettings.swift:16"
     ],
     "table" : "App",
     "translations" : {
-      "de" : "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können. Nie den Versionsverlauf.",
-      "en" : "Frees caches, old reports and other files that are safe to delete. Never version history.",
-      "es" : "Libera cachés, informes antiguos y otros archivos que se pueden eliminar sin riesgo. Nunca el historial de versiones.",
-      "fr" : "Libère les caches, les anciens rapports et d’autres fichiers supprimables sans risque. Jamais l’historique des versions.",
-      "pt-BR" : "Libera caches, relatórios antigos e outros arquivos que podem ser apagados com segurança. Nunca o histórico de versões."
+      "de" : "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können.",
+      "en" : "Frees caches, old reports and other files that are safe to delete.",
+      "es" : "Libera cachés, informes antiguos y otros archivos que se pueden eliminar sin riesgo.",
+      "fr" : "Libère les caches, les anciens rapports et d’autres fichiers supprimables sans risque.",
+      "pt-BR" : "Libera caches, relatórios antigos e outros arquivos que podem ser apagados com segurança."
     }
   },
   {
@@ -858,7 +858,7 @@
     "key" : "Full Disk Access is on",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:235"
+      "App\/Shell\/Onboarding.swift:244"
     ],
     "table" : "App",
     "translations" : {
@@ -890,7 +890,7 @@
     "key" : "Get notified",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:263"
+      "App\/Shell\/Onboarding.swift:272"
     ],
     "table" : "App",
     "translations" : {
@@ -922,7 +922,7 @@
     "key" : "Helper approved",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:253"
+      "App\/Shell\/Onboarding.swift:262"
     ],
     "table" : "App",
     "translations" : {
@@ -1002,7 +1002,7 @@
     "key" : "It does the few tasks that need an administrator.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:250"
+      "App\/Shell\/Onboarding.swift:259"
     ],
     "table" : "App",
     "translations" : {
@@ -1066,7 +1066,7 @@
     "key" : "Later",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/Onboarding.swift:314"
+      "App\/Shell\/Onboarding.swift:323"
     ],
     "table" : "App",
     "translations" : {
@@ -1082,7 +1082,7 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:179"
+      "App\/Renderer\/ScreenView.swift:180"
     ],
     "table" : "App",
     "translations" : {
@@ -1098,7 +1098,7 @@
     "key" : "Loading…",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:693"
+      "App\/Renderer\/ScreenView.swift:705"
     ],
     "table" : "App",
     "translations" : {
@@ -1117,8 +1117,8 @@
       "App\/Shell\/HomeView.swift:18",
       "App\/Shell\/MenuBarContent.swift:101",
       "App\/Shell\/StandardWindowView.swift:220",
-      "App\/Main\/MacSpaceMain.swift:64",
-      "App\/Main\/MacSpaceMain.swift:84"
+      "App\/Main\/MacSpaceMain.swift:68",
+      "App\/Main\/MacSpaceMain.swift:88"
     ],
     "table" : "App",
     "translations" : {
@@ -1134,7 +1134,7 @@
     "key" : "MacSpace can now do the tasks that need an administrator.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:246"
+      "App\/Shell\/Onboarding.swift:255"
     ],
     "table" : "App",
     "translations" : {
@@ -1150,7 +1150,7 @@
     "key" : "MacSpace can now see everything in System Data.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:230"
+      "App\/Shell\/Onboarding.swift:239"
     ],
     "table" : "App",
     "translations" : {
@@ -1198,7 +1198,7 @@
     "key" : "MacSpace keeps an eye on your disk.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:271"
+      "App\/Shell\/Onboarding.swift:280"
     ],
     "table" : "App",
     "translations" : {
@@ -1214,7 +1214,7 @@
     "key" : "MacSpace needs it to see everything in System Data.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:232"
+      "App\/Shell\/Onboarding.swift:241"
     ],
     "table" : "App",
     "translations" : {
@@ -1327,7 +1327,7 @@
     "key" : "Move MacSpace to your Applications folder first.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:247"
+      "App\/Shell\/Onboarding.swift:256"
     ],
     "table" : "App",
     "translations" : {
@@ -1583,7 +1583,7 @@
     "key" : "Open Login Items",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:254"
+      "App\/Shell\/Onboarding.swift:263"
     ],
     "table" : "App",
     "translations" : {
@@ -1599,7 +1599,7 @@
     "key" : "Open MacSpace",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:272"
+      "App\/Shell\/Onboarding.swift:281"
     ],
     "table" : "App",
     "translations" : {
@@ -1632,7 +1632,7 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/SettingsView.swift:189",
-      "App\/Shell\/Onboarding.swift:236"
+      "App\/Shell\/Onboarding.swift:245"
     ],
     "table" : "App",
     "translations" : {
@@ -1842,7 +1842,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:694"
+      "App\/Renderer\/ScreenView.swift:706"
     ],
     "table" : "App",
     "translations" : {
@@ -1874,8 +1874,10 @@
     "key" : "Settings",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:295",
-      "App\/Shell\/MainView.swift:344",
+      "App\/Settings\/ScreenshotToolView.swift:94",
+      "App\/Settings\/ScreenshotToolView.swift:94",
+      "App\/Shell\/MainView.swift:298",
+      "App\/Shell\/MainView.swift:347",
       "App\/Shell\/StandardWindowView.swift:157",
       "App\/Shell\/StandardWindowView.swift:222"
     ],
@@ -1893,7 +1895,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:294"
+      "App\/Shell\/MainView.swift:297"
     ],
     "table" : "App",
     "translations" : {
@@ -1909,7 +1911,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:293"
+      "App\/Shell\/MainView.swift:296"
     ],
     "table" : "App",
     "translations" : {
@@ -1941,7 +1943,7 @@
     "key" : "Shader Studio",
     "kind" : "Text",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:99"
+      "App\/Main\/MacSpaceMain.swift:105"
     ],
     "table" : "App",
     "translations" : {
@@ -1955,8 +1957,9 @@
   {
     "id" : "App|Show in Finder",
     "key" : "Show in Finder",
-    "kind" : "Tooltip",
+    "kind" : "Button",
     "places" : [
+      "App\/Settings\/ScreenshotToolView.swift:27",
       "App\/Renderer\/WidgetView.swift:391",
       "App\/Renderer\/WidgetView.swift:392"
     ],
@@ -1974,7 +1977,7 @@
     "key" : "Show the sidebar",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:317"
+      "App\/Shell\/MainView.swift:320"
     ],
     "table" : "App",
     "translations" : {
@@ -2006,7 +2009,7 @@
     "key" : "The helper couldn't be installed. Try again in Settings > Permissions.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:248"
+      "App\/Shell\/Onboarding.swift:257"
     ],
     "table" : "App",
     "translations" : {
@@ -2070,7 +2073,7 @@
     "key" : "Turn on MacSpace in the list. Not there? Drag this icon into it.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:231"
+      "App\/Shell\/Onboarding.swift:240"
     ],
     "table" : "App",
     "translations" : {
@@ -2086,7 +2089,7 @@
     "key" : "Turn on MacSpace under Allow in the Background.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:249"
+      "App\/Shell\/Onboarding.swift:258"
     ],
     "table" : "App",
     "translations" : {
@@ -2152,7 +2155,7 @@
     "key" : "When MacSpace frees space, or your disk is almost full.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:263"
+      "App\/Shell\/Onboarding.swift:272"
     ],
     "table" : "App",
     "translations" : {
@@ -2232,7 +2235,7 @@
     "key" : "Working…",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:692"
+      "App\/Renderer\/ScreenView.swift:704"
     ],
     "table" : "App",
     "translations" : {
@@ -2248,7 +2251,7 @@
     "key" : "You can free up to %@ right now.",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/Onboarding.swift:271"
+      "App\/Shell\/Onboarding.swift:280"
     ],
     "table" : "App",
     "translations" : {
@@ -2264,7 +2267,7 @@
     "key" : "You're all set",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/Onboarding.swift:272"
+      "App\/Shell\/Onboarding.swift:281"
     ],
     "table" : "App",
     "translations" : {
@@ -2973,7 +2976,9 @@
     "key" : "Debloat",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273",
+      "App\/Settings\/ScreenshotToolView.swift:93",
+      "App\/Settings\/ScreenshotToolView.swift:93"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3790,7 +3795,8 @@
     "key" : "Siri",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:12"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:12",
+      "App\/Settings\/ScreenshotToolView.swift:92"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4503,7 +4509,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:141",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:156",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:161",
-      "App\/Shell\/MainView.swift:230"
+      "App\/Shell\/MainView.swift:233"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -4559,7 +4565,7 @@
       "en" : "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.",
       "es" : "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.",
       "fr" : "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.",
-      "pt-BR" : "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup ficam."
+      "pt-BR" : "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem."
     }
   },
   {
@@ -4861,6 +4867,22 @@
     }
   },
   {
+    "id" : "OtherSystemFiles|MacSpace could not measure right now. Try the refresh button.",
+    "key" : "MacSpace could not measure right now. Try the refresh button.",
+    "kind" : "Notice message",
+    "places" : [
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:77"
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "MacSpace konnte gerade nichts messen. Versuche die Aktualisieren-Taste.",
+      "en" : "MacSpace could not measure right now. Try the refresh button.",
+      "es" : "MacSpace no ha podido medir ahora. Prueba con el botón de actualizar.",
+      "fr" : "MacSpace n’a pas pu mesurer pour l’instant. Essayez le bouton Actualiser.",
+      "pt-BR" : "O MacSpace não conseguiu medir nada agora. Tente o botão atualizar."
+    }
+  },
+  {
     "id" : "OtherSystemFiles|Not connected",
     "key" : "Not connected",
     "kind" : "Pill",
@@ -4874,22 +4896,6 @@
       "es" : "No conectado",
       "fr" : "Non connecté",
       "pt-BR" : "Não conectado"
-    }
-  },
-  {
-    "id" : "OtherSystemFiles|Nothing can be measured right now. Try Refresh.",
-    "key" : "Nothing can be measured right now. Try Refresh.",
-    "kind" : "Notice message",
-    "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:77"
-    ],
-    "table" : "OtherSystemFiles",
-    "translations" : {
-      "de" : "Gerade lässt sich nichts messen. Versuche „Aktualisieren“.",
-      "en" : "Nothing can be measured right now. Try Refresh.",
-      "es" : "Ahora no se puede medir nada. Prueba con Actualizar.",
-      "fr" : "Rien ne peut être mesuré pour l’instant. Essayez Actualiser.",
-      "pt-BR" : "Nada pode ser medido agora. Tente Atualizar."
     }
   },
   {
@@ -4916,7 +4922,8 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:97",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:117",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:75",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:88"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:88",
+      "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5515,7 +5522,7 @@
     "kind" : "Notice",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:24",
-      "App\/Shell\/Onboarding.swift:235"
+      "App\/Shell\/Onboarding.swift:244"
     ],
     "table" : "Siri",
     "translations" : {
@@ -5871,7 +5878,7 @@
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:103",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:118",
-      "App\/Shell\/MainView.swift:227"
+      "App\/Shell\/MainView.swift:230"
     ],
     "table" : "Siri",
     "translations" : {
@@ -5991,7 +5998,7 @@
       "en" : "MacSpace needs it to read and verify the switch.",
       "es" : "MacSpace lo necesita para leer y comprobar el interruptor.",
       "fr" : "MacSpace en a besoin pour lire et vérifier l’interrupteur.",
-      "pt-BR" : "O MacSpace precisa dele para ler e verificar o botão."
+      "pt-BR" : "O MacSpace precisa para ler e verificar o botão."
     }
   },
   {
@@ -6243,7 +6250,8 @@
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:51",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:103",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111",
+      "App\/Settings\/ScreenshotToolView.swift:92"
     ],
     "table" : "Siri",
     "translations" : {
@@ -6543,19 +6551,19 @@
     }
   },
   {
-    "id" : "Siri|Usually takes a few minutes. If it doesn't, MacSpace does it after %lld minutes.",
-    "key" : "Usually takes a few minutes. If it doesn't, MacSpace does it after %lld minutes.",
+    "id" : "Siri|Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
+    "key" : "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
     "kind" : "Row detail",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:192"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Dauert meist ein paar Minuten. Falls nicht, erledigt MacSpace das nach %lld Minuten.",
-      "en" : "Usually takes a few minutes. If it doesn't, MacSpace does it after %lld minutes.",
-      "es" : "Suele tardar unos minutos. Si no ocurre, MacSpace lo hace tras %lld minutos.",
-      "fr" : "Cela prend généralement quelques minutes. Sinon, MacSpace s’en charge au bout de %lld minutes.",
-      "pt-BR" : "Normalmente leva alguns minutos. Se não acontecer, o MacSpace faz isso após %lld minutos."
+      "de" : "Dauert meist nur einen Moment. Falls nicht, erledigt MacSpace das nach %lld Minuten.",
+      "en" : "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
+      "es" : "Suele tardar unos instantes. Si no ocurre, MacSpace lo hace tras %lld minutos.",
+      "fr" : "Cela prend généralement quelques instants. Sinon, MacSpace s’en charge au bout de %lld minutes.",
+      "pt-BR" : "Normalmente leva alguns instantes. Se não acontecer, o MacSpace faz isso após %lld minutos."
     }
   },
   {
@@ -6671,19 +6679,19 @@
     }
   },
   {
-    "id" : "Siri|macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.",
-    "key" : "macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.",
+    "id" : "Siri|macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac.",
+    "key" : "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac.",
     "kind" : "Notice message",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:35"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "macOS bietet Apple Intelligence in virtuellen Maschinen nicht an, daher gibt es hier nichts auszuschalten oder freizugeben. Nutze MacSpace auf dem echten Mac.",
-      "en" : "macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac.",
-      "es" : "macOS no ofrece Apple Intelligence en una máquina virtual, así que aquí no hay nada que desactivar ni liberar. Usa MacSpace en el Mac real.",
-      "fr" : "macOS ne propose pas Apple Intelligence dans une machine virtuelle : il n’y a rien à désactiver ni à libérer ici. Utilisez MacSpace sur le vrai Mac.",
-      "pt-BR" : "O macOS não oferece o Apple Intelligence em máquinas virtuais, então não há nada a desativar ou liberar aqui. Use o MacSpace no Mac real."
+      "de" : "macOS bietet Apple Intelligence in virtuellen Maschinen nicht an. Nutze MacSpace auf einem echten Mac.",
+      "en" : "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac.",
+      "es" : "macOS no ofrece Apple Intelligence en una máquina virtual. Usa MacSpace en un Mac real.",
+      "fr" : "macOS ne propose pas Apple Intelligence dans une machine virtuelle. Utilisez MacSpace sur un vrai Mac.",
+      "pt-BR" : "O macOS não oferece o Apple Intelligence em máquinas virtuais. Use o MacSpace em um Mac real."
     }
   },
   {
@@ -8062,19 +8070,19 @@
     }
   },
   {
-    "id" : "SystemData|Earlier versions of your documents (File > Revert To). The documents themselves stay.",
-    "key" : "Earlier versions of your documents (File > Revert To). The documents themselves stay.",
+    "id" : "SystemData|Earlier versions of your documents (File > Revert To). Only keeps the latest version.",
+    "key" : "Earlier versions of your documents (File > Revert To). Only keeps the latest version.",
     "kind" : "Row detail",
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:625"
     ],
     "table" : "SystemData",
     "translations" : {
-      "de" : "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Die Dokumente selbst bleiben.",
-      "en" : "Earlier versions of your documents (File > Revert To). The documents themselves stay.",
-      "es" : "Versiones anteriores de tus documentos (Archivo > Volver a). Los documentos se conservan.",
-      "fr" : "Versions précédentes de vos documents (Fichier > Revenir à). Les documents eux-mêmes restent.",
-      "pt-BR" : "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Os documentos continuam."
+      "de" : "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Behält nur die letzte Version.",
+      "en" : "Earlier versions of your documents (File > Revert To). Only keeps the latest version.",
+      "es" : "Versiones anteriores de tus documentos (Archivo > Volver a). Solo conserva la última versión.",
+      "fr" : "Versions précédentes de vos documents (Fichier > Revenir à). Ne conserve que la dernière version.",
+      "pt-BR" : "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Mantém somente a última versão."
     }
   },
   {
@@ -8107,6 +8115,22 @@
       "es" : "Vacía la Papelera en el Finder.",
       "fr" : "Videz la Corbeille dans le Finder.",
       "pt-BR" : "Esvazie o Lixo no Finder."
+    }
+  },
+  {
+    "id" : "SystemData|Erase Console records used for troubleshooting.",
+    "key" : "Erase Console records used for troubleshooting.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:429"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen.",
+      "en" : "Erase Console records used for troubleshooting.",
+      "es" : "Borra los registros de Consola que se usan para solucionar problemas.",
+      "fr" : "Efface les enregistrements de Console utilisés pour le dépannage.",
+      "pt-BR" : "Apaga os registros do Console usados para resolução de problemas."
     }
   },
   {
@@ -8352,7 +8376,7 @@
       "en" : "Free stuck wallpaper downloads?",
       "es" : "¿Liberar las descargas de fondos de pantalla atascadas?",
       "fr" : "Libérer les téléchargements de fonds d’écran bloqués ?",
-      "pt-BR" : "Liberar os downloads de fundos de tela travados?"
+      "pt-BR" : "Liberar os downloads de wallpapers travados?"
     }
   },
   {
@@ -9837,7 +9861,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:440",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:322"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:322",
+      "App\/Settings\/ScreenshotToolView.swift:90"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10419,22 +10444,6 @@
     }
   },
   {
-    "id" : "SystemData|What macOS records for troubleshooting, shown in Console. It starts again from empty.",
-    "key" : "What macOS records for troubleshooting, shown in Console. It starts again from empty.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:429"
-    ],
-    "table" : "SystemData",
-    "translations" : {
-      "de" : "Was macOS zur Fehlersuche aufzeichnet, zu sehen in der Konsole. Es beginnt wieder leer.",
-      "en" : "What macOS records for troubleshooting, shown in Console. It starts again from empty.",
-      "es" : "Lo que macOS registra para solucionar problemas, visible en Consola. Empieza de nuevo vacío.",
-      "fr" : "Ce que macOS enregistre pour le dépannage, affiché dans Console. Il repart de zéro.",
-      "pt-BR" : "O que o macOS registra para resolver problemas, mostrado no Console. Ele recomeça vazio."
-    }
-  },
-  {
     "id" : "SystemData|What the disk records about each file.",
     "key" : "What the disk records about each file.",
     "kind" : "Row detail",
@@ -10690,7 +10699,7 @@
       "en" : "macOS keeps these locked, even from MacSpace.",
       "es" : "macOS los mantiene bloqueados, incluso para MacSpace.",
       "fr" : "macOS garde ces éléments verrouillés, même pour MacSpace.",
-      "pt-BR" : "O macOS mantém isto trancado, até para o MacSpace."
+      "pt-BR" : "O macOS mantém isto inacessível, até para o MacSpace."
     }
   },
   {

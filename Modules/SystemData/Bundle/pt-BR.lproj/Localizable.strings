@@ -73,9 +73,10 @@
 "Downloads again when needed" = "Baixa de novo quando precisar";
 "Downloads macOS no longer needs, like released Apple Intelligence models." = "Downloads de que o macOS não precisa mais, como modelos do Apple Intelligence liberados.";
 "Downloads you can turn off" = "Downloads que você pode desativar";
-"Earlier versions of your documents (File > Revert To). The documents themselves stay." = "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Os documentos continuam.";
+"Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Mantém somente a última versão.";
 "Empties after 30 days" = "Esvazia após 30 dias";
 "Empty the Trash in Finder." = "Esvazie o Lixo no Finder.";
+"Erase Console records used for troubleshooting." = "Apaga os registros do Console usados para resolução de problemas.";
 "Everything else" = "Todo o resto";
 "Everything in the Trash is deleted for good." = "Tudo o que está no Lixo é apagado de vez.";
 "File system metadata" = "Metadados do sistema de arquivos";
@@ -90,7 +91,7 @@
 "Free old reports?" = "Liberar os relatórios antigos?";
 "Free recommended" = "Liberar recomendados";
 "Free selected" = "Liberar selecionados";
-"Free stuck wallpaper downloads?" = "Liberar os downloads de fundos de tela travados?";
+"Free stuck wallpaper downloads?" = "Liberar os downloads de wallpapers travados?";
 "Free the leftover update files?" = "Liberar os arquivos restantes da atualização?";
 "Free the selected caches?" = "Liberar os caches selecionados?";
 "Free the symbols for crash reports?" = "Liberar os símbolos para relatórios de falhas?";
@@ -218,7 +219,6 @@
 "What fills System Data" = "O que ocupa Dados do Sistema";
 "What is in it" = "Conteúdo";
 "What macOS keeps to read crash reports. It's rebuilt when needed." = "O que o macOS guarda para ler relatórios de falhas. É recriado quando necessário.";
-"What macOS records for troubleshooting, shown in Console. It starts again from empty." = "O que o macOS registra para resolver problemas, mostrado no Console. Ele recomeça vazio.";
 "What the disk records about each file." = "O que o disco registra sobre cada arquivo.";
 "Xcode Command Line Tools" = "Ferramentas de Linha de Comando do Xcode";
 "Xcode builds: %@" = "Compilações do Xcode: %@";
@@ -234,7 +234,7 @@
 "free %@" = "liberar %@";
 "macOS builds them again the next time it reads a crash report." = "O macOS os cria de novo na próxima vez que ler um relatório de falha.";
 "macOS downloads them again if they're needed." = "O macOS os baixa de novo se forem necessários.";
-"macOS keeps these locked, even from MacSpace." = "O macOS mantém isto trancado, até para o MacSpace.";
+"macOS keeps these locked, even from MacSpace." = "O macOS mantém isto inacessível, até para o MacSpace.";
 "macOS restore image: %@" = "Imagem de restauração do macOS: %@";
 "macOS's model catalog, for the Photos spatial effect." = "O catálogo de modelos do macOS, para o efeito espacial do Fotos.";
 "nothing to free" = "nada a liberar";

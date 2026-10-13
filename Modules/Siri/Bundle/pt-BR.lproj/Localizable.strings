@@ -38,7 +38,7 @@
 "Leftover Apple Intelligence models" = "Modelos restantes do Apple Intelligence";
 "Leftover models" = "Modelos restantes";
 "Log in as %@ and turn Apple Intelligence off there." = "Inicie sessão como %@ e desative o Apple Intelligence lá.";
-"MacSpace needs it to read and verify the switch." = "O MacSpace precisa dele para ler e verificar o botão.";
+"MacSpace needs it to read and verify the switch." = "O MacSpace precisa para ler e verificar o botão.";
 "No supported Siri language with a base language different from %@ is available." = "Não há nenhum idioma da Siri compatível com um idioma base diferente de %@.";
 "Not available in a virtual machine" = "Não disponível em máquina virtual";
 "Notify me if Apple Intelligence turns back on" = "Avisar se o Apple Intelligence for reativado";
@@ -73,7 +73,7 @@
 "Under Saved to iCloud, click See All, then Siri." = "Em Salvo no iCloud, clique em Ver Tudo e depois em Siri.";
 "Unknown action %@." = "Ação desconhecida %@.";
 "Unused system assets" = "Recursos do sistema sem uso";
-"Usually takes a few minutes. If it doesn't, MacSpace does it after %lld minutes." = "Normalmente leva alguns minutos. Se não acontecer, o MacSpace faz isso após %lld minutos.";
+"Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "Normalmente leva alguns instantes. Se não acontecer, o MacSpace faz isso após %lld minutos.";
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Com a sincronização da Siri com o iCloud ativada, isso também muda a Siri no seu iPhone e iPad.";
 "Writing the Siri language preference failed." = "Não foi possível gravar a preferência de idioma da Siri.";
 "deleting %@ of models" = "apagando %@ de modelos";
@@ -81,7 +81,7 @@
 "free up to %@" = "liberar até %@";
 "free up to %@ of models" = "liberar até %@ de modelos";
 "freeing %@ of models" = "liberando %@ de modelos";
-"macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac." = "O macOS não oferece o Apple Intelligence em máquinas virtuais, então não há nada a desativar ou liberar aqui. Use o MacSpace no Mac real.";
+"macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "O macOS não oferece o Apple Intelligence em máquinas virtuais. Use o MacSpace em um Mac real.";
 "macOS is removing the model" = "O macOS está removendo o modelo";
 "models not measured" = "modelos não medidos";
 "needs Full Disk Access to read" = "requer Acesso Total ao Disco para ler";

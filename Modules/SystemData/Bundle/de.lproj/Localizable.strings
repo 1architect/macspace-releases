@@ -73,9 +73,10 @@
 "Downloads again when needed" = "Wird bei Bedarf neu geladen";
 "Downloads macOS no longer needs, like released Apple Intelligence models." = "Downloads, die macOS nicht mehr braucht, etwa freigegebene Apple Intelligence-Modelle.";
 "Downloads you can turn off" = "Downloads, die du abschalten kannst";
-"Earlier versions of your documents (File > Revert To). The documents themselves stay." = "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Die Dokumente selbst bleiben.";
+"Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Behält nur die letzte Version.";
 "Empties after 30 days" = "Leert sich nach 30 Tagen";
 "Empty the Trash in Finder." = "Leere den Papierkorb im Finder.";
+"Erase Console records used for troubleshooting." = "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen.";
 "Everything else" = "Alles andere";
 "Everything in the Trash is deleted for good." = "Alles im Papierkorb wird endgültig gelöscht.";
 "File system metadata" = "Metadaten des Dateisystems";
@@ -218,7 +219,6 @@
 "What fills System Data" = "Was „Systemdaten“ füllt";
 "What is in it" = "Inhalt";
 "What macOS keeps to read crash reports. It's rebuilt when needed." = "Was macOS zum Lesen von Absturzberichten aufbewahrt. Es wird bei Bedarf neu aufgebaut.";
-"What macOS records for troubleshooting, shown in Console. It starts again from empty." = "Was macOS zur Fehlersuche aufzeichnet, zu sehen in der Konsole. Es beginnt wieder leer.";
 "What the disk records about each file." = "Was der Datenträger über jede Datei speichert.";
 "Xcode Command Line Tools" = "Xcode-Befehlszeilentools";
 "Xcode builds: %@" = "Xcode-Builds: %@";

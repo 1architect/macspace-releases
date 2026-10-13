@@ -40,13 +40,17 @@ reports, system assets, app data, document version history. What it cannot name 
 **Not identified**. It is never left out.
 
 The main button, **Free** with a size, deletes what is safe: caches of apps that are closed,
-diagnostic and crash reports older than 7 days, and unused system assets. Under **Free now**,
-each item has its own button. Two items are kept apart because they need more care: **Document
-version history** (earlier versions of your documents; the documents stay) and **Leftover macOS
+diagnostic and crash reports older than 7 days, and unused system assets. Under **Free now**, each
+item has its own button. Two items are kept apart because they need more care: **Document version
+history** (earlier versions of your documents; only the latest version stays) and **Leftover macOS
 update files** (files of an update that is already installed). The **System log** (what macOS
-records for troubleshooting) and the **Trash** have their own buttons too, never the main one.
-For everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by
-hand.
+records for troubleshooting) and the **Trash** have their own buttons too, never the main one. For
+everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by hand.
+A click on a block of the chart opens the items it is made of, and the folder button on a row shows
+its files in the Finder. What macOS keeps closed to every app is named **Protected by macOS**. Under
+**Free now**, the caches of open apps can be checked too: **Free** quits those apps first. With
+**Cache cleaner** in Settings, another app (CleanMyMac, Mole, OnyX, Pearcleaner, Purge or Sensei,
+when installed) can free the caches in place of MacSpace.
 
 <p align="center">
   <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
@@ -110,16 +114,17 @@ policy too, because macOS ignores the setting there.
   <img src="Docs/Screenshots/en/Debloat.png" alt="The Debloat page: Disable switches grouped by category, all switched on, and the Enable all button" width="720">
 </p>
 
-**Also in MacSpace.** **Clean automatically** (Settings, off until you turn it on) frees what
-the modules can free without asking, every day, every 3 days or every week, while MacSpace is
-running. Debloat takes no part, and version history is never deleted. **Recent cleanups** lists
-what each one freed. MacSpace notifies you when automatic cleanup frees at least 100 MB, when an
-action that took a while ends while MacSpace is not in front, and when the disk is almost full
-(once a day at most). Each notification can be switched off. **When the window closes**, MacSpace
-can quit, keep running in the menu bar (the default) or keep running unseen in the background.
-Right-click the menu bar icon for a menu with each module, **Settings…**, **Open Panel** and
-**Quit MacSpace**. MacSpace speaks English, Portuguese (Brazil), French, Spanish and German, and
-follows your system language.
+**Also in MacSpace.** **Clean automatically** (Settings, off until you turn it on) frees what the
+modules can free without asking, every day, every 3 days or every week, while MacSpace is running.
+Debloat takes no part, and version history is never deleted. **Recent cleanups** lists what each one
+freed. MacSpace notifies you when automatic cleanup frees at least 100 MB, when an action that took
+a while ends while MacSpace is not in front, and when the disk is almost full (once a day at most).
+Each notification can be switched off. **When the window closes**, MacSpace can quit, keep running
+in the menu bar (the default) or keep running unseen in the background. Right-click the menu bar
+icon for a menu with each module, **Settings…**, **Open Panel** and **Quit MacSpace**. MacSpace
+speaks English, Portuguese (Brazil), French, Spanish and German, and follows your system language.
+When a cleanup ends, **All done** says how much it freed. The window keeps its size and place, and
+on the home page, pointing at the ✕ shows **Minimize** and **Maximize**.
 
 ---
 
@@ -230,9 +235,10 @@ choose, change the Debloat switches that need an administrator, and remove the M
   Access, what is in the caches folder of each app's container
   (`~/Library/Containers/<app>/Data/Library/Caches`), but for what macOS keeps there. Never Apple's.
   Those checked for you have not changed for a month, and their app has not been opened for as long
-  or is not installed. Caches in use are listed unchecked and say that they come back. Caches of
-  apps that are open, and folders that hold media or documents with names people give, are not
-  offered.
+  or is not installed. Caches in use are listed unchecked and say that they come back. The caches of
+  an open app can be checked too: **Free** names the app, asks it to quit (it can ask you to save,
+  and you can cancel) and then frees its cache. Automatic cleaning never quits an app. Folders that
+  hold media or documents with names people give are not offered.
 - Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
   formulae, updating or sending Homebrew's analytics.
 

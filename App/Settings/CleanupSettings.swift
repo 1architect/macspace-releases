@@ -13,7 +13,7 @@ struct CleanupSection: View {
     var body: some View {
         Section("Cleanup") {
             Toggle(isOn: $cleaner.isEnabled) {
-                InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete. Never version history."))
+                InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete."))
             }
             if cleaner.isEnabled {
                 Picker("How often", selection: $cleaner.frequency) {

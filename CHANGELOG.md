@@ -7,92 +7,122 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-13
+
+Hi! I'm Gio, MacSpace creator.
+
+I was not expecting MacSpace to be so well received by the community, so thank you so much for your support!
+
+As we move forward with the project, today we introduce an important new feature: app cache cleaning.
+
+Currently there are numerous paid, free and open source solutions for cache cleaning.
+
+MacSpace takes a new approach on the matter: instead of individual app guided development, the default MacSpace backend uses an app agnostic solution based on the main available frameworks for app development on MacOS.
+
+And instead of cleaning everything up just for the sake of big numbers, MacSpace suggests to erase only the things that will actually not come back to eat your disk just after cleanup. But of course if you want you can delete everything, just make sure to check all apps you'd like to reset.
+
+And because there are lots of great solutions on the market, you can also choose to use them instead of MacSpace default solution. When cleaning MacSpace will point you to open your favorite app. Or to use none at all too. Just remember to select the preferred one in settings.
+
+We are also deprecating two debloat toggles that MacOS does not recognize anymore and were causing issues with the mail app.
+
+For dessert, lots of bug fixes and refinements! See you soon.
+
 ### Added
 
-- System Data: **App caches**, under Free now, lists the folders in `~/Library/Caches`, judged by the files' own dates and their app's last launch, with no list of apps. Those unchanged for a month whose app has not been opened for as long, or is not installed, are checked; the others are unchecked, and those in use say that they come back and how much they wrote in the last two days. Not listed: Apple's, caches of apps that are open, and folders with media or documents named by people. Its own button, never Clean or automatic cleaning.
-- System Data: with Full Disk Access, the caches that App Store and other sandboxed apps keep in their container (`~/Library/Containers/<app>/Data/Library/Caches`) are listed under **Caches you can free** beside those in `~/Library/Caches`, by the same rules, and named after their app (an extension's after the app it comes with). They go only while that app and its extensions are closed. The folder stays, and so does what macOS's own services keep in it (background downloads); Apple's containers are never listed. Other System Files keeps macOS's figure for app container caches as one row, without listing them again.
-- System Data: a **Homebrew** row runs Homebrew's own `brew cleanup`, with what it frees by Homebrew's dry run, and a second button that also deletes every download. Homebrew runs as you, without autoremove, auto-update or analytics.
-- System Data: a **Trash** row frees the Trash (everything in it, for good) or opens it in the Finder, and says whether the Finder empties items after 30 days by itself. Never part of Clean or automatic cleaning.
-- System Data: the **System log** (what macOS records for troubleshooting, about 2.9 GB on the development Mac) can be freed from Free now, with the helper. MacSpace runs Apple's own `log erase`, then prunes the format strings no entry needs any more; logging goes on as usual. macOS never frees it by itself. Its own button, which cannot be undone; never Clean or automatic cleaning.
-- System Data: the copies macOS makes of an app when it checks it are freed for the space they hold of their own, once the app was updated and the copy is of an older version. They are listed under **Caches you can free** as **Old app copy**, by that space, not by their size (2.4 GB of SketchUp held 40 MB of its own here, which is not offered), and go only while the app is closed and nothing runs from the copy.
-- System Data: the **Symbols for crash reports** (coresymbolicationd's cache, 2.1 GB on the development Mac on an earlier day) can be freed from Free now once they reach 50 MB, with the helper, which empties the folder and stops the daemon so its space comes back; macOS rebuilds the cache when it next reads a crash report. Never part of Clean or automatic cleaning.
-- Other System Files: **Time Machine snapshots**, the copies of this Mac Time Machine keeps for a day, are listed with how many there are and the space macOS says they hold. **Free** deletes all but the newest and the one the next backup starts from, never while a backup runs.
-- Other System Files: **Time Machine backup disks** lists each backup disk. A connected one opens a page of its backups, newest first, where you choose old ones to free, with the helper; the latest backup always stays. A disk that is not connected says so.
-- A choosing page whose rows have no size of their own (backups) titles its button without a size (`Selection.choices` of 0).
-- A group's page can let the user choose rows and act on the chosen ones (`Row.selection`): checkboxes, and the page's button titled with the chosen rows' total.
-- System Data: the block of what no folder accounts for is **Protected by macOS** once everything MacSpace can measure is measured, and opens a page naming the folders macOS keeps closed to every app (Apple Intelligence's models, system databases) and the file system's own metadata.
-- System Data: wallpaper and screen saver downloads that macOS left unfinished can be deleted from Free now, with the helper. Only the `CFNetworkDownload_*.tmp` files of idleassetsd that have not changed in 3 days go, so a download still in progress stays. Clean and automatic cleaning leave them out.
-- A folder button beside a row's (i) shows its files in the Finder, selected in one window. Modules list a row's files with `Row.paths`; System Data and Other System Files do.
-- System Data: a click on a block of the page's chart opens a page of the items it is made of, with the same page change and Back as a group. Modules list a block's items with `UsageSegment.items`.
-- System Data: caches of open apps can be checked like any other, one by one or with their part's box. Free's confirmation names those apps in one line ("Quits Enscape and WhatsApp."); Free quits them (an app can ask to save, and you can cancel), waits for their helpers to end, and frees their caches. MacSpace does not open them again. Automatic cleaning never quits an app. A choosing page names checked rows in its confirmation with `Selection.noteNames` and `Selection.note`.
-- Freeing space looks the same everywhere: the main button says only **Freeing space…** and fills as the work advances, the rows leave the page one by one as each is freed, and **All done** comes in as a page of its own, with the words in its middle, as soon as the work ends; it then slides away as Back does, once the module has read the Mac again, and a page that let you choose goes back to the one under it. The button starts filling at once, through the quitting of apps too. The charts keep pulsing while it runs. Modules give the button's text with `Action.workingTitle` and report each finished row with `ActionProgress.finished`.
-- System Data: the caches of developer tools that Purge frees and MacSpace did not: Xcode's cache, documentation cache and test devices, Playwright, Puppeteer, Corepack, Yarn Berry, Deno, Composer, NuGet, Dart packages, Android's build cache, older versions of Claude Code and Cursor Agent, and every other folder in `~/.cache` (recommended once unchanged for a month).
-- Settings: a **System** section with the macOS release.
-- System Data: the page's main **Free** also erases the system log. Automatic cleaning still never does.
-- System Data: a cache kept by a program that is not an app in the Dock or the menu bar (a command-line tool, or a plug-in's renderer that runs inside another app) says **In use** and can be chosen like the others. Free's confirmation names it, and MacSpace closes it first: an app is asked to quit, a command-line tool to end, never one of macOS's programs.
-- The window keeps its size and place between launches, and opens on the desktop where you click the menu bar icon instead of taking you back to the one it was left on.
-- The whole dashboard moves the window, the tiles too; a drag never opens a tile.
-- On the dashboard, the ✕ grows into one glass pill under the pointer with **Minimize** and **Maximize** beside it (Maximize fills the screen and then restores the window), and shrinks back when the pointer leaves.
-- **All done** counts up what was freed under its words ("9,9 MB freed"), and the words come in as the page arrives.
-- While a module reads the Mac, the page's **Loading…** button fills from the left as it does while space is freed. System Data says how far its scan is (the folders measured, then the helper's measuring); the other modules fill over the time they took last time. Modules report it with `MacSpaceModule.screen(context:progress:)` and share it among callers with `LoadProgressRelay`.
-- Charts: each chart is arranged at its own shape again, as in 1.0.3 (they were arranged at one shape and stretched); a tile draws at most 4 blocks, the smallest parts in one. On every tile, the block under the pointer is named just under the chart.
-- Tiles: titles in SF Pro Display semibold, 16 points on the small tiles. While a module reads the Mac its status line says **loading…**. A tile closing from its page keeps its text where it settles.
-- **All done** names what was freed in the large tile's type, its digits rolling in one after another; it leaves at once when Back closes the page under it.
-- Settings › System Data: **Free caches** turns the caches page off (the caches are then listed with the rest of System Data), and **Cache cleaner** below it picks who frees them: MacSpace, or CleanMyMac, Mole, OnyX, Pearcleaner, Purge or Sensei when installed. With another app, Free now shows what the caches hold and a button that opens it; Free and automatic cleaning leave them alone. Modules declare such options with `OptionDefinition.under` and `OptionChoice.apps`.
-- Other System Files: a click on a block of the page's chart opens a page of what it is made of: the purgeable app files with their Free button, each cloud folder's downloads with Remove Downloads and Show in Finder, and the macOS update waiting to install. A service MacSpace has nothing more to say about opens nothing.
+**System Data**
+
+- **Caches you can free**: one page for the caches MacSpace can free, with developer caches, a saved choice and select-all. The caches
+  of apps are judged by their files' own dates and their app's last launch (no list of apps): those unchanged for a month whose app
+  has not been opened for as long, or is not installed, come checked; the others are listed unchecked, and those in use say that they
+  come back. Apple's caches and folders with media or documents named by people are never listed.
+- With Full Disk Access, the caches that App Store and other sandboxed apps keep in their container are listed there too, by the same
+  rules, and go only while the app and its extensions are closed.
+- The caches of **open apps** can be checked too. **Free** names those apps ("Quits Enscape and WhatsApp."), quits them (an app can ask
+  you to save, and you can cancel) and frees their caches. Automatic cleaning never quits an app. A cache kept by a program that is
+  not an app in the Dock (a command-line tool, a plug-in's renderer) says **In use** and is closed first.
+- Developer caches that Purge frees and MacSpace did not: Xcode's cache, documentation and test devices, Playwright, Puppeteer,
+  Corepack, Yarn Berry, Deno, Composer, NuGet, Dart packages, Android's build cache, older versions of Claude Code and Cursor Agent, and
+  every other folder in `~/.cache`.
+- **Homebrew** row: runs Homebrew's own `brew cleanup` (and, with a second button, also deletes every download), as you, without
+  autoremove, auto-update or analytics.
+- **Trash** row: frees the Trash for good, or shows it in the Finder.
+- **System log** (about 2.9 GB here) can be freed with Apple's own `log erase`; **Symbols for crash reports** once they reach 50 MB;
+  **Old app copy**: the copies macOS makes of an app when it checks it, once the app was updated. Each has its own button, cannot be
+  undone, and is never part of Free or automatic cleaning (the page's **Free** also erases the system log).
+- Wallpaper and screen saver downloads that macOS left unfinished (they can grow to hundreds of GB) have a row of their own.
+- **Protected by macOS**: the part no folder accounts for is named once everything MacSpace can measure is measured, and opens a page
+  of what macOS keeps closed to every app.
+- **Cache cleaner** (Settings › System Data): pick who frees the caches, MacSpace or CleanMyMac, Mole, OnyX, Pearcleaner, Purge or
+  Sensei when installed. **Free caches** turns the caches page off.
+- A click on a block of a page's chart opens a page of the items it is made of (System Data, Other System Files). A folder button
+  beside a row shows its files in the Finder.
+
+**Other System Files**
+
+- **Time Machine snapshots** are listed with how many there are and the space macOS says they hold. **Free** deletes all but the newest
+  and the one the next backup starts from, never while a backup runs.
+- **Time Machine backup disks**: a connected disk opens a page of its backups, newest first, to choose old ones to free; the latest
+  always stays.
+- The purgeable app files say how much of them is the symbols for crash reports.
+
+**App**
+
+- Freeing space looks the same everywhere: the main button says **Freeing space…** and fills as the work advances, rows leave the page
+  as each is freed, and **All done** comes in as a page of its own with what was freed counting up under it. While a module reads the
+  Mac, the page's **Loading…** button fills as the scan advances.
+- The window keeps its size and place between launches and opens on the desktop where you click the menu bar icon. The whole dashboard
+  moves the window. On the dashboard, the ✕ grows into a glass pill with **Minimize** and **Maximize** when you point at it.
+- Tiles: titles in SF Pro Display, with a status line in light weight; a tile says what its module is cleaning, and how far it is,
+  while a cleanup runs; the attention mark sits in the bottom-left corner. Charts are arranged at their own shape again, a tile draws
+  at most 4 blocks and names the one under the pointer.
+- Confirmation windows have one shape: left aligned, a title in at most two lines and a description in at most two.
 
 ### Changed
 
-- Pills that are not a warning have the colors of the (i) and folder buttons beside them, in the warning pill's font.
-- The (i) balloons follow the night or day look chosen in MacSpace, not the system's appearance.
-- On the caches page, every part has its box, and caches no longer carry an "Unknown app" pill.
-- System Data: the Trash row shows the Trash in the Finder from its folder button; its **Open** button is gone.
-- Confirmations are one line at most: the title asks, and a line says only what you would not expect (an app that quits).
-- Recent cleanups: how each one started (by you, automatic, by MacSpace) is a pill.
-- The attention mark sits in the bottom-left corner of a tile.
-- The menu bar icon breathes while MacSpace frees space, as the charts do while they load.
-- Resizing the window: the tiles follow it without leaving and coming back, their blocks stretch without re-arranging, the chart keeps its height (the line naming the hovered block shows only where it has room beside the caption), and their text changes size at most once, in a step. A tile and the page it opens arrange their blocks the same way. The window resizes from a band across the glass's edge, wider at the corners, instead of from a thin line outside it.
-- A tile lifts under the pointer with its text and chart laid out at the lifted size, as it did before they were lifted as a picture.
-- Siri & Apple Intelligence: the line about the models keeps its size, on two lines where one is too short; it folds away only where two lines are too.
-- System Data: the system log row offers only what an erase frees; what the log keeps of the apps still running is left out once MacSpace has seen an erase. The pages of what macOS keeps locked no longer list its folders' internal names.
-- A change in a module's options in Settings (the cache cleaner) shows on its page at once.
-
-- Loading: a tile or a page also darkens its background and lets it lift again, over and over, while its module reads the Mac. A page with no chart (Debloat, Siri & Apple Intelligence) shows nothing else meanwhile: no placeholder rows. Every page's main button says **Loading…** and breathes while its module reads the Mac, whether or not the page has a main action.
-- Tiles: text is never shrunk to fit. Where a title and its figure do not fit on one line, the title (which may take two lines) is followed by the figure on a line of its own (`Tile.figure`). The status line under a title is that title's size, in regular weight.
-- Charts: all blocks of a chart have the same corners, the smallest block's.
-- Debloat: the Siri AI switch says what stays on: Apple Intelligence and its other features.
-- A tile says what its module is cleaning, and how far it is, in place of its status line while the cleanup runs.
-- While a page reads the Mac again, only its chart pulses: the legend and the rows fold away and come back with the new figures, and the main button says Loading.
-- The main button keeps a warning on one line wherever the page has room.
-- Tiles: the status line is regular weight, keeps one weight at any tile size, and lines up with the other tiles'. One margin of 12 points on every tile: from the top and the sides to the chart, and from the right and the bottom edges to the caption, on the large tile too. The text stays sharp, and the chart's blocks keep their places, while a tile lifts under the pointer or moves to another cell. No pointing hand over tiles and charts.
-- Debloat: the tile's dots are shared out evenly over their rows, and stay solid while they pulse.
-- The (i) and folder buttons are small capsules side by side, before the badge.
-- The close and refresh buttons keep their look when the window is not active: the same tint and light on both rims as the glass they stand in for.
-- System Data: the Caches group under Everything else says, behind its (i), why MacSpace leaves app caches alone.
+- System Data is 3× faster (27.4 s to about 8.4 s on the development Mac, same figures), and the folders only root can read are
+  measured again (they all read 0 bytes). A helper that cannot start no longer hangs the app. Idle CPU is lower.
+- Free now lists the largest first. Pills replace notes, and **Free** is the only verb.
+- Confirmations are short: the title asks, and one line says only what you would not expect.
+- Resizing the window: the tiles follow it without leaving and coming back, their blocks stretch without re-arranging, and their text
+  changes size at most once. The window resizes from a band across the glass's edge instead of a thin line outside it.
+- Clearer texts: version history's detail ("Only keeps the latest version."), the system log's ("Erase Console records used for
+  troubleshooting."), the Siri tile in a virtual machine, **Clean automatically**, and the retry when nothing could be measured.
+- Settings: a **System** section with the macOS release; the (i) balloons follow the night or day look chosen in MacSpace.
+- Debloat: the Siri AI switch says what stays on (Apple Intelligence and its other features).
 
 ### Removed
 
-- Debloat: the Generative search indexing switch. It stopped Mail search from working, with or without Apple Intelligence ([#6](https://github.com/1architect/macspace-releases/issues/6)). If you had switched it off, MacSpace switches Generative search indexing back on by itself (with the helper); restart your Mac to finish.
-- Debloat: the Apple Intelligence features switch. Apple deprecated its policies on macOS and their effect could not be verified; the Apple Intelligence switch on the Siri & Apple Intelligence page turns these features off. On a Mac where it is still on, it stays listed until you switch it off, which removes its policies.
+- Debloat: the **Generative search indexing** switch. It stopped Mail search from working, with or without Apple Intelligence
+  ([#6](https://github.com/1architect/macspace-releases/issues/6)). If you had switched it off, MacSpace switches it back on by itself
+  (with the helper); restart your Mac to finish.
+- Debloat: the **Apple Intelligence features** switch. Apple deprecated its policies and their effect could not be verified; the
+  Apple Intelligence switch on the Siri & Apple Intelligence page turns these features off. Where it is still applied, MacSpace removes
+  its policies by itself (they made macOS treat Apple Intelligence as restricted, hid it in System Settings and stopped its download).
 
 ### Fixed
 
-- Charts: what can be freed was drawn larger than parts many times its size (88.5 MB beside 764 MB and 2.24 GB in System Data, 10.1 MB beside 68.5 MB in Other System Files). Its block still takes a visible share, but never more than the part just above it.
-- System Data: WhatsApp's cache was never freed, and said its app was open while it was closed: macOS keeps WhatsApp's notification extension running, and every program inside an app's bundle counted as the app. Only the app's own program counts now (an extension keeps only its own container).
-- Siri & Apple Intelligence: the line about the models showed on no tile.
-- System Data: freeing caches no longer quits Siri (its `SiriEntityCache` was taken for an app's cache, and macOS brought Siri back on screen) or any other part of macOS; only apps you see in the Dock or the menu bar are quit.
-- Switching to or from the Aurora theme no longer fades the tiles' grounds out and back in.
-
-- System Data: files reached by several hard links were counted once per path (1.49 GB too much for Spotlight's own store alone), and Apple's container caches that macOS counts as purgeable were counted in full; the listed items then added up to more than System Settings' figure, and hid that much of what no folder accounts for.
-- System Data: Apple's containers under 100 MB were left out of System Data with the third-party ones (0.73 GB on the development Mac), and the parts of `~/Library/Logs`, `~/Library/Messages`, `~/Library/Photos` and `/Library/Logs` beside crash reports and Messages' attachments were measured by nothing. Both went to the block of what no folder accounts for.
+- System Data: a cache is never deleted while a command-line tool that owns it, a helper of its app or any other program is using it,
+  and freeing caches no longer quits Siri or any other part of macOS (only apps you see in the Dock or menu bar). WhatsApp's cache
+  was never freed because its notification extension counted as the app.
+- System Data: files reached by several hard links were counted once per path (1.49 GB too much for Spotlight's store alone), and
+  Apple's container caches that macOS counts as purgeable were counted in full, so the listed items added up to more than System
+  Settings' figure. Small Apple containers and parts of `~/Library` were left out of every group; they are listed now.
 - System Data: a file deleted while a process holds it open made the check for open files answer "unknown", so Clean deleted nothing.
-- System Data: a cache is renamed, then deleted, so an app that starts meanwhile never finds half of one.
-- Debloat: a policy that Screen Time or another profile sets is no longer shown as switched off (or partly switched off) by MacSpace. Its row says "Set by another profile", its switch cannot be flipped, and Disable all leaves it out. MacSpace no longer tries to undo settings that are not its own.
-- Apple Intelligence downloads are no longer cut short by MacSpace: while Apple Intelligence is on, MacSpace never asks macOS to delete system assets, through which its models download and update. Clean, automatic cleaning and the background retries leave them out, and System Data lists them as kept. Switching Apple Intelligence off on the Siri & Apple Intelligence page still releases its models.
-- Debloat: where the retired Apple Intelligence features switch is still applied, MacSpace removes its policies by itself (with the helper). They made macOS treat Apple Intelligence as restricted: System Settings hid it, said extensions were disabled by the organization, and its download stood still.
-- System Data: the caches and temporary files of root, macOS's services and other accounts are measured (with the helper). Wallpaper and screen saver downloads that macOS left unfinished, which can grow to hundreds of GB, get a row of their own.
-- System Data: a small item that is partly closed to MacSpace is no longer dropped before the helper measures it.
-- System Data: a cache is no longer deleted while a command-line tool that owns it (such as the clang compiler), a helper of its app, or any other program is still using it. Clean and automatic cleaning check this again just before each deletion, and skip the cache when they can't tell.
+  A cache is renamed, then deleted, so an app that starts meanwhile never finds half of one.
+- Debloat: a policy that Screen Time or another profile sets is no longer shown as switched off by MacSpace ("Set by another
+  profile"; Disable all leaves it out).
+- Apple Intelligence downloads are no longer cut short: while Apple Intelligence is on, MacSpace never asks macOS to delete system
+  assets, through which its models download and update.
+- Charts drew what can be freed larger than parts many times its size; its block no longer exceeds the part just above it.
+- Siri & Apple Intelligence: the line about the models showed on no tile.
+
+### For module authors
+
+- `Row.selection` lets a group's page offer checkboxes and a button titled with the chosen rows' total (`Selection.choices`,
+  `Selection.noteNames`, `Selection.note`); `Row.paths` and `UsageSegment.items` list a row's files and a block's items;
+  `Action.workingTitle` and `ActionProgress.finished` drive the freeing button; `MacSpaceModule.screen(context:progress:)` with
+  `LoadProgressRelay` reports a scan's progress; `OptionDefinition.under` and `OptionChoice.apps` declare options such as the cache
+  cleaner; `Tile.figure` puts a figure on its own line.
 
 ## [1.0.3] - 2026-10-09
 
@@ -202,7 +232,8 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/1architect/macspace-releases/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/1architect/macspace-releases/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/1architect/macspace-releases/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/1architect/macspace-releases/compare/v1.0.0...v1.0.1

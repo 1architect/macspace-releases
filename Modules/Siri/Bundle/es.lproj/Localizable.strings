@@ -73,7 +73,7 @@
 "Under Saved to iCloud, click See All, then Siri." = "En Guardado en iCloud, haz clic en Ver todo y luego en Siri.";
 "Unknown action %@." = "Acción desconocida %@.";
 "Unused system assets" = "Recursos del sistema sin usar";
-"Usually takes a few minutes. If it doesn't, MacSpace does it after %lld minutes." = "Suele tardar unos minutos. Si no ocurre, MacSpace lo hace tras %lld minutos.";
+"Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "Suele tardar unos instantes. Si no ocurre, MacSpace lo hace tras %lld minutos.";
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Con la sincronización de Siri con iCloud activada, esto también cambia Siri en tu iPhone y iPad.";
 "Writing the Siri language preference failed." = "No se ha podido guardar la preferencia de idioma de Siri.";
 "deleting %@ of models" = "eliminando %@ de modelos";
@@ -81,7 +81,7 @@
 "free up to %@" = "liberar hasta %@";
 "free up to %@ of models" = "liberar hasta %@ de modelos";
 "freeing %@ of models" = "liberando %@ de modelos";
-"macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac." = "macOS no ofrece Apple Intelligence en una máquina virtual, así que aquí no hay nada que desactivar ni liberar. Usa MacSpace en el Mac real.";
+"macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS no ofrece Apple Intelligence en una máquina virtual. Usa MacSpace en un Mac real.";
 "macOS is removing the model" = "macOS está eliminando el modelo";
 "models not measured" = "modelos sin medir";
 "needs Full Disk Access to read" = "requiere acceso total al disco";

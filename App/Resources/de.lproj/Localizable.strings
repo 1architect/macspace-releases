@@ -51,7 +51,7 @@
 "Follow System" = "Wie System";
 "Freed %@" = "%@ freigegeben";
 "Freed in total" = "Insgesamt freigegeben";
-"Frees caches, old reports and other files that are safe to delete. Never version history." = "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können. Nie den Versionsverlauf.";
+"Frees caches, old reports and other files that are safe to delete." = "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können.";
 "Full Disk Access" = "Festplattenvollzugriff";
 "Full Disk Access is on" = "Festplattenvollzugriff ist aktiviert";
 "General" = "Allgemein";

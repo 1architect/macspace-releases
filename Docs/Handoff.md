@@ -33,7 +33,7 @@ Folders start with a capital letter. Everything here is public; signing material
 | `Modules/<Name>/Module` | The module's code. `Bundle/` holds its `Info.plist` and `Manifest.json`; `Privileged/` holds operations compiled into the helper. |
 | `Helper/` | The privileged helper executable. |
 | `Cli/` | `MacSpaceCli`, a command-line tool shipped inside the app (diagnostics, screens as JSON, the isolated purge process). |
-| `Scripts/` | `Assemble.sh` builds the `.app`; `MakeIcon.swift` makes the icon. |
+| `Scripts/` | `Assemble.sh` builds the `.app`; `Localize.swift` writes the translations; `TextCatalog.swift` and `SelfTest.sh` support them and the checks. |
 | `Packaging/` | The helper's launchd plist template. |
 | `Tests/` | One test target per area. |
 | `Docs/` | This folder; `Screenshots/<language>/` holds the README images. |
@@ -67,6 +67,10 @@ Settings of the script, as environment variables: `CONFIG` (default `release`), 
 first Developer ID or Apple Development identity in the keychain, otherwise ad-hoc; `-` forces ad-hoc), `TEAM_ID`,
 `SPARKLE_PUBLIC_KEY` (without it the build never checks for updates). Other variables: `MACSPACE_MODULES_DIR` points the app or CLI
 at another folder of modules; `MACSPACE_CLI` overrides where the CLI is found.
+`DEV=1` builds with the development tools (the default for a `-dev` version, which is what a local build is named after the last
+release), `DEV=0` without them (a release); `OUT_DIR` builds somewhere else than `Build/` (`OUT_DIR=Build/Dev` keeps a development
+build apart from the app that gets installed); notarization is on by default with a Developer ID identity, and `NOTARY_PROFILE=`
+turns it off.
 
 Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
 
@@ -145,9 +149,22 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
     helper) through `locKey`. Manifest names, options and tasks are looked up in the module's bundle when the app reads them
     (`ModuleScanner.localized`). A saved tile is only shown in the language it was saved in. Only the developer tools, the CLI and
     the helper stay in English.
-15. **Design tools.** The Design menu and the Shader Studio exist only with `--design-tools` (`open -a MacSpace --args --design-tools`)
-    or `MACSPACE_DESIGN=1`. In a debug build (`swift build`), `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes
-    folders with the app's own Full Disk Access). It is compiled out of release builds.
+15. **Design tools.** The Design menu and its windows (Shader Studio, Widget Type, Text Editor, Screenshots) are compiled only into
+    development builds (`MACSPACE_DEV`, set by `DEV=1`). A release has no menu, no windows and no flag that brings them back, and it draws
+    every Design menu setting at its default whatever a development build left in the defaults (`DesignSettings.tool`). In a debug build
+    (`swift build`), `MACSPACE_DEBUG=1` turns on `DebugRemote` (window capture, navigation, and `du:` which sizes folders with the app's
+    own Full Disk Access); it is compiled out of release builds.
+16. **README screenshots.** `Docs/Screenshots/<language>/` is made by the Screenshots window of a development build (Design menu, ⌥⌘S),
+    which photographs the window page by page at the screen's full resolution and saves 8-bit RGBA PNG files with no palette, so soft
+    gradients do not band (an optional one-level dither breaks up a step that is left). For all of them at once, with the shipped look and
+    the language of your choice, run from the repository:
+    ```bash
+    for language in en pt-BR fr es de; do
+      Build/Dev/MacSpace.app/Contents/MacOS/MacSpace --capture-screenshots Docs/Screenshots/$language \
+        -AppleLanguages "($language)" -AppleLocale "${language/-/_}"
+    done
+    ```
+    Quit the installed MacSpace first. Do not run the files through an image optimizer that reduces colors.
 
 ### Adding a module
 

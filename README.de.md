@@ -43,14 +43,19 @@ von Dokumenten. Was es nicht benennen kann, erscheint als **Nicht erkannt**. Es 
 ausgelassen.
 
 Die Hauptschaltfläche, **Freigeben** mit einer Größe, löscht, was gefahrlos gelöscht werden kann:
-Caches von Apps, die geschlossen sind, Diagnose- und Absturzberichte, die älter als 7 Tage sind,
-und ungenutzte Systemressourcen. Unter **Jetzt freigeben** hat jedes Objekt eine eigene
-Schaltfläche. Zwei Objekte stehen für sich, weil sie mehr Vorsicht verlangen: **Versionsverlauf
-von Dokumenten** (frühere Versionen deiner Dokumente; die Dokumente bleiben) und **Übrige
+Caches von Apps, die geschlossen sind, Diagnose- und Absturzberichte, die älter als 7 Tage sind, und
+ungenutzte Systemressourcen. Unter **Jetzt freigeben** hat jedes Objekt eine eigene Schaltfläche.
+Zwei Objekte stehen für sich, weil sie mehr Vorsicht verlangen: **Versionsverlauf von Dokumenten**
+(frühere Versionen deiner Dokumente; nur die letzte Version bleibt) und **Übrige
 macOS-Update-Dateien** (Dateien eines bereits installierten Updates). Das **Systemprotokoll** (was
 macOS zur Fehlersuche aufzeichnet) und der **Papierkorb** haben ebenfalls eigene Schaltflächen, nie
 die Hauptschaltfläche. Bei allem, was zu macOS oder zu anderen Apps gehört, sagt MacSpace, was es
-ist und was du von Hand tun kannst.
+ist und was du von Hand tun kannst. Ein Klick auf einen Block des Diagramms öffnet die Objekte, aus
+denen er besteht, und die Ordner-Schaltfläche einer Zeile zeigt ihre Dateien im Finder. Was macOS
+für alle Apps gesperrt hält, heißt **Von macOS geschützt**. Unter **Jetzt freigeben** lassen sich
+auch die Caches geöffneter Apps ankreuzen: **Freigeben** beendet diese Apps zuerst. Mit dem
+**Cache-Reiniger** in den Einstellungen kann eine andere App (CleanMyMac, Mole, OnyX, Pearcleaner,
+Purge oder Sensei, wenn installiert) die Caches statt MacSpace freigeben.
 
 <p align="center">
   <img src="Docs/Screenshots/de/SystemData.png" alt="Die Seite „Systemdaten“: ein Diagramm dessen, was „Systemdaten“ füllt, die Liste „Jetzt freigeben“ und die Schaltfläche „Freigeben“ mit ihrer Größe" width="720">
@@ -121,17 +126,18 @@ die Einstellung dort ignoriert.
 </p>
 
 **Außerdem in MacSpace.** **Automatisch bereinigen** (Einstellungen, aus, bis du es einschaltest)
-gibt frei, was die Module ohne Rückfrage freigeben können, täglich, alle 3 Tage oder
-wöchentlich, solange MacSpace läuft. Debloat nimmt daran nicht teil, und der Versionsverlauf
-wird nie gelöscht. **Letzte Bereinigungen** listet auf, was jede freigegeben hat. MacSpace zeigt
-dir eine Mitteilung, wenn die automatische Bereinigung mindestens 100 MB freigibt, wenn eine
-Aktion, die eine Weile gedauert hat, endet, während MacSpace nicht im Vordergrund ist, und wenn
-der Speicher fast voll ist (höchstens einmal am Tag). Jede Mitteilung lässt sich ausschalten.
-**Beim Schließen des Fensters** kann sich MacSpace beenden, in der Menüleiste weiterlaufen
-(Standard) oder unsichtbar im Hintergrund weiterlaufen. Mit Rechtsklick auf das Symbol in der
-Menüleiste öffnet sich ein Menü mit jedem Modul, **Einstellungen …**, **Panel öffnen** und
-**MacSpace beenden**. MacSpace spricht Englisch, Portugiesisch (Brasilien), Französisch,
-Spanisch und Deutsch und folgt deiner Systemsprache.
+gibt frei, was die Module ohne Rückfrage freigeben können, täglich, alle 3 Tage oder wöchentlich,
+solange MacSpace läuft. Debloat nimmt daran nicht teil, und der Versionsverlauf wird nie gelöscht.
+**Letzte Bereinigungen** listet auf, was jede freigegeben hat. MacSpace zeigt dir eine Mitteilung,
+wenn die automatische Bereinigung mindestens 100 MB freigibt, wenn eine Aktion, die eine Weile
+gedauert hat, endet, während MacSpace nicht im Vordergrund ist, und wenn der Speicher fast voll ist
+(höchstens einmal am Tag). Jede Mitteilung lässt sich ausschalten. **Beim Schließen des Fensters**
+kann sich MacSpace beenden, in der Menüleiste weiterlaufen (Standard) oder unsichtbar im Hintergrund
+weiterlaufen. Mit Rechtsklick auf das Symbol in der Menüleiste öffnet sich ein Menü mit jedem Modul,
+**Einstellungen …**, **Panel öffnen** und **MacSpace beenden**. MacSpace spricht Englisch,
+Portugiesisch (Brasilien), Französisch, Spanisch und Deutsch und folgt deiner Systemsprache. Wenn
+eine Bereinigung endet, sagt **Fertig**, wie viel freigegeben wurde. Das Fenster behält Größe und
+Position, und auf der Startseite zeigt der Zeiger auf dem ✕ **Minimieren** und **Maximieren**.
 
 ---
 
@@ -248,8 +254,10 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   (`~/Library/Containers/<App>/Data/Library/Caches`), außer dem, was macOS dort ablegt. Nie die von
   Apple. Vorausgewählt sind die, die seit einem Monat unverändert sind und deren App so lange nicht
   geöffnet wurde oder nicht installiert ist. Genutzte Caches stehen ohne Häkchen da und sagen, dass
-  sie zurückkommen. Caches geöffneter Apps und Ordner mit Medien oder Dokumenten, die Menschen
-  benannt haben, werden nicht angeboten.
+  sie zurückkommen. Die Caches einer geöffneten App lassen sich ebenfalls ankreuzen: **Freigeben**
+  nennt die App, bittet sie, sich zu beenden (sie kann dich ums Sichern bitten, und du kannst
+  abbrechen), und gibt dann ihren Cache frei. Das automatische Aufräumen beendet nie eine App.
+  Ordner mit Medien oder Dokumenten, die Menschen benannt haben, werden nicht angeboten.
 - Nur über die Zeile **Homebrew**: das eigene `brew cleanup` von Homebrew, als du ausgeführt, ohne
   Formeln zu deinstallieren, zu aktualisieren oder Homebrews Statistiken zu senden.
 

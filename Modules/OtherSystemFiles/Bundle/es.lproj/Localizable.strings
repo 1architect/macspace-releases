@@ -42,8 +42,8 @@
 "Installs at the next restart" = "Se instala al reiniciar";
 "Latest" = "La más reciente";
 "Left alone" = "Sin tocar";
+"MacSpace could not measure right now. Try the refresh button." = "MacSpace no ha podido medir ahora. Prueba con el botón de actualizar.";
 "Not connected" = "No conectado";
-"Nothing can be measured right now. Try Refresh." = "Ahora no se puede medir nada. Prueba con Actualizar.";
 "Open" = "Abrir";
 "Other System Files" = "Otros archivos del sistema";
 "Other purgeable documents" = "Otros documentos purgables";

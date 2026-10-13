@@ -205,7 +205,8 @@ public struct MainView: View {
             guard let destination = router.take() else { return }
             Task {
                 if !windowShown || host.dashboardHandles.isEmpty { try? await Task.sleep(for: .milliseconds(700)) }
-                present(destination)
+                // Home is the dashboard: whatever page is open goes back to it (the Screenshots window asks for it).
+                if destination == .home { close() } else { present(destination) }
             }
         }
     }

@@ -406,7 +406,7 @@ public final class DesignSettings: ObservableObject {
     /// draws the defaults, even on a Mac where a development build left other values.
     private static func tool(_ defaults: UserDefaults, _ key: String) -> Any? {
         #if MACSPACE_DEV
-        defaults.object(forKey: key)
+        ScreenshotLaunch.isRequested ? nil : defaults.object(forKey: key)
         #else
         nil
         #endif
@@ -537,6 +537,8 @@ public struct DesignCommands: Commands {
                 .keyboardShortcut("t", modifiers: [.command, .option])
             Button("Text Editor…") { openWindow(id: TextEditorView.windowID) }
                 .keyboardShortcut("e", modifiers: [.command, .option])
+            Button("Screenshots…") { openWindow(id: ScreenshotToolView.windowID) }
+                .keyboardShortcut("s", modifiers: [.command, .option])
             Divider()
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])

@@ -38,6 +38,7 @@ Three channels deliver it, and all three move together:
 2. **Notes.** In `CHANGELOG.md`, turn `## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD`, start a new empty `## [Unreleased]`
    above it, and update the links at the bottom. Write `ReleaseNotes/X.Y.Z/en.md` and its four translations: short, in the
    app's own words (the texts in `Localization/*.json`), because they appear in the update window.
+   If the look changed, retake the README screenshots first (see "README screenshots" in [Handoff.md](Handoff.md)).
 3. **Tag.** Commit (`MacSpace X.Y.Z`), then:
    ```bash
    git tag -a vX.Y.Z -m "MacSpace X.Y.Z"

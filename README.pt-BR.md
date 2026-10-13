@@ -42,13 +42,18 @@ caches, registros, relatórios, recursos do sistema, dados de apps, histórico d
 documentos. O que ele não consegue nomear aparece como **Não identificado**. Nunca fica de fora.
 
 O botão principal, **Liberar** com um tamanho, apaga o que é seguro: caches de apps que estão
-fechados, relatórios de diagnóstico e de falhas com mais de 7 dias e recursos do sistema sem uso.
-Em **Liberar agora**, cada item tem o seu próprio botão. Dois itens ficam separados porque pedem
-mais cuidado: **Histórico de versões de documentos** (versões anteriores dos seus documentos; os
-documentos continuam) e **Arquivos restantes de atualização do macOS** (arquivos de uma
-atualização que já está instalada). O **Registro do sistema** (o que o macOS registra para resolver
-problemas) e o **Lixo** também têm botões próprios, nunca o principal. Para tudo o que pertence ao
-macOS ou a outros apps, o MacSpace diz o que é e o que fazer manualmente.
+fechados, relatórios de diagnóstico e de falhas com mais de 7 dias e recursos do sistema sem uso. Em
+**Liberar agora**, cada item tem o seu próprio botão. Dois itens ficam separados porque pedem mais
+cuidado: **Histórico de versões de documentos** (versões anteriores dos seus documentos; só a última
+versão permanece) e **Arquivos restantes de atualização do macOS** (arquivos de uma atualização que
+já está instalada). O **Registro do sistema** (o que o macOS registra para resolver problemas) e o
+**Lixo** também têm botões próprios, nunca o principal. Para tudo o que pertence ao macOS ou a
+outros apps, o MacSpace diz o que é e o que fazer manualmente. Um clique em um bloco do gráfico abre
+os itens de que ele é feito, e o botão de pasta numa linha mostra os arquivos dela no Finder. O que
+o macOS mantém inacessível a todos os apps aparece como **Protegido pelo macOS**. Em **Liberar
+agora**, os caches de apps abertos também podem ser marcados: **Liberar** encerra esses apps antes.
+Com o **Limpador de caches**, nos Ajustes, outro app (CleanMyMac, Mole, OnyX, Pearcleaner, Purge ou
+Sensei, quando instalado) pode liberar os caches no lugar do MacSpace.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
@@ -115,16 +120,17 @@ interruptor de análises também é uma política, porque o macOS ignora o ajust
 </p>
 
 **Também no MacSpace.** **Limpar automaticamente** (nos Ajustes, desativado até você ativá-lo)
-libera, sem perguntar, o que os módulos podem liberar, todos os dias, a cada 3 dias ou toda
-semana, enquanto o MacSpace está aberto. O Debloat não participa, e o histórico de versões nunca é
-apagado. **Limpezas recentes** lista o que cada uma liberou. O MacSpace notifica você quando a
-limpeza automática libera pelo menos 100 MB, quando uma ação demorada termina com o MacSpace em
-segundo plano e quando o disco está quase cheio (no máximo uma vez por dia). Cada notificação pode
-ser desativada. **Ao fechar a janela**, o MacSpace pode encerrar, continuar na barra de menus (o
-padrão) ou continuar em segundo plano, sem nenhum ícone. Clique com o botão direito no ícone da
-barra de menus para abrir um menu com cada módulo, **Ajustes…**, **Abrir Painel** e **Encerrar
-o MacSpace**. O MacSpace está disponível em inglês, português (Brasil), francês, espanhol e alemão
-e acompanha o idioma do sistema.
+libera, sem perguntar, o que os módulos podem liberar, todos os dias, a cada 3 dias ou toda semana,
+enquanto o MacSpace está aberto. O Debloat não participa, e o histórico de versões nunca é apagado.
+**Limpezas recentes** lista o que cada uma liberou. O MacSpace notifica você quando a limpeza
+automática libera pelo menos 100 MB, quando uma ação demorada termina com o MacSpace em segundo
+plano e quando o disco está quase cheio (no máximo uma vez por dia). Cada notificação pode ser
+desativada. **Ao fechar a janela**, o MacSpace pode encerrar, continuar na barra de menus (o padrão)
+ou continuar em segundo plano, sem nenhum ícone. Clique com o botão direito no ícone da barra de
+menus para abrir um menu com cada módulo, **Ajustes…**, **Abrir Painel** e **Encerrar o MacSpace**.
+O MacSpace está disponível em inglês, português (Brasil), francês, espanhol e alemão e acompanha o
+idioma do sistema. Quando uma limpeza termina, **Pronto** diz quanto foi liberado. A janela mantém o
+tamanho e a posição e, na página inicial, apontar para o ✕ mostra **Minimizar** e **Maximizar**.
 
 ---
 
@@ -238,8 +244,11 @@ o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista co
   Acesso Total ao Disco, o que está na pasta de caches do contêiner de cada app
   (`~/Library/Containers/<app>/Data/Library/Caches`), exceto o que o macOS guarda lá. Nunca os da
   Apple. As que já vêm marcadas não mudam há um mês, e o app delas não é aberto há tanto tempo ou
-  não está instalado. Caches em uso aparecem desmarcados e avisam que voltam. Caches de apps abertos
-  e pastas com mídias ou documentos com nomes dados por pessoas não são oferecidos.
+  não está instalado. Caches em uso aparecem desmarcados e avisam que voltam. Os caches de um app
+  aberto também podem ser marcados: **Liberar** diz o nome do app, pede que ele encerre (ele pode
+  pedir que você salve, e você pode cancelar) e então libera o cache dele. A limpeza automática
+  nunca encerra um app. Pastas com mídias ou documentos com nomes dados por pessoas não são
+  oferecidas.
 - Somente pela linha **Homebrew**: o `brew cleanup` do próprio Homebrew, rodado como você, sem
   desinstalar fórmulas, atualizar ou enviar as estatísticas do Homebrew.
 

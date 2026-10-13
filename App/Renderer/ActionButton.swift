@@ -28,7 +28,7 @@ struct ActionButton: View {
 /// Asks before an action, in an alert of its own in the middle of the screen. Not a sheet on the window: a sheet dims the window's
 /// whole frame, and on this window, clear around its rounded glass, that showed as a grey rectangle with square corners.
 @MainActor
-enum ConfirmationAlert {
+public enum ConfirmationAlert {
     /// Whether the user confirmed the action; true when it asks nothing.
     static func ask(_ action: Action) -> Bool {
         guard let confirmation = action.confirmation else { return true }
@@ -37,7 +37,21 @@ enum ConfirmationAlert {
         alert.informativeText = confirmation.message
         alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = action.role == .destructive
         alert.addButton(withTitle: String(localized: "Cancel"))
+        standardize(alert)
         return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// One shape for every confirmation: both texts left aligned, the title in at most two lines and the description in at most two.
+    public static func standardize(_ alert: NSAlert) {
+        alert.layout()
+        for case let label as NSTextField in alert.window.contentView?.subviews ?? [] {
+            guard label.stringValue == alert.messageText || label.stringValue == alert.informativeText else { continue }
+            label.alignment = .left
+            label.maximumNumberOfLines = 2
+            label.lineBreakMode = .byTruncatingTail
+            label.cell?.truncatesLastVisibleLine = true
+        }
+        alert.layout()
     }
 }
 

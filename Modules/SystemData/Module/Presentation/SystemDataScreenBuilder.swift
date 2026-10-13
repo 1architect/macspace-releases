@@ -426,7 +426,7 @@ enum SystemDataScreenBuilder {
         guard bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
         return (Row(id: "system-log", title: loc("System log"), trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "list.bullet.rectangle",
-                    detail: loc("What macOS records for troubleshooting, shown in Console. It starts again from empty."),
+                    detail: loc("Erase Console records used for troubleshooting."),
                     actions: [Action(id: "eraseUnifiedLog", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free the system log?"),
                                                                 message: loc("Console's history is deleted."),
@@ -622,7 +622,7 @@ enum SystemDataScreenBuilder {
         let size = ByteFormat.string(bytes)
         return (Row(id: "versions", title: loc("Document version history"),
                       trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "clock.arrow.circlepath",
-                      detail: loc("Earlier versions of your documents (File > Revert To). The documents themselves stay."),
+                      detail: loc("Earlier versions of your documents (File > Revert To). Only keeps the latest version."),
                       actions: [Action(id: "deleteVersions", title: loc("Free"), role: .destructive,
                                        confirmation: Confirmation(title: loc("Free all version history?"),
                                                                   message: loc("You won't be able to revert any document to an earlier version. Save and close your documents first."),

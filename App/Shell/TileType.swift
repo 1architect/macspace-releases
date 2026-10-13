@@ -9,7 +9,7 @@ struct TileType: Codable, Equatable, Sendable {
     /// SF Pro Text are the system font at their optical sizes, so a Mac without Apple's fonts installed draws them alike.
     var family: String? = "SF Pro Display"
     var titleWeight = TypeWeight.semibold
-    var statusWeight = TypeWeight.regular
+    var statusWeight = TypeWeight.light
     /// The status line's size against the title's.
     var statusScale = 1.0
     /// The caption's size on each kind of tile (`CaptionSize.tile`): a small tile, a small tile 180 points high or more, the large
@@ -40,7 +40,7 @@ struct TileType: Codable, Equatable, Sendable {
     /// What the Widget Type window left in the defaults, in a development build; a release always draws the defaults.
     static func load(_ defaults: UserDefaults = .standard) -> TileType {
         #if MACSPACE_DEV
-        defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(TileType.self, from: $0) } ?? TileType()
+        ScreenshotLaunch.isRequested ? TileType() : defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(TileType.self, from: $0) } ?? TileType()
         #else
         TileType()
         #endif

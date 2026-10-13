@@ -25,8 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             alert.alertStyle = .critical
             alert.addButton(withTitle: String(localized: "Quit"))
             alert.addButton(withTitle: String(localized: "Continue"))
+            ConfirmationAlert.standardize(alert)
             if alert.runModal() == .alertFirstButtonReturn { NSApp.terminate(nil) }
         }
+        #if MACSPACE_DEV
+        ScreenshotLaunch.runIfRequested()
+        #endif
         Task { @MainActor in await AppModel.host.start() }
         StatusItemController.shared.install(host: AppModel.host)
         AppNotifications.shared.install(host: AppModel.host)
@@ -113,6 +117,15 @@ struct MacSpaceMain: App {
         }
         .commandsRemoved()
         .defaultSize(width: 420, height: 640)
+        .handlesExternalEvents(matching: [])
+        .windowLevel(.floating)
+
+        // The README's screenshots at full color (Design menu, ⌥⌘S).
+        Window("Screenshots", id: ScreenshotToolView.windowID) {
+            ScreenshotToolView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 440, height: 560)
         .handlesExternalEvents(matching: [])
         .windowLevel(.floating)
 

@@ -119,12 +119,7 @@
   "Sin tocar",
   "Unangetastet"
  ],
- "Nothing can be measured right now. Try Refresh.": [
-  "Nada pode ser medido agora. Tente Atualizar.",
-  "Rien ne peut être mesuré pour l’instant. Essayez Actualiser.",
-  "Ahora no se puede medir nada. Prueba con Actualizar.",
-  "Gerade lässt sich nichts messen. Versuche „Aktualisieren“."
- ],
+ "MacSpace could not measure right now. Try the refresh button.": ["O MacSpace não conseguiu medir nada agora. Tente o botão atualizar.", "MacSpace n’a pas pu mesurer pour l’instant. Essayez le bouton Actualiser.", "MacSpace no ha podido medir ahora. Prueba con el botón de actualizar.", "MacSpace konnte gerade nichts messen. Versuche die Aktualisieren-Taste."],
  "Open": [
   "Abrir",
   "Ouvrir",
@@ -354,7 +349,7 @@
   "Konnte nicht freigegeben werden"
  ],
  "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.": [
-  "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup ficam.",
+  "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem.",
   "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.",
   "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.",
   "Dateien aus diesen Stunden lassen sich auf diesem Mac nicht mehr wiederherstellen. Die Backups auf dem Backup-Volume bleiben."

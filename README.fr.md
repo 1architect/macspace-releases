@@ -45,11 +45,16 @@ Le bouton principal, **Libérer** suivi d’une taille, supprime ce qui peut l�
 caches des apps fermées, les rapports de diagnostic et de plantage de plus de 7 jours, et les
 ressources système inutilisées. Sous **À libérer**, chaque élément a son propre bouton. Deux
 éléments sont mis à part, car ils demandent plus de précautions : **Historique des versions des
-documents** (versions précédentes de vos documents ; les documents restent) et **Fichiers
+documents** (versions précédentes de vos documents ; seule la dernière version reste) et **Fichiers
 restants de mise à jour de macOS** (fichiers d’une mise à jour déjà installée). Le **Journal
 système** (ce que macOS enregistre pour le dépannage) et la **Corbeille** ont aussi leur propre
 bouton, jamais le bouton principal. Pour tout ce qui appartient à macOS ou à d’autres apps, MacSpace
-explique de quoi il s’agit et ce qu’il faut faire à la main.
+explique de quoi il s’agit et ce qu’il faut faire à la main. Un clic sur un bloc du graphique ouvre
+les éléments qui le composent, et le bouton dossier d’une ligne montre ses fichiers dans le Finder.
+Ce que macOS garde fermé à toutes les apps s’appelle **Protégé par macOS**. Sous **À libérer**, les
+caches des apps ouvertes peuvent aussi être cochés : **Libérer** quitte d’abord ces apps. Avec
+**Nettoyeur de caches**, dans Réglages, une autre app (CleanMyMac, Mole, OnyX, Pearcleaner, Purge ou
+Sensei, si elle est installée) peut libérer les caches à la place de MacSpace.
 
 <p align="center">
   <img src="Docs/Screenshots/fr/SystemData.png" alt="La page Données système : un graphique de ce qui remplit Données système, la liste À libérer et le bouton Libérer avec sa taille" width="720">
@@ -120,16 +125,18 @@ bêta de macOS, l’interrupteur d’analyse est aussi une règle, car macOS y i
 
 **Et aussi dans MacSpace.** **Nettoyer automatiquement** (dans Réglages, désactivé jusqu’à ce que
 vous l’activiez) libère, sans rien demander, ce que les modules peuvent libérer, tous les jours,
-tous les 3 jours ou toutes les semaines, tant que MacSpace est ouvert. Debloat n’y participe pas,
-et l’historique des versions n’est jamais supprimé. **Nettoyages récents** liste ce que chacun a
+tous les 3 jours ou toutes les semaines, tant que MacSpace est ouvert. Debloat n’y participe pas, et
+l’historique des versions n’est jamais supprimé. **Nettoyages récents** liste ce que chacun a
 libéré. MacSpace vous avertit quand le nettoyage automatique libère au moins 100 Mo, quand une
 action qui a pris du temps se termine alors que MacSpace n’est pas au premier plan, et quand le
-disque est presque plein (une fois par jour au plus). Chaque notification peut être désactivée.
-**À la fermeture de la fenêtre**, MacSpace peut quitter, rester dans la barre des menus (par
-défaut) ou rester actif en arrière-plan, sans rien afficher. Un clic droit sur l’icône de la barre
-des menus ouvre un menu avec chaque module, **Réglages…**, **Ouvrir le panneau** et **Quitter
-MacSpace**. MacSpace parle anglais, portugais (Brésil), français, espagnol et allemand, et suit la
-langue de votre système.
+disque est presque plein (une fois par jour au plus). Chaque notification peut être désactivée. **À
+la fermeture de la fenêtre**, MacSpace peut quitter, rester dans la barre des menus (par défaut) ou
+rester actif en arrière-plan, sans rien afficher. Un clic droit sur l’icône de la barre des menus
+ouvre un menu avec chaque module, **Réglages…**, **Ouvrir le panneau** et **Quitter MacSpace**.
+MacSpace parle anglais, portugais (Brésil), français, espagnol et allemand, et suit la langue de
+votre système. Quand un nettoyage se termine, **Terminé** indique ce qui a été libéré. La fenêtre
+garde sa taille et sa place et, sur la page d’accueil, pointer la ✕ affiche **Réduire** et
+**Agrandir**.
 
 ---
 
@@ -245,8 +252,11 @@ administrateur, et supprimer le profil MacSpace. [Sécurité](SECURITY.fr.md) do
   conteneur de chaque app (`~/Library/Containers/<app>/Data/Library/Caches`), sauf ce que macOS y
   garde. Jamais ceux d’Apple. Ceux cochés pour vous sont inchangés depuis un mois, et leur app n’a
   pas été ouverte depuis aussi longtemps ou n’est pas installée. Les caches utilisés sont listés non
-  cochés et disent qu’ils reviennent. Les caches des apps ouvertes, et les dossiers qui contiennent
-  des médias ou des documents nommés par des personnes, ne sont pas proposés.
+  cochés et disent qu’ils reviennent. Les caches d’une app ouverte peuvent aussi être cochés :
+  **Libérer** nomme l’app, lui demande de quitter (elle peut vous demander d’enregistrer, et vous
+  pouvez annuler), puis libère son cache. Le nettoyage automatique ne quitte jamais une app. Les
+  dossiers qui contiennent des médias ou des documents nommés par des personnes ne sont pas
+  proposés.
 - Seulement depuis la ligne **Homebrew** : le `brew cleanup` de Homebrew, lancé en votre nom, sans
   désinstaller de formules, mettre à jour ni envoyer les statistiques de Homebrew.
 

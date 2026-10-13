@@ -32,7 +32,7 @@ enum SiriScreenBuilder {
     /// macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release there.
     static func virtualMachineBanner() -> Banner {
         Banner(id: "status", severity: .info, title: loc("This is a virtual machine"),
-               message: loc("macOS does not offer Apple Intelligence in a virtual machine, so there is nothing to switch off or release here. Use MacSpace on the real Mac."))
+               message: loc("macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac."))
     }
 
     /// The tile shows the switch itself, with no glow. What can be freed is said in the line under it, without a meter: the models
@@ -189,7 +189,7 @@ enum SiriScreenBuilder {
             let minutes = Int(ModelAutoRelease.settleTime / 60)
             widget = .list(ListWidget(id: "models-list", rows: [
                 Row(id: "releasing", title: loc("macOS is removing the model"), symbol: "arrow.triangle.2.circlepath",
-                    detail: loc("Usually takes a few minutes. If it doesn't, MacSpace does it after \(minutes) minutes.")),
+                    detail: loc("Usually takes a few instants. If it doesn't, MacSpace does it after \(minutes) minutes.")),
             ]))
         }
         return .section(SectionWidget(id: "models", title: loc("Leftover models"), widgets: [widget]))
