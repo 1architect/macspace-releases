@@ -104,5 +104,22 @@ struct MacSpaceMain: App {
         .handlesExternalEvents(matching: [])
         // Over the main window, so it stays in view while parts are picked there.
         .windowLevel(.floating)
+
+        // Temporary: the tiles' type (Design menu, ⌥⌘T), over the main window so the dashboard shows each change.
+        Window("Widget Type", id: WidgetTypeView.windowID) {
+            WidgetTypeView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 420, height: 640)
+        .handlesExternalEvents(matching: [])
+        .windowLevel(.floating)
+
+        // Temporary: every text of the app, to propose better ones and export them (Design menu, ⌥⌘E).
+        Window("Text Editor", id: TextEditorView.windowID) {
+            TextEditorView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 1000, height: 700)
+        .handlesExternalEvents(matching: [])
     }
 }

@@ -60,6 +60,26 @@ final class BlockLayoutTests: XCTestCase {
         XCTAssertEqual([inside.topLeading, inside.bottomLeading, inside.topTrailing, inside.bottomTrailing], [4, 4, 4, 4])
     }
 
+    /// Bars: one row as high as the chart, each as wide as its share, in the order given.
+    func testBarsAreOneRowAsHighAsTheChart() {
+        let rects = Treemap.arranged([6, 3, 1], in: CGRect(x: 0, y: 0, width: 200, height: 50), style: .bars)
+        XCTAssertEqual(rects.map(\.height), [50, 50, 50])
+        XCTAssertEqual(rects.map { $0.width.rounded() }, [120, 60, 20])
+        XCTAssertEqual(rects.map { $0.minX.rounded() }, [0, 120, 180])
+    }
+
+    /// A tile draws at most its limit of blocks, the orange one among them; the smallest parts go into one block.
+    func testATileDrawsAtMostItsLimit() {
+        let parts = [segment("macos", 14.4), segment("support", 7.46), segment("protected", 3.4), segment("brew", 2.57),
+                     segment("apple", 2.36), segment("shared", 2.24), segment("rest", 0.76), segment("free", 0.09, caution: true)]
+        let blocks = BlockLayout.blocks(parts, limit: 4)
+        XCTAssertEqual(blocks.count, 4)
+        XCTAssertTrue(blocks.contains { $0.segment.id == "free" })
+        XCTAssertEqual(Set(blocks.map(\.segment.id)), ["macos", "support", BlockLayout.smallerID, "free"])
+        XCTAssertEqual(blocks.first { $0.segment.id == BlockLayout.smallerID }?.segment.label, "5 smaller")
+        XCTAssertEqual(BlockLayout.blocks(parts, limit: 20).count, BlockLayout.blocks(parts).count, "a limit above the parts changes nothing")
+    }
+
     /// One small part is kept as it is (merging one into "1 smaller" would only rename it), with its minimum share.
     func testOneSmallPartIsKept() {
         let blocks = BlockLayout.blocks([segment("big", 10), segment("small", 0.1)])

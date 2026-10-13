@@ -351,9 +351,13 @@ public struct MainView: View {
 
     private func card(_ layer: ZoomLayer, in size: CGSize, target: CGRect, face: Bool) -> some View {
         ZoomCard(progress: progress, origin: layer.origin, target: target, container: size) { p in
+            // Laid out as the tile it shrinks back onto, at every size of the zoom: its caption's lines and its chart's blocks are
+            // already where they will settle. Laid out at the card's size, the caption took one line in the large card and broke onto
+            // two as the tile settled, and the text jumped.
             TileContent(destination: layer.destination, tint: layer.tint, host: host, storage: storage,
                         captionSize: CaptionSize.tile(height: layer.origin.height, large: frames.isLarge(layer.destination)), progress: p,
-                        showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45))
+                        showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45),
+                        restingSize: layer.origin.size, captionWidth: layer.origin.width)
         }
     }
 

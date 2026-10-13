@@ -20,13 +20,20 @@ struct TileInfo: Equatable {
     @MainActor
     init(_ handle: ModuleHandle) {
         if let tile = handle.tile {
-            self.init(title: tile.title, figure: tile.figure, status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status,
+            // Read again (Refresh, the first reading), the status line says so, in its own style: the old figures dimmed read as the
+            // new ones.
+            let reading = handle.tileIsStale || handle.isRefreshing
+            self.init(title: tile.title, figure: tile.figure,
+                      status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : (reading ? Self.loadingStatus : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
         } else {
-            self.init(title: handle.manifest.name.lowercased(), status: String(localized: "looking…"), loading: true)
+            self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus, loading: true)
         }
     }
+
+    /// A tile's status line while its module reads the Mac.
+    static var loadingStatus: String { String(localized: "loading…") }
 
     /// While a module cleans, its status line ("free up to 3.74 GB") says what it is doing and how far it is, as the page's pill
     /// does, and its chart breathes: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's
@@ -113,6 +120,8 @@ struct TileFace: View {
     }
 
     static let minimumChartHeight: CGFloat = 40
+    /// From the blocks to the line naming the one under the pointer: in the room between the chart and the caption, clear of both.
+    static let legendGap: CGFloat = 2
 
     /// What the caption takes from the tile's bottom edge up: its title lines, its status line and the room under it.
     static func captionHeight(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> CGFloat {
@@ -183,9 +192,6 @@ struct TileFace: View {
         .animation(Theme.hover, value: info.needsAttention)
     }
 
-    /// Room the attention mark takes at the start of the line under a blocks chart.
-    private var markRoom: CGFloat { info.needsAttention ? 27 : 0 }
-
     private func legend(_ mark: some View, _ text: String) -> some View {
         HStack(spacing: 4) {
             mark.frame(width: 8, height: 8)
@@ -199,27 +205,26 @@ struct TileFace: View {
         switch graphic {
         case let .blocks(segments):
             let area = Self.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
-            let legend = Self.legendShown(in: restingSize ?? size, info: info, captionSize: captionSize)
-            let blocks = BlockLayout.blocks(segments)
+            let blocks = BlockLayout.blocks(segments, limit: ChartLook.tile.limit)
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
-            // No names in the blocks: the one under the pointer is named in the line below.
-            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, outerRadius: Theme.tileRadius - Self.margin,
-                       loading: info.loading)
+            // No names in the blocks: the one under the pointer is named in the line just under them.
+            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, gap: CGFloat(TileType.current.tileGap),
+                       outerRadius: TileType.current.concentricCorners ? Theme.tileRadius - Self.margin : nil,
+                       look: .tile, loading: info.loading,
+                       orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size })
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
-            // What the pointer is on, and nothing otherwise.
-            HStack(spacing: 6) {
-                if legend, let hovered {
-                    RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(hovered, shade: BlockLayout.shade(of: hovered, in: blocks) ?? 0, tint: tint, design: design)).frame(width: 9, height: 9)
-                    Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))")
-                }
+            // What the pointer is on, and nothing otherwise: its name and size, in the tile's small text, just under the blocks and as
+            // wide as them, on every tile. Beside the caption, it had no room on a small tile and named nothing there.
+            Group {
+                if let hovered { Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))") }
             }
-            .font(.system(size: 11))
+            .font(TileType.current.smallText)
             .foregroundStyle(palette.soft)
             .lineLimit(1)
-            // After the attention mark, when the tile has one in that corner.
-            .frame(width: max(Self.legendRoom(in: size, info: info, captionSize: captionSize) - markRoom, 0), alignment: .leading)
-            .offset(x: Self.margin + markRoom, y: area.maxY + 8)
+            .truncationMode(.tail)
+            .frame(width: area.width, alignment: .leading)
+            .offset(x: area.minX, y: area.maxY + Self.legendGap)
             .animation(Theme.hover, value: hovered?.id)
         case let .dots(dots):
             VStack(alignment: .leading, spacing: 10) {
@@ -229,7 +234,7 @@ struct TileFace: View {
                     legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), String(localized: "enabled"))
                     if dots.contains(.attention) { legend(Circle().fill(design.action), String(localized: "undone")) }
                 }
-                .font(.system(size: 11))
+                .font(TileType.current.smallText)
                 .foregroundStyle(palette.soft)
                 .lineLimit(1)
             }
@@ -263,7 +268,8 @@ enum CaptionSize {
     static let tilePadding: CGFloat = 12
 
     static func tile(height: CGFloat, large: Bool) -> CGFloat {
-        large ? (height >= 300 ? 22 : 18) : (height >= 180 ? 18 : 14)
+        let type = TileType.current
+        return CGFloat(large ? (height >= 300 ? type.largeTallSize : type.largeSize) : (height >= 180 ? type.mediumSize : type.smallSize))
     }
 }
 
@@ -531,7 +537,9 @@ struct DashboardTileView: View {
               case let .blocks(segments)? = handle.tile?.graphic else { return nil }
         let info = TileInfo(handle)
         let area = TileFace.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
-        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
+        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments,
+                                  orderSize: TileFace.chartArea(in: restingSize, info: info, captionSize: captionSize, restingSize: restingSize).size,
+                                  look: .tile)?.id
     }
 }
 
@@ -732,6 +740,8 @@ struct TileContent: View {
     var switchOverlaid = false
     /// The tile's size in its cell (`TileFace.restingSize`); nil where it is drawn at rest.
     var restingSize: CGSize?
+    /// The width the caption is laid out in, when not the tile's: the zoom's, the tile's on the dashboard.
+    var captionWidth: CGFloat?
 
     var body: some View {
         switch destination {
@@ -758,6 +768,7 @@ struct TileContent: View {
                 TileCaption(title: info.title, figure: info.figure, status: info.status, size: captionSize, loading: info.loading)
                     .padding([.top, .horizontal], captionPadding)
                     .padding(.bottom, Self.captionBottom(size: captionSize))
+                    .frame(width: captionWidth, alignment: .trailing)
                     .opacity(captionOpacity)
             }
         }

@@ -64,7 +64,7 @@ if CommandLine.arguments.contains("--check") {
     build.waitUntilExit()
     guard build.terminationStatus == 0 else { print("error: the build failed"); exit(1) }
     let skipped = ["App/Debug/", "App/Shell/ColorLab.swift", "App/Settings/ColorLabView.swift", "App/Shell/Shading.swift", "App/Shell/Design.swift",
-                   "Cli/", "Helper/", "Tests/"]
+                   "App/Settings/WidgetTypeView.swift", "App/Settings/TextEditorView.swift", "App/Shell/TileType.swift", "Cli/", "Helper/", "Tests/"]
     var known: [String: Set<String>] = [:]
     for file in tables {
         let entries = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as! [String: [String]]

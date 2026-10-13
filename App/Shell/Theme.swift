@@ -88,21 +88,36 @@ struct TintPalette {
 /// The caption's typeface at one optical size whatever its point size. The system font follows its size with its optical size (17
 /// at 17 points and below, 22 at 22): a caption sized to its tile (`CaptionSize`) changed its cut as the tile grew, and its strokes
 /// thinned out as the tile was resized. Pinned to the small sizes' cut, it keeps one weight from the smallest tile to the largest.
+///
+/// The typeface, weights and optical size can be changed in the design tools' Widget Type window (`TileType`).
 enum CaptionFont {
-    static let opticalSize: NSNumber = 17
     private static let opticalSizeAxis = NSNumber(value: 0x6F70_737A) // 'opsz'
 
-    static func font(size: CGFloat, weight: NSFont.Weight) -> NSFont {
-        let base = NSFont.systemFont(ofSize: size, weight: weight)
+    static func font(size: CGFloat, weight: TypeWeight) -> NSFont {
+        let type = TileType.current
+        // SF Pro Display and Text are the system font's own cuts, at their optical sizes: installed only with Apple's fonts, they are
+        // drawn from the system font on every Mac.
+        let systemCuts = ["SF Pro Display": 28.0, "SF Pro Text": 17.0, "SF Pro": type.opticalSize]
+        if let family = type.family, systemCuts[family] == nil,
+           let font = NSFontManager.shared.font(withFamily: family, traits: [], weight: weight.managerWeight, size: size) {
+            return font
+        }
+        let base = NSFont.systemFont(ofSize: size, weight: weight.weight)
         // The weight is part of the variation too: the new one is added to it, not put in its place.
         var variation = (CTFontCopyVariation(base) as? [NSNumber: NSNumber]) ?? [:]
-        variation[opticalSizeAxis] = opticalSize
+        variation[opticalSizeAxis] = NSNumber(value: type.family.flatMap { systemCuts[$0] } ?? type.opticalSize)
         return NSFont(descriptor: base.fontDescriptor.addingAttributes([.variation: variation]), size: size) ?? base
     }
 
+    /// A tile's title and its figure: bold.
+    static func title(size: CGFloat) -> NSFont { font(size: size, weight: TileType.current.titleWeight) }
+
     /// The status line under a title: regular, at its title's size, as it first was. At the page rows' 13 points, or at the smallest
     /// tile's title size on every tile, it read too small under a large tile's title (2026-10-12).
-    static func status(size: CGFloat) -> NSFont { font(size: size, weight: .regular) }
+    static func status(size: CGFloat) -> NSFont {
+        let type = TileType.current
+        return font(size: (size * type.statusScale).rounded(), weight: type.statusWeight)
+    }
 }
 
 /// How a tile's caption is laid out in `width`: the title and its figure on one line where they fit; otherwise the title, which may
@@ -120,7 +135,7 @@ struct CaptionLayout {
     let titleWidth: CGFloat
 
     init(info: TileInfo, size: CGFloat, width: CGFloat) {
-        let font = CaptionFont.font(size: size, weight: .bold)
+        let font = CaptionFont.title(size: size)
         func measure(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: [.font: font]).width) }
         let available = max(width, 1)
         let joined = TileCaption.joined(info.title, info.figure)
@@ -163,7 +178,7 @@ struct TileCaption: View, @preconcurrency Animatable {
     static func joined(_ title: String, _ figure: String?) -> String { figure.map { "\(title) \($0)" } ?? title }
 
     var body: some View {
-        let bold = Font(CaptionFont.font(size: size, weight: .bold))
+        let bold = Font(CaptionFont.title(size: size))
         VStack(alignment: .trailing, spacing: 0) {
             ViewThatFits(in: .horizontal) {
                 Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
@@ -177,7 +192,6 @@ struct TileCaption: View, @preconcurrency Animatable {
                 .font(Font(CaptionFont.status(size: size)))
                 .lineLimit(1)
                 .contentTransition(.numericText())
-                .opacity(loading ? 0.65 : 1)
         }
         .multilineTextAlignment(.trailing)
         .foregroundStyle(design.ink)

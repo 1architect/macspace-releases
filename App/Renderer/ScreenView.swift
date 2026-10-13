@@ -140,7 +140,8 @@ struct ScreenView: View {
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
-        .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning) { [handle] in
+        .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
+                                  leaving: reveal < 1) { [handle] in
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
@@ -463,6 +464,9 @@ private struct AllDoneOverlay: View {
     /// The module is still reading the Mac after the action (`ModuleHandle.isCleaning`): the page stays until it is done, so the page
     /// it goes back to has its new figures. Gone back to at once, that page stood half loaded and did not answer (2026-10-13).
     let reloading: Bool
+    /// The page is closing under it (Back to the dashboard): it goes at once, with nothing left to do. Left where it was, it
+    /// stayed over the tile shrinking back onto the dashboard, its count half rolled (2026-10-13).
+    let leaving: Bool
     let finished: () -> Void
     @State private var shown = false
     @State private var run: Task<Void, Never>?
@@ -477,6 +481,9 @@ private struct AllDoneOverlay: View {
     @Environment(\.pageGround) private var ground
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The large tile's caption size, at its largest (`CaptionSize.tile`).
+    static var textSize: CGFloat { CGFloat(TileType.current.largeTallSize) }
+
     /// How long the count takes, in steps of `countStep`.
     static let countSteps = 36
     static let countStep = Duration.milliseconds(25)
@@ -486,18 +493,18 @@ private struct AllDoneOverlay: View {
             if shown {
                 ZStack {
                     Rectangle().fill(ground ?? .clear)
-                    VStack(spacing: 8) {
+                    // In the large tile's caption styles: its title, and its status line under it.
+                    VStack(spacing: 2) {
                         Text("All done")
-                            .font(.system(size: 30, weight: .semibold))
+                            .font(Font(CaptionFont.title(size: Self.textSize)))
                             .foregroundStyle(design.ink)
                             .scaleEffect(appeared || reduceMotion ? 1 : 0.8)
                             .opacity(appeared ? 1 : 0)
                             .blur(radius: appeared || reduceMotion ? 0 : 6)
                         if let counted {
-                            Text(String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)))
-                                .font(.system(size: 17, weight: .medium).monospacedDigit())
-                                .foregroundStyle(design.ink.opacity(0.65))
-                                .contentTransition(.numericText(value: progress))
+                            RollingText(text: String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)),
+                                        font: Font(CaptionFont.status(size: Self.textSize)))
+                                .foregroundStyle(design.ink)
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
@@ -528,6 +535,14 @@ private struct AllDoneOverlay: View {
             }
         }
         .onDisappear { run?.cancel(); count?.cancel(); shown = false }
+        .onChange(of: leaving) { _, now in
+            guard now, shown else { return }
+            run?.cancel()
+            count?.cancel()
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { shown = false }
+        }
         .onChange(of: reloading, initial: true) { _, now in reloadingNow = now }
     }
 

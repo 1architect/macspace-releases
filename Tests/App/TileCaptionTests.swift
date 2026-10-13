@@ -55,7 +55,17 @@ final class TileCaptionTests: XCTestCase {
     /// window is dragged (2026-10-13).
     func testTheCaptionSizeChangesInSteps() {
         let sizes = Set(stride(from: 120.0, through: 600.0, by: 1).map { CaptionSize.tile(height: $0, large: false) })
-        XCTAssertEqual(sizes, [14, 18])
+        XCTAssertEqual(sizes, [16], "16 points on every small tile")
         XCTAssertEqual(Set(stride(from: 250.0, through: 900.0, by: 1).map { CaptionSize.tile(height: $0, large: true) }), [18, 22])
+    }
+
+    /// Each digit rolls on its own; the words between them keep together, so they keep their kerning.
+    func testRollingTextSplitsDigitsFromWords() {
+        let pieces = RollingText.pieces("liberar 209,3 MB")
+        XCTAssertEqual(pieces.map(\.text), ["liberar ", "2", "0", "9", ",", "3", " MB"])
+        XCTAssertEqual(pieces.filter(\.isDigit).count, 4)
+        // A changed digit gets a new identity (it rolls); the unchanged pieces keep theirs (they stay).
+        let next = RollingText.pieces("liberar 212,3 MB")
+        XCTAssertEqual(Set(pieces.map(\.id)).intersection(next.map(\.id)).count, 5)
     }
 }

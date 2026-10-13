@@ -291,6 +291,8 @@ struct Design: Equatable {
     /// The tiles' and the glass window's corners (`CornerRadii`); here so a change redraws everything.
     var tileRadius = CornerRadii.defaultTile
     var windowRadius = CornerRadii.defaultWindow
+    /// The tiles' type, from the Widget Type window (`TileType`); here so a change redraws everything.
+    var tileType = TileType()
 
     /// The lift's animation, and the lean's.
     var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
@@ -376,6 +378,13 @@ public final class DesignSettings: ObservableObject {
     /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
     @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
     @Published public var tileRadius: CGFloat { didSet { defaults.set(Double(tileRadius), forKey: "design.tileRadius") } }
+    /// The tiles' type (Widget Type window).
+    @Published var tileType: TileType {
+        didSet {
+            TileType.current = tileType
+            defaults.set(try? JSONEncoder().encode(tileType), forKey: TileType.key)
+        }
+    }
     @Published public var windowRadius: CGFloat { didSet { defaults.set(Double(windowRadius), forKey: "design.windowRadius") } }
     /// The standard window's title bar (its title and the band behind it); off, the pages reach the top of the window.
     @Published public var standardTitleBar: Bool { didSet { defaults.set(standardTitleBar, forKey: "design.standardTitleBar") } }
@@ -420,6 +429,7 @@ public final class DesignSettings: ObservableObject {
         standardSidebarIcons = defaults.object(forKey: "design.standardSidebarIcons") as? Bool ?? true
         standardGlassBackground = defaults.bool(forKey: "design.standardGlassBackground")
         tileRadius = CGFloat(defaults.object(forKey: "design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
+        tileType = TileType.load(defaults)
         windowRadius = CGFloat(defaults.object(forKey: "design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
         colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
         observeSystemAppearance()
@@ -444,7 +454,7 @@ public final class DesignSettings: ObservableObject {
                                   clipWindow: clipWindow, trackPointer: trackPointer,
                                   windowGlass: windowGlass, windowBackground: windowBackground, pageEdgeFade: pageEdgeFade,
                                   pageEdgeBlur: pageEdgeBlur, clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
-                                  tileRadius: tileRadius, windowRadius: windowRadius) }
+                                  tileRadius: tileRadius, windowRadius: windowRadius, tileType: tileType) }
 
     /// The system's setting, global for the user: "Dark" while the appearance is dark, absent while it is light.
     private static func readSystemIsDark() -> Bool {
@@ -502,6 +512,10 @@ public struct DesignCommands: Commands {
             Divider()
             Button("Shader Studio…") { openWindow(id: ColorLabView.windowID) }
                 .keyboardShortcut("l", modifiers: [.command, .option])
+            Button("Widget Type…") { openWindow(id: WidgetTypeView.windowID) }
+                .keyboardShortcut("t", modifiers: [.command, .option])
+            Button("Text Editor…") { openWindow(id: TextEditorView.windowID) }
+                .keyboardShortcut("e", modifiers: [.command, .option])
             Divider()
             Toggle("Liquid Glass Tiles", isOn: $settings.glass)
                 .keyboardShortcut("g", modifiers: [.command, .option])

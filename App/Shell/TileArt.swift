@@ -204,7 +204,8 @@ enum LoadingWave {
 
 /// Squarified treemap: rectangles with areas proportional to the values, kept as close to square as the space allows. Values are laid
 /// out in the order given (largest first reads best), in columns side by side across the chart's long side, each column's blocks
-/// stacked down it (rows down a chart taller than wide).
+/// stacked down it (rows down a chart taller than wide). The design tools' Widget Type window also offers one row of bars and the
+/// classic treemap (`ChartStyle`).
 enum Treemap {
     /// The squarified layout whose thinnest block is widest, over the orders of the blocks after the largest: laid out largest first,
     /// the last block took whatever strip was left (25 points wide and full height on a page, too narrow for its size). Returns where
@@ -214,10 +215,10 @@ enum Treemap {
     /// stretched to `rect`. Arranged anew in every frame of a tile growing into another cell, two orders that score alike took
     /// turns, and even in one order the rows broke differently as the chart's proportions changed: the blocks re-flowed into another
     /// arrangement and back (2026-10-12). Arranged at rest, they only stretch while the tile moves.
-    static func arranged(_ values: [Double], in rect: CGRect, orderIn: CGRect? = nil) -> [CGRect] {
+    static func arranged(_ values: [Double], in rect: CGRect, orderIn: CGRect? = nil, style: ChartStyle = .columns) -> [CGRect] {
         let base = orderIn ?? rect
-        let order = order(values, in: base)
-        let rects = layout(order.map { values[$0] }, in: base)
+        let order = style == .bars ? Array(values.indices) : order(values, in: base, style: style)
+        let rects = layout(order.map { values[$0] }, in: base, style: style)
         var result = [CGRect](repeating: .zero, count: values.count)
         for (position, index) in order.enumerated() { result[index] = rects[position] }
         guard base != rect, base.width > 0, base.height > 0 else { return result }
@@ -228,7 +229,7 @@ enum Treemap {
     }
 
     /// The order `arranged` lays the values out in, by index.
-    static func order(_ values: [Double], in rect: CGRect) -> [Int] {
+    static func order(_ values: [Double], in rect: CGRect, style: ChartStyle = .columns) -> [Int] {
         guard values.count > 2, values.count <= 7 else { return Array(values.indices) }
         func thinnest(_ rects: [CGRect]) -> CGFloat {
             rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map { min($0.width, $0.height) }.min() ?? 0
@@ -236,7 +237,7 @@ enum Treemap {
         var best: (order: [Int], rects: [CGRect], score: CGFloat)?
         func visit(_ order: [Int], _ rest: [Int]) {
             guard !rest.isEmpty else {
-                let rects = layout(order.map { values[$0] }, in: rect)
+                let rects = layout(order.map { values[$0] }, in: rect, style: style)
                 let score = thinnest(rects)
                 // Only a clearly wider thinnest block replaces an earlier order: the given one first, so it wins ties.
                 if best == nil || score > best!.score + 0.5 { best = (order, rects, score) }
@@ -252,15 +253,16 @@ enum Treemap {
         return best?.order ?? Array(values.indices)
     }
 
-    static func layout(_ values: [Double], in rect: CGRect) -> [CGRect] {
+    static func layout(_ values: [Double], in rect: CGRect, style: ChartStyle = .columns) -> [CGRect] {
         let total = values.reduce(0, +)
         guard total > 0, rect.width > 0, rect.height > 0 else { return values.map { _ in .zero } }
+        if style == .bars { return bars(values, total: total, in: rect) }
         let scale = Double(rect.width * rect.height) / total
         let areas = values.map { $0 * scale }
         var result = [CGRect](repeating: .zero, count: values.count)
         var remaining = Array(areas.indices)
         var space = rect
-        let columns = rect.width >= rect.height
+        let wide = rect.width >= rect.height
 
         func worst(_ row: [Int], _ side: Double) -> Double {
             let sum = row.reduce(0) { $0 + areas[$1] }
@@ -280,6 +282,8 @@ enum Treemap {
             // Always columns across a wide chart: the squarified layout turns its strips to the shorter side of what is left, and
             // once the space left was taller than wide, its blocks were laid in rows across a column, a block of a row reaching
             // under two columns beside it and blocks of different heights side by side (2026-10-13).
+            // The classic treemap turns each strip to the shorter side of the space left.
+            let columns = style == .treemap ? space.width >= space.height : wide
             let side = Double(columns ? space.height : space.width)
             var row = [remaining.removeFirst()]
             while let next = remaining.first, worst(row + [next], side) <= worst(row, side) {
@@ -308,6 +312,18 @@ enum Treemap {
         }
         return result
     }
+
+    /// One row of bars across the chart's long side, each its share of it and the chart's whole other side.
+    private static func bars(_ values: [Double], total: Double, in rect: CGRect) -> [CGRect] {
+        var offset: CGFloat = 0
+        return values.map { value in
+            let share = CGFloat(value / total)
+            defer { offset += share }
+            return rect.width >= rect.height
+                ? CGRect(x: rect.minX + offset * rect.width, y: rect.minY, width: share * rect.width, height: rect.height)
+                : CGRect(x: rect.minX, y: rect.minY + offset * rect.height, width: rect.width, height: share * rect.height)
+        }
+    }
 }
 
 /// What the blocks draw, so that every part can be seen and pointed at. Parts under 2% of the total are drawn as one block ("3
@@ -324,11 +340,23 @@ enum BlockLayout {
     static let smallerID = "blocks.smaller"
 
     /// The blocks in the order they are laid out, largest first, with what each one is drawn at.
-    static func blocks(_ segments: [UsageSegment]) -> [(segment: UsageSegment, weight: Double)] {
+    /// `limit` is the most blocks drawn, the orange one included (a tile's, `ChartLook.limit`): past it, the smallest parts are
+    /// drawn as one block with the ones under 2%.
+    static func blocks(_ segments: [UsageSegment], limit: Int? = nil) -> [(segment: UsageSegment, weight: Double)] {
         let total = Double(segments.map(\.bytes).reduce(0, +))
         guard total > 0 else { return segments.map { ($0, Double($0.bytes)) } }
         var shown = segments
-        let small = segments.filter { $0.tone != .caution && Double($0.bytes) < total * mergeBelow }
+        var small = segments.filter { $0.tone != .caution && Double($0.bytes) < total * mergeBelow }
+        if let limit {
+            let cautions = segments.filter { $0.tone == .caution }.count
+            let others = segments.filter { $0.tone != .caution }.sorted { $0.bytes > $1.bytes }
+            let alone = others.filter { part in !small.contains { $0.id == part.id } }
+            // One place for the block of the smaller ones, once any part goes into it.
+            let room = max(limit - cautions - 1, 1)
+            if alone.count + cautions + min(small.count, 1) > limit, alone.count > room {
+                small += alone[room...]
+            }
+        }
         if small.count >= 2 {
             let ids = Set(small.map(\.id))
             shown = segments.filter { !ids.contains($0.id) }
@@ -402,12 +430,13 @@ struct BlocksView: View {
     /// The radius of the chart's outer corners, when it sits in a rounded tile: concentric with the tile's corners (the tile's radius
     /// less the margin to the chart). Only the corners on the chart's edge take it; the corners between blocks keep the blocks' own.
     var outerRadius: CGFloat?
+    /// The layout and the most blocks drawn: a page's unless the tile says (`ChartLook.tile`).
+    var look = ChartLook.page
     var loading = false
-    /// Where the blocks are arranged (`Treemap.arranged`): one shape for every chart, the tiles' and the page's, stretched to the size
-    /// drawn. Arranged at each chart's own size, a tile and the page it opens drew the same parts in different places (2026-10-13),
-    /// and a tile re-arranged itself as the window was resized.
+    /// Where the blocks are arranged (`Treemap.arranged`), when not at the size drawn: a tile's chart at rest, so a tile moving to
+    /// another cell only stretches its blocks. Each chart is arranged at its own shape, as in 1.0.3: one shape for every chart
+    /// (320 by 120, stretched to each) drew blocks that did not fit the chart around them, tall slivers on a large tile (2026-10-13).
     var orderSize: CGSize?
-    static let arrangement = CGSize(width: 320, height: 120)
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
@@ -445,11 +474,11 @@ struct BlocksView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let blocks = BlockLayout.blocks(segments)
+            let blocks = BlockLayout.blocks(segments, limit: look.limit)
             let shown = blocks.map(\.segment)
             let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
             let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
-                                         orderIn: CGRect(origin: .zero, size: orderSize ?? Self.arrangement))
+                                         orderIn: CGRect(origin: .zero, size: orderSize ?? proxy.size), style: look.style)
             let corner = Self.radius(for: rects.map(inset))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
@@ -540,10 +569,11 @@ struct BlocksView: View {
     }
 
     /// The block under a point, for hover: a part's own block, or the block of the smaller ones (`BlockLayout`).
-    static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment], orderSize: CGSize? = nil) -> UsageSegment? {
-        let blocks = BlockLayout.blocks(segments)
+    static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment], orderSize: CGSize? = nil,
+                        look: ChartLook = .page) -> UsageSegment? {
+        let blocks = BlockLayout.blocks(segments, limit: look.limit)
         let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: size),
-                                     orderIn: CGRect(origin: .zero, size: orderSize ?? arrangement))
+                                     orderIn: CGRect(origin: .zero, size: orderSize ?? size), style: look.style)
         return zip(blocks, rects).first { $0.1.contains(point) }?.0.segment
     }
 }
@@ -671,7 +701,7 @@ struct StateView: View {
     /// folded away on a tile 230 points wide, where "367,3 MB de modelos mantidos pelo macOS" needs 220 and has 206 (2026-10-13).
     var showsDetail = true
 
-    static let detailFont = NSFont.systemFont(ofSize: 11)
+    static var detailFont: NSFont { NSFont.systemFont(ofSize: TileType.current.smallTextSize) }
     static let detailLines = 2
 
     /// Whether `detail` fits in `width` at its size, in `detailLines` lines at most, its words unbroken.
@@ -725,7 +755,7 @@ struct StateView: View {
             if part != .switchOnly {
                 // Never shrunk: on two lines where one is too short, and folded away only where two are too (`showsDetail`).
                 if showsDetail {
-                    Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(Self.detailLines)
+                    Text(detail).font(TileType.current.smallText).foregroundStyle(palette.soft).lineLimit(Self.detailLines)
                         .fixedSize(horizontal: false, vertical: true)
                         .opacity(wave(1))
                 }

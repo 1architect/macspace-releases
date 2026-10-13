@@ -145,7 +145,7 @@
 "disabled" = "désactivés";
 "disk" = "disque";
 "enabled" = "activés";
-"looking…" = "analyse…";
+"loading…" = "chargement…";
 "macOS" = "macOS";
 "macOS is treating MacSpace as a downloaded app, so the helper cannot be installed. In Terminal run: xattr -dr com.apple.quarantine /Applications/MacSpace.app, then reopen MacSpace. (A notarized release does not need this.)" = "macOS traite MacSpace comme une app téléchargée : l’assistant ne peut donc pas être installé. Dans Terminal, exécutez : xattr -dr com.apple.quarantine /Applications/MacSpace.app, puis rouvrez MacSpace. (Une version notarisée n’en a pas besoin.)";
 "macOS update" = "Mise à jour de macOS";

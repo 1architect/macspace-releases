@@ -113,6 +113,9 @@ plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
 echo "App icon: $ICON"
 # The app's translations, one folder per language (Scripts/Localize.swift writes them from Localization/).
 cp -R App/Resources/*.lproj "$APP/Contents/Resources/"
+# Every text with its kind of element, for the design tools' Text Editor (Scripts/TextCatalog.swift).
+swift Scripts/TextCatalog.swift
+cp App/Resources/TextCatalog.json "$APP/Contents/Resources/"
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
