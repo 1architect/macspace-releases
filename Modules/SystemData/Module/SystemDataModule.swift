@@ -19,17 +19,18 @@ public struct SystemDataModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        SystemDataScreenBuilder.tile(await snapshot(privileged: context.privileged))
+        SystemDataScreenBuilder.tile(await snapshot(context: context))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SystemDataScreenBuilder.screen(await snapshot(privileged: context.privileged))
+        SystemDataScreenBuilder.screen(await snapshot(context: context))
     }
 
-    /// The scan, with what the user chose on the caches page, which changes without the Mac changing.
-    private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, privileged: (any PrivilegedChannel)?) async -> SystemDataSnapshot {
-        var snapshot = await store.snapshot(maxAge: maxAge, privileged: privileged)
+    /// The scan, with what the user chose on the caches page and in Settings, which changes without the Mac changing.
+    private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext) async -> SystemDataSnapshot {
+        var snapshot = await store.snapshot(maxAge: maxAge, privileged: context.privileged)
         snapshot.choices = CacheChoices.load()
+        snapshot.cleaner = CacheCleaner.read(context)
         return snapshot
     }
 
@@ -46,7 +47,7 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let snapshot = await snapshot(maxAge: 600, privileged: context.privileged)
+        let snapshot = await snapshot(maxAge: 600, context: context)
         switch request.actionID {
         case "clean":
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
@@ -79,6 +80,22 @@ public struct SystemDataModule: MacSpaceModule {
             progress(ActionProgress(message: loc("Freeing space…")))
             let ids = Set(Selection.ids(request.parameters["ids"]))
             return Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot)
+        case CachesPage.quitAndFree:
+            guard let id = request.parameters["id"], var entry = CachesPage.entries(snapshot).first(where: { $0.id == id }) else {
+                return .failed(loc("Already gone"))
+            }
+            progress(ActionProgress(message: loc("Quitting \(entry.title)…")))
+            guard let apps = await AppQuitter.quit(entry.owners, exact: entry.exactOwners) else {
+                return .failed(loc("\(entry.title) is running; quit it first."))
+            }
+            progress(ActionProgress(message: loc("Freeing space…")))
+            entry.open = false
+            let result = Self.freeCaches([entry], in: snapshot)
+            await AppQuitter.reopen(apps)
+            return result
+        case "openCleaner":
+            if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "openTrash":
             NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -102,11 +119,11 @@ public struct SystemDataModule: MacSpaceModule {
     /// Automatic cleanup: what the main Free button frees (the caches chosen on the caches page, old reports, unused system assets).
     /// Never the version history or anything else that cannot be undone.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
-        let snapshot = await snapshot(maxAge: 0, privileged: context.privileged)
+        let snapshot = await snapshot(maxAge: 0, context: context)
         guard SystemDataScreenBuilder.cleanBytes(snapshot) >= SystemDataScreenBuilder.worthARow else { return nil }
         let cleaned = Self.cleanSafe(snapshot, store: store, progress: { _ in })
         await store.invalidate()
-        return CleanupReport(freedBytes: cleaned.freed, summary: loc("Caches, old reports and unused system assets"), details: cleaned.details)
+        return CleanupReport(freedBytes: cleaned.freed, summary: snapshot.cleaner == .macSpace ? loc("Caches, old reports and unused system assets") : loc("Old reports and unused system assets"), details: cleaned.details)
     }
 
     /// Everything Clean frees, measured on the volume over the whole run.

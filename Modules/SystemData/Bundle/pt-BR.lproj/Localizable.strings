@@ -4,6 +4,7 @@
 "%@ is outside the cleanable locations." = "%@ está fora dos locais que podem ser limpos.";
 "%@ is running; quit it first." = "%@ está aberto; encerre-o primeiro.";
 "%@ older than %lld days." = "%@ com mais de %lld dias.";
+"%@ quits, its cache is freed, and it opens again. It may ask you to save first." = "%@ é encerrado, o cache é liberado e ele abre de novo. Ele pode pedir para salvar antes.";
 "%lld items" = "%lld itens";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "Mais %lld, incluindo modelos da Apple Intelligence, estão em Protegido pelo macOS.";
 "%lld places couldn't be measured." = "%lld locais não puderam ser medidos.";
@@ -44,6 +45,7 @@
 "Assorted macOS features and the OS itself." = "Vários recursos do macOS e o próprio sistema.";
 "Audio plug-ins and sounds" = "Plug-ins de áudio e sons";
 "Battery and energy history used by System Settings > Battery." = "Histórico de bateria e energia usado em Ajustes do Sistema > Bateria.";
+"Cache cleaner" = "Limpador de caches";
 "Caches for all users" = "Caches para todos os usuários";
 "Caches you can free" = "Caches que podem ser liberados";
 "Caches, old reports and unused system assets" = "Caches, relatórios antigos e recursos do sistema sem uso";
@@ -85,6 +87,7 @@
 "Free %@ in the Trash?" = "Liberar %@ do Lixo?";
 "Free %@?" = "Liberar %@?";
 "Free all version history?" = "Liberar todo o histórico de versões?";
+"Free caches" = "Liberar caches";
 "Free now" = "Liberar agora";
 "Free old reports?" = "Liberar os relatórios antigos?";
 "Free recommended" = "Liberar recomendados";
@@ -98,6 +101,7 @@
 "Freeing in the background" = "Liberando em segundo plano";
 "Freeing space…" = "Liberando espaço…";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libera cerca de %@. O Homebrew os baixa de novo quando precisar.";
+"Frees old reports and unused system assets." = "Libera os relatórios antigos e os recursos do sistema sem uso.";
 "Frees the chosen caches, old reports and unused system assets." = "Libera os caches escolhidos, os relatórios antigos e os recursos do sistema sem uso.";
 "Frees up to %@ of downloads stuck for %lld days or more. macOS downloads again what it needs." = "Libera até %@ de downloads travados há %lld dias ou mais. O macOS baixa de novo o que precisar.";
 "From a deleted account. Copy what you need, then delete it." = "De uma conta apagada. Copie o que precisar e apague-a.";
@@ -140,9 +144,11 @@
 "Old Homebrew versions" = "Versões antigas do Homebrew";
 "Old app copy" = "Cópia antiga de app";
 "Old diagnostic and crash reports" = "Relatórios antigos de diagnóstico e de falhas";
+"Old reports and unused system assets" = "Relatórios antigos e recursos do sistema sem uso";
 "Old reports are deleted from Free now." = "Os relatórios antigos são apagados em Liberar agora.";
 "Older version" = "Versão antiga";
 "Open" = "Abrir";
+"Open %@" = "Abrir %@";
 "Open now" = "Aberto agora";
 "Other" = "Outros";
 "Other caches" = "Outros caches";
@@ -153,6 +159,8 @@
 "Power log" = "Registro de energia";
 "Project deleted" = "Projeto apagado";
 "Protected by macOS" = "Protegido pelo macOS";
+"Quit %@ and free its cache?" = "Encerrar %@ e liberar o cache?";
+"Quitting %@…" = "Encerrando %@…";
 "Rebuilt by Spotlight; macOS manages it." = "Reconstruído pelo Spotlight; o macOS o gerencia.";
 "Recommended" = "Recomendados";
 "Remove it with the tool that made it." = "Remova-o com a ferramenta que o criou.";
@@ -208,7 +216,6 @@
 "Unfinished download: %@" = "Download incompleto: %@";
 "Unified system log" = "Registro unificado do sistema";
 "Unknown action %@." = "Ação desconhecida %@.";
-"Unknown app" = "App desconhecido";
 "Unused assets are removed from Free now when macOS reports any; the rest is in use." = "Os recursos sem uso são removidos em Liberar agora quando o macOS os informa; o resto está em uso.";
 "Unused system assets" = "Recursos do sistema sem uso";
 "Version history stays." = "O histórico de versões é mantido.";

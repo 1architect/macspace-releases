@@ -122,7 +122,7 @@ struct WidgetForm<Top: View>: View {
     /// A header's title, after the box that checks its whole part on a choosing page (`Selection.sections`).
     @ViewBuilder
     private func titled(_ title: String, help: String?, part: String?) -> some View {
-        if let part, let choice = sectionChoice, choice.hasChoices(part) {
+        if let part, let choice = sectionChoice, choice.hasRows(part) {
             HStack(spacing: 8) {
                 Toggle(title, isOn: Binding(get: { choice.isOn(part) }, set: { _ in choice.toggle(part) }))
                     .toggleStyle(.checkbox)
@@ -243,7 +243,9 @@ struct SectionChoice {
         Set(selection.sections.first { $0.id == part }?.rows ?? []).intersection(selection.choices.keys)
     }
 
-    func hasChoices(_ part: String) -> Bool { !choosable(part).isEmpty }
+    /// Every part with rows has a box, even when none of them can be chosen now (all their apps are open): turned on, it is kept, and
+    /// its rows are checked as soon as they can be.
+    func hasRows(_ part: String) -> Bool { !(selection.sections.first { $0.id == part }?.rows ?? []).isEmpty }
 
     func isOn(_ part: String) -> Bool {
         let rows = choosable(part)
@@ -275,13 +277,16 @@ struct BadgeView: View {
     /// What needs the user is drawn in the action color, with its deep form for the text.
     private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
 
+    /// Every other pill is drawn as the row's (i) and folder pills (`rowPill`): the same text and capsule colors, the same weight and
+    /// height, so the facts and the buttons beside them read as one set.
     var body: some View {
         Text(badge.text)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .foregroundStyle(attention ? design.actionDeep : .white)
-            .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(Palette.color(badge.tone, design).opacity(badge.tone == .neutral ? 0.3 : 0.55)), in: Capsule())
+            .font(.system(size: 11, weight: attention ? .semibold : .regular))
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .frame(height: 18)
+            .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
+            .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
     }
 }
 

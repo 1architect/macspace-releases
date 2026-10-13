@@ -25,11 +25,17 @@ final class SdkTests: XCTestCase {
         let manifest = ModuleManifest(id: "com.example.m", name: "M", summary: "s", version: "1.0", symbol: "star",
                                       permissions: [.fullDiskAccess],
                                       options: [OptionDefinition(id: "o", title: "O", kind: .toggle(defaultValue: true)),
-                                                OptionDefinition(id: "p", title: "P", kind: .choice(options: [OptionChoice(id: "a", title: "A")], defaultValue: "a"))],
+                                                OptionDefinition(id: "p", title: "P", kind: .choice(options: [OptionChoice(id: "a", title: "A"),
+                                                                                                                    OptionChoice(id: "b", title: "B", apps: ["com.example.b"])],
+                                                                                                    defaultValue: "a"), under: "o")],
                                       backgroundTasks: [BackgroundTaskDefinition(id: "w", title: "Watch", intervalSeconds: 60)])
         let decoded = try JSONDecoder().decode(ModuleManifest.self, from: JSONEncoder().encode(manifest))
         XCTAssertEqual(decoded, manifest)
         XCTAssertEqual(decoded.sdkVersion, SdkVersion.current)
+        // A manifest written before an option could sit under a toggle or name an app still reads.
+        let old = try JSONDecoder().decode(OptionDefinition.self, from: Data(#"{"id":"c","title":"C","kind":{"choice":{"options":[{"id":"a","title":"A"}],"defaultValue":"a"}}}"#.utf8))
+        XCTAssertNil(old.under)
+        if case let .choice(choices, _) = old.kind { XCTAssertNil(choices[0].apps) } else { XCTFail("not a choice") }
     }
 
     /// A group can let its page choose rows (`Selection`); a row saved before that existed decodes without one, and ids that hold

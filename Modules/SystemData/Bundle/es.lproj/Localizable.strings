@@ -4,6 +4,7 @@
 "%@ is outside the cleanable locations." = "%@ está fuera de las ubicaciones que se pueden limpiar.";
 "%@ is running; quit it first." = "%@ está abierto; ciérralo primero.";
 "%@ older than %lld days." = "%@ con más de %lld días.";
+"%@ quits, its cache is freed, and it opens again. It may ask you to save first." = "%@ se cierra, se libera su caché y se vuelve a abrir. Puede pedirte que guardes antes.";
 "%lld items" = "%lld elementos";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.";
 "%lld places couldn't be measured." = "No se han podido medir %lld ubicaciones.";
@@ -44,6 +45,7 @@
 "Assorted macOS features and the OS itself." = "Varias funciones de macOS y el propio sistema.";
 "Audio plug-ins and sounds" = "Plug-ins de audio y sonidos";
 "Battery and energy history used by System Settings > Battery." = "Historial de batería y energía que usa Ajustes del Sistema > Batería.";
+"Cache cleaner" = "Limpiador de cachés";
 "Caches for all users" = "Cachés para todos los usuarios";
 "Caches you can free" = "Cachés que puedes liberar";
 "Caches, old reports and unused system assets" = "Cachés, informes antiguos y recursos del sistema sin usar";
@@ -85,6 +87,7 @@
 "Free %@ in the Trash?" = "¿Liberar %@ de la Papelera?";
 "Free %@?" = "¿Liberar %@?";
 "Free all version history?" = "¿Liberar todo el historial de versiones?";
+"Free caches" = "Liberar cachés";
 "Free now" = "Liberar ahora";
 "Free old reports?" = "¿Liberar los informes antiguos?";
 "Free recommended" = "Liberar recomendados";
@@ -98,6 +101,7 @@
 "Freeing in the background" = "Liberando en segundo plano";
 "Freeing space…" = "Liberando espacio…";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.";
+"Frees old reports and unused system assets." = "Libera los informes antiguos y los recursos del sistema sin uso.";
 "Frees the chosen caches, old reports and unused system assets." = "Libera las cachés elegidas, los informes antiguos y los recursos del sistema sin uso.";
 "Frees up to %@ of downloads stuck for %lld days or more. macOS downloads again what it needs." = "Libera hasta %@ de descargas atascadas desde hace %lld días o más. macOS vuelve a descargar lo que necesite.";
 "From a deleted account. Copy what you need, then delete it." = "De una cuenta eliminada. Copia lo que necesites y elimínala.";
@@ -140,9 +144,11 @@
 "Old Homebrew versions" = "Versiones antiguas de Homebrew";
 "Old app copy" = "Copia antigua de app";
 "Old diagnostic and crash reports" = "Informes antiguos de diagnóstico y de fallos";
+"Old reports and unused system assets" = "Informes antiguos y recursos del sistema sin usar";
 "Old reports are deleted from Free now." = "Los informes antiguos se eliminan desde Liberar ahora.";
 "Older version" = "Versión antigua";
 "Open" = "Abrir";
+"Open %@" = "Abrir %@";
 "Open now" = "Abierto ahora";
 "Other" = "Otros";
 "Other caches" = "Otras cachés";
@@ -153,6 +159,8 @@
 "Power log" = "Registro de energía";
 "Project deleted" = "Proyecto eliminado";
 "Protected by macOS" = "Protegido por macOS";
+"Quit %@ and free its cache?" = "¿Salir de %@ y liberar su caché?";
+"Quitting %@…" = "Cerrando %@…";
 "Rebuilt by Spotlight; macOS manages it." = "Spotlight lo reconstruye; macOS lo gestiona.";
 "Recommended" = "Recomendados";
 "Remove it with the tool that made it." = "Elimínalo con la herramienta que lo creó.";
@@ -208,7 +216,6 @@
 "Unfinished download: %@" = "Descarga sin terminar: %@";
 "Unified system log" = "Registro unificado del sistema";
 "Unknown action %@." = "Acción desconocida %@.";
-"Unknown app" = "App desconocida";
 "Unused assets are removed from Free now when macOS reports any; the rest is in use." = "Los recursos sin usar se eliminan desde Liberar ahora cuando macOS los indica; el resto está en uso.";
 "Unused system assets" = "Recursos del sistema sin usar";
 "Version history stays." = "El historial de versiones se conserva.";

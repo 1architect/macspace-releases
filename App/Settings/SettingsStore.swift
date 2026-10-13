@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MacSpaceSdk
 
@@ -56,6 +57,12 @@ public final class SettingsStore: @unchecked Sendable {
         defaults.set(enabled, forKey: Self.key(id, "task", taskID))
     }
 
+    /// A choice is offered while it needs no other app or one of its apps is installed (`OptionChoice.apps`).
+    public static func isOffered(_ choice: OptionChoice) -> Bool {
+        guard let apps = choice.apps, !apps.isEmpty else { return true }
+        return apps.contains { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
+    }
+
     static func key(_ parts: String...) -> String { (["module"] + parts).joined(separator: ".") }
 
     struct StoredOptions: OptionStore {
@@ -74,9 +81,11 @@ public final class SettingsStore: @unchecked Sendable {
         }
 
         func string(_ id: String) -> String {
-            if let stored = defaults.value.string(forKey: SettingsStore.key(manifest.id, "option", id)) { return stored }
-            if case let .choice(_, defaultValue)? = manifest.options.first(where: { $0.id == id })?.kind { return defaultValue }
-            return ""
+            let stored = defaults.value.string(forKey: SettingsStore.key(manifest.id, "option", id))
+            guard case let .choice(choices, defaultValue)? = manifest.options.first(where: { $0.id == id })?.kind else { return stored ?? "" }
+            // A choice whose app was removed since reads as the default (`OptionChoice.apps`).
+            if let stored, let choice = choices.first(where: { $0.id == stored }), SettingsStore.isOffered(choice) { return stored }
+            return defaultValue
         }
 
         func isBackgroundTaskEnabled(_ id: String) -> Bool {

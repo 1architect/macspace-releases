@@ -256,10 +256,10 @@ final class AppCacheTests: XCTestCase {
         let gone = try XCTUnwrap(row.children.first { $0.id == "appcache:gone" })
         XCTAssertEqual(gone.badges.map(\.text), ["App cache", "App not installed"])
         XCTAssertNil(gone.detail)
-        XCTAssertEqual(row.children.first { $0.id == "appcache:open" }?.badges.map(\.text), ["Open now", "Unknown app"])
-        XCTAssertEqual(row.children.first { $0.id == "appcache:busy" }?.badges.map(\.text), ["Unknown app"],
-                       "the part's title says it comes back; the pill says only what it does not")
-        XCTAssertEqual(row.children.first { $0.id == "appcache:tool" }?.badges.map(\.text), ["Unknown app"])
+        XCTAssertEqual(row.children.first { $0.id == "appcache:open" }?.badges.map(\.text), ["Open now"])
+        XCTAssertEqual(row.children.first { $0.id == "appcache:busy" }?.badges.map(\.text), [],
+                       "the part's title says it comes back; an app MacSpace cannot name gets no pill")
+        XCTAssertEqual(row.children.first { $0.id == "appcache:tool" }?.badges.map(\.text), [])
     }
 
     /// The user's choice is kept: what they checked, and every cache of a part whose box is on, newcomers too.
@@ -277,6 +277,82 @@ final class AppCacheTests: XCTestCase {
         snap.choices = CacheChoices(chosen: [], all: ["apps"])
         XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 95_000_000, "the whole part")
         XCTAssertEqual(CachesPage.row(snap, now: now)?.selection?.sections.map(\.all), [false, true])
+    }
+
+    /// An open app's cache has its own Free, which quits that app first; the others have only their box.
+    func testAnOpenAppsCacheIsFreedByQuittingItsApp() throws {
+        var running = cache(.app(name: "Firefox", lastOpened: now), unchangedDays: 1, bytes: 300_000_000)
+        running.id = "appcache:org.mozilla.firefox"
+        running.name = "org.mozilla.firefox"
+        running.ownerRunning = true
+        var closed = cache(.unknown, unchangedDays: 1, bytes: 90_000_000)
+        closed.id = "appcache:busy"
+        let row = try XCTUnwrap(CachesPage.row(snapshot([running, closed]), now: now))
+        let open = try XCTUnwrap(row.children.first { $0.id == running.id })
+        XCTAssertEqual(open.actions.map(\.id), [CachesPage.quitAndFree])
+        XCTAssertEqual(open.actions.first?.parameters["id"], running.id)
+        XCTAssertNotNil(open.actions.first?.confirmation)
+        XCTAssertEqual(row.children.first { $0.id == "appcache:busy" }?.actions, [])
+        XCTAssertEqual(CachesPage.entries(snapshot([running]), now: now).first?.owners, ["org.mozilla.firefox", "Firefox"])
+    }
+
+    /// The apps quit for a cache are found as the cleaner finds them; a container's only by bundle identifier, and never MacSpace or
+    /// the Finder.
+    func testTheAppsQuitForACacheAreItsOwners() {
+        let apps = [RunningApp(bundleIdentifier: "org.mozilla.firefox", name: "Firefox"), RunningApp(bundleIdentifier: "com.apple.finder", name: "Finder"),
+                    RunningApp(bundleIdentifier: "com.macspace.app", name: "MacSpace"), RunningApp(bundleIdentifier: "com.example.Notes", name: "Notes")]
+        XCTAssertEqual(AppQuitter.owning(["org.mozilla.firefox"], exact: true, apps: apps), [0])
+        XCTAssertEqual(AppQuitter.owning(["Firefox"], exact: false, apps: apps), [0])
+        XCTAssertEqual(AppQuitter.owning(["Firefox"], exact: true, apps: apps), [], "a container is named after its app's identifier")
+        XCTAssertEqual(AppQuitter.owning(["com.apple.finder", "MacSpace"], exact: false, apps: apps), [])
+        XCTAssertEqual(AppQuitter.owning(["com.example.FinderSync"], exact: false, apps: apps), [], "a short name inside another's is not it")
+    }
+
+    /// Settings › System Data decides who frees the caches: off, they are not on the caches page; another app, the page shows what
+    /// can be freed and opens it, and neither Free nor automatic cleaning touches them.
+    func testTheCacheCleanerChosenInSettings() throws {
+        var gone = cache(.notInstalled, unchangedDays: 45, bytes: 30_000_000)
+        gone.id = "appcache:gone"
+        var snap = snapshot([gone])
+        snap.cleaner = .off
+        XCTAssertNil(CachesPage.row(snap, now: now))
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 0)
+        snap.cleaner = .app(name: "OnyX", url: URL(fileURLWithPath: "/Applications/OnyX.app"))
+        let row = try XCTUnwrap(CachesPage.row(snap, now: now))
+        XCTAssertEqual(row.trailing, ByteFormat.string(30_000_000))
+        XCTAssertEqual(row.actions.map(\.id), ["openCleaner"])
+        XCTAssertTrue(row.children.isEmpty, "no page of boxes: the other app chooses")
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 0)
+    }
+
+    /// The choice reads the app it names from the manifest; one that is not installed falls back to MacSpace.
+    func testACleanerThatIsNotInstalledFallsBackToMacSpace() {
+        let manifest = ModuleManifest(id: "m", name: "M", summary: "", version: "1", symbol: "x", options: [
+            OptionDefinition(id: CacheCleaner.switchID, title: "Free caches", kind: .toggle(defaultValue: true)),
+            OptionDefinition(id: CacheCleaner.choiceID, title: "Cache cleaner", kind: .choice(options: [
+                OptionChoice(id: "macspace", title: "MacSpace"), OptionChoice(id: "onyx", title: "OnyX", apps: ["com.titanium.OnyX"]),
+            ], defaultValue: "macspace"), under: CacheCleaner.switchID),
+        ])
+        func context(_ on: Bool, _ choice: String) -> ModuleContext {
+            ModuleContext(manifest: manifest, options: Options(on: on, choice: choice), permissions: NoPermissions())
+        }
+        let onyx = URL(fileURLWithPath: "/Applications/OnyX.app")
+        XCTAssertEqual(CacheCleaner.read(context(false, "onyx"), locate: { _ in onyx }), .off)
+        XCTAssertEqual(CacheCleaner.read(context(true, "macspace"), locate: { _ in onyx }), .macSpace)
+        XCTAssertEqual(CacheCleaner.read(context(true, "onyx"), locate: { $0 == "com.titanium.OnyX" ? onyx : nil }), .app(name: "OnyX", url: onyx))
+        XCTAssertEqual(CacheCleaner.read(context(true, "onyx"), locate: { _ in nil }), .macSpace)
+    }
+
+    private struct Options: OptionStore {
+        let on: Bool
+        let choice: String
+        func bool(_ id: String) -> Bool { on }
+        func string(_ id: String) -> String { choice }
+        func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
+    }
+
+    private struct NoPermissions: PermissionChecker {
+        func status(of permission: Permission) -> PermissionStatus { .granted }
     }
 
     /// A cache listed on the caches page is not listed again in its block's page; what it is taken from goes to "can be freed".

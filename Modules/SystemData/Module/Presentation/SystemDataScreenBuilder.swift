@@ -356,7 +356,9 @@ enum SystemDataScreenBuilder {
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
         let total = cleanBytes(snapshot)
         guard total >= worthARow else { return nil }
-        var message = loc("Frees the chosen caches, old reports and unused system assets.")
+        // Caches another app frees (`CacheCleaner.app`), or that cleanup leaves alone, are not part of it.
+        var message = snapshot.cleaner == .macSpace ? loc("Frees the chosen caches, old reports and unused system assets.")
+            : loc("Frees old reports and unused system assets.")
         if versionsRow(snapshot) != nil { message += " " + loc("Version history stays.") }
         if unifiedLogRow(snapshot) != nil { message += " " + loc("The system log stays.") }
         return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,

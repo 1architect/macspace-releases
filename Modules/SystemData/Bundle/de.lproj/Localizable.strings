@@ -4,6 +4,7 @@
 "%@ is outside the cleanable locations." = "%@ liegt außerhalb der bereinigbaren Orte.";
 "%@ is running; quit it first." = "%@ ist geöffnet; beende es zuerst.";
 "%@ older than %lld days." = "%@ älter als %lld Tage.";
+"%@ quits, its cache is freed, and it opens again. It may ask you to save first." = "%@ wird beendet, sein Cache freigegeben und es öffnet sich wieder. Vorher fragt es eventuell, ob du sichern willst.";
 "%lld items" = "%lld Objekte";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "%lld weitere, darunter Modelle von Apple Intelligence, stehen unter „Von macOS geschützt“.";
 "%lld places couldn't be measured." = "%lld Orte konnten nicht gemessen werden.";
@@ -44,6 +45,7 @@
 "Assorted macOS features and the OS itself." = "Verschiedene macOS-Funktionen und das System selbst.";
 "Audio plug-ins and sounds" = "Audio-Plug-ins und Töne";
 "Battery and energy history used by System Settings > Battery." = "Batterie- und Energieverlauf für Systemeinstellungen > Batterie.";
+"Cache cleaner" = "Cache-Reiniger";
 "Caches for all users" = "Caches für alle Benutzer";
 "Caches you can free" = "Caches, die du freigeben kannst";
 "Caches, old reports and unused system assets" = "Caches, alte Berichte und ungenutzte Systemressourcen";
@@ -85,6 +87,7 @@
 "Free %@ in the Trash?" = "%@ im Papierkorb freigeben?";
 "Free %@?" = "%@ freigeben?";
 "Free all version history?" = "Den gesamten Versionsverlauf freigeben?";
+"Free caches" = "Caches freigeben";
 "Free now" = "Jetzt freigeben";
 "Free old reports?" = "Alte Berichte freigeben?";
 "Free recommended" = "Empfohlene freigeben";
@@ -98,6 +101,7 @@
 "Freeing in the background" = "Wird im Hintergrund freigegeben";
 "Freeing space…" = "Speicher wird freigegeben …";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht.";
+"Frees old reports and unused system assets." = "Gibt alte Berichte und ungenutzte Systemressourcen frei.";
 "Frees the chosen caches, old reports and unused system assets." = "Gibt die ausgewählten Caches, alte Berichte und ungenutzte Systemressourcen frei.";
 "Frees up to %@ of downloads stuck for %lld days or more. macOS downloads again what it needs." = "Gibt bis zu %@ an Downloads frei, die seit %lld Tagen oder länger hängen. macOS lädt erneut, was es braucht.";
 "From a deleted account. Copy what you need, then delete it." = "Von einem gelöschten Account. Kopiere, was du brauchst, und lösche ihn dann.";
@@ -140,9 +144,11 @@
 "Old Homebrew versions" = "Alte Homebrew-Versionen";
 "Old app copy" = "Alte App-Kopie";
 "Old diagnostic and crash reports" = "Alte Diagnose- und Absturzberichte";
+"Old reports and unused system assets" = "Alte Berichte und ungenutzte Systemressourcen";
 "Old reports are deleted from Free now." = "Alte Berichte werden unter „Jetzt freigeben“ gelöscht.";
 "Older version" = "Ältere Version";
 "Open" = "Öffnen";
+"Open %@" = "%@ öffnen";
 "Open now" = "Gerade geöffnet";
 "Other" = "Sonstiges";
 "Other caches" = "Andere Caches";
@@ -153,6 +159,8 @@
 "Power log" = "Energieprotokoll";
 "Project deleted" = "Projekt gelöscht";
 "Protected by macOS" = "Von macOS geschützt";
+"Quit %@ and free its cache?" = "%@ beenden und Cache freigeben?";
+"Quitting %@…" = "%@ wird beendet …";
 "Rebuilt by Spotlight; macOS manages it." = "Von Spotlight neu aufgebaut; macOS verwaltet ihn.";
 "Recommended" = "Empfohlen";
 "Remove it with the tool that made it." = "Entferne es mit dem Tool, das es erstellt hat.";
@@ -208,7 +216,6 @@
 "Unfinished download: %@" = "Unvollständiger Download: %@";
 "Unified system log" = "Einheitliches Systemprotokoll";
 "Unknown action %@." = "Unbekannte Aktion %@.";
-"Unknown app" = "Unbekannte App";
 "Unused assets are removed from Free now when macOS reports any; the rest is in use." = "Ungenutzte Ressourcen werden unter „Jetzt freigeben“ entfernt, sobald macOS welche meldet; der Rest wird genutzt.";
 "Unused system assets" = "Ungenutzte Systemressourcen";
 "Version history stays." = "Der Versionsverlauf bleibt erhalten.";

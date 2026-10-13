@@ -3,10 +3,15 @@ import Foundation
 public struct OptionChoice: Codable, Equatable, Sendable {
     public var id: String
     public var title: String
+    /// Bundle identifiers of the app this choice hands the work to (one per edition: "com.macpaw.CleanMyMac5", "...4"). Settings offers
+    /// the choice only while one of them is installed, and a saved choice whose app is gone reads as the option's default. nil for a
+    /// choice that needs no other app.
+    public var apps: [String]?
 
-    public init(id: String, title: String) {
+    public init(id: String, title: String, apps: [String]? = nil) {
         self.id = id
         self.title = title
+        self.apps = apps
     }
 }
 
@@ -21,12 +26,15 @@ public struct OptionDefinition: Codable, Equatable, Sendable, Identifiable {
     public var title: String
     public var detail: String?
     public var kind: OptionKind
+    /// The id of a toggle of the same module this option refines: Settings draws it right below that toggle, and only while it is on.
+    public var under: String?
 
-    public init(id: String, title: String, detail: String? = nil, kind: OptionKind) {
+    public init(id: String, title: String, detail: String? = nil, kind: OptionKind, under: String? = nil) {
         self.id = id
         self.title = title
         self.detail = detail
         self.kind = kind
+        self.under = under
     }
 }
 

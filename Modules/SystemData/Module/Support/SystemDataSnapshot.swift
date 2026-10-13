@@ -32,6 +32,8 @@ struct SystemDataSnapshot: Sendable {
     var developerCaches: [DeveloperCache] = []
     /// What the user chose on the caches page (`CacheChoices`), read when the page is built, not when the Mac is scanned.
     var choices = CacheChoices()
+    /// Who frees the caches (`CacheCleaner`), read from Settings when the page is built.
+    var cleaner: CacheCleaner = .macSpace
 }
 
 /// Measures the root-only locations through the helper and folds the sizes into the report.

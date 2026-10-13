@@ -11,7 +11,77 @@
     "fullDiskAccess",
     "privilegedHelper"
   ],
-  "options": [],
+  "options": [
+    {
+      "id": "cacheCleanup",
+      "title": "Free caches",
+      "kind": {
+        "toggle": {
+          "defaultValue": true
+        }
+      }
+    },
+    {
+      "id": "cacheCleaner",
+      "title": "Cache cleaner",
+      "under": "cacheCleanup",
+      "kind": {
+        "choice": {
+          "options": [
+            {
+              "id": "macspace",
+              "title": "MacSpace"
+            },
+            {
+              "id": "cleanmymac",
+              "title": "CleanMyMac",
+              "apps": [
+                "com.macpaw.CleanMyMac5",
+                "com.macpaw.CleanMyMac4",
+                "com.macpaw.CleanMyMac-setapp"
+              ]
+            },
+            {
+              "id": "mole",
+              "title": "Mole",
+              "apps": [
+                "com.tw93.MoleApp"
+              ]
+            },
+            {
+              "id": "onyx",
+              "title": "OnyX",
+              "apps": [
+                "com.titanium.OnyX"
+              ]
+            },
+            {
+              "id": "pearcleaner",
+              "title": "Pearcleaner",
+              "apps": [
+                "com.alienator88.Pearcleaner"
+              ]
+            },
+            {
+              "id": "purge",
+              "title": "Purge",
+              "apps": [
+                "io.getpurge.app"
+              ]
+            },
+            {
+              "id": "sensei",
+              "title": "Sensei",
+              "apps": [
+                "org.cindori.Sensei"
+              ]
+            }
+          ],
+          "defaultValue": "macspace"
+        }
+      }
+    }
+  ],
   "backgroundTasks": [],
   "tileSize": "wide",
   "tileTint": "blue",

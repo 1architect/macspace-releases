@@ -38,13 +38,17 @@ struct CacheEntry: Equatable {
     var recommended = false
     /// Why, as a pill, when the category does not say it.
     var reason: String?
-    /// Its other pills, outside Recommended ("Open now", "Unknown app").
+    /// Its other pills, outside Recommended ("Open now").
     var facts: [String] = []
     /// Its app or tool is open: it can only be freed once that quits, so it has no box.
     var open = false
     /// The scanned item that holds it (`SystemDataItem.id`), whose block and listing it is taken out of; nil when it is in none (a
     /// developer folder System Settings counts under Developer).
     var within: String?
+    /// Who keeps it open (`AppQuitter`): the names and bundle identifiers the cleaner checks before freeing it.
+    var owners: [String] = []
+    /// `owners` are bundle identifiers only (a container's caches).
+    var exactOwners = false
     /// It stands for the whole of that item, not only its own size: Homebrew's downloads are its cache folder, whose rest (its
     /// package list) nothing frees, so the folder is not listed again for what is left.
     var wholeItem = false
@@ -54,8 +58,10 @@ struct CacheEntry: Equatable {
 }
 
 enum CachesPage {
-    /// Every cache the page lists, largest first.
+    /// Every cache the page lists, largest first. None while cache cleanup is off in Settings (`CacheCleaner.off`): the caches are then
+    /// listed with the rest of what is in System Data, as any other folder.
     static func entries(_ snapshot: SystemDataSnapshot, now: Date = Date()) -> [CacheEntry] {
+        guard snapshot.cleaner != .off else { return [] }
         var entries: [CacheEntry] = []
         let report = snapshot.report
 
@@ -80,8 +86,12 @@ enum CachesPage {
                     entry.reason = loc("Not opened for \(max(0, Int(now.timeIntervalSince(lastOpened) / 86_400))) days")
                 default: entry.reason = loc("Unchanged for \(days) days")
                 }
-            } else if cache.owner == .unknown {
-                entry.facts = [loc("Unknown app")]
+            }
+            if let container = cache.container {
+                entry.owners = cache.bundleIdentifiers.isEmpty ? [container] : cache.bundleIdentifiers
+                entry.exactOwners = true
+            } else {
+                entry.owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name, cache.title]
             }
             if cache.ownerRunning { open(&entry) }
             entries.append(entry)
@@ -99,6 +109,7 @@ enum CachesPage {
             let web = item.id.hasPrefix("supportcache:")
             var entry = CacheEntry(id: item.id, title: copy ? item.title : String(item.id.drop { $0 != ":" }.dropFirst()), bytes: bytes, paths: item.paths,
                                    source: web ? .web : (copy ? .appCopy : .system), recommended: true, within: item.id)
+            entry.owners = item.owners
             if item.inUse { open(&entry) }
             entries.append(entry)
         }
@@ -174,8 +185,9 @@ enum CachesPage {
         return Set(candidates.filter { chosen.contains($0.id) || choices.all.contains(part($0).rawValue) }.map(\.id))
     }
 
-    /// What the page's main Free button and automatic cleaning free.
+    /// What the page's main Free button and automatic cleaning free. Nothing when another app frees the caches.
     static func chosen(_ snapshot: SystemDataSnapshot, now: Date = Date()) -> [CacheEntry] {
+        guard snapshot.cleaner == .macSpace else { return [] }
         let all = entries(snapshot, now: now)
         let ids = checked(all, snapshot.choices)
         return all.filter { ids.contains($0.id) }
@@ -188,10 +200,15 @@ enum CachesPage {
     // MARK: Page
 
     /// The caches page, as a group row of Free now: Recommended, then the apps' caches, then the developer caches, each largest
-    /// first, each with a box that checks the whole part. nil when there is no cache to list.
+    /// first, each with a box that checks the whole part. nil when there is no cache to list. When another app frees them
+    /// (`CacheCleaner.app`), one row with what can be freed and a button that opens that app.
     static func row(_ snapshot: SystemDataSnapshot, now: Date = Date()) -> Row? {
         let all = entries(snapshot, now: now)
         guard !all.isEmpty else { return nil }
+        if case let .app(name, _) = snapshot.cleaner {
+            return Row(id: groupID, title: loc("Caches you can free"), trailing: ByteFormat.string(all.map(\.bytes).reduce(0, +)),
+                       actions: [Action(id: "openCleaner", title: loc("Open \(name)"))])
+        }
         let choices = snapshot.choices
         var rows: [Row] = []
         var sections: [SelectionSection] = []
@@ -230,11 +247,21 @@ enum CachesPage {
     }
 
     /// A cache as a row: its pills (where it comes from and why, under Recommended; its state elsewhere) and its folder. No (i):
-    /// the pills say it.
+    /// the pills say it. An open app's cache has a Free button of its own, which quits the app, frees the cache and opens the app
+    /// again (`quitAndFree`).
     static func row(_ entry: CacheEntry, part: CacheEntry.Part) -> Row {
         let badges = part == .recommended ? [entry.source.title] + [entry.reason].compactMap { $0 } : entry.facts
-        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0) }, paths: entry.paths)
+        var actions: [Action] = []
+        if entry.open, !entry.owners.isEmpty {
+            actions.append(Action(id: quitAndFree, title: loc("Free"), parameters: ["id": entry.id], confirmation: Confirmation(
+                title: loc("Quit \(entry.title) and free its cache?"),
+                message: loc("\(entry.title) quits, its cache is freed, and it opens again. It may ask you to save first."), confirmTitle: loc("Free"))))
+        }
+        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0) }, actions: actions,
+                   paths: entry.paths)
     }
+
+    static let quitAndFree = "quitAndFree"
 
     // MARK: What the page takes out of the rest
 

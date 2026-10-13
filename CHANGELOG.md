@@ -25,9 +25,15 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - System Data: wallpaper and screen saver downloads that macOS left unfinished can be deleted from Free now, with the helper. Only the `CFNetworkDownload_*.tmp` files of idleassetsd that have not changed in 3 days go, so a download still in progress stays. Clean and automatic cleaning leave them out.
 - A folder button beside a row's (i) shows its files in the Finder, selected in one window. Modules list a row's files with `Row.paths`; System Data and Other System Files do.
 - System Data: a click on a block of the page's chart opens a page of the items it is made of, with the same page change and Back as a group. Modules list a block's items with `UsageSegment.items`.
+- System Data: a cache whose app is open has its own **Free** button on the caches page. MacSpace quits the app (it can ask to save, and you can cancel), frees the cache and opens the app again.
+- Settings › System Data: **Free caches** turns the caches page off (the caches are then listed with the rest of System Data), and **Cache cleaner** below it picks who frees them: MacSpace, or CleanMyMac, Mole, OnyX, Pearcleaner, Purge or Sensei when installed. With another app, Free now shows what the caches hold and a button that opens it; Free and automatic cleaning leave them alone. Modules declare such options with `OptionDefinition.under` and `OptionChoice.apps`.
 - Other System Files: a click on a block of the page's chart opens a page of what it is made of: the purgeable app files with their Free button, each cloud folder's downloads with Remove Downloads and Show in Finder, and the macOS update waiting to install. A service MacSpace has nothing more to say about opens nothing.
 
 ### Changed
+
+- Pills that are not a warning look like the (i) and folder buttons beside them: the same grey text, capsule and height.
+- The (i) balloons follow the night or day look chosen in MacSpace, not the system's appearance.
+- On the caches page, **Come back with use** always has its box, even when every app in it is open: turned on, those caches are checked once their app quits. Caches no longer carry an "Unknown app" pill.
 
 - Loading: a tile or a page also darkens its background and lets it lift again, over and over, while its module reads the Mac. A page with no chart (Debloat, Siri & Apple Intelligence) shows the shape of its groups and rows meanwhile, instead of a few grey boxes.
 - Tiles: text is never shrunk to fit. Where a title and its figure do not fit on one line, the title (which may take two lines) is followed by the figure on a line of its own (`Tile.figure`). The status line under a title is that title's size, in regular weight.

@@ -4,6 +4,7 @@
 "%@ is outside the cleanable locations." = "%@ se trouve hors des emplacements nettoyables.";
 "%@ is running; quit it first." = "%@ est ouvert ; quittez-le d’abord.";
 "%@ older than %lld days." = "%@ de plus de %lld jours.";
+"%@ quits, its cache is freed, and it opens again. It may ask you to save first." = "%@ se ferme, son cache est libéré, puis il se rouvre. Il peut d’abord vous demander d’enregistrer.";
 "%lld items" = "%lld éléments";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.";
 "%lld places couldn't be measured." = "%lld emplacements n’ont pas pu être mesurés.";
@@ -44,6 +45,7 @@
 "Assorted macOS features and the OS itself." = "Diverses fonctions de macOS et le système lui-même.";
 "Audio plug-ins and sounds" = "Modules audio et sons";
 "Battery and energy history used by System Settings > Battery." = "Historique de batterie et d’énergie utilisé par Réglages Système > Batterie.";
+"Cache cleaner" = "Nettoyeur de caches";
 "Caches for all users" = "Caches pour tous les utilisateurs";
 "Caches you can free" = "Caches que vous pouvez libérer";
 "Caches, old reports and unused system assets" = "Caches, anciens rapports et ressources système inutilisées";
@@ -85,6 +87,7 @@
 "Free %@ in the Trash?" = "Libérer %@ dans la Corbeille ?";
 "Free %@?" = "Libérer %@ ?";
 "Free all version history?" = "Libérer tout l’historique des versions ?";
+"Free caches" = "Libérer les caches";
 "Free now" = "À libérer";
 "Free old reports?" = "Libérer les anciens rapports ?";
 "Free recommended" = "Libérer la recommandation";
@@ -98,6 +101,7 @@
 "Freeing in the background" = "Libération en arrière-plan";
 "Freeing space…" = "Libération d’espace…";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.";
+"Frees old reports and unused system assets." = "Libère les anciens rapports et les ressources système inutilisées.";
 "Frees the chosen caches, old reports and unused system assets." = "Libère les caches choisis, les anciens rapports et les ressources système inutilisées.";
 "Frees up to %@ of downloads stuck for %lld days or more. macOS downloads again what it needs." = "Libère jusqu’à %@ de téléchargements bloqués depuis %lld jours ou plus. macOS télécharge à nouveau ce dont il a besoin.";
 "From a deleted account. Copy what you need, then delete it." = "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.";
@@ -140,9 +144,11 @@
 "Old Homebrew versions" = "Anciennes versions de Homebrew";
 "Old app copy" = "Ancienne copie d’app";
 "Old diagnostic and crash reports" = "Anciens rapports de diagnostic et de plantage";
+"Old reports and unused system assets" = "Anciens rapports et ressources système inutilisées";
 "Old reports are deleted from Free now." = "Les anciens rapports sont supprimés depuis À libérer.";
 "Older version" = "Ancienne version";
 "Open" = "Ouvrir";
+"Open %@" = "Ouvrir %@";
 "Open now" = "Ouvert";
 "Other" = "Autres";
 "Other caches" = "Autres caches";
@@ -153,6 +159,8 @@
 "Power log" = "Journal d’énergie";
 "Project deleted" = "Projet supprimé";
 "Protected by macOS" = "Protégé par macOS";
+"Quit %@ and free its cache?" = "Quitter %@ et libérer son cache ?";
+"Quitting %@…" = "Fermeture de %@…";
 "Rebuilt by Spotlight; macOS manages it." = "Reconstruit par Spotlight ; macOS le gère.";
 "Recommended" = "Recommandés";
 "Remove it with the tool that made it." = "Supprimez-le avec l’outil qui l’a créé.";
@@ -208,7 +216,6 @@
 "Unfinished download: %@" = "Téléchargement inachevé : %@";
 "Unified system log" = "Journal système unifié";
 "Unknown action %@." = "Action inconnue %@.";
-"Unknown app" = "App inconnue";
 "Unused assets are removed from Free now when macOS reports any; the rest is in use." = "Les ressources inutilisées sont supprimées depuis À libérer quand macOS en signale ; le reste est utilisé.";
 "Unused system assets" = "Ressources système inutilisées";
 "Version history stays." = "L’historique des versions est conservé.";

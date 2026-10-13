@@ -13,6 +13,7 @@ struct InfoButton: View {
     var note: String?
     @State private var shown = false
     @State private var hovering = false
+    @Environment(\.design) private var design
 
     private var paragraphs: [String] {
         (text ?? "").components(separatedBy: "\n\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
@@ -39,9 +40,31 @@ struct InfoButton: View {
             .accessibilityLabel(String(localized: "More about this"))
             .popover(isPresented: $shown, arrowEdge: .bottom) {
                 InfoBalloon(paragraphs: paragraphs, steps: steps, note: note)
+                    .environment(\.colorScheme, design.colorScheme)
+                    .background(PopoverAppearance(isLight: design.isLight))
             }
         }
     }
+}
+
+/// Gives a popover's window the palette's appearance, not the system's: the balloon's glass is drawn by its window, so under a light
+/// system appearance it stayed light on the night palettes, whatever its text was told.
+private struct PopoverAppearance: NSViewRepresentable {
+    let isLight: Bool
+
+    final class Marker: NSView {
+        var name: NSAppearance.Name = .darkAqua { didSet { apply() } }
+        override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); apply() }
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+        private func apply() {
+            guard let window, window.appearance?.name != name else { return }
+            window.appearance = NSAppearance(named: name)
+        }
+    }
+
+    func makeNSView(context: Context) -> Marker { Marker() }
+
+    func updateNSView(_ view: Marker, context: Context) { view.name = isLight ? .aqua : .darkAqua }
 }
 
 /// A letter of the system font as a shape, scaled to the height it is given and centered on its own outline.

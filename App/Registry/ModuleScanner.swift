@@ -70,7 +70,7 @@ public enum ModuleScanner {
             option.title = text(option.title)
             option.detail = option.detail.map(text)
             if case let .choice(choices, defaultValue) = option.kind {
-                option.kind = .choice(options: choices.map { OptionChoice(id: $0.id, title: text($0.title)) }, defaultValue: defaultValue)
+                option.kind = .choice(options: choices.map { OptionChoice(id: $0.id, title: text($0.title), apps: $0.apps) }, defaultValue: defaultValue)
             }
             return option
         }

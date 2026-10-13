@@ -77,6 +77,15 @@ struct SettingsView: View {
     @ViewBuilder
     private func optionRow(_ handle: ModuleHandle, _ option: OptionDefinition) -> some View {
         let options = host.settings.optionStore(for: handle.manifest)
+        // An option that refines a toggle (`OptionDefinition.under`) is drawn only while that toggle is on; the manifest lists it
+        // right after the toggle, so it is the row below it.
+        if option.under.map(options.bool) ?? true {
+            optionControl(handle, option, options)
+        }
+    }
+
+    @ViewBuilder
+    private func optionControl(_ handle: ModuleHandle, _ option: OptionDefinition, _ options: any OptionStore) -> some View {
         switch option.kind {
         case .toggle:
             Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
@@ -84,7 +93,8 @@ struct SettingsView: View {
         case let .choice(choices, _):
             Picker(option.title, selection: Binding(get: { options.string(option.id) },
                                                     set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
-                ForEach(choices, id: \.id) { Text($0.title).tag($0.id) }
+                // Only the choices whose app is installed (`OptionChoice.apps`).
+                ForEach(choices.filter(SettingsStore.isOffered), id: \.id) { Text($0.title).tag($0.id) }
             }
         }
     }
