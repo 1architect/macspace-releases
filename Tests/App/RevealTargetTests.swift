@@ -9,6 +9,14 @@ final class RevealTargetTests: XCTestCase {
         XCTAssertEqual(RevealTarget.of(files), .select(files))
     }
 
+    /// A hidden folder (the Trash) is opened: selected in its parent, it is not drawn there.
+    func testAHiddenFolderIsOpened() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(".hidden-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        XCTAssertEqual(RevealTarget.of([folder]), .open(folder.standardizedFileURL))
+    }
+
     func testFilesInManyFoldersOpenOneWindowOnTheFolderHoldingThemAll() {
         // Each account's temporary folder under /private/var/folders: one window, not one per account.
         let files = (0..<30).map { url("/private/var/folders/zz/account\($0)/T") }

@@ -26,9 +26,15 @@ public struct SystemDataModule: MacSpaceModule {
         SystemDataScreenBuilder.screen(await snapshot(context: context))
     }
 
+    /// The page, with the scan's progress: the paths measured, then the helper's measuring (`SystemDataStore`).
+    public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
+        SystemDataScreenBuilder.screen(await snapshot(context: context, progress: progress))
+    }
+
     /// The scan, with what the user chose on the caches page and in Settings, which changes without the Mac changing.
-    private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext) async -> SystemDataSnapshot {
-        var snapshot = await store.snapshot(maxAge: maxAge, privileged: context.privileged)
+    private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext,
+                          progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
+        var snapshot = await store.snapshot(maxAge: maxAge, privileged: context.privileged, progress: progress)
         snapshot.choices = CacheChoices.load()
         snapshot.logFloor = SystemLogFloor.load()
         snapshot.cleaner = CacheCleaner.read(context)
@@ -83,9 +89,6 @@ public struct SystemDataModule: MacSpaceModule {
             return await Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot, quitApps: true, progress: progress)
         case "openCleaner":
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
-        case "openTrash":
-            NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "emptyTrash":
             progress(ActionProgress(message: loc("Freeing space…")))

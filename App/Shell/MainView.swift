@@ -302,7 +302,12 @@ public struct MainView: View {
     private var cornerControls: some View {
         HStack(spacing: 8) {
             // In the standard window, ✕ only while the sidebar (and the window's own buttons above it) is hidden; Back on a page.
-            if !embedded || isOpen || !navigator.sidebarShown {
+            // In the glass window, which has none of the window's own buttons, the dashboard's ✕ grows into a pill with Minimize and
+            // Zoom under the pointer (`WindowControls`).
+            if !embedded && !isOpen {
+                WindowControls { closeWindow() }
+                    .transition(.opacity)
+            } else if !embedded || isOpen || !navigator.sidebarShown {
                 GlassCircleButton(symbol: isOpen ? "chevron.left" : "xmark", help: isOpen ? String(localized: "Back") : String(localized: "Close")) {
                     isOpen ? close() : closeWindow()
                 }

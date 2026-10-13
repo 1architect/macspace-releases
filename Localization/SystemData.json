@@ -160,7 +160,6 @@
  "Logs for all users": ["Registros para todos os usuários", "Journaux pour tous les utilisateurs", "Registros para todos los usuarios", "Protokolle für alle Benutzer"],
  "Frees about %@. Homebrew downloads them again when it needs them.": ["Libera cerca de %@. O Homebrew os baixa de novo quando precisar.", "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.", "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.", "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht."],
  "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.": ["O Finder pode apagar os itens que estão nele há 30 dias: Finder > Ajustes > Avançado.", "Le Finder peut supprimer les éléments qui s’y trouvent depuis 30 jours : Finder > Réglages > Avancés.", "El Finder puede eliminar los ítems que llevan 30 días en ella: Finder > Ajustes > Avanzado.", "Der Finder kann Objekte löschen, die seit 30 Tagen darin liegen: Finder > Einstellungen > Erweitert."],
- "Open": ["Abrir", "Ouvrir", "Abrir", "Öffnen"],
  "Unchanged for %lld days": ["Sem mudanças há %lld dias", "Inchangé depuis %lld jours", "Sin cambios desde hace %lld días", "Seit %lld Tagen unverändert"],
  "Not opened for %lld days": ["Não aberto há %lld dias", "Non ouvert depuis %lld jours", "Sin abrir desde hace %lld días", "Seit %lld Tagen nicht geöffnet"],
  "App not installed": ["App não instalado", "App non installée", "App no instalada", "App nicht installiert"],

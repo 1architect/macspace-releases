@@ -353,6 +353,29 @@ final class SystemDataStoreTests: XCTestCase {
         XCTAssertEqual(counter.n, 2)
     }
 
+    /// The scan's progress reaches the caller that started it and one that joined it, and ends full.
+    func testScanProgressReachesEveryCaller() async {
+        final class Heard: @unchecked Sendable { var values: [Double] = []; let lock = NSLock(); func add(_ v: Double) { lock.withLock { values.append(v) } } }
+        let first = Heard(), joined = Heard()
+        let store = SystemDataStore(builder: { (progress: LoadProgressRelay) in
+            progress.report(0.3)
+            Thread.sleep(forTimeInterval: 0.2)
+            progress.report(0.6)
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0,
+                                                             manualCleanup: [], unreadable: [], warnings: []),
+                                    purgeableAssetsBytes: nil,
+                                    reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
+        })
+        async let a = store.snapshot(progress: first.add)
+        try? await Task.sleep(for: .milliseconds(50))
+        async let b = store.snapshot(progress: joined.add)
+        _ = await (a, b)
+        XCTAssertEqual(first.values.last, 1)
+        XCTAssertEqual(joined.values.last, 1)
+        XCTAssertTrue(first.values.contains(0.6) && joined.values.contains(0.6))
+        XCTAssertEqual(first.values, first.values.sorted(), "never backwards")
+    }
+
     /// A caller waiting on a scan when an action invalidates the store must not get that scan's figures (from before the action).
     func testACallerWaitingOnAnObsoleteScanGetsAFreshOne() async throws {
         final class Counter: @unchecked Sendable { var n = 0; let lock = NSLock(); func next() -> Int { lock.lock(); defer { lock.unlock() }; n += 1; return n } }

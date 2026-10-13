@@ -1,4 +1,5 @@
 {
+ "%@ freed": ["%@ liberados", "%@ libérés", "%@ liberados", "%@ freigegeben"],
  "%@ freed in total": ["%@ liberados no total", "%@ libérés au total", "%@ liberados en total", "%@ insgesamt freigegeben"],
  "%@ in total": ["%@ no total", "%@ au total", "%@ en total", "%@ insgesamt"],
  "%@ left.": ["%@ livres.", "%@ restants.", "%@ disponibles.", "%@ frei."],
@@ -30,6 +31,9 @@
  "Clean automatically": ["Limpar automaticamente", "Nettoyer automatiquement", "Limpiar automáticamente", "Automatisch bereinigen"],
  "Cleanup": ["Limpeza", "Nettoyage", "Limpieza", "Bereinigung"],
  "Close": ["Fechar", "Fermer", "Cerrar", "Schließen"],
+ "Maximize": ["Maximizar", "Agrandir", "Maximizar", "Maximieren"],
+ "Minimize": ["Minimizar", "Réduire", "Minimizar", "Minimieren"],
+ "Restore": ["Restaurar", "Restaurer", "Restaurar", "Wiederherstellen"],
  "Close Window": ["Fechar Janela", "Fermer la fenêtre", "Cerrar ventana", "Fenster schließen"],
  "Configuration profile": ["Perfil de configuração", "Profil de configuration", "Perfil de configuración", "Konfigurationsprofil"],
  "Continue": ["Continuar", "Continuer", "Continuar", "Fortfahren"],

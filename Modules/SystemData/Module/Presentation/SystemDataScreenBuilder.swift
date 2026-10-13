@@ -394,9 +394,11 @@ enum SystemDataScreenBuilder {
 
     static let manualThreshold: UInt64 = 50_000_000
 
-    /// The Trash: Free empties it, as the Finder's Empty Trash does; Open shows it in the Finder; and whether the Finder empties old
+    /// The Trash: Free empties it, as the Finder's Empty Trash does; its folder pill (`Row.paths`) shows it in the Finder; and whether the Finder empties old
     /// items by itself. The Trash is a category of its own in System Settings, not System Data, so it is not in the page's figures, and
     /// never part of Clean or automatic cleaning: what is in it is the user's.
+    static let trashPath = (NSHomeDirectory() as NSString).appendingPathComponent(".Trash")
+
     static func trashRow(_ snapshot: SystemDataSnapshot) -> (row: Row, bytes: UInt64)? {
         guard let bytes = snapshot.report.items.first(where: { $0.id == "trash:user" })?.bytes, bytes >= worthARow else { return nil }
         let empties = snapshot.trashEmptiesItself == true
@@ -407,8 +409,8 @@ enum SystemDataScreenBuilder {
                     actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free \(size) in the Trash?"),
                                                                 message: loc("Everything in the Trash is deleted for good."),
-                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space…")),
-                              Action(id: "openTrash", title: loc("Open"))]), bytes)
+                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
+                    paths: [Self.trashPath]), bytes)
     }
 
     /// The unified log's item: what Console shows, and the format strings it is read with.

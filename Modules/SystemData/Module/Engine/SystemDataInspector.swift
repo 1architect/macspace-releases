@@ -368,7 +368,8 @@ public struct SystemDataInspector {
 
     // MARK: Inspect
 
-    public func inspect(now: Date = Date()) -> SystemDataReport {
+    /// `progress` hears how many of the paths to measure are measured, 0...1, as the workers finish them.
+    public func inspect(now: Date = Date(), progress: LoadProgressSink? = nil) -> SystemDataReport {
         // Each scan counts an APFS clone family once across every item (`CloneLedger`).
         // A worker with no path left to start helps with the large trees still being walked (`ScanPool`), plus one more thread
         // from the start: one cloud folder took 6 seconds and finished alone after every other path.
@@ -437,11 +438,14 @@ public struct SystemDataInspector {
             // A few workers pull the next path as they finish one. One worker per path (`concurrentPerform` over the jobs) put every
             // core of the Mac on the scan: 800% CPU on a 10-core M4, from the Refresh button and from the automatic readings.
             let queue = JobCounter(count: jobs.count)
+            // Counts the paths measured, for `progress`: the next number it hands out is how many are done.
+            let done = JobCounter(count: jobs.count)
             DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(jobs.count, 1))) { _ in
                 defer { pool.release() }
                 while let index = queue.next() {
                     let job = jobs[index]
                     results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
+                    if let progress, let measured = done.next() { progress(Double(measured + 1) / Double(jobs.count)) }
                 }
             }
             let sizes = results.values

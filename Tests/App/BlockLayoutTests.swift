@@ -38,6 +38,28 @@ final class BlockLayoutTests: XCTestCase {
         XCTAssertEqual(blocks.last?.segment.id, "free")
     }
 
+    /// The blocks stand in columns: any two blocks share their left and right edges or do not overlap across the chart at all.
+    func testBlocksStandInColumns() {
+        let values = [14.41, 7.45, 3.42, 2.57, 2.35, 2.24, 0.76, 0.15].map { $0 * 1e9 }
+        for size in [CGSize(width: 320, height: 120), CGSize(width: 600, height: 300), CGSize(width: 200, height: 180)] {
+            let rects = Treemap.arranged(values, in: CGRect(origin: .zero, size: size))
+            for a in rects { for b in rects where a != b {
+                let same = abs(a.minX - b.minX) < 0.01 && abs(a.maxX - b.maxX) < 0.01
+                let apart = a.maxX <= b.minX + 0.01 || b.maxX <= a.minX + 0.01
+                XCTAssertTrue(same || apart, "\(a) and \(b) at \(size)")
+            } }
+        }
+    }
+
+    /// Only the corners on the chart's own corners take the tile's concentric radius.
+    func testOnlyTheChartsOuterCornersFollowTheTile() {
+        let size = CGSize(width: 300, height: 100)
+        let corner = BlocksView.shape(CGRect(x: 0, y: 0, width: 100, height: 100), in: size, corner: 4, outer: 7).cornerRadii
+        XCTAssertEqual([corner.topLeading, corner.bottomLeading, corner.topTrailing, corner.bottomTrailing], [7, 7, 4, 4])
+        let inside = BlocksView.shape(CGRect(x: 100, y: 0, width: 100, height: 50), in: size, corner: 4, outer: 7).cornerRadii
+        XCTAssertEqual([inside.topLeading, inside.bottomLeading, inside.topTrailing, inside.bottomTrailing], [4, 4, 4, 4])
+    }
+
     /// One small part is kept as it is (merging one into "1 smaller" would only rename it), with its minimum share.
     func testOneSmallPartIsKept() {
         let blocks = BlockLayout.blocks([segment("big", 10), segment("small", 0.1)])

@@ -140,7 +140,7 @@ struct ScreenView: View {
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
-        .overlay { AllDoneOverlay(token: handle.allDone, reloading: handle.isCleaning) { [handle] in
+        .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning) { [handle] in
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
@@ -455,26 +455,53 @@ struct HeroBlocks: View {
 
 /// "All done", as a page of its own: when an action the user started succeeded (`ModuleHandle.allDone`), a page with the words in its
 /// middle slides in over the page as any page does, `finished` runs under it (a choosing page goes back), and it slides away as Back
-/// does, showing the page under it.
+/// does, showing the page under it. The words come in as the page arrives, and what the action freed counts up under them.
 private struct AllDoneOverlay: View {
     let token: Int
+    /// What the action freed (`ModuleHandle.allDoneFreed`); nothing is counted when it freed nothing measured.
+    let freed: UInt64?
     /// The module is still reading the Mac after the action (`ModuleHandle.isCleaning`): the page stays until it is done, so the page
     /// it goes back to has its new figures. Gone back to at once, that page stood half loaded and did not answer (2026-10-13).
     let reloading: Bool
     let finished: () -> Void
     @State private var shown = false
     @State private var run: Task<Void, Never>?
+    @State private var count: Task<Void, Never>?
+    /// The words have come in.
+    @State private var appeared = false
+    /// What is counted on this page, kept from when it opened.
+    @State private var counted: UInt64?
+    /// How far the count is, 0 to 1.
+    @State private var progress = 0.0
     @Environment(\.design) private var design
     @Environment(\.pageGround) private var ground
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// How long the count takes, in steps of `countStep`.
+    static let countSteps = 36
+    static let countStep = Duration.milliseconds(25)
 
     var body: some View {
         ZStack {
             if shown {
                 ZStack {
                     Rectangle().fill(ground ?? .clear)
-                    Text("All done")
-                        .font(.system(size: 30, weight: .semibold))
-                        .foregroundStyle(design.ink)
+                    VStack(spacing: 8) {
+                        Text("All done")
+                            .font(.system(size: 30, weight: .semibold))
+                            .foregroundStyle(design.ink)
+                            .scaleEffect(appeared || reduceMotion ? 1 : 0.8)
+                            .opacity(appeared ? 1 : 0)
+                            .blur(radius: appeared || reduceMotion ? 0 : 6)
+                        if let counted {
+                            Text(String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)))
+                                .font(.system(size: 17, weight: .medium).monospacedDigit())
+                                .foregroundStyle(design.ink.opacity(0.65))
+                                .contentTransition(.numericText(value: progress))
+                                .opacity(appeared ? 1 : 0)
+                                .offset(y: appeared || reduceMotion ? 0 : 8)
+                        }
+                    }
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
@@ -484,9 +511,15 @@ private struct AllDoneOverlay: View {
         // Only a new success: a page opened again later must not say it again.
         .onChange(of: token) { _, _ in
             run?.cancel()
+            count?.cancel()
             run = Task { @MainActor in
+                counted = freed.flatMap { $0 > 0 ? $0 : nil }
+                progress = 0
+                appeared = false
                 shown = true
-                try? await Task.sleep(for: .seconds(1.2))
+                count = Task { @MainActor in await countUp() }
+                // Long enough to read the figure once it has counted up.
+                try? await Task.sleep(for: counted == nil ? .seconds(1.2) : .seconds(2))
                 while reloadingNow, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(100)) }
                 guard !Task.isCancelled else { return }
                 finished()
@@ -494,12 +527,42 @@ private struct AllDoneOverlay: View {
                 shown = false
             }
         }
-        .onDisappear { run?.cancel(); shown = false }
+        .onDisappear { run?.cancel(); count?.cancel(); shown = false }
         .onChange(of: reloading, initial: true) { _, now in reloadingNow = now }
     }
 
     /// `reloading` as it is now, for the task that waits on it (a task keeps the value it started with).
     @State private var reloadingNow = false
+
+    /// The words come in as the page slides in, then the figure counts up from zero, quickly at first and slowing to its value.
+    private func countUp() async {
+        try? await Task.sleep(for: .milliseconds(120))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(duration: 0.5, bounce: 0.3)) { appeared = true }
+        guard !reduceMotion else { progress = 1; return }
+        try? await Task.sleep(for: .milliseconds(200))
+        for step in 1...Self.countSteps {
+            guard !Task.isCancelled else { return }
+            let t = Double(step) / Double(Self.countSteps)
+            withAnimation(.snappy(duration: 0.1)) { progress = 1 - pow(1 - t, 3) }
+            try? await Task.sleep(for: Self.countStep)
+        }
+    }
+
+    /// `bytes` in the unit of `total` ("4,2 MB" on the way to "9,9 MB"), so the count does not change unit as it goes.
+    static func counting(_ bytes: UInt64, toward total: UInt64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowsNonnumericFormatting = false
+        formatter.allowedUnits = switch total {
+        case ..<1_000: .useBytes
+        case ..<1_000_000: .useKB
+        case ..<1_000_000_000: .useMB
+        case ..<1_000_000_000_000: .useGB
+        default: .useTB
+        }
+        return formatter.string(fromByteCount: Int64(clamping: bytes))
+    }
 }
 
 /// The bottom-left corner of a page: one pill that is the main action, turns into the progress of what is running, then into its
@@ -558,7 +621,7 @@ private struct ActionDock: View {
         if handle.isCleaning { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
         // (`Screen.primary`).
-        if handle.screen == nil || handle.isRefreshing { return .loading }
+        if handle.screen == nil || handle.isRefreshing { return .loading(handle.loading) }
         if let notice, notice.action != nil || mainAction == nil || showsPassingNotice { return .notice(notice) }
         if let primary = mainAction { return .idle(primary) }
         return nil
@@ -596,8 +659,9 @@ private struct ActionPill: View {
         case idle(Action)
         /// The action's own working title (`Action.workingTitle`), which stays the same while it runs, and how far it is.
         case working(String?, Double?)
-        /// The module is reading the Mac again; the action comes back with the new figures.
-        case loading
+        /// The module is reading the Mac again; the action comes back with the new figures. The pill fills over the time the
+        /// reading took last time, when it is under way (`LoadFill`), and breathes before that.
+        case loading(LoadFill?)
         case done(ActionResult)
         /// One of the page's banners: its title, and its action when it has one.
         case notice(Banner)
@@ -680,9 +744,13 @@ private struct ActionPill: View {
                 Self.shape.fill(hovering && !isWorking ? lighter : fill)
             }
             if isWorking {
-                let fraction: Double? = if case let .working(_, fraction) = phase { fraction } else { nil }
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
+                    let fraction: Double? = switch phase {
+                    case let .working(_, fraction): fraction
+                    case let .loading(fill?): fill.fraction(at: context.date)
+                    default: nil
+                    }
                     GeometryReader { geometry in
                         if let fraction {
                             Rectangle().fill(design.actionLight)

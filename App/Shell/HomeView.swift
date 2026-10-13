@@ -203,7 +203,8 @@ struct TileFace: View {
             let blocks = BlockLayout.blocks(segments)
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
             // No names in the blocks: the one under the pointer is named in the line below.
-            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading)
+            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, outerRadius: Theme.tileRadius - Self.margin,
+                       loading: info.loading)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, and nothing otherwise.

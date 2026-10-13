@@ -27,6 +27,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isBusy = false
     /// The module is reading the Mac again (Refresh, or after an action): the tile's and the page's charts pulse as while loading.
     @Published public private(set) var isRefreshing = false
+    /// The module is being read, as the user sees it (`isRefreshing`): since when, and how long it took last time. The page's button
+    /// fills over that time (`LoadFill`), as it fills while an action runs.
+    @Published public private(set) var loading: LoadFill?
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
     /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates, and
@@ -40,6 +43,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Bumped when an action the user started succeeded (`ActionResult`): the page shows "All done" in its middle, then a page that
     /// lets the user choose goes back to the one under it.
     @Published public private(set) var allDone = 0
+    /// What the action behind the latest `allDone` freed (`ActionResult.freedBytes`): the page counts up to it under "All done".
+    public private(set) var allDoneFreed: UInt64?
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
     @Published public var groupPath: [String] = [] {
@@ -193,21 +198,35 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let context = context()
         refreshGeneration += 1
         let generation = refreshGeneration
+        let started = Date()
         if !quiet {
             refreshes += 1
+            if loading == nil {
+                loading = LoadFill(started: started, expected: settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess)
+            }
             updateBusy()
         }
         defer {
             if !quiet {
                 refreshes -= 1
+                if refreshes == 0 { loading = nil }
                 updateBusy()
             }
         }
         if reload { await module.invalidate() }
         async let nextTile = module.tile(context: context)
-        async let nextScreen = module.screen(context: context)
+        // What the module says of its progress fills the Loading… button (`LoadFill.reported`).
+        let reports: LoadProgressSink = { [weak self] fraction in
+            Task { @MainActor in
+                guard let self, !quiet, generation == self.refreshGeneration, self.loading != nil,
+                      fraction > self.loading?.reported ?? -1 else { return }
+                self.loading?.reported = fraction
+            }
+        }
+        async let nextScreen = module.screen(context: context, progress: reports)
         let (newTile, newScreen) = await (nextTile, nextScreen)
         guard generation == refreshGeneration, state == .ready else { return }
+        if !quiet { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = Date()
         // Only what changed is published: each published value redraws the tile and the page, and the readings that follow the Mac
         // by themselves mostly find it unchanged.
@@ -352,7 +371,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // the button stays full and keeps saying what the action did, the charts keep pulsing (`isCleaning`), and the rows the action
         // finished stay gone, until the new figures are in.
         if !quiet {
-            if celebrates { allDone += 1 }
+            if celebrates {
+                allDoneFreed = result.freedBytes
+                allDone += 1
+            }
             if result.refresh { progress = ActionProgress(fraction: 1, message: progress?.message ?? "", finished: progress?.finished ?? []) }
         }
         if result.refresh { await refresh(quiet: true) }
@@ -400,5 +422,25 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         await module.runBackgroundTask(taskID, context: context())
         // A task may have changed something (the Debloat watch switching a feature off again): the tile and page show it.
         await refresh(quiet: true)
+    }
+}
+
+/// How far a module's reading has come: what the module says (`MacSpaceModule.screen(context:progress:)`), or, from a module that
+/// does not say, the time it took last time.
+public struct LoadFill: Equatable, Sendable {
+    public var started: Date
+    /// How long the module last took to be read.
+    public var expected: TimeInterval
+    /// What the module reported, 0...1; nil until it does.
+    public var reported: Double?
+    /// A module never read before.
+    static let firstGuess: TimeInterval = 2
+
+    /// What the module reported; or else 0 to just under 1 over the time expected: quick at first, slowing as it nears that time
+    /// (about 80% there), never full while the module is still being read, however long it takes.
+    public func fraction(at date: Date) -> Double {
+        if let reported { return min(max(reported, 0), 1) }
+        let elapsed = max(0, date.timeIntervalSince(started)) / max(expected, 0.1)
+        return 0.95 * (1 - exp(-1.8 * elapsed))
     }
 }

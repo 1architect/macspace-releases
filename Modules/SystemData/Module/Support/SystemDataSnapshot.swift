@@ -93,17 +93,27 @@ enum RootMeasurements {
 
 /// Builds snapshots off the main thread and lets concurrent callers share one scan.
 actor SystemDataStore {
-    typealias Builder = @Sendable () -> SystemDataSnapshot
+    /// Reads the Mac, reporting its progress up to `scanned` (the helper's measuring, when there is a helper, takes the rest).
+    typealias Builder = @Sendable (LoadProgressRelay) -> SystemDataSnapshot
 
     private var cached: SystemDataSnapshot?
     private var inflight: Task<SystemDataSnapshot, Never>?
+    /// The progress of the scan in flight, which every caller waiting on it hears (`MacSpaceModule.screen(context:progress:)`).
+    private var relay: LoadProgressRelay?
     private let builder: Builder
+    /// How far the scan has come once this process has read the disk; the helper's measuring is the rest.
+    static let scanned = 0.8
     /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
     /// came back with the figures from before the action.
     private var generation = 0
 
     init(builder: @escaping Builder = SystemDataStore.liveSnapshot) {
         self.builder = builder
+    }
+
+    /// A builder that says nothing of its progress (tests).
+    init(builder: @escaping @Sendable () -> SystemDataSnapshot) {
+        self.builder = { _ in builder() }
     }
 
     /// How old a scan may be when the tile or the page asks for it. A scan reads the whole disk; the Refresh button and every action
@@ -114,7 +124,8 @@ actor SystemDataStore {
     static let helperRetry: TimeInterval = 60
     private var helperAskedAt: Date?
 
-    func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
+    func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil,
+                  progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil {
             // A scan the helper did not measure kept saying so for the scan's whole life (ten minutes), though the helper was back:
             // the helper's part alone is asked again, the rest of the scan is kept.
@@ -126,40 +137,51 @@ actor SystemDataStore {
             retry.helperError = nil
             let started = generation
             let measured = await RootMeasurements.apply(to: retry, channel: privileged)
-            guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged) }
+            guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged, progress: progress) }
             self.cached = measured
             return measured
         }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.
         if let inflight {
+            if let progress { relay?.attach(progress) }
             let waitedFor = generation
             let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, privileged: privileged)
+            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, privileged: privileged, progress: progress)
         }
         let builder = self.builder
+        let relay = LoadProgressRelay()
+        if let progress { relay.attach(progress) }
+        relay.report(0)
         let task = Task.detached(priority: .utility) { () -> SystemDataSnapshot in
-            let scanned = builder()
+            let scanned = builder(relay)
+            relay.report(Self.scanned)
+            defer { relay.report(1) }
             guard let privileged else { return scanned }
             return await RootMeasurements.apply(to: scanned, channel: privileged)
         }
         let started = generation
         inflight = task
+        self.relay = relay
         let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged) }
+        guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged, progress: progress) }
         cached = fresh
         helperAskedAt = Date()
         inflight = nil
+        self.relay = nil
         return fresh
     }
 
     func invalidate() {
         cached = nil
         inflight = nil
+        relay = nil
         generation += 1
     }
 
-    static func liveSnapshot() -> SystemDataSnapshot {
+    /// The scan: the disk read path by path (most of its time), then what macOS says of the purgeable space and the asset families,
+    /// and what was read beside it (`progress`, up to `scanned`).
+    static func liveSnapshot(progress: LoadProgressRelay) -> SystemDataSnapshot {
         // Homebrew's dry runs take a second or two; they run while the disk is read.
         let homebrew = HomebrewBox()
         let brewDone = DispatchSemaphore(value: 0)
@@ -171,14 +193,16 @@ actor SystemDataStore {
         let settings = SettingsBox()
         let settingsDone = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .utility).async { settings.storage = SettingsStorageMeter().measure(); settingsDone.signal() }
-        let report = SystemDataInspector().inspect()
+        let report = SystemDataInspector().inspect(progress: progress.part(0...0.65))
         let services = livePurgeableServices()
+        progress.report(0.7)
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
         var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
+        progress.report(0.75)
         snapshot.purgeableServices = services
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
         settingsDone.wait()

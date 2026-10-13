@@ -39,6 +39,49 @@ public struct ActionProgress: Codable, Equatable, Sendable {
 
 public typealias ProgressSink = @Sendable (ActionProgress) -> Void
 
+/// How far a module's reading of the Mac has come, 0...1 (`MacSpaceModule.screen(context:progress:)`). The page's Loading… button
+/// fills by it, as it fills by `ActionProgress.fraction` while an action runs.
+public typealias LoadProgressSink = @Sendable (Double) -> Void
+
+/// Hands one reading's progress to everyone waiting on it, from any thread: a module whose tile and page share one reading of the Mac
+/// reports it once, and each caller that joins later starts at the fraction reached so far. Only steps of a percent or more are passed
+/// on, so a reading that reports every file does not redraw the page for each.
+public final class LoadProgressRelay: @unchecked Sendable {
+    private let lock = NSLock()
+    private var sinks: [LoadProgressSink] = []
+    private var reported: Double?
+
+    public init() {}
+
+    /// The fraction reached so far, nil before the first report.
+    public var fraction: Double? { lock.withLock { reported } }
+
+    /// Adds a caller, which hears the fraction reached so far at once.
+    public func attach(_ sink: @escaping LoadProgressSink) {
+        let now = lock.withLock { () -> Double? in
+            sinks.append(sink)
+            return reported
+        }
+        if let now { sink(now) }
+    }
+
+    /// Reports the reading's progress; never backwards.
+    public func report(_ fraction: Double) {
+        let value = min(max(fraction, 0), 1)
+        let targets = lock.withLock { () -> [LoadProgressSink] in
+            guard reported == nil || value >= reported! + 0.01 || (value == 1 && reported! < 1) else { return [] }
+            reported = value
+            return sinks
+        }
+        for sink in targets { sink(value) }
+    }
+
+    /// Progress over `span` of this reading: a step of it that reports 0...1 of its own.
+    public func part(_ span: ClosedRange<Double>) -> LoadProgressSink {
+        { [self] fraction in report(span.lowerBound + (span.upperBound - span.lowerBound) * min(max(fraction, 0), 1)) }
+    }
+}
+
 /// What an action did. A success the user started from a button, that freed space or says something (`message`), is shown as "All
 /// done" in the middle of the page, never on the button; on a page that lets the user choose (`Row.selection`), the page then goes
 /// back to the one under it. A failure, or something left to do, is the button's text until it is clicked.
@@ -126,6 +169,11 @@ public protocol MacSpaceModule: Sendable {
     /// The module's full page.
     func screen(context: ModuleContext) async -> Screen
 
+    /// The module's full page, saying how far reading the Mac has come (0...1) while it takes long enough to be seen: the page's
+    /// Loading… button fills by it. The default reports nothing, and the app fills the button over the time the module took last
+    /// time instead.
+    func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen
+
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult
 
     /// Runs a task declared in the manifest's `backgroundTasks`.
@@ -141,6 +189,8 @@ public protocol MacSpaceModule: Sendable {
 }
 
 public extension MacSpaceModule {
+    func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await screen(context: context) }
+
     func invalidate() async {}
 
     func autoClean(context: ModuleContext) async -> CleanupReport? { nil }

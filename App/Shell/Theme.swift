@@ -302,8 +302,6 @@ struct LoadingDots: View {
 private struct GlassCircleStyle: ButtonStyle {
     let diameter: CGFloat
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.controlActiveState) private var activeState
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
@@ -311,44 +309,63 @@ private struct GlassCircleStyle: ButtonStyle {
         configuration.label
             .opacity(pressed ? 0.55 : 1)
             .background {
-                Group {
-                    if activeState != .key && !reduceTransparency {
-                        // Glass in a window that is not key is drawn in its inactive look, a dark grey disc, by AppKit's glass and
-                        // SwiftUI's alike, whatever the view asks for (tried 2026-10-12). The buttons keep their look instead: the
-                        // active glass drawn as it shows: the page's color a little darker, a fine dark edge at the top left and a
-                        // bright one at the bottom right.
-                        // As the active clear glass shows (`ClearGlassCircle`): its 14 % black tint over the page, and light caught on
-                        // both rims, strongest at the top left. A dark top edge read as a hole, not glass (2026-10-13).
-                        Circle().fill(.black.opacity(0.14))
-                            .overlay {
-                                Circle().fill(RadialGradient(colors: [.white.opacity(0.10), .clear], center: .topLeading,
-                                                             startRadius: 0, endRadius: diameter))
-                            }
-                            .overlay {
-                                Circle().strokeBorder(LinearGradient(stops: [.init(color: .white.opacity(0.6), location: 0),
-                                                                             .init(color: .white.opacity(0.08), location: 0.45),
-                                                                             .init(color: .white.opacity(0.08), location: 0.6),
-                                                                             .init(color: .white.opacity(0.35), location: 1)],
-                                                                     startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-                            }
-                    } else if reduceTransparency {
-                        // With Reduce Transparency the system draws glass as an opaque disc in its own default colors: one button came
-                        // out near black and another white, its white symbol lost. A solid light over the page's color instead, the
-                        // same for every button, with a fine edge.
-                        Circle().fill(.white.opacity(0.18))
-                            .overlay { Circle().strokeBorder(.white.opacity(0.28), lineWidth: 0.5) }
-                    } else {
-                        ClearGlassCircle(diameter: diameter)
-                    }
-                }
-                // A light over the button under the pointer, a little less while pressed.
-                .overlay { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)) }
+                GlassGround(width: diameter, height: diameter)
+                    // A light over the button under the pointer, a little less while pressed.
+                    .overlay { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)) }
             }
             .scaleEffect(pressed ? 0.88 : (hovering ? 1.08 : 1))
             .onHover { hovering = $0 && isEnabled }
             .onChange(of: isEnabled) { _, enabled in if !enabled { hovering = false } }
             .animation(Theme.press, value: pressed)
             .animation(Theme.hover, value: hovering)
+    }
+}
+
+/// The round buttons' glass, as a capsule of any width (a circle when as wide as high): the active clear glass, or its look drawn
+/// by hand where macOS would draw something else (`GlassCircleStyle`). Its width animates frame by frame, so the glass of a pill that
+/// grows (`WindowControls`) follows the movement instead of jumping to its new size.
+struct GlassGround: View, @preconcurrency Animatable {
+    var width: CGFloat
+    let height: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.controlActiveState) private var activeState
+
+    var animatableData: CGFloat {
+        get { width }
+        set { width = newValue }
+    }
+
+    var body: some View {
+        Group {
+            if activeState != .key && !reduceTransparency {
+                // Glass in a window that is not key is drawn in its inactive look, a dark grey disc, by AppKit's glass and
+                // SwiftUI's alike, whatever the view asks for (tried 2026-10-12). The buttons keep their look instead: the
+                // active glass drawn as it shows.
+                // As the active clear glass shows (`ClearGlassCircle`): its 14 % black tint over the page, and light caught on
+                // both rims, strongest at the top left. A dark top edge read as a hole, not glass (2026-10-13).
+                Capsule().fill(.black.opacity(0.14))
+                    .overlay {
+                        Capsule().fill(RadialGradient(colors: [.white.opacity(0.10), .clear], center: .topLeading,
+                                                      startRadius: 0, endRadius: height))
+                    }
+                    .overlay {
+                        Capsule().strokeBorder(LinearGradient(stops: [.init(color: .white.opacity(0.6), location: 0),
+                                                                      .init(color: .white.opacity(0.08), location: 0.45),
+                                                                      .init(color: .white.opacity(0.08), location: 0.6),
+                                                                      .init(color: .white.opacity(0.35), location: 1)],
+                                                              startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                    }
+            } else if reduceTransparency {
+                // With Reduce Transparency the system draws glass as an opaque disc in its own default colors: one button came
+                // out near black and another white, its white symbol lost. A solid light over the page's color instead, the
+                // same for every button, with a fine edge.
+                Capsule().fill(.white.opacity(0.18))
+                    .overlay { Capsule().strokeBorder(.white.opacity(0.28), lineWidth: 0.5) }
+            } else {
+                ClearGlassCircle(diameter: height)
+            }
+        }
+        .frame(width: width, height: height)
     }
 }
 

@@ -167,7 +167,11 @@ in. A failure, or something left to do, is the button's text until it is clicked
 not expect: the apps that quit ("Quits Enscape and WhatsApp."). MacSpace never opens again an app it quit.
 
 **Loading.** While a module reads the Mac, its page shows its ground breathing and the button saying "Loading…", and nothing
-else: no placeholder rows.
+else: no placeholder rows. The button fills as the reading advances: a module whose reading takes seconds reports how far it is
+(`screen(context:progress:)`, shared among its callers with `LoadProgressRelay`); any other fills over the time it took last time.
+
+**Charts.** Blocks stand in columns across the chart, each column's blocks stacked down it. On a tile, only the chart's outer
+corners follow the tile's (its radius less the margin); the corners between blocks keep the blocks' own.
 - When a row stands for files the user can open, list them in `Row.paths` (a folder button shows them in the Finder). When a page
   has a hero chart, give each block the rows it is made of in `UsageSegment.items` (a click opens a page of them), and leave them
   out on the tile. The doc comments in `Sdk/Interface/Widgets.swift` say how.

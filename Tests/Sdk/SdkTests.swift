@@ -67,4 +67,20 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(ActionResult.succeeded("ok", restartRequired: true).restartRequired, true)
         XCTAssertFalse(ActionResult.failed("no").refresh)
     }
+
+    /// A reading's progress reaches every caller, a late one at the fraction reached so far, never backwards, in steps of a percent.
+    func testLoadProgressRelay() {
+        final class Heard: @unchecked Sendable { var values: [Double] = []; let lock = NSLock(); func add(_ v: Double) { lock.withLock { values.append(v) } } }
+        let relay = LoadProgressRelay()
+        let first = Heard(), late = Heard()
+        relay.attach(first.add)
+        relay.report(0.2)
+        relay.report(0.205)
+        relay.report(0.1)
+        relay.attach(late.add)
+        relay.part(0.5...1)(0.5)
+        XCTAssertEqual(first.values, [0.2, 0.75])
+        XCTAssertEqual(late.values, [0.2, 0.75])
+        XCTAssertEqual(relay.fraction, 0.75)
+    }
 }

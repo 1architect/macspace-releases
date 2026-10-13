@@ -401,12 +401,16 @@ struct RevealButton: View {
 enum RevealTarget: Equatable {
     /// Files in one folder (or in a few with nothing but the root in common), selected there.
     case select([URL])
-    /// Files in many folders: the deepest folder that holds them all, opened.
+    /// Files in many folders: the deepest folder that holds them all, opened; or one hidden folder, opened.
     case open(URL)
 
     static func of(_ urls: [URL]) -> RevealTarget? {
         let urls = urls.map(\.standardizedFileURL)
         guard let first = urls.first else { return nil }
+        // One hidden folder (the Trash, ~/.Trash) is opened: selected in its parent, the Finder showed a window where it is not drawn.
+        if urls.count == 1, first.lastPathComponent.hasPrefix("."), (try? first.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            return .open(first)
+        }
         let parents = Set(urls.map { $0.deletingLastPathComponent().path })
         if parents.count == 1 { return .select(urls) }
         var common = first.deletingLastPathComponent().pathComponents

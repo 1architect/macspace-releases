@@ -434,7 +434,8 @@ final class AppCacheTests: XCTestCase {
         var snap = snapshot([], items: [SystemDataItem(id: "trash:user", title: "Trash", kind: .trash, paths: ["/t"], bytes: 5_000_000, readable: true,
                                                       owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])])
         let row = try XCTUnwrap(SystemDataScreenBuilder.trashRow(snap)?.row)
-        XCTAssertEqual(row.actions.map(\.id), ["emptyTrash", "openTrash"])
+        XCTAssertEqual(row.actions.map(\.id), ["emptyTrash"])
+        XCTAssertEqual(row.paths, [SystemDataScreenBuilder.trashPath], "the folder pill shows it in the Finder")
         XCTAssertEqual(row.actions.first?.title, "Free")
         XCTAssertNotNil(row.actions.first?.confirmation, "emptying the Trash asks first")
         XCTAssertEqual(row.badge?.text, "Cannot be undone")

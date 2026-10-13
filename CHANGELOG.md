@@ -32,6 +32,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - System Data: a cache kept by a program that is not an app in the Dock or the menu bar (a command-line tool, or a plug-in's renderer that runs inside another app) says **In use** and can be chosen like the others. Free's confirmation names it, and MacSpace closes it first: an app is asked to quit, a command-line tool to end, never one of macOS's programs.
 - The window keeps its size and place between launches, and opens on the desktop where you click the menu bar icon instead of taking you back to the one it was left on.
 - The whole dashboard moves the window, the tiles too; a drag never opens a tile.
+- On the dashboard, the ✕ grows into one glass pill under the pointer with **Minimize** and **Maximize** beside it (Maximize fills the screen and then restores the window), and shrinks back when the pointer leaves.
+- **All done** counts up what was freed under its words ("9,9 MB freed"), and the words come in as the page arrives.
+- While a module reads the Mac, the page's **Loading…** button fills from the left as it does while space is freed. System Data says how far its scan is (the folders measured, then the helper's measuring); the other modules fill over the time they took last time. Modules report it with `MacSpaceModule.screen(context:progress:)` and share it among callers with `LoadProgressRelay`.
+- Charts: the blocks stand in columns, never a row of blocks reaching under the columns beside it, and on a tile the chart's outer corners follow the tile's rounded corners.
 - Settings › System Data: **Free caches** turns the caches page off (the caches are then listed with the rest of System Data), and **Cache cleaner** below it picks who frees them: MacSpace, or CleanMyMac, Mole, OnyX, Pearcleaner, Purge or Sensei when installed. With another app, Free now shows what the caches hold and a button that opens it; Free and automatic cleaning leave them alone. Modules declare such options with `OptionDefinition.under` and `OptionChoice.apps`.
 - Other System Files: a click on a block of the page's chart opens a page of what it is made of: the purgeable app files with their Free button, each cloud folder's downloads with Remove Downloads and Show in Finder, and the macOS update waiting to install. A service MacSpace has nothing more to say about opens nothing.
 
@@ -40,6 +44,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - Pills that are not a warning have the colors of the (i) and folder buttons beside them, in the warning pill's font.
 - The (i) balloons follow the night or day look chosen in MacSpace, not the system's appearance.
 - On the caches page, every part has its box, and caches no longer carry an "Unknown app" pill.
+- System Data: the Trash row shows the Trash in the Finder from its folder button; its **Open** button is gone.
 - Confirmations are one line at most: the title asks, and a line says only what you would not expect (an app that quits).
 - Recent cleanups: how each one started (by you, automatic, by MacSpace) is a pill.
 - The attention mark sits in the bottom-left corner of a tile.

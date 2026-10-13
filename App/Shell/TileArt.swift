@@ -113,11 +113,11 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
                 // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
                 ZStack {
                     tinted
-                    GlassPane(corners: corners, color: .clear, opacity: 0, shade: dark ? Theme.highlightDarkening * 0.7 : 0)
+                    clipped(GlassPane(corners: corners, color: .clear, opacity: 0, shade: dark ? Theme.highlightDarkening * 0.7 : 0))
                 }
             } else if let corners = Self.corners(of: shape) {
-                GlassPane(corners: corners, color: design.fill(.chartElements)?.average(base) ?? base, opacity: 0.7 * strength,
-                          shade: dark ? Theme.highlightDarkening * 0.7 : 0)
+                clipped(GlassPane(corners: corners, color: design.fill(.chartElements)?.average(base) ?? base, opacity: 0.7 * strength,
+                                  shade: dark ? Theme.highlightDarkening * 0.7 : 0))
             } else {
                 // A shape AppKit's glass cannot take stays SwiftUI's glass.
                 tinted.glassEffect(.regular, in: shape)
@@ -132,12 +132,29 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
         }
     }
 
+    /// The glass cut to a shape whose corners differ (a block on the chart's outer corner); any other shape's glass as it is.
+    @ViewBuilder
+    private func clipped(_ glass: GlassPane) -> some View {
+        if let rectangle = shape as? UnevenRoundedRectangle,
+           Set([rectangle.cornerRadii.topLeading, rectangle.cornerRadii.bottomLeading, rectangle.cornerRadii.bottomTrailing,
+                rectangle.cornerRadii.topTrailing]).count > 1 {
+            glass.clipShape(shape)
+        } else {
+            glass
+        }
+    }
+
     /// How much a flat element lightens under the pointer.
     static var flatHighlight: Double { 0.1 }
 
     /// The corners AppKit's glass gives a shape, or nil for a shape it cannot take.
     private static func corners(of shape: S) -> GlassPane.Corners? {
         if let rectangle = shape as? RoundedRectangle { return .radius(rectangle.cornerSize.width) }
+        // AppKit's glass takes one radius: the smallest, and the glass is cut to the shape's larger corners (`clipped`).
+        if let rectangle = shape as? UnevenRoundedRectangle {
+            let radii = rectangle.cornerRadii
+            return .radius(min(radii.topLeading, radii.bottomLeading, radii.bottomTrailing, radii.topTrailing))
+        }
         if shape is Circle || shape is Capsule { return .round }
         return nil
     }
@@ -186,7 +203,8 @@ enum LoadingWave {
 // MARK: Blocks
 
 /// Squarified treemap: rectangles with areas proportional to the values, kept as close to square as the space allows. Values are laid
-/// out in the order given (largest first reads best).
+/// out in the order given (largest first reads best), in columns side by side across the chart's long side, each column's blocks
+/// stacked down it (rows down a chart taller than wide).
 enum Treemap {
     /// The squarified layout whose thinnest block is widest, over the orders of the blocks after the largest: laid out largest first,
     /// the last block took whatever strip was left (25 points wide and full height on a page, too narrow for its size). Returns where
@@ -242,6 +260,7 @@ enum Treemap {
         var result = [CGRect](repeating: .zero, count: values.count)
         var remaining = Array(areas.indices)
         var space = rect
+        let columns = rect.width >= rect.height
 
         func worst(_ row: [Int], _ side: Double) -> Double {
             let sum = row.reduce(0) { $0 + areas[$1] }
@@ -258,13 +277,16 @@ enum Treemap {
                 for index in remaining { result[index] = CGRect(origin: space.origin, size: .zero) }
                 break
             }
-            let side = Double(min(space.width, space.height))
+            // Always columns across a wide chart: the squarified layout turns its strips to the shorter side of what is left, and
+            // once the space left was taller than wide, its blocks were laid in rows across a column, a block of a row reaching
+            // under two columns beside it and blocks of different heights side by side (2026-10-13).
+            let side = Double(columns ? space.height : space.width)
             var row = [remaining.removeFirst()]
             while let next = remaining.first, worst(row + [next], side) <= worst(row, side) {
                 row.append(remaining.removeFirst())
             }
             let sum = row.reduce(0) { $0 + areas[$1] }
-            if space.width >= space.height {
+            if columns {
                 let width = CGFloat(sum / Double(space.height))
                 var y = space.minY
                 for index in row {
@@ -377,6 +399,9 @@ struct BlocksView: View {
     var labels = true
     var hovered: String?
     var gap: CGFloat = 3
+    /// The radius of the chart's outer corners, when it sits in a rounded tile: concentric with the tile's corners (the tile's radius
+    /// less the margin to the chart). Only the corners on the chart's edge take it; the corners between blocks keep the blocks' own.
+    var outerRadius: CGFloat?
     var loading = false
     /// Where the blocks are arranged (`Treemap.arranged`): one shape for every chart, the tiles' and the page's, stretched to the size
     /// drawn. Arranged at each chart's own size, a tile and the page it opens drew the same parts in different places (2026-10-13),
@@ -407,6 +432,17 @@ struct BlocksView: View {
         rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map(radius).min() ?? 6
     }
 
+    /// A block's shape: `corner` at each corner, but `outer` at the corners on the chart's own corners (`outerRadius`), never more
+    /// than half the block's shorter side.
+    static func shape(_ rect: CGRect, in size: CGSize, corner: CGFloat, outer: CGFloat?) -> UnevenRoundedRectangle {
+        guard let outer, outer > corner else { return UnevenRoundedRectangle(cornerRadii: .init(topLeading: corner, bottomLeading: corner, bottomTrailing: corner, topTrailing: corner), style: .continuous) }
+        let round = min(outer, min(rect.width, rect.height) / 2)
+        let left = rect.minX < 0.5, right = rect.maxX > size.width - 0.5, top = rect.minY < 0.5, bottom = rect.maxY > size.height - 0.5
+        return UnevenRoundedRectangle(cornerRadii: .init(topLeading: top && left ? round : corner, bottomLeading: bottom && left ? round : corner,
+                                                         bottomTrailing: bottom && right ? round : corner, topTrailing: top && right ? round : corner),
+                                      style: .continuous)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let blocks = BlockLayout.blocks(segments)
@@ -421,14 +457,16 @@ struct BlocksView: View {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
-                        placed(Surface(shape: RoundedRectangle(cornerRadius: corner, style: .continuous), color: fill, highlighted: hovered == segment.id,
+                        let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
+                        placed(Surface(shape: shape, color: fill, highlighted: hovered == segment.id,
                                        strength: appeared ? wave(context.date, index) : 0,
                                        glass: min(rect.width, rect.height) >= Self.smallestGlass),
                                index: index, rect: rect)
                     }
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         let rect = inset(rects[index])
-                        placed(overlay(segment, shade: shades[index], rect: rect, corner: corner).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
+                        let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
+                        placed(overlay(segment, shade: shades[index], rect: rect, shape: shape).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
                     }
                 }
             }
@@ -460,10 +498,10 @@ struct BlocksView: View {
 
     /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
     /// own edge; an outline would sit inside it).
-    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, corner: CGFloat) -> some View {
+    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, shape: UnevenRoundedRectangle) -> some View {
         ZStack(alignment: .topLeading) {
             if !design.glassElements {
-                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                shape
                     .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
                     .animation(Theme.highlight, value: hovered)
             }

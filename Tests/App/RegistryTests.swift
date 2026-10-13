@@ -163,6 +163,19 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.lastResult?.outcome, .failed)
     }
 
+    /// The button fills over the time the module took last time: quick at first, about 80% there at that time, never full.
+    func testLoadFillSlowsAndNeverFills() {
+        let start = Date()
+        let fill = LoadFill(started: start, expected: 4)
+        XCTAssertEqual(fill.fraction(at: start), 0)
+        let atExpected = fill.fraction(at: start.addingTimeInterval(4))
+        XCTAssertGreaterThan(atExpected, 0.75)
+        XCTAssertLessThan(atExpected, 0.85)
+        XCTAssertLessThan(fill.fraction(at: start.addingTimeInterval(400)), 1)
+        XCTAssertGreaterThan(fill.fraction(at: start.addingTimeInterval(1)) - fill.fraction(at: start),
+                             fill.fraction(at: start.addingTimeInterval(4)) - fill.fraction(at: start.addingTimeInterval(3)), "slows down")
+    }
+
     func testRefreshButtonMakesTheModuleForgetItsCache() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

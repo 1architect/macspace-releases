@@ -37,6 +37,17 @@ public final class SettingsStore: @unchecked Sendable {
         defaults.set(language, forKey: Self.key(id, "lastTileLanguage"))
     }
 
+    /// How long the module last took to be read, the first time (`reload` false) or after Refresh: the page's button fills over
+    /// that time while it loads (`ModuleHandle.loading`).
+    public func loadDuration(module id: String, reload: Bool) -> TimeInterval? {
+        let seconds = defaults.double(forKey: Self.key(id, reload ? "reloadDuration" : "loadDuration"))
+        return seconds > 0 ? seconds : nil
+    }
+
+    public func setLoadDuration(_ seconds: TimeInterval, module id: String, reload: Bool) {
+        defaults.set(seconds, forKey: Self.key(id, reload ? "reloadDuration" : "loadDuration"))
+    }
+
     /// The language the app is shown in.
     public static var language: String { Bundle.main.preferredLocalizations.first ?? "en" }
 
