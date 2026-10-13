@@ -261,19 +261,29 @@ public struct SettingsStorageMeter {
         ((try? FileManager.default.contentsOfDirectory(atPath: directory)) ?? []).filter { $0 != ".DS_Store" && $0 != ".localized" }
     }
 
+    /// How many places are measured at the same time. The scan of System Data's items runs beside this one.
+    static let workers = 3
+
     public func measure() -> SettingsStorage? {
         guard let (capacity, available) = space(), capacity >= available else { return nil }
         let systemVolumes = dataDevice().map { APFSVolumeUsage.systemVolumes(volumes(), dataDevice: $0) } ?? 0
         let apps = IndexedApps.outermost(self.apps())
         let places = places(apps: apps)
-        var categories = places.map { SettingsStorage.Category(id: $0.id, bytes: $0.paths.map { AllocatedSize.allocatedBytes($0, excluding: []) }.reduce(0, +)) }
         // Documents: the home folder without ~/Library, ~/Applications, the trash and every place another category claims there (the
         // media folders Settings names, the apps Spotlight found); Desktop and Documents too when iCloud Drive keeps them.
         var excluded = Set(places.flatMap(\.paths).filter { $0.hasPrefix(home.path + "/") })
         for name in ["Library", "Applications", ".Trash", "Music/iTunes/iTunes Media", "Music/Music/Media", "Movies/Apple TV/Media",
                      "Movies/TV/Media", "Movies/TV/TV Library"] { excluded.insert(path(name)) }
         if desktopAndDocumentsInICloud() { excluded.formUnion([path("Desktop"), path("Documents")]) }
-        categories.insert(SettingsStorage.Category(id: "documents", bytes: AllocatedSize.allocatedBytes(home.path, excluding: excluded)), at: 1)
+        // Every place, and the home folder for Documents, measured side by side: one after the other they took 10 seconds.
+        let jobs = places.flatMap { $0.paths.map { (path: $0, excluding: Set<String>()) } } + [(path: home.path, excluding: excluded)]
+        let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers)
+        var next = 0
+        var categories = places.map { place in
+            defer { next += place.paths.count }
+            return SettingsStorage.Category(id: place.id, bytes: sizes[next..<next + place.paths.count].reduce(0, +))
+        }
+        categories.insert(SettingsStorage.Category(id: "documents", bytes: sizes[next]), at: 1)
         return SettingsStorage(capacity: capacity, used: capacity - available, macOS: systemVolumes, categories: categories)
     }
 }
@@ -282,27 +292,56 @@ public struct SettingsStorageMeter {
 /// (listing them would make the cloud app fetch them).
 public enum AllocatedSize {
     public static func allocatedBytes(_ root: String, excluding excluded: Set<String>) -> UInt64 {
-        guard FileManager.default.fileExists(atPath: root), let rootCopy = strdup(root) else { return 0 }
-        defer { free(rootCopy) }
-        var paths: [UnsafeMutablePointer<CChar>?] = [rootCopy, nil]
-        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return 0 }
-        defer { fts_close(fts) }
-        var total: UInt64 = 0
+        var info = stat()
+        guard lstat(root, &info) == 0 else { return 0 }
+        guard info.st_mode & S_IFMT == S_IFDIR else { return UInt64(max(info.st_blocks, 0)) * 512 }
+        guard info.st_flags & UInt32(SF_DATALESS) == 0 else { return 0 }
         // A file reached by several hard links counts once (`HardLinks`).
-        var links = Set<UInt64>()
-        while let entry = fts_read(fts) {
-            let info = Int32(entry.pointee.fts_info)
-            if info == FTS_D {
-                if let path = entry.pointee.fts_path, excluded.contains(String(cString: path)) { fts_set(fts, entry, FTS_SKIP); continue }
-                if let stat = entry.pointee.fts_statp, stat.pointee.st_flags & UInt32(SF_DATALESS) != 0 { fts_set(fts, entry, FTS_SKIP); continue }
-                if let stat = entry.pointee.fts_statp { total += UInt64(max(stat.pointee.st_blocks, 0)) * 512 }
-                continue
-            }
-            guard info == FTS_F || info == FTS_SL || info == FTS_DEFAULT, let stat = entry.pointee.fts_statp else { continue }
-            if let path = entry.pointee.fts_path, excluded.contains(String(cString: path)) { continue }
-            if stat.pointee.st_nlink > 1, info == FTS_F, !links.insert(UInt64(stat.pointee.st_ino)).inserted { continue }
-            total += UInt64(max(stat.pointee.st_blocks, 0)) * 512
-        }
-        return total
+        struct Sums { var total: UInt64 = 0, links = Set<UInt64>() }
+        return DirectoryWalk.walk(root, extended: false, initial: Sums()) { sums, path, entry in
+            if !excluded.isEmpty, excluded.contains(path()) { return .skip }
+            if entry.isDirectory { return entry.isDataless ? .skip : .descend }
+            if entry.linkCount > 1, entry.isRegularFile, let inode = HardLinks.inode(path()), !sums.links.insert(inode).inserted { return .skip }
+            sums.total += entry.allocatedBytes
+            return .skip
+        }.state.total
     }
+
+    /// Several trees at once, `workers` at a time, in the order given.
+    public static func allocatedBytes(_ jobs: [(path: String, excluding: Set<String>)], workers: Int) -> [UInt64] {
+        let results = LockedArray(repeating: UInt64(0), count: jobs.count)
+        let queue = JobCounter(count: jobs.count)
+        DispatchQueue.concurrentPerform(iterations: min(max(workers, 1), max(jobs.count, 1))) { _ in
+            while let index = queue.next() { results.set(index, allocatedBytes(jobs[index].path, excluding: jobs[index].excluding)) }
+        }
+        return results.values
+    }
+}
+
+/// Hands out the indices 0..<count once each, to workers pulling the next as they finish one.
+public final class JobCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private let count: Int
+    private var issued = 0
+
+    public init(count: Int) { self.count = count }
+
+    public func next() -> Int? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard issued < count else { return nil }
+        issued += 1
+        return issued - 1
+    }
+}
+
+/// An array written by parallel workers, each index once.
+public final class LockedArray<Element>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Element]
+
+    public init(repeating value: Element, count: Int) { storage = Array(repeating: value, count: count) }
+
+    public func set(_ index: Int, _ value: Element) { lock.lock(); storage[index] = value; lock.unlock() }
+    public var values: [Element] { lock.lock(); defer { lock.unlock() }; return storage }
 }

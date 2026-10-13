@@ -160,12 +160,16 @@ private struct PermissionRow: View {
     let status: PermissionStatus
     @State private var helperError: String?
     @State private var helperStatus: PermissionStatus?
+    @State private var repairing = false
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 InfoTitle(title: permission.title, info: permission.detail)
                 if let helperError { Text(helperError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
+                if permission == .privilegedHelper, PrivilegedHelperInstaller.status == .enabled, ((helperStatus ?? status) == .missing) {
+                    Text("Not responding").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
+                }
             }
             Spacer()
             switch (permission == .privilegedHelper ? helperStatus : nil) ?? status {
@@ -195,7 +199,28 @@ private struct PermissionRow: View {
     }
 
     /// Installs the helper (Launch Services first, so a hand-copied app is found), then sends the user to the one switch that approves it.
-    private var helperButton: some View {
+    /// One macOS says is enabled but that does not answer is registered again (`PrivilegedHelperInstaller.repair`).
+    @ViewBuilder private var helperButton: some View {
+        if PrivilegedHelperInstaller.status == .enabled {
+            Button(repairing ? String(localized: "Repairing…") : String(localized: "Repair helper")) {
+                helperError = nil
+                repairing = true
+                Task {
+                    do { try await PrivilegedHelperInstaller.repair() } catch {
+                        helperError = String(localized: "Could not install the helper: \(error.localizedDescription)")
+                    }
+                    if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
+                    repairing = false
+                    helperStatus = PrivilegedHelperInstaller.permissionStatus()
+                }
+            }
+            .disabled(repairing)
+        } else {
+            installButton
+        }
+    }
+
+    private var installButton: some View {
         Button(PrivilegedHelperInstaller.status == .requiresApproval ? String(localized: "Approve in Settings") : String(localized: "Install helper")) {
             helperError = nil
             if PrivilegedHelperInstaller.status != .requiresApproval {

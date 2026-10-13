@@ -242,6 +242,8 @@ public struct SystemDataLocations: Sendable {
 public struct SystemDataInspector {
     /// How many paths are measured at the same time. Sizing is disk-bound; more workers only took cores from everything else.
     static let scanWorkers = 3
+    /// Threads that may join a large tree's walk while the workers are busy (`ScanPool`).
+    static let scanHelpers = 1
     /// Dynamic entries smaller than this are summarized, not listed.
     public static let minimumItemBytes: UInt64 = 50 * 1_000_000
     static let partialDownloadSuffixes = [".part", ".partial", ".crdownload", ".download", ".opdownload", ".prlupd-part"]
@@ -312,6 +314,11 @@ public struct SystemDataInspector {
 
     public static func liveAccountExists(_ uid: uid_t) -> Bool { getpwuid(uid) != nil }
 
+    /// The prefixes that hold a Homebrew (`bin/brew`), in the order given.
+    static func homebrewPrefixes(_ prefixes: [String], fileManager: FileManager) -> [String] {
+        prefixes.filter { fileManager.isExecutableFile(atPath: ($0 as NSString).appendingPathComponent("bin/brew")) }
+    }
+
     /// Without Full Disk Access, reading other apps' data or the user's Downloads and cloud folders makes macOS ask once per app or
     /// folder, and the scan waits on every prompt. Those places are skipped and reported as unmeasured instead.
     public var hasFullDiskAccess: Bool = LivePermissionChecker.probeFullDiskAccess() != .missing
@@ -342,7 +349,10 @@ public struct SystemDataInspector {
 
     public func inspect(now: Date = Date()) -> SystemDataReport {
         // Each scan counts an APFS clone family once across every item (`CloneLedger`).
-        let sizer = FileTreeSizer(countsPurgeable: true, clones: CloneLedger())
+        // A worker with no path left to start helps with the large trees still being walked (`ScanPool`), plus one more thread
+        // from the start: one cloud folder took 6 seconds and finished alone after every other path.
+        let pool = ScanPool(free: Self.scanHelpers)
+        let sizer = FileTreeSizer(countsPurgeable: true, clones: CloneLedger(), pool: pool)
         let running = runningApps()
         var items: [SystemDataItem] = []
         var unreadable: [String] = []
@@ -396,16 +406,18 @@ public struct SystemDataInspector {
             for (index, entry) in pending.enumerated() where entry.measurable {
                 for path in entry.paths { jobs.append((index, path)) }
             }
-            let results = MeasurementResults(count: jobs.count)
+            let results = LockedArray(repeating: SizeMeasurement(bytes: nil), count: jobs.count)
             // A few workers pull the next path as they finish one. One worker per path (`concurrentPerform` over the jobs) put every
             // core of the Mac on the scan: 800% CPU on a 10-core M4, from the Refresh button and from the automatic readings.
-            let queue = JobQueue(count: jobs.count)
+            let queue = JobCounter(count: jobs.count)
             DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(jobs.count, 1))) { _ in
+                defer { pool.release() }
                 while let index = queue.next() {
                     let job = jobs[index]
                     results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
                 }
             }
+            let sizes = results.values
             var next = 0
             for entry in pending {
                 var total: UInt64 = 0
@@ -417,7 +429,7 @@ public struct SystemDataInspector {
                 if !entry.measurable { unreadable.append(contentsOf: entry.paths.filter { !unreadable.contains($0) }) }
                 if entry.measurable {
                     for _ in entry.paths {
-                        let result = results.get(next)
+                        let result = sizes[next]
                         next += 1
                         if let entryPath = result.unreadableEntry {
                             if !unreadable.contains(entryPath) { unreadable.append(entryPath) }
@@ -507,8 +519,15 @@ public struct SystemDataInspector {
             add("developer:commandLineTools", loc("Xcode Command Line Tools"), .developerTools, paths: [path],
                 cleanup: SystemDataCleanup(kind: .review, description: loc("Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select."), command: nil))
         }
-        add("packages:homebrew", loc("Homebrew"), .packageManager, paths: [system["homebrew"], system["usrLocal"]].compactMap { $0 },
+        // Homebrew is only where its `brew` is: on Apple silicon `/usr/local` holds other tools (node, Python, Parallels), which were
+        // counted as Homebrew and opened a second Finder window from its row. A `/usr/local` without Homebrew is listed on its own.
+        let brewPrefixes = Self.homebrewPrefixes([system["homebrew"], system["usrLocal"]].compactMap { $0 }, fileManager: fileManager)
+        add("packages:homebrew", loc("Homebrew"), .packageManager, paths: brewPrefixes,
             cleanup: SystemDataCleanup(kind: .command, description: "", command: nil))
+        if let path = system["usrLocal"], !brewPrefixes.contains(path) {
+            add("usrlocal", path, .packageManager, paths: [path],
+                cleanup: SystemDataCleanup(kind: .review, description: loc("Remove it with the tool that made it."), command: nil), minimum: Self.minimumItemBytes)
+        }
         add("logs:unified", loc("Unified system log"), .logs, paths: [system["unifiedLog"], system["uuidtext"]].compactMap { $0 },
             cleanup: managed(loc("Rotated by logd; deleting it removes the logs needed for troubleshooting.")))
         if let path = system["systemReports"] {
@@ -757,16 +776,23 @@ public struct SystemDataInspector {
         var containerCaches: UInt64 = 0
         var smallAppleCaches: UInt64 = 0
         if hasFullDiskAccess {
-            for folder in ["Group Containers", "Containers"] {
-                for path in children((library as NSString).appendingPathComponent(folder)) {
-                    let name = (path as NSString).lastPathComponent
+            let caches: [(name: String, path: String)] = ["Group Containers", "Containers"].flatMap { folder in
+                children((library as NSString).appendingPathComponent(folder)).compactMap { path in
                     let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
-                    guard fileManager.fileExists(atPath: caches) else { continue }
-                    let bytes = FileTreeSizer().size(at: URL(fileURLWithPath: caches))?.bytes ?? 0
-                    containerCaches += bytes
-                    if let index = items.firstIndex(where: { $0.id == "container:\(name)" }) { items[index].cachesBytes = bytes }
-                    else if name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.") { smallAppleCaches += bytes }
+                    return fileManager.fileExists(atPath: caches) ? ((path as NSString).lastPathComponent, caches) : nil
                 }
+            }
+            // Measured side by side, as the items are.
+            let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
+            let queue = JobCounter(count: caches.count)
+            DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
+                while let index = queue.next() { sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0) }
+            }
+            let positions = Dictionary(items.indices.map { (items[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
+            for (cache, bytes) in zip(caches, sizes.values) {
+                containerCaches += bytes
+                if let index = positions["container:\(cache.name)"] { items[index].cachesBytes = bytes }
+                else if cache.name.hasPrefix("com.apple.") || cache.name.hasPrefix("group.com.apple.") { smallAppleCaches += bytes }
             }
             if let index = items.firstIndex(where: { $0.id == SmallKey(kind: .appContainer, cleanup: .managedByMacOS).id }) { items[index].cachesBytes = smallAppleCaches }
         }
@@ -986,30 +1012,3 @@ struct SizeMeasurement {
     var purgeable: UInt64 = 0
 }
 
-/// Hands out the indexes 0..<count, each once, to the workers of a scan.
-final class JobQueue: @unchecked Sendable {
-    private let lock = NSLock()
-    private let count: Int
-    private var issued = 0
-
-    init(count: Int) { self.count = count }
-
-    func next() -> Int? {
-        lock.lock()
-        defer { lock.unlock() }
-        guard issued < count else { return nil }
-        issued += 1
-        return issued - 1
-    }
-}
-
-/// Collects parallel measurements; each index is written once.
-final class MeasurementResults: @unchecked Sendable {
-    private let lock = NSLock()
-    private var values: [SizeMeasurement]
-
-    init(count: Int) { values = Array(repeating: SizeMeasurement(bytes: nil), count: count) }
-
-    func set(_ index: Int, _ value: SizeMeasurement) { lock.lock(); values[index] = value; lock.unlock() }
-    func get(_ index: Int) -> SizeMeasurement { lock.lock(); defer { lock.unlock() }; return values[index] }
-}

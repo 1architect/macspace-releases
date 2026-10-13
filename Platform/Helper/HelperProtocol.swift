@@ -1,3 +1,4 @@
+import Darwin.membership
 import Foundation
 
 /// The privileged helper is a launch daemon (registered with `SMAppService`) that runs the few steps that need root.
@@ -62,11 +63,37 @@ public struct PrivilegedOperationError: Error, LocalizedError, Equatable {
 public protocol PrivilegedOperationHandler: Sendable {
     /// Operation identifiers, namespaced by module (`siri.orphan-subscriptions.plan`).
     var operations: Set<String> { get }
+    /// The operations that only read the Mac, which any account may ask for. Every other one changes or deletes something for the
+    /// whole Mac and is run only for an administrator (`PrivilegedHelperService`), so an operation added later is protected unless
+    /// its module says otherwise.
+    var readOnlyOperations: Set<String> { get }
     func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data
+}
+
+public extension PrivilegedOperationHandler {
+    var readOnlyOperations: Set<String> { [] }
+}
+
+/// Whether an account is an administrator of this Mac (a member of the `admin` group, nested groups included).
+public enum AdminAccounts {
+    public static let adminGroupID: gid_t = 80
+
+    public static func contains(_ uid: uid_t) -> Bool {
+        if uid == 0 { return true }
+        var user = uuid_t(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        var group = user
+        guard mbr_uid_to_uuid(uid, &user) == 0, mbr_gid_to_uuid(adminGroupID, &group) == 0 else { return false }
+        var member: Int32 = 0
+        guard mbr_check_membership(&user, &group, &member) == 0 else { return false }
+        return member != 0
+    }
 }
 
 public enum PrivilegedHelperError: LocalizedError, Equatable, CustomStringConvertible {
     case connection(String)
+    /// The helper took the call and never answered: launchd could not start it (its signature no longer matches the one approved).
+    /// Asking again does not help, so a channel stops asking for a while (`LazyPrivilegedChannel`).
+    case noAnswer(seconds: Int)
     case malformedResponse
     case helper(String)
 
@@ -75,6 +102,7 @@ public enum PrivilegedHelperError: LocalizedError, Equatable, CustomStringConver
     public var description: String {
         switch self {
         case let .connection(message): return "Could not reach the MacSpace helper: \(message)"
+        case let .noAnswer(seconds): return "Could not reach the MacSpace helper: no answer after \(seconds) seconds"
         case .malformedResponse: return "The MacSpace helper sent an unreadable response."
         case let .helper(message): return message
         }

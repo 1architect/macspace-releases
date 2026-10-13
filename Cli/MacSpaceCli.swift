@@ -12,7 +12,8 @@ struct MacSpaceCli {
         if arguments.first == "orphan-subscriptions" { OrphanCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "helper" {
             // Diagnostics for the privileged helper: `helper` prints the status, `helper --register` tries to register it and
-            // `helper --unregister` removes the registration made from this copy of the app.
+            // `helper --unregister` removes the registration made from this copy of the app; `helper --repair` registers it again
+            // once launchd has dropped the old job, for a helper that is enabled but never answers.
             print("status: \(PrivilegedHelperInstaller.status.rawValue) (0 not registered, 1 enabled, 2 requires approval, 3 not found)")
             if PrivilegedHelperInstaller.status == .notFound { print("why: \(PrivilegedHelperInstaller.notFoundReason())") }
             if arguments.contains("--unregister") {
@@ -22,6 +23,10 @@ struct MacSpaceCli {
             if arguments.contains("--register") {
                 do { try PrivilegedHelperInstaller.register(); print("registered; status now \(PrivilegedHelperInstaller.status.rawValue)") }
                 catch { print("register failed: \(error)") }
+            }
+            if arguments.contains("--repair") {
+                do { try await PrivilegedHelperInstaller.repair(); print("registered again; status now \(PrivilegedHelperInstaller.status.rawValue)") }
+                catch { print("repair failed: \(error)") }
             }
             if arguments.contains("--ping") {
                 do {
@@ -53,7 +58,7 @@ struct MacSpaceCli {
                    MacSpaceCli orphan-subscriptions [--execute] [--json]   (root to execute)
                    MacSpaceCli screen <module-id> [--dir <folder>] [--tile]
                    MacSpaceCli action <module-id> <action-id> [key=value ...]
-                   MacSpaceCli helper [--unregister] [--register] [--ping]
+                   MacSpaceCli helper [--unregister] [--register] [--repair] [--ping]
                    MacSpaceCli notification <framework binary> <symbol> ...
                    MacSpaceCli purge-assets [--execute] [--self-test] [--json]
             """)

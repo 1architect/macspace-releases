@@ -83,7 +83,8 @@ final class StorageOverview: ObservableObject {
                   available >= 0, Int64(capacity) >= available else { return (nil, nil) }
             return (UInt64(Int64(capacity) - available), UInt64(capacity))
         }.value
-        usedBytes = reading.0
-        totalBytes = reading.1
+        // Set only when it changed: every set redraws the tiles that show it.
+        if usedBytes != reading.0 { usedBytes = reading.0 }
+        if totalBytes != reading.1 { totalBytes = reading.1 }
     }
 }

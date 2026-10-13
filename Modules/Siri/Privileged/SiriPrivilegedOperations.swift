@@ -9,6 +9,7 @@ public struct SiriPrivilegedOperations: PrivilegedOperationHandler {
     public init() {}
 
     public var operations: Set<String> { [Self.planOrphans, Self.removeOrphans] }
+    public var readOnlyOperations: Set<String> { [Self.planOrphans] }
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
         // The current user is the caller, not root: the cleaner must never remove that account's own rows.

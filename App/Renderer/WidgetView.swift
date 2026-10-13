@@ -213,11 +213,22 @@ struct TitleLine: View {
 
 extension EnvironmentValues {
     /// Opens the page of a group row (`Row.children`), by its id.
-    @Entry var openGroup: @MainActor (String) -> Void = { _ in }
+    @Entry var openGroup = GroupOpener(module: nil) { _ in }
     /// On the page of a group that lets the user choose (`Row.selection`): which rows have a box and which are checked.
     @Entry var rowChoice: RowChoice? = nil
     /// On a choosing page in parts (`Selection.sections`): the header boxes.
     @Entry var sectionChoice: SectionChoice? = nil
+}
+
+/// Opens a group's page. Equal for the same module: a bare closure is new at every update of the page, which redrew every row that
+/// reads it.
+struct GroupOpener: Equatable {
+    let module: String?
+    let open: @MainActor (String) -> Void
+
+    @MainActor func callAsFunction(_ id: String) { open(id) }
+
+    static func == (lhs: GroupOpener, rhs: GroupOpener) -> Bool { lhs.module == rhs.module }
 }
 
 /// The header boxes of a choosing page in parts: a part's box is on when the user turned it on (new rows then join checked), or when

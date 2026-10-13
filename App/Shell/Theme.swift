@@ -281,9 +281,10 @@ struct GlassCircleButton: View {
 /// symbol. With Reduce Motion they stay dimmed instead.
 struct LoadingDots: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
             HStack(spacing: 3.5) {
                 ForEach(0..<3, id: \.self) { index in
                     let wave = LoadingWave.opacity(context.date, index: index, count: 3, loading: true, reduceMotion: reduceMotion)

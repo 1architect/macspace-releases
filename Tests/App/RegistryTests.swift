@@ -175,6 +175,23 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(calls.all.filter { $0 == "invalidate" }.count, 1, "a plain refresh keeps the cache")
     }
 
+    /// A reading that finds the module unchanged publishes nothing, so nothing is redrawn; one that finds it changed does.
+    func testAnUnchangedReadingRedrawsNothing() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let host = try makeHost(modules: [(Fixtures.manifest(), "A")], directory: directory)
+        await host.reload()
+        let handle = try XCTUnwrap(host.handles.first)
+        var changes = 0
+        let watch = handle.objectWillChange.sink { changes += 1 }
+        defer { watch.cancel() }
+        await handle.refresh(quiet: true)
+        XCTAssertEqual(changes, 0)
+        await host.setEnabled(false, module: handle.id)
+        await host.setEnabled(true, module: handle.id)
+        XCTAssertGreaterThan(changes, 0, "a module switched off and on again shows its figures again")
+    }
+
     func testMissingPermissionsStopAnActionBeforeTheModuleIsCalled() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

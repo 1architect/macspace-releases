@@ -97,11 +97,16 @@ public final class DebloatEngine {
 
     // MARK: Status
 
-    public func status() -> [ControlStatus] {
+    public func status() -> [ControlStatus] { status(of: controls) }
+
+    /// Several controls with one reading of what they share: the journal, the running processes and the installed profiles. One at a
+    /// time, each control read the journal, listed the processes and ran `system_profiler` again, every time the page was read.
+    public func status(of controls: [DebloatControl]) -> [ControlStatus] {
+        guard !controls.isEmpty else { return [] }
         let entries = journal.allEntries
         let processes = system.processes()
         let held = controls.contains(where: Self.hasPolicy) ? macSpaceHeld() : nil
-        return controls.map { status(of: $0, entries: entries, processes: processes, held: held) }
+        return controls.map { status(of: $0, entries: entries, processes: processes, held: Self.hasPolicy($0) ? held : nil) }
     }
 
     public func status(of control: DebloatControl) -> ControlStatus {

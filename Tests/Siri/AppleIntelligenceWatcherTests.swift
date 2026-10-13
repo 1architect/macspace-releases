@@ -91,3 +91,10 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: store.eventLogURL, encoding: .utf8).split(separator: "\n").count, 1)
     }
 }
+
+final class SiriPrivilegedReadingsTests: XCTestCase {
+    /// Listing orphaned model subscriptions is open to every account; removing them needs an administrator.
+    func testOnlyThePlanIsOpenToEveryAccount() {
+        XCTAssertEqual(SiriPrivilegedOperations().readOnlyOperations, [SiriPrivilegedOperations.planOrphans])
+    }
+}

@@ -375,6 +375,7 @@ struct BlocksView: View {
     var orderSize: CGSize?
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @State private var appeared = false
 
     /// The narrowest block drawn as glass (`Surface.glass`).
@@ -404,7 +405,7 @@ struct BlocksView: View {
             let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
                                          orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
             let corner = Self.radius(for: rects.map(inset))
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+            TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
@@ -522,22 +523,23 @@ private struct BlockFrame: ViewModifier, @preconcurrency Animatable {
 }
 
 /// A loading tile or page: a shade over its ground that deepens and lifts, again and again, while its chart pulses as it loads. A
-/// shade, not a light: brightening washed the pale grounds out. An animation the system repeats, not a timeline: nothing is redrawn
-/// by the app between frames.
+/// shade, not a light: brightening washed the pale grounds out. A timeline of 30 frames a second that rests while its window is not
+/// in front: a repeating animation was worked out by the app at every frame of the display (120 a second), and went on in a closed
+/// or hidden window, keeping MacSpace at 5% CPU in the menu bar.
 struct LoadingGlow<S: Shape>: View {
     let shape: S
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @Environment(\.design) private var design
-    @State private var dark = false
 
     var body: some View {
-        shape.fill(.black)
-            .opacity(reduceMotion ? 0.05 : (dark ? (design.isLight ? 0.09 : 0.18) : 0))
-            .allowsHitTesting(false)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { dark = true }
-            }
+        let deepest = design.isLight ? 0.09 : 0.18
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
+            // Deepens and lifts every 1.8 seconds, easing at both ends.
+            let phase = 0.5 - 0.5 * cos(2 * .pi * context.date.timeIntervalSinceReferenceDate / 1.8)
+            shape.fill(.black).opacity(reduceMotion ? 0.05 : deepest * phase)
+        }
+        .allowsHitTesting(false)
     }
 }
 
@@ -553,6 +555,7 @@ struct DotsView: View {
     var loading = false
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @State private var appeared = false
 
     /// As many columns as make the rows even: up to `columns` a row, and the dots shared out over the rows that takes, so 12 dots are
@@ -566,7 +569,7 @@ struct DotsView: View {
     var body: some View {
         let palette = design.palette(tint)
         let columns = Self.columns(for: dots.count, atMost: columns)
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
                 ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
                     let wave = LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion)
@@ -618,10 +621,11 @@ struct StateView: View {
     var disabled = false
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @State private var fill: CGFloat = 0
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
             content { index in LoadingWave.opacity(context.date, index: index, count: 3, loading: loading, reduceMotion: reduceMotion) }
         }
         .animation(.smooth(duration: 0.4), value: loading)
@@ -678,9 +682,12 @@ struct StateView: View {
 struct GlowEdge: View {
     var radius: CGFloat = Theme.tileRadius
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+        // It turns while MacSpace is in front, and rests in the background: shown for as long as Apple Intelligence is on, its two
+        // blurred strokes were redrawn 30 times a second behind whatever app was in front.
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
             let angle = Angle.degrees(reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate * 40)
             let colors: [Color] = [Color(hex: 0x3A8BFF), Color(hex: 0xB04CFF), Color(hex: 0xFF5C9A), Color(hex: 0xFF9F2E), Color(hex: 0x3A8BFF)]
             let gradient = AngularGradient(colors: colors, center: .center, angle: angle)
@@ -705,6 +712,7 @@ struct BarGaugeView: View {
     var loading = false
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @State private var drawn: Double = 0
 
     var body: some View {
@@ -717,7 +725,7 @@ struct BarGaugeView: View {
                     .modifier(AnimatedLength(value: proxy.size.width * used, kind: .width))
                 // While loading, a light runs along the bar.
                 if loading && !reduceMotion {
-                    TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                    TimelineView(.animation(minimumInterval: 1 / 30, paused: !appearsActive)) { context in
                         let runner = 0.22
                         let from = LoadingWave.position(context.date) * (1 + runner) - runner
                         Surface(shape: Capsule(), color: palette.step(5))
@@ -737,23 +745,37 @@ struct BarGaugeView: View {
 
 /// The amber "!" with a ring that keeps pulsing out of it.
 struct AttentionMark: View {
+    static let pulse = 1.8
+    static let rest = 1.6
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @Environment(\.design) private var design
-    @State private var pulsing = false
 
     var body: some View {
-        // One pulse, then a rest, repeated by the animation itself: the view is not redrawn every frame by a timeline, and the window
-        // (all glass) is not recomposited between pulses.
+        // One pulse, then a rest, at 30 frames a second while the window is in front; still otherwise. A repeating animation was
+        // worked out at every frame of the display, rests included, and went on in a closed window.
         Image(systemName: "exclamationmark")
             .font(.system(size: 10, weight: .heavy))
             .foregroundStyle(design.actionDeep)
             .frame(width: 19, height: 19)
             .background(Circle().fill(design.action))
-            .background(Circle().stroke(design.action, lineWidth: 1.5).scaleEffect(pulsing ? 1.9 : 1).opacity(pulsing ? 0 : 1))
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeOut(duration: 1.8).delay(1.6).repeatForever(autoreverses: false)) { pulsing = true }
+            .background {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
+                    let progress = Self.progress(at: context.date)
+                    Circle().stroke(design.action, lineWidth: 1.5)
+                        .scaleEffect(1 + 0.9 * progress)
+                        .opacity(reduceMotion ? 0 : 1 - progress)
+                }
             }
             .accessibilityLabel(String(localized: "Needs attention"))
+    }
+
+    /// How far the ring has gone out, 0...1, easing out; 0 during the rest.
+    static func progress(at date: Date) -> Double {
+        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: pulse + rest)
+        guard t >= rest else { return 0 }
+        let x = (t - rest) / pulse
+        return 1 - (1 - x) * (1 - x)
     }
 }

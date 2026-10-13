@@ -311,6 +311,20 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertFalse(RootMeasuredLocations.isAllowed("/Users/someone/Library"))
         XCTAssertFalse(RootMeasuredLocations.isAllowed("/private/var/../etc"))
         XCTAssertFalse(RootMeasuredLocations.isAllowed("/private/var/"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/System/Volumes/Data//Users/someone"))
+    }
+
+    /// A link to a home folder, made where anyone may write (`/private/tmp`), passes the text check; the disk check refuses it.
+    func testTheHelperRefusesAPathThroughALink() throws {
+        let temporary = try XCTUnwrap(realpath(FileManager.default.temporaryDirectory.path, nil).map { defer { free($0) }; return String(cString: $0) })
+        let folder = temporary + "/allowed-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(atPath: folder + "/real", withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: folder) }
+        try FileManager.default.createSymbolicLink(atPath: folder + "/link", withDestinationPath: NSHomeDirectory())
+        XCTAssertTrue(RootMeasuredLocations.isAllowedOnDisk(folder + "/real"))
+        XCTAssertTrue(RootMeasuredLocations.isAllowed(folder + "/link/Documents"))
+        XCTAssertFalse(RootMeasuredLocations.isAllowedOnDisk(folder + "/link/Documents"))
+        XCTAssertNil(FileTreeSizer(refusesLinks: true).size(at: URL(fileURLWithPath: folder + "/link/Library")).flatMap(\.allocatedBytesEstimate))
     }
 }
 
@@ -359,4 +373,43 @@ final class SystemDataStoreTests: XCTestCase {
         XCTAssertEqual(snapshot.report.measuredBytes, 2, "the waiting caller got the scan started after the invalidate")
     }
 
+    /// When the helper did not answer, a later reading asks it again for the same scan instead of keeping the failure for the
+    /// scan's whole life, and does not scan the disk again.
+    func testAHelperThatFailedIsAskedAgainWithoutANewScan() async {
+        final class Counter: @unchecked Sendable { var scans = 0 }
+        final class Helper: PrivilegedChannel, @unchecked Sendable {
+            var answers = false
+            func perform(operation: String, arguments: [String: String]) async throws -> Data {
+                guard answers else { throw PrivilegedHelperError.noAnswer(seconds: 8) }
+                return try JSONEncoder().encode(RootMeasurementResponse(sizes: [:], purgeable: [:]))
+            }
+        }
+        let counter = Counter()
+        let helper = Helper()
+        let store = SystemDataStore(builder: {
+            counter.scans += 1
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0,
+                                                             manualCleanup: [], unreadable: ["/private/var/db/diagnostics"], warnings: []),
+                                    purgeableAssetsBytes: nil,
+                                    reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
+        })
+        let first = await store.snapshot(privileged: helper)
+        XCTAssertNotNil(first.helperError)
+        helper.answers = true
+        let soon = await store.snapshot(now: Date().addingTimeInterval(10), privileged: helper)
+        XCTAssertNotNil(soon.helperError, "not asked again within the minute")
+        let later = await store.snapshot(now: Date().addingTimeInterval(SystemDataStore.helperRetry + 1), privileged: helper)
+        XCTAssertNil(later.helperError)
+        XCTAssertTrue(later.helperTried)
+        XCTAssertEqual(counter.scans, 1, "the disk is not scanned again")
+    }
+
+}
+
+final class PrivilegedReadingsTests: XCTestCase {
+    /// Measuring is open to every account; deleting the version history, a staged update or wallpaper downloads needs an
+    /// administrator (`PrivilegedHelperService`).
+    func testOnlyMeasuringIsOpenToEveryAccount() {
+        XCTAssertEqual(SystemDataPrivilegedOperations().readOnlyOperations, [SystemDataPrivilegedOperations.measure])
+    }
 }

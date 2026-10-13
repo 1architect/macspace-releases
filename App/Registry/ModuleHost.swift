@@ -108,14 +108,16 @@ public final class ModuleHost: ObservableObject {
     private var activationObserver: NSObjectProtocol?
 
     /// Coming back to MacSpace (from System Settings, after approving a profile), the modules that depend on approvals given there
-    /// read the Mac again: without it, the page kept saying the profile was waiting.
+    /// read the Mac again: without it, the page kept saying the profile was waiting. The others catch up if their figures are old
+    /// (`ModuleHandle.appBecameActive`).
     private func observeActivation() {
         activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 ConfigurationProfiles.shared.refresh()
-                for handle in self.activeHandles where handle.manifest.permissions.contains(.configurationProfile) {
-                    Task { await handle.refresh(reload: true, quiet: true) }
+                for handle in self.activeHandles {
+                    if handle.manifest.permissions.contains(.configurationProfile) { Task { await handle.refresh(reload: true, quiet: true) } }
+                    else { handle.appBecameActive() }
                 }
             }
         }

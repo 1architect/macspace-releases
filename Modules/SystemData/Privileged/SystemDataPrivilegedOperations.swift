@@ -33,8 +33,16 @@ public enum RootMeasuredLocations {
 
     public static func isAllowed(_ path: String) -> Bool {
         if allowed.contains(path) { return true }
-        guard !path.contains("/../"), !path.hasSuffix("/.."), !path.hasPrefix("/System/Volumes/Data/Users") else { return false }
+        guard !path.contains("/../"), !path.hasSuffix("/.."), !path.contains("//"), !path.hasPrefix("/System/Volumes/Data/Users") else { return false }
         return allowedRoots.contains { path.hasPrefix($0) && path.count > $0.count }
+    }
+
+    /// Whether root may measure `path`: allowed as written and as the disk resolves it. The text alone was not enough: a link made
+    /// in `/private/tmp` to another account's home folder passed it, and root then told any caller the sizes of that account's files.
+    public static func isAllowedOnDisk(_ path: String) -> Bool {
+        guard isAllowed(path), let resolved = realpath(path, nil) else { return false }
+        defer { free(resolved) }
+        return String(cString: resolved) == path
     }
 }
 
@@ -47,6 +55,7 @@ public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
     public init() {}
 
     public var operations: Set<String> { [Self.measure, Self.deleteVersions, Self.deleteStagedUpdate, Self.deleteWallpaperDownloads] }
+    public var readOnlyOperations: Set<String> { [Self.measure] }
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
         if operation == Self.deleteStagedUpdate { return try JSONEncoder().encode(StagedUpdateCleaner().execute()) }
@@ -55,10 +64,12 @@ public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
         if operation == Self.deleteVersions { return try JSONEncoder().encode(VersionStoreCleaner().execute()) }
         guard operation == Self.measure else { throw PrivilegedOperationError("Unknown operation \(operation).") }
         let requested = (arguments["paths"] ?? "").split(separator: "\n").map(String.init)
-        let sizer = FileTreeSizer(countsPurgeable: true)
+        // Up to three threads on each folder: the folders only root can read (the system databases) are few and large.
+        // No link is followed anywhere in a path, should one be put in place after the check above (`refusesLinks`).
+        let sizer = FileTreeSizer(countsPurgeable: true, pool: ScanPool(free: 2), refusesLinks: true)
         var sizes: [String: UInt64] = [:]
         var purgeable: [String: UInt64] = [:]
-        for path in requested where RootMeasuredLocations.isAllowed(path) {
+        for path in requested where RootMeasuredLocations.isAllowedOnDisk(path) {
             guard FileManager.default.fileExists(atPath: path), (try? FileManager.default.contentsOfDirectory(atPath: path)) != nil,
                   let measured = sizer.size(at: URL(fileURLWithPath: path)) else { continue }
             sizes[path] = measured.allocatedBytesEstimate ?? measured.logicalBytes

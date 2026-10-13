@@ -29,6 +29,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
     }
 
     public var operations: Set<String> { [Self.status, Self.apply, Self.revert, Self.removeProfile] }
+    public var readOnlyOperations: Set<String> { [Self.status] }
 
     public static func arguments(controlIDs: [String], options: DebloatPlanOptions) -> [String: String] {
         ["controls": controlIDs.joined(separator: ","),
@@ -56,7 +57,7 @@ public struct DebloatPrivilegedOperations: PrivilegedOperationHandler {
         switch operation {
         case Self.status:
             let controls = ids.isEmpty ? engine.controls : engine.controls.filter { ids.contains($0.id) }
-            return try encoder.encode(controls.map(engine.status(of:)))
+            return try encoder.encode(engine.status(of: controls))
         case Self.apply, Self.revert:
             guard !ids.isEmpty else { throw PrivilegedOperationError("Name at least one control.") }
             let options = DebloatPlanOptions(restoreFallbacks: arguments["restoreFallbacks"] == "true",

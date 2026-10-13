@@ -67,24 +67,17 @@ public struct FileTreeSizer: Sendable {
     /// Counts each APFS clone family's shared blocks once across every tree sized with this ledger.
     public let clones: CloneLedger?
 
-    public init(countsPurgeable: Bool = false, clones: CloneLedger? = nil) {
+    /// Threads idle elsewhere in the scan that may help with a large tree (`DirectoryWalk`); nil walks each tree on one thread.
+    public let pool: ScanPool?
+
+    /// Opens no folder through a link anywhere in its path (`O_NOFOLLOW_ANY`), for root measuring paths a caller named.
+    public let refusesLinks: Bool
+
+    public init(countsPurgeable: Bool = false, clones: CloneLedger? = nil, pool: ScanPool? = nil, refusesLinks: Bool = false) {
         self.countsPurgeable = countsPurgeable
         self.clones = clones
-    }
-
-    /// A file's clone family, the bytes only it holds, and its extended flags. nil when they cannot be read.
-    static func extendedAttributes(_ path: String) -> (family: UInt64, privateBytes: UInt64, flags: UInt64)? {
-        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0, fileattr: 0,
-                            forkattr: attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS))
-        var buffer = [UInt8](repeating: 0, count: 32)
-        let result = buffer.withUnsafeMutableBytes { getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
-        guard result == 0 else { return nil }
-        // The length, then the extended attributes in bit order: private size, clone id, extended flags.
-        return buffer.withUnsafeBytes {
-            (family: $0.loadUnaligned(fromByteOffset: 12, as: UInt64.self),
-             privateBytes: UInt64(max($0.loadUnaligned(fromByteOffset: 4, as: Int64.self), 0)),
-             flags: $0.loadUnaligned(fromByteOffset: 20, as: UInt64.self))
-        }
+        self.pool = pool
+        self.refusesLinks = refusesLinks
     }
 
     /// Whether APFS flags the file purgeable: macOS may delete it when space runs low.
@@ -99,111 +92,54 @@ public struct FileTreeSizer: Sendable {
         return flags & UInt64(EF_IS_PURGEABLE) != 0
     }
 
-    private var sizingKeys: Set<URLResourceKey> {
-        [
-            .isDirectoryKey,
-            .isRegularFileKey,
-            .isSymbolicLinkKey,
-            .fileSizeKey,
-            .fileAllocatedSizeKey,
-            .totalFileSizeKey,
-            .totalFileAllocatedSizeKey,
-            .volumeIdentifierKey,
-            .linkCountKey
-        ]
-    }
-
     /// Descriptive filesystem sizing only. This deliberately does not claim unique APFS block ownership.
-    /// Descendants mounted from another filesystem are skipped to avoid obvious double counting.
+    /// Descendants mounted from another filesystem are skipped to avoid obvious double counting, and so are folders still only in
+    /// the cloud (`SF_DATALESS`): listing them would make the cloud app fetch them, and what they hold takes no space here.
     public func size(at url: URL) -> FileTreeSize? {
-        do {
-            let rootValues = try url.resourceValues(forKeys: sizingKeys)
-            if rootValues.isSymbolicLink == true {
-                return nil
-            }
-
-            if rootValues.isRegularFile == true {
-                return FileTreeSize(
-                    logicalBytes: logicalSize(from: rootValues) ?? 0,
-                    allocatedBytesEstimate: allocatedSize(from: rootValues)
-                )
-            }
-
-            guard rootValues.isDirectory == true else {
-                return FileTreeSize(
-                    logicalBytes: logicalSize(from: rootValues) ?? 0,
-                    allocatedBytesEstimate: allocatedSize(from: rootValues)
-                )
-            }
-
-            let rootVolumeID = rootValues.volumeIdentifier.map { String(describing: $0) }
-            // The enumerator reports a folder it cannot open through this handler and goes on; the count says the sizes are short.
-            let errors = ErrorCount()
-            guard let enumerator = FileManager.default.enumerator(
-                at: url,
-                includingPropertiesForKeys: Array(sizingKeys),
-                options: [],
-                errorHandler: { _, _ in errors.value += 1; return true }
-            ) else { return nil }
-
-            var logical: UInt64 = 0
-            var allocated: UInt64 = 0
-            var purgeable: UInt64 = 0
-            var sawAllocated = false
-            // Hard-linked files met in this tree; across trees, the ledger's.
-            let links = clones ?? CloneLedger()
-
-            for case let item as URL in enumerator {
-                // One pool per file: a tree of a million files otherwise keeps every URL and attribute it touched until the end.
-                autoreleasepool {
-                    guard let resource = try? item.resourceValues(forKeys: sizingKeys) else { return }
-                    if resource.isSymbolicLink == true { return }
-
-                    if let rootVolumeID,
-                       let itemVolumeID = resource.volumeIdentifier.map({ String(describing: $0) }),
-                       itemVolumeID != rootVolumeID {
-                        enumerator.skipDescendants()
-                        return
-                    }
-
-                    guard resource.isRegularFile == true else { return }
-                    // A file reached by several hard links counts at its first path only.
-                    if (resource.linkCount ?? 1) > 1, let inode = HardLinks.inode(item.path), !links.claimLink(inode) { return }
-                    logical += logicalSize(from: resource) ?? 0
-                    if var value = allocatedSize(from: resource) {
-                        if countsPurgeable || clones != nil, value > 0, let extended = Self.extendedAttributes(item.path) {
-                            // A later member of a clone family adds only what it does not share.
-                            if let clones, extended.family != 0, !clones.claim(extended.family) { value = min(value, extended.privateBytes) }
-                            if countsPurgeable, extended.flags & UInt64(EF_IS_PURGEABLE) != 0 { purgeable += value }
-                        }
-                        allocated += value
-                        sawAllocated = true
-                    }
-                }
-            }
-
-            return FileTreeSize(
-                logicalBytes: logical,
-                allocatedBytesEstimate: sawAllocated ? allocated : nil,
-                unreadableFolders: errors.value,
-                purgeableBytes: purgeable
-            )
-        } catch {
+        let root = url.path
+        var info = stat()
+        guard lstat(root, &info) == 0 else { return nil }
+        switch info.st_mode & S_IFMT {
+        case S_IFLNK:
             return nil
+        case S_IFDIR:
+            break
+        default:
+            // A single file: its sizes, as the folder walk reads them.
+            guard let file = try? url.resourceValues(forKeys: [.fileSizeKey, .fileAllocatedSizeKey, .totalFileSizeKey, .totalFileAllocatedSizeKey]) else { return nil }
+            return FileTreeSize(logicalBytes: UInt64(max(0, file.totalFileSize ?? file.fileSize ?? 0)),
+                                allocatedBytesEstimate: (file.totalFileAllocatedSize ?? file.fileAllocatedSize).map { UInt64(max(0, $0)) })
         }
-    }
 
-    private final class ErrorCount: @unchecked Sendable {
-        var value = 0
-    }
-
-    private func logicalSize(from values: URLResourceValues) -> UInt64? {
-        let value = values.totalFileSize ?? values.fileSize
-        return value.map { UInt64(max(0, $0)) }
-    }
-
-    private func allocatedSize(from values: URLResourceValues) -> UInt64? {
-        let value = values.totalFileAllocatedSize ?? values.fileAllocatedSize
-        return value.map { UInt64(max(0, $0)) }
+        struct Sums { var logical: UInt64 = 0, allocated: UInt64 = 0, purgeable: UInt64 = 0, sawFile = false }
+        // Hard-linked files met in this tree; across trees, the ledger's.
+        let links = clones ?? CloneLedger()
+        let clones = clones
+        let countsPurgeable = countsPurgeable
+        let extended = countsPurgeable || clones != nil
+        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, makeState: { Sums() }) { sums, path, entry in
+            if entry.isDirectory { return entry.isDataless ? .skip : .descend }
+            guard entry.isRegularFile else { return .skip }
+            // A file reached by several hard links counts at its first path only.
+            if entry.linkCount > 1, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
+            sums.sawFile = true
+            sums.logical += entry.logicalBytes
+            var value = entry.allocatedBytes
+            if extended, value > 0 {
+                // A later member of a clone family adds only what it does not share.
+                if let clones, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.privateBytes) }
+                if countsPurgeable, entry.extendedFlags & UInt64(EF_IS_PURGEABLE) != 0 { sums.purgeable += value }
+            }
+            sums.allocated += value
+            return .skip
+        }
+        let total = walk.states.reduce(into: Sums()) { total, part in
+            total.logical += part.logical
+            total.allocated += part.allocated
+            total.purgeable += part.purgeable
+            total.sawFile = total.sawFile || part.sawFile
+        }
+        return FileTreeSize(logicalBytes: total.logical, allocatedBytesEstimate: total.sawFile ? total.allocated : nil,
+                            unreadableFolders: walk.unreadable, purgeableBytes: total.purgeable)
     }
 }

@@ -13,17 +13,29 @@ public final class PrivilegedHelperService: @unchecked Sendable {
     /// update replaced the helper while the old one is still running.
     public let launchFingerprint: String
 
-    public init(handlers: [any PrivilegedOperationHandler], launchFingerprint: String = HelperFingerprint.ofCurrentExecutable() ?? "") {
+    /// The operations any account may ask for (`PrivilegedOperationHandler.readOnlyOperations`); the others need an administrator.
+    private let readOnly: Set<String>
+    private let isAdmin: @Sendable (uid_t) -> Bool
+
+    public init(handlers: [any PrivilegedOperationHandler], launchFingerprint: String = HelperFingerprint.ofCurrentExecutable() ?? "",
+                isAdmin: @escaping @Sendable (uid_t) -> Bool = AdminAccounts.contains) {
         self.launchFingerprint = launchFingerprint
+        self.isAdmin = isAdmin
         var map: [String: any PrivilegedOperationHandler] = [:]
+        var readOnly: Set<String> = []
         for handler in handlers {
             for operation in handler.operations {
                 precondition(map[operation] == nil && operation != Self.pingOperation, "duplicate privileged operation \(operation)")
                 map[operation] = handler
             }
+            readOnly.formUnion(handler.readOnlyOperations.intersection(handler.operations))
         }
         self.handlers = map
+        self.readOnly = readOnly
     }
+
+    /// Said to an account that is not an administrator, for an operation that changes the Mac.
+    public static let needsAdministrator = "Only an administrator of this Mac can do this."
 
     /// Runs `body` once no operation is running (operations run one at a time on the service's queue).
     public func whenIdle(_ body: () -> Void) { queue.sync { body() } }
@@ -37,6 +49,9 @@ public final class PrivilegedHelperService: @unchecked Sendable {
             }
             if request.operation == Self.pingOperation { return HelperResponse(payload: Data(launchFingerprint.utf8)) }
             guard let handler = handlers[request.operation] else { return HelperResponse(error: "Unknown operation \(request.operation).") }
+            // The helper accepts any account that runs MacSpace or its command-line tool: a standard account could otherwise delete
+            // every account's version history or change macOS's settings for the whole Mac.
+            guard readOnly.contains(request.operation) || isAdmin(clientUID) else { return HelperResponse(error: Self.needsAdministrator) }
             do {
                 return HelperResponse(payload: try handler.handle(request.operation, arguments: request.arguments, caller: PrivilegedCaller(uid: clientUID)))
             } catch {

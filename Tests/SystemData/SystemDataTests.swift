@@ -32,6 +32,23 @@ final class SystemDataTests: XCTestCase {
         return inspector
     }
 
+    /// Homebrew is only where its `brew` is: on Apple silicon `/usr/local` holds other tools, which were counted as Homebrew and
+    /// opened a second Finder window from its row. Without Homebrew, `/usr/local` is an item of its own.
+    func testHomebrewIsOnlyWhereItsBrewIs() throws {
+        try file("opt/homebrew/Cellar/x/data", mb: 60)
+        try file("usrlocal/bin/node", mb: 70)
+        let brew = root.appendingPathComponent("opt/homebrew/bin/brew")
+        try fm.createDirectory(at: brew.deletingLastPathComponent(), withIntermediateDirectories: true)
+        XCTAssertTrue(fm.createFile(atPath: brew.path, contents: Data("#!/bin/sh\n".utf8), attributes: [.posixPermissions: 0o755]))
+        let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil,
+                                            systemPaths: ["homebrew": root.appendingPathComponent("opt/homebrew").path, "usrLocal": root.appendingPathComponent("usrlocal").path])
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        inspector.processCheck = .none
+        let report = inspector.inspect()
+        XCTAssertEqual(report.items.first { $0.id == "packages:homebrew" }?.paths, [root.appendingPathComponent("opt/homebrew").path])
+        XCTAssertEqual(report.items.first { $0.id == "usrlocal" }?.paths, [root.appendingPathComponent("usrlocal").path])
+    }
+
     func testWithoutFullDiskAccessProtectedFoldersAreSkippedAndReported() throws {
         try file("home/Library/Containers/net.whatsapp.WhatsApp/Data/cache", mb: 110)
         try file("home/Library/CloudStorage/OneDrive-X/big.pdf", mb: 120)

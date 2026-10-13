@@ -200,10 +200,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let (newTile, newScreen) = await (nextTile, nextScreen)
         guard generation == refreshGeneration, state == .ready else { return }
         lastRefreshed = Date()
-        tile = newTile
-        tileIsStale = false
-        settings.setLastTile(newTile, module: id)
-        screen = newScreen
+        // Only what changed is published: each published value redraws the tile and the page, and the readings that follow the Mac
+        // by themselves mostly find it unchanged.
+        if tile != newTile {
+            tile = newTile
+            settings.setLastTile(newTile, module: id)
+        }
+        if tileIsStale { tileIsStale = false }
+        if screen != newScreen { screen = newScreen }
         scheduleAutoRefresh()
     }
 
@@ -236,7 +240,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// How often a module is read again by itself, so its tile and page follow the Mac without Refresh; a tile that is changing
     /// asks for sooner (`Tile.refreshAfter`).
     static let autoRefreshInterval: TimeInterval = 60
+    /// The same while another app is in front, with MacSpace's window still on screen behind it: a glance at it does not need
+    /// the minute's figures, and every module read again each minute (Debloat starts several processes to read the Mac) kept
+    /// MacSpace at a few percent of CPU in the background. Coming back to MacSpace reads again the modules whose figures are older
+    /// than a minute (`appBecameActive`).
+    static let backgroundRefreshInterval: TimeInterval = 600
     static let fastestAutoRefresh: TimeInterval = 3
+    /// Whether MacSpace is the app in front; injectable for tests.
+    static var isAppActive: @MainActor () -> Bool = { NSApp?.isActive ?? true }
     private var autoRefresh: Task<Void, Never>?
     private var lastRefreshed: Date?
     /// Whether a window of MacSpace is on screen. Without one nobody sees the tile or the page, so the module is not read again by
@@ -258,11 +269,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
     }
 
+    /// Back in front: figures older than the usual minute are read again now, and the readings go back to every minute.
+    func appBecameActive() {
+        guard state == .ready, isWatched else { return }
+        let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
+        if age >= Self.autoRefreshInterval, !performing { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
+    }
+
     /// Schedules the next quiet reading after the one that just finished.
     private func scheduleAutoRefresh() {
         autoRefresh?.cancel()
         guard state == .ready, isWatched else { return }
-        let delay = max(min(tile?.refreshAfter ?? Self.autoRefreshInterval, Self.autoRefreshInterval), Self.fastestAutoRefresh)
+        let interval = Self.isAppActive() ? Self.autoRefreshInterval : Self.backgroundRefreshInterval
+        // A tile that is changing (`Tile.refreshAfter`) is followed at its own pace, in front or not.
+        let delay = max(min(tile?.refreshAfter ?? interval, interval), Self.fastestAutoRefresh)
         autoRefresh = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, self.state == .ready, self.isWatched else { return }

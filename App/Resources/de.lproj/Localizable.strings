@@ -87,6 +87,7 @@
 "No modules were found." = "Keine Module gefunden.";
 "Not in this build" = "Nicht in diesem Build";
 "Not installed" = "Nicht installiert";
+"Not responding" = "Antwortet nicht";
 "Nothing cleaned yet." = "Noch nichts bereinigt.";
 "Nothing to free" = "Nichts freizugeben";
 "Notifications" = "Mitteilungen";
@@ -104,6 +105,8 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "Beende MacSpace und kopiere es erneut. Berechtigungen für diese Kopie gingen beim nächsten Update verloren.";
 "Recent cleanups" = "Letzte Bereinigungen";
 "Refresh" = "Aktualisieren";
+"Repair helper" = "Hilfsprogramm reparieren";
+"Repairing…" = "Wird repariert …";
 "Restart to finish" = "Zum Abschließen neu starten";
 "Settings" = "Einstellungen";
 "Settings › Permissions" = "Einstellungen › Berechtigungen";

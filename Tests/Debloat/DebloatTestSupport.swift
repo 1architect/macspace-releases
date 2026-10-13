@@ -138,7 +138,8 @@ final class FakeDebloatSystem: DebloatSystem {
         sessionCalls.append("start \(service.label)")
         return loadedServices?.insert(service.label).inserted ?? true
     }
-    func processes() -> [RunningProcess]? { runningProcesses }
+    var processListings = 0
+    func processes() -> [RunningProcess]? { processListings += 1; return runningProcesses }
     func diagnosticHistory() -> DiagnosticSubmissionHistory? { history }
 }
 

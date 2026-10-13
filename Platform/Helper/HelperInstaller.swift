@@ -11,10 +11,12 @@ public enum PrivilegedHelperInstaller {
 
     public static var status: SMAppService.Status { service.status }
 
-    /// What the Settings page shows for the "Privileged helper" permission.
-    public static func permissionStatus(_ status: SMAppService.Status = PrivilegedHelperInstaller.status) -> PermissionStatus {
+    /// What the Settings page shows for the "Privileged helper" permission. Enabled is not enough: a helper launchd cannot start
+    /// stays "enabled" for macOS, and the page said Granted while every reading that needs it failed (2026-10-13).
+    public static func permissionStatus(_ status: SMAppService.Status = PrivilegedHelperInstaller.status,
+                                        answers: Bool = HelperHealth.shared.answers) -> PermissionStatus {
         switch status {
-        case .enabled: return .granted
+        case .enabled: return answers ? .granted : .missing
         case .notRegistered, .requiresApproval: return .missing
         case .notFound: return .unknown
         @unknown default: return .unknown
@@ -50,6 +52,23 @@ public enum PrivilegedHelperInstaller {
 
     public static func unregister() async throws { try await service.unregister() }
 
+    /// Whether launchd still has the helper's job (`launchctl print`), which it drops a moment after `unregister`.
+    static func launchdHasJob() -> Bool {
+        (try? ProcessCommandRunner(defaultTimeout: 5).run("/bin/launchctl", ["print", "system/\(PrivilegedHelperConstants.machServiceName)"])) != nil
+    }
+
+    /// Registers the helper again, for one macOS says is enabled that never answers: launchd's job pointed at a record of the
+    /// helper macOS no longer had ("copy_bundle_path … Invalid or missing Program", 2026-10-13). Registering again only takes once
+    /// launchd has dropped the old job; registered at once, launchd kept it. The approval stays (the same team signs it).
+    public static func repair(bundle: Bundle = .main) async throws {
+        guard isInApplicationsFolder(bundle.bundlePath) else { throw NotInApplicationsError(path: bundle.bundlePath) }
+        if status != .notRegistered { try? await unregister() }
+        for _ in 0..<30 where launchdHasJob() { try? await Task.sleep(for: .seconds(1)) }
+        try? await Task.sleep(for: .seconds(2))
+        try register(bundle: bundle)
+        HelperHealth.shared.record(answered: true)
+    }
+
     /// At launch: makes the helper ready without the user having to press anything, and without ever costing them its approval.
     ///
     /// - An approved helper is only pinged, a few times over about twenty seconds: after an update the helper of the earlier build
@@ -66,9 +85,16 @@ public enum PrivilegedHelperInstaller {
         guard isInApplicationsFolder(bundle.bundlePath), CodeIntegrity.isIntact(bundle.bundleURL) else { return false }
         switch status {
         case .enabled:
+            // A helper that is starting may refuse the first calls, so it is asked again a few times; one that takes calls and never
+            // answers cannot be started at all, and the modules, which load after this, are not held back waiting for it.
             for wait in waits {
                 if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
-                if (try? await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:])) != nil { break }
+                do {
+                    _ = try await channel.perform(operation: PrivilegedHelperService.pingOperation, arguments: [:])
+                    break
+                } catch PrivilegedHelperError.noAnswer {
+                    break
+                } catch {}
             }
             return false
         case .notRegistered, .notFound:
@@ -98,4 +124,18 @@ public enum PrivilegedHelperInstaller {
     }
 
     public static func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
+}
+
+/// Whether the helper answered the last time it was asked (`LazyPrivilegedChannel`): macOS reports a helper launchd cannot start as
+/// enabled, so the app keeps what it saw itself.
+public final class HelperHealth: @unchecked Sendable {
+    public static let shared = HelperHealth()
+    private let lock = NSLock()
+    private var answered = true
+
+    public init() {}
+
+    public var answers: Bool { lock.lock(); defer { lock.unlock() }; return answered }
+
+    public func record(answered: Bool) { lock.lock(); self.answered = answered; lock.unlock() }
 }

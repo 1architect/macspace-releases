@@ -106,8 +106,26 @@ actor SystemDataStore {
     /// forget it (`invalidate`), so only the readings that follow the Mac by themselves wait this long.
     static let defaultMaxAge: TimeInterval = 600
 
+    /// How long after the helper failed it is asked again, for the same scan.
+    static let helperRetry: TimeInterval = 60
+    private var helperAskedAt: Date?
+
     func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil) async -> SystemDataSnapshot {
-        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil { return cached }
+        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil {
+            // A scan the helper did not measure kept saying so for the scan's whole life (ten minutes), though the helper was back:
+            // the helper's part alone is asked again, the rest of the scan is kept.
+            guard let privileged, cached.helperError != nil, inflight == nil,
+                  now.timeIntervalSince(helperAskedAt ?? cached.takenAt) >= Self.helperRetry else { return cached }
+            helperAskedAt = now
+            var retry = cached
+            retry.helperTried = false
+            retry.helperError = nil
+            let started = generation
+            let measured = await RootMeasurements.apply(to: retry, channel: privileged)
+            guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged) }
+            self.cached = measured
+            return measured
+        }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.
         if let inflight {
@@ -126,6 +144,7 @@ actor SystemDataStore {
         let fresh = await task.value
         guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged) }
         cached = fresh
+        helperAskedAt = Date()
         inflight = nil
         return fresh
     }
@@ -144,6 +163,10 @@ actor SystemDataStore {
         let developer = DeveloperBox()
         let developerDone = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .utility).async { developer.caches = DeveloperCaches.scan(); developerDone.signal() }
+        // System Settings' categories are measured beside the items: one after the other, they added 10 seconds to every scan.
+        let settings = SettingsBox()
+        let settingsDone = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .utility).async { settings.storage = SettingsStorageMeter().measure(); settingsDone.signal() }
         let report = SystemDataInspector().inspect()
         let services = livePurgeableServices()
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -154,7 +177,8 @@ actor SystemDataStore {
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         snapshot.purgeableServices = services
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
-        snapshot.settings = SettingsStorageMeter().measure()
+        settingsDone.wait()
+        snapshot.settings = settings.storage
         snapshot.trashEmptiesItself = CFPreferencesCopyAppValue("FXRemoveOldTrashItems" as CFString, "com.apple.finder" as CFString) as? Bool ?? false
         brewDone.wait()
         snapshot.homebrew = homebrew.plan
@@ -189,6 +213,11 @@ actor SystemDataStore {
 /// Homebrew's plan, handed from the thread that asks Homebrew to the scan's.
 private final class HomebrewBox: @unchecked Sendable {
     var plan: HomebrewCleanup.Plan?
+}
+
+/// System Settings' categories, handed from the thread that measures them to the scan's.
+private final class SettingsBox: @unchecked Sendable {
+    var storage: SettingsStorage?
 }
 
 /// The developer caches, handed from the thread that scans them to the scan's.

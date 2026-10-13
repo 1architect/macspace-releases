@@ -47,3 +47,10 @@ final class DebloatOperationsTests: XCTestCase {
         XCTAssertNil(DebloatTargetUser.forUID(4_000_000))
     }
 }
+
+final class DebloatPrivilegedReadingsTests: XCTestCase {
+    /// Reading the controls is open to every account; applying, reverting and removing profiles needs an administrator.
+    func testOnlyTheStatusIsOpenToEveryAccount() {
+        XCTAssertEqual(DebloatPrivilegedOperations().readOnlyOperations, [DebloatPrivilegedOperations.status])
+    }
+}

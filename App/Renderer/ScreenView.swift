@@ -114,7 +114,7 @@ struct ScreenView: View {
             }
         }
         .animation(Theme.push, value: groups.map(\.id))
-        .environment(\.openGroup) { [handle] id in handle.pushGroup(id) }
+        .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
@@ -561,6 +561,7 @@ private struct ActionPill: View {
     let run: @MainActor (Action) async -> Void
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
     @State private var hovering = false
 
     private var severity: Banner.Severity? {
@@ -633,7 +634,7 @@ private struct ActionPill: View {
             }
             if isWorking {
                 let progress: ActionProgress? = if case let .working(progress) = phase { progress } else { nil }
-                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
                     GeometryReader { geometry in
                         if let fraction = progress?.fraction {

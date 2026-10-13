@@ -86,10 +86,22 @@ public final class PrivilegedHelperClient: PrivilegedChannel, @unchecked Sendabl
 
     deinit { connection.invalidate() }
 
+    /// How long a call may go unanswered. When launchd cannot start the helper (its signature does not match the approved one, as
+    /// with a build signed for development only), the call got neither a reply nor an error: the pages that asked it waited forever,
+    /// showing their loading animation. Measuring the system's folders as root takes well under a minute.
+    public static let defaultTimeout: TimeInterval = 180
+
     public func perform(operation: String, arguments: [String: String]) async throws -> Data {
+        try await perform(operation: operation, arguments: arguments, timeout: Self.defaultTimeout)
+    }
+
+    public func perform(operation: String, arguments: [String: String], timeout: TimeInterval) async throws -> Data {
         let payload = try HelperCoding.encoder.encode(HelperRequest(operation: operation, arguments: arguments))
         let data: Data = try await withCheckedThrowingContinuation { continuation in
             let once = ResumeOnce(continuation)
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) {
+                once.resume(throwing: PrivilegedHelperError.noAnswer(seconds: Int(timeout)))
+            }
             guard let proxy = connection.remoteObjectProxyWithErrorHandler({ error in
                 once.resume(throwing: PrivilegedHelperError.connection(error.localizedDescription))
             }) as? MacSpaceHelperProtocol else {

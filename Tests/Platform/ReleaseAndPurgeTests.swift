@@ -112,6 +112,35 @@ final class FileTreeSizerTests: XCTestCase {
         XCTAssertEqual(first + second, 1_000_000)
         XCTAssertLessThan(AllocatedSize.allocatedBytes(root.path, excluding: []), 1_200_000)
     }
+
+    /// Walked by several threads (`ScanPool`), a tree adds up to what one thread finds; links are not followed, and an excluded
+    /// folder is left out of Settings' category sizes.
+    func testATreeWalkedBySeveralThreadsAddsUpTheSame() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("walk-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for folder in 0..<12 {
+            for depth in 0..<3 {
+                let directory = root.appendingPathComponent("f\(folder)/" + Array(repeating: "d", count: depth + 1).joined(separator: "/"))
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                for file in 0..<5 { try Data(count: 1_000 * (folder + 1) + file).write(to: directory.appendingPathComponent("file\(file)")) }
+            }
+        }
+        let outside = FileManager.default.temporaryDirectory.appendingPathComponent("walk-outside-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: outside) }
+        try Data(count: 9_000_000).write(to: outside)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("link"), withDestinationURL: outside)
+        // Each folder: three levels of five files of 1,000 × (folder + 1) bytes, plus 0 + 1 + 2 + 3 + 4.
+        var expected: UInt64 = 0
+        for folder in 0..<12 { expected += UInt64(3 * (5_000 * (folder + 1) + 10)) }
+
+        let alone = try XCTUnwrap(FileTreeSizer(countsPurgeable: true).size(at: root))
+        let together = try XCTUnwrap(FileTreeSizer(countsPurgeable: true, pool: ScanPool(free: 4)).size(at: root))
+        XCTAssertEqual(alone.logicalBytes, expected, "the link's 9 MB are not followed")
+        XCTAssertEqual(together, alone)
+        let all = AllocatedSize.allocatedBytes(root.path, excluding: [])
+        XCTAssertEqual(AllocatedSize.allocatedBytes([(root.path, []), (root.path, [root.appendingPathComponent("f11").path])], workers: 2).first, all)
+        XCTAssertLessThan(AllocatedSize.allocatedBytes(root.path, excluding: [root.appendingPathComponent("f11").path]), all)
+    }
 }
 
 final class CleanupHistoryTests: XCTestCase {

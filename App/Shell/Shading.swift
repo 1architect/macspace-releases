@@ -149,12 +149,14 @@ struct ShadedFill<S: Shape>: View {
     /// Lights add on dark grounds and blend normally on light ones.
     var light = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
         if let shading, !reduceMotion, shading.moves || shading.grainMoves {
-            // As often as the light or the grain needs: the grain alone changes 6 to 24 times a second.
+            // As often as the light or the grain needs: the grain alone changes 6 to 24 times a second. It rests while MacSpace is in
+            // the background, where it kept redrawing its window behind the app in front.
             let interval = shading.moves ? 1.0 / 30 : 1 / (6 + 18 * shading.noiseSpeed)
-            TimelineView(.animation(minimumInterval: interval)) { context in
+            TimelineView(.animation(minimumInterval: interval, paused: !appearsActive)) { context in
                 layers(shading, time: context.date.timeIntervalSinceReferenceDate)
             }
         } else {

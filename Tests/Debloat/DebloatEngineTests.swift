@@ -53,6 +53,15 @@ final class DebloatEngineTests: XCTestCase {
         XCTAssertEqual(try state(engine, "test.pref"), .unknown)
     }
 
+    /// The page reads every control at once: the processes are listed once, not once per control.
+    func testControlsReadTogetherListTheProcessesOnce() throws {
+        let (engine, system, _) = makeEngine()
+        let statuses = engine.status(of: controls)
+        XCTAssertEqual(statuses.map(\.controlID), controls.map(\.id))
+        XCTAssertEqual(system.processListings, 1)
+        XCTAssertEqual(statuses.map(\.state), try controls.map { try state(engine, $0.id) })
+    }
+
     // MARK: Plans
 
     func testUntestedControlsApplyWithANoteToCheckThem() throws {
