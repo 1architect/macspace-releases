@@ -65,8 +65,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(macos.children.map(\.id), ["logs", "spotlight"])
         XCTAssertEqual(macos.title, "Managed by macOS")
         XCTAssertNil(macos.detail, "the title says why")
-        XCTAssertTrue(list.rows.first { $0.id == "other:caches" }?.detail?.contains("leaves them alone") == true,
-                      "why the caches are not cleaned is behind their (i)")
+        XCTAssertTrue(list.rows.first { $0.id == "other:caches" }?.detail?.contains("App caches") == true,
+                      "where the caches can be freed is behind their (i)")
         let group = try XCTUnwrap(SystemDataScreenBuilder.group(.section(section), symbol: "x", total: 0))
         XCTAssertEqual(group.subtitle, "5 items")
         XCTAssertEqual(SystemDataScreenBuilder.OtherCategory.of(.virtualMachine).id, "other", "a kind in no category goes to Other")
@@ -236,6 +236,54 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(blocks.map(\.bytes).reduce(0, +), 5_000_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.tile(snap).title, "system data")
         XCTAssertEqual(SystemDataScreenBuilder.tile(snap).figure, "5 GB")
+    }
+
+    /// Once everything MacSpace can measure is measured, the remainder is what macOS keeps closed to every app: it is named so, and
+    /// its page lists those folders by kind, with no size and no Finder button (they cannot be opened), and the file system's own
+    /// metadata. While places are still unmeasured it stays "Not identified" and opens nothing.
+    func testTheRemainderIsProtectedByMacOSOnceEverythingIsMeasured() throws {
+        var snap = snapshot(items: [item("logs", kind: .logs, bytes: 3_000_000_000, cleanup: .managedByMacOS)])
+        snap.settings = SettingsStorage(capacity: 245_000_000_000, used: 190_000_000_000, macOS: 45_000_000_000,
+                                        categories: [SettingsStorage.Category(id: "applications", bytes: 100_000_000_000),
+                                                     SettingsStorage.Category(id: "documents", bytes: 40_000_000_000)])
+        XCTAssertEqual(SystemDataScreenBuilder.blocks(snap).first { $0.id == "unidentified" }?.label, "Not identified")
+        snap.report.protectedFolders = ["/System/Library/AssetsV2/com_apple_MobileAsset_UAF_FM_GenerativeModels", "/private/var/db/oah",
+                                        "/private/var/db/CoreDuet/Knowledge", "/var/folders/x/y/0/com.apple.ScreenTimeAgent"]
+        let block = try XCTUnwrap(SystemDataScreenBuilder.blocksWithItems(snap).first { $0.id == "unidentified" })
+        XCTAssertEqual(block.label, "Protected by macOS")
+        XCTAssertEqual(block.bytes, 2_000_000_000, "the measured remainder, unchanged")
+        XCTAssertEqual(block.items.map(\.id), ["protected:assets", "protected:databases", "protected:other", "protected:filesystem"])
+        XCTAssertTrue(block.items[0].detail?.contains("UAF_FM_GenerativeModels") == true)
+        XCTAssertTrue(block.items[1].detail?.contains("CoreDuet/Knowledge") == true)
+        XCTAssertEqual(block.items[1].subtitle, "2 items")
+        XCTAssertTrue(block.items.allSatisfy { $0.paths.isEmpty && $0.trailing == nil })
+        XCTAssertEqual(block.group?.id, "segment:unidentified")
+        XCTAssertNil(block.items[0].badge)
+        XCTAssertTrue(block.items[0].detail?.contains("same folder as System assets") == true)
+        // The system assets item says where the closed families are; with Apple Intelligence on, they are marked as kept.
+        snap.report.items.append(item("assets:system", kind: .systemAssets, bytes: 500_000_000, cleanup: .command))
+        snap.assetsHeld = true
+        let blocks = SystemDataScreenBuilder.blocksWithItems(snap)
+        let assets = try XCTUnwrap(blocks.first { $0.id == "macos" }?.items.first { $0.id == "assets:system" })
+        XCTAssertTrue(assets.detail?.contains("Without the 1 families macOS keeps closed") == true)
+        XCTAssertEqual(blocks.first { $0.id == "unidentified" }?.items.first?.badge?.text, "Kept while Apple Intelligence is on")
+        snap.report.fullDiskAccess = false
+        let unmeasured = try XCTUnwrap(SystemDataScreenBuilder.blocksWithItems(snap).first { $0.id == "unidentified" })
+        XCTAssertEqual(unmeasured.label, "Not identified")
+        XCTAssertTrue(unmeasured.items.isEmpty)
+    }
+
+    /// macOS's purge counts part of the apps' container caches as purgeable, which Settings counts as free space: each Apple container
+    /// leaves out the service's share of its own caches folder.
+    func testPurgeableContainerCachesAreNotCounted() {
+        var wallpaper = item("container:com.apple.wallpaper.agent", kind: .appContainer, bytes: 1_200_000_000, cleanup: .managedByMacOS)
+        wallpaper.cachesBytes = 1_000_000_000
+        var snap = snapshot(items: [wallpaper])
+        snap.report.containerCachesBytes = 2_000_000_000
+        snap.purgeableServices = [CacheDeleteService.appContainerCaches: 1_000_000_000]
+        XCTAssertEqual(SystemDataScreenBuilder.counted(wallpaper, snap), 700_000_000, "half of its caches, as the service has half of all")
+        snap.purgeableServices = [:]
+        XCTAssertEqual(SystemDataScreenBuilder.counted(wallpaper, snap), 1_200_000_000, "without the service's figure, all of it")
     }
 
     /// The apps inside an item are not System Data (System Settings lists them under Applications), and are said apart from what

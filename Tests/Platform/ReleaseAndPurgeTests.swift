@@ -93,6 +93,25 @@ final class FileTreeSizerTests: XCTestCase {
         XCTAssertEqual(size.logicalBytes, 5_000)
         XCTAssertEqual(size.unreadableFolders, 1)
     }
+
+    /// A file reached by two hard links is stored once, and counted once: in one tree, across trees that share a ledger, and by
+    /// Settings' category sizes (`AllocatedSize`). Counted per path, Spotlight's own store came to 1.49 GB more than it takes.
+    func testAHardLinkedFileIsCountedOnce() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("links-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("a"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("b"), withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("a/blob")
+        try Data(count: 1_000_000).write(to: file)
+        try FileManager.default.linkItem(at: file, to: root.appendingPathComponent("a/again"))
+        try FileManager.default.linkItem(at: file, to: root.appendingPathComponent("b/blob"))
+        XCTAssertEqual(try XCTUnwrap(FileTreeSizer().size(at: root)).logicalBytes, 1_000_000)
+        let ledger = CloneLedger()
+        let first = try XCTUnwrap(FileTreeSizer(clones: ledger).size(at: root.appendingPathComponent("a"))).logicalBytes
+        let second = try XCTUnwrap(FileTreeSizer(clones: ledger).size(at: root.appendingPathComponent("b"))).logicalBytes
+        XCTAssertEqual(first + second, 1_000_000)
+        XCTAssertLessThan(AllocatedSize.allocatedBytes(root.path, excluding: []), 1_200_000)
+    }
 }
 
 final class CleanupHistoryTests: XCTestCase {

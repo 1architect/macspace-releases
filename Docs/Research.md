@@ -162,6 +162,31 @@ day from three code-signing clones (APFS clones, 6.2 GB) and two virtualization 
 Files macOS may delete by itself carry the APFS flag `EF_IS_PURGEABLE` (`getattrlist`, `ATTR_CMNEXT_EXT_FLAGS`; file attributes
 come before the extended ones in the buffer). System Data leaves them out, as Settings counts them as free space.
 
+### What no folder accounts for
+
+**Measured** (26B5101f, 2026-10-12, with Full Disk Access and the helper). The page's remainder ("Not identified") was 7.32 GB of
+42.9 GB. The Data volume used 131.7 GB (`df`); a `du -x` with Full Disk Access read about 120.4 GB, and the helper's root-only places
+about 1.4 GB more, so about 10 GB is read by no one. 68 folders refuse to open with "operation not permitted" even with Full Disk
+Access, and as root (System Integrity Protection): Apple Intelligence's model families in `/System/Library/AssetsV2`
+(`UAF_FM_GenerativeModels`, `UAF_FM_Visual`, `UAF_IF_Planner`…, whose manifests had been rewritten that morning, with Apple
+Intelligence on), databases in `/private/var/db` (`Spotlight`, `CoreDuet/Knowledge`, `oah`, `AppleIntelligencePlatform`…), and
+per-user service folders in `/private/var/folders`. No interface gives their size without listing them (`ATTR_DIR_ALLOCSIZE` is not
+returned). With the file system's own metadata they make the remainder, so the page names them ("Protected by macOS") and lists them,
+without sizes. Ruled out: local snapshots (none), files flagged purgeable (under 1 GB, mostly in places Settings counts elsewhere).
+
+**Measured, and fixed: the listed items exceeded Settings' figure.** With the models released, the items added up to 35.27 GB
+against 32.55 GB, so the page's remainder read zero and part of it had been hidden before. Two causes. Files reached by several hard
+links were counted once per path: 2.14 GB over the Data volume, 1.49 GB of it in `~/Library/Metadata/CoreSpotlight`. And
+CacheDelete counts 1.28 GB of apps' container caches as purgeable (Settings counts it as free space), which Apple's containers
+counted in full; their caches folders held 1.90 GB. With hard links counted once and each container leaving out the service's
+share of its caches, the items came to 32.67 GB against 33.00 GB. APFS clones shared between items and Settings' categories came to
+0.06 GB only.
+
+Two of MacSpace's own gaps were in the remainder too, about 0.85 GB, both fixed: Apple's containers under 100 MB (881 of them,
+0.73 GB) were summed with third-party ones into one "Smaller items" item, which the page leaves out as Applications; and the parts of
+`~/Library/Logs`, `~/Library/Messages`, `~/Library/Photos` and `/Library/Logs` that the entries for crash reports and Messages'
+attachments do not measure were measured by nothing (0.11 GB).
+
 **Measured, not System Data:** Time Machine's local snapshots do not exist on this Mac; the only snapshot is the sealed
 OS-update snapshot on the System volume (required, not purgeable). How much local snapshots hold elsewhere is **unmeasured**.
 
@@ -247,6 +272,37 @@ any other app is never taken. Their storage (Local Storage, IndexedDB, Service W
 cleans these while the app is closed and takes them off the app's own figure. `~/Library/Caches` in general is listed, not
 cleaned.
 
+### Third-party app caches (`~/Library/Caches`)
+
+**Measured** (26B5101f, 2026-10-12). Third-party folders held 0.88 GB, Apple's 0.39 GB. Owner lookups alone misjudge them: of the
+folders over 1 MB, `pip` and `org.swift.swiftpm` (used in the last 6 days) and `SharedImageCache`, `SiriEntityCache`, `PassKit` and
+`Animoji` (Apple's, without the `com.apple.` prefix) name no app; an app started from the Finder gets the system PATH only
+(`launchctl getenv PATH` is empty), so `pip`, `bun` or `brew` are not found there either.
+
+**Measured: what a file's dates say.** A read moves a file's access date only when that date is not newer than its last change: a
+file read 6 days after its last access kept it (two files; `cat`, `head`, Python), and re-reads seconds or minutes after a first read
+did not move it. So the access date is "first read after the last change", not "last read". A folder's own access date moves when
+anything lists it, MacSpace's scan included. The newest creation, write or access date of a cache's files, and the newest write of
+its folders, was within about a day of the owner app's last launch (`kMDItemLastUsedDate`) for 10 of 11 apps; the exception, a
+menu-bar utility, was opened 3.5 days after its cache last changed, so an app opened recently keeps its cache whatever the dates say.
+
+**What MacSpace does with it.** A cache unchanged for 30 days whose app was not opened for as long, or that is named after a bundle
+identifier no installed app has, is offered checked; the rest are offered unchecked, those in use saying that they come back and
+how much they wrote in the last two days (most of what a cleaner frees in `~/Library/Caches` is that: Firefox's 309 MB, at its
+own size cap, wrote 38.5 MB in two days); a cache whose app or tool is running is not listed; a folder whose owner cannot be named
+is never checked; media or documents with names people give (50 MB or more) keep a folder out; a name macOS has on
+its system volume (a framework, a daemon, an app) is Apple's. Nothing is opened to read this. Each cache is read again just before
+it goes, then the cleaner's checks apply (the owner not running, no file open), and the folder is renamed, then deleted. **Unverified:**
+how much this frees on a Mac used for years: here, 92.7 MB of third-party cache files were unchanged for 30 days, all Homebrew
+downloads.
+
+**Measured: Homebrew** (7.0.8). Plain `brew cleanup -n` failed with "Refusing to load cask … from untrusted tap": Homebrew 7 refuses
+casks from a tap the user has not trusted, MacSpace's own here; `--prune=all` skips that check and worked (138.2 MB, against 33.4 MB
+for the plain run when the tap is trusted). Plain `brew cleanup` also uninstalls formulae nothing needs (autoremove), and any brew
+command reports to Homebrew's analytics and fetches its package list when it has none. MacSpace runs it with
+`HOMEBREW_NO_AUTOREMOVE`, `HOMEBREW_NO_AUTO_UPDATE` and `HOMEBREW_NO_ANALYTICS`, from `/opt/homebrew/bin/brew` or
+`/usr/local/bin/brew`, and only when the package list is already there. A dry run takes under 1.5 s.
+
 ### Other accounts' folders in `/private/var/folders`
 
 **Measured** (26B5101f, 2026-10-12). `/private/var/folders` holds one folder per account that has ever run: the user's own, root's,
@@ -275,7 +331,9 @@ paths of their files with `EPERM`, even to their own user: `lsd`, `nsurlsessiond
 Memory-mapped files whose descriptor was closed are not listed this way. The cleaner checks, before each item, for an owner
 running as an app, as a process of the same name, or from inside the owner's app, and for any open file in the item. A refusal
 from a program under `/System` or `/usr` is ignored, because those programs do not use third-party apps' caches. Any other
-refusal, or a process list that cannot be read, keeps the item.
+refusal, or a process list that cannot be read, keeps the item. **Measured** (2026-10-12): a file deleted while a process holds it
+open has no path, and asking for it fails with `ENOENT` (two `opencode` processes held one). It is in no folder, so it is skipped;
+counted as a refusal, it had made every answer unknown and Clean deleted nothing.
 
 ### Document version history
 
@@ -298,8 +356,6 @@ user to "install the waiting update" for such files was wrong, and the row now s
 
 - **The prepared macOS update (10.7 GB):** installs at the next restart and macOS removes it then; nothing safe deletes it before.
 - **Unified log (2.48 GB):** `log erase --all` removes the diagnostic history. Not offered.
-- **Homebrew (2.9 GB):** most is the installed packages (401 MB Cellar, 37 MB downloads). `brew cleanup` removes only old versions
-  and downloads and stopped on an error in a third-party tap. **Inferred.**
 - **Swap, power log, symbolication cache:** in use or rotated by macOS. **Inferred.**
 - **Aerial wallpaper (575 MB):** one video, the one in use.
 - **Apps' own data** (messaging apps' group containers of several GB, cloud folders): guided manual cleanup, since the app owns it.

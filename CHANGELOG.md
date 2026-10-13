@@ -9,6 +9,11 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
+- System Data: **App caches**, under Free now, lists the folders in `~/Library/Caches`, judged by the files' own dates and their app's last launch, with no list of apps. Those unchanged for a month whose app has not been opened for as long, or is not installed, are checked; the others are unchecked, and those in use say that they come back and how much they wrote in the last two days. Not listed: Apple's, caches of apps that are open, and folders with media or documents named by people. Its own button, never Clean or automatic cleaning.
+- System Data: a **Homebrew** row runs Homebrew's own `brew cleanup`, with what it frees by Homebrew's dry run, and a second button that also deletes every download. Homebrew runs as you, without autoremove, auto-update or analytics.
+- System Data: a **Trash** row opens the Trash in the Finder and says whether the Finder empties items after 30 days by itself.
+- A group's page can let the user choose rows and act on the chosen ones (`Row.selection`): checkboxes, and the page's button titled with the chosen rows' total.
+- System Data: the block of what no folder accounts for is **Protected by macOS** once everything MacSpace can measure is measured, and opens a page naming the folders macOS keeps closed to every app (Apple Intelligence's models, system databases) and the file system's own metadata.
 - System Data: wallpaper and screen saver downloads that macOS left unfinished can be deleted from Free now, with the helper. Only the `CFNetworkDownload_*.tmp` files of idleassetsd that have not changed in 3 days go, so a download still in progress stays. Clean and automatic cleaning leave them out.
 - A folder button beside a row's (i) shows its files in the Finder, selected in one window. Modules list a row's files with `Row.paths`; System Data and Other System Files do.
 - System Data: a click on a block of the page's chart opens a page of the items it is made of, with the same page change and Back as a group. Modules list a block's items with `UsageSegment.items`.
@@ -36,6 +41,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- System Data: files reached by several hard links were counted once per path (1.49 GB too much for Spotlight's own store alone), and Apple's container caches that macOS counts as purgeable were counted in full; the listed items then added up to more than System Settings' figure, and hid that much of what no folder accounts for.
+- System Data: Apple's containers under 100 MB were left out of System Data with the third-party ones (0.73 GB on the development Mac), and the parts of `~/Library/Logs`, `~/Library/Messages`, `~/Library/Photos` and `/Library/Logs` beside crash reports and Messages' attachments were measured by nothing. Both went to the block of what no folder accounts for.
+- System Data: a file deleted while a process holds it open made the check for open files answer "unknown", so Clean deleted nothing.
+- System Data: a cache is renamed, then deleted, so an app that starts meanwhile never finds half of one.
 - Debloat: a policy that Screen Time or another profile sets is no longer shown as switched off (or partly switched off) by MacSpace. Its row says "Set by another profile", its switch cannot be flipped, and Disable all leaves it out. MacSpace no longer tries to undo settings that are not its own.
 - Apple Intelligence downloads are no longer cut short by MacSpace: while Apple Intelligence is on, MacSpace never asks macOS to delete system assets, through which its models download and update. Clean, automatic cleaning and the background retries leave them out, and System Data lists them as kept. Switching Apple Intelligence off on the Siri & Apple Intelligence page still releases its models.
 - Debloat: where the retired Apple Intelligence features switch is still applied, MacSpace removes its policies by itself (with the helper). They made macOS treat Apple Intelligence as restricted: System Settings hid it, said extensions were disabled by the organization, and its download stood still.

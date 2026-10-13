@@ -120,6 +120,46 @@ final class SystemDataTests: XCTestCase {
     /// What System Settings lists in another category is not System Data: an app inside a measured folder (an installer's helper
     /// app, a tool's own app) is taken off it, an item in a claimed place or in the home folder outside ~/Library (Documents) is left
     /// out whole, and the apps Spotlight finds are counted once even when they nest.
+    /// Containers too small to list are summed apart: Apple's are System Data, third-party ones are Settings' Applications. Summed
+    /// together, Apple's (0.73 GB on the development Mac) were left out with the others and ended up in "not identified".
+    func testSmallAppleContainersAreSummedApartFromThirdPartyOnes() throws {
+        try file("home/Library/Containers/com.apple.Notes/Data/a", mb: 2)
+        try file("home/Library/Group Containers/group.com.apple.notes/b", mb: 3)
+        try file("home/Library/Containers/com.example.App/Data/c", mb: 4)
+        let items = inspector().inspect().items
+        let apple = try XCTUnwrap(items.first { $0.id == "small:appContainer.managedByMacOS" })
+        XCTAssertEqual(Double(apple.bytes ?? 0), 5_000_000, accuracy: 300_000)
+        XCTAssertFalse(SystemDataScreenBuilder.countedByAnotherCategory(apple), "Apple's containers are System Data")
+        let thirdParty = try XCTUnwrap(items.first { $0.id == "small:appContainer" })
+        XCTAssertEqual(Double(thirdParty.bytes ?? 0), 4_000_000, accuracy: 300_000)
+        XCTAssertTrue(SystemDataScreenBuilder.countedByAnotherCategory(thirdParty), "third-party containers are Applications")
+    }
+
+    /// Folders another entry measures only in part are measured for the rest: apps' logs beside the crash reports, the Messages
+    /// database beside its attachments (Settings' Messages category).
+    func testFoldersMeasuredElsewhereOnlyInPartAreMeasuredForTheRest() throws {
+        try file("home/Library/Logs/DiagnosticReports/a.ips", mb: 60)
+        try file("home/Library/Logs/SomeApp/log.txt", mb: 70)
+        try file("home/Library/Messages/Attachments/x.jpg", mb: 80)
+        try file("home/Library/Messages/chat.db", mb: 55)
+        let items = inspector().inspect().items
+        XCTAssertEqual(try XCTUnwrap(items.first { $0.id == "library:Logs" }).paths.map { ($0 as NSString).lastPathComponent }, ["SomeApp"])
+        XCTAssertEqual(try XCTUnwrap(items.first { $0.id == "library:Messages" }).paths.map { ($0 as NSString).lastPathComponent }, ["chat.db"])
+    }
+
+    /// Only a folder closed even to root ("operation not permitted", System Integrity Protection) is protected; one only root can
+    /// open ("permission denied") is the helper's to measure.
+    func testOnlyFoldersClosedEvenToRootAreProtected() throws {
+        let caches = root.appendingPathComponent("home/Library/Caches")
+        let rootOnly = caches.appendingPathComponent("rootonly")
+        try fm.createDirectory(at: rootOnly, withIntermediateDirectories: true)
+        try fm.createDirectory(at: caches.appendingPathComponent("open"), withIntermediateDirectories: true)
+        try fm.setAttributes([.posixPermissions: 0], ofItemAtPath: rootOnly.path)
+        defer { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: rootOnly.path) }
+        XCTAssertEqual(SystemDataInspector.protectedFolders(under: [(caches.path, 1)]), [])
+        XCTAssertEqual(inspector(fullDiskAccess: false).inspect().protectedFolders, [], "without Full Disk Access a refusal proves nothing")
+    }
+
     func testWhatSettingsListsElsewhereIsNotSystemData() throws {
         try file("home/Library/Application Support/Tool/data.db", mb: 70)
         try file("home/Library/Application Support/Tool/1.2/Tool.app/Contents/MacOS/Tool", mb: 60)

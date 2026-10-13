@@ -32,6 +32,18 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(decoded.sdkVersion, SdkVersion.current)
     }
 
+    /// A group can let its page choose rows (`Selection`); a row saved before that existed decodes without one, and ids that hold
+    /// commas survive the trip through the action's parameter.
+    func testASelectionSurvivesTheTripAndOldRowsDecode() throws {
+        var group = Row.group(id: "g", title: "G", totalBytes: 3, rows: [Row(id: "a,b", title: "A"), Row(id: "c", title: "C")])
+        group.selection = Selection(action: Action(id: "act", title: "Free"), choices: ["a,b": 1, "c": 2], checked: ["c"])
+        let decoded = try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(group))
+        XCTAssertEqual(decoded, group)
+        XCTAssertNil(try JSONDecoder().decode(Row.self, from: Data(#"{"id":"r","title":"R"}"#.utf8)).selection)
+        XCTAssertEqual(Selection.ids(Selection.parameter(["a,b", "c"])), ["a,b", "c"])
+        XCTAssertEqual(Selection.ids(nil), [])
+    }
+
     func testActionResultHelpers() {
         XCTAssertEqual(ActionResult.succeeded("ok", restartRequired: true).restartRequired, true)
         XCTAssertFalse(ActionResult.failed("no").refresh)

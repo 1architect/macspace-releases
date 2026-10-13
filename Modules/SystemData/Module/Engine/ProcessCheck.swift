@@ -127,8 +127,9 @@ public struct ProcessCheck: Sendable {
             for fd in fds.prefix(Int(listed) / MemoryLayout<proc_fdinfo>.size) where fd.proc_fdtype == UInt32(PROX_FDTYPE_VNODE) {
                 var info = vnode_fdinfowithpath()
                 guard proc_pidfdinfo(pid, fd.proc_fd, PROC_PIDFDVNODEPATHINFO, &info, Int32(MemoryLayout<vnode_fdinfowithpath>.size)) > 0 else {
-                    // Closed, or the process ended, since the listing.
-                    if errno == EBADF || errno == ESRCH || isAppleSystemProgram(program) { continue }
+                    // Closed, or the process ended, since the listing. ENOENT: the file has no path any more (deleted while open), so
+                    // it is in no folder; two `opencode` processes held one on 26B5101f (2026-10-12), which made every answer unknown.
+                    if errno == EBADF || errno == ESRCH || errno == ENOENT || isAppleSystemProgram(program) { continue }
                     return nil
                 }
                 let path = withUnsafePointer(to: info.pvip.vip_path) { $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) } }

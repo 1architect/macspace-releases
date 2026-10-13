@@ -190,6 +190,15 @@ struct TitleLine: View {
 extension EnvironmentValues {
     /// Opens the page of a group row (`Row.children`), by its id.
     @Entry var openGroup: @MainActor (String) -> Void = { _ in }
+    /// On the page of a group that lets the user choose (`Row.selection`): which rows have a box and which are checked.
+    @Entry var rowChoice: RowChoice? = nil
+}
+
+/// The boxes of a group page that lets the user choose (`Row.selection`).
+struct RowChoice {
+    let choices: Set<String>
+    let checked: Set<String>
+    let toggle: @MainActor (String) -> Void
 }
 
 /// Joins the parts of a description into one text, a paragraph each (`InfoButton`).
@@ -246,6 +255,7 @@ struct RowView: View {
     let row: Row
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup
+    @Environment(\.rowChoice) private var rowChoice
 
     var body: some View {
         if !row.children.isEmpty { groupRow } else { itemRow }
@@ -270,6 +280,12 @@ struct RowView: View {
 
     private var itemRow: some View {
         HStack(spacing: 10) {
+            // On a page that lets the user choose, a box first; the row's title is its label.
+            if let choice = rowChoice, choice.choices.contains(row.id) {
+                Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
+                    .toggleStyle(.checkbox)
+                    .labelsHidden()
+            }
             // A short note after the title ("App container", "120 files"); the description and the steps are behind the (i).
             TitleLine(title: row.title, note: row.subtitle)
             // Its (i), where its files are, and its badge, close together.

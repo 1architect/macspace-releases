@@ -202,7 +202,7 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
 - Caches that apps rebuild: the caches in the per-user system cache folder (`/var/folders/…/C`)
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
   `~/Library/Application Support`. Only while the app or tool that owns them is closed, with its
-  helpers, and no program has a file open in them. `~/Library/Caches` is listed, not cleaned.
+  helpers, and no program has a file open in them.
 - Diagnostic and crash reports older than 7 days, in `/Library/Logs/DiagnosticReports` and
   `~/Library/Logs/DiagnosticReports`.
 - Unused system assets, Apple Intelligence models that macOS has released, and files apps marked
@@ -213,6 +213,13 @@ the MacSpace profile. [Security](SECURITY.md) has the full list.
   the local copies of cloud files. For the downloads, the helper deletes only the
   `CFNetworkDownload_*.tmp` files in `/var/folders/…/T/com.apple.idleassetsd` that have not
   changed in 3 days, so a download still in progress stays.
+- Only the caches you choose under **App caches**: folders in `~/Library/Caches`. Those checked for
+  you have not changed for a month, and their app has not been opened for as long or is not
+  installed. Caches in use are listed unchecked and say that they come back. Caches of apps that are
+  open, and folders that hold media or documents with names people give, are not offered.
+- Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
+  formulae, updating or sending Homebrew's analytics. MacSpace never empties the Trash: its row
+  opens it in the Finder.
 
 **What it never touches.** MacSpace measures how much space your documents, Photos, Mail and
 Messages take. It does not read what is in them and never deletes them. It lists large items such

@@ -64,6 +64,16 @@ public struct SystemDataModule: MacSpaceModule {
         case "purgeAssets":
             progress(ActionProgress(message: loc("Freeing space…")))
             return Self.purgeAssets(store: store)
+        case "cleanAppCaches":
+            progress(ActionProgress(message: loc("Freeing space…")))
+            return Self.cleanAppCaches(Selection.ids(request.parameters["ids"]), in: snapshot)
+        case "cleanHomebrew":
+            guard let plan = snapshot.homebrew else { return .failed(loc("Homebrew is not installed")) }
+            progress(ActionProgress(message: loc("Running Homebrew's cleanup…")))
+            return Self.cleanHomebrew(plan.brew, allDownloads: request.parameters["all"] == "true")
+        case "openTrash":
+            NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "cleanAll":
             let cleaned = Self.cleanSafe(snapshot, store: store, progress: progress)
             return .succeeded(Self.freedMessage(cleaned.freed), details: cleaned.details, freedBytes: cleaned.freed)
@@ -110,6 +120,58 @@ public struct SystemDataModule: MacSpaceModule {
             return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
         }
         return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
+    }
+
+    /// Deletes the chosen app caches. Each is read again first (`AppCaches.measure`): one that looks like data now stays. Then the cleaner's own checks, as for every cache: its app or tool not running, nothing open in
+    /// it, renamed then deleted.
+    static func cleanAppCaches(_ ids: [String], in snapshot: SystemDataSnapshot, now: Date = Date()) -> ActionResult {
+        let chosen = snapshot.report.appCaches.filter { ids.contains($0.id) }
+        guard !chosen.isEmpty else { return .failed(loc("Already gone")) }
+        var details: [String] = []
+        var items: [SystemDataItem] = []
+        for var cache in chosen {
+            if let dates = AppCaches.measure(cache.path, now: now) {
+                cache.lastChange = dates.lastChange
+                cache.recentBytes = dates.recentBytes
+                cache.dataLikeBytes = dates.dataLikeBytes
+            }
+            // Read again: one that now looks like data stays. One in use may go: the user chose it, and the page said it comes back.
+            guard AppCaches.outcome(cache, now: now) != .heldBack else {
+                details.append("Skipped: \(cache.id). It now holds media or documents.")
+                continue
+            }
+            // Its owner by folder name (a tool, a bundle identifier) and by the app's own name, so the running check finds either.
+            var owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name]
+            if cache.title != owners[0] { owners.append(cache.title) }
+            items.append(SystemDataItem(id: cache.id, title: cache.title, kind: .appCache, paths: [cache.path], bytes: cache.bytes, readable: true,
+                                        owners: owners, inUse: false,
+                                        cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil), notes: []))
+        }
+        guard !items.isEmpty else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
+        let caches = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches").standardizedFileURL.path
+        let report = SystemDataCleaner().clean(items, allowedRoots: [caches])
+        details += report.results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
+        let freed = measuredFreed(report.freeBytesBefore, report.freeBytesAfter)
+        if !report.results.contains(where: \.deleted) {
+            return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
+        }
+        return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
+    }
+
+    /// Runs Homebrew's cleanup (`HomebrewCleanup`), unless Homebrew is busy: a cleanup then would delete what an install is unpacking.
+    static func cleanHomebrew(_ brew: String, allDownloads: Bool) -> ActionResult {
+        guard let processes = ProcessCheck.live.processes() else { return .failed(loc("Couldn't check which programs are running, so nothing was deleted.")) }
+        if HomebrewCleanup.isRunning(brew, processes: processes) { return .failed(loc("Homebrew is running; try again when it is done.")) }
+        let before = DataVolume.freeBytes()
+        let run = HomebrewCleanup.clean(brew, allDownloads: allDownloads)
+        let freed = measuredFreed(before, DataVolume.settledFreeBytes())
+        var details = ["brew cleanup\(allDownloads ? " --prune=all" : "") with HOMEBREW_NO_AUTOREMOVE, HOMEBREW_NO_AUTO_UPDATE and HOMEBREW_NO_ANALYTICS."]
+        if let reported = run.freed { details.append("Homebrew reported \(ByteFormat.string(reported)).") }
+        guard run.succeeded else {
+            if let error = run.error { details.append(error) }
+            return ActionResult(outcome: .failed, message: loc("Homebrew's cleanup stopped"), details: details, refresh: true)
+        }
+        return .succeeded(freedMessage(freed ?? run.freed), details: details, freedBytes: freed)
     }
 
     static func cleanReports(_ plan: CleanupPlan) -> ActionResult {

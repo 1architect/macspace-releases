@@ -24,6 +24,10 @@ struct SystemDataSnapshot: Sendable {
     var helperError: String?
     /// The disk as System Settings divides it; System Data's total is its remainder. nil when it could not be read.
     var settings: SettingsStorage?
+    /// What Homebrew's cleanup would free, both ways (`HomebrewCleanup`); nil when Homebrew is not installed.
+    var homebrew: HomebrewCleanup.Plan?
+    /// Finder's "Remove items from the Trash after 30 days" (`FXRemoveOldTrashItems`): on, off, or nil when unreadable.
+    var trashEmptiesItself: Bool?
 }
 
 /// Measures the root-only locations through the helper and folds the sizes into the report.
@@ -129,6 +133,10 @@ actor SystemDataStore {
     }
 
     static func liveSnapshot() -> SystemDataSnapshot {
+        // Homebrew's dry runs take a second or two; they run while the disk is read.
+        let homebrew = HomebrewBox()
+        let brewDone = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .utility).async { homebrew.plan = HomebrewCleanup.plan(); brewDone.signal() }
         let report = SystemDataInspector().inspect()
         let services = livePurgeableServices()
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -140,6 +148,9 @@ actor SystemDataStore {
         snapshot.purgeableServices = services
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
         snapshot.settings = SettingsStorageMeter().measure()
+        snapshot.trashEmptiesItself = CFPreferencesCopyAppValue("FXRemoveOldTrashItems" as CFString, "com.apple.finder" as CFString) as? Bool ?? false
+        brewDone.wait()
+        snapshot.homebrew = homebrew.plan
         // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
         #if DEBUG
         if ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1", let data = try? JSONEncoder().encode(report) {
@@ -164,4 +175,9 @@ actor SystemDataStore {
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
         return all?[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
     }
+}
+
+/// Homebrew's plan, handed from the thread that asks Homebrew to the scan's.
+private final class HomebrewBox: @unchecked Sendable {
+    var plan: HomebrewCleanup.Plan?
 }

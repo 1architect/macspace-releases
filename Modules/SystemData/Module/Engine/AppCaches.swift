@@ -1,0 +1,193 @@
+import CoreServices
+import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
+
+/// A third-party app's cache folder in `~/Library/Caches`, with what decides whether it is in use: the file system's dates and the
+/// owner app's last launch. Nothing in it is opened to read this. Measured on 26B5101f (2026-10-12): for 10 of 11 apps, a cache's
+/// last change was within about a day of the app's last launch, so a cache that has not changed for weeks is one nothing uses.
+public struct AppCache: Codable, Equatable, Sendable {
+    public enum Owner: Codable, Equatable, Sendable {
+        /// An installed app, with its name and when it was last opened (nil when Spotlight does not say).
+        case app(name: String, lastOpened: Date?)
+        /// Named after a bundle identifier that no installed app has: the app is gone, or on a disk that is not connected.
+        case notInstalled
+        /// A plain name (a command-line tool, a plug-in, a framework): who uses it cannot be told.
+        case unknown
+    }
+
+    public var id: String
+    /// The folder's own name.
+    public var name: String
+    public var path: String
+    public var bytes: UInt64
+    /// The newest date anything in the folder was created, written or first read after a change. A file's access date moves only on
+    /// the first read after a change (measured on 26B5101f), so this is not the last read: an app that only reads its cache does not
+    /// move it, which is why the owner's last launch is asked too.
+    public var lastChange: Date
+    /// Bytes created in the last two days: a cache that refills by itself comes back soon after it is deleted.
+    public var recentBytes: UInt64
+    /// Media and documents with names people give (`Episode 12.mp3`), which an app may keep in its cache as data (offline downloads).
+    public var dataLikeBytes: UInt64
+    public var owner: Owner
+    /// Its app or tool is running now (as the cleaner checks it): it cannot go until it quits, so it is not listed.
+    public var ownerRunning = false
+
+    /// The name to show: the app's when it is installed, else the folder's.
+    public var title: String {
+        if case let .app(name, _) = owner { return name }
+        return name
+    }
+}
+
+public enum AppCacheOutcome: Equatable, Sendable {
+    /// Checked when the page opens: unchanged for a month and its app not opened for as long (or not installed).
+    case suggested
+    /// Listed, not checked: old enough, but who uses it cannot be told, or not old enough to suggest.
+    case offered
+    /// In use or recently used: listed, not checked, saying it comes back as the app is used (and how much it wrote lately).
+    case comesBack
+    /// Holds what looks like data: never listed.
+    case heldBack
+}
+
+public enum AppCaches {
+    /// Unchanged this long, a cache is not in use; its app not opened this long, it is not about to be.
+    static let unusedDays = 30.0
+    /// Changed within this, a cache is in use and not even offered.
+    static let recentDays = 7.0
+    /// From this much data-like content, a folder is never offered.
+    static let dataLikeLimit: UInt64 = 50_000_000
+    static let mediaAndDocumentExtensions: Set<String> = ["mp3", "m4a", "m4b", "aac", "flac", "wav", "aif", "aiff", "ogg", "opus", "mp4", "m4v",
+                                                          "mov", "mkv", "avi", "webm", "pdf", "doc", "docx", "pages", "key", "numbers", "xls",
+                                                          "xlsx", "ppt", "pptx", "rtf", "epub"]
+
+    public static func outcome(_ cache: AppCache, now: Date = Date()) -> AppCacheOutcome {
+        if cache.dataLikeBytes >= dataLikeLimit { return .heldBack }
+        let unchanged = now.timeIntervalSince(cache.lastChange) / 86_400
+        if unchanged < recentDays { return .comesBack }
+        switch cache.owner {
+        case let .app(_, lastOpened):
+            guard let lastOpened else { return unchanged >= unusedDays ? .offered : .comesBack }
+            // An app opened this month may use its cache only by reading it, which leaves no date behind (Middle, 2026-10-12).
+            if now.timeIntervalSince(lastOpened) / 86_400 < unusedDays { return .comesBack }
+            return unchanged >= unusedDays ? .suggested : .offered
+        case .notInstalled:
+            return unchanged >= unusedDays ? .suggested : .offered
+        case .unknown:
+            return .offered
+        }
+    }
+
+    /// Days since the cache last changed, rounded down.
+    public static func unchangedDays(_ cache: AppCache, now: Date = Date()) -> Int {
+        max(0, Int(now.timeIntervalSince(cache.lastChange) / 86_400))
+    }
+
+    // MARK: Reading the Mac
+
+    /// The folder's dates and sizes, from the file system's records alone (`fts`, which reads no file's content).
+    static func measure(_ path: String, now: Date = Date()) -> (lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64)? {
+        guard let copy = strdup(path) else { return nil }
+        defer { free(copy) }
+        var paths: [UnsafeMutablePointer<CChar>?] = [copy, nil]
+        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return nil }
+        defer { fts_close(fts) }
+        let recent = now.timeIntervalSince1970 - 2 * 86_400
+        var newest: TimeInterval = 0
+        var recentBytes: UInt64 = 0
+        var dataLike: UInt64 = 0
+        func seconds(_ time: timespec) -> TimeInterval { TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9 }
+        while let entry = fts_read(fts) {
+            let info = Int32(entry.pointee.fts_info)
+            guard let stat = entry.pointee.fts_statp?.pointee else { continue }
+            // A folder's own access date moves whenever something lists it (this scan too), so only its writes count.
+            if info == FTS_D {
+                newest = max(newest, seconds(stat.st_mtimespec), seconds(stat.st_birthtimespec))
+                continue
+            }
+            guard info == FTS_F else { continue }
+            let born = seconds(stat.st_birthtimespec)
+            newest = max(newest, born, seconds(stat.st_mtimespec), seconds(stat.st_atimespec))
+            let allocated = UInt64(max(stat.st_blocks, 0)) * 512
+            if born >= recent { recentBytes += allocated }
+            if let path = entry.pointee.fts_path, isDataLike((String(cString: path) as NSString).lastPathComponent) { dataLike += allocated }
+        }
+        return (Date(timeIntervalSince1970: newest), recentBytes, dataLike)
+    }
+
+    /// A media file or document with a name a person gave it ("Episode 12.mp3"), not a key or a hash ("a3f9…e1.mp4").
+    static func isDataLike(_ fileName: String) -> Bool {
+        let ext = (fileName as NSString).pathExtension.lowercased()
+        guard mediaAndDocumentExtensions.contains(ext) else { return false }
+        let stem = (fileName as NSString).deletingPathExtension
+        let keyLike = stem.count >= 16 && stem.allSatisfy { $0.isHexDigit || $0 == "-" || $0 == "_" }
+        return !keyLike
+    }
+
+    /// Who uses the folder: an app by bundle identifier (and when it was last opened), an app by name in the Applications folders, a
+    /// bundle identifier no installed app has, or no one that can be named.
+    static func owner(of name: String) -> AppCache.Owner {
+        #if canImport(AppKit)
+        if looksLikeBundleIdentifier(name) {
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: name) else { return .notInstalled }
+            return .app(name: FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: ""), lastOpened: lastOpened(url.path))
+        }
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        for folder in ["/Applications", home + "/Applications"] {
+            let path = "\(folder)/\(name).app"
+            if FileManager.default.fileExists(atPath: path) { return .app(name: name, lastOpened: lastOpened(path)) }
+        }
+        #endif
+        return .unknown
+    }
+
+    /// `com.example.App`: two dots or more, no spaces.
+    static func looksLikeBundleIdentifier(_ name: String) -> Bool {
+        name.split(separator: ".").count >= 3 && !name.contains(" ")
+    }
+
+    /// When the app was last opened, as Spotlight records it; nil when it does not say (an app started from Xcode has none).
+    static func lastOpened(_ appPath: String) -> Date? {
+        guard let item = MDItemCreate(kCFAllocatorDefault, appPath as CFString) else { return nil }
+        return MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
+    }
+
+    /// Whether macOS itself has something by this name on the sealed system volume (a framework, a daemon, an app): such a cache is
+    /// Apple's even without the `com.apple.` prefix (PassKit, GameKit, GeoServices and CloudKit on 26B5101f). A name found nowhere is
+    /// not proved third-party; it only falls back to the other rules. Names are compared exactly: the disk ignores case, and `pip`
+    /// (Python's installer) would otherwise match `PIP.framework` (Picture in Picture).
+    static func isApple(_ name: String, root: String = "") -> Bool {
+        guard !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else { return false }
+        return systemNames(root: root).contains(name)
+    }
+
+    /// The names macOS has in the places above, read once.
+    static func systemNames(root: String) -> Set<String> {
+        if root.isEmpty, let cached = SystemNames.shared.names { return cached }
+        var names = Set<String>()
+        let places: [(folder: String, suffix: String)] = [("/System/Library/Frameworks", ".framework"), ("/System/Library/PrivateFrameworks", ".framework"),
+                                                          ("/usr/libexec", ""), ("/usr/sbin", ""), ("/System/Library/CoreServices", ".app"),
+                                                          ("/System/Applications", ".app")]
+        for place in places {
+            for entry in (try? FileManager.default.contentsOfDirectory(atPath: root + place.folder)) ?? [] {
+                if place.suffix.isEmpty { names.insert(entry) }
+                else if entry.hasSuffix(place.suffix) { names.insert(String(entry.dropLast(place.suffix.count))) }
+            }
+        }
+        if root.isEmpty { SystemNames.shared.names = names }
+        return names
+    }
+}
+
+/// The sealed system volume's names, which change only with macOS itself.
+private final class SystemNames: @unchecked Sendable {
+    static let shared = SystemNames()
+    private let lock = NSLock()
+    private var stored: Set<String>?
+    var names: Set<String>? {
+        get { lock.lock(); defer { lock.unlock() }; return stored }
+        set { lock.lock(); stored = newValue; lock.unlock() }
+    }
+}

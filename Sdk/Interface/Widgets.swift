@@ -232,9 +232,12 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// Those that no longer exist are left out, and no button is drawn when none is left. Only list places the user can open: not a
     /// folder macOS keeps closed even with Full Disk Access, nor a row with no files of its own (a setting, an account).
     public var paths: [String]
+    /// On a group: its page lets the user choose among its rows and act on the chosen ones (`Selection`).
+    public var selection: Selection?
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, symbol: String? = nil,
-                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [], paths: [String] = []) {
+                detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [], paths: [String] = [],
+                selection: Selection? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -246,11 +249,12 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.actions = actions
         self.children = children
         self.paths = paths
+        self.selection = selection
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children, paths }
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, badge, symbol, detail, steps, actions, children, paths, selection }
 
-    /// `children` and `paths` may be missing (a screen written before they existed).
+    /// `children`, `paths` and `selection` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -264,6 +268,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         actions = try container.decodeIfPresent([Action].self, forKey: .actions) ?? []
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
+        selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
     }
 
     /// A group of `rows` as one row: its count under the title and its total on the right.
@@ -271,6 +276,30 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         Row(id: id, title: title, subtitle: rows.count == 1 ? String(localized: "1 item") : String(localized: "\(rows.count) items"),
             trailing: ByteCountFormatter.string(fromByteCount: Int64(clamping: totalBytes), countStyle: .file), symbol: symbol, detail: detail,
             children: rows)
+    }
+}
+
+/// A group whose page lets the user choose rows and act on the chosen ones (`Row.selection`). Each of the group's rows named in
+/// `choices` gets a checkbox, checked when the page opens if its id is in `checked`; rows not named have none. While at least one is
+/// checked, the page's bottom button is `action`, titled with its title and the checked rows' total ("Free 120 MB"), and runs with
+/// the checked ids, one per line, in the parameter `ids` (ids can hold commas, a folder's name for one). A choice is the user's until the group's page closes.
+public struct Selection: Codable, Equatable, Sendable {
+    public var action: Action
+    /// The rows that can be chosen, by id, with the size each adds to the button's total.
+    public var choices: [String: UInt64]
+    /// The rows checked when the page opens: what the module suggests.
+    public var checked: [String]
+
+    public init(action: Action, choices: [String: UInt64], checked: [String] = []) {
+        self.action = action
+        self.choices = choices
+        self.checked = checked
+    }
+
+    /// The `ids` parameter for these ids, and back.
+    public static func parameter(_ ids: [String]) -> String { ids.joined(separator: "\n") }
+    public static func ids(_ parameter: String?) -> [String] {
+        (parameter ?? "").split(separator: "\n").map(String.init).filter { !$0.isEmpty }
     }
 }
 

@@ -31,11 +31,33 @@ public final class CloneLedger: @unchecked Sendable {
 
     public init() {}
 
+    private var links = Set<UInt64>()
+
     /// True the first time a family is seen.
     func claim(_ family: UInt64) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         return seen.insert(family).inserted
+    }
+
+    /// True the first time a hard-linked file (by its inode) is seen: its blocks are stored once however many paths reach it
+    /// (`HardLinks`).
+    func claimLink(_ inode: UInt64) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return links.insert(inode).inserted
+    }
+}
+
+/// A file with more than one hard link is stored once. Counted once per path, `~/Library/Metadata/CoreSpotlight` alone came to
+/// 1.49 GB more than it takes (measured 2026-10-12, 2.14 GB over the whole Data volume), which put System Data's listed items above
+/// System Settings' figure.
+enum HardLinks {
+    /// The file's inode when it has more than one link; nil for an ordinary file (one link), which needs no bookkeeping.
+    static func inode(_ path: String) -> UInt64? {
+        var info = stat()
+        guard lstat(path, &info) == 0, info.st_nlink > 1 else { return nil }
+        return UInt64(info.st_ino)
     }
 }
 
@@ -86,7 +108,8 @@ public struct FileTreeSizer: Sendable {
             .fileAllocatedSizeKey,
             .totalFileSizeKey,
             .totalFileAllocatedSizeKey,
-            .volumeIdentifierKey
+            .volumeIdentifierKey,
+            .linkCountKey
         ]
     }
 
@@ -127,6 +150,8 @@ public struct FileTreeSizer: Sendable {
             var allocated: UInt64 = 0
             var purgeable: UInt64 = 0
             var sawAllocated = false
+            // Hard-linked files met in this tree; across trees, the ledger's.
+            let links = clones ?? CloneLedger()
 
             for case let item as URL in enumerator {
                 // One pool per file: a tree of a million files otherwise keeps every URL and attribute it touched until the end.
@@ -142,6 +167,8 @@ public struct FileTreeSizer: Sendable {
                     }
 
                     guard resource.isRegularFile == true else { return }
+                    // A file reached by several hard links counts at its first path only.
+                    if (resource.linkCount ?? 1) > 1, let inode = HardLinks.inode(item.path), !links.claimLink(inode) { return }
                     logical += logicalSize(from: resource) ?? 0
                     if var value = allocatedSize(from: resource) {
                         if countsPurgeable || clones != nil, value > 0, let extended = Self.extendedAttributes(item.path) {

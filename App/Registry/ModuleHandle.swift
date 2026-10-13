@@ -33,7 +33,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isCleaning = false
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
-    @Published public var groupPath: [String] = []
+    @Published public var groupPath: [String] = [] {
+        // What was chosen on a page is forgotten once the page closes, however it closed (Back, Home, a refresh that dropped it).
+        didSet { if chosen.keys.contains(where: { !groupPath.contains($0) }) { chosen = chosen.filter { groupPath.contains($0.key) } } }
+    }
     /// The group page on top, if any.
     public var openGroup: String? { groupPath.last }
 
@@ -44,6 +47,22 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Back from the group page on top, to the one under it or to the module's page.
     public func popGroup() {
         if !groupPath.isEmpty { groupPath.removeLast() }
+    }
+
+    /// What the user checked on group pages that let them choose (`Row.selection`), by group id; nil until a box is clicked, when
+    /// the module's suggestion (`Selection.checked`) stands.
+    @Published public private(set) var chosen: [String: Set<String>] = [:]
+
+    /// The rows checked on a group's page: the user's choice, or the module's suggestion, among the rows that can still be chosen.
+    public func checked(_ group: Row) -> Set<String> {
+        guard let selection = group.selection else { return [] }
+        return (chosen[group.id] ?? Set(selection.checked)).intersection(selection.choices.keys)
+    }
+
+    public func toggle(_ id: String, in group: Row) {
+        var ids = checked(group)
+        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        chosen[group.id] = ids
     }
 
     private var module: (any MacSpaceModule)?

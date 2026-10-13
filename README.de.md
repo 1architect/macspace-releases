@@ -215,7 +215,7 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
 - Caches, die Apps neu aufbauen: die Caches im Systemcache-Ordner pro Benutzer
   (`/var/folders/…/C`) und die Web-Caches (`Cache`, `Code Cache`, `GPUCache`), die Chromium- und
   Electron-Apps in `~/Library/Application Support` ablegen. Nur solange die App oder das Werkzeug, dem
-  sie gehören, samt Hilfsprozessen geschlossen ist und kein Programm darin eine Datei geöffnet hat. `~/Library/Caches` wird aufgelistet, nicht bereinigt.
+  sie gehören, samt Hilfsprozessen geschlossen ist und kein Programm darin eine Datei geöffnet hat.
 - Diagnose- und Absturzberichte, die älter als 7 Tage sind, in `/Library/Logs/DiagnosticReports`
   und `~/Library/Logs/DiagnosticReports`.
 - Ungenutzte Systemressourcen, Apple Intelligence-Modelle, die macOS freigegeben hat, und
@@ -228,6 +228,14 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   Cloud-Dateien. Bei den Downloads löscht das Hilfsprogramm nur die Dateien
   `CFNetworkDownload_*.tmp` in `/var/folders/…/T/com.apple.idleassetsd`, die sich seit 3 Tagen
   nicht geändert haben; ein laufender Download bleibt.
+- Nur die Caches, die du unter **App-Caches** auswählst: Ordner in `~/Library/Caches`.
+  Vorausgewählt sind die, die seit einem Monat unverändert sind und deren App so lange nicht
+  geöffnet wurde oder nicht installiert ist. Genutzte Caches stehen ohne Häkchen da und sagen, dass
+  sie zurückkommen. Caches geöffneter Apps und Ordner mit Medien oder Dokumenten, die Menschen
+  benannt haben, werden nicht angeboten.
+- Nur über die Zeile **Homebrew**: das eigene `brew cleanup` von Homebrew, als du ausgeführt, ohne
+  Formeln zu deinstallieren, zu aktualisieren oder Homebrews Statistiken zu senden. MacSpace leert
+  den Papierkorb nie: seine Zeile öffnet ihn im Finder.
 
 **Was es nie antastet.** MacSpace misst, wie viel Speicher deine Dokumente, Fotos, Mail und
 Nachrichten belegen. Es liest nicht, was darin steht, und löscht sie nie. Es listet große Objekte

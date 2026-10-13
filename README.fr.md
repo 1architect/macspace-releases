@@ -214,7 +214,7 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
 - Les caches que les apps recréent : ceux du dossier de cache système de chaque utilisateur
   (`/var/folders/…/C`) et les caches web (`Cache`, `Code Cache`, `GPUCache`) que les apps Chromium
   et Electron gardent dans `~/Library/Application Support`. Seulement quand l’app ou l’outil qui les
-  possède est fermé, avec ses processus auxiliaires, et qu’aucun programme n’y a de fichier ouvert. `~/Library/Caches` est listé, pas nettoyé.
+  possède est fermé, avec ses processus auxiliaires, et qu’aucun programme n’y a de fichier ouvert.
 - Les rapports de diagnostic et de plantage de plus de 7 jours, dans
   `/Library/Logs/DiagnosticReports` et `~/Library/Logs/DiagnosticReports`.
 - Les ressources système inutilisées, les modèles Apple Intelligence que macOS a libérés, et les
@@ -226,6 +226,14 @@ profil MacSpace. [Sécurité](SECURITY.fr.md) donne la liste complète.
   cloud. Pour ces téléchargements, l’assistant ne supprime que les fichiers `CFNetworkDownload_*.tmp`
   de `/var/folders/…/T/com.apple.idleassetsd` inchangés depuis 3 jours : un téléchargement en cours
   reste.
+- Seulement les caches que vous choisissez dans **Caches d’apps** : des dossiers de
+  `~/Library/Caches`. Ceux cochés pour vous sont inchangés depuis un mois, et leur app n’a pas été
+  ouverte depuis aussi longtemps ou n’est pas installée. Les caches utilisés sont listés non cochés
+  et disent qu’ils reviennent. Les caches des apps ouvertes, et les dossiers qui contiennent des
+  médias ou des documents nommés par des personnes, ne sont pas proposés.
+- Seulement depuis la ligne **Homebrew** : le `brew cleanup` de Homebrew, lancé en votre nom, sans
+  désinstaller de formules, mettre à jour ni envoyer les statistiques de Homebrew. MacSpace ne vide
+  jamais la corbeille : sa ligne l’ouvre dans le Finder.
 
 **Ce qu’il ne touche jamais.** MacSpace mesure l’espace que prennent vos documents, Photos, Mail et
 Messages. Il ne lit pas leur contenu et ne les supprime jamais. Il liste les gros éléments, comme

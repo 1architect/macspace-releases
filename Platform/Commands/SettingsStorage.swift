@@ -278,7 +278,7 @@ public struct SettingsStorageMeter {
     }
 }
 
-/// Allocated sizes of folder trees, as `du` counts them: each file's blocks once per path, folders still only in the cloud skipped
+/// Allocated sizes of folder trees, as `du` counts them: each file's blocks once (a hard-linked file at its first path), folders still only in the cloud skipped
 /// (listing them would make the cloud app fetch them).
 public enum AllocatedSize {
     public static func allocatedBytes(_ root: String, excluding excluded: Set<String>) -> UInt64 {
@@ -288,6 +288,8 @@ public enum AllocatedSize {
         guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return 0 }
         defer { fts_close(fts) }
         var total: UInt64 = 0
+        // A file reached by several hard links counts once (`HardLinks`).
+        var links = Set<UInt64>()
         while let entry = fts_read(fts) {
             let info = Int32(entry.pointee.fts_info)
             if info == FTS_D {
@@ -298,6 +300,7 @@ public enum AllocatedSize {
             }
             guard info == FTS_F || info == FTS_SL || info == FTS_DEFAULT, let stat = entry.pointee.fts_statp else { continue }
             if let path = entry.pointee.fts_path, excluded.contains(String(cString: path)) { continue }
+            if stat.pointee.st_nlink > 1, info == FTS_F, !links.insert(UInt64(stat.pointee.st_ino)).inserted { continue }
             total += UInt64(max(stat.pointee.st_blocks, 0)) * 512
         }
         return total

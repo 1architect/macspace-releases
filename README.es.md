@@ -209,7 +209,7 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
 - Cachés que las apps vuelven a crear: las cachés de la carpeta de caché del sistema de cada
   usuario (`/var/folders/…/C`) y las cachés web (`Cache`, `Code Cache`, `GPUCache`) que las apps
   de Chromium y Electron guardan en `~/Library/Application Support`. Solo mientras la app o la herramienta a la
-  que pertenecen está cerrada, con sus procesos auxiliares, y ningún programa tiene un archivo abierto en ellas. `~/Library/Caches` se muestra, pero no se limpia.
+  que pertenecen está cerrada, con sus procesos auxiliares, y ningún programa tiene un archivo abierto en ellas.
 - Informes de diagnóstico y de fallos con más de 7 días, en `/Library/Logs/DiagnosticReports` y
   `~/Library/Logs/DiagnosticReports`.
 - Recursos del sistema sin usar, modelos de Apple Intelligence que macOS ha liberado y archivos
@@ -222,6 +222,13 @@ interruptores de Debloat que requieren un administrador y eliminar el perfil de 
   descargas, el asistente elimina solo los archivos `CFNetworkDownload_*.tmp` de
   `/var/folders/…/T/com.apple.idleassetsd` que no han cambiado en 3 días, así que una descarga en
   curso se queda.
+- Solo las cachés que eliges en **Cachés de apps**: carpetas de `~/Library/Caches`. Las que vienen
+  marcadas no cambian desde hace un mes, y su app no se abre desde hace tanto o no está instalada.
+  Las cachés en uso aparecen sin marcar y avisan de que vuelven. No se ofrecen las cachés de apps
+  abiertas ni las carpetas con archivos multimedia o documentos con nombres que les dan las personas.
+- Solo desde la fila **Homebrew**: el `brew cleanup` del propio Homebrew, ejecutado como tú, sin
+  desinstalar fórmulas, actualizar ni enviar las estadísticas de Homebrew. MacSpace nunca vacía la
+  Papelera: su fila la abre en el Finder.
 
 **Qué no toca nunca.** MacSpace mide cuánto espacio ocupan tus documentos, Fotos, Mail y
 Mensajes. No lee lo que contienen y nunca los elimina. Muestra elementos grandes, como descargas

@@ -100,6 +100,9 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     public var elsewhereBytes: UInt64? = nil
     /// Steps the user takes in the owning app when MacSpace cannot clean it.
     public var guide: ManualCleanupGuide? = nil
+    /// For a container: what its caches folder holds (`Data/Library/Caches`, or `Library/Caches` in a group container), part of what
+    /// macOS's purge counts as purgeable (`SystemDataReport.containerCachesBytes`).
+    public var cachesBytes: UInt64? = nil
 }
 
 public struct SystemDataReport: Codable, Equatable, Sendable {
@@ -120,6 +123,14 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     /// Places inside folders only root can list, so whether they exist is known only once the helper measures them; each becomes an
     /// item then, taken off the item that holds it (`RootMeasurements`).
     public var rootOnly: [RootOnlyPlace] = []
+    /// Folders macOS keeps closed to every app, even with Full Disk Access and as root (`SystemDataInspector.protectedFolders`). What is
+    /// in them is part of what System Settings counts and no folder MacSpace lists accounts for. Empty without Full Disk Access.
+    public var protectedFolders: [String] = []
+    /// Third-party apps' cache folders in `~/Library/Caches`, every size, with what tells whether they are in use (`AppCaches`).
+    public var appCaches: [AppCache] = []
+    /// What every container's caches folder holds, Apple's and third-party; macOS's purge of app container caches counts a part of
+    /// it as purgeable, which System Settings counts as free space.
+    public var containerCachesBytes: UInt64 = 0
 }
 
 /// A place the scan cannot see into, named in advance; see `SystemDataReport.rootOnly`.
@@ -213,6 +224,12 @@ public struct SystemDataLocations: Sendable {
     static let databaseFoldersCountedElsewhere: Set<String> = ["diagnostics", "uuidtext", "powerlog"]
     /// `/Library` folders other entries measure (the Command Line Tools, the diagnostic reports).
     static let sharedFoldersCountedElsewhere: Set<String> = ["Developer", "Logs"]
+    /// Of the folders above, those another entry or category measures only in part: what they name inside is measured elsewhere,
+    /// the rest is System Data and is measured on its own. Left out until 2026-10-12, it went to "not identified" (0.11 GB on the
+    /// development Mac): apps' logs, the Messages database (Settings' Messages category is only its attachments), Photos' own data
+    /// in `~/Library` (Settings' Photos category is the photo library).
+    static let libraryFoldersPartlyElsewhere: [String: Set<String>] = ["Logs": ["DiagnosticReports"], "Messages": ["Attachments"], "Photos": []]
+    static let sharedFoldersPartlyElsewhere: [String: Set<String>] = ["Logs": ["DiagnosticReports"]]
 
     public static func live() -> SystemDataLocations {
         var buffer = [CChar](repeating: 0, count: Int(PATH_MAX))
@@ -305,6 +322,9 @@ public struct SystemDataInspector {
     /// The processes that are not apps, for the items deleted while their owner is closed; injectable for tests.
     public var processCheck: ProcessCheck = .live
 
+    /// Who uses an app cache folder, by its owner's name (`AppCaches.owner`); injectable for tests.
+    public var appCacheOwner: @Sendable (String) -> AppCache.Owner = { AppCaches.owner(of: $0) }
+
     /// Folders in `/Users` that are not home folders.
     static let usersFolderEntries: Set<String> = ["Shared", "Guest", "Deleted Users", ".localized"]
 
@@ -328,7 +348,10 @@ public struct SystemDataInspector {
         var unreadable: [String] = []
 
         // Listed children (containers, caches) that cannot be read are reported once, as their parent folder.
-        var smallBytes: [SystemDataKind: UInt64] = [:]
+        // Entries too small to list are summed per kind. Apple's containers are summed apart from third-party ones: Settings counts
+        // Apple's in System Data and the others under Applications (`countedByAnotherCategory`), and 881 small Apple containers held
+        // 0.73 GB on the development Mac (2026-10-12) that were left out with the third-party ones.
+        var smallBytes: [SmallKey: UInt64] = [:]
         func measure(_ path: String, individually: Bool) -> SizeMeasurement {
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return SizeMeasurement(bytes: nil) }
@@ -410,7 +433,7 @@ public struct SystemDataInspector {
                 // for the helper to measure (`RootMeasurements`), which adds its sizes to the item: dropped, its folders' sizes were lost.
                 if entry.minimum > 0, measured, total < entry.minimum, !waitsForHelper {
                     // Not listed, but System Settings counts it, so it stays in the totals.
-                    if measured, total > 0 { smallBytes[entry.kind, default: 0] += total }
+                    if measured, total > 0 { smallBytes[SmallKey(kind: entry.kind, cleanup: entry.cleanup.kind), default: 0] += total }
                     continue
                 }
                 var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
@@ -453,7 +476,7 @@ public struct SystemDataInspector {
             let name = (path as NSString).lastPathComponent
             let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
             add("appcache:\(name)", loc("App cache: \(name)"), .appCache, paths: [path], owners: [owner],
-                cleanup: isAppleCache(name) ? appleManaged : appCacheReview, notes: name.hasSuffix(".ShipIt") ? ["An app updater's download cache."] : [],
+                cleanup: isAppleCache(name) || AppCaches.isApple(name) ? appleManaged : appCacheReview, notes: name.hasSuffix(".ShipIt") ? ["An app updater's download cache."] : [],
                 minimum: Self.minimumItemBytes)
         }
         for path in children((home as NSString).appendingPathComponent(".cache")) {
@@ -485,7 +508,7 @@ public struct SystemDataInspector {
                 cleanup: SystemDataCleanup(kind: .review, description: loc("Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select."), command: nil))
         }
         add("packages:homebrew", loc("Homebrew"), .packageManager, paths: [system["homebrew"], system["usrLocal"]].compactMap { $0 },
-            cleanup: SystemDataCleanup(kind: .command, description: loc("Run brew cleanup in Terminal to remove old versions."), command: nil))
+            cleanup: SystemDataCleanup(kind: .command, description: loc("Homebrew's own cleanup is under Free now when it has something to free."), command: nil))
         add("logs:unified", loc("Unified system log"), .logs, paths: [system["unifiedLog"], system["uuidtext"]].compactMap { $0 },
             cleanup: managed(loc("Rotated by logd; deleting it removes the logs needed for troubleshooting.")))
         if let path = system["systemReports"] {
@@ -616,6 +639,10 @@ public struct SystemDataInspector {
             let name = (path as NSString).lastPathComponent
             add("library:\(name)", loc("\(name) (your Library)"), .systemLibrary, paths: [path], cleanup: systemOwned, minimum: Self.minimumItemBytes)
         }
+        for (name, elsewhere) in SystemDataLocations.libraryFoldersPartlyElsewhere.sorted(by: { $0.key < $1.key }) {
+            let rest = children((library as NSString).appendingPathComponent(name)).filter { !elsewhere.contains(($0 as NSString).lastPathComponent) }
+            if !rest.isEmpty { add("library:\(name)", loc("\(name) (your Library)"), .systemLibrary, paths: rest, cleanup: systemOwned, minimum: Self.minimumItemBytes) }
+        }
         if let path = system["systemDatabases"] {
             let databases = children(path).filter { !SystemDataLocations.databaseFoldersCountedElsewhere.contains(($0 as NSString).lastPathComponent) }
             add("system:databases", loc("System databases"), .systemLibrary, paths: databases, cleanup: systemOwned, minimum: Self.minimumItemBytes)
@@ -689,6 +716,10 @@ public struct SystemDataInspector {
                     cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
                     minimum: Self.minimumItemBytes)
             }
+            for (name, elsewhere) in SystemDataLocations.sharedFoldersPartlyElsewhere.sorted(by: { $0.key < $1.key }) {
+                let rest = children((path as NSString).appendingPathComponent(name)).filter { !elsewhere.contains(($0 as NSString).lastPathComponent) }
+                if !rest.isEmpty { add("shared:\(name)", Self.sharedTitle(name), .logs, paths: rest, cleanup: systemOwned, minimum: Self.minimumItemBytes) }
+            }
         }
 
         finish()
@@ -712,13 +743,32 @@ public struct SystemDataInspector {
             let folder = "appsupport:" + id.dropFirst("supportcache:".count)
             if let index = items.firstIndex(where: { $0.id == folder }), let bytes = items[index].bytes {
                 items[index].bytes = bytes > cache ? bytes - cache : 0
-            } else if measuredTotals[folder] != nil, let small = smallBytes[.appSupport] {
-                smallBytes[.appSupport] = small > cache ? small - cache : 0
+            } else if measuredTotals[folder] != nil, let small = smallBytes[SmallKey(kind: .appSupport)] {
+                smallBytes[SmallKey(kind: .appSupport)] = small > cache ? small - cache : 0
             }
         }
-        for (kind, bytes) in smallBytes.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
-            items.append(SystemDataItem(id: "small:\(kind.rawValue)", title: loc("Smaller items"), kind: kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
-                                        cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: []))
+        for (key, bytes) in smallBytes.sorted(by: { $0.key.id < $1.key.id }) {
+            items.append(SystemDataItem(id: key.id, title: loc("Smaller items"), kind: key.kind, paths: [], bytes: bytes, readable: true, owners: [], inUse: false,
+                                        cleanup: SystemDataCleanup(kind: key.cleanup, description: "", command: nil), notes: []))
+        }
+        // Each container's caches folder: macOS's purge counts up to 1.28 GB of them as purgeable (26B5101f, 2026-10-12), which
+        // System Settings counts as free space, so the page leaves that share out of Apple's containers (`purgeable`). Apple's
+        // containers too small to list share the "Smaller items" item's figure.
+        var containerCaches: UInt64 = 0
+        var smallAppleCaches: UInt64 = 0
+        if hasFullDiskAccess {
+            for folder in ["Group Containers", "Containers"] {
+                for path in children((library as NSString).appendingPathComponent(folder)) {
+                    let name = (path as NSString).lastPathComponent
+                    let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
+                    guard fileManager.fileExists(atPath: caches) else { continue }
+                    let bytes = FileTreeSizer().size(at: URL(fileURLWithPath: caches))?.bytes ?? 0
+                    containerCaches += bytes
+                    if let index = items.firstIndex(where: { $0.id == "container:\(name)" }) { items[index].cachesBytes = bytes }
+                    else if name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.") { smallAppleCaches += bytes }
+                }
+            }
+            if let index = items.firstIndex(where: { $0.id == SmallKey(kind: .appContainer, cleanup: .managedByMacOS).id }) { items[index].cachesBytes = smallAppleCaches }
         }
         items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         let volumeUsage = volumes()
@@ -730,6 +780,35 @@ public struct SystemDataInspector {
                                       measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
                                       unreadable: unreadable, warnings: warnings)
         report.fullDiskAccess = hasFullDiskAccess
+        report.containerCachesBytes = containerCaches
+        // Third-party caches, every size (the items above list only the large ones), with their dates and owner. MacSpace's own are
+        // left out: they are in use whenever this runs. So is Homebrew's, which its own cleanup handles.
+        let cachesFolder = (home as NSString).appendingPathComponent("Library/Caches")
+        report.appCaches = children(cachesFolder).compactMap { path -> AppCache? in
+            let name = (path as NSString).lastPathComponent
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue, !name.hasPrefix("."),
+                  !name.hasPrefix("com.macspace."), !isAppleCache(name), !AppCaches.isApple(name),
+                  // Homebrew's downloads go through its own cleanup (the Homebrew row), which knows what an install is still using.
+                  !(name == "Homebrew" && HomebrewCleanup.brew() != nil),
+                  let bytes = measuredTotals["appcache:\(name)"], let dates = AppCaches.measure(path, now: now) else { return nil }
+            let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
+            var cache = AppCache(id: "appcache:\(name)", name: name, path: path, bytes: bytes, lastChange: dates.lastChange, recentBytes: dates.recentBytes,
+                                 dataLikeBytes: dates.dataLikeBytes, owner: appCacheOwner(owner))
+            cache.ownerRunning = isRunning([owner, cache.title], cleanup: .deleteWhenNotRunning)
+            return cache
+        }
+        // Where macOS keeps such folders, as found on 26B5101f: system assets (Apple Intelligence's models among them), the system
+        // databases and the rest of /private/var, the caches folders, and this account's per-user folders.
+        if hasFullDiskAccess {
+            var roots: [(path: String, depth: Int)] = [((home as NSString).appendingPathComponent("Library/Caches"), 1)]
+            for (key, depth) in [("systemAssets", 1), ("systemDatabases", 2), ("privateVar", 3)] { if let path = system[key] { roots.append((path, depth)) } }
+            if let path = system["library"] { roots.append(((path as NSString).appendingPathComponent("Caches"), 1)) }
+            if let path = locations.userSystemDirectory?.path { roots.append((path, 3)) }
+            // The per-user folders are visited from this account's own; the databases, from their own root.
+            let skipped = Set([system["varFolders"], system["systemDatabases"]].compactMap { $0 })
+            report.protectedFolders = Self.protectedFolders(under: roots, skipping: skipped)
+        }
         report.rootOnly = otherAccountFolders.map { folder in
             RootOnlyPlace(id: "downloads:idleassetsd:\((folder as NSString).lastPathComponent)", title: loc("Wallpaper and screen saver downloads"), kind: .systemLibrary,
                           path: (folder as NSString).appendingPathComponent("T/com.apple.idleassetsd"),
@@ -743,6 +822,35 @@ public struct SystemDataInspector {
 }
 
 extension SystemDataInspector {
+    /// The folders under `roots` (each to its depth) that macOS keeps closed to every app, even with Full Disk Access and as root
+    /// (System Integrity Protection): opening one fails with "operation not permitted" (`EPERM`). "Permission denied" (`EACCES`) is a
+    /// folder only root can open, which the helper measures, so it is not one. Meaningful only with Full Disk Access, without which
+    /// privacy protection refuses folders the same way. Opening a folder reads nothing in it.
+    static func protectedFolders(under roots: [(path: String, depth: Int)], skipping skipped: Set<String> = []) -> [String] {
+        var found: [String] = []
+        func visit(_ directory: String, depth: Int) {
+            guard let handle = opendir(directory) else {
+                if errno == EPERM { found.append(directory) }
+                return
+            }
+            defer { closedir(handle) }
+            guard depth > 0 else { return }
+            var names: [String] = []
+            while let entry = readdir(handle) {
+                guard entry.pointee.d_type == DT_DIR else { continue }
+                let name = withUnsafePointer(to: entry.pointee.d_name) { $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXNAMLEN) + 1) { String(cString: $0) } }
+                if name != "." && name != ".." { names.append(name) }
+            }
+            for name in names.sorted() {
+                let child = (directory as NSString).appendingPathComponent(name)
+                if !skipped.contains(child) { visit(child, depth: depth - 1) }
+            }
+        }
+        for root in roots { visit(root.path, depth: root.depth) }
+        var seen = Set<String>()
+        return found.filter { seen.insert($0).inserted }
+    }
+
     /// What `/Library/<name>` holds, in words.
     static func sharedTitle(_ name: String) -> String {
         switch name {
@@ -751,6 +859,7 @@ extension SystemDataInspector {
         case "Frameworks": return loc("Shared frameworks")
         case "Audio": return loc("Audio plug-ins and sounds")
         case "Caches": return loc("Caches for all users")
+        case "Logs": return loc("Logs for all users")
         case "SystemExtensions": return loc("System extensions")
         default: return loc("\(name) (installed for all users)")
         }
@@ -824,7 +933,14 @@ public struct SystemDataCleaner {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Couldn't check which files are in use, so nothing was deleted."))
             }
             for path in paths {
-                do { try fileManager.removeItem(atPath: path) } catch {
+                // Renamed first, in one step, then deleted: an app that starts meanwhile finds no cache rather than half of one, and a
+                // folder that cannot be renamed is left as it was. What cannot be deleted goes back under its own name.
+                let doomed = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(".macspace-deleting-\(UUID().uuidString)")
+                do { try fileManager.moveItem(atPath: path, toPath: doomed) } catch {
+                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription)
+                }
+                do { try fileManager.removeItem(atPath: doomed) } catch {
+                    if !fileManager.fileExists(atPath: path) { try? fileManager.moveItem(atPath: doomed, toPath: path) }
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription)
                 }
             }
@@ -844,6 +960,21 @@ public struct SystemDataCleaner {
         roots.append(locations.home.appendingPathComponent("Library/Application Support").path)
         return roots.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
     }
+}
+
+/// Entries too small to list (`SystemDataInspector.minimumItemBytes`), summed as one "Smaller items" item per kind. Containers are
+/// summed per cleanup too: Apple's (managed by macOS) count in System Data, third-party ones (review) are Settings' Applications.
+struct SmallKey: Hashable {
+    let kind: SystemDataKind
+    let cleanup: SystemDataCleanup.Kind
+
+    init(kind: SystemDataKind, cleanup: SystemDataCleanup.Kind = .review) {
+        self.kind = kind
+        self.cleanup = kind == .appContainer ? cleanup : .review
+    }
+
+    /// `small:<kind>`, and `small:<kind>.<cleanup>` for Apple's containers.
+    var id: String { cleanup == .review ? "small:\(kind.rawValue)" : "small:\(kind.rawValue).\(cleanup.rawValue)" }
 }
 
 struct SizeMeasurement {

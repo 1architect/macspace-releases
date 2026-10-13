@@ -67,6 +67,12 @@ enum SystemDataScreenBuilder {
         var purgeable = item.purgeableBytes ?? 0
         if item.id == "index:spotlight" { purgeable = max(purgeable, snapshot.purgeableServices[CacheDeleteService.spotlightIndex] ?? 0) }
         if item.id == "assets:system" { purgeable = max(purgeable, snapshot.purgeableAssetsBytes ?? 0) }
+        // macOS's purge of app container caches names no container: each gets the service's share of its own caches folder.
+        if item.kind == .appContainer, let caches = item.cachesBytes, snapshot.report.containerCachesBytes > 0,
+           let service = snapshot.purgeableServices[CacheDeleteService.appContainerCaches] {
+            let share = min(1, Double(service) / Double(snapshot.report.containerCachesBytes))
+            purgeable = max(purgeable, UInt64(Double(caches) * share))
+        }
         return min(purgeable, item.bytes ?? 0)
     }
 
@@ -92,6 +98,64 @@ enum SystemDataScreenBuilder {
         guard let settings = snapshot.settings else { return 0 }
         let listed = measured(snapshot.report).map { counted($0, snapshot) }.reduce(0, +)
         return settings.systemData > listed ? settings.systemData - listed : 0
+    }
+
+    /// Whether everything MacSpace can measure was measured, so the remainder is what macOS keeps closed to every app: Full Disk
+    /// Access granted, the helper's places read, and protected folders found. Otherwise it also holds unmeasured places and stays
+    /// "Not identified", with nothing to list.
+    static func isProtected(_ snapshot: SystemDataSnapshot) -> Bool {
+        snapshot.report.fullDiskAccess && !snapshot.report.protectedFolders.isEmpty && partialBanner(snapshot) == nil
+    }
+
+    /// The remainder's page, measured on 26B5101f (2026-10-12): 68 folders no app can open, even with Full Disk Access and as root,
+    /// among them Apple Intelligence's model families in `/System/Library/AssetsV2`; with the helper's places measured, about 7 GB
+    /// on the development Mac. Their sizes cannot be read, so the rows name them and the block carries the measured total.
+    /// The system asset families among the protected folders (Apple Intelligence's models among them): in the folder the "System assets"
+    /// item measures, but not in its figure, since they cannot be opened.
+    static func protectedAssetFamilies(_ snapshot: SystemDataSnapshot) -> [String] {
+        let root = SystemDataLocations.defaultSystemPaths["systemAssets"].map { $0 + "/" } ?? "/System/Library/AssetsV2/"
+        return snapshot.report.protectedFolders.filter { $0.hasPrefix(root) }
+    }
+
+    static func protectedRows(_ snapshot: SystemDataSnapshot) -> [Row] {
+        guard isProtected(snapshot) else { return [] }
+        let folders = snapshot.report.protectedFolders
+        let assetsRoot = SystemDataLocations.defaultSystemPaths["systemAssets"].map { $0 + "/" } ?? "/System/Library/AssetsV2/"
+        let databasesRoot = SystemDataLocations.defaultSystemPaths["systemDatabases"].map { $0 + "/" } ?? "/private/var/db/"
+        let assets = protectedAssetFamilies(snapshot)
+        let databases = folders.filter { $0.hasPrefix(databasesRoot) }
+        let others = folders.filter { !$0.hasPrefix(assetsRoot) && !$0.hasPrefix(databasesRoot) }
+        /// Names as the folders call themselves: an asset family without its `com_apple_MobileAsset_` prefix, a database by its path
+        /// inside the databases folder, any other folder by its own name.
+        func names(_ paths: [String], under root: String?) -> String {
+            var seen = Set<String>()
+            return paths.map { path -> String in
+                if let root, path.hasPrefix(root) {
+                    let inner = String(path.dropFirst(root.count))
+                    return inner.hasPrefix("com_apple_MobileAsset_") ? String(inner.dropFirst("com_apple_MobileAsset_".count)) : inner
+                }
+                return (path as NSString).lastPathComponent
+            }.filter { seen.insert($0).inserted }.joined(separator: ", ")
+        }
+        func count(_ paths: [String]) -> String { paths.count == 1 ? loc("1 item") : loc("\(paths.count) items") }
+        var rows: [Row] = []
+        if !assets.isEmpty {
+            // While Apple Intelligence is on, its models stay (`SystemAssetGuard`), which is why they are on disk at all.
+            rows.append(Row(id: "protected:assets", title: loc("Models and system assets"), subtitle: count(assets),
+                            badge: snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil,
+                            detail: loc("Apple Intelligence's models and other assets that macOS keeps closed to every app: \(names(assets, under: assetsRoot)). They are in the same folder as System assets, which counts only the families it can open.")))
+        }
+        if !databases.isEmpty {
+            rows.append(Row(id: "protected:databases", title: loc("System databases"), subtitle: count(databases),
+                            detail: loc("Databases of macOS's services that no app can open: \(names(databases, under: databasesRoot)).")))
+        }
+        if !others.isEmpty {
+            rows.append(Row(id: "protected:other", title: loc("Other protected folders"), subtitle: count(others),
+                            detail: loc("Other folders macOS keeps closed to every app: \(names(others, under: nil)).")))
+        }
+        rows.append(Row(id: "protected:filesystem", title: loc("File system metadata"),
+                        detail: loc("The file system's own metadata for every file and folder, and what changed between this reading and System Settings'. No app can measure what is in these folders, so the block's size is what System Settings counts minus everything MacSpace lists.")))
+        return rows
     }
 
     static func usage(_ snapshot: SystemDataSnapshot) -> UsageBar {
@@ -172,7 +236,9 @@ enum SystemDataScreenBuilder {
         if freeable >= worthARow { segments.append(UsageSegment(id: "freeable", label: loc("Can be freed"), bytes: freeable, tone: .caution)) }
         // The blocks add up to System Settings' figure: what no listed folder accounts for is a block of its own.
         let unknown = notIdentified(snapshot)
-        if unknown >= worthARow { segments.append(UsageSegment(id: "unidentified", label: loc("Not identified"), bytes: unknown, tone: .neutral)) }
+        if unknown >= worthARow {
+            segments.append(UsageSegment(id: "unidentified", label: isProtected(snapshot) ? loc("Protected by macOS") : loc("Not identified"), bytes: unknown, tone: .neutral))
+        }
         return segments.sorted { $0.bytes > $1.bytes }
     }
 
@@ -184,18 +250,29 @@ enum SystemDataScreenBuilder {
         let freeRows: [Row] = {
             guard case let .section(section)? = freeNow(snapshot), case let .list(list)? = section.widgets.first else { return [] }
             // The unused system assets and the wallpaper downloads are not in the blocks (`blocks`).
-            return list.rows.filter { $0.id != "assets" && $0.id != "wallpaper-downloads" }
+            return list.rows.filter { $0.id != "assets" && $0.id != "wallpaper-downloads" && !ownButtonRows.contains($0.id) }
         }()
         return blocks(snapshot).map { segment in
             var segment = segment
             if segment.id == "freeable" {
                 segment.items = freeRows
+            } else if segment.id == "unidentified" {
+                segment.items = protectedRows(snapshot)
             } else if let group = groups.first(where: { $0.id == segment.id }) {
                 let sized = items.filter { group.kinds.contains($0.kind) }
                     .map { (item: $0, bytes: inBlock($0, snapshot)) }
                     .filter { $0.bytes >= worthARow }
                     .sorted { $0.bytes > $1.bytes }
-                segment.items = sized.map { itemRow($0.item, bytes: $0.bytes) }
+                segment.items = sized.map { entry in
+                    var row = itemRow(entry.item, bytes: entry.bytes)
+                    // The families macOS keeps closed are in the same folder but in no figure of this row: say where they are.
+                    let closed = protectedAssetFamilies(snapshot)
+                    if entry.item.id == "assets:system", isProtected(snapshot), !closed.isEmpty {
+                        let note = loc("Without the \(closed.count) families macOS keeps closed, among them Apple Intelligence's models: they are under Protected by macOS.")
+                        row.detail = row.detail.map { $0 + " " + note } ?? note
+                    }
+                    return row
+                }
             }
             return segment
         }
@@ -296,11 +373,111 @@ enum SystemDataScreenBuilder {
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
+        // Freed only from their own rows, never by Clean or automatic cleaning.
+        if let caches = appCachesRow(snapshot) { rows.append(caches) }
+        if let homebrew = homebrewRow(snapshot) { rows.append(homebrew) }
+        if let trash = trashRow(snapshot) { rows.append(trash) }
         guard !rows.isEmpty else { return nil }
         return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: rows))]))
     }
 
     static let manualThreshold: UInt64 = 50_000_000
+
+    /// Rows of Free now that are not part of what Clean frees, so not of the "can be freed" block either.
+    static let ownButtonRows: Set<String> = ["appcaches", "homebrew", "trash"]
+
+    /// Third-party caches (`AppCaches.outcome`), as a group whose page lets the user choose which go. Checked: unchanged for a month
+    /// whose app was not opened for as long, or is not installed. Unchecked: the others nothing has changed for a week, and the caches
+    /// in use, which say that they come back and how much they wrote in the last two days (Firefox's, at its size cap, wrote 38 MB on
+    /// 2026-10-12). Left out: what looks like data, and caches whose app or tool is running.
+    static func appCachesRow(_ snapshot: SystemDataSnapshot, now: Date = Date()) -> Row? {
+        var listed: [(cache: AppCache, outcome: AppCacheOutcome)] = []
+        for cache in snapshot.report.appCaches where cache.bytes >= worthARow && !cache.ownerRunning {
+            let outcome = AppCaches.outcome(cache, now: now)
+            if outcome != .heldBack { listed.append((cache, outcome)) }
+        }
+        // What nothing uses first, then what comes back; largest first in each.
+        listed.sort { ($0.outcome == .comesBack ? 1 : 0, $1.cache.bytes) < ($1.outcome == .comesBack ? 1 : 0, $0.cache.bytes) }
+        guard !listed.isEmpty else { return nil }
+        // Two folders of one app (Sublime Text's own and `com.sublimetext.4`) are told apart by their folder names.
+        var titles: [String: Int] = [:]
+        for entry in listed { titles[entry.cache.title, default: 0] += 1 }
+        let rows = listed.map { entry -> Row in
+            let cache = entry.cache
+            let title = titles[cache.title, default: 0] > 1 ? cache.name : cache.title
+            let days = AppCaches.unchangedDays(cache, now: now)
+            var subtitle = loc("Unchanged for \(days) days")
+            var detail = loc("This cache has not changed for \(days) days.")
+            if entry.outcome == .comesBack {
+                subtitle = loc("Comes back as it is used")
+                detail = cache.recentBytes >= worthARow
+                    ? loc("In use: it wrote \(ByteFormat.string(cache.recentBytes)) in the last two days, and fills again as its app or tool runs. Deleting it frees the space for a while.")
+                    : loc("In use lately: it fills again as its app or tool runs. Deleting it frees the space for a while.")
+                return Row(id: cache.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(cache.bytes), detail: detail, paths: [cache.path])
+            }
+            switch cache.owner {
+            case let .app(_, lastOpened?):
+                let opened = max(0, Int(now.timeIntervalSince(lastOpened) / 86_400))
+                subtitle = loc("Not opened for \(opened) days")
+                detail += " " + loc("Its app was last opened \(opened) days ago.")
+            case .app: break
+            case .notInstalled:
+                subtitle = loc("App not installed")
+                detail += " " + loc("No installed app has its name; the app was removed, or is on a disk that is not connected.")
+            case .unknown:
+                detail += " " + loc("MacSpace cannot tell which app or tool uses it, so it is not checked.")
+            }
+            return Row(id: cache.id, title: title, subtitle: subtitle, trailing: ByteFormat.string(cache.bytes), detail: detail, paths: [cache.path])
+        }
+        let total = listed.map { $0.cache.bytes }.reduce(0, +)
+        var group = Row.group(id: "appcaches", title: loc("App caches"), totalBytes: total, rows: rows,
+                              detail: loc("Apps' caches in your Library. Checked: those unchanged for a month whose app was not opened for as long, or is not installed. The others are yours to choose; those in use come back as their app runs. Caches of apps that are open are not listed."))
+        group.trailing = ByteFormat.string(total)
+        group.selection = Selection(
+            action: Action(id: "cleanAppCaches", title: loc("Free"), confirmation: Confirmation(
+                title: loc("Delete the chosen caches?"), message: loc("An app rebuilds its cache when it needs it again; its next launch may be slower."),
+                confirmTitle: loc("Delete"))),
+            choices: Dictionary(listed.map { ($0.cache.id, $0.cache.bytes) }, uniquingKeysWith: { first, _ in first }),
+            checked: listed.filter { $0.outcome == AppCacheOutcome.suggested }.map { $0.cache.id })
+        return group
+    }
+
+    /// Homebrew's own cleanup, both ways, with what each frees by Homebrew's dry run. Its default stops on a cask from a tap it does not
+    /// trust (MacSpace's own, on 2026-10-12, in Homebrew 7); with every download it does not, so that way is still offered, with the reason.
+    static func homebrewRow(_ snapshot: SystemDataSnapshot) -> Row? {
+        guard let plan = snapshot.homebrew else { return nil }
+        let standard = plan.standard.bytes.flatMap { $0 >= worthARow ? $0 : nil }
+        let all = plan.allDownloads.bytes.flatMap { $0 >= worthARow && $0 > (standard ?? 0) ? $0 : nil }
+        guard standard != nil || all != nil else { return nil }
+        var actions: [Action] = []
+        var detail = loc("Homebrew's own cleanup, as Terminal runs it, without uninstalling, updating or sending analytics.")
+        if let standard {
+            detail += " " + loc("Old versions and downloads Homebrew no longer needs: \(ByteFormat.string(standard)).")
+            actions.append(Action(id: "cleanHomebrew", title: loc("Free"), parameters: ["all": "false"], confirmation: Confirmation(
+                title: loc("Run Homebrew's cleanup?"), message: loc("Frees about \(ByteFormat.string(standard)): old versions and downloads Homebrew no longer needs."),
+                confirmTitle: loc("Free"))))
+        } else if let error = plan.standard.error {
+            detail += " " + loc("Homebrew's usual cleanup stopped: \(error)")
+        }
+        if let all {
+            detail += " " + loc("With every download too: \(ByteFormat.string(all)); Homebrew downloads them again when it needs them.")
+            actions.append(Action(id: "cleanHomebrew", title: loc("Free all"), parameters: ["all": "true"], confirmation: Confirmation(
+                title: loc("Also delete every Homebrew download?"), message: loc("Frees about \(ByteFormat.string(all)). Homebrew downloads them again when it needs them."),
+                confirmTitle: loc("Free"))))
+        }
+        return Row(id: "homebrew", title: loc("Homebrew"), trailing: ByteFormat.string(standard ?? all ?? 0), detail: detail, actions: actions)
+    }
+
+    /// The Trash, which the Finder empties: a button that opens it there, and whether the Finder empties old items by itself. The Trash
+    /// is a category of its own in System Settings, not System Data, so it is not in the page's figures.
+    static func trashRow(_ snapshot: SystemDataSnapshot) -> Row? {
+        guard let bytes = snapshot.report.items.first(where: { $0.id == "trash:user" })?.bytes, bytes >= worthARow else { return nil }
+        var detail = loc("Files you deleted, until the Trash is emptied in the Finder.")
+        detail += " " + (snapshot.trashEmptiesItself == true ? loc("The Finder deletes items that have been in it for 30 days.")
+                                                               : loc("The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced."))
+        return Row(id: "trash", title: loc("Trash"), trailing: ByteFormat.string(bytes), detail: detail,
+                   actions: [Action(id: "openTrash", title: loc("Open"))])
+    }
 
     /// Where the scan found the item with this id, for the row's Show in Finder.
     static func paths(of id: String, _ snapshot: SystemDataSnapshot) -> [String] {
@@ -372,10 +549,10 @@ enum SystemDataScreenBuilder {
         static let other = OtherCategory(id: "other", title: loc("Other"))
 
         /// Why a category is left alone, behind its (i), where the title does not say it. The caches here are the apps' own and
-        /// macOS's: an app rebuilds its cache as soon as it runs again, and clearing it is the app's job (the module's scope since
-        /// 2026-10-01). What MacSpace does clean, the per-user system cache and the apps' web caches, is under Free now.
+        /// macOS's, in use: an app rebuilds its cache as soon as it runs again. What MacSpace does clean, the per-user system cache,
+        /// the apps' web caches and the caches nothing uses (`appCachesRow`), is under Free now.
         static let details: [String: String] = [
-            "caches": loc("Apps and macOS manage these caches and rebuild them when they run, so MacSpace leaves them alone. To clear one, use the app's own setting."),
+            "caches": loc("Apps and macOS rebuild these caches as they run. Third-party ones can be freed from App caches, under Free now; Apple's are left to macOS."),
         ]
 
         /// The bar's category that holds this kind, or Other.

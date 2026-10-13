@@ -45,6 +45,13 @@ MacSpace lit ces éléments sur votre Mac pour faire son travail. Il n’en envo
 - **Les noms et les tailles des fichiers et des dossiers**, sur tout le disque une fois l’accès
   complet au disque accordé. Il ne lit pas le contenu de vos documents, photos, e-mails ou
   messages. Il mesure l’espace qu’ils occupent.
+- **Les dates des fichiers dans les caches des apps** (`~/Library/Caches`) : quand chacun a été
+  créé, modifié ou lu pour la première fois, et **quand chaque app a été ouverte pour la dernière
+  fois**, comme Spotlight l’enregistre, pour savoir quels caches rien n’utilise. Il n’ouvre pas les
+  fichiers.
+- **L’estimation propre à Homebrew**, si Homebrew est installé : MacSpace lance `brew cleanup -n`,
+  qui ne change rien, avec la mise à jour automatique et les statistiques de Homebrew désactivées,
+  et seulement quand Homebrew a déjà sa liste de paquets, pour qu’il n’aille pas en ligne.
 - **Quelques fichiers système :** le fichier d’éligibilité à Apple Intelligence, la base de données
   d’abonnements aux ressources de macOS, la liste des profils de configuration installés, et la
   base de données du compte Apple (en lecture seule, pour savoir si la synchronisation iCloud de

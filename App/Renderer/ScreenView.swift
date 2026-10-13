@@ -166,6 +166,9 @@ struct ScreenView: View {
         return WidgetForm(widgets: [.list(list)], handler: handler, showsTop: false) { EmptyView() }
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
+            .environment(\.rowChoice, group.selection.map { selection in
+                RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in handle.toggle(id, in: group) }
+            })
     }
 }
 
@@ -454,15 +457,37 @@ private struct ActionDock: View {
     /// What the page has to say, from its banners: the first one.
     private var notice: Banner? { ScreenView.banners(in: handle.screen?.widgets ?? []).first }
 
+    /// The group page on top, when it lets the user choose (`Row.selection`): its button acts on the checked rows instead of the
+    /// page's main action.
+    private var choosingGroup: Row? {
+        guard let id = handle.groupPath.last, let screen = handle.screen, let group = ScreenView.row(id, in: screen), group.selection != nil else { return nil }
+        return group
+    }
+
+    /// The selection's action for the checked rows, titled with their total, carrying their ids; nil when none is checked.
+    private var choiceAction: Action? {
+        guard let group = choosingGroup, let selection = group.selection else { return nil }
+        let ids = handle.checked(group)
+        guard !ids.isEmpty else { return nil }
+        var action = selection.action
+        let total = ids.compactMap { selection.choices[$0] }.reduce(0, +)
+        action.title = selection.action.title + " " + ByteFormat.string(total)
+        action.parameters["ids"] = Selection.parameter(ids.sorted())
+        return action
+    }
+
+    /// The page's main action, or on a page that lets the user choose, the action on the chosen rows.
+    private var mainAction: Action? { choosingGroup != nil ? choiceAction : handle.screen?.primary }
+
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     private var phase: ActionPill.Phase? {
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning { return .working(handle.progress) }
         // Reading the Mac again: the action waits for the new figures, and says so.
-        if handle.isRefreshing, handle.screen?.primary != nil { return .loading }
-        if let notice, notice.action != nil || handle.screen?.primary == nil || showsPassingNotice { return .notice(notice) }
-        if let primary = handle.screen?.primary { return .idle(primary) }
+        if handle.isRefreshing, mainAction != nil { return .loading }
+        if let notice, notice.action != nil || mainAction == nil || showsPassingNotice { return .notice(notice) }
+        if let primary = mainAction { return .idle(primary) }
         return nil
     }
 
