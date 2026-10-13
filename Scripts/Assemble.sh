@@ -11,6 +11,7 @@
 #                                            Mac (another Mac, a VM). It uses the notarytool keychain profile "MacSpace" (NOTARY_PROFILE
 #                                            names another), made once with
 #                                            xcrun notarytool store-credentials MacSpace --apple-id … --team-id … (app-specific password)
+#   DEV=1 / DEV=0 Scripts/Assemble.sh        with or without the development tools (default: with them for a -dev version only)
 #   NOTARY_PROFILE= Scripts/Assemble.sh      skip notarization (the app then opens only on the Mac that built it)
 #   OUT_DIR=Build/Test Scripts/Assemble.sh   build somewhere else than Build/ (development and test builds, so they never replace the
 #                                            app that is copied to /Applications)
@@ -36,6 +37,12 @@ if [ -z "${VERSION:-}" ]; then
   LAST_VERSION=${LAST_TAG#v}
   VERSION="${LAST_VERSION:-0.1.0}-dev"
 fi
+# A development build (a -dev version, or DEV=1) is compiled with MACSPACE_DEV: the Design menu and its windows (Shader Studio,
+# Widget Type, Text Editor), the Design menu's settings read from the defaults, --onboarding and MACSPACE_MODULES_DIR. A release
+# (VERSION given, as the release pipeline does) has none of them, and no flag or setting turns them on.
+case "$VERSION" in *-dev) DEV=${DEV:-1} ;; *) DEV=${DEV:-0} ;; esac
+SWIFT_FLAGS=()
+[ "$DEV" = 1 ] && SWIFT_FLAGS=(-Xswiftc -DMACSPACE_DEV)
 # A local build gets a build number of its own, 1.<year and day>.<time>: macOS keeps an app's icon by its identity and build
 # number, and every build being "1" kept the icon it first cached (the generic one). It stays below any release build (2 and up).
 BUILD=${BUILD:-1.$(date +%y%j).$((10#$(date +%H%M%S)))}
@@ -77,8 +84,8 @@ fi
 # The app icon, made in Icon Composer, kept in the repository.
 ICON=${ICON:-App/Resources/MacSpace.icon}
 
-swift build -c "$CONFIG"
-BIN=$(swift build -c "$CONFIG" --show-bin-path)
+swift build -c "$CONFIG" ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"}
+BIN=$(swift build -c "$CONFIG" ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"} --show-bin-path)
 
 OUT_DIR=${OUT_DIR:-Build}
 FINAL="$OUT_DIR/MacSpace.app"
@@ -113,9 +120,11 @@ plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
 echo "App icon: $ICON"
 # The app's translations, one folder per language (Scripts/Localize.swift writes them from Localization/).
 cp -R App/Resources/*.lproj "$APP/Contents/Resources/"
-# Every text with its kind of element, for the design tools' Text Editor (Scripts/TextCatalog.swift).
-swift Scripts/TextCatalog.swift
-cp App/Resources/TextCatalog.json "$APP/Contents/Resources/"
+# Every text with its kind of element, for the design tools' Text Editor (Scripts/TextCatalog.swift): development builds only.
+if [ "$DEV" = 1 ]; then
+  swift Scripts/TextCatalog.swift
+  cp App/Resources/TextCatalog.json "$APP/Contents/Resources/"
+fi
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
@@ -246,5 +255,7 @@ fi
 # knows. Two copies with the same identifier let macOS tie the helper to this one, which the next build replaces ("Codesigning
 # failure loading plist … -67056"). Finder registers it again when it shows the folder; the helper refuses to install from it.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$PWD/$APP" 2>/dev/null || true
-echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc}${NOTARY_PROFILE:+, notarized})"
+TOOLS=""
+[ "$DEV" = 1 ] && TOOLS=", with the development tools"
+echo "Built $APP (version $VERSION, signed with ${SIGN_IDENTITY/#-/ad-hoc}${NOTARY_PROFILE:+, notarized}$TOOLS)"
 [ "${INSTALL:-0}" = 1 ] || echo "Copy it to /Applications to run it (quit MacSpace first)."

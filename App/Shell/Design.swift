@@ -268,17 +268,17 @@ struct Design: Equatable {
     var tilt = true
     var hoverShade = true
     /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass, on glass tiles and flat ones alike, or flat color.
-    var glassElements = true
+    var glassElements = false
     /// Temporary, for measuring GPU use: the window clipped to its rounded corners; tiles following the pointer.
     var clipWindow = true
     var trackPointer = true
     /// Temporary, for measuring GPU use: the window itself is glass over the desktop, or a solid color.
-    var windowGlass = true
+    var windowGlass = false
     /// The glass window's whole background (blur, glass, fill and edge); off, the widgets float over the desktop with nothing behind them.
     var windowBackground = true
     /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
     /// or cut it off cleanly.
-    var pageEdgeFade = false
+    var pageEdgeFade = true
     /// With the fade: the content scrolls on under the title and the main action, blurred by a band of Liquid Glass that fades out
     /// toward the page, instead of fading away.
     var pageEdgeBlur = false
@@ -402,36 +402,49 @@ public final class DesignSettings: ObservableObject {
         didSet { if let data = try? JSONEncoder().encode(colorLab) { defaults.set(data, forKey: "design.colorLab") } }
     }
 
+    /// A Design menu setting kept in the defaults: read in a development build only. A release has no Design menu, so it always
+    /// draws the defaults, even on a Mac where a development build left other values.
+    private static func tool(_ defaults: UserDefaults, _ key: String) -> Any? {
+        #if MACSPACE_DEV
+        defaults.object(forKey: key)
+        #else
+        nil
+        #endif
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        let tool = { (key: String) in Self.tool(defaults, key) }
+        // The defaults below are the look MacSpace ships with (settled in the Design menu, 2026-10-13): flat chart blocks, no glass
+        // over the window, the page fading under its title. A release always draws them.
         let scheme = PaletteScheme(rawValue: defaults.string(forKey: "design.palette") ?? "") ?? .deep
         self.scheme = scheme
         // Until one is chosen, the palette picked before there was a choice keeps its night or day.
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: "design.appearanceMode") ?? "") ?? (scheme.isLight ? .day : .night)
-        backgroundAppearance = BackgroundAppearance(rawValue: defaults.string(forKey: "design.backgroundAppearance") ?? "") ?? .palette
-        glass = defaults.bool(forKey: "design.glass")
-        lift = defaults.object(forKey: "design.lift") as? Bool ?? true
-        tilt = defaults.object(forKey: "design.tilt") as? Bool ?? true
-        hoverShade = defaults.object(forKey: "design.hoverShade") as? Bool ?? true
-        windowShadow = defaults.object(forKey: "design.windowShadow") as? Bool ?? true
-        glassElements = defaults.object(forKey: "design.glassElements") as? Bool ?? true
-        clipWindow = defaults.object(forKey: "design.clipWindow") as? Bool ?? true
-        trackPointer = defaults.object(forKey: "design.trackPointer") as? Bool ?? true
-        windowGlass = defaults.object(forKey: "design.windowGlass") as? Bool ?? true
-        windowBackground = defaults.object(forKey: "design.windowBackground") as? Bool ?? true
-        pageEdgeFade = defaults.bool(forKey: "design.pageEdgeFade")
-        pageEdgeBlur = defaults.bool(forKey: "design.pageEdgeBlur")
-        clearTileGlass = defaults.bool(forKey: "design.clearTileGlass")
-        quickLift = defaults.bool(forKey: "design.quickLift")
-        windowBorder = defaults.object(forKey: "design.windowBorder") as? Bool ?? true
-        standardWindow = defaults.bool(forKey: "design.standardWindow")
-        standardTitleBar = defaults.object(forKey: "design.standardTitleBar") as? Bool ?? true
-        standardSidebarIcons = defaults.object(forKey: "design.standardSidebarIcons") as? Bool ?? true
-        standardGlassBackground = defaults.bool(forKey: "design.standardGlassBackground")
-        tileRadius = CGFloat(defaults.object(forKey: "design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
+        backgroundAppearance = BackgroundAppearance(rawValue: tool("design.backgroundAppearance") as? String ?? "") ?? .palette
+        glass = tool("design.glass") as? Bool ?? false
+        lift = tool("design.lift") as? Bool ?? true
+        tilt = tool("design.tilt") as? Bool ?? true
+        hoverShade = tool("design.hoverShade") as? Bool ?? true
+        windowShadow = tool("design.windowShadow") as? Bool ?? true
+        glassElements = tool("design.glassElements") as? Bool ?? false
+        clipWindow = tool("design.clipWindow") as? Bool ?? true
+        trackPointer = tool("design.trackPointer") as? Bool ?? true
+        windowGlass = tool("design.windowGlass") as? Bool ?? false
+        windowBackground = tool("design.windowBackground") as? Bool ?? true
+        pageEdgeFade = tool("design.pageEdgeFade") as? Bool ?? true
+        pageEdgeBlur = tool("design.pageEdgeBlur") as? Bool ?? false
+        clearTileGlass = tool("design.clearTileGlass") as? Bool ?? false
+        quickLift = tool("design.quickLift") as? Bool ?? false
+        windowBorder = tool("design.windowBorder") as? Bool ?? true
+        standardWindow = tool("design.standardWindow") as? Bool ?? false
+        standardTitleBar = tool("design.standardTitleBar") as? Bool ?? false
+        standardSidebarIcons = tool("design.standardSidebarIcons") as? Bool ?? false
+        standardGlassBackground = tool("design.standardGlassBackground") as? Bool ?? true
+        tileRadius = CGFloat(tool("design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
         tileType = TileType.load(defaults)
-        windowRadius = CGFloat(defaults.object(forKey: "design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
-        colorLab = defaults.data(forKey: "design.colorLab").flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
+        windowRadius = CGFloat(tool("design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
+        colorLab = (tool("design.colorLab") as? Data).flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
         observeSystemAppearance()
         followAppearance()
     }
@@ -476,11 +489,16 @@ public final class DesignSettings: ObservableObject {
     }
 }
 
-/// The Design menu and the Shader Studio are for working on the look, not for users: they are there only when MacSpace is opened
-/// with `--design-tools` (`open -a MacSpace --args --design-tools`), or with `MACSPACE_DESIGN=1` in its environment.
+/// The Design menu and its windows (Shader Studio, Widget Type, Text Editor) are for working on the look, not for users: they are
+/// compiled only into development builds (`MACSPACE_DEV`, which Scripts/Assemble.sh sets for a -dev build) and are always there in
+/// one. A release has no menu, no windows and no flag or setting that brings them back, and it draws every Design menu setting at
+/// its default, whatever a development build left in the defaults (`DesignSettings.tool`).
 public enum DesignTools {
-    public static let isEnabled = ProcessInfo.processInfo.arguments.contains("--design-tools")
-        || ProcessInfo.processInfo.environment["MACSPACE_DESIGN"] == "1"
+    #if MACSPACE_DEV
+    public static let isEnabled = true
+    #else
+    public static let isEnabled = false
+    #endif
 }
 
 /// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…9), and switches for what answers the pointer.
@@ -491,9 +509,12 @@ public struct DesignCommands: Commands {
     public init() {}
 
     public var body: some Commands {
-        if DesignTools.isEnabled { menu }
+        #if MACSPACE_DEV
+        menu
+        #endif
     }
 
+    #if MACSPACE_DEV
     private var menu: some Commands {
         CommandMenu("Design") {
             Toggle("Standard Window with Sidebar", isOn: $settings.standardWindow)
@@ -550,5 +571,6 @@ public struct DesignCommands: Commands {
             .pickerStyle(.inline)
         }
     }
+    #endif
 }
 

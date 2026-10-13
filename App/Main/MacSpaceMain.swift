@@ -95,7 +95,9 @@ struct MacSpaceMain: App {
         .restorationBehavior(.disabled)
         .defaultSize(width: 900, height: 600)
 
-        // Temporary: the Shader Studio (Design menu, ⌥⌘L), only reachable with the design tools on (`DesignTools`).
+        // The design tools' windows (Design menu), in development builds only (`DesignTools`).
+        #if MACSPACE_DEV
+        // Temporary: the Shader Studio (Design menu, ⌥⌘L).
         Window("Shader Studio", id: ColorLabView.windowID) {
             ColorLabView()
         }
@@ -121,5 +123,6 @@ struct MacSpaceMain: App {
         .commandsRemoved()
         .defaultSize(width: 1000, height: 700)
         .handlesExternalEvents(matching: [])
+        #endif
     }
 }

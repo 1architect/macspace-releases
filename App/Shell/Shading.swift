@@ -478,6 +478,7 @@ extension Color {
 
 // MARK: Picking in the window
 
+#if MACSPACE_DEV
 /// While the studio picks (its "Pick in window" switch), a click on what this is applied to selects it in the studio instead of doing
 /// what it does, and what is selected is outlined.
 struct StudioPickable<S: InsettableShape>: ViewModifier {
@@ -500,7 +501,16 @@ struct StudioPickable<S: InsettableShape>: ViewModifier {
         }
     }
 }
+#endif
 
 extension View {
-    func studioPickable<S: InsettableShape>(_ target: FillTarget, in shape: S) -> some View { modifier(StudioPickable(target: target, shape: shape)) }
+    /// Nothing in a release, which has no Shader Studio (`DesignTools`).
+    @ViewBuilder
+    func studioPickable<S: InsettableShape>(_ target: FillTarget, in shape: S) -> some View {
+        #if MACSPACE_DEV
+        modifier(StudioPickable(target: target, shape: shape))
+        #else
+        self
+        #endif
+    }
 }

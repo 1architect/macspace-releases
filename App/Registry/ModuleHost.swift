@@ -34,15 +34,20 @@ public final class ModuleHost: ObservableObject {
     }
     private var cleaningObservers: [AnyCancellable] = []
 
-    /// `MACSPACE_MODULES_DIR` points a development build at another folder of modules.
+    /// `MACSPACE_MODULES_DIR` points a development build at another folder of modules; a release only loads its own.
     public static func defaultModulesDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL? {
+        #if MACSPACE_DEV
         if let override = environment["MACSPACE_MODULES_DIR"] { return URL(fileURLWithPath: override, isDirectory: true) }
+        #endif
         return Bundle.main.builtInPlugInsURL
     }
 
     /// The folder of a built app next to the command-line tool, for `macspace modules`.
     public nonisolated static func defaultModulesDirectoryForCli() -> URL {
+        // Another folder of modules, for trying modules from a build: development builds only.
+        #if MACSPACE_DEV
         if let override = ProcessInfo.processInfo.environment["MACSPACE_MODULES_DIR"] { return URL(fileURLWithPath: override, isDirectory: true) }
+        #endif
         return URL(fileURLWithPath: "/Applications/MacSpace.app/Contents/PlugIns", isDirectory: true)
     }
 

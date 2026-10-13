@@ -28,7 +28,7 @@ struct TileType: Codable, Equatable, Sendable {
     var tileChartStyle = ChartStyle.treemap
     var pageChartStyle = ChartStyle.treemap
     /// The most blocks a tile's chart draws, the orange one included; the rest are drawn as one ("3 smaller"). 0 draws them all.
-    var tileBlocks = 4
+    var tileBlocks = 10
     /// The room between a tile's blocks: 3 points, as on a page and in 1.0.3.
     var tileGap = 3.0
 
@@ -37,8 +37,13 @@ struct TileType: Codable, Equatable, Sendable {
     /// What the text is measured and drawn with now. Set by `DesignSettings` when the Widget Type window changes it.
     nonisolated(unsafe) static var current = load()
 
+    /// What the Widget Type window left in the defaults, in a development build; a release always draws the defaults.
     static func load(_ defaults: UserDefaults = .standard) -> TileType {
+        #if MACSPACE_DEV
         defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(TileType.self, from: $0) } ?? TileType()
+        #else
+        TileType()
+        #endif
     }
 
     /// Keys missing from a saved value (one saved before they existed) keep their defaults.

@@ -1,3 +1,5 @@
+// Development builds only (`MACSPACE_DEV`, set by Scripts/Assemble.sh for a -dev build): a release has no design tools.
+#if MACSPACE_DEV
 import AppKit
 import MacSpaceSdk
 import SwiftUI
@@ -398,3 +400,4 @@ private struct StopEditor: View {
         }
     }
 }
+#endif

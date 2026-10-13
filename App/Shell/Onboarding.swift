@@ -39,7 +39,16 @@ public final class Onboarding: ObservableObject {
     private let defaults: UserDefaults
     private var prepared = false
 
-    init(defaults: UserDefaults = .standard, arguments: [String] = ProcessInfo.processInfo.arguments) {
+    /// `--onboarding` shows the welcome again, in a development build; a release takes no launch arguments.
+    static var launchArguments: [String] {
+        #if MACSPACE_DEV
+        ProcessInfo.processInfo.arguments
+        #else
+        []
+        #endif
+    }
+
+    init(defaults: UserDefaults = .standard, arguments: [String] = Onboarding.launchArguments) {
         self.defaults = defaults
         if arguments.contains("--onboarding") {
             defaults.set(false, forKey: Self.completedKey)

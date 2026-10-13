@@ -212,12 +212,14 @@ public struct MainView: View {
 
     private func handleRemote() {
             guard let text = remote.command?.text else { return }
+            #if MACSPACE_DEV
+            if text == "open:colorLab" { openWindow(id: ColorLabView.windowID); return }
+            #endif
             if text == "close" { close() }
             else if text == "onboarding" { onboarding.restart() }
             else if text == "onboarding:next" { onboarding.next() }
             else if text == "onboarding:finish" { onboarding.finish() }
             else if text == "open:settings" { present(.settings) }
-            else if text == "open:colorLab" { openWindow(id: ColorLabView.windowID) }
             else if text == "back" { close() }
             else if text.hasPrefix("group:"), case let .module(id)? = layer?.destination { host.handle(for: id)?.pushGroup(String(text.dropFirst(6))) }
             else if text.hasPrefix("open:") { present(.module(String(text.dropFirst(5)))) }

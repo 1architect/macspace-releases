@@ -61,8 +61,14 @@ enum CornerRadii {
     static let defaultWindow: CGFloat = 28
     static let choices: [CGFloat] = [0, 6, 10, 14, 19, 24, 28, 34, 40]
 
+    #if MACSPACE_DEV
     static var tile: CGFloat { CGFloat(UserDefaults.standard.object(forKey: "design.tileRadius") as? Double ?? Double(defaultTile)) }
     static var window: CGFloat { CGFloat(UserDefaults.standard.object(forKey: "design.windowRadius") as? Double ?? Double(defaultWindow)) }
+    #else
+    // A release has no Design menu: the corners are always the defaults.
+    static var tile: CGFloat { defaultTile }
+    static var window: CGFloat { defaultWindow }
+    #endif
 }
 
 extension Color {
