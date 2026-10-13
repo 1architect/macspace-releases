@@ -26,6 +26,8 @@ public struct DeveloperCache: Codable, Equatable, Sendable {
     public var method: Method
     /// Why it is recommended, as a pill; nil when it is not.
     public var reason: String?
+    /// The owner running when the Mac was read (a tool such as `opencode`, which MacSpace does not quit): it cannot be freed now.
+    public var runningOwner: String?
 
     public var recommended: Bool { reason != nil }
 }
@@ -33,6 +35,8 @@ public struct DeveloperCache: Codable, Equatable, Sendable {
 public enum DeveloperCaches {
     /// Unchanged this long, a tool's cache is recommended: the tool downloads again what a project still needs.
     static let unusedDays = 7.0
+    /// A folder of `~/.cache` with no known tool is recommended after this long untouched.
+    static let toolCacheDays = 30.0
 
     /// A package manager's cache: where it is under the home folder, and the programs that use it.
     struct Folder {
@@ -57,6 +61,27 @@ public enum DeveloperCaches {
         Folder(id: "gobuild", title: loc("Go builds"), path: "Library/Caches/go-build", owners: ["go"]),
         Folder(id: "precommit", title: "pre-commit", path: ".cache/pre-commit", owners: ["pre-commit"]),
         Folder(id: "simulatorcaches", title: loc("Simulator caches"), path: "Library/Developer/CoreSimulator/Caches", owners: ["Simulator"]),
+        // The rest of what Purge's developer list frees (2026-10-13), where each tool keeps it.
+        Folder(id: "xcodecache", title: loc("Xcode cache"), path: "Library/Caches/com.apple.dt.Xcode", owners: ["Xcode", "xcodebuild"]),
+        Folder(id: "xcodedocs", title: loc("Xcode documentation cache"), path: "Library/Developer/Xcode/DocumentationCache", owners: ["Xcode"]),
+        Folder(id: "xctestdevices", title: loc("Xcode test devices"), path: "Library/Developer/XCTestDevices", owners: ["Xcode", "xcodebuild", "Simulator"]),
+        Folder(id: "playwright", title: "Playwright", path: "Library/Caches/ms-playwright", owners: ["node", "playwright"]),
+        Folder(id: "playwright-cache", title: "Playwright", path: ".cache/ms-playwright", owners: ["node", "playwright"]),
+        Folder(id: "puppeteer", title: "Puppeteer", path: ".cache/puppeteer", owners: ["node"]),
+        Folder(id: "corepack", title: "Corepack", path: ".cache/node/corepack", owners: ["node", "corepack"]),
+        Folder(id: "yarnberry", title: "Yarn", path: ".yarn/berry/cache", owners: ["yarn", "node"]),
+        Folder(id: "deno", title: "Deno", path: "Library/Caches/deno", owners: ["deno"]),
+        Folder(id: "composer", title: "Composer", path: ".composer/cache", owners: ["composer", "php"]),
+        Folder(id: "composer-library", title: "Composer", path: "Library/Caches/composer", owners: ["composer", "php"]),
+        Folder(id: "nuget", title: "NuGet", path: ".nuget/packages", owners: ["dotnet", "nuget"]),
+        Folder(id: "pub", title: loc("Dart packages"), path: ".pub-cache/hosted", owners: ["dart", "flutter"]),
+        Folder(id: "androidbuild", title: loc("Android build cache"), path: ".android/build-cache", owners: ["studio", "java", "gradle"]),
+    ]
+
+    /// Command-line tools that keep each version they installed, one per entry: every one but the newest is of no use.
+    static let versionFolders: [Folder] = [
+        Folder(id: "claude", title: "Claude Code", path: ".local/share/claude/versions", owners: ["claude"]),
+        Folder(id: "cursor-agent", title: "Cursor Agent", path: ".local/share/cursor-agent/versions", owners: ["cursor-agent"]),
     ]
 
     /// The folders of `~/Library/Caches` and `~/.cache` this list claims, so they are listed here only, not again as an app's or a
@@ -124,10 +149,38 @@ public enum DeveloperCaches {
             measured(folder.id, folder.title, (home as NSString).appendingPathComponent(folder.path), owners: folder.owners, reason: unused)
         }
 
+        for folder in versionFolders {
+            let versions = children((home as NSString).appendingPathComponent(folder.path))
+                .sorted { version(of: $0).lexicographicallyPrecedes(version(of: $1)) }
+            for path in versions.dropLast() {
+                let name = (path as NSString).lastPathComponent
+                measured("\(folder.id):\(name)", loc("\(folder.title) \(name)"), path, owners: folder.owners) { _ in loc("Older version") }
+            }
+        }
+
+        // The rest of `~/.cache`, which command-line tools keep for what they can fetch or build again (the XDG cache folder). Who
+        // uses each folder cannot always be told, so one is recommended only after a month untouched.
+        let claimedHere = claimedToolCaches
+        for path in children((home as NSString).appendingPathComponent(".cache")) {
+            let name = (path as NSString).lastPathComponent
+            guard !claimedHere.contains(name), name != "node" else { continue }
+            measured("cache:\(name)", name, path, owners: [name]) { lastChange in
+                let days = Int(now.timeIntervalSince(lastChange) / 86_400)
+                return Double(days) >= toolCacheDays ? loc("Unchanged for \(days) days") : nil
+            }
+        }
+
         // Go's module cache, through Go's own command (its files are read-only), only when Go is installed.
         if let go = ["/opt/homebrew/bin/go", "/usr/local/go/bin/go", "/usr/local/bin/go"].first(where: FileManager.default.isExecutableFile(atPath:)) {
             measured("gomodules", loc("Go modules"), (home as NSString).appendingPathComponent("go/pkg/mod"), owners: ["go", "gopls"],
                      method: .goModules(go: go), reason: unused)
+        }
+        // Which are in use now, from one listing of the processes: MacSpace quits no tool, so these wait until it ends.
+        if let processes = ProcessCheck.live.processes() {
+            let apps = SystemDataInspector.liveRunningApps()
+            for index in found.indices {
+                found[index].runningOwner = ProcessCheck.runningOwner(found[index].owners, apps: apps, processes: processes, appPath: ProcessCheck.live.appPath)
+            }
         }
         return found.sorted { $0.bytes > $1.bytes }
     }
@@ -214,7 +267,9 @@ public enum DeveloperCaches {
 
     /// The folders developer caches may be deleted from.
     static func allowedRoots(home: String) -> [String] {
-        ["Library/Developer/Xcode", "Library/Developer/CoreSimulator/Caches", "Library/Caches", "Library/pnpm", ".npm", ".bun", ".cache", ".gradle", ".cargo"]
+        ["Library/Developer/Xcode", "Library/Developer/CoreSimulator/Caches", "Library/Developer/XCTestDevices", "Library/Caches", "Library/pnpm",
+         ".npm", ".bun", ".cache", ".gradle", ".cargo", ".yarn/berry", ".composer", ".nuget", ".pub-cache", ".android",
+         ".local/share/claude/versions", ".local/share/cursor-agent/versions"]
             .map { URL(fileURLWithPath: (home as NSString).appendingPathComponent($0)).standardizedFileURL.path }
     }
 }

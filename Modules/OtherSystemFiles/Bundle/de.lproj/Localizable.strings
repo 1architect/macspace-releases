@@ -3,7 +3,6 @@
 "%@ cache" = "%@-Cache";
 "%@ files on this Mac" = "%@-Dateien auf diesem Mac";
 "%@ free" = "%@ frei";
-"%@ of it is symbols for crash reports. macOS builds them again when it next reads one." = "%@ davon sind Symbole für Absturzberichte. macOS baut sie wieder auf, wenn es den nächsten liest.";
 "%@, ready to install" = "%@, bereit zur Installation";
 "%lld backups" = "%lld Backups";
 "%lld files" = "%lld Dateien";
@@ -11,7 +10,7 @@
 "1 backup" = "1 Backup";
 "1 file" = "1 Datei";
 "1 snapshot" = "1 Schnappschuss";
-"Already gone" = "Bereits weg";
+"Already gone" = "Bereits gelöscht";
 "App container caches" = "Caches von App-Containern";
 "Apps download them again if they need them." = "Apps laden sie bei Bedarf erneut.";
 "Backing up now" = "Backup läuft";

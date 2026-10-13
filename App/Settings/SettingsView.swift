@@ -89,10 +89,10 @@ struct SettingsView: View {
         switch option.kind {
         case .toggle:
             Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
-                                               set: { host.settings.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
+                                               set: { host.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
         case let .choice(choices, _):
             Picker(option.title, selection: Binding(get: { options.string(option.id) },
-                                                    set: { host.settings.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
+                                                    set: { host.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
                 // Only the choices whose app is installed (`OptionChoice.apps`).
                 ForEach(choices.filter(SettingsStore.isOffered), id: \.id) { Text($0.title).tag($0.id) }
             }

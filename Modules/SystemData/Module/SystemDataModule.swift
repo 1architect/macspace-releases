@@ -30,6 +30,7 @@ public struct SystemDataModule: MacSpaceModule {
     private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext) async -> SystemDataSnapshot {
         var snapshot = await store.snapshot(maxAge: maxAge, privileged: context.privileged)
         snapshot.choices = CacheChoices.load()
+        snapshot.logFloor = SystemLogFloor.load()
         snapshot.cleaner = CacheCleaner.read(context)
         return snapshot
     }
@@ -77,22 +78,9 @@ public struct SystemDataModule: MacSpaceModule {
             progress(ActionProgress(message: loc("Freeing space…")))
             return Self.purgeAssets(store: store)
         case "freeCaches":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
             let ids = Set(Selection.ids(request.parameters["ids"]))
-            return Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot)
-        case CachesPage.quitAndFree:
-            guard let id = request.parameters["id"], var entry = CachesPage.entries(snapshot).first(where: { $0.id == id }) else {
-                return .failed(loc("Already gone"))
-            }
-            progress(ActionProgress(message: loc("Quitting \(entry.title)…")))
-            guard let apps = await AppQuitter.quit(entry.owners, exact: entry.exactOwners) else {
-                return .failed(loc("\(entry.title) is running; quit it first."))
-            }
-            progress(ActionProgress(message: loc("Freeing space…")))
-            entry.open = false
-            let result = Self.freeCaches([entry], in: snapshot)
-            await AppQuitter.reopen(apps)
-            return result
+            return await Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot, quitApps: true, progress: progress)
         case "openCleaner":
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -109,7 +97,16 @@ public struct SystemDataModule: MacSpaceModule {
             progress(ActionProgress(message: loc("Freeing space…")))
             return await Self.deleteSymbolicationCache(context.privileged)
         case "cleanAll":
-            let cleaned = Self.cleanSafe(snapshot, store: store, progress: progress)
+            let log = SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil
+            var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, progress: progress, span: log ? 0...0.8 : 0...1)
+            // The system log too, which only this button and its own row erase: automatic cleaning never does (it cannot be undone).
+            if log {
+                progress(ActionProgress(fraction: 0.85, message: loc("Freeing space…")))
+                let erased = await Self.eraseUnifiedLog(context.privileged)
+                cleaned.freed += erased.freedBytes ?? 0
+                cleaned.details += erased.details
+                progress(ActionProgress(fraction: 1, message: loc("Freeing space…")))
+            }
             return .succeeded(Self.freedMessage(cleaned.freed), details: cleaned.details, freedBytes: cleaned.freed)
         default:
             return .failed(loc("Unknown action \(request.actionID)."))
@@ -121,21 +118,25 @@ public struct SystemDataModule: MacSpaceModule {
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
         let snapshot = await snapshot(maxAge: 0, context: context)
         guard SystemDataScreenBuilder.cleanBytes(snapshot) >= SystemDataScreenBuilder.worthARow else { return nil }
-        let cleaned = Self.cleanSafe(snapshot, store: store, progress: { _ in })
+        // It quits no app: the open apps' caches wait for a Free the user confirms.
+        let cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: false, progress: { _ in })
         await store.invalidate()
         return CleanupReport(freedBytes: cleaned.freed, summary: snapshot.cleaner == .macSpace ? loc("Caches, old reports and unused system assets") : loc("Old reports and unused system assets"), details: cleaned.details)
     }
 
-    /// Everything Clean frees, measured on the volume over the whole run.
-    static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, progress: ProgressSink) -> (freed: UInt64, details: [String]) {
+    /// Everything Free frees, measured on the volume over the whole run. The chosen caches of open apps go only when `quitApps` (the
+    /// user confirmed, with those apps named).
+    static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, quitApps: Bool, progress: @escaping ProgressSink,
+                          span: ClosedRange<Double> = 0...1) async -> (freed: UInt64, details: [String]) {
+        func at(_ share: Double) -> Double { span.lowerBound + (span.upperBound - span.lowerBound) * share }
         var details: [String] = []
         let before = DataVolume.freeBytes()
         let caches = CachesPage.chosen(snapshot)
-        progress(ActionProgress(fraction: 0.1, message: loc("Freeing space…")))
-        if !caches.isEmpty { details += freeCaches(caches, in: snapshot).details }
-        progress(ActionProgress(fraction: 0.5, message: loc("Freeing space…")))
+        progress(ActionProgress(fraction: at(0.03), message: loc("Freeing space…")))
+        if !caches.isEmpty { details += await freeCaches(caches, in: snapshot, quitApps: quitApps, progress: progress, span: at(0.03)...at(0.6)).details }
+        progress(ActionProgress(fraction: at(0.6), message: loc("Freeing space…")))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
-        progress(ActionProgress(fraction: 0.7, message: loc("Freeing space…")))
+        progress(ActionProgress(fraction: at(0.75), message: loc("Freeing space…")))
         if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying, !snapshot.assetsHeld { details += purgeAssets(store: store).details }
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
@@ -154,29 +155,70 @@ public struct SystemDataModule: MacSpaceModule {
         return ActionResult(outcome: .succeeded, message: "", refresh: true)
     }
 
-    /// Frees caches of the caches page, each its own way: app caches read again first (`cleanAppCaches`), web and system caches
-    /// through the cleaner, developer caches through `DeveloperCaches.free`, Homebrew's through its own cleanup. One whose app is
-    /// open is skipped. The space freed is measured on the volume over the whole run.
-    static func freeCaches(_ entries: [CacheEntry], in snapshot: SystemDataSnapshot) -> ActionResult {
-        let chosen = entries.filter { !$0.open }
-        guard !chosen.isEmpty else { return .failed(loc("Already gone")) }
-        let ids = Set(chosen.map(\.id))
+    /// Frees the chosen caches one by one, telling the page which are gone as it goes (`ActionProgress.finished`), so their rows leave
+    /// one after the other. With `quitApps` (Free was confirmed with the open apps named, `CachesPage.quitNote`), those apps are quit
+    /// first, all of them before any cache, and are not opened again: the user opens them when they want. One that does not quit (it
+    /// asked to save and the user kept it open) keeps its cache. Without it (automatic cleaning), the open apps' caches stay.
+    /// `span` is the part of the action's progress bar this takes.
+    static func freeCaches(_ entries: [CacheEntry], in snapshot: SystemDataSnapshot, quitApps: Bool, progress: @escaping ProgressSink,
+                           span: ClosedRange<Double> = 0...1) async -> ActionResult {
+        var entries = entries
+        guard !entries.isEmpty else { return .failed(loc("Already gone")) }
+        let working = loc("Freeing space…")
+        // The bar moves at once, and through the quitting too: an app that asks to save can take a while, and the button stood still.
+        func at(_ share: Double) -> Double { span.lowerBound + (span.upperBound - span.lowerBound) * share }
+        let quitting = quitApps ? entries.indices.filter { entries[$0].open } : []
+        let quitShare = quitting.isEmpty ? 0.0 : 0.3
+        progress(ActionProgress(fraction: at(0.03), message: working))
+        for (step, index) in quitting.enumerated() {
+            if await AppQuitter.quit(entries[index].owners, exact: entries[index].exactOwners) { entries[index].open = false }
+            progress(ActionProgress(fraction: at(0.03 + (quitShare - 0.03) * Double(step + 1) / Double(quitting.count)), message: working))
+        }
         let before = DataVolume.freeBytes()
         var details: [String] = []
-        let apps = chosen.filter { $0.source == .app }.map(\.id)
-        if !apps.isEmpty { details += cleanAppCaches(apps, in: snapshot).details }
-        let items = snapshot.report.items.filter { item in chosen.contains { $0.id == item.id && ($0.source == .web || $0.source == .system || $0.source == .appCopy) } }
-        if !items.isEmpty { details += clean(items).details }
-        let developer = snapshot.developerCaches.filter { ids.contains($0.id) }
-        if !developer.isEmpty { details += DeveloperCaches.free(developer) }
-        if let plan = snapshot.homebrew, ids.contains(CachesPage.homebrewOld) || ids.contains(CachesPage.homebrewDownloads) {
-            details += cleanHomebrew(plan.brew, allDownloads: ids.contains(CachesPage.homebrewDownloads)).details
+        var finished: [String] = []
+        for (index, entry) in entries.enumerated() {
+            progress(ActionProgress(fraction: at(quitShare + (1 - quitShare) * Double(index) / Double(entries.count)), message: working, finished: finished))
+            guard !entry.open else {
+                details.append("Skipped: \(entry.id). Its app is open.")
+                continue
+            }
+            // Homebrew's two rows are one cleanup: the downloads' takes the old versions too.
+            if entry.id == CachesPage.homebrewOld, entries.contains(where: { $0.id == CachesPage.homebrewDownloads }) { continue }
+            let freed = freeOne(entry, in: snapshot)
+            details += freed.details
+            if freed.done {
+                finished.append(entry.id)
+                if entry.id == CachesPage.homebrewDownloads, entries.contains(where: { $0.id == CachesPage.homebrewOld }) { finished.append(CachesPage.homebrewOld) }
+            }
         }
+        progress(ActionProgress(fraction: span.upperBound, message: working, finished: finished))
         let freed = measuredFreed(before, DataVolume.settledFreeBytes())
-        if !details.contains(where: { $0.hasPrefix("Deleted") || $0.hasPrefix("brew cleanup") }) {
-            return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
-        }
+        guard !finished.isEmpty else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
         return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
+    }
+
+    /// Frees one cache of the caches page its own way: an app cache read again first (`cleanAppCaches`), a web or system cache through
+    /// the cleaner, a developer cache through `DeveloperCaches.free`, Homebrew's through its own cleanup.
+    static func freeOne(_ entry: CacheEntry, in snapshot: SystemDataSnapshot) -> (done: Bool, details: [String]) {
+        func deleted(_ details: [String]) -> Bool { details.contains { $0.hasPrefix("Deleted") } }
+        switch entry.source {
+        case .app:
+            let details = cleanAppCaches([entry.id], in: snapshot).details
+            return (deleted(details), details)
+        case .web, .system, .appCopy:
+            let items = snapshot.report.items.filter { $0.id == entry.id }
+            guard !items.isEmpty else { return (false, ["Skipped: \(entry.id). Already gone."]) }
+            let details = clean(items).details
+            return (deleted(details), details)
+        case .developer:
+            let details = DeveloperCaches.free(snapshot.developerCaches.filter { $0.id == entry.id })
+            return (deleted(details), details)
+        case .homebrew:
+            guard let plan = snapshot.homebrew else { return (false, ["Skipped: \(entry.id). Homebrew is gone."]) }
+            let result = cleanHomebrew(plan.brew, allDownloads: entry.id == CachesPage.homebrewDownloads)
+            return (result.outcome == .succeeded, result.details)
+        }
     }
 
     static func clean(_ items: [SystemDataItem]) -> ActionResult {
@@ -339,6 +381,7 @@ public struct SystemDataModule: MacSpaceModule {
         guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
         let measured = measuredFreed(before, DataVolume.settledFreeBytes())
         let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
+        if let after = result.bytesAfter { SystemLogFloor.save(after) }
         var details = ["log erase --all\(result.prunedFormatStrings ? " and --uuidtext" : ""): the log went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
         if let error = result.error { details.append(error) }
         return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? stored), details: details,

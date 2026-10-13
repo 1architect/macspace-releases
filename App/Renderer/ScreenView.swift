@@ -13,7 +13,7 @@ struct ScreenView: View {
 
     /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
     private var hasFooter: Bool {
-        handle.screen?.primary != nil || handle.isCleaning || handle.lastResult != nil
+        handle.screen?.primary != nil || handle.screen == nil || handle.isRefreshing || handle.isCleaning || handle.lastResult != nil
             || !Self.banners(in: handle.screen?.widgets ?? []).isEmpty
     }
 
@@ -59,6 +59,23 @@ struct ScreenView: View {
             case var .section(section):
                 section.widgets = withoutBanners(section.widgets)
                 return section.widgets.isEmpty ? nil : .section(section)
+            default: return widget
+            }
+        }
+    }
+
+    /// The widgets without these rows, wherever they are: the rows an action is done with leave the page as it goes
+    /// (`ActionProgress.finished`).
+    static func without(_ ids: Set<String>, in widgets: [ScreenWidget]) -> [ScreenWidget] {
+        guard !ids.isEmpty else { return widgets }
+        return widgets.map { widget in
+            switch widget {
+            case var .list(list):
+                list.rows.removeAll { ids.contains($0.id) }
+                return .list(list)
+            case var .section(section):
+                section.widgets = without(ids, in: section.widgets)
+                return .section(section)
             default: return widget
             }
         }
@@ -123,6 +140,10 @@ struct ScreenView: View {
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
+        .overlay { AllDoneOverlay(token: handle.allDone, reloading: handle.isCleaning) { [handle] in
+            // A page that let the user choose what to free has done its job: back to the page under it.
+            if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
+        } }
         .disabled(handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
@@ -139,20 +160,23 @@ struct ScreenView: View {
                 // While the module reads the Mac again (Refresh, or after an action), only the blocks stay, pulsing: the legend and the
                 // groups under them fold away and rise in again with the new figures, instead of showing figures about to change.
                 let refreshing = content.loaded && handle.isRefreshing
-                WidgetForm(widgets: refreshing ? [] : content.widgets, handler: handler, showsTop: content.hero != nil) {
+                WidgetForm(widgets: refreshing ? [] : Self.without(handle.finishedRows, in: content.widgets), handler: handler, showsTop: content.hero != nil) {
                     if let hero = content.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing)
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
                     }
                 }
                 .animation(Theme.layout, value: refreshing ? [] : content.widgets.map(\.id))
+                .animation(Theme.layout, value: handle.finishedRows)
             } else {
-                PageSkeleton()
-                    .padding(.top, PageInsets.top - PageInsets.scrollTop)
-                    .padding(.horizontal, PageInsets.side)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                // Nothing in the page's place while the module reads the Mac: its ground breathes (`TileBackdrop.loading`) and the
+                // button says Loading… (`ActionDock`). A placeholder of rows stood there before, and stayed for good when the module
+                // could not read the Mac (2026-10-13).
+                Color.clear
+                    .accessibilityElement()
+                    .accessibilityLabel(String(localized: "Loading"))
             }
         }
         .scrollIndicators(.never)
@@ -164,7 +188,7 @@ struct ScreenView: View {
     private func groupPage(_ group: Row) -> some View {
         let widgets: [ScreenWidget]
         if let selection = group.selection, !selection.sections.isEmpty {
-            let byID = Dictionary(group.children.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let byID = Dictionary(group.children.filter { !handle.finishedRows.contains($0.id) }.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             widgets = selection.sections.compactMap { section -> ScreenWidget? in
                 let rows = section.rows.compactMap { byID[$0] }
                 guard !rows.isEmpty else { return nil }
@@ -172,9 +196,10 @@ struct ScreenView: View {
             }
         } else {
             widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
-                                        rows: group.children))]
+                                        rows: group.children.filter { !handle.finishedRows.contains($0.id) }))]
         }
         return WidgetForm(widgets: widgets, handler: handler, showsTop: false) { EmptyView() }
+            .animation(Theme.layout, value: handle.finishedRows)
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
             .environment(\.rowChoice, group.selection.map { selection in
@@ -428,47 +453,53 @@ struct HeroBlocks: View {
     }
 }
 
-/// The page's shape while the module reads the Mac, for a page with no chart (`HeroBlocks` stands in for one with blocks): groups of
-/// rows as the form will draw them, a heading over each and, in each row, a title and a switch. It stays still: the page's card
-/// brightens and dims while it loads (`TileBackdrop.loading`), as a tile does. A few large grey boxes stood in for it before.
-private struct PageSkeleton: View {
-    /// Rows per group, and how much of a row's width each title takes.
-    private static let groups: [[CGFloat]] = [[0.42], [0.55, 0.36], [0.48], [0.38, 0.5]]
+/// "All done", as a page of its own: when an action the user started succeeded (`ModuleHandle.allDone`), a page with the words in its
+/// middle slides in over the page as any page does, `finished` runs under it (a choosing page goes back), and it slides away as Back
+/// does, showing the page under it.
+private struct AllDoneOverlay: View {
+    let token: Int
+    /// The module is still reading the Mac after the action (`ModuleHandle.isCleaning`): the page stays until it is done, so the page
+    /// it goes back to has its new figures. Gone back to at once, that page stood half loaded and did not answer (2026-10-13).
+    let reloading: Bool
+    let finished: () -> Void
+    @State private var shown = false
+    @State private var run: Task<Void, Never>?
+    @Environment(\.design) private var design
+    @Environment(\.pageGround) private var ground
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            ForEach(Array(Self.groups.enumerated()), id: \.offset) { group, rows in
-                VStack(alignment: .leading, spacing: 9) {
-                    // The group's heading, in the form's header indent.
-                    bar(width: 120 + CGFloat(group % 2) * 40, height: 11).padding(.leading, 12)
-                    VStack(spacing: 0) {
-                        ForEach(Array(rows.enumerated()), id: \.offset) { index, share in
-                            if index > 0 { Rectangle().fill(.primary.opacity(0.06)).frame(height: 1).padding(.horizontal, 12) }
-                            GeometryReader { proxy in
-                                HStack {
-                                    bar(width: proxy.size.width * share, height: 11)
-                                    Spacer(minLength: 12)
-                                    Capsule().fill(.primary.opacity(0.1)).frame(width: 30, height: 18)
-                                }
-                                .padding(.horizontal, 12)
-                                .frame(height: proxy.size.height)
-                            }
-                            .frame(height: 40)
-                        }
-                    }
-                    .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        ZStack {
+            if shown {
+                ZStack {
+                    Rectangle().fill(ground ?? .clear)
+                    Text("All done")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(design.ink)
                 }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel(String(localized: "Loading"))
+        .animation(Theme.push, value: shown)
+        .allowsHitTesting(shown)
+        // Only a new success: a page opened again later must not say it again.
+        .onChange(of: token) { _, _ in
+            run?.cancel()
+            run = Task { @MainActor in
+                shown = true
+                try? await Task.sleep(for: .seconds(1.2))
+                while reloadingNow, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(100)) }
+                guard !Task.isCancelled else { return }
+                finished()
+                try? await Task.sleep(for: .milliseconds(60))
+                shown = false
+            }
+        }
+        .onDisappear { run?.cancel(); shown = false }
+        .onChange(of: reloading, initial: true) { _, now in reloadingNow = now }
     }
 
-    private func bar(width: CGFloat, height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: height / 2, style: .continuous)
-            .fill(.primary.opacity(0.1))
-            .frame(width: max(width, 0), height: height)
-    }
+    /// `reloading` as it is now, for the task that waits on it (a task keeps the value it started with).
+    @State private var reloadingNow = false
 }
 
 /// The bottom-left corner of a page: one pill that is the main action, turns into the progress of what is running, then into its
@@ -501,7 +532,20 @@ private struct ActionDock: View {
         // Rows with no size of their own (`Selection.choices`) put none on the button.
         action.title = total > 0 ? title + " " + ByteFormat.string(total) : title
         action.parameters["ids"] = Selection.parameter(ids.sorted())
+        // The checked rows that name something in the confirmation (an open app, which the action quits), in page order.
+        let names = Self.orderedIDs(group).filter(ids.contains).compactMap { selection.noteNames[$0] }.reduce(into: [String]()) { names, name in
+            if !names.contains(name) { names.append(name) }
+        }
+        if let note = selection.note, !names.isEmpty {
+            action.confirmation?.message = String(format: note, ListFormatter.localizedString(byJoining: names))
+        }
         return action
+    }
+
+    /// A choosing page's rows in the order drawn: part by part, or as listed.
+    static func orderedIDs(_ group: Row) -> [String] {
+        guard let sections = group.selection?.sections, !sections.isEmpty else { return group.children.map(\.id) }
+        return sections.flatMap(\.rows)
     }
 
     /// The page's main action, or on a page that lets the user choose, the action on the chosen rows.
@@ -511,9 +555,10 @@ private struct ActionDock: View {
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     private var phase: ActionPill.Phase? {
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
-        if handle.isCleaning { return .working(handle.progress) }
-        // Reading the Mac again: the action waits for the new figures, and says so.
-        if handle.isRefreshing, mainAction != nil { return .loading }
+        if handle.isCleaning { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
+        // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
+        // (`Screen.primary`).
+        if handle.screen == nil || handle.isRefreshing { return .loading }
         if let notice, notice.action != nil || mainAction == nil || showsPassingNotice { return .notice(notice) }
         if let primary = mainAction { return .idle(primary) }
         return nil
@@ -525,7 +570,7 @@ private struct ActionDock: View {
                 ActionPill(phase: phase, dismiss: {
                     if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
                 }) { [handle] action in
-                    if let confirmation = action.confirmation, !ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { return }
+                    guard ConfirmationAlert.ask(action) else { return }
                     await handle.perform(action)
                 }
                 .transition(.blurReplace)
@@ -549,7 +594,8 @@ private struct ActionDock: View {
 private struct ActionPill: View {
     enum Phase: Equatable {
         case idle(Action)
-        case working(ActionProgress?)
+        /// The action's own working title (`Action.workingTitle`), which stays the same while it runs, and how far it is.
+        case working(String?, Double?)
         /// The module is reading the Mac again; the action comes back with the new figures.
         case loading
         case done(ActionResult)
@@ -576,7 +622,7 @@ private struct ActionPill: View {
     private var text: String {
         switch phase {
         case let .idle(action): return action.title
-        case let .working(progress): return progress?.message ?? String(localized: "Working…")
+        case let .working(title, _): return title ?? String(localized: "Working…")
         case .loading: return String(localized: "Loading…")
         case let .done(result): return result.restartRequired ? String(localized: "Restart to finish") : result.message
         case let .notice(banner): return banner.title
@@ -634,11 +680,11 @@ private struct ActionPill: View {
                 Self.shape.fill(hovering && !isWorking ? lighter : fill)
             }
             if isWorking {
-                let progress: ActionProgress? = if case let .working(progress) = phase { progress } else { nil }
+                let fraction: Double? = if case let .working(_, fraction) = phase { fraction } else { nil }
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
                     let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
                     GeometryReader { geometry in
-                        if let fraction = progress?.fraction {
+                        if let fraction {
                             Rectangle().fill(design.actionLight)
                                 .frame(width: geometry.size.width * max(0.08, min(1, fraction)))
                                 .opacity(0.7 + 0.3 * wave)

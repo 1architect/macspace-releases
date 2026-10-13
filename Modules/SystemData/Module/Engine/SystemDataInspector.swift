@@ -159,10 +159,24 @@ public struct RootOnlyPlace: Codable, Equatable, Sendable {
 public struct RunningApp: Equatable, Sendable {
     public let bundleIdentifier: String?
     public let name: String?
+    /// Part of macOS (Siri, the Control Center, the Dock): it never keeps a third-party cache, so it is never matched by its name,
+    /// and MacSpace never quits it.
+    public let system: Bool
+    /// In the Dock or the menu bar, where the user sees it and can quit it; a cache it keeps says "Open now", one kept by anything
+    /// else "In use" (`CachesPage`).
+    public let quittable: Bool
 
-    public init(bundleIdentifier: String?, name: String?) {
+    public init(bundleIdentifier: String?, name: String?, system: Bool = false, quittable: Bool = true) {
         self.bundleIdentifier = bundleIdentifier
         self.name = name
+        self.system = system
+        self.quittable = quittable
+    }
+
+    /// Whether an app at this location is part of macOS.
+    public static func isSystem(_ bundleURL: URL?) -> Bool {
+        guard let path = bundleURL?.standardizedFileURL.path else { return false }
+        return path.hasPrefix("/System/") || path.hasPrefix("/Library/Apple/") || path.hasPrefix("/usr/")
     }
 }
 
@@ -341,7 +355,10 @@ public struct SystemDataInspector {
 
     public static func liveRunningApps() -> [RunningApp] {
         #if canImport(AppKit)
-        return NSWorkspace.shared.runningApplications.map { RunningApp(bundleIdentifier: $0.bundleIdentifier, name: $0.localizedName) }
+        return NSWorkspace.shared.runningApplications.map {
+            RunningApp(bundleIdentifier: $0.bundleIdentifier, name: $0.localizedName, system: RunningApp.isSystem($0.bundleURL),
+                       quittable: $0.activationPolicy != .prohibited)
+        }
         #else
         return []
         #endif
@@ -824,6 +841,7 @@ public struct SystemDataInspector {
                 entry.container = cache.name
                 entry.bundleIdentifiers = owner.bundleIdentifiers
                 entry.ownerRunning = isRunningApp(owner.bundleIdentifiers)
+                if entry.ownerRunning { entry.quittable = !AppQuitter.owning(owner.bundleIdentifiers, exact: true, apps: running.filter(\.quittable)).isEmpty }
                 offeredContainerCaches.append(entry)
             }
             let positions = Dictionary(items.indices.map { (items[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -862,6 +880,7 @@ public struct SystemDataInspector {
             var cache = AppCache(id: "appcache:\(name)", name: name, path: path, bytes: bytes, lastChange: dates.lastChange, recentBytes: dates.recentBytes,
                                  dataLikeBytes: dates.dataLikeBytes, owner: appCacheOwner(owner))
             cache.ownerRunning = isRunning([owner, cache.title], cleanup: .deleteWhenNotRunning)
+            if cache.ownerRunning { cache.quittable = !AppQuitter.owning([owner, cache.title], exact: false, apps: running.filter(\.quittable)).isEmpty }
             return cache
         } + offeredContainerCaches
         // Where macOS keeps such folders, as found on 26B5101f: system assets (Apple Intelligence's models among them), the system

@@ -123,7 +123,7 @@ struct UpdatesSettingsSection: View {
 /// The release the Mac runs, for reports and debugging, at the end of Settings: selectable, so it can be copied.
 struct MacOSReleaseSection: View {
     var body: some View {
-        Section {
+        Section("System") {
             LabeledContent("macOS") {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()

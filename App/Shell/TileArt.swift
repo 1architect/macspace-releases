@@ -1,3 +1,4 @@
+import AppKit
 import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
@@ -289,7 +290,7 @@ enum Treemap {
 
 /// What the blocks draw, so that every part can be seen and pointed at. Parts under 2% of the total are drawn as one block ("3
 /// smaller"), and every block takes at least a share of the area, more for what can be freed (the page's main action). The sizes
-/// shown stay the real ones; the legend still lists every part. Drawn to scale, a part was a sliver a pixel or two wide, or nothing
+/// shown stay the real ones, and no block is drawn larger than a part that is larger; the legend still lists every part. Drawn to scale, a part was a sliver a pixel or two wide, or nothing
 /// at all (13.8 MB of 35 GB), and the amber block a thin strip at the far edge.
 enum BlockLayout {
     static let mergeBelow = 0.02
@@ -313,9 +314,15 @@ enum BlockLayout {
         } else if let only = small.first, Double(only.bytes) < total * dropBelow {
             shown = segments.filter { $0.id != only.id }
         }
-        return shown.map { segment in
-            (segment, max(Double(segment.bytes), total * (segment.tone == .caution ? actionShare : minimumShare)))
-        }.sorted { $0.weight > $1.weight }
+        // No block drawn larger than a part that is really larger: the amber block's share is a floor, not a lift past its
+        // neighbours. Raised to its 7% on its own, 88.5 MB of 33 GB drew larger than 764 MB and 2.24 GB beside it, and 10.1 MB
+        // larger than 68.5 MB (2026-10-13). Held to the part above it, it is drawn as large as that one at most.
+        var cap = Double.infinity
+        return shown.sorted { $0.bytes > $1.bytes }.map { segment in
+            let weight = min(max(Double(segment.bytes), total * (segment.tone == .caution ? actionShare : minimumShare)), cap)
+            cap = weight
+            return (segment, weight)
+        }
     }
 
     /// Where a block's color sits on its tile's ramp, 0 (the largest, close to the ground) to 1 (the smallest, the strongest):
@@ -371,8 +378,11 @@ struct BlocksView: View {
     var hovered: String?
     var gap: CGFloat = 3
     var loading = false
-    /// Where the blocks' order is chosen, when not at the size they are drawn: a tile's chart at rest (`Treemap.arranged`).
+    /// Where the blocks are arranged (`Treemap.arranged`): one shape for every chart, the tiles' and the page's, stretched to the size
+    /// drawn. Arranged at each chart's own size, a tile and the page it opens drew the same parts in different places (2026-10-13),
+    /// and a tile re-arranged itself as the window was resized.
     var orderSize: CGSize?
+    static let arrangement = CGSize(width: 320, height: 120)
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
@@ -403,7 +413,7 @@ struct BlocksView: View {
             let shown = blocks.map(\.segment)
             let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
             let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
-                                         orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
+                                         orderIn: CGRect(origin: .zero, size: orderSize ?? Self.arrangement))
             let corner = Self.radius(for: rects.map(inset))
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
                 // Two layers moved alike: the blocks, then their names over them.
@@ -495,7 +505,7 @@ struct BlocksView: View {
     static func segment(at point: CGPoint, in size: CGSize, segments: [UsageSegment], orderSize: CGSize? = nil) -> UsageSegment? {
         let blocks = BlockLayout.blocks(segments)
         let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: size),
-                                     orderIn: orderSize.map { CGRect(origin: .zero, size: $0) })
+                                     orderIn: CGRect(origin: .zero, size: orderSize ?? arrangement))
         return zip(blocks, rects).first { $0.1.contains(point) }?.0.segment
     }
 }
@@ -619,6 +629,25 @@ struct StateView: View {
     var flip: (@MainActor (Bool) async -> Bool)?
     /// The module offers no change: the switch is dimmed, as a page's switch row that cannot be flipped.
     var disabled = false
+    /// The detail has room in `detailLines` lines (`detailFits`); measured by the tile, which knows its width. On one line only, it
+    /// folded away on a tile 230 points wide, where "367,3 MB de modelos mantidos pelo macOS" needs 220 and has 206 (2026-10-13).
+    var showsDetail = true
+
+    static let detailFont = NSFont.systemFont(ofSize: 11)
+    static let detailLines = 2
+
+    /// Whether `detail` fits in `width` at its size, in `detailLines` lines at most, its words unbroken.
+    static func detailFits(_ detail: String, width: CGFloat) -> Bool {
+        guard width > 0 else { return false }
+        let words = detail.split(separator: " ").map { ceil((String($0) as NSString).size(withAttributes: [.font: detailFont]).width) }
+        guard words.allSatisfy({ $0 <= width }) else { return false }
+        let bounds = (detail as NSString).boundingRect(with: NSSize(width: width, height: .greatestFiniteMagnitude),
+                                                      options: [.usesLineFragmentOrigin], attributes: [.font: detailFont])
+        // One line, measured the same way.
+        let line = (detail as NSString).boundingRect(with: NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
+                                                     options: [.usesLineFragmentOrigin], attributes: [.font: detailFont]).height
+        return bounds.height <= line * CGFloat(detailLines) + 1
+    }
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
@@ -656,9 +685,12 @@ struct StateView: View {
                 .allowsHitTesting(flip != nil && part != .allButSwitch)
             }
             if part != .switchOnly {
-                // One line, as the other tiles' text: across the tile, a little smaller where it is long.
-                Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(1).minimumScaleFactor(0.8)
-                    .opacity(wave(1))
+                // Never shrunk: on two lines where one is too short, and folded away only where two are too (`showsDetail`).
+                if showsDetail {
+                    Text(detail).font(.system(size: 11)).foregroundStyle(palette.soft).lineLimit(Self.detailLines)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(wave(1))
+                }
                 if let meter {
                     // Read here: the geometry reader's closure outlives this call and cannot hold `wave`.
                     let strength = wave(2)

@@ -1,4 +1,5 @@
 import MacSpacePlatform
+import MacSpaceSdk
 import SwiftUI
 
 /// Cleanup in one section: automatic cleanup (on or off, how often), then what has been freed so far and a
@@ -52,7 +53,7 @@ struct SettingsLinkRow: View {
     }
 }
 
-/// Every cleanup, newest first: the module, when and how it started beside it, and the space freed.
+/// Every cleanup, newest first: the module, when, how it started as a pill, and the space freed.
 struct CleanupHistoryPage: View {
     @State private var entries = CleanupHistory.shared.entries
     @State private var lifetime = CleanupHistory.shared.lifetimeBytes
@@ -65,8 +66,10 @@ struct CleanupHistoryPage: View {
                     Text("Nothing cleaned yet.").foregroundStyle(.secondary)
                 }
                 ForEach(entries) { entry in
-                    HStack {
-                        TitleLine(title: entry.moduleName, note: "\(entry.date.formatted(date: .abbreviated, time: .shortened)) · \(Self.trigger(entry.trigger))")
+                    HStack(spacing: 8) {
+                        TitleLine(title: entry.moduleName, note: entry.date.formatted(date: .abbreviated, time: .shortened))
+                        // How it started is a fact about the row: a pill.
+                        BadgeView(badge: Badge(Self.trigger(entry.trigger)))
                         Spacer(minLength: 8)
                         Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
                     }
@@ -92,9 +95,9 @@ struct CleanupHistoryPage: View {
 
     static func trigger(_ trigger: CleanupHistory.Trigger) -> String {
         switch trigger {
-        case .manual: return String(localized: "by you")
-        case .automatic: return String(localized: "automatic")
-        case .background: return String(localized: "finished by MacSpace")
+        case .manual: return String(localized: "By you")
+        case .automatic: return String(localized: "Automatic")
+        case .background: return String(localized: "By MacSpace")
         }
     }
 }

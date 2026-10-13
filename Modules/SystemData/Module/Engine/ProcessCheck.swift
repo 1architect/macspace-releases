@@ -17,6 +17,35 @@ public struct RunningProcess: Equatable, Sendable {
     }
 }
 
+extension RunningApp {
+    /// Whether this app is the owner named: by bundle identifier, or, unless `exact`, by its name or a name that contains it
+    /// (`Firefox` in `Mozilla Firefox`). An app of macOS is never matched by name: "Siri" is in `SiriEntityCache`, a cache of
+    /// macOS's own.
+    func owns(_ owner: String, exact: Bool = false) -> Bool {
+        if bundleIdentifier?.caseInsensitiveCompare(owner) == .orderedSame { return true }
+        guard !exact, !system, let name else { return false }
+        return name.caseInsensitiveCompare(owner) == .orderedSame || owner.lowercased().contains(name.lowercased()) && name.count >= 4
+    }
+}
+
+/// The bundle identifiers of bundles programs run from, read once each.
+private final class BundleIdentifiers: @unchecked Sendable {
+    static let shared = BundleIdentifiers()
+    private let lock = NSLock()
+    private var known: [String: String?] = [:]
+
+    func identifier(of bundle: String) -> String? {
+        lock.lock()
+        if let found = known[bundle] { lock.unlock(); return found }
+        lock.unlock()
+        let identifier = (NSDictionary(contentsOfFile: bundle + "/Contents/Info.plist")?["CFBundleIdentifier"] as? String)
+        lock.lock()
+        known[bundle] = identifier
+        lock.unlock()
+        return identifier
+    }
+}
+
 /// What the cleaner checks before each deletion besides the running apps. The running apps miss what is not an app: a compiler using
 /// its module cache, an app's helper or background agent, any process still holding a cache file open. The caches the cleaner deletes
 /// belong to the user, so every process that can use them runs as the user and can be read without root. When something cannot be
@@ -46,10 +75,7 @@ public struct ProcessCheck: Sendable {
     /// name (a command-line tool such as `clang`), or a process whose executable is inside the owner's app (its helpers and agents).
     static func runningOwner(_ owners: [String], apps: [RunningApp], processes: [RunningProcess], appPath: (String) -> String?) -> String? {
         owners.first { owner in
-            if apps.contains(where: { app in
-                app.bundleIdentifier?.caseInsensitiveCompare(owner) == .orderedSame
-                    || app.name.map { $0.caseInsensitiveCompare(owner) == .orderedSame || owner.lowercased().contains($0.lowercased()) && $0.count >= 4 } == true
-            }) { return true }
+            if apps.contains(where: { $0.owns(owner) }) { return true }
             if processes.contains(where: { $0.name.caseInsensitiveCompare(owner) == .orderedSame }) { return true }
             guard owner.contains("."), let bundle = appPath(owner) else { return false }
             let inside = bundle.hasSuffix("/") ? bundle : bundle + "/"
@@ -60,14 +86,27 @@ public struct ProcessCheck: Sendable {
     /// The first of these apps that is running, by bundle identifier only, for a sandboxed app's container, which is named after it:
     /// the app itself, or a process running from inside its bundle (an extension, a helper). Unlike `runningOwner`, an app whose name
     /// is only part of an identifier does not count: the Finder, always open, is not `com.example.FinderSync`.
-    static func runningApp(_ bundleIdentifiers: [String], apps: [RunningApp], processes: [RunningProcess], appPath: (String) -> String?) -> String? {
+    static func runningApp(_ bundleIdentifiers: [String], apps: [RunningApp], processes: [RunningProcess], appPath: (String) -> String?,
+                           bundleOf: (String) -> String? = ProcessCheck.bundleIdentifier(ofProgram:)) -> String? {
         for identifier in bundleIdentifiers {
             if let app = apps.first(where: { $0.bundleIdentifier?.caseInsensitiveCompare(identifier) == .orderedSame }) { return app.name ?? identifier }
-            guard let bundle = appPath(identifier) else { continue }
-            let inside = bundle.hasSuffix("/") ? bundle : bundle + "/"
-            if let process = processes.first(where: { $0.executablePath?.hasPrefix(inside) == true }) { return process.name }
+            // A process counts for the bundle it comes from: the app's own program for the app, an extension's for the extension. Every
+            // process inside the app's bundle counted for the app, and WhatsApp's notification extension, which macOS keeps running
+            // while WhatsApp is closed and which has a container of its own, kept WhatsApp's cache from ever being freed (26B5101f,
+            // 2026-10-13).
+            if let process = processes.first(where: { $0.executablePath.flatMap(bundleOf)?.caseInsensitiveCompare(identifier) == .orderedSame }) {
+                return process.name
+            }
         }
         return nil
+    }
+
+    /// The bundle identifier of the innermost bundle a program is in (`…/WhatsApp.app/Contents/PlugIns/ServiceExtension.appex/…` is
+    /// the extension's), from its Info.plist; nil for a program in no bundle. Read once per bundle.
+    @Sendable static func bundleIdentifier(ofProgram path: String) -> String? {
+        guard let range = path.range(of: "/Contents/MacOS/", options: .backwards) else { return nil }
+        let bundle = String(path[..<range.lowerBound])
+        return BundleIdentifiers.shared.identifier(of: bundle)
     }
 
     /// The name of a process whose program is at or under one of the paths, compared as the kernel reports paths

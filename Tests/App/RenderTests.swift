@@ -81,7 +81,7 @@ final class RenderTests: XCTestCase {
                 let frame = Bento.frame(placements[index], columns: 3, rows: rows, in: size)
                 ZStack(alignment: .bottomTrailing) {
                     TileFace(tint: tile.0, info: tile.1)
-                    TileCaption(title: tile.1.title, status: tile.1.status, size: CaptionSize.tile(height: frame.height)).padding(CaptionSize.tilePadding)
+                    TileCaption(title: tile.1.title, status: tile.1.status, size: CaptionSize.tile(height: frame.height, large: frame.height > 300)).padding(CaptionSize.tilePadding)
                 }
                 .frame(width: frame.width, height: frame.height)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous))
@@ -150,24 +150,33 @@ final class RenderTests: XCTestCase {
         }
     }
 
-    func testBlocksLegendMovesOverALongCaption() {
+    /// The line naming the hovered block goes beside the caption where it has room, and nowhere else: it never takes a row off the
+    /// chart, so the chart does not jump as the window's width crosses the point (2026-10-13).
+    func testBlocksLegendNeverTakesRoomFromTheChart() {
         let short = TileInfo(title: "cache", status: "1 GB")
         let long = TileInfo(title: "other system files", status: "free up to 63,9 MB")
         let size = CGSize(width: 270, height: 220)
-        XCTAssertFalse(TileFace.legendAbove(in: CGSize(width: 520, height: 220), info: long, captionSize: 22))
-        XCTAssertFalse(TileFace.legendAbove(in: size, info: short, captionSize: 22))
-        XCTAssertTrue(TileFace.legendAbove(in: size, info: long, captionSize: 22))
-        XCTAssertLessThan(TileFace.chartArea(in: size, info: long, captionSize: 22).height,
-                          TileFace.chartArea(in: size, info: short, captionSize: 22).height)
+        XCTAssertTrue(TileFace.legendShown(in: CGSize(width: 520, height: 220), info: long, captionSize: 22))
+        XCTAssertTrue(TileFace.legendShown(in: size, info: short, captionSize: 22))
+        XCTAssertFalse(TileFace.legendShown(in: size, info: long, captionSize: 22))
+        XCTAssertEqual(TileFace.chartArea(in: size, info: long, captionSize: 22).height,
+                       TileFace.chartArea(in: size, info: short, captionSize: 22).height)
+        // One margin on every side of the chart.
+        let area = TileFace.chartArea(in: size, info: short, captionSize: 22)
+        XCTAssertEqual(area.minX, area.minY)
+        XCTAssertEqual(size.width - area.maxX, area.minY)
     }
 }
 
 final class MenuBarIconTests: XCTestCase {
-    func testTheCirclesLeaveAndComeBackOneByOne() {
-        XCTAssertEqual(MenuBarIcon.visibility(rank: 0, phase: 0), 1, "the full grid at rest")
-        XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.5), 0, "all gone in the middle of a round")
-        XCTAssertEqual(MenuBarIcon.visibility(rank: 8, phase: 0.999), 1, "all back at its end")
-        XCTAssertLessThan(MenuBarIcon.visibility(rank: 0, phase: 0.1), MenuBarIcon.visibility(rank: 5, phase: 0.1), "the first leaves first")
+    /// The circles breathe as a loading chart's elements do: the same wave, running through them one after another.
+    func testTheCirclesBreatheAsTheChartsDoWhileTheyLoad() {
+        XCTAssertEqual(MenuBarIcon.visibility(rank: 0, at: nil), 1, "the full grid at rest")
+        let date = Date(timeIntervalSinceReferenceDate: 1000)
+        for rank in 0..<9 {
+            XCTAssertEqual(MenuBarIcon.visibility(rank: rank, at: date), LoadingWave.opacity(date, index: rank, count: 9, loading: true, reduceMotion: false))
+        }
+        XCTAssertNotEqual(MenuBarIcon.visibility(rank: 0, at: date), MenuBarIcon.visibility(rank: 4, at: date), "a wave, not all at once")
         XCTAssertEqual(Set(MenuBarIcon.order), Set(0..<9))
     }
 
@@ -179,7 +188,7 @@ final class MenuBarIconTests: XCTestCase {
         strip.lockFocus()
         NSColor.white.setFill(); NSRect(origin: .zero, size: strip.size).fill()
         for index in 0..<frames {
-            MenuBarIcon.image(phase: Double(index) / Double(frames)).draw(in: NSRect(x: CGFloat(index) * cell + 4, y: 4, width: cell - 8, height: cell - 8))
+            MenuBarIcon.image(at: Date(timeIntervalSinceReferenceDate: LoadingWave.period * Double(index) / Double(frames))).draw(in: NSRect(x: CGFloat(index) * cell + 4, y: 4, width: cell - 8, height: cell - 8))
         }
         strip.unlockFocus()
         let data = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(strip.tiffRepresentation))?.representation(using: .png, properties: [:]))

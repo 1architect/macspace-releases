@@ -40,7 +40,7 @@ struct CacheEntry: Equatable {
     var reason: String?
     /// Its other pills, outside Recommended ("Open now").
     var facts: [String] = []
-    /// Its app or tool is open: it can only be freed once that quits, so it has no box.
+    /// Its app or tool is open: a Free the user confirms closes it first (`AppQuitter`).
     var open = false
     /// The scanned item that holds it (`SystemDataItem.id`), whose block and listing it is taken out of; nil when it is in none (a
     /// developer folder System Settings counts under Developer).
@@ -93,7 +93,7 @@ enum CachesPage {
             } else {
                 entry.owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name, cache.title]
             }
-            if cache.ownerRunning { open(&entry) }
+            if cache.ownerRunning { cache.quittable == false ? inUse(&entry) : open(&entry) }
             entries.append(entry)
         }
 
@@ -116,8 +116,11 @@ enum CachesPage {
 
         // Developer tools' caches; those in ~/Library/Developer are System Settings' Developer, in no System Data item.
         for cache in snapshot.developerCaches {
-            entries.append(CacheEntry(id: cache.id, title: cache.title, bytes: cache.bytes, paths: cache.paths, source: .developer,
-                                      recommended: cache.recommended, reason: cache.reason, within: containingItem(cache.paths.first, report)))
+            var entry = CacheEntry(id: cache.id, title: cache.title, bytes: cache.bytes, paths: cache.paths, source: .developer,
+                                   recommended: cache.recommended, reason: cache.reason, within: containingItem(cache.paths.first, report))
+            entry.owners = cache.owners
+            if cache.runningOwner != nil { inUse(&entry) }
+            entries.append(entry)
         }
 
         // Homebrew's own cleanup: old versions (recommended), and every download, which Homebrew fetches again when it needs one.
@@ -150,9 +153,19 @@ enum CachesPage {
     static let homebrewOld = "homebrew:old"
     static let homebrewDownloads = "homebrew:downloads"
 
-    /// An open app's cache: not freeable now, so not recommended, and its reason stays as a fact.
+    /// An open app's cache: freed only by a Free the user confirms, which quits the app (`quitNote`), so not recommended, and its
+    /// reason stays as a fact.
     private static func open(_ entry: inout CacheEntry) {
         entry.facts = [loc("Open now")] + [entry.reason].compactMap { $0 } + entry.facts
+        entry.recommended = false
+        entry.reason = nil
+        entry.open = true
+    }
+
+    /// A cache kept by a program that is not an app in the Dock or the menu bar (a tool, a plug-in's renderer): chosen as any other,
+    /// and Free closes that program first, as it quits an open app (`AppQuitter`).
+    private static func inUse(_ entry: inout CacheEntry) {
+        entry.facts = [loc("In use")]
         entry.recommended = false
         entry.reason = nil
         entry.open = true
@@ -175,8 +188,8 @@ enum CachesPage {
     /// The part each cache is listed in.
     static func part(_ entry: CacheEntry) -> CacheEntry.Part { entry.recommended ? .recommended : entry.home }
 
-    /// A cache of an open app cannot be chosen until the app quits.
-    static func choosable(_ entry: CacheEntry) -> Bool { !entry.open }
+    /// A cache in use can be chosen when MacSpace knows what to close for it (`AppQuitter`).
+    static func choosable(_ entry: CacheEntry) -> Bool { !entry.open || !entry.owners.isEmpty }
 
     /// The caches checked: the user's choice, with every cache of a part whose header box is on, or MacSpace's recommendation.
     static func checked(_ entries: [CacheEntry], _ choices: CacheChoices) -> Set<String> {
@@ -185,7 +198,8 @@ enum CachesPage {
         return Set(candidates.filter { chosen.contains($0.id) || choices.all.contains(part($0).rawValue) }.map(\.id))
     }
 
-    /// What the page's main Free button and automatic cleaning free. Nothing when another app frees the caches.
+    /// What the page's main Free button and automatic cleaning free (automatic cleaning never the open apps' caches, as it quits no
+    /// app). Nothing when another app frees the caches.
     static func chosen(_ snapshot: SystemDataSnapshot, now: Date = Date()) -> [CacheEntry] {
         guard snapshot.cleaner == .macSpace else { return [] }
         let all = entries(snapshot, now: now)
@@ -224,15 +238,16 @@ enum CachesPage {
         var group = Row.group(id: groupID, title: loc("Caches you can free"), totalBytes: all.map(\.bytes).reduce(0, +), rows: rows)
         let choosable = all.filter(self.choosable)
         group.selection = Selection(
-            action: Action(id: "freeCaches", title: loc("Free selected"), confirmation: Confirmation(
-                title: loc("Free the selected caches?"), message: loc("Apps rebuild their caches. They may open more slowly the first time."),
-                confirmTitle: loc("Free"))),
+            action: Action(id: "freeCaches", title: loc("Free selected"), confirmation: Confirmation(title: loc("Free the selected caches?"), confirmTitle: loc("Free")),
+                           workingTitle: loc("Freeing space…")),
             choices: Dictionary(choosable.map { ($0.id, $0.bytes) }, uniquingKeysWith: { first, _ in first }),
             checked: checked(all, choices).sorted(),
             suggested: choosable.filter(\.recommended).map(\.id),
             suggestedTitle: loc("Free recommended"),
             sections: sections,
-            save: Action(id: "saveCacheChoice", title: loc("Free selected")))
+            save: Action(id: "saveCacheChoice", title: loc("Free selected")),
+            noteNames: Dictionary(choosable.filter(\.open).map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first }),
+            note: loc("Quits %@."))
         return group
     }
 
@@ -247,21 +262,20 @@ enum CachesPage {
     }
 
     /// A cache as a row: its pills (where it comes from and why, under Recommended; its state elsewhere) and its folder. No (i):
-    /// the pills say it. An open app's cache has a Free button of its own, which quits the app, frees the cache and opens the app
-    /// again (`quitAndFree`).
+    /// the pills say it.
     static func row(_ entry: CacheEntry, part: CacheEntry.Part) -> Row {
         let badges = part == .recommended ? [entry.source.title] + [entry.reason].compactMap { $0 } : entry.facts
-        var actions: [Action] = []
-        if entry.open, !entry.owners.isEmpty {
-            actions.append(Action(id: quitAndFree, title: loc("Free"), parameters: ["id": entry.id], confirmation: Confirmation(
-                title: loc("Quit \(entry.title) and free its cache?"),
-                message: loc("\(entry.title) quits, its cache is freed, and it opens again. It may ask you to save first."), confirmTitle: loc("Free"))))
-        }
-        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0) }, actions: actions,
-                   paths: entry.paths)
+        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0) }, paths: entry.paths)
     }
 
-    static let quitAndFree = "quitAndFree"
+    /// The confirmation's line when some of these caches belong to open apps, which Free quits first: "Quits Enscape and WhatsApp.".
+    /// nil when none does.
+    static func quitNote(_ entries: [CacheEntry]) -> String? {
+        var names: [String] = []
+        for entry in entries where entry.open && !names.contains(entry.title) { names.append(entry.title) }
+        guard !names.isEmpty else { return nil }
+        return String(format: loc("Quits %@."), ListFormatter.localizedString(byJoining: names))
+    }
 
     // MARK: What the page takes out of the rest
 

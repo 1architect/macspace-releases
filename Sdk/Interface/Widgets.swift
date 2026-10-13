@@ -21,12 +21,14 @@ public struct Badge: Codable, Equatable, Sendable {
     }
 }
 
+/// Asked before an action runs. Keep it short: the title asks the question ("Free 250 MB?"), and the message, when there is one, says
+/// in one line what the user would not expect (an app that will quit). Never how MacSpace works inside.
 public struct Confirmation: Codable, Equatable, Sendable {
     public var title: String
     public var message: String
     public var confirmTitle: String
 
-    public init(title: String, message: String, confirmTitle: String) {
+    public init(title: String, message: String = "", confirmTitle: String) {
         self.title = title
         self.message = message
         self.confirmTitle = confirmTitle
@@ -50,9 +52,13 @@ public struct Action: Codable, Equatable, Sendable {
     public var parameters: [String: String]
     public var confirmation: Confirmation?
     public var requires: [Permission]
+    /// What the button says while the action runs, and nothing else: "Freeing space…" for every action that frees space.
+    /// The button fills from the left as the action advances (`ActionProgress.fraction`); the module's progress messages are not
+    /// shown. nil: "Working…".
+    public var workingTitle: String?
 
     public init(id: String, title: String, symbol: String? = nil, role: ActionRole = .normal, parameters: [String: String] = [:],
-                confirmation: Confirmation? = nil, requires: [Permission] = []) {
+                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil) {
         self.id = id
         self.title = title
         self.symbol = symbol
@@ -60,6 +66,7 @@ public struct Action: Codable, Equatable, Sendable {
         self.parameters = parameters
         self.confirmation = confirmation
         self.requires = requires
+        self.workingTitle = workingTitle
     }
 }
 
@@ -70,7 +77,10 @@ public struct Screen: Codable, Equatable, Sendable {
     public var subtitle: String?
     /// The big bar at the top of the page, drawn without a card.
     public var hero: UsageBar?
-    /// The page's one main action, pinned at the bottom (the "Clean" pill). Every other action sits next to what it acts on.
+    /// The page's one main action, pinned at the bottom (the "Free" pill). Every other action sits next to what it acts on. Whether
+    /// or not a page has one, the pill is there while the module reads the Mac, saying Loading… and breathing as it fills, and the
+    /// page shows nothing else meanwhile but its ground breathing: no placeholder rows. While an action runs it says only the
+    /// action's `workingTitle` (`ActionProgress`).
     public var primary: Action?
     public var widgets: [ScreenWidget]
 
@@ -332,9 +342,15 @@ public struct Selection: Codable, Equatable, Sendable {
     public var suggestedTitle: String?
     public var sections: [SelectionSection]
     public var save: Action?
+    /// Rows that add a name to the confirmation while they are checked, by id: an open app's cache adds the app, which the action
+    /// quits. The names of the checked ones, joined as a list ("Enscape and WhatsApp"), fill `note`, which becomes the confirmation's
+    /// message.
+    public var noteNames: [String: String]
+    /// The confirmation's message while one of `noteNames` is checked, with `%@` for their names: "Quits %@.".
+    public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil) {
         self.action = action
         self.choices = choices
         self.checked = checked
@@ -342,9 +358,11 @@ public struct Selection: Codable, Equatable, Sendable {
         self.suggestedTitle = suggestedTitle
         self.sections = sections
         self.save = save
+        self.noteNames = noteNames
+        self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case action, choices, checked, suggested, suggestedTitle, sections, save }
+    private enum CodingKeys: String, CodingKey { case action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
@@ -356,6 +374,8 @@ public struct Selection: Codable, Equatable, Sendable {
         suggestedTitle = try container.decodeIfPresent(String.self, forKey: .suggestedTitle)
         sections = try container.decodeIfPresent([SelectionSection].self, forKey: .sections) ?? []
         save = try container.decodeIfPresent(Action.self, forKey: .save)
+        noteNames = try container.decodeIfPresent([String: String].self, forKey: .noteNames) ?? [:]
+        note = try container.decodeIfPresent(String.self, forKey: .note)
     }
 
     /// The `ids` parameter for these ids, and back.

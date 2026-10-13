@@ -34,12 +34,28 @@ final class TileCaptionTests: XCTestCase {
         let blocks = TileInfo(title: "outros arquivos do sistema", figure: "2,46 GB", status: "liberar até 748,8 MB",
                               graphic: .blocks([]))
         for size in [CGSize(width: 215, height: 150), CGSize(width: 230, height: 165), CGSize(width: 260, height: 190)] {
-            let captionSize = CaptionSize.tile(height: size.height)
+            let captionSize = CaptionSize.tile(height: size.height, large: false)
             let area = TileFace.chartArea(in: size, info: blocks, captionSize: captionSize)
             XCTAssertGreaterThanOrEqual(area.height, TileFace.minimumChartHeight, "\(size)")
         }
         // A caption on one line leaves the chart as before.
         let wide = CGSize(width: 900, height: 330)
         XCTAssertEqual(TileFace.captionHeight(in: wide, info: blocks, captionSize: 22), TileFace.captionBand)
+    }
+
+    /// A switch tile's detail wraps onto a second line, at its size, before it folds away (2026-10-13: it folded away on a 230-point tile).
+    func testASwitchTilesDetailWrapsBeforeItFolds() {
+        let detail = "367,3 MB de modelos mantidos pelo macOS"
+        XCTAssertTrue(StateView.detailFits(detail, width: 206), "two lines")
+        XCTAssertTrue(StateView.detailFits(detail, width: 400), "one line")
+        XCTAssertFalse(StateView.detailFits(detail, width: 60), "more than two lines: folded")
+    }
+
+    /// Resizing the window changes a caption's size in steps, never point by point: the text does not grow and shrink while the
+    /// window is dragged (2026-10-13).
+    func testTheCaptionSizeChangesInSteps() {
+        let sizes = Set(stride(from: 120.0, through: 600.0, by: 1).map { CaptionSize.tile(height: $0, large: false) })
+        XCTAssertEqual(sizes, [14, 18])
+        XCTAssertEqual(Set(stride(from: 250.0, through: 900.0, by: 1).map { CaptionSize.tile(height: $0, large: true) }), [18, 22])
     }
 }

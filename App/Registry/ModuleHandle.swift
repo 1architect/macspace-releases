@@ -29,8 +29,17 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isRefreshing = false
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
-    /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates.
+    /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates, and
+    /// the page's charts pulse until the figures after it are in.
     @Published public private(set) var isCleaning = false
+    /// The action the user started that is running, for its button's text (`Action.workingTitle`).
+    @Published public private(set) var runningAction: Action?
+    /// The rows the running action is done with (`ActionProgress.finished`): the page lets them go one after the other. Emptied once
+    /// the page is read again after the action.
+    @Published public private(set) var finishedRows: Set<String> = []
+    /// Bumped when an action the user started succeeded (`ActionResult`): the page shows "All done" in its middle, then a page that
+    /// lets the user choose goes back to the one under it.
+    @Published public private(set) var allDone = 0
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
     @Published public var groupPath: [String] = [] {
@@ -304,9 +313,19 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         performing = true
         let started = Date()
-        if !quiet { updateBusy(); isCleaning = true }
-        defer { if !quiet { isCleaning = false } }
-        if !quiet { progress = nil }
+        if !quiet {
+            updateBusy()
+            isCleaning = true
+            runningAction = action
+            finishedRows = []
+            progress = nil
+        }
+        defer {
+            if !quiet {
+                isCleaning = false
+                runningAction = nil
+            }
+        }
         lastResult = nil
         actionGeneration += 1
         let generation = actionGeneration
@@ -316,18 +335,32 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             Task { @MainActor in
                 guard let self, self.performing, self.actionGeneration == generation else { return }
                 self.progress = update
+                if !update.finished.isEmpty, Set(update.finished) != self.finishedRows { self.finishedRows = Set(update.finished) }
             }
         }
-        if !quiet { progress = nil }
-        if !quiet || result.outcome != .succeeded || result.restartRequired { lastResult = result }
+        // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
+        // button's text.
+        let celebrates = !quiet && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
+        if (!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired { lastResult = result }
         // A long action that ends while the user is in another app says so in Notification Center.
         if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
         if let freed = result.freedBytes {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: freed, trigger: .manual, summary: result.message)
         }
         performing = false
-        if !quiet { updateBusy() }
-        if result.refresh { await refresh(quiet: quiet) }
+        // "All done" as soon as the work is: reading the Mac again takes seconds of its own (a full scan for System Data). Meanwhile
+        // the button stays full and keeps saying what the action did, the charts keep pulsing (`isCleaning`), and the rows the action
+        // finished stay gone, until the new figures are in.
+        if !quiet {
+            if celebrates { allDone += 1 }
+            if result.refresh { progress = ActionProgress(fraction: 1, message: progress?.message ?? "", finished: progress?.finished ?? []) }
+        }
+        if result.refresh { await refresh(quiet: true) }
+        if !quiet {
+            updateBusy()
+            progress = nil
+            finishedRows = []
+        }
         return result
     }
 

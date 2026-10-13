@@ -150,7 +150,14 @@ final class AppCacheTests: XCTestCase {
         XCTAssertNil(ProcessCheck.runningApp(ids, apps: [finder], processes: [], appPath: appPath))
         XCTAssertEqual(ProcessCheck.runningApp(ids, apps: [RunningApp(bundleIdentifier: "com.example.App", name: "Example")], processes: [], appPath: appPath), "Example")
         let fileExtension = RunningProcess(pid: 1, name: "FinderSync", executablePath: "/Applications/Example.app/Contents/PlugIns/FinderSync.appex/Contents/MacOS/FinderSync")
-        XCTAssertEqual(ProcessCheck.runningApp(ids, apps: [finder], processes: [fileExtension], appPath: appPath), "FinderSync", "its extension runs")
+        let bundleOf: (String) -> String? = { $0.contains("FinderSync.appex") ? "com.example.App.FinderSync" : "com.example.App" }
+        XCTAssertEqual(ProcessCheck.runningApp(ids, apps: [finder], processes: [fileExtension], appPath: appPath, bundleOf: bundleOf), "FinderSync",
+                       "its extension runs")
+        // The app's own container is kept by the app, not by an extension macOS keeps running while the app is closed (WhatsApp's).
+        XCTAssertNil(ProcessCheck.runningApp(["com.example.App"], apps: [finder], processes: [fileExtension], appPath: appPath, bundleOf: bundleOf))
+        let app = RunningProcess(pid: 2, name: "Example", executablePath: "/Applications/Example.app/Contents/MacOS/Example")
+        XCTAssertEqual(ProcessCheck.runningApp(["com.example.App"], apps: [], processes: [app], appPath: appPath, bundleOf: bundleOf), "Example")
+        XCTAssertEqual(ProcessCheck.bundleIdentifier(ofProgram: "/System/Applications/Calculator.app/Contents/MacOS/Calculator"), "com.apple.calculator")
     }
 
     /// Freeing a container's caches empties its caches folder, which stays, of all but macOS's own; nothing else in the container, nor
@@ -250,7 +257,10 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(selection.sections[1].rows, ["appcache:open", "appcache:busy", "appcache:tool"], "largest first")
         XCTAssertEqual(selection.checked, ["appcache:gone"])
         XCTAssertEqual(selection.suggested, ["appcache:gone"])
-        XCTAssertNil(selection.choices["appcache:open"], "its app is open: the cleaner would refuse it")
+        XCTAssertNotNil(selection.choices["appcache:open"], "its app is open: chosen, it is freed once MacSpace may quit the app")
+        XCTAssertEqual(selection.noteNames.keys.sorted(), ["appcache:open"], "its app is named in the confirmation, which quits it")
+        XCTAssertEqual(selection.note, "Quits %@.")
+        XCTAssertEqual(selection.action.workingTitle, "Freeing space…")
         XCTAssertEqual(selection.action.id, "freeCaches")
         XCTAssertNotNil(selection.save)
         let gone = try XCTUnwrap(row.children.first { $0.id == "appcache:gone" })
@@ -279,21 +289,21 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(CachesPage.row(snap, now: now)?.selection?.sections.map(\.all), [false, true])
     }
 
-    /// An open app's cache has its own Free, which quits that app first; the others have only their box.
-    func testAnOpenAppsCacheIsFreedByQuittingItsApp() throws {
+    /// An open app's cache is chosen as any other, by its box or its part's; it has no button of its own, and the main Free's
+    /// confirmation names the app it quits.
+    func testAnOpenAppsCacheIsChosenLikeAnyOther() throws {
         var running = cache(.app(name: "Firefox", lastOpened: now), unchangedDays: 1, bytes: 300_000_000)
         running.id = "appcache:org.mozilla.firefox"
         running.name = "org.mozilla.firefox"
         running.ownerRunning = true
-        var closed = cache(.unknown, unchangedDays: 1, bytes: 90_000_000)
-        closed.id = "appcache:busy"
-        let row = try XCTUnwrap(CachesPage.row(snapshot([running, closed]), now: now))
-        let open = try XCTUnwrap(row.children.first { $0.id == running.id })
-        XCTAssertEqual(open.actions.map(\.id), [CachesPage.quitAndFree])
-        XCTAssertEqual(open.actions.first?.parameters["id"], running.id)
-        XCTAssertNotNil(open.actions.first?.confirmation)
-        XCTAssertEqual(row.children.first { $0.id == "appcache:busy" }?.actions, [])
-        XCTAssertEqual(CachesPage.entries(snapshot([running]), now: now).first?.owners, ["org.mozilla.firefox", "Firefox"])
+        var snap = snapshot([running])
+        let row = try XCTUnwrap(CachesPage.row(snap, now: now))
+        XCTAssertEqual(row.children.first?.actions, [])
+        XCTAssertEqual(CachesPage.entries(snap, now: now).first?.owners, ["org.mozilla.firefox", "Firefox"])
+        XCTAssertEqual(SystemDataScreenBuilder.cleanAll(snap)?.confirmation?.message ?? "", "", "not chosen: nothing quits")
+        snap.choices = CacheChoices(chosen: [], all: ["apps"])
+        XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 300_000_000, "the part's box takes it")
+        XCTAssertEqual(SystemDataScreenBuilder.cleanAll(snap)?.confirmation?.message, "Quits Firefox.")
     }
 
     /// The apps quit for a cache are found as the cleaner finds them; a container's only by bundle identifier, and never MacSpace or
@@ -306,6 +316,31 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(AppQuitter.owning(["Firefox"], exact: true, apps: apps), [], "a container is named after its app's identifier")
         XCTAssertEqual(AppQuitter.owning(["com.apple.finder", "MacSpace"], exact: false, apps: apps), [])
         XCTAssertEqual(AppQuitter.owning(["com.example.FinderSync"], exact: false, apps: apps), [], "a short name inside another's is not it")
+    }
+
+    /// A program that is not an app is closed for its cache by the owner's exact name, as the cleaner finds it running; never one of
+    /// macOS's programs, never MacSpace, never a process the apps already cover.
+    func testTheToolsClosedForACacheAreFoundByTheCleanersRule() {
+        let processes = [RunningProcess(pid: 10, name: "opencode", executablePath: "/opt/homebrew/bin/opencode"),
+                         RunningProcess(pid: 11, name: "opencode-helper", executablePath: "/opt/homebrew/bin/opencode-helper"),
+                         RunningProcess(pid: 12, name: "opencode", executablePath: "/usr/libexec/opencode"),
+                         RunningProcess(pid: 13, name: "opencode", executablePath: "/Applications/OpenCode.app/Contents/MacOS/opencode"),
+                         RunningProcess(pid: 99, name: "opencode", executablePath: "/x/opencode")]
+        XCTAssertEqual(AppQuitter.tools(["opencode"], processes: processes, appPIDs: [13], ownPID: 99).map(\.pid), [10])
+    }
+
+    /// An app of macOS is never matched by name nor quit: "Siri" is in `SiriEntityCache`, and quitting it for that cache brought up
+    /// the Siri orb (2026-10-13).
+    func testAnAppOfMacOSIsNeverQuitForACache() {
+        let siri = RunningApp(bundleIdentifier: "com.apple.siri.launcher", name: "Siri", system: true)
+        XCTAssertEqual(AppQuitter.owning(["SiriEntityCache"], exact: false, apps: [siri]), [])
+        XCTAssertNil(ProcessCheck.runningOwner(["SiriEntityCache"], apps: [siri], processes: [], appPath: { _ in nil }))
+        XCTAssertTrue(RunningApp.isSystem(URL(fileURLWithPath: "/System/Library/CoreServices/Siri.app")))
+        XCTAssertFalse(RunningApp.isSystem(URL(fileURLWithPath: "/Applications/Firefox.app")))
+        // Apple's by rule, not by a list: it begins with an app of macOS's, then a word of its own.
+        XCTAssertTrue(AppCaches.isApple("SiriEntityCache"))
+        XCTAssertFalse(AppCaches.isApple("Siriusly"), "not at a word's start")
+        XCTAssertFalse(AppCaches.isApple("FirefoxCache"), "not a name macOS has")
     }
 
     /// Settings › System Data decides who frees the caches: off, they are not on the caches page; another app, the page shows what

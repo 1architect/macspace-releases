@@ -10,19 +10,38 @@ public struct ActionRequest: Codable, Equatable, Sendable {
     }
 }
 
+/// How a running action advances. The page's button shows only `Action.workingTitle` and fills from the left by `fraction`; it never
+/// changes its text while the action runs. `message` goes to the tile's status line on Home.
 public struct ActionProgress: Codable, Equatable, Sendable {
     /// 0...1, or nil when the length is unknown.
     public var fraction: Double?
     public var message: String
+    /// The rows the action is done with so far, by id (`Row.id`), every one of them each time: the page lets them go one after the
+    /// other, so the user sees the work being done. An action that acts on rows one by one reports them as it goes.
+    public var finished: [String]
 
-    public init(fraction: Double? = nil, message: String) {
+    public init(fraction: Double? = nil, message: String, finished: [String] = []) {
         self.fraction = fraction
         self.message = message
+        self.finished = finished
+    }
+
+    private enum CodingKeys: String, CodingKey { case fraction, message, finished }
+
+    /// `finished` may be missing (a module built before it existed).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        fraction = try container.decodeIfPresent(Double.self, forKey: .fraction)
+        message = try container.decode(String.self, forKey: .message)
+        finished = try container.decodeIfPresent([String].self, forKey: .finished) ?? []
     }
 }
 
 public typealias ProgressSink = @Sendable (ActionProgress) -> Void
 
+/// What an action did. A success the user started from a button, that freed space or says something (`message`), is shown as "All
+/// done" in the middle of the page, never on the button; on a page that lets the user choose (`Row.selection`), the page then goes
+/// back to the one under it. A failure, or something left to do, is the button's text until it is clicked.
 public struct ActionResult: Codable, Equatable, Sendable {
     public enum Outcome: String, Codable, Sendable {
         case succeeded

@@ -181,29 +181,6 @@ final class TimeMachineTests: XCTestCase {
     }
 }
 
-/// The symbols for crash reports are the largest part of the purgeable app files on the development Mac (1.55 of 2.74 GB, and Free up
-/// to removed them): the row says so, as nothing else names them.
-final class SymbolsInPurgeableFilesTests: XCTestCase {
-    private func snapshot(estimate: UInt64, symbols: UInt64?) -> PurgeableSnapshot {
-        var snap = PurgeableSnapshot(services: [CacheDeleteService.fsPurgeableData: estimate], takenAt: Date())
-        snap.symbolsBytes = symbols
-        return snap
-    }
-
-    private func detail(_ snap: PurgeableSnapshot) -> String? {
-        guard case let .section(free)? = OtherSystemFilesScreenBuilder.freeNow(snap), case let .list(list) = free.widgets[0] else { return nil }
-        return list.rows.first { $0.id == CacheDeleteService.fsPurgeableData }?.detail
-    }
-
-    func testThePurgeableFilesRowNamesTheSymbols() {
-        XCTAssertTrue(detail(snapshot(estimate: 2_740_000_000, symbols: 1_546_256_384))?.contains("symbols for crash reports") == true)
-        XCTAssertFalse(detail(snapshot(estimate: 2_740_000_000, symbols: 10_000_000))?.contains("symbols") == true, "too small to say")
-        XCTAssertFalse(detail(snapshot(estimate: 2_740_000_000, symbols: nil))?.contains("symbols") == true, "unknown without the helper")
-        XCTAssertNil(OtherSystemFilesScreenBuilder.symbolsLine(snapshot(estimate: 100_000_000, symbols: 1_546_256_384)),
-                     "never more than macOS's own figure")
-    }
-}
-
 final class FakeRunner: CommandRunning, @unchecked Sendable {
     let lock = NSLock()
     var calls: [[String]] = []

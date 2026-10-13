@@ -277,11 +277,11 @@ struct BadgeView: View {
     /// What needs the user is drawn in the action color, with its deep form for the text.
     private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
 
-    /// Every other pill is drawn as the row's (i) and folder pills (`rowPill`): the same text and capsule colors, the same weight and
-    /// height, so the facts and the buttons beside them read as one set.
+    /// Every other pill has the colors of the row's (i) and folder pills (`rowPill`), grey text on a faint capsule of their height, in
+    /// the warning pill's font, so the facts read as one set.
     var body: some View {
         Text(badge.text)
-            .font(.system(size: 11, weight: attention ? .semibold : .regular))
+            .font(.system(size: 11, weight: .semibold))
             .lineLimit(1)
             .padding(.horizontal, 8)
             .frame(height: 18)

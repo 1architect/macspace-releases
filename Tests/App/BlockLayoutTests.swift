@@ -8,7 +8,7 @@ final class BlockLayoutTests: XCTestCase {
         UsageSegment(id: id, label: id, bytes: UInt64(gb * 1_000_000_000), tone: caution ? .caution : .series(0))
     }
 
-    /// Parts under 2% of the total are drawn as one block; every block keeps a minimum share, the amber one more; sizes stay real.
+    /// Parts under 2% of the total are drawn as one block; every block keeps a minimum share, the amber one more, up to the part above it; sizes stay real.
     func testSmallPartsMergeAndNoBlockIsASliver() {
         let parts = [segment("macos", 17.7), segment("support", 7.9), segment("apple", 3), segment("shared", 2.3), segment("caches", 2.2),
                      segment("brew", 2.1), segment("free", 0.62, caution: true), segment("cloud", 0.014), segment("tiny", 0.2)]
@@ -19,10 +19,23 @@ final class BlockLayoutTests: XCTestCase {
         XCTAssertEqual(smaller?.segment.label, "2 smaller")
         XCTAssertEqual(smaller?.segment.bytes, 214_000_000, "the real size")
         XCTAssertTrue(blocks.allSatisfy { $0.weight >= total * BlockLayout.minimumShare - 1 })
-        XCTAssertGreaterThanOrEqual(blocks.first { $0.segment.id == "free" }?.weight ?? 0, total * BlockLayout.actionShare - 1)
+        // The amber block's 7% would pass brew (2.1 GB): it is held to brew's size.
+        XCTAssertEqual(blocks.first { $0.segment.id == "free" }?.weight, blocks.first { $0.segment.id == "brew" }?.weight)
+        XCTAssertEqual(blocks.map(\.weight), blocks.map(\.weight).sorted(by: >), "largest first")
         XCTAssertEqual(blocks.first?.segment.id, "macos", "largest first")
         let smallerIndex = try! XCTUnwrap(blocks.firstIndex { $0.segment.id == BlockLayout.smallerID })
         XCTAssertEqual(BlockLayout.shade(of: segment("cloud", 0.014), in: blocks), BlockLayout.shade(at: smallerIndex, in: blocks), "drawn in the smaller ones' block")
+    }
+
+    /// What can be freed is never drawn larger than a part that is larger: held to the part above it, not raised past it.
+    func testTheAmberBlockIsNotDrawnLargerThanLargerParts() {
+        let parts = [segment("macos", 14.4), segment("support", 7.46), segment("protected", 3.4), segment("brew", 2.57),
+                     segment("apple", 2.36), segment("shared", 2.24), segment("rest", 0.764), segment("free", 0.0885, caution: true)]
+        let blocks = BlockLayout.blocks(parts)
+        let weight = { (id: String) in blocks.first { $0.segment.id == id }?.weight ?? 0 }
+        XCTAssertLessThanOrEqual(weight("free"), weight("rest"))
+        XCTAssertLessThanOrEqual(weight("rest"), weight("shared"))
+        XCTAssertEqual(blocks.last?.segment.id, "free")
     }
 
     /// One small part is kept as it is (merging one into "1 smaller" would only rename it), with its minimum share.

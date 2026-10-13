@@ -317,9 +317,18 @@ private struct GlassCircleStyle: ButtonStyle {
                         // SwiftUI's alike, whatever the view asks for (tried 2026-10-12). The buttons keep their look instead: the
                         // active glass drawn as it shows: the page's color a little darker, a fine dark edge at the top left and a
                         // bright one at the bottom right.
-                        Circle().fill(.black.opacity(0.05))
+                        // As the active clear glass shows (`ClearGlassCircle`): its 14 % black tint over the page, and light caught on
+                        // both rims, strongest at the top left. A dark top edge read as a hole, not glass (2026-10-13).
+                        Circle().fill(.black.opacity(0.14))
                             .overlay {
-                                Circle().strokeBorder(LinearGradient(colors: [.black.opacity(0.18), .clear, .white.opacity(0.95)],
+                                Circle().fill(RadialGradient(colors: [.white.opacity(0.10), .clear], center: .topLeading,
+                                                             startRadius: 0, endRadius: diameter))
+                            }
+                            .overlay {
+                                Circle().strokeBorder(LinearGradient(stops: [.init(color: .white.opacity(0.6), location: 0),
+                                                                             .init(color: .white.opacity(0.08), location: 0.45),
+                                                                             .init(color: .white.opacity(0.08), location: 0.6),
+                                                                             .init(color: .white.opacity(0.35), location: 1)],
                                                                      startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
                             }
                     } else if reduceTransparency {

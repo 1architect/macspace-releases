@@ -347,7 +347,7 @@ public struct MainView: View {
     private func card(_ layer: ZoomLayer, in size: CGSize, target: CGRect, face: Bool) -> some View {
         ZoomCard(progress: progress, origin: layer.origin, target: target, container: size) { p in
             TileContent(destination: layer.destination, tint: layer.tint, host: host, storage: storage,
-                        captionSize: CaptionSize.tile(height: layer.origin.height), progress: p,
+                        captionSize: CaptionSize.tile(height: layer.origin.height, large: frames.isLarge(layer.destination)), progress: p,
                         showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45))
         }
     }

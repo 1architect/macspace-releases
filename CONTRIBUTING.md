@@ -155,6 +155,19 @@ not grey text after the title. The (i) is only for what a pill cannot say. Never
 
 **One verb.** Every action that frees space is titled Free, on buttons and in confirmations ("Free", "Free 120 MB", "Free
 selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be undone keeps the "Cannot be undone" pill.
+
+**Freeing looks the same everywhere.** While an action frees space, its button says only "Freeing space…" (`Action.workingTitle`)
+and fills as the work advances; it shows no other text, no step and no count. An action that frees rows reports each one as it is
+done (`ActionProgress.finished`), and the rows leave the page one after another. When it ends, "All done" comes in as a page of
+its own, the words in its middle, then slides away as Back does; a page where the user chose what to free goes back to the one
+under it. The button starts filling as soon as the action starts. The charts pulse until the new figures are
+in. A failure, or something left to do, is the button's text until it is clicked.
+
+**Confirmations are short.** The title asks ("Free 250 MB?"). A message, when there is one, is one line about what the user would
+not expect: the apps that quit ("Quits Enscape and WhatsApp."). MacSpace never opens again an app it quit.
+
+**Loading.** While a module reads the Mac, its page shows its ground breathing and the button saying "Loading…", and nothing
+else: no placeholder rows.
 - When a row stands for files the user can open, list them in `Row.paths` (a folder button shows them in the Finder). When a page
   has a hero chart, give each block the rows it is made of in `UsageSegment.items` (a click opens a page of them), and leave them
   out on the tile. The doc comments in `Sdk/Interface/Widgets.swift` say how.

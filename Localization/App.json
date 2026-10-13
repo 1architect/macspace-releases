@@ -131,12 +131,12 @@
  "You can free up to %@ right now.": ["Você pode liberar até %@ agora.", "Vous pouvez libérer jusqu’à %@ dès maintenant.", "Puedes liberar hasta %@ ahora mismo.", "Du kannst jetzt bis zu %@ freigeben."],
  "You're all set": ["Tudo pronto", "Tout est prêt", "Todo listo", "Alles bereit"],
  "Your disk is almost full": ["Seu disco está quase cheio", "Votre disque est presque plein", "Tu disco está casi lleno", "Dein Speicher ist fast voll"],
- "automatic": ["automática", "automatique", "automática", "automatisch"],
- "by you": ["por você", "par vous", "por ti", "von dir"],
+ "Automatic": ["Automática", "Automatique", "Automática", "Automatisch"],
+ "By you": ["Por você", "Par vous", "Por ti", "Von dir"],
  "disabled": ["desativados", "désactivés", "desactivados", "deaktiviert"],
  "disk": ["disco", "disque", "disco", "Speicher"],
  "enabled": ["ativados", "activés", "activados", "aktiviert"],
- "finished by MacSpace": ["concluída pelo MacSpace", "terminé par MacSpace", "terminada por MacSpace", "von MacSpace abgeschlossen"],
+ "By MacSpace": ["Pelo MacSpace", "Par MacSpace", "Por MacSpace", "Von MacSpace"],
  "looking…": ["analisando…", "analyse…", "analizando…", "wird geprüft …"],
  "macOS": ["macOS", "macOS", "macOS", "macOS"],
  "macOS is treating MacSpace as a downloaded app, so the helper cannot be installed. In Terminal run: xattr -dr com.apple.quarantine /Applications/MacSpace.app, then reopen MacSpace. (A notarized release does not need this.)": ["O macOS está tratando o MacSpace como um app baixado, então o auxiliar não pode ser instalado. No Terminal, execute: xattr -dr com.apple.quarantine /Applications/MacSpace.app e abra o MacSpace de novo. (Uma versão notarizada não precisa disso.)", "macOS traite MacSpace comme une app téléchargée : l’assistant ne peut donc pas être installé. Dans Terminal, exécutez : xattr -dr com.apple.quarantine /Applications/MacSpace.app, puis rouvrez MacSpace. (Une version notarisée n’en a pas besoin.)", "macOS trata MacSpace como una app descargada, así que no se puede instalar el asistente. En Terminal, ejecuta: xattr -dr com.apple.quarantine /Applications/MacSpace.app y vuelve a abrir MacSpace. (Una versión notarizada no lo necesita.)", "macOS behandelt MacSpace als geladene App, daher kann das Hilfsprogramm nicht installiert werden. Führe im Terminal xattr -dr com.apple.quarantine /Applications/MacSpace.app aus und öffne MacSpace erneut. (Eine notarisierte Version braucht das nicht.)"],
@@ -146,5 +146,7 @@
  "settings": ["ajustes", "réglages", "ajustes", "Einstellungen"],
  "undone": ["desfeito", "annulé", "deshecho", "rückgängig"],
  "working…": ["trabalhando…", "en cours…", "trabajando…", "wird ausgeführt …"],
- "Kept while Apple Intelligence is on": ["Mantido enquanto a Apple Intelligence estiver ativa", "Conservé tant qu’Apple Intelligence est activé", "Se conserva mientras Apple Intelligence esté activado", "Bleibt, solange Apple Intelligence aktiv ist"]
+ "Kept while Apple Intelligence is on": ["Mantido enquanto a Apple Intelligence estiver ativa", "Conservé tant qu’Apple Intelligence est activé", "Se conserva mientras Apple Intelligence esté activado", "Bleibt, solange Apple Intelligence aktiv ist"],
+ "All done": ["Pronto", "Terminé", "Listo", "Fertig"],
+ "System": ["Sistema", "Système", "Sistema", "System"]
 }

@@ -80,7 +80,6 @@ public final class StatusItemController: NSObject {
     private weak var host: ModuleHost?
     private var observers: Set<AnyCancellable> = []
     private var animation: Task<Void, Never>?
-    private var phase: Double = 0
 
     public func install(host: ModuleHost) {
         self.host = host
@@ -98,7 +97,7 @@ public final class StatusItemController: NSObject {
         let shown = GeneralSettings.showsInMenuBar()
         if shown, item == nil {
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-            item.button?.image = MenuBarIcon.image(phase: phase)
+            item.button?.image = MenuBarIcon.image(at: nil)
             item.button?.setAccessibilityLabel("MacSpace")
             item.button?.target = self
             item.button?.action = #selector(clicked(_:))
@@ -171,20 +170,15 @@ public final class StatusItemController: NSObject {
     @objc private func openSettings() { AppRouter.shared.open(.settings) }
     @objc private func quit() { NSApp.terminate(nil) }
 
-    /// The circles leave and come back, round after round, while something is cleaned; the round in progress finishes when it ends.
+    /// The circles breathe while something is cleaned, and rest full when it ends.
     private func animate() {
         guard animation == nil, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         animation = Task { @MainActor [weak self] in
-            let start = Date()
-            while !Task.isCancelled, let self {
+            while !Task.isCancelled, let self, self.host?.isCleaning ?? false {
+                self.item?.button?.image = MenuBarIcon.image(at: Date())
                 try? await Task.sleep(for: .seconds(1 / MenuBarIcon.frameRate))
-                let next = (Date().timeIntervalSince(start) / MenuBarIcon.round).truncatingRemainder(dividingBy: 1)
-                if !(self.host?.isCleaning ?? false), next < self.phase { break }
-                self.phase = next
-                self.item?.button?.image = MenuBarIcon.image(phase: next)
             }
-            self?.phase = 0
-            self?.item?.button?.image = MenuBarIcon.image(phase: 0)
+            self?.item?.button?.image = MenuBarIcon.image(at: nil)
             self?.animation = nil
         }
     }

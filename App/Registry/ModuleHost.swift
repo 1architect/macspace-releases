@@ -190,6 +190,13 @@ public final class ModuleHost: ObservableObject {
         applySchedule()
     }
 
+    /// Keeps an option and has its module read again at once, quietly: an option can change what its tile and page show.
+    public func setOption(_ value: OptionValue, _ optionID: String, module id: String) {
+        settings.setOption(value, optionID, module: id)
+        guard let handle = handles.first(where: { $0.id == id }) else { return }
+        Task { await handle.refresh(quiet: true) }
+    }
+
     public func setBackgroundTask(_ enabled: Bool, _ taskID: String, module id: String) {
         settings.setBackgroundTask(enabled, taskID, module: id)
         applySchedule()

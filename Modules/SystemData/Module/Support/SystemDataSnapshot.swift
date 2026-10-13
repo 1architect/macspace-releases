@@ -32,6 +32,8 @@ struct SystemDataSnapshot: Sendable {
     var developerCaches: [DeveloperCache] = []
     /// What the user chose on the caches page (`CacheChoices`), read when the page is built, not when the Mac is scanned.
     var choices = CacheChoices()
+    /// What the system log kept at its last erase (`SystemLogFloor`), which no erase frees; nil before the first.
+    var logFloor: UInt64?
     /// Who frees the caches (`CacheCleaner`), read from Settings when the page is built.
     var cleaner: CacheCleaner = .macSpace
 }

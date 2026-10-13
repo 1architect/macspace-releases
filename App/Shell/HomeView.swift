@@ -82,18 +82,14 @@ struct TileFace: View {
     var switchOverlaid = false
     @Environment(\.design) private var design
 
-    /// Room left under the chart for the caption.
+    /// Room left under the chart for the caption: a one-line caption at 22 points, with the margin under it (`margin`).
     static let captionBand: CGFloat = 62
 
-    /// How far below the tile's top edge its chart starts, whatever the chart. The caption's baseline sits as far above the bottom
-    /// edge (`TileContent`). The same for every chart: the dots and the switch started at 16, so their tiles' captions sat higher
-    /// than the others' in the same row.
-    static let topInset: CGFloat = 12
-
-    /// How what comes and goes with the tile's size (resizing the window) comes and goes: as the tiles do when the window opens. The
-    /// animation goes with the transition, not on the view: an animation on the view would also animate every frame of the live
-    /// resize, and the tiles would trail the window.
-    static let resizeTransition = AnyTransition.opacity.combined(with: .scale(scale: 0.86)).animation(Theme.layout)
+    /// The tile's one margin, 12 points: from the top edge to the chart, from the sides to the chart, from the right edge to the
+    /// caption, and from the bottom edge to the caption's baseline (`TileContent`), on every tile, large or small. The chart started
+    /// 15 points down while its sides were 12 away, which left the top looking wider (2026-10-13); 12 is the sides' margin, kept.
+    static let margin: CGFloat = 12
+    static let topInset: CGFloat = margin
 
     /// The caption's size, which sets how much room it leaves the legend under a blocks chart.
     var captionSize: CGFloat = 22
@@ -102,22 +98,18 @@ struct TileFace: View {
     /// back and forth while the tile moves. nil: at the size it is drawn.
     var restingSize: CGSize?
 
-    /// The line under a blocks chart (what amber means, or the block under the pointer): its height, and the least width it reads in.
-    static let legendRow: CGFloat = 20
+    /// The least width the line naming the block under the pointer reads in.
     static let legendMinimumWidth: CGFloat = 84
 
-    /// Where a blocks chart sits in a tile of `size`. The legend goes left of the caption; where the caption leaves it too little room
-    /// (a narrow tile, a long caption), it goes over the caption instead and the chart gives way. Side by side, the two overlapped.
-    /// The room under the chart is the caption's own height (never less than `captionBand`), so a caption that takes more lines
-    /// (`CaptionLayout`) takes only what they need. Adding each extra line on top of the band, and the legend's row over it, left a
-    /// small tile's chart a few points tall (2026-10-12). The chart keeps `minimumChartHeight`: where the legend would take it
-    /// below that, the tile has no legend (`legendShown`).
+    /// Where a blocks chart sits in a tile of `size`: from the top margin down to the caption, whose height it leaves (never less
+    /// than `captionBand`), so a caption that takes more lines (`CaptionLayout`) takes only what they need. The line naming the block
+    /// under the pointer goes left of the caption, only where it has room there (`legendShown`); it never takes room from the chart.
+    /// Going above the caption where it had none, it took a row off the chart, and the chart jumped by that row each time the
+    /// window's width crossed the point (2026-10-13).
     static func chartArea(in size: CGSize, info: TileInfo, captionSize: CGFloat, restingSize: CGSize? = nil) -> CGRect {
         let rest = restingSize ?? size
-        let top = topInset
         let band = captionHeight(in: rest, info: info, captionSize: captionSize) + 14
-            + (legendShown(in: rest, info: info, captionSize: captionSize) && legendAbove(in: rest, info: info, captionSize: captionSize) ? legendRow : 0)
-        return CGRect(x: 12, y: top, width: max(size.width - 24, 0), height: max(size.height - top - band, 0))
+        return CGRect(x: margin, y: topInset, width: max(size.width - 2 * margin, 0), height: max(size.height - topInset - band, 0))
     }
 
     static let minimumChartHeight: CGFloat = 40
@@ -129,16 +121,9 @@ struct TileFace: View {
         return max(captionBand, layout.titleHeight + ceil(status.ascender - status.descender + status.leading) + TileContent.captionBottom(size: captionSize))
     }
 
-    /// Whether the line naming the block under the pointer has room: beside the caption, or above it while the chart keeps
-    /// `minimumChartHeight`.
+    /// Whether the line naming the block under the pointer has room left of the caption.
     static func legendShown(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
-        guard legendAbove(in: size, info: info, captionSize: captionSize) else { return true }
-        let chart = size.height - topInset - captionHeight(in: size, info: info, captionSize: captionSize) - 14 - legendRow
-        return chart >= minimumChartHeight
-    }
-
-    static func legendAbove(in size: CGSize, info: TileInfo, captionSize: CGFloat) -> Bool {
-        legendRoom(in: size, info: info, captionSize: captionSize) < legendMinimumWidth
+        legendRoom(in: size, info: info, captionSize: captionSize) >= legendMinimumWidth
     }
 
     /// The width left of the caption for the legend.
@@ -151,7 +136,7 @@ struct TileFace: View {
         let measured = max(layout.titleWidth, width(info.status, CaptionFont.status(size: captionSize)))
         // The caption never runs past the tile: where it would, it takes more lines (`CaptionLayout`).
         let caption = min(ceil(measured), max(size.width - 2 * padding, 0))
-        return size.width - 14 - 12 - caption - padding
+        return size.width - margin - 12 - caption - padding
     }
 
     @Environment(\.openPageRadius) private var pageRadius
@@ -185,16 +170,21 @@ struct TileFace: View {
                 GlowEdge().opacity(chartOpacity).transition(.opacity)
             }
         }
-        .overlay(alignment: .topTrailing) {
+        // The mark sits in the bottom-left corner, on the caption's last line, clear of the switch and the window's buttons at the top.
+        .overlay(alignment: .bottomLeading) {
             if info.needsAttention {
                 AttentionMark()
-                    .padding(12)
+                    .padding(.leading, Self.margin)
+                    .padding(.bottom, TileContent.captionBottom(size: captionSize))
                     .opacity(chartOpacity)
                     .transition(.scale.combined(with: .opacity))
             }
         }
         .animation(Theme.hover, value: info.needsAttention)
     }
+
+    /// Room the attention mark takes at the start of the line under a blocks chart.
+    private var markRoom: CGFloat { info.needsAttention ? 27 : 0 }
 
     private func legend(_ mark: some View, _ text: String) -> some View {
         HStack(spacing: 4) {
@@ -209,13 +199,11 @@ struct TileFace: View {
         switch graphic {
         case let .blocks(segments):
             let area = Self.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
-            let above = Self.legendAbove(in: restingSize ?? size, info: info, captionSize: captionSize)
             let legend = Self.legendShown(in: restingSize ?? size, info: info, captionSize: captionSize)
-            let restingArea = restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize) }
             let blocks = BlockLayout.blocks(segments)
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
             // No names in the blocks: the one under the pointer is named in the line below.
-            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading, orderSize: restingArea?.size)
+            BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, loading: info.loading)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, and nothing otherwise.
@@ -228,13 +216,13 @@ struct TileFace: View {
             .font(.system(size: 11))
             .foregroundStyle(palette.soft)
             .lineLimit(1)
-            .frame(width: max(above ? size.width - 28 : Self.legendRoom(in: size, info: info, captionSize: captionSize), 0),
-                   alignment: .leading)
-            .offset(x: 14, y: area.maxY + 8)
+            // After the attention mark, when the tile has one in that corner.
+            .frame(width: max(Self.legendRoom(in: size, info: info, captionSize: captionSize) - markRoom, 0), alignment: .leading)
+            .offset(x: Self.margin + markRoom, y: area.maxY + 8)
             .animation(Theme.hover, value: hovered?.id)
         case let .dots(dots):
             VStack(alignment: .leading, spacing: 10) {
-                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 28 - 6 * 7) / 7), loading: info.loading)
+                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 2 * Self.margin - 6 * 7) / 7), loading: info.loading)
                 HStack(spacing: 10) {
                     legend(Circle().fill(palette.step(5)), String(localized: "disabled"))
                     legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), String(localized: "enabled"))
@@ -244,15 +232,16 @@ struct TileFace: View {
                 .foregroundStyle(palette.soft)
                 .lineLimit(1)
             }
-            .padding(.leading, 14)
+            .padding(.leading, Self.margin)
             .padding(.top, Self.topInset)
-            .padding(.trailing, 14)
+            .padding(.trailing, Self.margin)
         case let .state(on, _, detail, meter, actionable):
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
-                      part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil)
+                      part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil,
+                      showsDetail: StateView.detailFits(detail, width: size.width - 2 * Self.margin))
                 // The tile's width, so the detail stays on one line; the meter keeps its own width (`StateView`).
-                .frame(width: max(size.width - 28, 0), alignment: .leading)
-                .padding(.leading, 14)
+                .frame(width: max(size.width - 2 * Self.margin, 0), alignment: .leading)
+                .padding(.leading, Self.margin)
                 .padding(.top, Self.topInset)
         case let .gauge(value, _, _):
             // A bar across the tile, centered in the room between the window's close button, in this tile's top-left corner, and
@@ -265,11 +254,16 @@ struct TileFace: View {
     }
 }
 
-/// The caption's size: large on big tiles, smaller when the window is small, largest on a page.
+/// The caption's size, in two steps for each kind of tile: smaller on a short tile, so its chart keeps room, larger once the tile is
+/// tall enough. Worked out from the tile's height point by point, it changed with every point of a resize, and the text grew and
+/// shrank while the window was dragged (2026-10-13); now it changes at most once, at its step.
 enum CaptionSize {
-    static let tilePadding: CGFloat = 15
+    /// The caption's distance from the tile's right edge: the tile's margin (`TileFace.margin`).
+    static let tilePadding: CGFloat = 12
 
-    static func tile(height: CGFloat) -> CGFloat { min(22, max(14, height * 0.1)) }
+    static func tile(height: CGFloat, large: Bool) -> CGFloat {
+        large ? (height >= 300 ? 22 : 18) : (height >= 180 ? 18 : 14)
+    }
 }
 
 /// One entry of the dashboard.
@@ -280,6 +274,8 @@ struct DashboardTile: Identifiable {
 
     var id: Destination { destination }
     var opens: Bool { destination != .storage }
+    /// The featured tile, two cells by two.
+    var large: Bool { size.height > 1 }
 }
 
 /// The dashboard: the startup disk, one tile per active module and Settings, packed into a bento grid that fills the glass. Tiles
@@ -301,11 +297,6 @@ struct HomeView: View {
     /// The Settings tile; the standard window has Settings in its sidebar instead.
     var showsSettingsTile = true
     @State private var appeared = false
-    /// Resizing the window changed how the tiles are arranged: they leave as when the window closes, the grid takes the new
-    /// arrangement, and they come in again as when it opens. Until then the old arrangement stays drawn (`shownArrangement`).
-    @State private var relayout = false
-    @State private var shownArrangement: Arrangement?
-    @State private var relayoutTask: Task<Void, Never>?
     /// The tile under the pointer, and where on it in coarse steps. Held here, not in each tile, because a tile's ground and its face
     /// are drawn in different layers and both lift and lean with it.
     @State private var pointerTile: Destination?
@@ -322,11 +313,6 @@ struct HomeView: View {
     struct Arrangement: Equatable {
         var columns: Int
         var scrolls: Bool
-    }
-
-    private struct Resize: Equatable {
-        var arrangement: Arrangement
-        var sizes: [Bento.Size]
     }
 
     static func arrangement(for size: CGSize, sizes: [Bento.Size]) -> Arrangement {
@@ -380,12 +366,12 @@ struct HomeView: View {
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height), restingSize: frame.size,
+                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height, large: tile.large), restingSize: frame.size,
                                       isHidden: hiddenTile == tile.destination, hovering: pointerTile == tile.destination,
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
                     }
-                    .modifier(placed(tile, index: index, count: tiles.count, frame: frame, face: true))
+                    .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
                 }
             }
         }
@@ -407,7 +393,7 @@ struct HomeView: View {
         // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is drawn the expensive
         // way and in its dimmed look, so glass elements darkened under the pointer.
         let turns = !design.glass && !design.glassElements
-        return TilePlacement(shown: appeared && !closing && !relayout, closing: closing || relayout, index: index, count: count, frame: frame,
+        return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
                              lifted: moves && design.lift && tile.opens,
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
                              turns: turns, liftsByTransform: face, reduceMotion: reduceMotion,
@@ -426,44 +412,21 @@ struct HomeView: View {
         }
     }
 
-    /// The arrangement the window's new size calls for differs from the one drawn: the tiles leave, then come back in the new one.
-    /// Resizing on through more changes only pushes their return back. With a page open, or while the window opens or closes, the
-    /// grid simply follows.
-    private func rearrange(from old: Arrangement, tiles count: Int) {
-        relayoutTask?.cancel()
-        guard appeared, !closing, !dormant, hiddenTile == nil else {
-            shownArrangement = nil
-            relayout = false
-            return
-        }
-        if shownArrangement == nil { shownArrangement = old }
-        relayout = true
-        relayoutTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(Self.depopulateDuration(tiles: count)))
-            guard !Task.isCancelled else { return }
-            // The new places are taken while the tiles are out of sight, without sliding there.
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) { shownArrangement = nil }
-            try? await Task.sleep(for: .milliseconds(16))
-            guard !Task.isCancelled else { return }
-            relayout = false
-        }
-    }
-
     var body: some View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles, includesSettings: showsSettingsTile) : []
         let sizes = tiles.map(\.size)
         GeometryReader { proxy in
-            let wanted = Self.arrangement(for: proxy.size, sizes: sizes)
-            let arrangement = shownArrangement ?? wanted
+            // A new size takes its arrangement at once, every tile following the window: the tiles used to leave and come back
+            // whenever the number of columns changed, which flashed the dashboard empty in the middle of a resize (2026-10-13).
+            let arrangement = Self.arrangement(for: proxy.size, sizes: sizes)
             let columns = arrangement.columns
             let placements = Bento.pack(sizes: sizes, columns: columns)
             let rows = Bento.rows(placements)
             let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, Self.needed(rows: rows)))
             // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the hover
             // lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
-            let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) })
+            let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) },
+                                  large: Set(tiles.filter(\.large).map(\.destination)))
             Group {
                 if !arrangement.scrolls {
                     // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to
@@ -481,11 +444,6 @@ struct HomeView: View {
                     .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in frames.scrollOffset = offset }
                 }
             }
-            // Only a new size re-arranges this way: a module switched on or off, or a new featured tile, keeps the tiles gliding to
-            // their new places (`grid`).
-            .onChange(of: Resize(arrangement: wanted, sizes: sizes)) { old, new in
-                if old.sizes == new.sizes { rearrange(from: old.arrangement, tiles: tiles.count) }
-            }
         }
         // Each time the window opens, once the tiles are known: a moment later, so the change animates instead of landing in the
         // first frame.
@@ -494,12 +452,7 @@ struct HomeView: View {
             try? await Task.sleep(for: .milliseconds(30))
             appeared = true
         }
-        .onDisappear {
-            appeared = false
-            relayoutTask?.cancel()
-            relayout = false
-            shownArrangement = nil
-        }
+        .onDisappear { appeared = false }
     }
 }
 
@@ -528,13 +481,14 @@ struct DashboardTileView: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-        Button(action: open) {
+        // A drag that moved the window is not a click (`WindowMoveCheck`).
+        Button { if tile.opens && !WindowMoveCheck.shared.windowMoved() { open() } } label: {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
                         hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true, restingSize: restingSize)
                 .contentShape(shape)
         }
-        .buttonStyle(TilePressStyle())
+        .buttonStyle(TilePressStyle(pressable: tile.opens))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(tile.opens ? .isButton : [])
         // Over the button, not in it: a click on the switch flips it and does not open the tile. A control of its own for
@@ -543,11 +497,14 @@ struct DashboardTileView: View {
             if case let .module(id) = tile.destination, let handle = host.handle(for: id) { TileSwitch(handle: handle, tint: tile.tint) }
         }
         .studioPickable(.tile(tile.tint), in: shape)
-        .allowsHitTesting(tile.opens)
+        // The whole dashboard moves the window, the tiles too: they never move themselves, so a drag on one has nothing else to do.
+        .simultaneousGesture(WindowDragGesture())
+        .allowsWindowActivationEvents(true)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onContinuousHover { phase in
             switch phase {
-            case let .active(location) where size.width > 0 && !isHidden && design.trackPointer:
+            // The disk's tile opens nothing: it takes the pointer only to move the window, and does not lift.
+            case let .active(location) where size.width > 0 && !isHidden && design.trackPointer && tile.opens:
                 let step = 10.0
                 let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
                 if next != lastStep { lastStep = next; onPointer(next) }
@@ -558,6 +515,8 @@ struct DashboardTileView: View {
             }
         }
         .onChange(of: isHidden) { _, hidden in if hidden { resetPointer() } }
+        // Watching the mouse from the first press on (`WindowMoveCheck`).
+        .onAppear { _ = WindowMoveCheck.shared }
     }
 
     private func resetPointer() {
@@ -571,9 +530,28 @@ struct DashboardTileView: View {
               case let .blocks(segments)? = handle.tile?.graphic else { return nil }
         let info = TileInfo(handle)
         let area = TileFace.chartArea(in: size, info: info, captionSize: captionSize, restingSize: restingSize)
-        let restingArea = TileFace.chartArea(in: restingSize, info: info, captionSize: captionSize)
-        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments,
-                                  orderSize: restingArea.size)?.id
+        return BlocksView.segment(at: CGPoint(x: location.x - area.minX, y: location.y - area.minY), in: area.size, segments: segments)?.id
+    }
+}
+
+/// Whether the window moved since the mouse went down: a drag that starts on a tile moves the window (`WindowDragGesture`), and the
+/// tile's button then sees a click where it is let go, which must not open it.
+@MainActor
+final class WindowMoveCheck {
+    static let shared = WindowMoveCheck()
+    private var monitor: Any?
+    private var origin: NSPoint?
+
+    private init() {
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            MainActor.assumeIsolated { self?.origin = event.window?.frame.origin }
+            return event
+        }
+    }
+
+    func windowMoved() -> Bool {
+        guard let origin, let window = NSApp.keyWindow ?? NSApp.mainWindow else { return false }
+        return hypot(window.frame.origin.x - origin.x, window.frame.origin.y - origin.y) > 2
     }
 }
 
@@ -795,6 +773,8 @@ private struct ModuleTileContent: View {
 /// The tile darkens while pressed. A shade laid over it, not a brightness filter: a filter stays on the tile even at 0 and makes every
 /// frame draw the whole tile through it. It does not sink: its ground, in the layer underneath, cannot see the press.
 private struct TilePressStyle: ButtonStyle {
+    /// A tile that opens nothing (the disk) takes the drag that moves the window, and shows no press.
+    var pressable = true
     /// Read so a change of the corner radius redraws the press shade.
     @Environment(\.design) private var design
 
@@ -802,7 +782,7 @@ private struct TilePressStyle: ButtonStyle {
         configuration.label
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
-                    .fill(.black.opacity(configuration.isPressed ? 0.12 : 0))
+                    .fill(.black.opacity(configuration.isPressed && pressable ? 0.12 : 0))
                     .allowsHitTesting(false)
             }
             .animation(Theme.press, value: configuration.isPressed)
@@ -825,7 +805,7 @@ private struct TileSwitch: View {
                           return result.map { $0.outcome != .failed } ?? false
                       } },
                       disabled: info.switchAction == nil)
-                .padding(.leading, 14)
+                .padding(.leading, TileFace.margin)
                 .padding(.top, TileFace.topInset)
         }
     }

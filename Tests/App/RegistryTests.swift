@@ -155,8 +155,10 @@ final class HostTests: XCTestCase {
         let handle = try XCTUnwrap(host.handles.first)
         await handle.perform(Action(id: "toggle", title: "T", parameters: ["id": "x"]), extraParameters: ["value": "true"])
         XCTAssertEqual(calls.all, ["perform:toggle:true"])
-        XCTAssertEqual(handle.lastResult?.outcome, .succeeded)
+        XCTAssertNil(handle.lastResult, "a success is \"All done\" on the page, not the button's text")
+        XCTAssertEqual(handle.allDone, 1)
         XCTAssertNil(handle.progress, "progress clears when the action ends")
+        XCTAssertNil(handle.runningAction)
         await handle.perform(Action(id: "fail", title: "F"))
         XCTAssertEqual(handle.lastResult?.outcome, .failed)
     }

@@ -125,36 +125,24 @@ enum SystemDataScreenBuilder {
         let assets = protectedAssetFamilies(snapshot)
         let databases = folders.filter { $0.hasPrefix(databasesRoot) }
         let others = folders.filter { !$0.hasPrefix(assetsRoot) && !$0.hasPrefix(databasesRoot) }
-        /// Names as the folders call themselves: an asset family without its `com_apple_MobileAsset_` prefix, a database by its path
-        /// inside the databases folder, any other folder by its own name.
-        func names(_ paths: [String], under root: String?) -> String {
-            var seen = Set<String>()
-            return paths.map { path -> String in
-                if let root, path.hasPrefix(root) {
-                    let inner = String(path.dropFirst(root.count))
-                    return inner.hasPrefix("com_apple_MobileAsset_") ? String(inner.dropFirst("com_apple_MobileAsset_".count)) : inner
-                }
-                return (path as NSString).lastPathComponent
-            }.filter { seen.insert($0).inserted }.joined(separator: ", ")
-        }
         func count(_ paths: [String]) -> String { paths.count == 1 ? loc("1 item") : loc("\(paths.count) items") }
         var rows: [Row] = []
         if !assets.isEmpty {
             // While Apple Intelligence is on, its models stay (`SystemAssetGuard`), which is why they are on disk at all.
             rows.append(Row(id: "protected:assets", title: loc("Models and system assets"), subtitle: count(assets),
                             badge: snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil,
-                            detail: loc("Apple Intelligence models and other files no app can open: \(names(assets, under: assetsRoot)).")))
+                            detail: loc("macOS keeps these locked, even from MacSpace.")))
         }
         if !databases.isEmpty {
             rows.append(Row(id: "protected:databases", title: loc("System databases"), subtitle: count(databases),
-                            detail: loc("macOS databases no app can open: \(names(databases, under: databasesRoot)).")))
+                            detail: loc("macOS keeps these locked, even from MacSpace.")))
         }
         if !others.isEmpty {
             rows.append(Row(id: "protected:other", title: loc("Other protected folders"), subtitle: count(others),
-                            detail: loc("Folders no app can open: \(names(others, under: nil)).")))
+                            detail: loc("macOS keeps these locked, even from MacSpace.")))
         }
         rows.append(Row(id: "protected:filesystem", title: loc("File system metadata"),
-                        detail: loc("What the disk records about each file, plus changes since System Settings measured. This is System Settings' total minus everything listed.")))
+                        detail: loc("What the disk records about each file.")))
         return rows
     }
 
@@ -194,10 +182,9 @@ enum SystemDataScreenBuilder {
         return snapshot.report.items.first { $0.id == "versions:documents" }?.bytes ?? 0
     }
 
-    /// The system log when it is offered under Free now (its own button, not Clean).
+    /// The system log when it is offered under Free now (its own button, and the page's main Free; never automatic cleaning).
     static func unifiedLogBytes(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        guard unifiedLogRow(snapshot) != nil else { return 0 }
-        return snapshot.report.items.first { $0.id == unifiedLogID }?.bytes ?? 0
+        unifiedLogRow(snapshot)?.bytes ?? 0
     }
 
     /// The symbols for crash reports when they are offered under Free now (their own button, not Clean).
@@ -306,7 +293,7 @@ enum SystemDataScreenBuilder {
         let bytes = counted(item, snapshot)
         var freed = (claimed ?? CachesPage.claimed(snapshot))[item.id] ?? 0
         if item.id == "versions:documents" && versionsRow(snapshot) != nil { freed = bytes }
-        if item.id == unifiedLogID && unifiedLogRow(snapshot) != nil { freed = bytes }
+        if item.id == unifiedLogID, let log = unifiedLogRow(snapshot) { freed = min(bytes, log.bytes) }
         if item.id == symbolsID && symbolsRow(snapshot) != nil { freed = bytes }
         if item.id == "reports:diagnostic" { freed = snapshot.reports.totalBytes }
         return bytes > freed ? bytes - freed : 0
@@ -353,16 +340,17 @@ enum SystemDataScreenBuilder {
 
 
 
+    /// The page's main Free: what automatic cleaning frees (`cleanBytes`), and the system log, which only a Free the user confirms
+    /// erases (it cannot be undone).
+    static func freeButtonBytes(_ snapshot: SystemDataSnapshot) -> UInt64 { cleanBytes(snapshot) + unifiedLogBytes(snapshot) }
+
     static func cleanAll(_ snapshot: SystemDataSnapshot) -> Action? {
-        let total = cleanBytes(snapshot)
+        let total = freeButtonBytes(snapshot)
         guard total >= worthARow else { return nil }
-        // Caches another app frees (`CacheCleaner.app`), or that cleanup leaves alone, are not part of it.
-        var message = snapshot.cleaner == .macSpace ? loc("Frees the chosen caches, old reports and unused system assets.")
-            : loc("Frees old reports and unused system assets.")
-        if versionsRow(snapshot) != nil { message += " " + loc("Version history stays.") }
-        if unifiedLogRow(snapshot) != nil { message += " " + loc("The system log stays.") }
+        // The title says it all; the message only names the open apps whose chosen caches go with it, which quit (`CachesPage.quitNote`).
+        let message = CachesPage.quitNote(CachesPage.chosen(snapshot)) ?? ""
         return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")))
+                      confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
     }
 
     // MARK: Sections
@@ -379,7 +367,7 @@ enum SystemDataScreenBuilder {
             rows.append((Row(id: "reports", title: loc("Old diagnostic and crash reports"), trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
                              detail: loc("\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days."),
                              actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")))],
+                                title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
                              paths: paths(of: "reports:diagnostic", snapshot)), snapshot.reports.totalBytes))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
@@ -391,7 +379,7 @@ enum SystemDataScreenBuilder {
                              badge: badge, symbol: "square.stack.3d.down.right",
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
                              actions: snapshot.assetsRetrying || snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")))],
+                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
                              paths: paths(of: "assets:system", snapshot)), assets))
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
@@ -419,7 +407,7 @@ enum SystemDataScreenBuilder {
                     actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free \(size) in the Trash?"),
                                                                 message: loc("Everything in the Trash is deleted for good."),
-                                                                confirmTitle: loc("Free"))),
+                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space…")),
                               Action(id: "openTrash", title: loc("Open"))]), bytes)
     }
 
@@ -429,16 +417,19 @@ enum SystemDataScreenBuilder {
     /// The system log, as a row of Free now with a button of its own: only the helper can erase it, with Apple's `log erase`, and the
     /// history macOS keeps for troubleshooting goes for good, so it keeps its pill and Clean leaves it out. Mole deletes its older
     /// files; macOS itself never frees it (logd tells its purge service there is nothing to free, at every urgency).
+    /// Sized by what an erase frees: what grew past what the log kept at its last erase (`SystemLogFloor`).
     static func unifiedLogRow(_ snapshot: SystemDataSnapshot) -> (row: Row, bytes: UInt64)? {
-        guard let item = snapshot.report.items.first(where: { $0.id == unifiedLogID }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
+        guard let item = snapshot.report.items.first(where: { $0.id == unifiedLogID }), let total = item.bytes else { return nil }
+        let bytes = total > (snapshot.logFloor ?? 0) ? total - (snapshot.logFloor ?? 0) : 0
+        guard bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
         return (Row(id: "system-log", title: loc("System log"), trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "list.bullet.rectangle",
                     detail: loc("What macOS records for troubleshooting, shown in Console. It starts again from empty."),
                     actions: [Action(id: "eraseUnifiedLog", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free the system log?"),
-                                                                message: loc("The history in Console is deleted. New entries are recorded as usual."),
+                                                                message: loc("Console's history is deleted."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper])],
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
                     paths: item.paths), bytes)
     }
 
@@ -458,7 +449,7 @@ enum SystemDataScreenBuilder {
                                      confirmation: Confirmation(title: loc("Free the symbols for crash reports?"),
                                                                 message: loc("macOS builds them again the next time it reads a crash report."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper])]), bytes)
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))]), bytes)
     }
 
     /// Where the scan found the item with this id, for the row's Show in Finder.
@@ -596,10 +587,8 @@ enum SystemDataScreenBuilder {
                       trailing: size, symbol: "arrow.down.app",
                       detail: loc("From an update that's already installed."),
                       actions: [Action(id: "deleteStagedUpdate", title: loc("Free"), role: .destructive,
-                                       confirmation: Confirmation(title: loc("Free the leftover update files?"),
-                                                                  message: loc("About \(size) from an update that's already installed."),
-                                                                  confirmTitle: loc("Free")),
-                                       requires: [.privilegedHelper])],
+                                       confirmation: Confirmation(title: loc("Free the leftover update files?"), confirmTitle: loc("Free")),
+                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
                       paths: item.paths)
         return .section(SectionWidget(id: "leftover-update", title: loc("Leftover update files"),
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
@@ -614,14 +603,13 @@ enum SystemDataScreenBuilder {
         let bytes = snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.compactMap(\.bytes).reduce(0, +)
         guard bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
-        let days = WallpaperDownloadCleaner.retentionDays
         return (Row(id: "wallpaper-downloads", title: loc("Wallpaper and screen saver downloads"), trailing: size, symbol: "photo.on.rectangle",
                     detail: loc("Wallpapers and screen savers macOS is downloading. A large size means stuck downloads."),
                     actions: [Action(id: "deleteWallpaperDownloads", title: loc("Free"),
                                      confirmation: Confirmation(title: loc("Free stuck wallpaper downloads?"),
-                                                                message: loc("Frees up to \(size) of downloads stuck for \(days) days or more. macOS downloads again what it needs."),
+                                                                message: loc("macOS downloads them again if they're needed."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper])],
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
                     paths: snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.flatMap(\.paths)), bytes)
     }
 
@@ -637,7 +625,7 @@ enum SystemDataScreenBuilder {
                                        confirmation: Confirmation(title: loc("Free all version history?"),
                                                                   message: loc("You won't be able to revert any document to an earlier version. Save and close your documents first."),
                                                                   confirmTitle: loc("Free")),
-                                       requires: [.privilegedHelper])],
+                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
                       paths: item.paths), bytes)
     }
 

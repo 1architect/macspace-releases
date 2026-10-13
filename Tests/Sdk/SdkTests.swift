@@ -48,6 +48,19 @@ final class SdkTests: XCTestCase {
         XCTAssertNil(try JSONDecoder().decode(Row.self, from: Data(#"{"id":"r","title":"R"}"#.utf8)).selection)
         XCTAssertEqual(Selection.ids(Selection.parameter(["a,b", "c"])), ["a,b", "c"])
         XCTAssertEqual(Selection.ids(nil), [])
+        // A choosing page can name its checked rows in the confirmation, and an action say what its button shows while it runs.
+        group.selection?.action.confirmation = Confirmation(title: "T", confirmTitle: "Free")
+        group.selection?.action.workingTitle = "Freeing space…"
+        group.selection?.noteNames = ["c": "C"]
+        group.selection?.note = "Quits %@."
+        XCTAssertEqual(try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(group)), group)
+    }
+
+    /// Progress names the rows an action is done with; one written before that existed decodes with none.
+    func testProgressCarriesTheFinishedRows() throws {
+        let progress = ActionProgress(fraction: 0.5, message: "M", finished: ["a"])
+        XCTAssertEqual(try JSONDecoder().decode(ActionProgress.self, from: JSONEncoder().encode(progress)), progress)
+        XCTAssertEqual(try JSONDecoder().decode(ActionProgress.self, from: Data(#"{"message":"M"}"#.utf8)).finished, [])
     }
 
     func testActionResultHelpers() {

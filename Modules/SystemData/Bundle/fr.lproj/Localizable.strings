@@ -4,7 +4,6 @@
 "%@ is outside the cleanable locations." = "%@ se trouve hors des emplacements nettoyables.";
 "%@ is running; quit it first." = "%@ est ouvert ; quittez-le d’abord.";
 "%@ older than %lld days." = "%@ de plus de %lld jours.";
-"%@ quits, its cache is freed, and it opens again. It may ask you to save first." = "%@ se ferme, son cache est libéré, puis il se rouvre. Il peut d’abord vous demander d’enregistrer.";
 "%lld items" = "%lld éléments";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.";
 "%lld places couldn't be measured." = "%lld emplacements n’ont pas pu être mesurés.";
@@ -17,7 +16,6 @@
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "Une image de restauration de macOS. Une fois le Mac, l’appareil ou la machine virtuelle configuré, elle peut être supprimée.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "Le disque et l’état d’une machine virtuelle. Supprimez celles que vous n’utilisez plus depuis l’app de virtualisation.";
-"About %@ from an update that's already installed." = "Environ %@ d’une mise à jour déjà installée.";
 "All users" = "Tous les utilisateurs";
 "Allow" = "Autoriser";
 "Allow Full Disk Access to see everything" = "Autorisez l’accès complet au disque pour tout voir";
@@ -25,6 +23,7 @@
 "An APFS clone of the app that macOS keeps after validating it. It shares storage with the app, so deleting it frees almost nothing; it only lowers the System Data figure in System Settings." = "Un clone APFS de l’app que macOS conserve après l’avoir validée. Il partage le stockage de l’app : le supprimer ne libère presque rien, il réduit seulement le chiffre de Données système dans Réglages Système.";
 "An app is using these files. Try again later." = "Une app utilise ces fichiers. Réessayez plus tard.";
 "An unfinished download by %@. If %@ is no longer downloading it, delete it." = "Un téléchargement inachevé de %@. Si %@ ne le télécharge plus, supprimez-le.";
+"Android build cache" = "Cache de compilation Android";
 "App cache" = "Cache d’app";
 "App cache: %@" = "Cache d’app : %@";
 "App container" = "Conteneur d’app";
@@ -34,12 +33,10 @@
 "App group data: %@" = "Données de groupe d’apps : %@";
 "App not installed" = "App non installée";
 "App support files" = "Fichiers de support d’apps";
-"Apple Intelligence models and other files no app can open: %@." = "Modèles d’Apple Intelligence et autres fichiers qu’aucune app ne peut ouvrir : %@.";
 "Apple app data" = "Données d’apps Apple";
 "Apple developer documentation" = "Documentation pour développeurs Apple";
 "Apple system cache used by background services; macOS manages it." = "Cache système Apple utilisé par des services en arrière-plan ; macOS le gère.";
 "Apps and macOS rebuild these by themselves." = "Les apps et macOS les recréent d’eux-mêmes.";
-"Apps rebuild their caches. They may open more slowly the first time." = "Les apps recréent leurs caches. Elles peuvent s’ouvrir plus lentement la première fois.";
 "Apps' support files for all users" = "Fichiers de support d’apps pour tous les utilisateurs";
 "Apps' temporary files; macOS clears them at restart." = "Fichiers temporaires d’apps ; macOS les efface au redémarrage.";
 "Assorted macOS features and the OS itself." = "Diverses fonctions de macOS et le système lui-même.";
@@ -58,9 +55,11 @@
 "Cloud storage: %@" = "Stockage cloud : %@";
 "Code-signing copy of %@" = "Copie de signature de code de %@";
 "Come back with use" = "Reviennent à l’usage";
+"Console's history is deleted." = "L’historique de Console est supprimé.";
 "CoreSpotlight indexes for apps' searchable content." = "Index CoreSpotlight du contenu consultable des apps.";
 "Couldn't free it" = "Impossible de libérer";
 "Daemon containers" = "Conteneurs de démons";
+"Dart packages" = "Paquets Dart";
 "Data of Apple background services." = "Données de services d’arrière-plan Apple.";
 "Data of an Apple app or service." = "Données d’une app ou d’un service Apple.";
 "Delete" = "Supprimer";
@@ -81,7 +80,6 @@
 "Everything in the Trash is deleted for good." = "Tout ce qui est dans la Corbeille est supprimé définitivement.";
 "File system metadata" = "Métadonnées du système de fichiers";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "Fichiers d’une mise à jour de macOS déjà installée ; aucune mise à jour n’est en attente. macOS ne les a pas supprimés et ils se trouvent dans un dossier protégé : MacSpace n’y touche pas.";
-"Folders no app can open: %@." = "Dossiers qu’aucune app ne peut ouvrir : %@.";
 "Free" = "Libérer";
 "Free %@" = "Libérer %@";
 "Free %@ in the Trash?" = "Libérer %@ dans la Corbeille ?";
@@ -101,9 +99,6 @@
 "Freeing in the background" = "Libération en arrière-plan";
 "Freeing space…" = "Libération d’espace…";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.";
-"Frees old reports and unused system assets." = "Libère les anciens rapports et les ressources système inutilisées.";
-"Frees the chosen caches, old reports and unused system assets." = "Libère les caches choisis, les anciens rapports et les ressources système inutilisées.";
-"Frees up to %@ of downloads stuck for %lld days or more. macOS downloads again what it needs." = "Libère jusqu’à %@ de téléchargements bloqués depuis %lld jours ou plus. macOS télécharge à nouveau ce dont il a besoin.";
 "From a deleted account. Copy what you need, then delete it." = "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.";
 "From an update that's already installed." = "D’une mise à jour déjà installée.";
 "Go builds" = "Compilations Go";
@@ -120,6 +115,7 @@
 "In System Settings > Apple Intelligence & Siri > Siri Voice, pick a voice that isn't a premium download." = "Dans Réglages Système > Apple Intelligence et Siri > Voix de Siri, choisissez une voix qui n’est pas un téléchargement premium.";
 "In System Settings > Keyboard > Dictation, remove languages you don't use." = "Dans Réglages Système > Clavier > Dictée, supprimez les langues inutilisées.";
 "In Xcode > Settings > Components, remove the documentation." = "Dans Xcode > Réglages > Composants, supprimez la documentation.";
+"In use" = "En cours d’utilisation";
 "Install the helper in Settings" = "Installez l’assistant dans Réglages";
 "Installed fonts" = "Polices installées";
 "Kept by macOS for its own services; it manages the size." = "Conservé par macOS pour ses propres services ; il en gère la taille.";
@@ -159,8 +155,7 @@
 "Power log" = "Journal d’énergie";
 "Project deleted" = "Projet supprimé";
 "Protected by macOS" = "Protégé par macOS";
-"Quit %@ and free its cache?" = "Quitter %@ et libérer son cache ?";
-"Quitting %@…" = "Fermeture de %@…";
+"Quits %@." = "Quitte %@.";
 "Rebuilt by Spotlight; macOS manages it." = "Reconstruit par Spotlight ; macOS le gère.";
 "Recommended" = "Recommandés";
 "Remove it with the tool that made it." = "Supprimez-le avec l’outil qui l’a créé.";
@@ -205,8 +200,6 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "Le service vocal de Siri, la reconnaissance vocale et les fonctions d’appel, pour la langue de Siri et celle du système. Aucun réglage ne les supprime.";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "Le service de synthèse vocale de Siri, pour la voix et la langue choisies.";
 "The helper did not answer" = "L’assistant n’a pas répondu";
-"The history in Console is deleted. New entries are recorded as usual." = "L’historique de Console est supprimé. Les nouvelles entrées sont enregistrées comme d’habitude.";
-"The system log stays." = "Le journal système reste.";
 "This permanently deletes %@." = "Cela supprime définitivement %@.";
 "Tool cache" = "Cache d’outil";
 "Tool cache: ~/.cache/%@" = "Cache d’outil : ~/.cache/%@";
@@ -218,7 +211,6 @@
 "Unknown action %@." = "Action inconnue %@.";
 "Unused assets are removed from Free now when macOS reports any; the rest is in use." = "Les ressources inutilisées sont supprimées depuis À libérer quand macOS en signale ; le reste est utilisé.";
 "Unused system assets" = "Ressources système inutilisées";
-"Version history stays." = "L’historique des versions est conservé.";
 "Virtual machine" = "Machine virtuelle";
 "Virtual machine: %@" = "Machine virtuelle : %@";
 "Wallpaper and screen saver downloads" = "Téléchargements de fonds d’écran et d’économiseurs d’écran";
@@ -228,19 +220,22 @@
 "What is in it" = "Contenu";
 "What macOS keeps to read crash reports. It's rebuilt when needed." = "Ce que macOS garde pour lire les rapports de plantage. Il est reconstruit au besoin.";
 "What macOS records for troubleshooting, shown in Console. It starts again from empty." = "Ce que macOS enregistre pour le dépannage, affiché dans Console. Il repart de zéro.";
-"What the disk records about each file, plus changes since System Settings measured. This is System Settings' total minus everything listed." = "Ce que le disque enregistre sur chaque fichier, plus ce qui a changé depuis la mesure des Réglages Système. C’est le total des Réglages Système moins tout ce qui est listé.";
+"What the disk records about each file." = "Ce que le disque enregistre sur chaque fichier.";
 "Xcode Command Line Tools" = "Outils de ligne de commande Xcode";
 "Xcode builds: %@" = "Compilations Xcode : %@";
+"Xcode cache" = "Cache de Xcode";
+"Xcode documentation cache" = "Cache de la documentation Xcode";
 "Xcode downloads it again when you open the docs." = "Xcode la retélécharge quand vous ouvrez la documentation.";
 "Xcode module cache" = "Cache des modules Xcode";
+"Xcode test devices" = "Appareils de test Xcode";
 "You won't be able to revert any document to an earlier version. Save and close your documents first." = "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.";
 "Your Library" = "Votre bibliothèque";
 "Your home folder" = "Votre dossier personnel";
 "and %lld more" = "et %lld autres";
 "free %@" = "libérer %@";
 "macOS builds them again the next time it reads a crash report." = "macOS les reconstruit la prochaine fois qu’il lit un rapport de plantage.";
-"macOS databases no app can open: %@." = "Bases de données de macOS qu’aucune app ne peut ouvrir : %@.";
 "macOS downloads them again if they're needed." = "macOS les retélécharge si besoin.";
+"macOS keeps these locked, even from MacSpace." = "macOS garde ces éléments verrouillés, même pour MacSpace.";
 "macOS restore image: %@" = "Image de restauration de macOS : %@";
 "macOS's model catalog, for the Photos spatial effect." = "Le catalogue de modèles de macOS, pour l’effet spatial de Photos.";
 "nothing to free" = "rien à libérer";

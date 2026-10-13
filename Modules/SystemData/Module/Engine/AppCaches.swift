@@ -34,6 +34,9 @@ public struct AppCache: Codable, Equatable, Sendable {
     public var owner: Owner
     /// Its app or tool is running now (as the cleaner checks it): it cannot go until it quits, so it is not listed.
     public var ownerRunning = false
+    /// While its owner runs: whether that owner is an app in the Dock or the menu bar ("Open now") or another program, a plug-in's
+    /// renderer or a command-line tool ("In use"). Free closes either (`AppQuitter`). nil when not known.
+    public var quittable: Bool?
     /// The sandboxed app's bundle identifier when the folder is its container's caches folder; nil for a folder in `~/Library/Caches`.
     /// Only what is in a container's folder is freed, never the folder itself, which the app expects to find, and never what macOS's
     /// own services keep there (`AppCaches.isAppleEntry`).
@@ -225,9 +228,20 @@ public enum AppCaches {
     /// Apple's even without the `com.apple.` prefix (PassKit, GameKit, GeoServices and CloudKit on 26B5101f). A name found nowhere is
     /// not proved third-party; it only falls back to the other rules. Names are compared exactly: the disk ignores case, and `pip`
     /// (Python's installer) would otherwise match `PIP.framework` (Picture in Picture).
+    ///
+    /// A name that begins with one of them, followed by a word of its own (`SiriEntityCache`: Siri, then EntityCache), is Apple's too:
+    /// macOS names a component's caches after it. A rule, not a list of names, so it holds for components MacSpace has never seen.
+    /// SiriEntityCache was taken for an app's cache on 26B5101f, and quitting "Siri" for it brought up the Siri orb (2026-10-13). Only
+    /// at a word's start (a capital after a lowercase letter), and a name of four letters or more: `Photosynth` is not Photos'.
     static func isApple(_ name: String, root: String = "") -> Bool {
         guard !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else { return false }
-        return systemNames(root: root).contains(name)
+        let names = systemNames(root: root)
+        if names.contains(name) { return true }
+        let characters = Array(name)
+        for index in characters.indices.dropFirst(4) where characters[index].isUppercase && characters[index - 1].isLowercase {
+            if names.contains(String(characters[..<index])) { return true }
+        }
+        return false
     }
 
     /// The names macOS has in the places above, read once.

@@ -103,8 +103,9 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(list.rows.map(\.id), ["assets", "caches", "reports"], "largest first; the caches are one page")
         let caches = list.rows[1]
         XCTAssertEqual(caches.children.map(\.id), ["supportcache:big", "usercache:small", "supportcache:open"],
-                       "recommended first, the open app's cache last with no box, crumbs hidden")
-        XCTAssertNil(caches.selection?.choices["supportcache:open"])
+                       "recommended first, the open app's cache last, crumbs hidden")
+        XCTAssertNotNil(caches.selection?.choices["supportcache:open"], "chosen, its app is quit first if the user says so")
+        XCTAssertEqual(caches.selection?.noteNames.keys.sorted(), ["supportcache:open"])
         XCTAssertEqual(caches.children.first { $0.id == "supportcache:open" }?.badges.map(\.text), ["Open now"])
         XCTAssertNotNil(list.rows[0].actions[0].confirmation)
         XCTAssertNotNil(list.rows[2].actions[0].confirmation, "freeing reports asks first")
@@ -257,8 +258,9 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(block.label, "Protected by macOS")
         XCTAssertEqual(block.bytes, 2_000_000_000, "the measured remainder, unchanged")
         XCTAssertEqual(block.items.map(\.id), ["protected:assets", "protected:databases", "protected:other", "protected:filesystem"])
-        XCTAssertTrue(block.items[0].detail?.contains("UAF_FM_GenerativeModels") == true)
-        XCTAssertTrue(block.items[1].detail?.contains("CoreDuet/Knowledge") == true)
+        // No folder names macOS uses inside: the user sees what they are, not what they are called (interface rules).
+        XCTAssertFalse(block.items[0].detail?.contains("UAF_FM_GenerativeModels") == true)
+        XCTAssertFalse(block.items[1].detail?.contains("CoreDuet") == true)
         XCTAssertEqual(block.items[1].subtitle, "2 items")
         XCTAssertTrue(block.items.allSatisfy { $0.paths.isEmpty && $0.trailing == nil })
         XCTAssertEqual(block.group?.id, "segment:unidentified")

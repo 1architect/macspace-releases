@@ -212,7 +212,9 @@ struct LabFill<S: Shape>: View {
     let color: Color
     let fill: FillSpec?
 
+    /// One view whatever the fill: with a branch per case, a theme with a fill of its own (Aurora's) and one without swapped views,
+    /// and the theme's animation faded the ground out and in again.
     var body: some View {
-        if let fill { shape.fill(fill.style(color)) } else { shape.fill(color) }
+        shape.fill(fill?.style(color) ?? AnyShapeStyle(color))
     }
 }

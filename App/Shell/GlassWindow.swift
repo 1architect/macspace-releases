@@ -19,6 +19,8 @@ struct GlassWindowConfigurator: NSViewRepresentable {
     }
 
     final class ConfiguringView: NSView {
+        static let frameName = "MacSpace.glassWindow"
+
         var wantsShadow = true {
             didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
         }
@@ -42,6 +44,18 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             // so the rounded corners and the resize band around the glass selected the app behind instead of resizing.
             window.ignoresMouseEvents = false
             window.invalidateShadow()
+            // Opened from the menu bar icon on another desktop, the window comes to that desktop instead of taking the user back to
+            // the one it was left on.
+            window.collectionBehavior.insert(.moveToActiveSpace)
+            // Its size and place are kept between launches.
+            window.setFrameAutosaveName(Self.frameName)
+            window.setFrameUsingName(Self.frameName)
+            // The edges are resized from a band across the glass's edge, not from the window's invisible outer edge (`ResizeBand`).
+            if let frameView = window.contentView?.superview, !frameView.subviews.contains(where: { $0 is ResizeBand }) {
+                let band = ResizeBand(frame: frameView.bounds)
+                band.autoresizingMask = [.width, .height]
+                frameView.addSubview(band, positioned: .above, relativeTo: nil)
+            }
             // The window could not become key when SwiftUI first showed it (it only can once adopted above), so it opened inactive and
             // its glass was drawn in the dimmed, unselected look until clicked. Make it key, with the app in front, once it is set up.
             DispatchQueue.main.async { [weak window] in
@@ -175,6 +189,105 @@ final class ShadowWindow: NSWindow {
     /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.
     static func glassPath(_ rect: CGRect) -> CGPath {
         RoundedRectangle(cornerRadius: min(Theme.windowRadius, rect.width / 2, rect.height / 2), style: .continuous).path(in: rect).cgPath
+    }
+}
+
+/// Where the glass window is resized: a band across the glass's edge, from the window's invisible outer edge (`Theme.resizeMargin`
+/// outside the glass) to a few points inside it, wider at the corners. AppKit resizes a borderless window only from its outer edge,
+/// so the resize cursor showed well away from the glass and the band to catch was a few points thin (2026-10-13). It takes the
+/// pointer only inside the band: everywhere else clicks go to the window's content.
+final class ResizeBand: NSView {
+    /// How far the band reaches into the glass.
+    static let inside: CGFloat = 5
+    /// How far along each edge from a corner the corner's diagonal resize reaches.
+    static let corner: CGFloat = 22
+
+    override var isFlipped: Bool { false }
+
+    /// The edge or corner under `point` (in this view), if it is in the band.
+    func position(at point: NSPoint) -> NSCursor.FrameResizePosition? {
+        let margin = Theme.resizeMargin
+        let glass = bounds.insetBy(dx: margin, dy: margin)
+        let inner = glass.insetBy(dx: Self.inside, dy: Self.inside)
+        guard bounds.contains(point), !inner.contains(point) else { return nil }
+        let left = point.x < glass.minX + Self.corner, right = point.x > glass.maxX - Self.corner
+        let bottom = point.y < glass.minY + Self.corner, top = point.y > glass.maxY - Self.corner
+        switch (left, right, top, bottom) {
+        case (true, _, true, _): return .topLeft
+        case (_, true, true, _): return .topRight
+        case (true, _, _, true): return .bottomLeft
+        case (_, true, _, true): return .bottomRight
+        default: break
+        }
+        if point.x < inner.minX { return .left }
+        if point.x > inner.maxX { return .right }
+        if point.y > inner.maxY { return .top }
+        return .bottom
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let superview else { return nil }
+        return position(at: convert(point, from: superview)) != nil ? self : nil
+    }
+
+    private var tracking: NSTrackingArea?
+    private var showsResizeCursor = false
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let tracking { removeTrackingArea(tracking) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        tracking = area
+    }
+
+    override func mouseMoved(with event: NSEvent) { updateCursor(event) }
+    override func mouseEntered(with event: NSEvent) { updateCursor(event) }
+    override func mouseExited(with event: NSEvent) {
+        if showsResizeCursor { NSCursor.arrow.set(); showsResizeCursor = false }
+    }
+
+    private func updateCursor(_ event: NSEvent) {
+        if let position = position(at: convert(event.locationInWindow, from: nil)) {
+            NSCursor.frameResize(position: position, directions: .all).set()
+            showsResizeCursor = true
+        } else if showsResizeCursor {
+            // Back to the arrow once, when the pointer leaves the band; the content sets its own cursors after that.
+            NSCursor.arrow.set()
+            showsResizeCursor = false
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let window, let position = position(at: convert(event.locationInWindow, from: nil)) else { return }
+        let start = window.frame
+        let origin = NSEvent.mouseLocation
+        let least = NSSize(width: max(window.minSize.width, Theme.minimumSize.width + 2 * Theme.resizeMargin),
+                           height: max(window.minSize.height, Theme.minimumSize.height + 2 * Theme.resizeMargin))
+        NSCursor.frameResize(position: position, directions: .all).push()
+        defer { NSCursor.pop() }
+        while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]), next.type == .leftMouseDragged {
+            let now = NSEvent.mouseLocation
+            let dx = now.x - origin.x, dy = now.y - origin.y
+            var frame = start
+            switch position {
+            case .left, .topLeft, .bottomLeft:
+                frame.size.width = max(start.width - dx, least.width)
+                frame.origin.x = start.maxX - frame.width
+            case .right, .topRight, .bottomRight:
+                frame.size.width = max(start.width + dx, least.width)
+            default: break
+            }
+            switch position {
+            case .bottom, .bottomLeft, .bottomRight:
+                frame.size.height = max(start.height - dy, least.height)
+                frame.origin.y = start.maxY - frame.height
+            case .top, .topLeft, .topRight:
+                frame.size.height = max(start.height + dy, least.height)
+            default: break
+            }
+            window.setFrame(frame, display: true)
+        }
     }
 }
 

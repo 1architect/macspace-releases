@@ -24,11 +24,16 @@ enum ZoomMath {
 /// outside the view state: it changes while scrolling and must not redraw the views that read it.
 final class TileFrames {
     private var layout: [Destination: CGRect] = [:]
+    private var large: Set<Destination> = []
     var scrollOffset: CGFloat = 0
 
-    func record(_ frames: [(Destination, CGRect)]) {
+    func record(_ frames: [(Destination, CGRect)], large: Set<Destination> = []) {
         layout = Dictionary(frames, uniquingKeysWith: { first, _ in first })
+        self.large = large
     }
+
+    /// The dashboard's large tile (`DashboardTile.large`), for the zoom to draw its caption and blocks as the tile has them.
+    func isLarge(_ destination: Destination) -> Bool { large.contains(destination) }
 
     /// The tile's rectangle in `ZoomSpace` right now.
     func frame(of destination: Destination) -> CGRect? {

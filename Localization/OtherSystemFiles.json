@@ -312,10 +312,10 @@
   "1 Schnappschuss"
  ],
  "Already gone": [
-  "Já não existe",
-  "Déjà disparu",
-  "Ya no está",
-  "Bereits weg"
+  "Já apagado",
+  "Déjà supprimé",
+  "Ya borrado",
+  "Bereits gelöscht"
  ],
  "Backing up now": [
   "Fazendo backup agora",
@@ -436,11 +436,5 @@
   "conservé",
   "se conserva",
   "bleibt"
- ],
- "%@ of it is symbols for crash reports. macOS builds them again when it next reads one.": [
-  "%@ disso são símbolos para relatórios de falhas. O macOS os cria de novo quando ler o próximo.",
-  "%@ en sont des symboles des rapports de plantage. macOS les reconstruit quand il en lit un.",
-  "%@ son símbolos para informes de fallos. macOS los vuelve a crear cuando lea el siguiente.",
-  "%@ davon sind Symbole für Absturzberichte. macOS baut sie wieder auf, wenn es den nächsten liest."
  ]
 }

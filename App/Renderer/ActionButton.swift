@@ -15,7 +15,7 @@ struct ActionButton: View {
         Button(role: action.role == .destructive ? .destructive : nil) {
             // Asked once the button has finished handling the click, not from inside it.
             Task { @MainActor in
-                if let confirmation = action.confirmation, !ConfirmationAlert.ask(confirmation, destructive: action.role == .destructive) { return }
+                guard ConfirmationAlert.ask(action) else { return }
                 _ = await handler(action, [:], false)
             }
         } label: {
@@ -29,11 +29,13 @@ struct ActionButton: View {
 /// whole frame, and on this window, clear around its rounded glass, that showed as a grey rectangle with square corners.
 @MainActor
 enum ConfirmationAlert {
-    static func ask(_ confirmation: Confirmation, destructive: Bool) -> Bool {
+    /// Whether the user confirmed the action; true when it asks nothing.
+    static func ask(_ action: Action) -> Bool {
+        guard let confirmation = action.confirmation else { return true }
         let alert = NSAlert()
         alert.messageText = confirmation.title
         alert.informativeText = confirmation.message
-        alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = destructive
+        alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = action.role == .destructive
         alert.addButton(withTitle: String(localized: "Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }

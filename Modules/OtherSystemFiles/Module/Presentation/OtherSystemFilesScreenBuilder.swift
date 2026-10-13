@@ -98,7 +98,7 @@ enum OtherSystemFilesScreenBuilder {
                       role: prominent ? .prominent : .normal,
                       confirmation: Confirmation(title: loc("Free up to \(size) of purgeable app files?"),
                                                  message: loc("Apps download them again if they need them."),
-                                                 confirmTitle: loc("Free")))
+                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
     }
 
     /// A macOS update downloaded and prepared, waiting for a restart: Software Update installs it, and macOS removes it then.
@@ -119,8 +119,7 @@ enum OtherSystemFilesScreenBuilder {
         var rows = Array(zip(cloudRows(snapshot), cloudShares(snapshot)))
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
-            var detail = snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail
-            if let symbols = symbolsLine(snapshot) { detail += "\n\n" + symbols }
+            let detail = snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail
             rows.append((Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
                              badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
                              detail: detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), snapshot.freeableBytes))
@@ -129,13 +128,6 @@ enum OtherSystemFilesScreenBuilder {
         guard !rows.isEmpty else { return nil }
         let sorted = rows.enumerated().sorted { $0.element.1 != $1.element.1 ? $0.element.1 > $1.element.1 : $0.offset < $1.offset }.map(\.element.0)
         return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))]))
-    }
-
-    /// What of the purgeable app files is the symbols for crash reports, when it is worth saying: the largest part of them on the
-    /// development Mac, and listed nowhere else (System Data leaves out what macOS may delete by itself). nil otherwise.
-    static func symbolsLine(_ snapshot: PurgeableSnapshot) -> String? {
-        guard let bytes = snapshot.symbolsBytes, bytes >= threshold, bytes <= snapshot.freeableBytes else { return nil }
-        return loc("\(ByteFormat.string(bytes)) of it is symbols for crash reports. macOS builds them again when it next reads one.")
     }
 
     /// Time Machine's local snapshots as one row: how many, what they hold together (macOS's figure), and, when some can go, a Free
@@ -161,7 +153,7 @@ enum OtherSystemFilesScreenBuilder {
         let free = Action(id: "freeSnapshots", title: loc("Free"), role: .destructive,
                           confirmation: Confirmation(title: removable.count == 1 ? loc("Free 1 Time Machine snapshot?") : loc("Free \(removable.count) Time Machine snapshots?"),
                                                      message: loc("Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay."),
-                                                     confirmTitle: loc("Free")))
+                                                     confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
         let row = Row(id: service.id, title: service.title, subtitle: count, trailing: bytes > 0 ? size : nil, badges: badges, symbol: service.symbol,
                       detail: detail, actions: removable.isEmpty || backingUp ? [] : [free])
         return (row, bytes, !removable.isEmpty)
@@ -209,7 +201,7 @@ enum OtherSystemFilesScreenBuilder {
                                confirmation: Confirmation(title: loc("Free the selected backups?"),
                                                           message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
                                                           confirmTitle: loc("Free")),
-                               requires: [.privilegedHelper]),
+                               requires: [.privilegedHelper], workingTitle: loc("Freeing space…")),
                 choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }))
         }
         return group
@@ -235,7 +227,7 @@ enum OtherSystemFilesScreenBuilder {
         Action(id: "removeDownloads", title: loc("Free"), parameters: ["path": source.path],
                confirmation: Confirmation(title: loc("Free \(ByteFormat.string(bytes)) of \(source.name) downloads?"),
                                           message: loc("The files stay in \(source.name) and download again when you open them."),
-                                          confirmTitle: loc("Free")))
+                                          confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
     }
 
     /// A service's name; the purgeable documents are named after the cloud service that holds them, once it is known.
