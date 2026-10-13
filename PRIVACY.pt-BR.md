@@ -46,9 +46,11 @@ lugar nenhum.
 - **Nomes e tamanhos de arquivos e pastas**, no disco inteiro depois que você concede o Acesso
   Total ao Disco. Ele não lê o que há nos seus documentos, fotos, e-mails ou mensagens. Ele mede
   quanto espaço eles ocupam.
-- **Datas dos arquivos nos caches dos apps** (`~/Library/Caches`): quando cada um foi criado,
-  alterado ou lido pela primeira vez, e **quando cada app foi aberto pela última vez**, como o
-  Spotlight registra, para saber quais caches nada usa. Ele não abre os arquivos.
+- **Datas dos arquivos nos caches dos apps** (`~/Library/Caches` e, com Acesso Total ao Disco, a
+  pasta de caches do contêiner de cada app, `~/Library/Containers/<app>/Data/Library/Caches`):
+  quando cada um foi criado, alterado ou lido pela primeira vez, e **quando cada app foi aberto pela
+  última vez**, como o Spotlight registra, para saber quais caches nada usa. Ele não abre os
+  arquivos.
 - **A estimativa do próprio Homebrew**, se o Homebrew estiver instalado: o MacSpace roda
   `brew cleanup -n`, que não muda nada, com a atualização automática e as estatísticas do Homebrew
   desligadas, e só quando o Homebrew já tem a lista de pacotes, para que ele não acesse a internet.

@@ -235,10 +235,13 @@ MacSpace. [Seguridad](SECURITY.es.md) tiene la lista completa.
   Papelera; las instantáneas locales de Time Machine, menos la más reciente y la que usa como punto
   de partida la próxima copia; y las copias que elijas en un disco de copia conectado, nunca la más
   reciente. Instantáneas y copias nunca se eliminan durante una copia.
-- Solo las cachés que eliges en **Cachés de apps**: carpetas de `~/Library/Caches`. Las que vienen
-  marcadas no cambian desde hace un mes, y su app no se abre desde hace tanto o no está instalada.
-  Las cachés en uso aparecen sin marcar y avisan de que vuelven. No se ofrecen las cachés de apps
-  abiertas ni las carpetas con archivos multimedia o documentos con nombres que les dan las personas.
+- Solo las cachés que eliges en **Cachés de apps**: carpetas de `~/Library/Caches` y, con acceso
+  total al disco, lo que hay en la carpeta de cachés del contenedor de cada app
+  (`~/Library/Containers/<app>/Data/Library/Caches`), salvo lo que macOS guarda allí. Nunca las de
+  Apple. Las que vienen marcadas no cambian desde hace un mes, y su app no se abre desde hace tanto
+  o no está instalada. Las cachés en uso aparecen sin marcar y avisan de que vuelven. No se ofrecen
+  las cachés de apps abiertas ni las carpetas con archivos multimedia o documentos con nombres que
+  les dan las personas.
 - Solo desde la fila **Homebrew**: el `brew cleanup` del propio Homebrew, ejecutado como tú, sin
   desinstalar fórmulas, actualizar ni enviar las estadísticas de Homebrew.
 

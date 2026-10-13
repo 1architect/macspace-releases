@@ -44,9 +44,10 @@ MacSpace reads these things on your Mac, to do its job. It does not send any of 
 - **Names and sizes of files and folders**, on the whole disk once you give it Full Disk Access.
   It does not read what is in your documents, photos, mail or messages. It measures how much
   space they take.
-- **Dates of the files in apps' caches** (`~/Library/Caches`): when each was created, changed or
-  first read, and **when each app was last opened**, as Spotlight records it, to tell which caches
-  nothing uses. It does not open the files.
+- **Dates of the files in apps' caches** (`~/Library/Caches` and, with Full Disk Access, the caches
+  folder in each app's container, `~/Library/Containers/<app>/Data/Library/Caches`): when each was
+  created, changed or first read, and **when each app was last opened**, as Spotlight records it, to
+  tell which caches nothing uses. It does not open the files.
 - **Homebrew's own estimate**, if Homebrew is installed: MacSpace runs `brew cleanup -n`, which
   changes nothing, with Homebrew's auto-update and analytics off, and only when Homebrew already has
   its package list, so Homebrew does not go online.

@@ -175,14 +175,19 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     /// Deletes the chosen app caches. Each is read again first (`AppCaches.measure`): one that looks like data now stays. Then the cleaner's own checks, as for every cache: its app or tool not running, nothing open in
-    /// it, renamed then deleted.
-    static func cleanAppCaches(_ ids: [String], in snapshot: SystemDataSnapshot, now: Date = Date()) -> ActionResult {
+    /// it, renamed then deleted. A container's caches folder stays, emptied of all but macOS's own (`AppCaches.containerContents`):
+    /// the cleaner may delete only inside the chosen containers' caches folders, and checks their apps by bundle identifier alone.
+    static func cleanAppCaches(_ ids: [String], in snapshot: SystemDataSnapshot, now: Date = Date(),
+                               home: String = FileManager.default.homeDirectoryForCurrentUser.path, cleaner: SystemDataCleaner = SystemDataCleaner()) -> ActionResult {
         let chosen = snapshot.report.appCaches.filter { ids.contains($0.id) }
         guard !chosen.isEmpty else { return .failed(loc("Already gone")) }
         var details: [String] = []
         var items: [SystemDataItem] = []
+        var containerItems: [SystemDataItem] = []
+        var containerFolders: [String] = []
+        let cleanup = SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil)
         for var cache in chosen {
-            if let dates = AppCaches.measure(cache.path, now: now) {
+            if let dates = AppCaches.measure(cache.path, now: now, skippingApple: cache.container != nil) {
                 cache.lastChange = dates.lastChange
                 cache.recentBytes = dates.recentBytes
                 cache.dataLikeBytes = dates.dataLikeBytes
@@ -192,19 +197,43 @@ public struct SystemDataModule: MacSpaceModule {
                 details.append("Skipped: \(cache.id). It now holds media or documents.")
                 continue
             }
+            if let container = cache.container {
+                // Only the caches folder of a third-party app's container, found again from its bundle identifier.
+                guard let folder = AppCaches.containerCachesFolder(home: home, container: container), folder == cache.path else {
+                    details.append("Skipped: \(cache.id). Not a third-party app's caches folder.")
+                    continue
+                }
+                let contents = AppCaches.containerContents(folder)
+                guard !contents.isEmpty else {
+                    details.append("Skipped: \(cache.id). Nothing in it.")
+                    continue
+                }
+                containerFolders.append(URL(fileURLWithPath: folder).standardizedFileURL.path)
+                containerItems.append(SystemDataItem(id: cache.id, title: cache.title, kind: .appCache, paths: contents, bytes: cache.bytes, readable: true,
+                                                     owners: cache.bundleIdentifiers.isEmpty ? [container] : cache.bundleIdentifiers, inUse: false,
+                                                     cleanup: cleanup, notes: []))
+                continue
+            }
             // Its owner by folder name (a tool, a bundle identifier) and by the app's own name, so the running check finds either.
             var owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name]
             if cache.title != owners[0] { owners.append(cache.title) }
             items.append(SystemDataItem(id: cache.id, title: cache.title, kind: .appCache, paths: [cache.path], bytes: cache.bytes, readable: true,
-                                        owners: owners, inUse: false,
-                                        cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil), notes: []))
+                                        owners: owners, inUse: false, cleanup: cleanup, notes: []))
         }
-        guard !items.isEmpty else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
-        let caches = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches").standardizedFileURL.path
-        let report = SystemDataCleaner().clean(items, allowedRoots: [caches])
-        details += report.results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
-        let freed = measuredFreed(report.freeBytesBefore, report.freeBytesAfter)
-        if !report.results.contains(where: \.deleted) {
+        guard !items.isEmpty || !containerItems.isEmpty else {
+            return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
+        }
+        var reports: [SystemDataCleanupReport] = []
+        if !items.isEmpty {
+            reports.append(cleaner.clean(items, allowedRoots: [URL(fileURLWithPath: home).appendingPathComponent("Library/Caches").standardizedFileURL.path]))
+        }
+        if !containerItems.isEmpty {
+            reports.append(cleaner.clean(containerItems, allowedRoots: containerFolders, ownersAreBundleIdentifiers: true))
+        }
+        let results = reports.flatMap(\.results)
+        details += results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
+        let freed = measuredFreed(reports.first?.freeBytesBefore, reports.last?.freeBytesAfter)
+        if !results.contains(where: \.deleted) {
             return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true)
         }
         return .succeeded(freedMessage(freed), details: details, freedBytes: freed)

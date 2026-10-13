@@ -46,9 +46,11 @@ irgendwohin.
 - **Namen und Größen von Dateien und Ordnern**, auf dem gesamten Speicher, sobald du ihm
   Festplattenvollzugriff gibst. Es liest nicht, was in deinen Dokumenten, Fotos, E-Mails oder
   Nachrichten steht. Es misst, wie viel Speicher sie belegen.
-- **Die Daten der Dateien in den Caches der Apps** (`~/Library/Caches`): wann jede erstellt,
-  geändert oder zum ersten Mal gelesen wurde, und **wann jede App zuletzt geöffnet wurde**, wie
-  Spotlight es festhält, um zu erkennen, welche Caches nichts nutzt. Die Dateien öffnet es nicht.
+- **Die Daten der Dateien in den Caches der Apps** (`~/Library/Caches` und, mit
+  Festplattenvollzugriff, der Cache-Ordner im Container jeder App,
+  `~/Library/Containers/<App>/Data/Library/Caches`): wann jede erstellt, geändert oder zum ersten
+  Mal gelesen wurde, und **wann jede App zuletzt geöffnet wurde**, wie Spotlight es festhält, um zu
+  erkennen, welche Caches nichts nutzt. Die Dateien öffnet es nicht.
 - **Die eigene Schätzung von Homebrew**, wenn Homebrew installiert ist: MacSpace führt
   `brew cleanup -n` aus, das nichts ändert, mit ausgeschalteter automatischer Aktualisierung und
   ohne Homebrews Statistiken, und nur, wenn Homebrew seine Paketliste schon hat, damit es nicht ins

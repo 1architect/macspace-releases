@@ -234,10 +234,12 @@ o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista co
   está no Lixo; os instantâneos locais do Time Machine, menos o mais recente e o
   que o próximo backup usa como ponto de partida; e os backups que você escolher num disco de backup
   conectado, nunca o mais recente. Instantâneos e backups nunca são apagados durante um backup.
-- Somente os caches que você escolhe em **Caches de apps**: pastas de `~/Library/Caches`. As que
-  já vêm marcadas não mudam há um mês, e o app delas não é aberto há tanto tempo ou não está
-  instalado. Caches em uso aparecem desmarcados e avisam que voltam. Caches de apps abertos e pastas
-  com mídias ou documentos com nomes dados por pessoas não são oferecidos.
+- Somente os caches que você escolhe em **Caches de apps**: pastas de `~/Library/Caches` e, com
+  Acesso Total ao Disco, o que está na pasta de caches do contêiner de cada app
+  (`~/Library/Containers/<app>/Data/Library/Caches`), exceto o que o macOS guarda lá. Nunca os da
+  Apple. As que já vêm marcadas não mudam há um mês, e o app delas não é aberto há tanto tempo ou
+  não está instalado. Caches em uso aparecem desmarcados e avisam que voltam. Caches de apps abertos
+  e pastas com mídias ou documentos com nomes dados por pessoas não são oferecidos.
 - Somente pela linha **Homebrew**: o `brew cleanup` do próprio Homebrew, rodado como você, sem
   desinstalar fórmulas, atualizar ou enviar as estatísticas do Homebrew.
 

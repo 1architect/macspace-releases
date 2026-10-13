@@ -226,10 +226,13 @@ choose, change the Debloat switches that need an administrator, and remove the M
   local snapshots, all but the newest and the one the next backup starts from; and the backups you
   choose on a connected backup disk, never the latest. Snapshots and backups are never deleted while
   a backup runs.
-- Only the caches you choose under **App caches**: folders in `~/Library/Caches`. Those checked for
-  you have not changed for a month, and their app has not been opened for as long or is not
-  installed. Caches in use are listed unchecked and say that they come back. Caches of apps that are
-  open, and folders that hold media or documents with names people give, are not offered.
+- Only the caches you choose under **App caches**: folders in `~/Library/Caches` and, with Full Disk
+  Access, what is in the caches folder of each app's container
+  (`~/Library/Containers/<app>/Data/Library/Caches`), but for what macOS keeps there. Never Apple's.
+  Those checked for you have not changed for a month, and their app has not been opened for as long
+  or is not installed. Caches in use are listed unchecked and say that they come back. Caches of
+  apps that are open, and folders that hold media or documents with names people give, are not
+  offered.
 - Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
   formulae, updating or sending Homebrew's analytics.
 

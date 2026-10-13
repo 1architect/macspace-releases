@@ -4,9 +4,10 @@ import Foundation
 import AppKit
 #endif
 
-/// A third-party app's cache folder in `~/Library/Caches`, with what decides whether it is in use: the file system's dates and the
-/// owner app's last launch. Nothing in it is opened to read this. Measured on 26B5101f (2026-10-12): for 10 of 11 apps, a cache's
-/// last change was within about a day of the app's last launch, so a cache that has not changed for weeks is one nothing uses.
+/// A third-party app's cache folder in `~/Library/Caches`, or a sandboxed app's in its container (`~/Library/Containers/<bundle id>/
+/// Data/Library/Caches`, read with Full Disk Access), with what decides whether it is in use: the file system's dates and the owner
+/// app's last launch. Nothing in it is opened to read this. Measured on 26B5101f (2026-10-12): for 10 of 11 apps, a cache's last
+/// change was within about a day of the app's last launch, so a cache that has not changed for weeks is one nothing uses.
 public struct AppCache: Codable, Equatable, Sendable {
     public enum Owner: Codable, Equatable, Sendable {
         /// An installed app, with its name and when it was last opened (nil when Spotlight does not say).
@@ -33,6 +34,13 @@ public struct AppCache: Codable, Equatable, Sendable {
     public var owner: Owner
     /// Its app or tool is running now (as the cleaner checks it): it cannot go until it quits, so it is not listed.
     public var ownerRunning = false
+    /// The sandboxed app's bundle identifier when the folder is its container's caches folder; nil for a folder in `~/Library/Caches`.
+    /// Only what is in a container's folder is freed, never the folder itself, which the app expects to find, and never what macOS's
+    /// own services keep there (`AppCaches.isAppleEntry`).
+    public var container: String? = nil
+    /// For a container's folder: the bundle identifiers whose app keeps it while running, matched exactly (`ProcessCheck.runningApp`):
+    /// the container's, and for an extension or a helper, its app's (`AppCaches.containerApp`).
+    public var bundleIdentifiers: [String] = []
 
     /// The name to show: the app's when it is installed, else the folder's.
     public var title: String {
@@ -81,8 +89,9 @@ public enum AppCaches {
 
     // MARK: Reading the Mac
 
-    /// The folder's dates and sizes, from the file system's records alone (`fts`, which reads no file's content).
-    static func measure(_ path: String, now: Date = Date()) -> (lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)? {
+    /// The folder's dates and sizes, from the file system's records alone (`fts`, which reads no file's content). For a container's
+    /// folder (`skippingApple`), what macOS's own services keep in it is left out, as it is when the folder is freed.
+    static func measure(_ path: String, now: Date = Date(), skippingApple: Bool = false) -> (lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)? {
         guard let copy = strdup(path) else { return nil }
         defer { free(copy) }
         var paths: [UnsafeMutablePointer<CChar>?] = [copy, nil]
@@ -96,6 +105,11 @@ public enum AppCaches {
         func seconds(_ time: timespec) -> TimeInterval { TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9 }
         while let entry = fts_read(fts) {
             let info = Int32(entry.pointee.fts_info)
+            if skippingApple, entry.pointee.fts_level == 1, let entryPath = entry.pointee.fts_path,
+               isAppleEntry((String(cString: entryPath) as NSString).lastPathComponent) {
+                if info == FTS_D { fts_set(fts, entry, FTS_SKIP) }
+                continue
+            }
             guard let stat = entry.pointee.fts_statp?.pointee else { continue }
             // A folder's own access date moves whenever something lists it (this scan too), so only its writes count.
             if info == FTS_D {
@@ -148,6 +162,63 @@ public enum AppCaches {
     static func lastOpened(_ appPath: String) -> Date? {
         guard let item = MDItemCreate(kCFAllocatorDefault, appPath as CFString) else { return nil }
         return MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
+    }
+
+    // MARK: Sandboxed apps' containers
+
+    /// Whether a container is Apple's: one of macOS's apps or services.
+    static func isAppleContainer(_ bundleIdentifier: String) -> Bool {
+        bundleIdentifier.hasPrefix("com.apple.") || bundleIdentifier.hasPrefix("group.com.apple.")
+    }
+
+    /// What macOS's own services keep in an app's caches folder, named after themselves: `com.apple.nsurlsessiond` holds the app's
+    /// background downloads, which the service carries on with while the app is closed and whose open files it does not show
+    /// (`ProcessCheck.isAppleSystemProgram`). Left to macOS.
+    static func isAppleEntry(_ name: String) -> Bool { name.hasPrefix("com.apple.") }
+
+    /// The caches folder of a third-party app's container in this home folder (`~/Library/Containers/<bundle id>/Data/Library/Caches`);
+    /// nil for Apple's containers and for a name that is not one folder's.
+    static func containerCachesFolder(home: String, container: String) -> String? {
+        guard !container.isEmpty, !container.contains("/"), !container.hasPrefix("."), !isAppleContainer(container) else { return nil }
+        return "\(home)/Library/Containers/\(container)/Data/Library/Caches"
+    }
+
+    /// What is freed from a container's caches folder: everything in it but macOS's own (`isAppleEntry`).
+    static func containerContents(_ folder: String, fileManager: FileManager = .default) -> [String] {
+        ((try? fileManager.contentsOfDirectory(atPath: folder)) ?? []).filter { !isAppleEntry($0) }.sorted()
+            .map { (folder as NSString).appendingPathComponent($0) }
+    }
+
+    /// The installed app a container belongs to: the app with its bundle identifier, or, for an extension or a helper, the app whose
+    /// identifier its own begins with (`net.whatsapp.WhatsApp.ServiceExtension` is WhatsApp's), as Apple requires of an app's
+    /// extensions. nil when no installed app has either, as for an app that was removed. Measured on 26B5101f (2026-10-13): this named
+    /// the app of 24 of the development Mac's 35 third-party containers; 10 of the other 11 belonged to apps no longer installed, and
+    /// one to HandBrake's XPC service, whose identifier does not begin with HandBrake's.
+    static func containerApp(_ bundleIdentifier: String, appURL: (String) -> URL? = liveAppURL) -> (bundleIdentifier: String, url: URL)? {
+        var parts = bundleIdentifier.split(separator: ".")
+        while parts.count >= 2 {
+            let candidate = parts.joined(separator: ".")
+            if let url = appURL(candidate) { return (candidate, url) }
+            parts.removeLast()
+        }
+        return nil
+    }
+
+    /// Who a container belongs to (its app, with when it was last opened, or no installed app), and the bundle identifiers whose
+    /// running keeps its caches: the container's, and its app's when that is another.
+    static func containerOwner(of bundleIdentifier: String) -> (owner: AppCache.Owner, bundleIdentifiers: [String]) {
+        guard let app = containerApp(bundleIdentifier) else { return (.notInstalled, [bundleIdentifier]) }
+        let name = FileManager.default.displayName(atPath: app.url.path).replacingOccurrences(of: ".app", with: "")
+        let identifiers = app.bundleIdentifier == bundleIdentifier ? [bundleIdentifier] : [bundleIdentifier, app.bundleIdentifier]
+        return (.app(name: name, lastOpened: lastOpened(app.url.path)), identifiers)
+    }
+
+    static func liveAppURL(_ bundleIdentifier: String) -> URL? {
+        #if canImport(AppKit)
+        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier)
+        #else
+        return nil
+        #endif
     }
 
     /// Whether macOS itself has something by this name on the sealed system volume (a framework, a daemon, an app): such a cache is

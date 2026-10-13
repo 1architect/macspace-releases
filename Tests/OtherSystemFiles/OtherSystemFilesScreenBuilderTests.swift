@@ -209,6 +209,20 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(OtherSystemFilesScreenBuilder.screen(snap).hero?.segments, blocks)
     }
 
+    /// macOS's purge of app container caches is one figure here. The caches of third-party apps' containers are listed, and freed, on
+    /// System Data's caches page only (one item, one place): the row names no folder and has no button, and its block opens nothing.
+    func testContainerCachesAreNotListedAgain() throws {
+        let snap = snapshot(measured)
+        guard case let .list(kept)? = OtherSystemFilesScreenBuilder.screen(snap).widgets.last else { return XCTFail() }
+        let row = try XCTUnwrap(kept.rows.first { $0.id == CacheDeleteService.appContainerCaches })
+        XCTAssertTrue(row.paths.isEmpty)
+        XCTAssertTrue(row.actions.isEmpty)
+        XCTAssertTrue(row.children.isEmpty)
+        let block = try XCTUnwrap(OtherSystemFilesScreenBuilder.blocksWithItems(snap).first { $0.id == CacheDeleteService.appContainerCaches })
+        XCTAssertTrue(block.items.isEmpty)
+        XCTAssertNil(block.group)
+    }
+
     /// Purgeable app files too few to free have no row, so their block opens nothing.
     func testABlockWithNothingToListOpensNothing() {
         let blocks = OtherSystemFilesScreenBuilder.blocksWithItems(snapshot([CacheDeleteService.fsPurgeableData: 1_000_000]))

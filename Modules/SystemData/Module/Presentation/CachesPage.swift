@@ -2,8 +2,9 @@ import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
 
-/// One cache the user can free: an app's cache, an app's web cache, a per-user system cache, a developer tool's cache, or Homebrew's
-/// leftovers. Each is listed on the caches page only (`CachesPage`), never again in a block's or a category's page.
+/// One cache the user can free: an app's cache (in `~/Library/Caches` or in its container), an app's web cache, a per-user system cache,
+/// a developer tool's cache, or Homebrew's leftovers. Each is listed on the caches page only (`CachesPage`), never again in a block's or
+/// a category's page.
 struct CacheEntry: Equatable {
     enum Source: Equatable {
         case app, web, system, developer, homebrew
@@ -58,16 +59,19 @@ enum CachesPage {
         var entries: [CacheEntry] = []
         let report = snapshot.report
 
-        // Third-party caches in ~/Library/Caches (`AppCaches.outcome`). What looks like data is never listed.
+        // Third-party caches in ~/Library/Caches and in sandboxed apps' containers (`AppCaches.outcome`). What looks like data is never
+        // listed. Third-party containers are System Settings' Applications, in no block or list of this page, and Other System Files
+        // lists macOS's purge of them as one figure, so a container's caches are listed here only.
         let listed = report.appCaches.filter { $0.bytes >= SystemDataScreenBuilder.worthARow && AppCaches.outcome($0, now: now) != .heldBack }
-        // Two folders of one app (Sublime Text's own and `com.sublimetext.4`) are told apart by their folder names.
+        // Two folders of one app (Sublime Text's own and `com.sublimetext.4`, an app and its extension) are told apart by their folder
+        // names.
         var titles: [String: Int] = [:]
         for cache in listed { titles[cache.title, default: 0] += 1 }
         for cache in listed {
             let outcome = AppCaches.outcome(cache, now: now)
             let days = AppCaches.unchangedDays(cache, now: now)
             var entry = CacheEntry(id: cache.id, title: titles[cache.title, default: 0] > 1 ? cache.name : cache.title, bytes: cache.bytes,
-                                   paths: [cache.path], source: .app, within: cache.id)
+                                   paths: [cache.path], source: .app, within: cache.container.map { "container:\($0)" } ?? cache.id)
             if outcome == .suggested {
                 entry.recommended = true
                 switch cache.owner {
@@ -125,6 +129,7 @@ enum CachesPage {
         for index in entries.indices where entries[index].within.map({ !itemIDs.contains($0) }) ?? true {
             guard let path = entries[index].paths.first else { continue }
             if path.hasPrefix(home + "/Library/Caches/") { entries[index].within = SmallKey(kind: .appCache).id }
+            else if path.hasPrefix(home + "/Library/Containers/") { entries[index].within = SmallKey(kind: .appContainer).id }
             else if path.hasPrefix(home + "/.cache/") { entries[index].within = SmallKey(kind: .toolCache).id }
             else if path.hasPrefix(home + "/."), entries[index].within == nil { entries[index].within = SmallKey(kind: .appSupport).id }
         }

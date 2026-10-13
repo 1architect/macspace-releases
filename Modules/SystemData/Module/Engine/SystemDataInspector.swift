@@ -126,7 +126,8 @@ public struct SystemDataReport: Codable, Equatable, Sendable {
     /// Folders macOS keeps closed to every app, even with Full Disk Access and as root (`SystemDataInspector.protectedFolders`). What is
     /// in them is part of what System Settings counts and no folder MacSpace lists accounts for. Empty without Full Disk Access.
     public var protectedFolders: [String] = []
-    /// Third-party apps' cache folders in `~/Library/Caches`, every size, with what tells whether they are in use (`AppCaches`).
+    /// Third-party apps' cache folders in `~/Library/Caches`, and with Full Disk Access in sandboxed apps' containers
+    /// (`AppCache.container`), every size, with what tells whether they are in use (`AppCaches`).
     public var appCaches: [AppCache] = []
     /// What every container's caches folder holds, Apple's and third-party; macOS's purge of app container caches counts a part of
     /// it as purgeable, which System Settings counts as free space.
@@ -332,6 +333,9 @@ public struct SystemDataInspector {
     /// Who uses an app cache folder, by its owner's name (`AppCaches.owner`); injectable for tests.
     public var appCacheOwner: @Sendable (String) -> AppCache.Owner = { AppCaches.owner(of: $0) }
 
+    /// Who a sandboxed app's container belongs to, by its bundle identifier (`AppCaches.containerOwner`); injectable for tests.
+    public var containerOwner: @Sendable (String) -> (owner: AppCache.Owner, bundleIdentifiers: [String]) = { AppCaches.containerOwner(of: $0) }
+
     /// Folders in `/Users` that are not home folders.
     static let usersFolderEntries: Set<String> = ["Shared", "Guest", "Deleted Users", ".localized"]
 
@@ -387,6 +391,11 @@ public struct SystemDataInspector {
             if processes == nil { processes = processCheck.processes() ?? [] }
             return ProcessCheck.runningOwner(owners, apps: running, processes: processes ?? [], appPath: processCheck.appPath) != nil
                 || ProcessCheck.runningFromInside(paths, processes: processes ?? []) != nil
+        }
+        /// A sandboxed app's, by bundle identifier only, as the cleaner checks a container's caches.
+        func isRunningApp(_ bundleIdentifiers: [String]) -> Bool {
+            if processes == nil { processes = processCheck.processes() ?? [] }
+            return ProcessCheck.runningApp(bundleIdentifiers, apps: running, processes: processes ?? [], appPath: processCheck.appPath) != nil
         }
         // Entries are registered first and measured together afterwards, in parallel: sizing is disk-bound and independent per path.
         struct Pending {
@@ -784,18 +793,38 @@ public struct SystemDataInspector {
         // containers too small to list share the "Smaller items" item's figure.
         var containerCaches: UInt64 = 0
         var smallAppleCaches: UInt64 = 0
+        // Third-party apps' own containers (not groups') have their caches offered on the caches page, as `~/Library/Caches` has.
+        var offeredContainerCaches: [AppCache] = []
         if hasFullDiskAccess {
-            let caches: [(name: String, path: String)] = ["Group Containers", "Containers"].flatMap { folder in
+            let caches: [(name: String, path: String, offered: Bool)] = ["Group Containers", "Containers"].flatMap { folder in
                 children((library as NSString).appendingPathComponent(folder)).compactMap { path in
+                    let name = (path as NSString).lastPathComponent
                     let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
-                    return fileManager.fileExists(atPath: caches) ? ((path as NSString).lastPathComponent, caches) : nil
+                    // MacSpace's own are in use whenever this runs.
+                    let offered = folder == "Containers" && AppCaches.containerCachesFolder(home: home, container: name) != nil && !name.hasPrefix("com.macspace.")
+                    return fileManager.fileExists(atPath: caches) ? (name, caches, offered) : nil
                 }
             }
-            // Measured side by side, as the items are.
+            // Measured side by side, as the items are; an offered one's dates too, while its folder's records are fresh.
             let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
+            let dates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: caches.count)
             let queue = JobCounter(count: caches.count)
             DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
-                while let index = queue.next() { sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0) }
+                while let index = queue.next() {
+                    sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0)
+                    if caches[index].offered { dates.set(index, AppCaches.measure(caches[index].path, now: now, skippingApple: true)) }
+                }
+            }
+            // The owner by bundle identifier: the container is named after it.
+            for (cache, measured) in zip(caches, dates.values) where cache.offered {
+                guard let measured, measured.bytes > 0 else { continue }
+                let owner = containerOwner(cache.name)
+                var entry = AppCache(id: "containercache:\(cache.name)", name: cache.name, path: cache.path, bytes: measured.bytes, lastChange: measured.lastChange,
+                                     recentBytes: measured.recentBytes, dataLikeBytes: measured.dataLikeBytes, owner: owner.owner)
+                entry.container = cache.name
+                entry.bundleIdentifiers = owner.bundleIdentifiers
+                entry.ownerRunning = isRunningApp(owner.bundleIdentifiers)
+                offeredContainerCaches.append(entry)
             }
             let positions = Dictionary(items.indices.map { (items[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
             for (cache, bytes) in zip(caches, sizes.values) {
@@ -816,8 +845,8 @@ public struct SystemDataInspector {
                                       unreadable: unreadable, warnings: warnings)
         report.fullDiskAccess = hasFullDiskAccess
         report.containerCachesBytes = containerCaches
-        // Third-party caches, every size (the items above list only the large ones), with their dates and owner. MacSpace's own are
-        // left out: they are in use whenever this runs. So is Homebrew's, which its own cleanup handles.
+        // Third-party caches, every size (the items above list only the large ones), with their dates and owner, then the containers'
+        // measured above. MacSpace's own are left out: they are in use whenever this runs. So is Homebrew's, which its own cleanup handles.
         let cachesFolder = (home as NSString).appendingPathComponent("Library/Caches")
         report.appCaches = children(cachesFolder).compactMap { path -> AppCache? in
             let name = (path as NSString).lastPathComponent
@@ -834,7 +863,7 @@ public struct SystemDataInspector {
                                  dataLikeBytes: dates.dataLikeBytes, owner: appCacheOwner(owner))
             cache.ownerRunning = isRunning([owner, cache.title], cleanup: .deleteWhenNotRunning)
             return cache
-        }
+        } + offeredContainerCaches
         // Where macOS keeps such folders, as found on 26B5101f: system assets (Apple Intelligence's models among them), the system
         // databases and the rest of /private/var, the caches folders, and this account's per-user folders.
         if hasFullDiskAccess {
@@ -938,7 +967,9 @@ public struct SystemDataCleaner {
 
     public static func dataVolumeFreeBytes() -> UInt64? { DataVolume.freeBytes() }
 
-    public func clean(_ items: [SystemDataItem], allowedRoots: [String]) -> SystemDataCleanupReport {
+    /// `ownersAreBundleIdentifiers`: the items are what is in sandboxed apps' containers, whose owners are bundle identifiers matched
+    /// exactly (`ProcessCheck.runningApp`), so the Finder, always open, does not keep `com.example.FinderSync`'s caches.
+    public func clean(_ items: [SystemDataItem], allowedRoots: [String], ownersAreBundleIdentifiers: Bool = false) -> SystemDataCleanupReport {
         let before = freeSpace()
         let results = items.map { item -> SystemDataCleanupResult in
             guard item.cleanup.kind == .deleteWhenNotRunning else {
@@ -959,7 +990,10 @@ public struct SystemDataCleaner {
             guard let processes = processCheck.processes() else {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Nothing was freed: MacSpace couldn't check which apps are open."))
             }
-            if let owner = ProcessCheck.runningOwner(item.owners, apps: runningApps(), processes: processes, appPath: processCheck.appPath) {
+            let owner = ownersAreBundleIdentifiers
+                ? ProcessCheck.runningApp(item.owners, apps: runningApps(), processes: processes, appPath: processCheck.appPath)
+                : ProcessCheck.runningOwner(item.owners, apps: runningApps(), processes: processes, appPath: processCheck.appPath)
+            if let owner {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(owner) is running; quit it first."))
             }
             // A program started from inside the folder (an app run from its code-signing copy) has its code mapped from there, which
@@ -991,7 +1025,8 @@ public struct SystemDataCleaner {
         return SystemDataCleanupReport(results: results, freeBytesBefore: before, freeBytesAfter: freeSpace())
     }
 
-    /// The directories cleanable items may live in.
+    /// The directories cleanable items may live in. App caches are freed with roots of their own (`SystemDataModule.cleanAppCaches`):
+    /// `~/Library/Caches`, and only the caches folders of the chosen apps' containers.
     public static func allowedRoots(_ locations: SystemDataLocations) -> [String] {
         var roots: [String] = []
         if let userDir = locations.userSystemDirectory {

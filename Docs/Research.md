@@ -262,8 +262,10 @@ Disk Access, among them the Foundation Model families (`UAF_FM_GenerativeModels`
   while the estimate at urgency 3 still said 911.7 MB. Asking at urgency 3 and then at 4 (critically full) removed what 3
   declined: 1.08 GB, after which the estimate said 63.5 MB. The app lists files as declined only when both remove nothing.
 - **Measured, container caches are not worth offering.** `com.apple.cache_delete_app_container_caches` reports 1.15 GB and keeps
-  reporting it. Purging freed 2.1 MB at urgency 1, 2.1 MB at 2, 95.7 MB at 3 and nothing at 4. Not in the app. (The caches
-  themselves cannot be read from here: `~/Library/Containers` is closed to a terminal.)
+  reporting it. Purging freed 2.1 MB at urgency 1, 2.1 MB at 2, 95.7 MB at 3 and nothing at 4. Not in the app. Read with Full Disk
+  Access (26B5101f, 2026-10-13), the containers' caches folders held 1.85 GB: Apple's 1.81 GB (the wallpaper agent 1.17 GB,
+  mediaanalysisd 476 MB), third-party apps' 38 MB. The third-party ones are offered on System Data's caches page, deleted directly
+  (Third-party app caches, below); Other System Files keeps the service as one figure.
 - **Measured, what `fspurgeable_document` is.** 21.15 GB, up from 9.96 GB the same morning: OneDrive's files. File Provider apps
   flag files they downloaded and keep in the cloud as purgeable (22.94 GB in 8,065 files of one cloud folder, nothing flagged in
   Downloads, Documents or Desktop). macOS may delete these local copies; they download again when opened. Other System Files names
@@ -310,6 +312,21 @@ its system volume (a framework, a daemon, an app) is Apple's. Nothing is opened 
 it goes, then the cleaner's checks apply (the owner not running, no file open), and the folder is renamed, then deleted. **Unverified:**
 how much this frees on a Mac used for years: here, 92.7 MB of third-party cache files were unchanged for 30 days, all Homebrew
 downloads.
+
+**Measured: caches in sandboxed apps' containers** (26B5101f, 2026-10-13, with Full Disk Access). 35 third-party containers; their
+`Data/Library/Caches` folders held 38 MB: WhatsApp 24 MB (22 MB of thumbnails named by hashes), OneDrive 11.6 MB and its file
+provider 2.1 MB, the rest under 1 MB. A container is named after the bundle identifier of what runs in it, and an extension's
+identifier begins with its app's, as Apple requires: LaunchServices named the app of 24 containers that way, 10 of the other 11
+belonged to apps no longer installed, and one to HandBrake's XPC service, whose identifier does not begin with HandBrake's, so it
+reads as not installed. WhatsApp's folder also holds `com.apple.nsurlsessiond/Downloads/net.whatsapp.WhatsApp`: nsurlsessiond keeps
+an app's background downloads there and carries on with them while the app is closed, and it refuses to show its open files.
+
+**What MacSpace does with them.** With Full Disk Access, each third-party container's caches folder is an app cache under the rules
+above, named after its app. Apple's containers (`com.apple.`, `group.com.apple.`) and group containers are not offered. Freeing
+deletes what is in the folder, never the folder, and never an entry named `com.apple.*` (left out of its size too). The cleaner may
+delete only inside the chosen containers' caches folders, and checks the app by bundle identifier alone: the app, or a process
+from inside its bundle. The name rule used for `~/Library/Caches` would have taken the Finder, always open, for the owner of
+`com.microsoft.OneDrive-mac.FinderSync`. **Unverified:** how much this frees on a Mac with more sandboxed apps.
 
 **Measured: Homebrew** (7.0.8). Plain `brew cleanup -n` failed with "Refusing to load cask … from untrusted tap": Homebrew 7 refuses
 casks from a tap the user has not trusted, MacSpace's own here; `--prune=all` skips that check and worked (138.2 MB, against 33.4 MB

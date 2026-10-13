@@ -57,6 +57,19 @@ public struct ProcessCheck: Sendable {
         }
     }
 
+    /// The first of these apps that is running, by bundle identifier only, for a sandboxed app's container, which is named after it:
+    /// the app itself, or a process running from inside its bundle (an extension, a helper). Unlike `runningOwner`, an app whose name
+    /// is only part of an identifier does not count: the Finder, always open, is not `com.example.FinderSync`.
+    static func runningApp(_ bundleIdentifiers: [String], apps: [RunningApp], processes: [RunningProcess], appPath: (String) -> String?) -> String? {
+        for identifier in bundleIdentifiers {
+            if let app = apps.first(where: { $0.bundleIdentifier?.caseInsensitiveCompare(identifier) == .orderedSame }) { return app.name ?? identifier }
+            guard let bundle = appPath(identifier) else { continue }
+            let inside = bundle.hasSuffix("/") ? bundle : bundle + "/"
+            if let process = processes.first(where: { $0.executablePath?.hasPrefix(inside) == true }) { return process.name }
+        }
+        return nil
+    }
+
     /// The name of a process whose program is at or under one of the paths, compared as the kernel reports paths
     /// (`/private/var/folders/…`).
     static func runningFromInside(_ paths: [String], processes: [RunningProcess]) -> String? {

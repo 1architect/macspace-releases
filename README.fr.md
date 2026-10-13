@@ -241,10 +241,12 @@ administrateur, et supprimer le profil MacSpace. [Sécurité](SECURITY.fr.md) do
   sauvegarde connecté, jamais la plus récente. Instantanés et sauvegardes ne sont jamais supprimés
   pendant une sauvegarde.
 - Seulement les caches que vous choisissez dans **Caches d’apps** : des dossiers de
-  `~/Library/Caches`. Ceux cochés pour vous sont inchangés depuis un mois, et leur app n’a pas été
-  ouverte depuis aussi longtemps ou n’est pas installée. Les caches utilisés sont listés non cochés
-  et disent qu’ils reviennent. Les caches des apps ouvertes, et les dossiers qui contiennent des
-  médias ou des documents nommés par des personnes, ne sont pas proposés.
+  `~/Library/Caches` et, avec l’accès complet au disque, ce qui est dans le dossier des caches du
+  conteneur de chaque app (`~/Library/Containers/<app>/Data/Library/Caches`), sauf ce que macOS y
+  garde. Jamais ceux d’Apple. Ceux cochés pour vous sont inchangés depuis un mois, et leur app n’a
+  pas été ouverte depuis aussi longtemps ou n’est pas installée. Les caches utilisés sont listés non
+  cochés et disent qu’ils reviennent. Les caches des apps ouvertes, et les dossiers qui contiennent
+  des médias ou des documents nommés par des personnes, ne sont pas proposés.
 - Seulement depuis la ligne **Homebrew** : le `brew cleanup` de Homebrew, lancé en votre nom, sans
   désinstaller de formules, mettre à jour ni envoyer les statistiques de Homebrew.
 

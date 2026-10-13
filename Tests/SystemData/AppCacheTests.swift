@@ -90,6 +90,137 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(Double(listed.first?.bytes ?? 0), 3_000_000, accuracy: 200_000)
     }
 
+    // MARK: Sandboxed apps' containers
+
+    private func write(_ relative: String, under base: URL, bytes: Int = 3_000_000) throws {
+        let url = base.appendingPathComponent(relative)
+        try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(count: bytes).write(to: url)
+    }
+
+    /// With Full Disk Access, the caches folder of each third-party app's own container is measured as an app cache, owned by the
+    /// container's bundle identifier; what macOS's services keep in it is left out. Apple's containers and group containers are not.
+    func testTheInspectorMeasuresThirdPartyContainersCaches() throws {
+        let home = root.appendingPathComponent("home")
+        try write("Library/Containers/com.example.Sandboxed/Data/Library/Caches/com.example.Sandboxed/Cache.db", under: home)
+        try write("Library/Containers/com.example.Sandboxed/Data/Library/Caches/com.apple.nsurlsessiond/Downloads/x.tmp", under: home, bytes: 2_000_000)
+        try write("Library/Containers/com.example.Sandboxed/Data/Library/Preferences/com.example.Sandboxed.plist", under: home)
+        try write("Library/Containers/com.apple.Notes/Data/Library/Caches/blob", under: home)
+        try write("Library/Group Containers/group.com.example.shared/Library/Caches/blob", under: home)
+        let locations = SystemDataLocations(home: home, userSystemDirectory: nil, systemPaths: [:])
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        inspector.hasFullDiskAccess = true
+        inspector.processCheck = .none
+        inspector.containerOwner = { id in (.app(name: "Sandboxed", lastOpened: nil), [id, "com.example.Host"]) }
+        let caches = inspector.inspect().appCaches
+        XCTAssertEqual(caches.map(\.id), ["containercache:com.example.Sandboxed"])
+        let cache = try XCTUnwrap(caches.first)
+        XCTAssertEqual(cache.container, "com.example.Sandboxed")
+        XCTAssertEqual(cache.path, home.appendingPathComponent("Library/Containers/com.example.Sandboxed/Data/Library/Caches").path)
+        XCTAssertEqual(cache.bundleIdentifiers, ["com.example.Sandboxed", "com.example.Host"])
+        XCTAssertEqual(cache.title, "Sandboxed")
+        XCTAssertEqual(Double(cache.bytes), 3_000_000, accuracy: 200_000, "macOS's background downloads are not counted")
+        XCTAssertFalse(cache.ownerRunning)
+
+        inspector.hasFullDiskAccess = false
+        XCTAssertTrue(inspector.inspect().appCaches.isEmpty, "without Full Disk Access, containers are not read")
+    }
+
+    /// A container belongs to the app with its bundle identifier, or to the app whose identifier an extension's begins with; Apple's
+    /// containers, and names that are not one folder's, have no caches folder to offer.
+    func testAContainerBelongsToItsAppOrTheAppOfItsExtension() {
+        let whatsApp = URL(fileURLWithPath: "/Applications/WhatsApp.app")
+        let installed: (String) -> URL? = { $0 == "net.whatsapp.WhatsApp" ? whatsApp : nil }
+        XCTAssertEqual(AppCaches.containerApp("net.whatsapp.WhatsApp", appURL: installed)?.bundleIdentifier, "net.whatsapp.WhatsApp")
+        XCTAssertEqual(AppCaches.containerApp("net.whatsapp.WhatsApp.ServiceExtension", appURL: installed)?.bundleIdentifier, "net.whatsapp.WhatsApp")
+        XCTAssertNil(AppCaches.containerApp("com.parallels.desktop.console.OpenInIE", appURL: installed), "an app that was removed")
+        XCTAssertNil(AppCaches.containerCachesFolder(home: "/h", container: "com.apple.Notes"))
+        XCTAssertNil(AppCaches.containerCachesFolder(home: "/h", container: "group.com.apple.notes"))
+        XCTAssertNil(AppCaches.containerCachesFolder(home: "/h", container: "../x"))
+        XCTAssertEqual(AppCaches.containerCachesFolder(home: "/h", container: "net.whatsapp.WhatsApp"), "/h/Library/Containers/net.whatsapp.WhatsApp/Data/Library/Caches")
+    }
+
+    /// A container's app is running only by its bundle identifier, or by a process from inside its bundle: the Finder, always open, does
+    /// not keep a Finder extension's caches, as it would by name.
+    func testAContainersAppIsRunningByBundleIdentifierOnly() {
+        let finder = RunningApp(bundleIdentifier: "com.apple.finder", name: "Finder")
+        let ids = ["com.example.App.FinderSync", "com.example.App"]
+        let appPath: (String) -> String? = { $0 == "com.example.App" ? "/Applications/Example.app" : nil }
+        XCTAssertNotNil(ProcessCheck.runningOwner(ids, apps: [finder], processes: [], appPath: appPath), "by name, the Finder would count")
+        XCTAssertNil(ProcessCheck.runningApp(ids, apps: [finder], processes: [], appPath: appPath))
+        XCTAssertEqual(ProcessCheck.runningApp(ids, apps: [RunningApp(bundleIdentifier: "com.example.App", name: "Example")], processes: [], appPath: appPath), "Example")
+        let fileExtension = RunningProcess(pid: 1, name: "FinderSync", executablePath: "/Applications/Example.app/Contents/PlugIns/FinderSync.appex/Contents/MacOS/FinderSync")
+        XCTAssertEqual(ProcessCheck.runningApp(ids, apps: [finder], processes: [fileExtension], appPath: appPath), "FinderSync", "its extension runs")
+    }
+
+    /// Freeing a container's caches empties its caches folder, which stays, of all but macOS's own; nothing else in the container, nor
+    /// another container, is touched, and the cleaner may delete nowhere else.
+    func testFreeingAContainersCachesEmptiesOnlyItsCachesFolder() throws {
+        let home = root.appendingPathComponent("home")
+        let container = home.appendingPathComponent("Library/Containers/com.example.Sandboxed")
+        let caches = container.appendingPathComponent("Data/Library/Caches")
+        try write("Data/Library/Caches/com.example.Sandboxed/Cache.db", under: container)
+        try write("Data/Library/Caches/thumbnails/a3f9c01b7e2d4f55.png", under: container)
+        try write("Data/Library/Caches/com.apple.nsurlsessiond/Downloads/x.tmp", under: container)
+        try write("Data/Library/Preferences/com.example.Sandboxed.plist", under: container)
+        try write("Library/Containers/com.example.Other/Data/Library/Caches/blob", under: home)
+        for url in [caches.appendingPathComponent("com.example.Sandboxed/Cache.db"), caches.appendingPathComponent("thumbnails/a3f9c01b7e2d4f55.png"),
+                    caches.appendingPathComponent("com.example.Sandboxed"), caches.appendingPathComponent("thumbnails"), caches] {
+            try age(url, days: 40)
+        }
+        var cache = AppCache(id: "containercache:com.example.Sandboxed", name: "com.example.Sandboxed", path: caches.path, bytes: 6_000_000,
+                             lastChange: now.addingTimeInterval(-40 * day), recentBytes: 0, dataLikeBytes: 0, owner: .notInstalled)
+        cache.container = "com.example.Sandboxed"
+        cache.bundleIdentifiers = ["com.example.Sandboxed"]
+        let cleaner = SystemDataCleaner(runningApps: { [RunningApp(bundleIdentifier: "com.apple.finder", name: "Finder")] }, processCheck: .none, freeSpace: { nil })
+        let result = SystemDataModule.cleanAppCaches([cache.id], in: snapshot([cache]), now: now, home: home.path, cleaner: cleaner)
+        XCTAssertNotEqual(result.outcome, .failed, result.details.joined(separator: "\n"))
+        XCTAssertEqual(try fm.contentsOfDirectory(atPath: caches.path), ["com.apple.nsurlsessiond"], "the folder stays, with macOS's own")
+        XCTAssertTrue(fm.fileExists(atPath: container.appendingPathComponent("Data/Library/Preferences/com.example.Sandboxed.plist").path))
+        XCTAssertTrue(fm.fileExists(atPath: home.appendingPathComponent("Library/Containers/com.example.Other/Data/Library/Caches/blob").path))
+
+        // Its roots are the chosen containers' caches folders: the rest of a container is outside them.
+        let preferences = SystemDataItem(id: "x", title: "x", kind: .appCache, paths: [container.appendingPathComponent("Data/Library/Preferences").path],
+                                         bytes: 1, readable: true, owners: ["com.example.Sandboxed"], inUse: false,
+                                         cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
+        XCTAssertFalse(cleaner.clean([preferences], allowedRoots: [caches.standardizedFileURL.path], ownersAreBundleIdentifiers: true).results[0].deleted)
+        // An Apple container is never freed, whatever the snapshot says.
+        var apple = cache
+        apple.id = "containercache:com.apple.Notes"
+        apple.container = "com.apple.Notes"
+        apple.path = home.appendingPathComponent("Library/Containers/com.apple.Notes/Data/Library/Caches").path
+        XCTAssertEqual(SystemDataModule.cleanAppCaches([apple.id], in: snapshot([apple]), now: now, home: home.path, cleaner: cleaner).outcome, .failed)
+    }
+
+    /// A container's cache is an app cache of the caches page, under the same rules; one holding media named by people is not listed.
+    /// It is listed there only: third-party containers are in no block or list of System Data's page.
+    func testContainerCachesAreAppCachesListedOnce() throws {
+        var gone = cache(.notInstalled, unchangedDays: 45, bytes: 40_000_000)
+        gone.id = "containercache:com.example.Gone"
+        gone.name = "com.example.Gone"
+        gone.path = "/h/Library/Containers/com.example.Gone/Data/Library/Caches"
+        gone.container = "com.example.Gone"
+        var media = cache(.app(name: "Player", lastOpened: nil), unchangedDays: 45, dataLike: 60_000_000, bytes: 80_000_000)
+        media.id = "containercache:com.example.Player"
+        media.container = "com.example.Player"
+        let container = SystemDataItem(id: "container:com.example.Gone", title: "App container: com.example.Gone", kind: .appContainer,
+                                       paths: ["/h/Library/Containers/com.example.Gone"], bytes: 300_000_000, readable: true, owners: ["com.example.Gone"],
+                                       inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])
+        var snap = snapshot([gone, media], items: [container])
+        snap.report.items[0].cachesBytes = 40_000_000
+        let entries = CachesPage.entries(snap, now: now)
+        XCTAssertEqual(entries.map(\.id), ["containercache:com.example.Gone"], "media named by people is never listed")
+        XCTAssertEqual(entries.first?.within, "container:com.example.Gone")
+        let row = try XCTUnwrap(CachesPage.row(snap, now: now))
+        XCTAssertEqual(row.selection?.checked, ["containercache:com.example.Gone"])
+        XCTAssertEqual(row.children.first?.badges.map(\.text), ["App cache", "App not installed"])
+        XCTAssertEqual(row.children.first?.paths, [gone.path])
+        XCTAssertEqual(SystemDataScreenBuilder.cleanBytes(snap), 40_000_000)
+        let listedElsewhere = SystemDataScreenBuilder.blocksWithItems(snap).filter { $0.id != "freeable" }.flatMap(\.items).map(\.id)
+            + SystemDataScreenBuilder.leftAlone(snap).map(\.id)
+        XCTAssertFalse(listedElsewhere.contains("container:com.example.Gone"))
+    }
+
     // MARK: The page
 
     private func snapshot(_ caches: [AppCache], items: [SystemDataItem] = []) -> SystemDataSnapshot {

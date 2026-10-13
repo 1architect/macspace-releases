@@ -243,8 +243,10 @@ Debloat-Schalter ändern, die einen Administrator erfordern, und das MacSpace-Pr
   und dem, von dem das nächste Backup ausgeht; und die Backups, die du auf einem angeschlossenen
   Backup-Volume auswählst, nie das neueste. Schnappschüsse und Backups werden nie gelöscht, während
   ein Backup läuft.
-- Nur die Caches, die du unter **App-Caches** auswählst: Ordner in `~/Library/Caches`.
-  Vorausgewählt sind die, die seit einem Monat unverändert sind und deren App so lange nicht
+- Nur die Caches, die du unter **App-Caches** auswählst: Ordner in `~/Library/Caches` und, mit
+  Festplattenvollzugriff, der Inhalt des Cache-Ordners im Container jeder App
+  (`~/Library/Containers/<App>/Data/Library/Caches`), außer dem, was macOS dort ablegt. Nie die von
+  Apple. Vorausgewählt sind die, die seit einem Monat unverändert sind und deren App so lange nicht
   geöffnet wurde oder nicht installiert ist. Genutzte Caches stehen ohne Häkchen da und sagen, dass
   sie zurückkommen. Caches geöffneter Apps und Ordner mit Medien oder Dokumenten, die Menschen
   benannt haben, werden nicht angeboten.
