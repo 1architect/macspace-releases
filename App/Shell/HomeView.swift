@@ -43,7 +43,7 @@ struct TileInfo: Equatable {
         if Bundle.main.preferredLocalizations.first?.hasPrefix("de") != true, let first = text.first {
             text = first.lowercased() + text.dropFirst()
         }
-        if let fraction = progress?.fraction { text += " · \(Int((min(max(fraction, 0), 1) * 100).rounded()))%" }
+        if let fraction = progress?.fraction { text += " \(Int((min(max(fraction, 0), 1) * 100).rounded()))%" }
         return text
     }
 
