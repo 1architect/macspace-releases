@@ -21,6 +21,11 @@ final class ZoomMathTests: XCTestCase {
 }
 
 final class BentoTests: XCTestCase {
+    func testCleaningStatusAddsProgressAfterAnEllipsis() {
+        let progress = ActionProgress(fraction: 0.4, message: "Freeing space…")
+        XCTAssertEqual(TileInfo.cleaningStatus(progress), "freeing space… 40%")
+    }
+
     func testTheSketchedDashboardPacksIntoTwoFullRowsOfThree() {
         // Storage, System Data (wide), Debloat, Siri, Settings.
         let placements = Bento.pack(spans: [1, 2, 1, 1, 1], columns: 3)

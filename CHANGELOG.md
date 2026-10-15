@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- While a module cleans, its tile reads "freeing space… 40%" instead of putting a middot after the ellipsis.
+
 ## [1.1.0] - 2026-10-13
 
 Hi! I'm Gio, MacSpace creator.
