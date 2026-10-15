@@ -140,12 +140,13 @@ struct ScreenView: View {
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
+        // Above "All done": disabled, it could not move the window while the module reads the Mac again after the cleanup.
+        .disabled(handle.isBusy && handle.progress != nil)
         .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
                                   leaving: reveal < 1) { [handle] in
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
-        .disabled(handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
@@ -510,6 +511,10 @@ private struct AllDoneOverlay: View {
                         }
                     }
                 }
+                // The page covers the whole window for a couple of seconds: it moves the window, from its words too, as the dashboard does.
+                .contentShape(Rectangle())
+                .gesture(WindowDragGesture())
+                .allowsWindowActivationEvents(true)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
