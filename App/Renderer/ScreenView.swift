@@ -510,6 +510,10 @@ private struct AllDoneOverlay: View {
                         }
                     }
                 }
+                // The page covers the whole window for a couple of seconds: it moves the window, from its words too, as the dashboard does.
+                .contentShape(Rectangle())
+                .gesture(WindowDragGesture())
+                .allowsWindowActivationEvents(true)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }

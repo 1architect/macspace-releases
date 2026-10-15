@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- You can now drag the window from anywhere on the All done page.
+
 ## [1.1.0] - 2026-10-13
 
 Hi! I'm Gio, MacSpace creator.
