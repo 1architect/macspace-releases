@@ -847,6 +847,8 @@ struct BarGaugeView: View {
 struct AttentionMark: View {
     static let pulse = 1.8
     static let rest = 1.6
+    static let diameter: CGFloat = 19
+    static var inset: CGFloat { max(Theme.tileRadius, diameter) }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
@@ -858,16 +860,18 @@ struct AttentionMark: View {
         Image(systemName: "exclamationmark")
             .font(.system(size: 10, weight: .heavy))
             .foregroundStyle(design.actionDeep)
-            .frame(width: 19, height: 19)
+            .frame(width: Self.diameter, height: Self.diameter)
             .background(Circle().fill(design.action))
             .background {
                 TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
                     let progress = Self.progress(at: context.date)
-                    Circle().stroke(design.action, lineWidth: 1.5)
-                        .scaleEffect(1 + 0.9 * progress)
+                    Circle().strokeBorder(design.action, lineWidth: 1.5)
+                        .frame(width: Self.diameter, height: Self.diameter)
+                        .scaleEffect(1 + (2 * (Self.inset - 1) / Self.diameter - 1) * progress)
                         .opacity(reduceMotion ? 0 : 1 - progress)
                 }
             }
+            .frame(width: 2 * Self.inset, height: 2 * Self.inset)
             .accessibilityLabel(String(localized: "Needs attention"))
     }
 

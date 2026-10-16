@@ -183,8 +183,6 @@ struct TileFace: View {
         .overlay(alignment: .bottomLeading) {
             if info.needsAttention {
                 AttentionMark()
-                    .padding(.leading, Self.margin)
-                    .padding(.bottom, TileContent.captionBottom(size: captionSize))
                     .opacity(chartOpacity)
                     .transition(.scale.combined(with: .opacity))
             }
