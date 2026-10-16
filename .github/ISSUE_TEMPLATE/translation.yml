@@ -16,6 +16,8 @@ body:
         - French, fr
         - Spanish, es
         - German, de
+        - Japanese, ja
+        - Korean, ko
         - Simplified Chinese, zh-Hans
         - English, en
     validations:

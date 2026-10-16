@@ -11,7 +11,7 @@
 
 import Foundation
 
-let languages = ["pt-BR", "fr", "es", "de", "zh-Hans"]
+let languages = ["pt-BR", "fr", "es", "de", "zh-Hans", "ja", "ko"]
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let source = root.appendingPathComponent("Localization")
 
