@@ -138,6 +138,7 @@ struct ScreenView: View {
         }
         .animation(Theme.push, value: groups.map(\.id))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
+        .modifier(ZoomReveal(index: 1, reveal: reveal))
         .environment(\.pageCascadeCount, cascadeCount)
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
