@@ -73,7 +73,7 @@ struct GeneralSettingsSection: View {
             Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Open at login")
-                    if let loginError { Text(loginError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
+                    if let loginError { StatusFlag(text: loginError) }
                 }
             }
         }
@@ -114,7 +114,7 @@ struct UpdatesSettingsSection: View {
                 }
             } else {
                 LabeledContent("Version") { Text(version).textSelection(.enabled).monospacedDigit() }
-                LabeledContent("Updates") { Text("Not in this build").foregroundStyle(.secondary) }
+                LabeledContent("Updates") { StatusFlag(text: String(localized: "Not in this build"), tone: .neutral) }
             }
         }
     }
@@ -128,7 +128,7 @@ struct MacOSReleaseSection: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
                     if !SupportedReleases.isSupported() {
-                        Text("MacSpace has not been tested on this release yet.").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
+                        StatusFlag(text: String(localized: "MacSpace has not been tested on this release yet."))
                     }
                 }
             }

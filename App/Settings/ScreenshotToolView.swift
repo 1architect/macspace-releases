@@ -44,7 +44,7 @@ public struct ScreenshotToolView: View {
             Section {
                 Button(tool.isRunning ? "Capturing…" : "Capture \(tool.selected.count) shots") { tool.run() }
                     .disabled(tool.isRunning || tool.selected.isEmpty)
-                if !tool.status.isEmpty { Text(tool.status).font(.caption).foregroundStyle(.secondary) }
+                if !tool.status.isEmpty { StatusFlag(text: tool.status, tone: .neutral) }
             }
         }
         .formStyle(.grouped)
