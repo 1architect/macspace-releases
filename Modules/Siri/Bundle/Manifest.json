@@ -3,7 +3,7 @@
   "name": "Siri & Apple Intelligence",
   "summary": "Switch Apple Intelligence off and reclaim the space its models take.",
   "version": "0.1.0",
-  "sdkVersion": 2,
+  "sdkVersion": 3,
   "symbol": "sparkles",
   "minimumMacOS": "27.0",
   "order": 20,

@@ -31,6 +31,9 @@ actor ModelAutoReleaser {
     private static let lastRunKey = "siri.modelsAutoReleasedAt"
     private var defaults: UserDefaults { .standard }
     private(set) var isRunning = false
+    private var running: Task<Void, Never>?
+
+    func waitForCurrentRelease() async { await running?.value }
 
     /// Looks at the state just read and starts the release when it is due. `release` runs the release and its purge; `finished`
     /// is called afterwards so the module reads the Mac again. Returns the running release, for a caller that must not end before
@@ -51,12 +54,13 @@ actor ModelAutoReleaser {
         guard due else { return nil }
         isRunning = true
         defaults.set(now, forKey: Self.lastRunKey)
-        return Task.detached(priority: .utility) {
+        running = Task.detached(priority: .utility) {
             release()
             await self.done()
             await finished()
         }
+        return running
     }
 
-    private func done() { isRunning = false }
+    private func done() { isRunning = false; running = nil }
 }

@@ -39,6 +39,7 @@ public final class AutoCleaner: ObservableObject {
 
     private let defaults: UserDefaults
     private weak var host: ModuleHost?
+    private var suspended = false
     private var loop: Task<Void, Never>?
 
     public init(defaults: UserDefaults = .standard) {
@@ -62,6 +63,20 @@ public final class AutoCleaner: ObservableObject {
         }
     }
 
+    func stopAndWait() async {
+        suspended = true
+        let task = loop
+        loop?.cancel()
+        loop = nil
+        await task?.value
+        while isRunning { try? await Task.sleep(for: .milliseconds(50)) }
+    }
+
+    func resume() {
+        suspended = false
+        if let host { start(host: host) }
+    }
+
     public nonisolated static func isDue(enabled: Bool, lastRun: Date?, frequency: Frequency, now: Date = Date()) -> Bool {
         guard enabled else { return false }
         guard let lastRun else { return true }
@@ -82,7 +97,7 @@ public final class AutoCleaner: ObservableObject {
 
     /// Runs every taking-part module's cleanup, one after another.
     public func runNow() async {
-        guard !isRunning, let host else { return }
+        guard !suspended, !isRunning, let host else { return }
         isRunning = true
         defer { isRunning = false }
         var freed: UInt64 = 0

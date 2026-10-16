@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Added
+
+- About includes GitHub and an uninstaller that restores each module’s settings before removing the helper and moving MacSpace to the Trash (#15).
+
 ### Fixed
 
 - Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).

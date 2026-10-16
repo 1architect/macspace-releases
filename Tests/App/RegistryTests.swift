@@ -55,6 +55,23 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    func testUninstallRestoresDisabledModulesAndBlocksNewActions() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let calls = Calls()
+        let host = try makeHost(modules: [(Fixtures.manifest(), "A")], calls: calls, directory: directory)
+        await host.reload()
+        let handle = try XCTUnwrap(host.handles.first)
+        handle.beginUninstall()
+        let blocked = await handle.perform(Action(id: "change", title: "Change"))
+        XCTAssertNil(blocked)
+        await host.setEnabled(false, module: handle.id)
+        let result = await handle.prepareForUninstall()
+        XCTAssertEqual(result.outcome, .succeeded)
+        XCTAssertEqual(calls.all.filter { $0 == "uninstall" }.count, 1)
+        XCTAssertFalse(calls.all.contains { $0.hasPrefix("perform:") })
+    }
+
     /// A group opened from a group's page goes on top of it, and Back returns to that page, then to the module's page.
     func testGroupPagesStackAndBackReturnsToThePageUnder() async throws {
         let directory = try Fixtures.temporaryDirectory()

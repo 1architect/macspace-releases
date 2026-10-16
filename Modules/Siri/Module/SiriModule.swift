@@ -15,6 +15,22 @@ public struct SiriModule: MacSpaceModule {
 
     public init() {}
 
+    public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
+        await ModelAutoReleaser.shared.waitForCurrentRelease()
+        await ModelPurger.shared.stopAndWait()
+        let environment = LiveSiriLanguageEnvironment()
+        guard let saved = environment.loadSavedSettings() else { return .succeeded("") }
+        do {
+            try environment.write(siriLanguage: saved.siriLanguage, outputVoice: saved.outputVoice)
+            guard environment.context().siriLanguage.map(AppleIntelligenceLanguageGuard.normalize)
+                    == AppleIntelligenceLanguageGuard.normalize(saved.siriLanguage) else {
+                return .failed(loc("Writing the Siri language preference failed."))
+            }
+            try environment.saveSettings(nil)
+            return .succeeded("")
+        } catch { return .failed(error.localizedDescription) }
+    }
+
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {

@@ -102,6 +102,8 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    this too; keep it for new modules.
 4. **Caching.** Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button
    calls the module's `invalidate()` first.
+Module contract version 3 adds the uninstall hook. Modules implement `prepareForUninstall(context:)` to restore reversible changes before the helper is removed. The host calls disabled modules too; failures keep the app installed. Siri restores its saved language and voice, Debloat reverts journaled settings and removes its own profiles. Cleaners use the default no-op because freed files cannot be restored.
+
 5. **Privileged work** goes through the helper. A module's `Privileged/` library declares named operations (`siri.orphan-subscriptions.*`,
    `debloat.*`, `systemdata.measure`, `systemdata.versions.delete`); `Helper/MacSpaceHelper.swift` registers them. The helper accepts
    only clients that satisfy a code-signing requirement passed on its command line and refuses to start without one.

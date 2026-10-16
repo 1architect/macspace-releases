@@ -36,6 +36,11 @@ struct FakeModule: MacSpaceModule {
 
     func runBackgroundTask(_ id: String, context: ModuleContext) async { calls.add("task:\(id)") }
 
+    func prepareForUninstall(context: ModuleContext) async -> ActionResult {
+        calls.add("uninstall")
+        return .succeeded("")
+    }
+
     func invalidate() async { calls.add("invalidate") }
 }
 
