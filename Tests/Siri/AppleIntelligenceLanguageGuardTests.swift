@@ -127,6 +127,28 @@ final class AppleIntelligenceLanguageGuardTests: XCTestCase {
         XCTAssertFalse(plan.scopeVerified)
     }
 
+    func testNoChangeDisableStillVerifiesEligibility() throws {
+        for answer: Int? in [4, nil] {
+            let env = FakeSiriEnvironment(system: "en-US", siri: "pt-BR", eligibility: { _ in answer })
+            let plan = try guardian.plan(.disable, context: env.context(), scope: .thisMacOnly)
+            XCTAssertTrue(plan.noChangeNeeded)
+            XCTAssertThrowsError(try guardian.apply(plan, environment: env)) {
+                XCTAssertEqual($0 as? AppleIntelligenceGuardError, .verificationFailed(answer: answer))
+            }
+            XCTAssertTrue(env.writes.isEmpty)
+        }
+    }
+
+    func testDisableAfterSystemLanguageChangeKeepsOriginalSave() throws {
+        let env = FakeSiriEnvironment(system: "en-US", siri: "en-US", eligibility: mismatchRule(system: "en-US"))
+        let saved = SavedSiriSettings(siriLanguage: "pt-BR", outputVoice: Data([9]), savedAt: .distantPast)
+        env.saved = saved
+        let result = try guardian.apply(try guardian.plan(.disable, context: env.context(), scope: .thisMacOnly), environment: env)
+        XCTAssertEqual(result.eligibilityAnswerAfter, 2)
+        XCTAssertEqual(env.saved, saved)
+        XCTAssertNotEqual(AppleIntelligenceLanguageGuard.baseLanguage(env.ctx.siriLanguage!), "en")
+    }
+
     func testDisablePrefersAnAlreadyInstalledLanguage() throws {
         let plan = try guardian.plan(.disable, context: context(system: "de-DE", siri: "de-DE", installed: ["de-DE", "fr-FR"]), scope: .thisMacOnly)
         XCTAssertEqual(plan.targetSiriLanguage, "fr-FR")

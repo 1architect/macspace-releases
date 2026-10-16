@@ -277,7 +277,7 @@ public struct AppleIntelligenceLanguageGuard {
                 throw AppleIntelligenceGuardError.unsupportedSiriLanguage(preferred)
             }
             let candidates = [preferredLanguage.map(Self.normalize), current].compactMap { $0 }
-                + (installed ?? []) + Self.defaultDisableLanguages
+                + (installed ?? []) + Self.defaultDisableLanguages + (supported ?? [])
             guard let choice = candidates.first(where: { Self.baseLanguage($0) != systemBase && isSupported($0) }) else {
                 throw AppleIntelligenceGuardError.noMismatchedLanguageAvailable(system: system)
             }
@@ -317,8 +317,12 @@ public struct AppleIntelligenceLanguageGuard {
     public func apply(_ plan: SiriLanguageChangePlan, environment: any SiriLanguageEnvironment,
                       timeout: Double = 8, pollInterval: Double = 0.5, now: Date = Date()) throws -> SiriLanguageChangeResult {
         if plan.noChangeNeeded {
+            let answer = environment.eligibilityAnswer()
+            if plan.action == .disable, answer == nil || answer == Self.eligibleAnswer {
+                throw AppleIntelligenceGuardError.verificationFailed(answer: answer)
+            }
             if plan.action == .enable { try environment.saveSettings(nil) }
-            return SiriLanguageChangeResult(plan: plan, executed: false, eligibilityAnswerAfter: environment.eligibilityAnswer())
+            return SiriLanguageChangeResult(plan: plan, executed: false, eligibilityAnswerAfter: answer)
         }
         let previousLanguage = environment.context().siriLanguage
         let previousVoice = environment.outputVoice()
@@ -423,7 +427,8 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
     public func context() -> SiriLanguageContext {
         let guardType = AppleIntelligenceLanguageGuard.self
         CFPreferencesAppSynchronize(kCFPreferencesAnyApplication)
-        let system = (CFPreferencesCopyAppValue("AppleLanguages" as CFString, kCFPreferencesAnyApplication) as? [String])?.first
+        let system = (CFPreferencesCopyValue("AppleLanguages" as CFString, kCFPreferencesAnyApplication,
+                                             kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String])?.first
         return SiriLanguageContext(
             systemLanguage: system,
             siriLanguage: value(guardType.siriLanguageKey, guardType.siriPreferencesDomain) as? String,
