@@ -1474,5 +1474,50 @@
   "GitHub",
   "GitHub",
   "GitHub"
+ ],
+ "About MacSpace": [
+  "Sobre o MacSpace",
+  "À propos de MacSpace",
+  "Acerca de MacSpace",
+  "Über MacSpace",
+  "关于 MacSpace",
+  "MacSpaceについて",
+  "MacSpace 정보"
+ ],
+ "Version %@": [
+  "Versão %@",
+  "Version %@",
+  "Versión %@",
+  "Version %@",
+  "版本 %@",
+  "バージョン %@",
+  "버전 %@"
+ ],
+ "Developed by\n%@": [
+  "Desenvolvido por\n%@",
+  "Développé par\n%@",
+  "Desarrollado por\n%@",
+  "Entwickelt von\n%@",
+  "开发者\n%@",
+  "開発者\n%@",
+  "개발자\n%@"
+ ],
+ "OK": [
+  "OK",
+  "OK",
+  "Aceptar",
+  "OK",
+  "好",
+  "OK",
+  "확인"
+ ],
+ "Uninstall…": [
+  "Desinstalar…",
+  "Désinstaller…",
+  "Desinstalar…",
+  "Deinstallieren…",
+  "卸载…",
+  "アンインストール…",
+  "제거…"
  ]
 }

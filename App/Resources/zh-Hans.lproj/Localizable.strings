@@ -17,6 +17,7 @@
 "1 item" = "1 项";
 "1 needed" = "需要 1 项";
 "About" = "关于";
+"About MacSpace" = "关于 MacSpace";
 "All done" = "全部完成";
 "Allow Full Disk Access" = "允许完全磁盘访问";
 "Allow Notifications" = "允许通知";
@@ -44,6 +45,7 @@
 "Couldn't free space. Try again later." = "无法释放空间，请稍后重试。";
 "Couldn’t uninstall MacSpace" = "无法卸载 MacSpace";
 "Day" = "日间";
+"Developed by\n%@" = "开发者\n%@";
 "Does the few things that need an administrator." = "执行少量需要管理员权限的操作。";
 "Drag into the Full Disk Access list" = "拖入完全磁盘访问列表";
 "Every 3 days" = "每 3 天";
@@ -102,6 +104,7 @@
 "Nothing cleaned yet." = "尚无清理记录。";
 "Nothing to free" = "没有可释放的内容";
 "Notifications" = "通知";
+"OK" = "好";
 "Open Login Items" = "打开登录项";
 "Open MacSpace" = "打开 MacSpace";
 "Open Panel" = "打开面板";
@@ -139,9 +142,11 @@
 "Uninstall" = "卸载";
 "Uninstall MacSpace?" = "卸载 MacSpace？";
 "Uninstall MacSpace…" = "卸载 MacSpace…";
+"Uninstall…" = "卸载…";
 "Unknown" = "未知";
 "Updates" = "更新";
 "Version" = "版本";
+"Version %@" = "版本 %@";
 "Wait for the current task to finish, then try again." = "请等待当前任务完成后重试。";
 "When MacSpace frees space, or your disk is almost full." = "释放空间或磁盘空间即将用尽时通知。";
 "When a cleanup finishes in the background" = "后台清理完成时";
