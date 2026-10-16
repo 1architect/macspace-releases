@@ -1,253 +1,1689 @@
 {
- "%@ is outside the cleanable locations.": ["%@ está fora dos locais que podem ser limpos.", "%@ se trouve hors des emplacements nettoyables.", "%@ está fuera de las ubicaciones que se pueden limpiar.", "%@ liegt außerhalb der bereinigbaren Orte."],
- "%@ is running; quit it first.": ["%@ está aberto; encerre-o primeiro.", "%@ est ouvert ; quittez-le d’abord.", "%@ está abierto; ciérralo primero.", "%@ ist geöffnet; beende es zuerst."],
- "%@ older than %lld days.": ["%@ com mais de %lld dias.", "%@ de plus de %lld jours.", "%@ con más de %lld días.", "%@ älter als %lld Tage."],
- "%lld items": ["%lld itens", "%lld éléments", "%lld elementos", "%lld Objekte"],
- "%lld places couldn't be measured.": ["%lld locais não puderam ser medidos.", "%lld emplacements n’ont pas pu être mesurés.", "No se han podido medir %lld ubicaciones.", "%lld Orte konnten nicht gemessen werden."],
- "%lld places only the helper can measure: %@. Turn it on in Settings.": ["%lld locais que só o auxiliar pode medir: %@. Ative-o nos Ajustes.", "%lld emplacements que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.", "%lld ubicaciones que solo el asistente puede medir: %@. Actívalo en Ajustes.", "%lld Orte, die nur das Hilfsprogramm messen kann: %@. Aktiviere es in den Einstellungen."],
- "%lld places weren't measured. Reopen MacSpace.": ["%lld locais não foram medidos. Abra o MacSpace de novo.", "%lld emplacements n’ont pas été mesurés. Rouvrez MacSpace.", "No se han medido %lld ubicaciones. Vuelve a abrir MacSpace.", "%lld Orte wurden nicht gemessen. Öffne MacSpace erneut."],
- "%lld reports": ["%lld relatórios", "%lld rapports", "%lld informes", "%lld Berichte"],
- "/System/Library/%@": ["/System/Library/%@", "/System/Library/%@", "/System/Library/%@", "/System/Library/%@"],
- "1 item": ["1 item", "1 élément", "1 elemento", "1 Objekt"],
- "1 report": ["1 relatório", "1 rapport", "1 informe", "1 Bericht"],
- "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.": ["Uma imagem de restauração do macOS. Depois que o Mac, dispositivo ou máquina virtual para o qual foi baixada estiver configurado, ela pode ser apagada.", "Une image de restauration de macOS. Une fois le Mac, l’appareil ou la machine virtuelle configuré, elle peut être supprimée.", "Una imagen de restauración de macOS. Cuando el Mac, el dispositivo o la máquina virtual para el que se descargó esté configurado, se puede eliminar.", "Ein macOS-Wiederherstellungsimage. Sobald der Mac, das Gerät oder die virtuelle Maschine eingerichtet ist, kann es gelöscht werden."],
- "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app.": ["O disco e o estado de uma máquina virtual. Apague as máquinas que você não usa mais no app de virtualização.", "Le disque et l’état d’une machine virtuelle. Supprimez celles que vous n’utilisez plus depuis l’app de virtualisation.", "El disco y el estado de una máquina virtual. Elimina las que ya no uses desde la app de virtualización.", "Festplatte und Zustand einer virtuellen Maschine. Lösche nicht mehr genutzte Maschinen in der Virtualisierungs-App."],
- "Allow": ["Permitir", "Autoriser", "Permitir", "Erlauben"],
- "Allow Full Disk Access to see everything": ["Permita o Acesso Total ao Disco para ver tudo", "Autorisez l’accès complet au disque pour tout voir", "Permite el acceso total al disco para verlo todo", "Erlaube Festplattenvollzugriff, um alles zu sehen"],
- "Already gone": ["Já apagado", "Déjà supprimé", "Ya borrado", "Bereits gelöscht"],
- "An APFS clone of the app that macOS keeps after validating it. It shares storage with the app, so deleting it frees almost nothing; it only lowers the System Data figure in System Settings.": ["Um clone APFS do app que o macOS mantém após validá-lo. Ele compartilha armazenamento com o app, então apagá-lo quase não libera espaço; só reduz o número de Dados do Sistema nos Ajustes do Sistema.", "Un clone APFS de l’app que macOS conserve après l’avoir validée. Il partage le stockage de l’app : le supprimer ne libère presque rien, il réduit seulement le chiffre de Données système dans Réglages Système.", "Un clon APFS de la app que macOS conserva tras validarla. Comparte almacenamiento con la app, así que eliminarlo casi no libera espacio; solo reduce la cifra de Datos del sistema en Ajustes del Sistema.", "Ein APFS-Klon der App, den macOS nach der Prüfung behält. Er teilt den Speicher mit der App; Löschen gibt kaum etwas frei und senkt nur den Wert „Systemdaten“ in den Systemeinstellungen."],
- "An unfinished download by %@. If %@ is no longer downloading it, delete it.": ["Um download incompleto de %@. Se %@ não estiver mais baixando, apague-o.", "Un téléchargement inachevé de %@. Si %@ ne le télécharge plus, supprimez-le.", "Una descarga sin terminar de %@. Si %@ ya no la está descargando, elimínala.", "Ein unvollständiger Download von %@. Lädt %@ ihn nicht mehr, lösche ihn."],
- "App cache: %@": ["Cache de app: %@", "Cache d’app : %@", "Caché de app: %@", "App-Cache: %@"],
- "App container": ["Contêiner de app", "Conteneur d’app", "Contenedor de app", "App-Container"],
- "App container: %@": ["Contêiner de app: %@", "Conteneur d’app : %@", "Contenedor de app: %@", "App-Container: %@"],
- "App data": ["Dados de apps", "Données d’apps", "Datos de apps", "App-Daten"],
- "App group data": ["Dados de grupo de apps", "Données de groupe d’apps", "Datos de grupo de apps", "App-Gruppendaten"],
- "App group data: %@": ["Dados de grupo de apps: %@", "Données de groupe d’apps : %@", "Datos de grupo de apps: %@", "App-Gruppendaten: %@"],
- "App support files": ["Arquivos de suporte de apps", "Fichiers de support d’apps", "Archivos de soporte de apps", "App-Supportdateien"],
- "Apple app data": ["Dados de apps da Apple", "Données d’apps Apple", "Datos de apps de Apple", "Daten von Apple-Apps"],
- "Apple developer documentation": ["Documentação para desenvolvedores da Apple", "Documentation pour développeurs Apple", "Documentación para desarrolladores de Apple", "Apple-Entwicklerdokumentation"],
- "Apple system cache used by background services; macOS manages it.": ["Cache do sistema da Apple usado por serviços em segundo plano; o macOS o gerencia.", "Cache système Apple utilisé par des services en arrière-plan ; macOS le gère.", "Caché del sistema de Apple usada por servicios en segundo plano; macOS la gestiona.", "Apple-Systemcache für Hintergrunddienste; macOS verwaltet ihn."],
- "Apps' support files for all users": ["Arquivos de suporte de apps para todos os usuários", "Fichiers de support d’apps pour tous les utilisateurs", "Archivos de soporte de apps para todos los usuarios", "App-Supportdateien für alle Benutzer"],
- "Apps' temporary files; macOS clears them at restart.": ["Arquivos temporários de apps; o macOS os apaga ao reiniciar.", "Fichiers temporaires d’apps ; macOS les efface au redémarrage.", "Archivos temporales de apps; macOS los borra al reiniciar.", "Temporäre Dateien von Apps; macOS löscht sie beim Neustart."],
- "Assorted macOS features and the OS itself.": ["Vários recursos do macOS e o próprio sistema.", "Diverses fonctions de macOS et le système lui-même.", "Varias funciones de macOS y el propio sistema.", "Verschiedene macOS-Funktionen und das System selbst."],
- "Audio plug-ins and sounds": ["Plug-ins de áudio e sons", "Modules audio et sons", "Plug-ins de audio y sonidos", "Audio-Plug-ins und Töne"],
- "Battery and energy history used by System Settings > Battery.": ["Histórico de bateria e energia usado em Ajustes do Sistema > Bateria.", "Historique de batterie et d’énergie utilisé par Réglages Système > Batterie.", "Historial de batería y energía que usa Ajustes del Sistema > Batería.", "Batterie- und Energieverlauf für Systemeinstellungen > Batterie."],
- "Caches for all users": ["Caches para todos os usuários", "Caches pour tous les utilisateurs", "Cachés para todos los usuarios", "Caches für alle Benutzer"],
- "Caches, old reports and unused system assets": ["Caches, relatórios antigos e recursos do sistema sem uso", "Caches, anciens rapports et ressources système inutilisées", "Cachés, informes antiguos y recursos del sistema sin usar", "Caches, alte Berichte und ungenutzte Systemressourcen"],
- "Can be freed": ["Pode ser liberado", "Peut être libéré", "Se puede liberar", "Freigebbar"],
- "Cannot be undone": ["Não pode ser desfeito", "Irréversible", "No se puede deshacer", "Nicht widerrufbar"],
- "Check Software Update in System Settings.": ["Verifique a Atualização de Software nos Ajustes do Sistema.", "Consultez Mise à jour de logiciels dans Réglages Système.", "Revisa Actualización de software en Ajustes del Sistema.", "Sieh unter „Softwareupdate“ in den Systemeinstellungen nach."],
- "Cloud files on this Mac": ["Arquivos da nuvem neste Mac", "Fichiers du cloud sur ce Mac", "Archivos de la nube en este Mac", "Cloud-Dateien auf diesem Mac"],
- "Cloud storage: %@": ["Armazenamento na nuvem: %@", "Stockage cloud : %@", "Almacenamiento en la nube: %@", "Cloud-Speicher: %@"],
- "Code-signing copy of %@": ["Cópia de assinatura de código de %@", "Copie de signature de code de %@", "Copia de firma de código de %@", "Codesignatur-Kopie von %@"],
- "CoreSpotlight indexes for apps' searchable content.": ["Índices do CoreSpotlight para o conteúdo pesquisável dos apps.", "Index CoreSpotlight du contenu consultable des apps.", "Índices de CoreSpotlight para el contenido buscable de las apps.", "CoreSpotlight-Indizes für durchsuchbare Inhalte von Apps."],
- "Couldn't free it": ["Não foi possível liberar", "Impossible de libérer", "No se ha podido liberar", "Konnte nicht freigegeben werden"],
- "Daemon containers": ["Contêineres de daemons", "Conteneurs de démons", "Contenedores de daemons", "Daemon-Container"],
- "Data of Apple background services.": ["Dados de serviços em segundo plano da Apple.", "Données de services d’arrière-plan Apple.", "Datos de servicios en segundo plano de Apple.", "Daten von Apple-Hintergrunddiensten."],
- "Data of an Apple app or service.": ["Dados de um app ou serviço da Apple.", "Données d’une app ou d’un service Apple.", "Datos de una app o servicio de Apple.", "Daten einer Apple-App oder eines Apple-Diensts."],
- "Delete": ["Apagar", "Supprimer", "Eliminar", "Löschen"],
- "Deleted %@.": ["%@ apagado.", "%@ supprimé.", "%@ eliminado.", "%@ gelöscht."],
- "Diagnostic and crash reports": ["Relatórios de diagnóstico e de falhas", "Rapports de diagnostic et de plantage", "Informes de diagnóstico y de fallos", "Diagnose- und Absturzberichte"],
- "Dictionaries": ["Dicionários", "Dictionnaires", "Diccionarios", "Wörterbücher"],
- "Document version history": ["Histórico de versões de documentos", "Historique des versions des documents", "Historial de versiones de documentos", "Versionsverlauf von Dokumenten"],
- "Document versions": ["Versões de documentos", "Versions de documents", "Versiones de documentos", "Dokumentversionen"],
- "Downloaded for Xcode; macOS marks it precious and nothing subscribes to it.": ["Baixada para o Xcode; o macOS a marca como importante e nada a usa.", "Téléchargée pour Xcode ; macOS la marque comme précieuse et rien ne l’utilise.", "Descargada para Xcode; macOS la marca como importante y nada la usa.", "Für Xcode geladen; macOS markiert sie als wichtig, und nichts nutzt sie."],
- "Downloads macOS no longer needs, like released Apple Intelligence models.": ["Downloads de que o macOS não precisa mais, como modelos do Apple Intelligence liberados.", "Téléchargements dont macOS n’a plus besoin, comme les modèles Apple Intelligence libérés.", "Descargas que macOS ya no necesita, como modelos de Apple Intelligence liberados.", "Downloads, die macOS nicht mehr braucht, etwa freigegebene Apple Intelligence-Modelle."],
- "Downloads you can turn off": ["Downloads que você pode desativar", "Téléchargements désactivables", "Descargas que puedes desactivar", "Downloads, die du abschalten kannst"],
- "Earlier versions of your documents (File > Revert To). Only keeps the latest version.": ["Versões anteriores dos seus documentos (Arquivo > Reverter Para). Mantém somente a última versão.", "Versions précédentes de vos documents (Fichier > Revenir à). Ne conserve que la dernière version.", "Versiones anteriores de tus documentos (Archivo > Volver a). Solo conserva la última versión.", "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Behält nur die letzte Version."],
- "Empty the Trash in Finder.": ["Esvazie o Lixo no Finder.", "Videz la Corbeille dans le Finder.", "Vacía la Papelera en el Finder.", "Leere den Papierkorb im Finder."],
- "Everything else": ["Todo o resto", "Tout le reste", "Todo lo demás", "Alles andere"],
- "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.": ["Arquivos de uma atualização anterior do macOS já instalada; nenhuma atualização está pendente. O macOS não os removeu e eles estão numa pasta protegida, então o MacSpace não mexe neles.", "Fichiers d’une mise à jour de macOS déjà installée ; aucune mise à jour n’est en attente. macOS ne les a pas supprimés et ils se trouvent dans un dossier protégé : MacSpace n’y touche pas.", "Archivos de una actualización anterior de macOS ya instalada; no hay ninguna pendiente. macOS no los ha eliminado y están en una carpeta protegida, así que MacSpace no los toca.", "Dateien eines bereits installierten macOS-Updates; kein Update wartet. macOS hat sie nicht entfernt, und sie liegen in einem geschützten Ordner, daher lässt MacSpace sie unangetastet."],
- "Free": ["Liberar", "Libérer", "Liberar", "Freigeben"],
- "Free %@": ["Liberar %@", "Libérer %@", "Liberar %@", "%@ freigeben"],
- "Free %@?": ["Liberar %@?", "Libérer %@ ?", "¿Liberar %@?", "%@ freigeben?"],
- "Free now": ["Liberar agora", "À libérer", "Liberar ahora", "Jetzt freigeben"],
- "Free up to %@ of unused system assets?": ["Liberar até %@ de recursos do sistema sem uso?", "Libérer jusqu’à %@ de ressources système inutilisées ?", "¿Liberar hasta %@ de recursos del sistema sin usar?", "Bis zu %@ ungenutzte Systemressourcen freigeben?"],
- "Freeing in the background": ["Liberando em segundo plano", "Libération en arrière-plan", "Liberando en segundo plano", "Wird im Hintergrund freigegeben"],
- "Freeing space…": ["Liberando espaço…", "Libération d’espace…", "Liberando espacio…", "Speicher wird freigegeben …"],
- "From a deleted account. Copy what you need, then delete it.": ["De uma conta apagada. Copie o que precisar e apague-a.", "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.", "De una cuenta eliminada. Copia lo que necesites y elimínala.", "Von einem gelöschten Account. Kopiere, was du brauchst, und lösche ihn dann."],
- "From an update that's already installed.": ["De uma atualização já instalada.", "D’une mise à jour déjà installée.", "De una actualización ya instalada.", "Von einem bereits installierten Update."],
- "Home folder of a deleted account: %@": ["Pasta pessoal de uma conta apagada: %@", "Dossier de départ d’un compte supprimé : %@", "Carpeta de inicio de una cuenta eliminada: %@", "Benutzerordner eines gelöschten Accounts: %@"],
- "Homebrew": ["Homebrew", "Homebrew", "Homebrew", "Homebrew"],
- "Homebrew & packages": ["Homebrew e pacotes", "Homebrew et paquets", "Homebrew y paquetes", "Homebrew & Pakete"],
- "In Dictionary > Settings, turn off dictionaries you don't use.": ["Em Dicionário > Ajustes, desative os dicionários que você não usa.", "Dans Dictionnaire > Réglages, désactivez les dictionnaires inutilisés.", "En Diccionario > Ajustes, desactiva los diccionarios que no uses.", "Deaktiviere unter Lexikon > Einstellungen nicht genutzte Wörterbücher."],
- "In Finder, select files and choose Remove Download. They stay in the cloud.": ["No Finder, selecione os arquivos e escolha Remover Download. Eles continuam na nuvem.", "Dans le Finder, sélectionnez les fichiers et choisissez Supprimer le téléchargement. Ils restent dans le cloud.", "En el Finder, selecciona los archivos y elige Eliminar descarga. Se quedan en la nube.", "Wähle im Finder die Dateien aus und dann „Download entfernen“. Sie bleiben in der Cloud."],
- "In System Settings > Apple Intelligence & Siri > Siri Voice, pick a voice that isn't a premium download.": ["Em Ajustes do Sistema > Apple Intelligence e Siri > Voz da Siri, escolha uma voz que não seja um download premium.", "Dans Réglages Système > Apple Intelligence et Siri > Voix de Siri, choisissez une voix qui n’est pas un téléchargement premium.", "En Ajustes del Sistema > Apple Intelligence y Siri > Voz de Siri, elige una voz que no sea una descarga premium.", "Wähle unter Systemeinstellungen > Apple Intelligence & Siri > Siri-Stimme eine Stimme, die kein Premium-Download ist."],
- "In System Settings > Keyboard > Dictation, remove languages you don't use.": ["Em Ajustes do Sistema > Teclado > Ditado, remova os idiomas que você não usa.", "Dans Réglages Système > Clavier > Dictée, supprimez les langues inutilisées.", "En Ajustes del Sistema > Teclado > Dictado, elimina los idiomas que no uses.", "Entferne unter Systemeinstellungen > Tastatur > Diktat nicht genutzte Sprachen."],
- "In Xcode > Settings > Components, remove the documentation.": ["Em Xcode > Ajustes > Componentes, remova a documentação.", "Dans Xcode > Réglages > Composants, supprimez la documentation.", "En Xcode > Ajustes > Componentes, elimina la documentación.", "Entferne unter Xcode > Einstellungen > Komponenten die Dokumentation."],
- "Install the helper in Settings": ["Instale o auxiliar nos Ajustes", "Installez l’assistant dans Réglages", "Instala el asistente en Ajustes", "Installiere das Hilfsprogramm in den Einstellungen"],
- "Installed fonts": ["Fontes instaladas", "Polices installées", "Tipos de letra instalados", "Installierte Schriften"],
- "Kept by macOS for its own services; it manages the size.": ["Mantido pelo macOS para seus próprios serviços; ele gerencia o tamanho.", "Conservé par macOS pour ses propres services ; il en gère la taille.", "macOS lo conserva para sus propios servicios y gestiona su tamaño.", "Von macOS für eigene Dienste behalten; es verwaltet die Größe."],
- "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history.": ["Mantido pelo revisiond para Arquivo > Reverter Para > Explorar Todas as Versões; versões antigas de um documento podem ser apagadas ali. Apagar o armazenamento remove todo o histórico de versões.", "Conservé par revisiond pour Fichier > Revenir à > Parcourir toutes les versions ; les anciennes versions d’un document peuvent y être supprimées. Supprimer le stockage efface tout l’historique.", "Lo conserva revisiond para Archivo > Volver a > Explorar todas las versiones; ahí se pueden eliminar versiones antiguas de un documento. Eliminar el almacén borra todo el historial.", "Von revisiond für Ablage > Zurücksetzen auf > Alle Versionen durchsuchen behalten; dort lassen sich alte Versionen löschen. Das Löschen des Speichers entfernt den gesamten Verlauf."],
- "Language data (spelling, text analysis)": ["Dados de idioma (ortografia, análise de texto)", "Données linguistiques (orthographe, analyse de texte)", "Datos de idioma (ortografía, análisis de texto)", "Sprachdaten (Rechtschreibung, Textanalyse)"],
- "Leftover macOS update files": ["Arquivos restantes de atualização do macOS", "Fichiers restants de mise à jour de macOS", "Archivos sobrantes de actualización de macOS", "Übrige macOS-Update-Dateien"],
- "Leftover update files": ["Arquivos de atualização restantes", "Fichiers de mise à jour restants", "Archivos de actualización sobrantes", "Übrige Update-Dateien"],
- "Leftovers": ["Restos", "Restes", "Restos", "Überbleibsel"],
- "Managed by macOS": ["Gerenciado pelo macOS", "Géré par macOS", "Gestionado por macOS", "Von macOS verwaltet"],
- "Managed by the kernel; shrinks after a restart.": ["Gerenciado pelo kernel; diminui após reiniciar.", "Géré par le noyau ; diminue après un redémarrage.", "Lo gestiona el kernel; se reduce tras reiniciar.", "Vom Kernel verwaltet; schrumpft nach einem Neustart."],
- "Mostly media. Clean it up from inside the app.": ["Principalmente mídia. Faça a limpeza dentro do app.", "Surtout des médias. Faites le ménage depuis l’app.", "Sobre todo contenido multimedia. Límpialo desde la app.", "Vor allem Medien. Räume sie in der App auf."],
- "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.": ["Necessárias para git, clang e Homebrew, a menos que um Xcode completo esteja selecionado com xcode-select.", "Nécessaires à git, clang et Homebrew, sauf si un Xcode complet est sélectionné avec xcode-select.", "Las necesitan git, clang y Homebrew, salvo que haya un Xcode completo seleccionado con xcode-select.", "Von git, clang und Homebrew benötigt, außer ein vollständiges Xcode ist mit xcode-select gewählt."],
- "Not a cleanable item (%@).": ["Não é um item que pode ser limpo (%@).", "Élément non nettoyable (%@).", "No es un elemento que se pueda limpiar (%@).", "Kein bereinigbares Objekt (%@)."],
- "Not identified": ["Não identificado", "Non identifié", "Sin identificar", "Nicht erkannt"],
- "Old diagnostic and crash reports": ["Relatórios antigos de diagnóstico e de falhas", "Anciens rapports de diagnostic et de plantage", "Informes antiguos de diagnóstico y de fallos", "Alte Diagnose- und Absturzberichte"],
- "Old reports are deleted from Free now.": ["Os relatórios antigos são apagados em Liberar agora.", "Les anciens rapports sont supprimés depuis À libérer.", "Los informes antiguos se eliminan desde Liberar ahora.", "Alte Berichte werden unter „Jetzt freigeben“ gelöscht."],
- "Other": ["Outros", "Autres", "Otros", "Sonstiges"],
- "Other system downloads": ["Outros downloads do sistema", "Autres téléchargements système", "Otras descargas del sistema", "Andere Systemdownloads"],
- "Per-user Spotlight metadata": ["Metadados do Spotlight por usuário", "Métadonnées Spotlight par utilisateur", "Metadatos de Spotlight por usuario", "Spotlight-Metadaten pro Benutzer"],
- "Photos models (Spatial Photos)": ["Modelos do Fotos (Fotos Espaciais)", "Modèles de Photos (photos spatiales)", "Modelos de Fotos (fotos espaciales)", "Fotos-Modelle (räumliche Fotos)"],
- "Power log": ["Registro de energia", "Journal d’énergie", "Registro de energía", "Energieprotokoll"],
- "Rebuilt by Spotlight; macOS manages it.": ["Reconstruído pelo Spotlight; o macOS o gerencia.", "Reconstruit par Spotlight ; macOS le gère.", "Spotlight lo reconstruye; macOS lo gestiona.", "Von Spotlight neu aufgebaut; macOS verwaltet ihn."],
- "Remove it with the tool that made it.": ["Remova-o com a ferramenta que o criou.", "Supprimez-le avec l’outil qui l’a créé.", "Elimínalo con la herramienta que lo creó.", "Entferne es mit dem Tool, das es erstellt hat."],
- "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g).": ["Solicitados pelo sistema para cada idioma em que viu texto e atualizados diariamente. Não é uma opção dos Ajustes: mesmo com um único idioma de ortografia, a lista continua igual.", "Demandées par le système pour chaque langue rencontrée dans du texte, et actualisées chaque jour. Ce n’est pas un choix des Réglages : même avec une seule langue d’orthographe, la liste reste la même.", "El sistema las solicita para cada idioma en el que ha visto texto y las actualiza a diario. No es una opción de Ajustes: aunque la ortografía use un solo idioma, la lista no cambia.", "Vom System für jede Sprache angefordert, in der es Text gesehen hat, und täglich aktualisiert. Keine Einstellung: Auch mit nur einer Rechtschreibsprache bleibt die Liste gleich."],
- "Restart, then free them under Free now.": ["Reinicie e libere-os em Liberar agora.", "Redémarrez, puis libérez-les dans À libérer.", "Reinicia y libéralos en Liberar ahora.", "Starte neu und gib sie dann unter „Jetzt freigeben“ frei."],
- "Rotated by logd; deleting it removes the logs needed for troubleshooting.": ["Rotacionado pelo logd; apagá-lo remove os registros necessários para solucionar problemas.", "Renouvelé par logd ; le supprimer efface les journaux utiles au dépannage.", "logd lo rota; eliminarlo borra los registros necesarios para resolver problemas.", "Von logd rotiert; Löschen entfernt die Protokolle für die Fehlersuche."],
- "Safe to delete while %@ is closed. It's rebuilt when needed.": ["Pode ser apagado com segurança enquanto %@ estiver fechado. É recriado quando necessário.", "Supprimable sans risque quand %@ est fermé. Il est recréé au besoin.", "Se puede eliminar sin riesgo mientras %@ esté cerrado. Se vuelve a crear cuando hace falta.", "Kann gefahrlos gelöscht werden, solange %@ geschlossen ist. Wird bei Bedarf neu erstellt."],
- "Saved home folder of a deleted account: %@": ["Pasta pessoal salva de uma conta apagada: %@", "Dossier de départ enregistré d’un compte supprimé : %@", "Carpeta de inicio guardada de una cuenta eliminada: %@", "Gesicherter Benutzerordner eines gelöschten Accounts: %@"],
- "Shared app files": ["Arquivos compartilhados de apps", "Fichiers d’apps partagés", "Archivos compartidos de apps", "Gemeinsame App-Dateien"],
- "Shared frameworks": ["Frameworks compartilhados", "Frameworks partagés", "Frameworks compartidos", "Gemeinsame Frameworks"],
- "Shared temporary files": ["Arquivos temporários compartilhados", "Fichiers temporaires partagés", "Archivos temporales compartidos", "Gemeinsame temporäre Dateien"],
- "Siri speech models": ["Modelos de fala da Siri", "Modèles vocaux de Siri", "Modelos de voz de Siri", "Siri-Sprachmodelle"],
- "Siri voices": ["Vozes da Siri", "Voix de Siri", "Voces de Siri", "Siri-Stimmen"],
- "Siri's speech service and phone call features, for the languages they transcribe.": ["O serviço de fala da Siri e os recursos de ligação, para os idiomas que transcrevem.", "Le service vocal de Siri et les fonctions d’appel, pour les langues qu’ils transcrivent.", "El servicio de voz de Siri y las funciones de llamada, para los idiomas que transcriben.", "Siris Sprachdienst und Anruffunktionen, für die Sprachen, die sie transkribieren."],
- "Smaller items": ["Itens menores", "Éléments plus petits", "Elementos más pequeños", "Kleinere Objekte"],
- "Speech recognition (dictation and calls)": ["Reconhecimento de fala (ditado e ligações)", "Reconnaissance vocale (dictée et appels)", "Reconocimiento de voz (dictado y llamadas)", "Spracherkennung (Diktat und Anrufe)"],
- "Spotlight index": ["Índice do Spotlight", "Index Spotlight", "Índice de Spotlight", "Spotlight-Index"],
- "Staged macOS update": ["Atualização do macOS preparada", "Mise à jour de macOS préparée", "Actualización de macOS preparada", "Vorbereitetes macOS-Update"],
- "Swap and sleep files": ["Arquivos de troca e de repouso", "Fichiers d’échange et de veille", "Archivos de intercambio y de reposo", "Auslagerungs- und Ruhezustandsdateien"],
- "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.": ["Símbolos para relatórios de falhas e depuração; recriados quando necessário. Pertence ao root.", "Symboles pour les rapports de plantage et le débogage ; recréés à la demande. Appartient à root.", "Símbolos para informes de fallos y depuración; se recrean cuando hace falta. Pertenece a root.", "Symbole für Absturzberichte und Debugging; bei Bedarf neu erstellt. Gehört root."],
- "System Data": ["Dados do Sistema", "Données système", "Datos del sistema", "Systemdaten"],
- "System cache: %@": ["Cache do sistema: %@", "Cache système : %@", "Caché del sistema: %@", "Systemcache: %@"],
- "System databases": ["Bancos de dados do sistema", "Bases de données système", "Bases de datos del sistema", "Systemdatenbanken"],
- "System extensions": ["Extensões do sistema", "Extensions système", "Extensiones del sistema", "Systemerweiterungen"],
- "System logs": ["Registros do sistema", "Journaux système", "Registros del sistema", "Systemprotokolle"],
- "Temporary files": ["Arquivos temporários", "Fichiers temporaires", "Archivos temporales", "Temporäre Dateien"],
- "Temporary files; macOS clears them at restart.": ["Arquivos temporários; o macOS os apaga ao reiniciar.", "Fichiers temporaires ; macOS les efface au redémarrage.", "Archivos temporales; macOS los borra al reiniciar.", "Temporäre Dateien; macOS löscht sie beim Neustart."],
- "The Dictionary app and Look Up.": ["O app Dicionário e o recurso Pesquisar.", "L’app Dictionnaire et Recherche.", "La app Diccionario y Consultar.", "Die App „Lexikon“ und „Nachschlagen“."],
- "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them.": ["O serviço de fala da Siri, o reconhecimento de fala e os recursos de ligação, para o idioma da Siri e o do sistema. Nenhum ajuste os remove.", "Le service vocal de Siri, la reconnaissance vocale et les fonctions d’appel, pour la langue de Siri et celle du système. Aucun réglage ne les supprime.", "El servicio de voz de Siri, el reconocimiento de voz y las funciones de llamada, para el idioma de Siri y el del sistema. Ningún ajuste los elimina.", "Siris Sprachdienst, Spracherkennung und Anruffunktionen, für die Siri- und die Systemsprache. Keine Einstellung entfernt sie."],
- "The Siri text-to-speech service, for the selected Siri voice and language.": ["O serviço de conversão de texto em fala da Siri, para a voz e o idioma escolhidos.", "Le service de synthèse vocale de Siri, pour la voix et la langue choisies.", "El servicio de texto a voz de Siri, para la voz y el idioma elegidos.", "Siris Sprachausgabe, für die gewählte Stimme und Sprache."],
- "The helper did not answer": ["O auxiliar não respondeu", "L’assistant n’a pas répondu", "El asistente no ha respondido", "Das Hilfsprogramm hat nicht geantwortet"],
- "This permanently deletes %@.": ["Isto apaga permanentemente %@.", "Cela supprime définitivement %@.", "Esto elimina para siempre %@.", "Dadurch werden %@ endgültig gelöscht."],
- "Tool cache: ~/.cache/%@": ["Cache de ferramenta: ~/.cache/%@", "Cache d’outil : ~/.cache/%@", "Caché de herramienta: ~/.cache/%@", "Tool-Cache: ~/.cache/%@"],
- "Trash": ["Lixo", "Corbeille", "Papelera", "Papierkorb"],
- "Turn on the helper to see everything": ["Ative o auxiliar para ver tudo", "Activez l’assistant pour tout voir", "Activa el asistente para verlo todo", "Aktiviere das Hilfsprogramm, um alles zu sehen"],
- "Unfinished download: %@": ["Download incompleto: %@", "Téléchargement inachevé : %@", "Descarga sin terminar: %@", "Unvollständiger Download: %@"],
- "Unified system log": ["Registro unificado do sistema", "Journal système unifié", "Registro unificado del sistema", "Einheitliches Systemprotokoll"],
- "Unknown action %@.": ["Ação desconhecida %@.", "Action inconnue %@.", "Acción desconocida %@.", "Unbekannte Aktion %@."],
- "Unused assets are removed from Free now when macOS reports any; the rest is in use.": ["Os recursos sem uso são removidos em Liberar agora quando o macOS os informa; o resto está em uso.", "Les ressources inutilisées sont supprimées depuis À libérer quand macOS en signale ; le reste est utilisé.", "Los recursos sin usar se eliminan desde Liberar ahora cuando macOS los indica; el resto está en uso.", "Ungenutzte Ressourcen werden unter „Jetzt freigeben“ entfernt, sobald macOS welche meldet; der Rest wird genutzt."],
- "Unused system assets": ["Recursos do sistema sem uso", "Ressources système inutilisées", "Recursos del sistema sin usar", "Ungenutzte Systemressourcen"],
- "Virtual machine: %@": ["Máquina virtual: %@", "Machine virtuelle : %@", "Máquina virtual: %@", "Virtuelle Maschine: %@"],
- "Wallpaper and screen saver downloads": ["Downloads de fundos de tela e protetores de tela", "Téléchargements de fonds d’écran et d’économiseurs d’écran", "Descargas de fondos de pantalla y salvapantallas", "Downloads von Hintergrundbildern und Bildschirmschonern"],
- "What fills System Data": ["O que ocupa Dados do Sistema", "Ce qui remplit Données système", "Qué ocupa Datos del sistema", "Was „Systemdaten“ füllt"],
- "What is in it": ["Conteúdo", "Contenu", "Qué contiene", "Inhalt"],
- "Xcode Command Line Tools": ["Ferramentas de Linha de Comando do Xcode", "Outils de ligne de commande Xcode", "Herramientas de línea de comandos de Xcode", "Xcode-Befehlszeilentools"],
- "Xcode downloads it again when you open the docs.": ["O Xcode a baixa de novo quando você abre a documentação.", "Xcode la retélécharge quand vous ouvrez la documentation.", "Xcode la vuelve a descargar cuando abres la documentación.", "Xcode lädt sie erneut, wenn du die Dokumentation öffnest."],
- "You won't be able to revert any document to an earlier version. Save and close your documents first.": ["Você não poderá reverter nenhum documento para uma versão anterior. Salve e feche seus documentos primeiro.", "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.", "No podrás volver a una versión anterior de ningún documento. Guarda y cierra tus documentos primero.", "Du kannst kein Dokument mehr auf eine frühere Version zurücksetzen. Sichere und schließe zuerst deine Dokumente."],
- "and %lld more": ["e mais %lld", "et %lld autres", "y %lld más", "und %lld weitere"],
- "free %@": ["liberar %@", "libérer %@", "liberar %@", "%@ freigeben"],
- "macOS downloads them again if they're needed.": ["O macOS os baixa de novo se forem necessários.", "macOS les retélécharge si besoin.", "macOS los vuelve a descargar si hacen falta.", "macOS lädt sie bei Bedarf erneut."],
- "macOS restore image: %@": ["Imagem de restauração do macOS: %@", "Image de restauration de macOS : %@", "Imagen de restauración de macOS: %@", "macOS-Wiederherstellungsimage: %@"],
- "macOS's model catalog, for the Photos spatial effect.": ["O catálogo de modelos do macOS, para o efeito espacial do Fotos.", "Le catalogue de modèles de macOS, pour l’effet spatial de Photos.", "El catálogo de modelos de macOS, para el efecto espacial de Fotos.", "Der Modellkatalog von macOS, für den räumlichen Effekt in Fotos."],
- "nothing to free": ["nada a liberar", "rien à libérer", "nada que liberar", "nichts freizugeben"],
- "system data": ["dados do sistema", "données système", "datos del sistema", "Systemdaten"],
- "system data %@": ["dados do sistema %@", "données système %@", "datos del sistema %@", "Systemdaten %@"],
- "the downloading app": ["o app que está baixando", "l’app de téléchargement", "la app que lo descarga", "die ladende App"],
- "See what fills System Data and free what is safe to remove.": ["Veja o que ocupa Dados do Sistema e libere o que pode ser removido com segurança.", "Voyez ce qui remplit Données système et libérez ce qui peut être supprimé sans risque.", "Mira qué ocupa Datos del sistema y libera lo que se puede eliminar sin riesgo.", "Sieh, was „Systemdaten“ füllt, und gib frei, was gefahrlos entfernt werden kann."],
- "Kept while Apple Intelligence is on": ["Mantido enquanto a Apple Intelligence estiver ativa", "Conservé tant qu’Apple Intelligence est activé", "Se conserva mientras Apple Intelligence esté activado", "Bleibt, solange Apple Intelligence aktiv ist"],
- "Protected by macOS": ["Protegido pelo macOS", "Protégé par macOS", "Protegido por macOS", "Von macOS geschützt"],
- "Models and system assets": ["Modelos e recursos do sistema", "Modèles et ressources système", "Modelos y recursos del sistema", "Modelle und Systemressourcen"],
- "Other protected folders": ["Outras pastas protegidas", "Autres dossiers protégés", "Otras carpetas protegidas", "Weitere geschützte Ordner"],
- "File system metadata": ["Metadados do sistema de arquivos", "Métadonnées du système de fichiers", "Metadatos del sistema de archivos", "Metadaten des Dateisystems"],
- "Logs for all users": ["Registros para todos os usuários", "Journaux pour tous les utilisateurs", "Registros para todos los usuarios", "Protokolle für alle Benutzer"],
- "Frees about %@. Homebrew downloads them again when it needs them.": ["Libera cerca de %@. O Homebrew os baixa de novo quando precisar.", "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.", "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.", "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht."],
- "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.": ["O Finder pode apagar os itens que estão nele há 30 dias: Finder > Ajustes > Avançado.", "Le Finder peut supprimer les éléments qui s’y trouvent depuis 30 jours : Finder > Réglages > Avancés.", "El Finder puede eliminar los ítems que llevan 30 días en ella: Finder > Ajustes > Avanzado.", "Der Finder kann Objekte löschen, die seit 30 Tagen darin liegen: Finder > Einstellungen > Erweitert."],
- "Unchanged for %lld days": ["Sem mudanças há %lld dias", "Inchangé depuis %lld jours", "Sin cambios desde hace %lld días", "Seit %lld Tagen unverändert"],
- "Not opened for %lld days": ["Não aberto há %lld dias", "Non ouvert depuis %lld jours", "Sin abrir desde hace %lld días", "Seit %lld Tagen nicht geöffnet"],
- "App not installed": ["App não instalado", "App non installée", "App no instalada", "App nicht installiert"],
- "Homebrew is not installed": ["O Homebrew não está instalado", "Homebrew n’est pas installé", "Homebrew no está instalado", "Homebrew ist nicht installiert"],
- "%lld more, including Apple Intelligence models, are under Protected by macOS.": ["Mais %lld, incluindo modelos da Apple Intelligence, estão em Protegido pelo macOS.", "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.", "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.", "%lld weitere, darunter Modelle von Apple Intelligence, stehen unter „Von macOS geschützt“."],
- "All users": ["Todos os usuários", "Tous les utilisateurs", "Todos los usuarios", "Alle Benutzer"],
- "Apps and macOS rebuild these by themselves.": ["Os apps e o macOS recriam estes sozinhos.", "Les apps et macOS les recréent d’eux-mêmes.", "Las apps y macOS los vuelven a crear solos.", "Apps und macOS legen sie selbst neu an."],
- "Cloud storage": ["Armazenamento na nuvem", "Stockage cloud", "Almacenamiento en la nube", "Cloud-Speicher"],
- "Empties after 30 days": ["Esvazia após 30 dias", "Se vide après 30 jours", "Se vacía a los 30 días", "Leert sich nach 30 Tagen"],
- "Free all version history?": ["Liberar todo o histórico de versões?", "Libérer tout l’historique des versions ?", "¿Liberar todo el historial de versiones?", "Den gesamten Versionsverlauf freigeben?"],
- "Free old reports?": ["Liberar os relatórios antigos?", "Libérer les anciens rapports ?", "¿Liberar los informes antiguos?", "Alte Berichte freigeben?"],
+ "%@ is outside the cleanable locations.": [
+  "%@ está fora dos locais que podem ser limpos.",
+  "%@ se trouve hors des emplacements nettoyables.",
+  "%@ está fuera de las ubicaciones que se pueden limpiar.",
+  "%@ liegt außerhalb der bereinigbaren Orte.",
+  "%@ 不在可清理位置中。"
+ ],
+ "%@ is running; quit it first.": [
+  "%@ está aberto; encerre-o primeiro.",
+  "%@ est ouvert ; quittez-le d’abord.",
+  "%@ está abierto; ciérralo primero.",
+  "%@ ist geöffnet; beende es zuerst.",
+  "%@ 正在运行，请先退出。"
+ ],
+ "%@ older than %lld days.": [
+  "%@ com mais de %lld dias.",
+  "%@ de plus de %lld jours.",
+  "%@ con más de %lld días.",
+  "%@ älter als %lld Tage.",
+  "%@，早于 %lld 天。"
+ ],
+ "%lld items": [
+  "%lld itens",
+  "%lld éléments",
+  "%lld elementos",
+  "%lld Objekte",
+  "%lld 项"
+ ],
+ "%lld places couldn't be measured.": [
+  "%lld locais não puderam ser medidos.",
+  "%lld emplacements n’ont pas pu être mesurés.",
+  "No se han podido medir %lld ubicaciones.",
+  "%lld Orte konnten nicht gemessen werden.",
+  "无法测量 %lld 个位置。"
+ ],
+ "%lld places only the helper can measure: %@. Turn it on in Settings.": [
+  "%lld locais que só o auxiliar pode medir: %@. Ative-o nos Ajustes.",
+  "%lld emplacements que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.",
+  "%lld ubicaciones que solo el asistente puede medir: %@. Actívalo en Ajustes.",
+  "%lld Orte, die nur das Hilfsprogramm messen kann: %@. Aktiviere es in den Einstellungen.",
+  "%lld 个位置只有辅助程序可以测量：%@。请在设置中开启。"
+ ],
+ "%lld places weren't measured. Reopen MacSpace.": [
+  "%lld locais não foram medidos. Abra o MacSpace de novo.",
+  "%lld emplacements n’ont pas été mesurés. Rouvrez MacSpace.",
+  "No se han medido %lld ubicaciones. Vuelve a abrir MacSpace.",
+  "%lld Orte wurden nicht gemessen. Öffne MacSpace erneut.",
+  "%lld 个位置未测量，请重新打开 MacSpace。"
+ ],
+ "%lld reports": [
+  "%lld relatórios",
+  "%lld rapports",
+  "%lld informes",
+  "%lld Berichte",
+  "%lld 份报告"
+ ],
+ "/System/Library/%@": [
+  "/System/Library/%@",
+  "/System/Library/%@",
+  "/System/Library/%@",
+  "/System/Library/%@",
+  "/System/Library/%@"
+ ],
+ "1 item": [
+  "1 item",
+  "1 élément",
+  "1 elemento",
+  "1 Objekt",
+  "1 项"
+ ],
+ "1 report": [
+  "1 relatório",
+  "1 rapport",
+  "1 informe",
+  "1 Bericht",
+  "1 份报告"
+ ],
+ "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.": [
+  "Uma imagem de restauração do macOS. Depois que o Mac, dispositivo ou máquina virtual para o qual foi baixada estiver configurado, ela pode ser apagada.",
+  "Une image de restauration de macOS. Une fois le Mac, l’appareil ou la machine virtuelle configuré, elle peut être supprimée.",
+  "Una imagen de restauración de macOS. Cuando el Mac, el dispositivo o la máquina virtual para el que se descargó esté configurado, se puede eliminar.",
+  "Ein macOS-Wiederherstellungsimage. Sobald der Mac, das Gerät oder die virtuelle Maschine eingerichtet ist, kann es gelöscht werden.",
+  "macOS 恢复映像。用于设置 Mac、设备或虚拟机后即可删除。"
+ ],
+ "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app.": [
+  "O disco e o estado de uma máquina virtual. Apague as máquinas que você não usa mais no app de virtualização.",
+  "Le disque et l’état d’une machine virtuelle. Supprimez celles que vous n’utilisez plus depuis l’app de virtualisation.",
+  "El disco y el estado de una máquina virtual. Elimina las que ya no uses desde la app de virtualización.",
+  "Festplatte und Zustand einer virtuellen Maschine. Lösche nicht mehr genutzte Maschinen in der Virtualisierungs-App.",
+  "虚拟机的磁盘和状态。请在虚拟化应用中删除不再使用的虚拟机。"
+ ],
+ "Allow": [
+  "Permitir",
+  "Autoriser",
+  "Permitir",
+  "Erlauben",
+  "允许"
+ ],
+ "Allow Full Disk Access to see everything": [
+  "Permita o Acesso Total ao Disco para ver tudo",
+  "Autorisez l’accès complet au disque pour tout voir",
+  "Permite el acceso total al disco para verlo todo",
+  "Erlaube Festplattenvollzugriff, um alles zu sehen",
+  "允许完全磁盘访问以查看所有内容"
+ ],
+ "Already gone": [
+  "Já apagado",
+  "Déjà supprimé",
+  "Ya borrado",
+  "Bereits gelöscht",
+  "已不存在"
+ ],
+ "An APFS clone of the app that macOS keeps after validating it. It shares storage with the app, so deleting it frees almost nothing; it only lowers the System Data figure in System Settings.": [
+  "Um clone APFS do app que o macOS mantém após validá-lo. Ele compartilha armazenamento com o app, então apagá-lo quase não libera espaço; só reduz o número de Dados do Sistema nos Ajustes do Sistema.",
+  "Un clone APFS de l’app que macOS conserve après l’avoir validée. Il partage le stockage de l’app : le supprimer ne libère presque rien, il réduit seulement le chiffre de Données système dans Réglages Système.",
+  "Un clon APFS de la app que macOS conserva tras validarla. Comparte almacenamiento con la app, así que eliminarlo casi no libera espacio; solo reduce la cifra de Datos del sistema en Ajustes del Sistema.",
+  "Ein APFS-Klon der App, den macOS nach der Prüfung behält. Er teilt den Speicher mit der App; Löschen gibt kaum etwas frei und senkt nur den Wert „Systemdaten“ in den Systemeinstellungen.",
+  "macOS 验证应用后保留的 APFS 克隆。它与应用共享存储，删除几乎不会释放空间，只会降低系统设置中的系统数据数值。"
+ ],
+ "An unfinished download by %@. If %@ is no longer downloading it, delete it.": [
+  "Um download incompleto de %@. Se %@ não estiver mais baixando, apague-o.",
+  "Un téléchargement inachevé de %@. Si %@ ne le télécharge plus, supprimez-le.",
+  "Una descarga sin terminar de %@. Si %@ ya no la está descargando, elimínala.",
+  "Ein unvollständiger Download von %@. Lädt %@ ihn nicht mehr, lösche ihn.",
+  "%@ 未完成的下载。如果 %@ 已不再下载，可将其删除。"
+ ],
+ "App cache: %@": [
+  "Cache de app: %@",
+  "Cache d’app : %@",
+  "Caché de app: %@",
+  "App-Cache: %@",
+  "应用缓存：%@"
+ ],
+ "App container": [
+  "Contêiner de app",
+  "Conteneur d’app",
+  "Contenedor de app",
+  "App-Container",
+  "应用容器"
+ ],
+ "App container: %@": [
+  "Contêiner de app: %@",
+  "Conteneur d’app : %@",
+  "Contenedor de app: %@",
+  "App-Container: %@",
+  "应用容器：%@"
+ ],
+ "App data": [
+  "Dados de apps",
+  "Données d’apps",
+  "Datos de apps",
+  "App-Daten",
+  "应用数据"
+ ],
+ "App group data": [
+  "Dados de grupo de apps",
+  "Données de groupe d’apps",
+  "Datos de grupo de apps",
+  "App-Gruppendaten",
+  "应用组数据"
+ ],
+ "App group data: %@": [
+  "Dados de grupo de apps: %@",
+  "Données de groupe d’apps : %@",
+  "Datos de grupo de apps: %@",
+  "App-Gruppendaten: %@",
+  "应用组数据：%@"
+ ],
+ "App support files": [
+  "Arquivos de suporte de apps",
+  "Fichiers de support d’apps",
+  "Archivos de soporte de apps",
+  "App-Supportdateien",
+  "应用支持文件"
+ ],
+ "Apple app data": [
+  "Dados de apps da Apple",
+  "Données d’apps Apple",
+  "Datos de apps de Apple",
+  "Daten von Apple-Apps",
+  "Apple 应用数据"
+ ],
+ "Apple developer documentation": [
+  "Documentação para desenvolvedores da Apple",
+  "Documentation pour développeurs Apple",
+  "Documentación para desarrolladores de Apple",
+  "Apple-Entwicklerdokumentation",
+  "Apple 开发者文档"
+ ],
+ "Apple system cache used by background services; macOS manages it.": [
+  "Cache do sistema da Apple usado por serviços em segundo plano; o macOS o gerencia.",
+  "Cache système Apple utilisé par des services en arrière-plan ; macOS le gère.",
+  "Caché del sistema de Apple usada por servicios en segundo plano; macOS la gestiona.",
+  "Apple-Systemcache für Hintergrunddienste; macOS verwaltet ihn.",
+  "后台服务使用的 Apple 系统缓存，由 macOS 管理。"
+ ],
+ "Apps' support files for all users": [
+  "Arquivos de suporte de apps para todos os usuários",
+  "Fichiers de support d’apps pour tous les utilisateurs",
+  "Archivos de soporte de apps para todos los usuarios",
+  "App-Supportdateien für alle Benutzer",
+  "所有用户的应用支持文件"
+ ],
+ "Apps' temporary files; macOS clears them at restart.": [
+  "Arquivos temporários de apps; o macOS os apaga ao reiniciar.",
+  "Fichiers temporaires d’apps ; macOS les efface au redémarrage.",
+  "Archivos temporales de apps; macOS los borra al reiniciar.",
+  "Temporäre Dateien von Apps; macOS löscht sie beim Neustart.",
+  "应用的临时文件，macOS 在重新启动时清除。"
+ ],
+ "Assorted macOS features and the OS itself.": [
+  "Vários recursos do macOS e o próprio sistema.",
+  "Diverses fonctions de macOS et le système lui-même.",
+  "Varias funciones de macOS y el propio sistema.",
+  "Verschiedene macOS-Funktionen und das System selbst.",
+  "各种 macOS 功能和系统本身使用的资源。"
+ ],
+ "Audio plug-ins and sounds": [
+  "Plug-ins de áudio e sons",
+  "Modules audio et sons",
+  "Plug-ins de audio y sonidos",
+  "Audio-Plug-ins und Töne",
+  "音频插件和声音"
+ ],
+ "Battery and energy history used by System Settings > Battery.": [
+  "Histórico de bateria e energia usado em Ajustes do Sistema > Bateria.",
+  "Historique de batterie et d’énergie utilisé par Réglages Système > Batterie.",
+  "Historial de batería y energía que usa Ajustes del Sistema > Batería.",
+  "Batterie- und Energieverlauf für Systemeinstellungen > Batterie.",
+  "“系统设置 > 电池”使用的电池和能耗历史。"
+ ],
+ "Caches for all users": [
+  "Caches para todos os usuários",
+  "Caches pour tous les utilisateurs",
+  "Cachés para todos los usuarios",
+  "Caches für alle Benutzer",
+  "所有用户的缓存"
+ ],
+ "Caches, old reports and unused system assets": [
+  "Caches, relatórios antigos e recursos do sistema sem uso",
+  "Caches, anciens rapports et ressources système inutilisées",
+  "Cachés, informes antiguos y recursos del sistema sin usar",
+  "Caches, alte Berichte und ungenutzte Systemressourcen",
+  "缓存、旧报告和未使用的系统资源"
+ ],
+ "Can be freed": [
+  "Pode ser liberado",
+  "Peut être libéré",
+  "Se puede liberar",
+  "Freigebbar",
+  "可释放"
+ ],
+ "Cannot be undone": [
+  "Não pode ser desfeito",
+  "Irréversible",
+  "No se puede deshacer",
+  "Nicht widerrufbar",
+  "无法撤销"
+ ],
+ "Check Software Update in System Settings.": [
+  "Verifique a Atualização de Software nos Ajustes do Sistema.",
+  "Consultez Mise à jour de logiciels dans Réglages Système.",
+  "Revisa Actualización de software en Ajustes del Sistema.",
+  "Sieh unter „Softwareupdate“ in den Systemeinstellungen nach.",
+  "在系统设置中检查软件更新。"
+ ],
+ "Cloud files on this Mac": [
+  "Arquivos da nuvem neste Mac",
+  "Fichiers du cloud sur ce Mac",
+  "Archivos de la nube en este Mac",
+  "Cloud-Dateien auf diesem Mac",
+  "此 Mac 上的云端文件"
+ ],
+ "Cloud storage: %@": [
+  "Armazenamento na nuvem: %@",
+  "Stockage cloud : %@",
+  "Almacenamiento en la nube: %@",
+  "Cloud-Speicher: %@",
+  "云存储：%@"
+ ],
+ "Code-signing copy of %@": [
+  "Cópia de assinatura de código de %@",
+  "Copie de signature de code de %@",
+  "Copia de firma de código de %@",
+  "Codesignatur-Kopie von %@",
+  "%@ 的代码签名副本"
+ ],
+ "CoreSpotlight indexes for apps' searchable content.": [
+  "Índices do CoreSpotlight para o conteúdo pesquisável dos apps.",
+  "Index CoreSpotlight du contenu consultable des apps.",
+  "Índices de CoreSpotlight para el contenido buscable de las apps.",
+  "CoreSpotlight-Indizes für durchsuchbare Inhalte von Apps.",
+  "应用可搜索内容的 CoreSpotlight 索引。"
+ ],
+ "Couldn't free it": [
+  "Não foi possível liberar",
+  "Impossible de libérer",
+  "No se ha podido liberar",
+  "Konnte nicht freigegeben werden",
+  "无法释放"
+ ],
+ "Daemon containers": [
+  "Contêineres de daemons",
+  "Conteneurs de démons",
+  "Contenedores de daemons",
+  "Daemon-Container",
+  "守护进程容器"
+ ],
+ "Data of Apple background services.": [
+  "Dados de serviços em segundo plano da Apple.",
+  "Données de services d’arrière-plan Apple.",
+  "Datos de servicios en segundo plano de Apple.",
+  "Daten von Apple-Hintergrunddiensten.",
+  "Apple 后台服务的数据。"
+ ],
+ "Data of an Apple app or service.": [
+  "Dados de um app ou serviço da Apple.",
+  "Données d’une app ou d’un service Apple.",
+  "Datos de una app o servicio de Apple.",
+  "Daten einer Apple-App oder eines Apple-Diensts.",
+  "Apple 应用或服务的数据。"
+ ],
+ "Delete": [
+  "Apagar",
+  "Supprimer",
+  "Eliminar",
+  "Löschen",
+  "删除"
+ ],
+ "Deleted %@.": [
+  "%@ apagado.",
+  "%@ supprimé.",
+  "%@ eliminado.",
+  "%@ gelöscht.",
+  "已删除 %@。"
+ ],
+ "Diagnostic and crash reports": [
+  "Relatórios de diagnóstico e de falhas",
+  "Rapports de diagnostic et de plantage",
+  "Informes de diagnóstico y de fallos",
+  "Diagnose- und Absturzberichte",
+  "诊断与崩溃报告"
+ ],
+ "Dictionaries": [
+  "Dicionários",
+  "Dictionnaires",
+  "Diccionarios",
+  "Wörterbücher",
+  "词典"
+ ],
+ "Document version history": [
+  "Histórico de versões de documentos",
+  "Historique des versions des documents",
+  "Historial de versiones de documentos",
+  "Versionsverlauf von Dokumenten",
+  "文稿版本历史"
+ ],
+ "Document versions": [
+  "Versões de documentos",
+  "Versions de documents",
+  "Versiones de documentos",
+  "Dokumentversionen",
+  "文稿版本"
+ ],
+ "Downloaded for Xcode; macOS marks it precious and nothing subscribes to it.": [
+  "Baixada para o Xcode; o macOS a marca como importante e nada a usa.",
+  "Téléchargée pour Xcode ; macOS la marque comme précieuse et rien ne l’utilise.",
+  "Descargada para Xcode; macOS la marca como importante y nada la usa.",
+  "Für Xcode geladen; macOS markiert sie als wichtig, und nichts nutzt sie.",
+  "为 Xcode 下载；macOS 将其标记为重要资源，没有服务订阅。"
+ ],
+ "Downloads macOS no longer needs, like released Apple Intelligence models.": [
+  "Downloads de que o macOS não precisa mais, como modelos do Apple Intelligence liberados.",
+  "Téléchargements dont macOS n’a plus besoin, comme les modèles Apple Intelligence libérés.",
+  "Descargas que macOS ya no necesita, como modelos de Apple Intelligence liberados.",
+  "Downloads, die macOS nicht mehr braucht, etwa freigegebene Apple Intelligence-Modelle.",
+  "macOS 不再需要的下载，如已释放的 Apple 智能模型。"
+ ],
+ "Downloads you can turn off": [
+  "Downloads que você pode desativar",
+  "Téléchargements désactivables",
+  "Descargas que puedes desactivar",
+  "Downloads, die du abschalten kannst",
+  "可关闭的下载"
+ ],
+ "Earlier versions of your documents (File > Revert To). Only keeps the latest version.": [
+  "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Mantém somente a última versão.",
+  "Versions précédentes de vos documents (Fichier > Revenir à). Ne conserve que la dernière version.",
+  "Versiones anteriores de tus documentos (Archivo > Volver a). Solo conserva la última versión.",
+  "Frühere Versionen deiner Dokumente (Ablage > Zurücksetzen auf). Behält nur die letzte Version.",
+  "文稿的旧版本（“文件 > 复原到”）。仅保留最新版本。"
+ ],
+ "Empty the Trash in Finder.": [
+  "Esvazie o Lixo no Finder.",
+  "Videz la Corbeille dans le Finder.",
+  "Vacía la Papelera en el Finder.",
+  "Leere den Papierkorb im Finder.",
+  "在访达中清倒废纸篓。"
+ ],
+ "Everything else": [
+  "Todo o resto",
+  "Tout le reste",
+  "Todo lo demás",
+  "Alles andere",
+  "其他所有内容"
+ ],
+ "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.": [
+  "Arquivos de uma atualização anterior do macOS já instalada; nenhuma atualização está pendente. O macOS não os removeu e eles estão numa pasta protegida, então o MacSpace não mexe neles.",
+  "Fichiers d’une mise à jour de macOS déjà installée ; aucune mise à jour n’est en attente. macOS ne les a pas supprimés et ils se trouvent dans un dossier protégé : MacSpace n’y touche pas.",
+  "Archivos de una actualización anterior de macOS ya instalada; no hay ninguna pendiente. macOS no los ha eliminado y están en una carpeta protegida, así que MacSpace no los toca.",
+  "Dateien eines bereits installierten macOS-Updates; kein Update wartet. macOS hat sie nicht entfernt, und sie liegen in einem geschützten Ordner, daher lässt MacSpace sie unangetastet.",
+  "已安装的 macOS 更新残留文件，没有待安装更新。macOS 尚未移除且文件位于受保护文件夹，MacSpace 不作处理。"
+ ],
+ "Free": [
+  "Liberar",
+  "Libérer",
+  "Liberar",
+  "Freigeben",
+  "释放"
+ ],
+ "Free %@": [
+  "Liberar %@",
+  "Libérer %@",
+  "Liberar %@",
+  "%@ freigeben",
+  "释放 %@"
+ ],
+ "Free %@?": [
+  "Liberar %@?",
+  "Libérer %@ ?",
+  "¿Liberar %@?",
+  "%@ freigeben?",
+  "释放 %@？"
+ ],
+ "Free now": [
+  "Liberar agora",
+  "À libérer",
+  "Liberar ahora",
+  "Jetzt freigeben",
+  "立即释放"
+ ],
+ "Free up to %@ of unused system assets?": [
+  "Liberar até %@ de recursos do sistema sem uso?",
+  "Libérer jusqu’à %@ de ressources système inutilisées ?",
+  "¿Liberar hasta %@ de recursos del sistema sin usar?",
+  "Bis zu %@ ungenutzte Systemressourcen freigeben?",
+  "释放最多 %@ 未使用的系统资源？"
+ ],
+ "Freeing in the background": [
+  "Liberando em segundo plano",
+  "Libération en arrière-plan",
+  "Liberando en segundo plano",
+  "Wird im Hintergrund freigegeben",
+  "正在后台释放"
+ ],
+ "Freeing space…": [
+  "Liberando espaço…",
+  "Libération d’espace…",
+  "Liberando espacio…",
+  "Speicher wird freigegeben …",
+  "正在释放空间…"
+ ],
+ "From a deleted account. Copy what you need, then delete it.": [
+  "De uma conta apagada. Copie o que precisar e apague-a.",
+  "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.",
+  "De una cuenta eliminada. Copia lo que necesites y elimínala.",
+  "Von einem gelöschten Account. Kopiere, was du brauchst, und lösche ihn dann.",
+  "来自已删除的账户。请先拷贝需要的内容再删除。"
+ ],
+ "From an update that's already installed.": [
+  "De uma atualização já instalada.",
+  "D’une mise à jour déjà installée.",
+  "De una actualización ya instalada.",
+  "Von einem bereits installierten Update.",
+  "来自已安装的更新。"
+ ],
+ "Home folder of a deleted account: %@": [
+  "Pasta pessoal de uma conta apagada: %@",
+  "Dossier de départ d’un compte supprimé : %@",
+  "Carpeta de inicio de una cuenta eliminada: %@",
+  "Benutzerordner eines gelöschten Accounts: %@",
+  "已删除账户的个人文件夹：%@"
+ ],
+ "Homebrew": [
+  "Homebrew",
+  "Homebrew",
+  "Homebrew",
+  "Homebrew",
+  "Homebrew"
+ ],
+ "Homebrew & packages": [
+  "Homebrew e pacotes",
+  "Homebrew et paquets",
+  "Homebrew y paquetes",
+  "Homebrew & Pakete",
+  "Homebrew 与软件包"
+ ],
+ "In Dictionary > Settings, turn off dictionaries you don't use.": [
+  "Em Dicionário > Ajustes, desative os dicionários que você não usa.",
+  "Dans Dictionnaire > Réglages, désactivez les dictionnaires inutilisés.",
+  "En Diccionario > Ajustes, desactiva los diccionarios que no uses.",
+  "Deaktiviere unter Lexikon > Einstellungen nicht genutzte Wörterbücher.",
+  "在“词典 > 设置”中关闭不使用的词典。"
+ ],
+ "In Finder, select files and choose Remove Download. They stay in the cloud.": [
+  "No Finder, selecione os arquivos e escolha Remover Download. Eles continuam na nuvem.",
+  "Dans le Finder, sélectionnez les fichiers et choisissez Supprimer le téléchargement. Ils restent dans le cloud.",
+  "En el Finder, selecciona los archivos y elige Eliminar descarga. Se quedan en la nube.",
+  "Wähle im Finder die Dateien aus und dann „Download entfernen“. Sie bleiben in der Cloud.",
+  "在访达中选择文件并选取“移除下载”，文件仍保留在云端。"
+ ],
+ "In System Settings > Apple Intelligence & Siri > Siri Voice, pick a voice that isn't a premium download.": [
+  "Em Ajustes do Sistema > Apple Intelligence e Siri > Voz da Siri, escolha uma voz que não seja um download premium.",
+  "Dans Réglages Système > Apple Intelligence et Siri > Voix de Siri, choisissez une voix qui n’est pas un téléchargement premium.",
+  "En Ajustes del Sistema > Apple Intelligence y Siri > Voz de Siri, elige una voz que no sea una descarga premium.",
+  "Wähle unter Systemeinstellungen > Apple Intelligence & Siri > Siri-Stimme eine Stimme, die kein Premium-Download ist.",
+  "在“系统设置 > Apple 智能与 Siri > Siri 声音”中，选择不需要额外下载的声音。"
+ ],
+ "In System Settings > Keyboard > Dictation, remove languages you don't use.": [
+  "Em Ajustes do Sistema > Teclado > Ditado, remova os idiomas que você não usa.",
+  "Dans Réglages Système > Clavier > Dictée, supprimez les langues inutilisées.",
+  "En Ajustes del Sistema > Teclado > Dictado, elimina los idiomas que no uses.",
+  "Entferne unter Systemeinstellungen > Tastatur > Diktat nicht genutzte Sprachen.",
+  "在“系统设置 > 键盘 > 听写”中移除不使用的语言。"
+ ],
+ "In Xcode > Settings > Components, remove the documentation.": [
+  "Em Xcode > Ajustes > Componentes, remova a documentação.",
+  "Dans Xcode > Réglages > Composants, supprimez la documentation.",
+  "En Xcode > Ajustes > Componentes, elimina la documentación.",
+  "Entferne unter Xcode > Einstellungen > Komponenten die Dokumentation.",
+  "在“Xcode > Settings > Components”中移除文档。"
+ ],
+ "Install the helper in Settings": [
+  "Instale o auxiliar nos Ajustes",
+  "Installez l’assistant dans Réglages",
+  "Instala el asistente en Ajustes",
+  "Installiere das Hilfsprogramm in den Einstellungen",
+  "在设置中安装辅助程序"
+ ],
+ "Installed fonts": [
+  "Fontes instaladas",
+  "Polices installées",
+  "Tipos de letra instalados",
+  "Installierte Schriften",
+  "已安装字体"
+ ],
+ "Kept by macOS for its own services; it manages the size.": [
+  "Mantido pelo macOS para seus próprios serviços; ele gerencia o tamanho.",
+  "Conservé par macOS pour ses propres services ; il en gère la taille.",
+  "macOS lo conserva para sus propios servicios y gestiona su tamaño.",
+  "Von macOS für eigene Dienste behalten; es verwaltet die Größe.",
+  "macOS 为其服务保留，自行管理大小。"
+ ],
+ "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history.": [
+  "Mantido pelo revisiond para Arquivo > Reverter Para > Explorar Todas as Versões; versões antigas de um documento podem ser apagadas ali. Apagar o armazenamento remove todo o histórico de versões.",
+  "Conservé par revisiond pour Fichier > Revenir à > Parcourir toutes les versions ; les anciennes versions d’un document peuvent y être supprimées. Supprimer le stockage efface tout l’historique.",
+  "Lo conserva revisiond para Archivo > Volver a > Explorar todas las versiones; ahí se pueden eliminar versiones antiguas de un documento. Eliminar el almacén borra todo el historial.",
+  "Von revisiond für Ablage > Zurücksetzen auf > Alle Versionen durchsuchen behalten; dort lassen sich alte Versionen löschen. Das Löschen des Speichers entfernt den gesamten Verlauf.",
+  "由 revisiond 保留，用于“文件 > 复原到 > 浏览所有版本”。可以在此浏览器中删除文稿旧版本。删除存储会移除全部版本历史。"
+ ],
+ "Language data (spelling, text analysis)": [
+  "Dados de idioma (ortografia, análise de texto)",
+  "Données linguistiques (orthographe, analyse de texte)",
+  "Datos de idioma (ortografía, análisis de texto)",
+  "Sprachdaten (Rechtschreibung, Textanalyse)",
+  "语言数据（拼写、文本分析）"
+ ],
+ "Leftover macOS update files": [
+  "Arquivos restantes de atualização do macOS",
+  "Fichiers restants de mise à jour de macOS",
+  "Archivos sobrantes de actualización de macOS",
+  "Übrige macOS-Update-Dateien",
+  "macOS 更新残留文件"
+ ],
+ "Leftover update files": [
+  "Arquivos de atualização restantes",
+  "Fichiers de mise à jour restants",
+  "Archivos de actualización sobrantes",
+  "Übrige Update-Dateien",
+  "更新残留文件"
+ ],
+ "Leftovers": [
+  "Restos",
+  "Restes",
+  "Restos",
+  "Überbleibsel",
+  "残留内容"
+ ],
+ "Managed by macOS": [
+  "Gerenciado pelo macOS",
+  "Géré par macOS",
+  "Gestionado por macOS",
+  "Von macOS verwaltet",
+  "由 macOS 管理"
+ ],
+ "Managed by the kernel; shrinks after a restart.": [
+  "Gerenciado pelo kernel; diminui após reiniciar.",
+  "Géré par le noyau ; diminue après un redémarrage.",
+  "Lo gestiona el kernel; se reduce tras reiniciar.",
+  "Vom Kernel verwaltet; schrumpft nach einem Neustart.",
+  "由内核管理，重新启动后会缩小。"
+ ],
+ "Mostly media. Clean it up from inside the app.": [
+  "Principalmente mídia. Faça a limpeza dentro do app.",
+  "Surtout des médias. Faites le ménage depuis l’app.",
+  "Sobre todo contenido multimedia. Límpialo desde la app.",
+  "Vor allem Medien. Räume sie in der App auf.",
+  "主要是媒体，请在应用内清理。"
+ ],
+ "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.": [
+  "Necessárias para git, clang e Homebrew, a menos que um Xcode completo esteja selecionado com xcode-select.",
+  "Nécessaires à git, clang et Homebrew, sauf si un Xcode complet est sélectionné avec xcode-select.",
+  "Las necesitan git, clang y Homebrew, salvo que haya un Xcode completo seleccionado con xcode-select.",
+  "Von git, clang und Homebrew benötigt, außer ein vollständiges Xcode ist mit xcode-select gewählt.",
+  "除非已通过 xcode-select 选择完整 Xcode，否则 git、clang 和 Homebrew 需要它。"
+ ],
+ "Not a cleanable item (%@).": [
+  "Não é um item que pode ser limpo (%@).",
+  "Élément non nettoyable (%@).",
+  "No es un elemento que se pueda limpiar (%@).",
+  "Kein bereinigbares Objekt (%@).",
+  "不可清理的项目（%@）。"
+ ],
+ "Not identified": [
+  "Não identificado",
+  "Non identifié",
+  "Sin identificar",
+  "Nicht erkannt",
+  "未识别"
+ ],
+ "Old diagnostic and crash reports": [
+  "Relatórios antigos de diagnóstico e de falhas",
+  "Anciens rapports de diagnostic et de plantage",
+  "Informes antiguos de diagnóstico y de fallos",
+  "Alte Diagnose- und Absturzberichte",
+  "旧诊断与崩溃报告"
+ ],
+ "Old reports are deleted from Free now.": [
+  "Os relatórios antigos são apagados em Liberar agora.",
+  "Les anciens rapports sont supprimés depuis À libérer.",
+  "Los informes antiguos se eliminan desde Liberar ahora.",
+  "Alte Berichte werden unter „Jetzt freigeben“ gelöscht.",
+  "旧报告可在“立即释放”中删除。"
+ ],
+ "Other": [
+  "Outros",
+  "Autres",
+  "Otros",
+  "Sonstiges",
+  "其他"
+ ],
+ "Other system downloads": [
+  "Outros downloads do sistema",
+  "Autres téléchargements système",
+  "Otras descargas del sistema",
+  "Andere Systemdownloads",
+  "其他系统下载"
+ ],
+ "Per-user Spotlight metadata": [
+  "Metadados do Spotlight por usuário",
+  "Métadonnées Spotlight par utilisateur",
+  "Metadatos de Spotlight por usuario",
+  "Spotlight-Metadaten pro Benutzer",
+  "各用户的 Spotlight 元数据"
+ ],
+ "Photos models (Spatial Photos)": [
+  "Modelos do Fotos (Fotos Espaciais)",
+  "Modèles de Photos (photos spatiales)",
+  "Modelos de Fotos (fotos espaciales)",
+  "Fotos-Modelle (räumliche Fotos)",
+  "照片模型（空间照片）"
+ ],
+ "Power log": [
+  "Registro de energia",
+  "Journal d’énergie",
+  "Registro de energía",
+  "Energieprotokoll",
+  "电源日志"
+ ],
+ "Rebuilt by Spotlight; macOS manages it.": [
+  "Reconstruído pelo Spotlight; o macOS o gerencia.",
+  "Reconstruit par Spotlight ; macOS le gère.",
+  "Spotlight lo reconstruye; macOS lo gestiona.",
+  "Von Spotlight neu aufgebaut; macOS verwaltet ihn.",
+  "由 Spotlight 重建，macOS 管理。"
+ ],
+ "Remove it with the tool that made it.": [
+  "Remova-o com a ferramenta que o criou.",
+  "Supprimez-le avec l’outil qui l’a créé.",
+  "Elimínalo con la herramienta que lo creó.",
+  "Entferne es mit dem Tool, das es erstellt hat.",
+  "使用创建它的工具移除。"
+ ],
+ "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g).": [
+  "Solicitados pelo sistema para cada idioma em que viu texto e atualizados diariamente. Não é uma opção dos Ajustes: mesmo com um único idioma de ortografia, a lista continua igual.",
+  "Demandées par le système pour chaque langue rencontrée dans du texte, et actualisées chaque jour. Ce n’est pas un choix des Réglages : même avec une seule langue d’orthographe, la liste reste la même.",
+  "El sistema las solicita para cada idioma en el que ha visto texto y las actualiza a diario. No es una opción de Ajustes: aunque la ortografía use un solo idioma, la lista no cambia.",
+  "Vom System für jede Sprache angefordert, in der es Text gesehen hat, und täglich aktualisiert. Keine Einstellung: Auch mit nur einer Rechtschreibsprache bleibt die Liste gleich.",
+  "系统为遇到文本的每种语言请求此数据，每天更新。这不是设置选项：即使拼写语言设为单一语言，列表也不变（已在 26B5091g 验证）。"
+ ],
+ "Restart, then free them under Free now.": [
+  "Reinicie e libere-os em Liberar agora.",
+  "Redémarrez, puis libérez-les dans À libérer.",
+  "Reinicia y libéralos en Liberar ahora.",
+  "Starte neu und gib sie dann unter „Jetzt freigeben“ frei.",
+  "重新启动后，在“立即释放”中释放。"
+ ],
+ "Rotated by logd; deleting it removes the logs needed for troubleshooting.": [
+  "Rotacionado pelo logd; apagá-lo remove os registros necessários para solucionar problemas.",
+  "Renouvelé par logd ; le supprimer efface les journaux utiles au dépannage.",
+  "logd lo rota; eliminarlo borra los registros necesarios para resolver problemas.",
+  "Von logd rotiert; Löschen entfernt die Protokolle für die Fehlersuche.",
+  "由 logd 轮换；删除会移除故障排查所需日志。"
+ ],
+ "Safe to delete while %@ is closed. It's rebuilt when needed.": [
+  "Pode ser apagado com segurança enquanto %@ estiver fechado. É recriado quando necessário.",
+  "Supprimable sans risque quand %@ est fermé. Il est recréé au besoin.",
+  "Se puede eliminar sin riesgo mientras %@ esté cerrado. Se vuelve a crear cuando hace falta.",
+  "Kann gefahrlos gelöscht werden, solange %@ geschlossen ist. Wird bei Bedarf neu erstellt.",
+  "%@ 关闭时可安全删除，需要时会重建。"
+ ],
+ "Saved home folder of a deleted account: %@": [
+  "Pasta pessoal salva de uma conta apagada: %@",
+  "Dossier de départ enregistré d’un compte supprimé : %@",
+  "Carpeta de inicio guardada de una cuenta eliminada: %@",
+  "Gesicherter Benutzerordner eines gelöschten Accounts: %@",
+  "已删除账户保存的个人文件夹：%@"
+ ],
+ "Shared app files": [
+  "Arquivos compartilhados de apps",
+  "Fichiers d’apps partagés",
+  "Archivos compartidos de apps",
+  "Gemeinsame App-Dateien",
+  "共享应用文件"
+ ],
+ "Shared frameworks": [
+  "Frameworks compartilhados",
+  "Frameworks partagés",
+  "Frameworks compartidos",
+  "Gemeinsame Frameworks",
+  "共享框架"
+ ],
+ "Shared temporary files": [
+  "Arquivos temporários compartilhados",
+  "Fichiers temporaires partagés",
+  "Archivos temporales compartidos",
+  "Gemeinsame temporäre Dateien",
+  "共享临时文件"
+ ],
+ "Siri speech models": [
+  "Modelos de fala da Siri",
+  "Modèles vocaux de Siri",
+  "Modelos de voz de Siri",
+  "Siri-Sprachmodelle",
+  "Siri 语音模型"
+ ],
+ "Siri voices": [
+  "Vozes da Siri",
+  "Voix de Siri",
+  "Voces de Siri",
+  "Siri-Stimmen",
+  "Siri 声音"
+ ],
+ "Siri's speech service and phone call features, for the languages they transcribe.": [
+  "O serviço de fala da Siri e os recursos de ligação, para os idiomas que transcrevem.",
+  "Le service vocal de Siri et les fonctions d’appel, pour les langues qu’ils transcrivent.",
+  "El servicio de voz de Siri y las funciones de llamada, para los idiomas que transcriben.",
+  "Siris Sprachdienst und Anruffunktionen, für die Sprachen, die sie transkribieren.",
+  "Siri 语音服务和通话功能使用的转录语言。"
+ ],
+ "Smaller items": [
+  "Itens menores",
+  "Éléments plus petits",
+  "Elementos más pequeños",
+  "Kleinere Objekte",
+  "较小项目"
+ ],
+ "Speech recognition (dictation and calls)": [
+  "Reconhecimento de fala (ditado e ligações)",
+  "Reconnaissance vocale (dictée et appels)",
+  "Reconocimiento de voz (dictado y llamadas)",
+  "Spracherkennung (Diktat und Anrufe)",
+  "语音识别（听写和通话）"
+ ],
+ "Spotlight index": [
+  "Índice do Spotlight",
+  "Index Spotlight",
+  "Índice de Spotlight",
+  "Spotlight-Index",
+  "Spotlight 索引"
+ ],
+ "Staged macOS update": [
+  "Atualização do macOS preparada",
+  "Mise à jour de macOS préparée",
+  "Actualización de macOS preparada",
+  "Vorbereitetes macOS-Update",
+  "已暂存的 macOS 更新"
+ ],
+ "Swap and sleep files": [
+  "Arquivos de troca e de repouso",
+  "Fichiers d’échange et de veille",
+  "Archivos de intercambio y de reposo",
+  "Auslagerungs- und Ruhezustandsdateien",
+  "交换与睡眠文件"
+ ],
+ "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.": [
+  "Símbolos para relatórios de falhas e depuração; recriados quando necessário. Pertence ao root.",
+  "Symboles pour les rapports de plantage et le débogage ; recréés à la demande. Appartient à root.",
+  "Símbolos para informes de fallos y depuración; se recrean cuando hace falta. Pertenece a root.",
+  "Symbole für Absturzberichte und Debugging; bei Bedarf neu erstellt. Gehört root.",
+  "崩溃报告和调试用符号，需要时重建，归 root 所有。"
+ ],
+ "System Data": [
+  "Dados do Sistema",
+  "Données système",
+  "Datos del sistema",
+  "Systemdaten",
+  "系统数据"
+ ],
+ "System cache: %@": [
+  "Cache do sistema: %@",
+  "Cache système : %@",
+  "Caché del sistema: %@",
+  "Systemcache: %@",
+  "系统缓存：%@"
+ ],
+ "System databases": [
+  "Bancos de dados do sistema",
+  "Bases de données système",
+  "Bases de datos del sistema",
+  "Systemdatenbanken",
+  "系统数据库"
+ ],
+ "System extensions": [
+  "Extensões do sistema",
+  "Extensions système",
+  "Extensiones del sistema",
+  "Systemerweiterungen",
+  "系统扩展"
+ ],
+ "System logs": [
+  "Registros do sistema",
+  "Journaux système",
+  "Registros del sistema",
+  "Systemprotokolle",
+  "系统日志"
+ ],
+ "Temporary files": [
+  "Arquivos temporários",
+  "Fichiers temporaires",
+  "Archivos temporales",
+  "Temporäre Dateien",
+  "临时文件"
+ ],
+ "Temporary files; macOS clears them at restart.": [
+  "Arquivos temporários; o macOS os apaga ao reiniciar.",
+  "Fichiers temporaires ; macOS les efface au redémarrage.",
+  "Archivos temporales; macOS los borra al reiniciar.",
+  "Temporäre Dateien; macOS löscht sie beim Neustart.",
+  "临时文件，macOS 在重新启动时清除。"
+ ],
+ "The Dictionary app and Look Up.": [
+  "O app Dicionário e o recurso Pesquisar.",
+  "L’app Dictionnaire et Recherche.",
+  "La app Diccionario y Consultar.",
+  "Die App „Lexikon“ und „Nachschlagen“.",
+  "“词典”应用和“查询”功能。"
+ ],
+ "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them.": [
+  "O serviço de fala da Siri, o reconhecimento de fala e os recursos de ligação, para o idioma da Siri e o do sistema. Nenhum ajuste os remove.",
+  "Le service vocal de Siri, la reconnaissance vocale et les fonctions d’appel, pour la langue de Siri et celle du système. Aucun réglage ne les supprime.",
+  "El servicio de voz de Siri, el reconocimiento de voz y las funciones de llamada, para el idioma de Siri y el del sistema. Ningún ajuste los elimina.",
+  "Siris Sprachdienst, Spracherkennung und Anruffunktionen, für die Siri- und die Systemsprache. Keine Einstellung entfernt sie.",
+  "Siri 语音服务、语音识别和通话功能使用的 Siri 语言和系统语言模型。没有设置可以移除。"
+ ],
+ "The Siri text-to-speech service, for the selected Siri voice and language.": [
+  "O serviço de conversão de texto em fala da Siri, para a voz e o idioma escolhidos.",
+  "Le service de synthèse vocale de Siri, pour la voix et la langue choisies.",
+  "El servicio de texto a voz de Siri, para la voz y el idioma elegidos.",
+  "Siris Sprachausgabe, für die gewählte Stimme und Sprache.",
+  "Siri 文字转语音服务使用的所选声音和语言。"
+ ],
+ "The helper did not answer": [
+  "O auxiliar não respondeu",
+  "L’assistant n’a pas répondu",
+  "El asistente no ha respondido",
+  "Das Hilfsprogramm hat nicht geantwortet",
+  "辅助程序无响应"
+ ],
+ "This permanently deletes %@.": [
+  "Isto apaga permanentemente %@.",
+  "Cela supprime définitivement %@.",
+  "Esto elimina para siempre %@.",
+  "Dadurch werden %@ endgültig gelöscht.",
+  "将永久删除 %@。"
+ ],
+ "Tool cache: ~/.cache/%@": [
+  "Cache de ferramenta: ~/.cache/%@",
+  "Cache d’outil : ~/.cache/%@",
+  "Caché de herramienta: ~/.cache/%@",
+  "Tool-Cache: ~/.cache/%@",
+  "工具缓存：~/.cache/%@"
+ ],
+ "Trash": [
+  "Lixo",
+  "Corbeille",
+  "Papelera",
+  "Papierkorb",
+  "废纸篓"
+ ],
+ "Turn on the helper to see everything": [
+  "Ative o auxiliar para ver tudo",
+  "Activez l’assistant pour tout voir",
+  "Activa el asistente para verlo todo",
+  "Aktiviere das Hilfsprogramm, um alles zu sehen",
+  "开启辅助程序以查看所有内容"
+ ],
+ "Unfinished download: %@": [
+  "Download incompleto: %@",
+  "Téléchargement inachevé : %@",
+  "Descarga sin terminar: %@",
+  "Unvollständiger Download: %@",
+  "未完成的下载：%@"
+ ],
+ "Unified system log": [
+  "Registro unificado do sistema",
+  "Journal système unifié",
+  "Registro unificado del sistema",
+  "Einheitliches Systemprotokoll",
+  "统一系统日志"
+ ],
+ "Unknown action %@.": [
+  "Ação desconhecida %@.",
+  "Action inconnue %@.",
+  "Acción desconocida %@.",
+  "Unbekannte Aktion %@.",
+  "未知操作 %@。"
+ ],
+ "Unused assets are removed from Free now when macOS reports any; the rest is in use.": [
+  "Os recursos sem uso são removidos em Liberar agora quando o macOS os informa; o resto está em uso.",
+  "Les ressources inutilisées sont supprimées depuis À libérer quand macOS en signale ; le reste est utilisé.",
+  "Los recursos sin usar se eliminan desde Liberar ahora cuando macOS los indica; el resto está en uso.",
+  "Ungenutzte Ressourcen werden unter „Jetzt freigeben“ entfernt, sobald macOS welche meldet; der Rest wird genutzt.",
+  "macOS 报告有未使用资源时，可在“立即释放”中移除；其余仍在使用中。"
+ ],
+ "Unused system assets": [
+  "Recursos do sistema sem uso",
+  "Ressources système inutilisées",
+  "Recursos del sistema sin usar",
+  "Ungenutzte Systemressourcen",
+  "未使用的系统资源"
+ ],
+ "Virtual machine: %@": [
+  "Máquina virtual: %@",
+  "Machine virtuelle : %@",
+  "Máquina virtual: %@",
+  "Virtuelle Maschine: %@",
+  "虚拟机：%@"
+ ],
+ "Wallpaper and screen saver downloads": [
+  "Downloads de fundos de tela e protetores de tela",
+  "Téléchargements de fonds d’écran et d’économiseurs d’écran",
+  "Descargas de fondos de pantalla y salvapantallas",
+  "Downloads von Hintergrundbildern und Bildschirmschonern",
+  "墙纸与屏幕保护程序下载"
+ ],
+ "What fills System Data": [
+  "O que ocupa Dados do Sistema",
+  "Ce qui remplit Données système",
+  "Qué ocupa Datos del sistema",
+  "Was „Systemdaten“ füllt",
+  "系统数据占用详情"
+ ],
+ "What is in it": [
+  "Conteúdo",
+  "Contenu",
+  "Qué contiene",
+  "Inhalt",
+  "包含的内容"
+ ],
+ "Xcode Command Line Tools": [
+  "Ferramentas de Linha de Comando do Xcode",
+  "Outils de ligne de commande Xcode",
+  "Herramientas de línea de comandos de Xcode",
+  "Xcode-Befehlszeilentools",
+  "Xcode 命令行工具"
+ ],
+ "Xcode downloads it again when you open the docs.": [
+  "O Xcode a baixa de novo quando você abre a documentação.",
+  "Xcode la retélécharge quand vous ouvrez la documentation.",
+  "Xcode la vuelve a descargar cuando abres la documentación.",
+  "Xcode lädt sie erneut, wenn du die Dokumentation öffnest.",
+  "打开文档时 Xcode 会重新下载。"
+ ],
+ "You won't be able to revert any document to an earlier version. Save and close your documents first.": [
+  "Você não poderá reverter nenhum documento para uma versão anterior. Salve e feche seus documentos primeiro.",
+  "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.",
+  "No podrás volver a una versión anterior de ningún documento. Guarda y cierra tus documentos primero.",
+  "Du kannst kein Dokument mehr auf eine frühere Version zurücksetzen. Sichere und schließe zuerst deine Dokumente.",
+  "将无法将任何文稿恢复为旧版本，请先保存并关闭文稿。"
+ ],
+ "and %lld more": [
+  "e mais %lld",
+  "et %lld autres",
+  "y %lld más",
+  "und %lld weitere",
+  "以及另外 %lld 项"
+ ],
+ "free %@": [
+  "liberar %@",
+  "libérer %@",
+  "liberar %@",
+  "%@ freigeben",
+  "释放 %@"
+ ],
+ "macOS downloads them again if they're needed.": [
+  "O macOS os baixa de novo se forem necessários.",
+  "macOS les retélécharge si besoin.",
+  "macOS los vuelve a descargar si hacen falta.",
+  "macOS lädt sie bei Bedarf erneut.",
+  "需要时 macOS 会重新下载。"
+ ],
+ "macOS restore image: %@": [
+  "Imagem de restauração do macOS: %@",
+  "Image de restauration de macOS : %@",
+  "Imagen de restauración de macOS: %@",
+  "macOS-Wiederherstellungsimage: %@",
+  "macOS 恢复映像：%@"
+ ],
+ "macOS's model catalog, for the Photos spatial effect.": [
+  "O catálogo de modelos do macOS, para o efeito espacial do Fotos.",
+  "Le catalogue de modèles de macOS, pour l’effet spatial de Photos.",
+  "El catálogo de modelos de macOS, para el efecto espacial de Fotos.",
+  "Der Modellkatalog von macOS, für den räumlichen Effekt in Fotos.",
+  "macOS 模型目录，用于照片的空间效果。"
+ ],
+ "nothing to free": [
+  "nada a liberar",
+  "rien à libérer",
+  "nada que liberar",
+  "nichts freizugeben",
+  "没有可释放的内容"
+ ],
+ "system data": [
+  "dados do sistema",
+  "données système",
+  "datos del sistema",
+  "Systemdaten",
+  "系统数据"
+ ],
+ "system data %@": [
+  "dados do sistema %@",
+  "données système %@",
+  "datos del sistema %@",
+  "Systemdaten %@",
+  "系统数据 %@"
+ ],
+ "the downloading app": [
+  "o app que está baixando",
+  "l’app de téléchargement",
+  "la app que lo descarga",
+  "die ladende App",
+  "下载该内容的应用"
+ ],
+ "See what fills System Data and free what is safe to remove.": [
+  "Veja o que ocupa Dados do Sistema e libere o que pode ser removido com segurança.",
+  "Voyez ce qui remplit Données système et libérez ce qui peut être supprimé sans risque.",
+  "Mira qué ocupa Datos del sistema y libera lo que se puede eliminar sin riesgo.",
+  "Sieh, was „Systemdaten“ füllt, und gib frei, was gefahrlos entfernt werden kann.",
+  "查看系统数据的内容并释放可安全移除的部分。"
+ ],
+ "Kept while Apple Intelligence is on": [
+  "Mantido enquanto a Apple Intelligence estiver ativa",
+  "Conservé tant qu’Apple Intelligence est activé",
+  "Se conserva mientras Apple Intelligence esté activado",
+  "Bleibt, solange Apple Intelligence aktiv ist",
+  "Apple 智能开启时保留"
+ ],
+ "Protected by macOS": [
+  "Protegido pelo macOS",
+  "Protégé par macOS",
+  "Protegido por macOS",
+  "Von macOS geschützt",
+  "受 macOS 保护"
+ ],
+ "Models and system assets": [
+  "Modelos e recursos do sistema",
+  "Modèles et ressources système",
+  "Modelos y recursos del sistema",
+  "Modelle und Systemressourcen",
+  "模型与系统资源"
+ ],
+ "Other protected folders": [
+  "Outras pastas protegidas",
+  "Autres dossiers protégés",
+  "Otras carpetas protegidas",
+  "Weitere geschützte Ordner",
+  "其他受保护文件夹"
+ ],
+ "File system metadata": [
+  "Metadados do sistema de arquivos",
+  "Métadonnées du système de fichiers",
+  "Metadatos del sistema de archivos",
+  "Metadaten des Dateisystems",
+  "文件系统元数据"
+ ],
+ "Logs for all users": [
+  "Registros para todos os usuários",
+  "Journaux pour tous les utilisateurs",
+  "Registros para todos los usuarios",
+  "Protokolle für alle Benutzer",
+  "所有用户的日志"
+ ],
+ "Frees about %@. Homebrew downloads them again when it needs them.": [
+  "Libera cerca de %@. O Homebrew os baixa de novo quando precisar.",
+  "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.",
+  "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.",
+  "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht.",
+  "释放约 %@，Homebrew 需要时会重新下载。"
+ ],
+ "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.": [
+  "O Finder pode apagar os itens que estão nele há 30 dias: Finder > Ajustes > Avançado.",
+  "Le Finder peut supprimer les éléments qui s’y trouvent depuis 30 jours : Finder > Réglages > Avancés.",
+  "El Finder puede eliminar los ítems que llevan 30 días en ella: Finder > Ajustes > Avanzado.",
+  "Der Finder kann Objekte löschen, die seit 30 Tagen darin liegen: Finder > Einstellungen > Erweitert.",
+  "访达可以删除在废纸篓中超过 30 天的项目：访达 > 设置 > 高级。"
+ ],
+ "Unchanged for %lld days": [
+  "Sem mudanças há %lld dias",
+  "Inchangé depuis %lld jours",
+  "Sin cambios desde hace %lld días",
+  "Seit %lld Tagen unverändert",
+  "%lld 天未更改"
+ ],
+ "Not opened for %lld days": [
+  "Não aberto há %lld dias",
+  "Non ouvert depuis %lld jours",
+  "Sin abrir desde hace %lld días",
+  "Seit %lld Tagen nicht geöffnet",
+  "%lld 天未打开"
+ ],
+ "App not installed": [
+  "App não instalado",
+  "App non installée",
+  "App no instalada",
+  "App nicht installiert",
+  "未安装应用"
+ ],
+ "Homebrew is not installed": [
+  "O Homebrew não está instalado",
+  "Homebrew n’est pas installé",
+  "Homebrew no está instalado",
+  "Homebrew ist nicht installiert",
+  "未安装 Homebrew"
+ ],
+ "%lld more, including Apple Intelligence models, are under Protected by macOS.": [
+  "Mais %lld, incluindo modelos da Apple Intelligence, estão em Protegido pelo macOS.",
+  "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.",
+  "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.",
+  "%lld weitere, darunter Modelle von Apple Intelligence, stehen unter „Von macOS geschützt“.",
+  "另外 %lld 项（包括 Apple 智能模型）位于“受 macOS 保护”中。"
+ ],
+ "All users": [
+  "Todos os usuários",
+  "Tous les utilisateurs",
+  "Todos los usuarios",
+  "Alle Benutzer",
+  "所有用户"
+ ],
+ "Apps and macOS rebuild these by themselves.": [
+  "Os apps e o macOS recriam estes sozinhos.",
+  "Les apps et macOS les recréent d’eux-mêmes.",
+  "Las apps y macOS los vuelven a crear solos.",
+  "Apps und macOS legen sie selbst neu an.",
+  "应用和 macOS 会自行重建。"
+ ],
+ "Cloud storage": [
+  "Armazenamento na nuvem",
+  "Stockage cloud",
+  "Almacenamiento en la nube",
+  "Cloud-Speicher",
+  "云存储"
+ ],
+ "Empties after 30 days": [
+  "Esvazia após 30 dias",
+  "Se vide après 30 jours",
+  "Se vacía a los 30 días",
+  "Leert sich nach 30 Tagen",
+  "30 天后清空"
+ ],
+ "Free all version history?": [
+  "Liberar todo o histórico de versões?",
+  "Libérer tout l’historique des versions ?",
+  "¿Liberar todo el historial de versiones?",
+  "Den gesamten Versionsverlauf freigeben?",
+  "释放全部版本历史？"
+ ],
+ "Free old reports?": [
+  "Liberar os relatórios antigos?",
+  "Libérer les anciens rapports ?",
+  "¿Liberar los informes antiguos?",
+  "Alte Berichte freigeben?",
+  "释放旧报告？"
+ ],
  "Free stuck wallpaper downloads?": [
   "Liberar os downloads de wallpapers travados?",
   "Libérer les téléchargements de fonds d’écran bloqués ?",
   "¿Liberar las descargas de fondos de pantalla atascadas?",
-  "Hängengebliebene Hintergrundbild-Downloads freigeben?"
+  "Hängengebliebene Hintergrundbild-Downloads freigeben?",
+  "释放卡住的墙纸下载？"
  ],
- "Free the leftover update files?": ["Liberar os arquivos restantes da atualização?", "Libérer les fichiers restants de la mise à jour ?", "¿Liberar los archivos restantes de la actualización?", "Die übrigen Update-Dateien freigeben?"],
- "Other caches": ["Outros caches", "Autres caches", "Otras cachés", "Andere Caches"],
- "Tool cache": ["Cache de ferramenta", "Cache d’outil", "Caché de herramienta", "Tool-Cache"],
- "Virtual machine": ["Máquina virtual", "Machine virtuelle", "Máquina virtual", "Virtuelle Maschine"],
- "Your Library": ["Sua Biblioteca", "Votre bibliothèque", "Tu Biblioteca", "Deine Library"],
- "Your home folder": ["Sua pasta pessoal", "Votre dossier personnel", "Tu carpeta de inicio", "Dein Benutzerordner"],
- "Swift packages": ["Pacotes Swift", "Paquets Swift", "Paquetes de Swift", "Swift-Pakete"],
- "Rust packages": ["Pacotes Rust", "Paquets Rust", "Paquetes de Rust", "Rust-Pakete"],
- "Go builds": ["Compilações do Go", "Compilations Go", "Compilaciones de Go", "Go-Builds"],
- "Simulator caches": ["Caches do Simulador", "Caches du Simulateur", "Cachés del Simulador", "Simulator-Caches"],
- "Xcode module cache": ["Cache de módulos do Xcode", "Cache des modules Xcode", "Caché de módulos de Xcode", "Xcode-Modulcache"],
- "Xcode builds: %@": ["Compilações do Xcode: %@", "Compilations Xcode : %@", "Compilaciones de Xcode: %@", "Xcode-Builds: %@"],
- "%@ %@ device files": ["Arquivos de dispositivo %@ %@", "Fichiers d’appareil %@ %@", "Archivos de dispositivo %@ %@", "Gerätedateien %@ %@"],
- "Go modules": ["Módulos do Go", "Modules Go", "Módulos de Go", "Go-Module"],
- "Project deleted": ["Projeto apagado", "Projet supprimé", "Proyecto eliminado", "Projekt gelöscht"],
- "Older version": ["Versão antiga", "Ancienne version", "Versión antigua", "Ältere Version"],
- "Simulators that can't run": ["Simuladores que não abrem mais", "Simulateurs qui ne peuvent plus démarrer", "Simuladores que ya no se pueden abrir", "Simulatoren, die nicht mehr starten"],
- "Can't run": ["Não abre mais", "Ne démarre plus", "Ya no se abre", "Startet nicht mehr"],
- "App cache": ["Cache de app", "Cache d’app", "Caché de app", "App-Cache"],
- "Web cache": ["Cache da web", "Cache web", "Caché web", "Web-Cache"],
- "System cache": ["Cache do sistema", "Cache système", "Caché del sistema", "System-Cache"],
- "Developer": ["Desenvolvedor", "Développeur", "Desarrollador", "Entwickler"],
- "Old Homebrew versions": ["Versões antigas do Homebrew", "Anciennes versions de Homebrew", "Versiones antiguas de Homebrew", "Alte Homebrew-Versionen"],
- "Homebrew downloads": ["Downloads do Homebrew", "Téléchargements de Homebrew", "Descargas de Homebrew", "Homebrew-Downloads"],
- "Downloads again when needed": ["Baixa de novo quando precisar", "Retéléchargé si besoin", "Se vuelve a descargar si hace falta", "Wird bei Bedarf neu geladen"],
- "Open now": ["Aberto agora", "Ouvert", "Abierto ahora", "Gerade geöffnet"],
- "In use": ["Em uso", "En cours d’utilisation", "En uso", "In Verwendung"],
- "Caches you can free": ["Caches que podem ser liberados", "Caches que vous pouvez libérer", "Cachés que puedes liberar", "Caches, die du freigeben kannst"],
- "Free selected": ["Liberar selecionados", "Libérer la sélection", "Liberar seleccionados", "Auswahl freigeben"],
- "Free the selected caches?": ["Liberar os caches selecionados?", "Libérer les caches sélectionnés ?", "¿Liberar las cachés seleccionadas?", "Die ausgewählten Caches freigeben?"],
- "Free recommended": ["Liberar recomendados", "Libérer la recommandation", "Liberar recomendados", "Empfohlene freigeben"],
- "Recommended": ["Recomendados", "Recommandés", "Recomendados", "Empfohlen"],
- "Come back with use": ["Voltam com o uso", "Reviennent à l’usage", "Vuelven con el uso", "Kommen bei Nutzung zurück"],
- "Homebrew is busy. Try again when it's done.": ["O Homebrew está ocupado. Tente de novo quando terminar.", "Homebrew est occupé. Réessayez quand il aura fini.", "Homebrew está ocupado. Vuelve a intentarlo cuando termine.", "Homebrew ist beschäftigt. Versuche es erneut, wenn es fertig ist."],
- "Homebrew's cleanup failed": ["A limpeza do Homebrew falhou", "Le nettoyage de Homebrew a échoué", "La limpieza de Homebrew falló", "Die Bereinigung von Homebrew ist fehlgeschlagen"],
- "Nothing was freed: MacSpace couldn't check which apps are open.": ["Nada foi liberado: o MacSpace não conseguiu verificar quais apps estão abertos.", "Rien n’a été libéré : MacSpace n’a pas pu vérifier quelles apps sont ouvertes.", "No se liberó nada: MacSpace no pudo comprobar qué apps están abiertas.", "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Apps geöffnet sind."],
- "Nothing was freed: MacSpace couldn't check which files are in use.": ["Nada foi liberado: o MacSpace não conseguiu verificar quais arquivos estão em uso.", "Rien n’a été libéré : MacSpace n’a pas pu vérifier quels fichiers sont utilisés.", "No se liberó nada: MacSpace no pudo comprobar qué archivos están en uso.", "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Dateien verwendet werden."],
- "System assets": ["Recursos do sistema", "Ressources système", "Recursos del sistema", "Systemressourcen"],
- "Symbolication cache": ["Cache de simbolização", "Cache de symbolisation", "Caché de simbolización", "Symbolisierungs-Cache"],
- "Temporary files of macOS and other users": ["Arquivos temporários do macOS e de outros usuários", "Fichiers temporaires de macOS et des autres utilisateurs", "Archivos temporales de macOS y de otros usuarios", "Temporäre Dateien von macOS und anderen Benutzern"],
- "Temporary files of macOS and of other users on this Mac.": ["Arquivos temporários do macOS e de outros usuários deste Mac.", "Fichiers temporaires de macOS et des autres utilisateurs de ce Mac.", "Archivos temporales de macOS y de otros usuarios de este Mac.", "Temporäre Dateien von macOS und anderen Benutzern dieses Macs."],
- "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.": ["Fundos e protetores de tela que o macOS está baixando. Um tamanho grande indica downloads travados.", "Fonds d’écran et économiseurs d’écran que macOS télécharge. Une grande taille indique des téléchargements bloqués.", "Fondos y salvapantallas que macOS está descargando. Un tamaño grande indica descargas atascadas.", "Hintergrundbilder und Bildschirmschoner, die macOS lädt. Eine große Größe bedeutet hängengebliebene Downloads."],
- "An app is using these files. Try again later.": ["Um app está usando estes arquivos. Tente de novo mais tarde.", "Une app utilise ces fichiers. Réessayez plus tard.", "Una app está usando estos archivos. Inténtalo más tarde.", "Eine App verwendet diese Dateien. Versuche es später erneut."],
- "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.": ["Uma cópia do app que o macOS fez ao verificá-lo. Ela divide espaço com o app, então só é liberado o que uma versão anterior deixou.", "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.", "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.", "Eine Kopie der App, die macOS beim Prüfen angelegt hat. Sie teilt sich den Speicher mit der App, daher wird nur frei, was eine ältere Version hinterlassen hat."],
- "Everything in the Trash is deleted for good.": ["Tudo o que está no Lixo é apagado de vez.", "Tout ce qui est dans la Corbeille est supprimé définitivement.", "Todo lo que hay en la Papelera se borra para siempre.", "Alles im Papierkorb wird endgültig gelöscht."],
- "Free %@ in the Trash?": ["Liberar %@ do Lixo?", "Libérer %@ dans la Corbeille ?", "¿Liberar %@ de la Papelera?", "%@ im Papierkorb freigeben?"],
- "Free the system log?": ["Liberar o registro do sistema?", "Libérer le journal système ?", "¿Liberar el registro del sistema?", "Systemprotokoll freigeben?"],
- "Log files": ["Arquivos de log", "Fichiers journaux", "Archivos de registro", "Protokolldateien"],
- "Old app copy": ["Cópia antiga de app", "Ancienne copie d’app", "Copia antigua de app", "Alte App-Kopie"],
- "System log": ["Registro do sistema", "Journal système", "Registro del sistema", "Systemprotokoll"],
- "Erase Console records used for troubleshooting.": ["Apaga os registros do Console usados para resolução de problemas.", "Efface les enregistrements de Console utilisés pour le dépannage.", "Borra los registros de Consola que se usan para solucionar problemas.", "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen."],
- "Symbols for crash reports": ["Símbolos para relatórios de falhas", "Symboles des rapports de plantage", "Símbolos para informes de fallos", "Symbole für Absturzberichte"],
- "What macOS keeps to read crash reports. It's rebuilt when needed.": ["O que o macOS guarda para ler relatórios de falhas. É recriado quando necessário.", "Ce que macOS garde pour lire les rapports de plantage. Il est reconstruit au besoin.", "Lo que macOS guarda para leer informes de fallos. Se vuelve a crear cuando hace falta.", "Was macOS zum Lesen von Absturzberichten aufbewahrt. Es wird bei Bedarf neu aufgebaut."],
- "Free the symbols for crash reports?": ["Liberar os símbolos para relatórios de falhas?", "Libérer les symboles des rapports de plantage ?", "¿Liberar los símbolos para informes de fallos?", "Symbole für Absturzberichte freigeben?"],
- "macOS builds them again the next time it reads a crash report.": ["O macOS os cria de novo na próxima vez que ler um relatório de falha.", "macOS les reconstruit la prochaine fois qu’il lit un rapport de plantage.", "macOS los vuelve a crear la próxima vez que lea un informe de fallos.", "macOS baut sie wieder auf, wenn es das nächste Mal einen Absturzbericht liest."],
- "Free caches": ["Liberar caches", "Libérer les caches", "Liberar cachés", "Caches freigeben"],
- "Cache cleaner": ["Limpador de caches", "Nettoyeur de caches", "Limpiador de cachés", "Cache-Reiniger"],
- "Open %@": ["Abrir %@", "Ouvrir %@", "Abrir %@", "%@ öffnen"],
- "Old reports and unused system assets": ["Relatórios antigos e recursos do sistema sem uso", "Anciens rapports et ressources système inutilisées", "Informes antiguos y recursos del sistema sin usar", "Alte Berichte und ungenutzte Systemressourcen"],
+ "Free the leftover update files?": [
+  "Liberar os arquivos restantes da atualização?",
+  "Libérer les fichiers restants de la mise à jour ?",
+  "¿Liberar los archivos restantes de la actualización?",
+  "Die übrigen Update-Dateien freigeben?",
+  "释放更新残留文件？"
+ ],
+ "Other caches": [
+  "Outros caches",
+  "Autres caches",
+  "Otras cachés",
+  "Andere Caches",
+  "其他缓存"
+ ],
+ "Tool cache": [
+  "Cache de ferramenta",
+  "Cache d’outil",
+  "Caché de herramienta",
+  "Tool-Cache",
+  "工具缓存"
+ ],
+ "Virtual machine": [
+  "Máquina virtual",
+  "Machine virtuelle",
+  "Máquina virtual",
+  "Virtuelle Maschine",
+  "虚拟机"
+ ],
+ "Your Library": [
+  "Sua Biblioteca",
+  "Votre bibliothèque",
+  "Tu Biblioteca",
+  "Deine Library",
+  "你的资源库"
+ ],
+ "Your home folder": [
+  "Sua pasta pessoal",
+  "Votre dossier personnel",
+  "Tu carpeta de inicio",
+  "Dein Benutzerordner",
+  "你的个人文件夹"
+ ],
+ "Swift packages": [
+  "Pacotes Swift",
+  "Paquets Swift",
+  "Paquetes de Swift",
+  "Swift-Pakete",
+  "Swift 软件包"
+ ],
+ "Rust packages": [
+  "Pacotes Rust",
+  "Paquets Rust",
+  "Paquetes de Rust",
+  "Rust-Pakete",
+  "Rust 软件包"
+ ],
+ "Go builds": [
+  "Compilações do Go",
+  "Compilations Go",
+  "Compilaciones de Go",
+  "Go-Builds",
+  "Go 构建"
+ ],
+ "Simulator caches": [
+  "Caches do Simulador",
+  "Caches du Simulateur",
+  "Cachés del Simulador",
+  "Simulator-Caches",
+  "模拟器缓存"
+ ],
+ "Xcode module cache": [
+  "Cache de módulos do Xcode",
+  "Cache des modules Xcode",
+  "Caché de módulos de Xcode",
+  "Xcode-Modulcache",
+  "Xcode 模块缓存"
+ ],
+ "Xcode builds: %@": [
+  "Compilações do Xcode: %@",
+  "Compilations Xcode : %@",
+  "Compilaciones de Xcode: %@",
+  "Xcode-Builds: %@",
+  "Xcode 构建：%@"
+ ],
+ "%@ %@ device files": [
+  "Arquivos de dispositivo %@ %@",
+  "Fichiers d’appareil %@ %@",
+  "Archivos de dispositivo %@ %@",
+  "Gerätedateien %@ %@",
+  "%@ %@ 设备文件"
+ ],
+ "Go modules": [
+  "Módulos do Go",
+  "Modules Go",
+  "Módulos de Go",
+  "Go-Module",
+  "Go 模块"
+ ],
+ "Project deleted": [
+  "Projeto apagado",
+  "Projet supprimé",
+  "Proyecto eliminado",
+  "Projekt gelöscht",
+  "项目已删除"
+ ],
+ "Older version": [
+  "Versão antiga",
+  "Ancienne version",
+  "Versión antigua",
+  "Ältere Version",
+  "旧版本"
+ ],
+ "Simulators that can't run": [
+  "Simuladores que não abrem mais",
+  "Simulateurs qui ne peuvent plus démarrer",
+  "Simuladores que ya no se pueden abrir",
+  "Simulatoren, die nicht mehr starten",
+  "无法运行的模拟器"
+ ],
+ "Can't run": [
+  "Não abre mais",
+  "Ne démarre plus",
+  "Ya no se abre",
+  "Startet nicht mehr",
+  "无法运行"
+ ],
+ "App cache": [
+  "Cache de app",
+  "Cache d’app",
+  "Caché de app",
+  "App-Cache",
+  "应用缓存"
+ ],
+ "Web cache": [
+  "Cache da web",
+  "Cache web",
+  "Caché web",
+  "Web-Cache",
+  "网页缓存"
+ ],
+ "System cache": [
+  "Cache do sistema",
+  "Cache système",
+  "Caché del sistema",
+  "System-Cache",
+  "系统缓存"
+ ],
+ "Developer": [
+  "Desenvolvedor",
+  "Développeur",
+  "Desarrollador",
+  "Entwickler",
+  "开发者"
+ ],
+ "Old Homebrew versions": [
+  "Versões antigas do Homebrew",
+  "Anciennes versions de Homebrew",
+  "Versiones antiguas de Homebrew",
+  "Alte Homebrew-Versionen",
+  "旧 Homebrew 版本"
+ ],
+ "Homebrew downloads": [
+  "Downloads do Homebrew",
+  "Téléchargements de Homebrew",
+  "Descargas de Homebrew",
+  "Homebrew-Downloads",
+  "Homebrew 下载"
+ ],
+ "Downloads again when needed": [
+  "Baixa de novo quando precisar",
+  "Retéléchargé si besoin",
+  "Se vuelve a descargar si hace falta",
+  "Wird bei Bedarf neu geladen",
+  "需要时重新下载"
+ ],
+ "Open now": [
+  "Aberto agora",
+  "Ouvert",
+  "Abierto ahora",
+  "Gerade geöffnet",
+  "正在运行"
+ ],
+ "In use": [
+  "Em uso",
+  "En cours d’utilisation",
+  "En uso",
+  "In Verwendung",
+  "使用中"
+ ],
+ "Caches you can free": [
+  "Caches que podem ser liberados",
+  "Caches que vous pouvez libérer",
+  "Cachés que puedes liberar",
+  "Caches, die du freigeben kannst",
+  "可释放的缓存"
+ ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar seleccionados",
+  "Auswahl freigeben",
+  "释放所选内容"
+ ],
+ "Free the selected caches?": [
+  "Liberar os caches selecionados?",
+  "Libérer les caches sélectionnés ?",
+  "¿Liberar las cachés seleccionadas?",
+  "Die ausgewählten Caches freigeben?",
+  "释放所选缓存？"
+ ],
+ "Free recommended": [
+  "Liberar recomendados",
+  "Libérer la recommandation",
+  "Liberar recomendados",
+  "Empfohlene freigeben",
+  "释放推荐内容"
+ ],
+ "Recommended": [
+  "Recomendados",
+  "Recommandés",
+  "Recomendados",
+  "Empfohlen",
+  "推荐"
+ ],
+ "Come back with use": [
+  "Voltam com o uso",
+  "Reviennent à l’usage",
+  "Vuelven con el uso",
+  "Kommen bei Nutzung zurück",
+  "使用后会再次产生"
+ ],
+ "Homebrew is busy. Try again when it's done.": [
+  "O Homebrew está ocupado. Tente de novo quando terminar.",
+  "Homebrew est occupé. Réessayez quand il aura fini.",
+  "Homebrew está ocupado. Vuelve a intentarlo cuando termine.",
+  "Homebrew ist beschäftigt. Versuche es erneut, wenn es fertig ist.",
+  "Homebrew 正忙，请完成后重试。"
+ ],
+ "Homebrew's cleanup failed": [
+  "A limpeza do Homebrew falhou",
+  "Le nettoyage de Homebrew a échoué",
+  "La limpieza de Homebrew falló",
+  "Die Bereinigung von Homebrew ist fehlgeschlagen",
+  "Homebrew 清理失败"
+ ],
+ "Nothing was freed: MacSpace couldn't check which apps are open.": [
+  "Nada foi liberado: o MacSpace não conseguiu verificar quais apps estão abertos.",
+  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quelles apps sont ouvertes.",
+  "No se liberó nada: MacSpace no pudo comprobar qué apps están abiertas.",
+  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Apps geöffnet sind.",
+  "未释放任何内容：MacSpace 无法检查哪些应用正在运行。"
+ ],
+ "Nothing was freed: MacSpace couldn't check which files are in use.": [
+  "Nada foi liberado: o MacSpace não conseguiu verificar quais arquivos estão em uso.",
+  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quels fichiers sont utilisés.",
+  "No se liberó nada: MacSpace no pudo comprobar qué archivos están en uso.",
+  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Dateien verwendet werden.",
+  "未释放任何内容：MacSpace 无法检查哪些文件正在使用。"
+ ],
+ "System assets": [
+  "Recursos do sistema",
+  "Ressources système",
+  "Recursos del sistema",
+  "Systemressourcen",
+  "系统资源"
+ ],
+ "Symbolication cache": [
+  "Cache de simbolização",
+  "Cache de symbolisation",
+  "Caché de simbolización",
+  "Symbolisierungs-Cache",
+  "符号化缓存"
+ ],
+ "Temporary files of macOS and other users": [
+  "Arquivos temporários do macOS e de outros usuários",
+  "Fichiers temporaires de macOS et des autres utilisateurs",
+  "Archivos temporales de macOS y de otros usuarios",
+  "Temporäre Dateien von macOS und anderen Benutzern",
+  "macOS 和其他用户的临时文件"
+ ],
+ "Temporary files of macOS and of other users on this Mac.": [
+  "Arquivos temporários do macOS e de outros usuários deste Mac.",
+  "Fichiers temporaires de macOS et des autres utilisateurs de ce Mac.",
+  "Archivos temporales de macOS y de otros usuarios de este Mac.",
+  "Temporäre Dateien von macOS und anderen Benutzern dieses Macs.",
+  "此 Mac 上 macOS 和其他用户的临时文件。"
+ ],
+ "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.": [
+  "Fundos e protetores de tela que o macOS está baixando. Um tamanho grande indica downloads travados.",
+  "Fonds d’écran et économiseurs d’écran que macOS télécharge. Une grande taille indique des téléchargements bloqués.",
+  "Fondos y salvapantallas que macOS está descargando. Un tamaño grande indica descargas atascadas.",
+  "Hintergrundbilder und Bildschirmschoner, die macOS lädt. Eine große Größe bedeutet hängengebliebene Downloads.",
+  "macOS 正在下载的墙纸和屏幕保护程序。占用过大说明下载卡住。"
+ ],
+ "An app is using these files. Try again later.": [
+  "Um app está usando estes arquivos. Tente de novo mais tarde.",
+  "Une app utilise ces fichiers. Réessayez plus tard.",
+  "Una app está usando estos archivos. Inténtalo más tarde.",
+  "Eine App verwendet diese Dateien. Versuche es später erneut.",
+  "有应用正在使用这些文件，请稍后重试。"
+ ],
+ "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.": [
+  "Uma cópia do app que o macOS fez ao verificá-lo. Ela divide espaço com o app, então só é liberado o que uma versão anterior deixou.",
+  "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.",
+  "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.",
+  "Eine Kopie der App, die macOS beim Prüfen angelegt hat. Sie teilt sich den Speicher mit der App, daher wird nur frei, was eine ältere Version hinterlassen hat.",
+  "macOS 检查应用时创建的副本。它与应用共享空间，因此只释放旧版本留下的部分。"
+ ],
+ "Everything in the Trash is deleted for good.": [
+  "Tudo o que está no Lixo é apagado de vez.",
+  "Tout ce qui est dans la Corbeille est supprimé définitivement.",
+  "Todo lo que hay en la Papelera se borra para siempre.",
+  "Alles im Papierkorb wird endgültig gelöscht.",
+  "废纸篓中的所有内容将永久删除。"
+ ],
+ "Free %@ in the Trash?": [
+  "Liberar %@ do Lixo?",
+  "Libérer %@ dans la Corbeille ?",
+  "¿Liberar %@ de la Papelera?",
+  "%@ im Papierkorb freigeben?",
+  "释放废纸篓中的 %@？"
+ ],
+ "Free the system log?": [
+  "Liberar o registro do sistema?",
+  "Libérer le journal système ?",
+  "¿Liberar el registro del sistema?",
+  "Systemprotokoll freigeben?",
+  "释放系统日志？"
+ ],
+ "Log files": [
+  "Arquivos de log",
+  "Fichiers journaux",
+  "Archivos de registro",
+  "Protokolldateien",
+  "日志文件"
+ ],
+ "Old app copy": [
+  "Cópia antiga de app",
+  "Ancienne copie d’app",
+  "Copia antigua de app",
+  "Alte App-Kopie",
+  "旧应用副本"
+ ],
+ "System log": [
+  "Registro do sistema",
+  "Journal système",
+  "Registro del sistema",
+  "Systemprotokoll",
+  "系统日志"
+ ],
+ "Erase Console records used for troubleshooting.": [
+  "Apaga os registros do Console usados para resolução de problemas.",
+  "Efface les enregistrements de Console utilisés pour le dépannage.",
+  "Borra los registros de Consola que se usan para solucionar problemas.",
+  "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen.",
+  "抹掉用于故障排查的控制台记录。"
+ ],
+ "Symbols for crash reports": [
+  "Símbolos para relatórios de falhas",
+  "Symboles des rapports de plantage",
+  "Símbolos para informes de fallos",
+  "Symbole für Absturzberichte",
+  "崩溃报告符号"
+ ],
+ "What macOS keeps to read crash reports. It's rebuilt when needed.": [
+  "O que o macOS guarda para ler relatórios de falhas. É recriado quando necessário.",
+  "Ce que macOS garde pour lire les rapports de plantage. Il est reconstruit au besoin.",
+  "Lo que macOS guarda para leer informes de fallos. Se vuelve a crear cuando hace falta.",
+  "Was macOS zum Lesen von Absturzberichten aufbewahrt. Es wird bei Bedarf neu aufgebaut.",
+  "macOS 为读取崩溃报告保留的内容，需要时会重建。"
+ ],
+ "Free the symbols for crash reports?": [
+  "Liberar os símbolos para relatórios de falhas?",
+  "Libérer les symboles des rapports de plantage ?",
+  "¿Liberar los símbolos para informes de fallos?",
+  "Symbole für Absturzberichte freigeben?",
+  "释放崩溃报告符号？"
+ ],
+ "macOS builds them again the next time it reads a crash report.": [
+  "O macOS os cria de novo na próxima vez que ler um relatório de falha.",
+  "macOS les reconstruit la prochaine fois qu’il lit un rapport de plantage.",
+  "macOS los vuelve a crear la próxima vez que lea un informe de fallos.",
+  "macOS baut sie wieder auf, wenn es das nächste Mal einen Absturzbericht liest.",
+  "macOS 下次读取崩溃报告时会重建。"
+ ],
+ "Free caches": [
+  "Liberar caches",
+  "Libérer les caches",
+  "Liberar cachés",
+  "Caches freigeben",
+  "释放缓存"
+ ],
+ "Cache cleaner": [
+  "Limpador de caches",
+  "Nettoyeur de caches",
+  "Limpiador de cachés",
+  "Cache-Reiniger",
+  "缓存清理工具"
+ ],
+ "Open %@": [
+  "Abrir %@",
+  "Ouvrir %@",
+  "Abrir %@",
+  "%@ öffnen",
+  "打开 %@"
+ ],
+ "Old reports and unused system assets": [
+  "Relatórios antigos e recursos do sistema sem uso",
+  "Anciens rapports et ressources système inutilisées",
+  "Informes antiguos y recursos del sistema sin usar",
+  "Alte Berichte und ungenutzte Systemressourcen",
+  "旧报告和未使用的系统资源"
+ ],
  "macOS keeps these locked, even from MacSpace.": [
   "O macOS mantém isto inacessível, até para o MacSpace.",
   "macOS garde ces éléments verrouillés, même pour MacSpace.",
   "macOS los mantiene bloqueados, incluso para MacSpace.",
-  "macOS hält diese gesperrt, auch für MacSpace."
+  "macOS hält diese gesperrt, auch für MacSpace.",
+  "macOS 锁定这些内容，MacSpace 也无法访问。"
  ],
- "What the disk records about each file.": ["O que o disco registra sobre cada arquivo.", "Ce que le disque enregistre sur chaque fichier.", "Lo que el disco registra de cada archivo.", "Was der Datenträger über jede Datei speichert."],
- "Console's history is deleted.": ["O histórico do Console é apagado.", "L’historique de Console est supprimé.", "Se borra el historial de Consola.", "Der Verlauf in der Konsole wird gelöscht."],
- "Xcode cache": ["Cache do Xcode", "Cache de Xcode", "Caché de Xcode", "Xcode-Cache"],
- "Xcode documentation cache": ["Cache da documentação do Xcode", "Cache de la documentation Xcode", "Caché de la documentación de Xcode", "Xcode-Dokumentationscache"],
- "Xcode test devices": ["Dispositivos de teste do Xcode", "Appareils de test Xcode", "Dispositivos de prueba de Xcode", "Xcode-Testgeräte"],
- "Dart packages": ["Pacotes do Dart", "Paquets Dart", "Paquetes de Dart", "Dart-Pakete"],
- "Android build cache": ["Cache de compilação do Android", "Cache de compilation Android", "Caché de compilación de Android", "Android-Build-Cache"],
- "Quits %@.": ["Encerra %@.", "Quitte %@.", "Cierra %@.", "Beendet %@."]
+ "What the disk records about each file.": [
+  "O que o disco registra sobre cada arquivo.",
+  "Ce que le disque enregistre sur chaque fichier.",
+  "Lo que el disco registra de cada archivo.",
+  "Was der Datenträger über jede Datei speichert.",
+  "磁盘记录的每个文件的信息。"
+ ],
+ "Console's history is deleted.": [
+  "O histórico do Console é apagado.",
+  "L’historique de Console est supprimé.",
+  "Se borra el historial de Consola.",
+  "Der Verlauf in der Konsole wird gelöscht.",
+  "控制台历史将被删除。"
+ ],
+ "Xcode cache": [
+  "Cache do Xcode",
+  "Cache de Xcode",
+  "Caché de Xcode",
+  "Xcode-Cache",
+  "Xcode 缓存"
+ ],
+ "Xcode documentation cache": [
+  "Cache da documentação do Xcode",
+  "Cache de la documentation Xcode",
+  "Caché de la documentación de Xcode",
+  "Xcode-Dokumentationscache",
+  "Xcode 文档缓存"
+ ],
+ "Xcode test devices": [
+  "Dispositivos de teste do Xcode",
+  "Appareils de test Xcode",
+  "Dispositivos de prueba de Xcode",
+  "Xcode-Testgeräte",
+  "Xcode 测试设备"
+ ],
+ "Dart packages": [
+  "Pacotes do Dart",
+  "Paquets Dart",
+  "Paquetes de Dart",
+  "Dart-Pakete",
+  "Dart 软件包"
+ ],
+ "Android build cache": [
+  "Cache de compilação do Android",
+  "Cache de compilation Android",
+  "Caché de compilación de Android",
+  "Android-Build-Cache",
+  "Android 构建缓存"
+ ],
+ "Quits %@.": [
+  "Encerra %@.",
+  "Quitte %@.",
+  "Cierra %@.",
+  "Beendet %@.",
+  "将退出 %@。"
+ ]
 }

@@ -141,8 +141,8 @@ Module contract version 3 adds the uninstall hook. Modules implement `prepareFor
     button. No welcome screen: it starts with what MacSpace needs. Steps already granted are left out (all granted: no onboarding);
     the symbol answers when a permission arrives. The step is kept across the relaunch System Settings asks for after Full Disk
     Access. Installs that ran before onboarding existed skip it; `open -a MacSpace --args --onboarding` shows it again.
-14. **Languages.** English, Portuguese (Brazil), French, Spanish and German. The translations live in `Localization/<Table>.json`
-    (`App`, and one per module), each English text, exactly as the code has it, mapped to its four translations;
+14. **Languages.** English, Portuguese (Brazil), French, Spanish, German and Simplified Chinese (zh-Hans). The translations live in `Localization/<Table>.json`
+    (`App`, and one per module), each English text, exactly as the code has it, mapped to its translations in the order declared by `Scripts/Localize.swift`;
     `swift Scripts/Localize.swift` writes them as `<language>.lproj/Localizable.strings` in `App/Resources` and in each module's
     `Bundle/` (Assemble.sh copies them), and stops if a translation drops a placeholder. `--check` also builds with the compiler's
     string extraction and lists every text the code shows that no table has: run it after changing any text. In the app, SwiftUI

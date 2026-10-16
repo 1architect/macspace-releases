@@ -3,411 +3,480 @@
   "%@ liberados",
   "%@ libérés",
   "%@ liberados",
-  "%@ freigegeben"
+  "%@ freigegeben",
+  "已释放 %@"
  ],
  "%@ freed in total": [
   "%@ liberados no total",
   "%@ libérés au total",
   "%@ liberados en total",
-  "%@ insgesamt freigegeben"
+  "%@ insgesamt freigegeben",
+  "累计释放 %@"
  ],
  "%@ in total": [
   "%@ no total",
   "%@ au total",
   "%@ en total",
-  "%@ insgesamt"
+  "%@ insgesamt",
+  "共 %@"
  ],
  "%@ left.": [
   "%@ livres.",
   "%@ restants.",
   "%@ disponibles.",
-  "%@ frei."
+  "%@ frei.",
+  "剩余 %@。"
  ],
  "%@ left. MacSpace can free %@.": [
   "%@ livres. O MacSpace pode liberar %@.",
   "%@ restants. MacSpace peut libérer %@.",
   "%@ disponibles. MacSpace puede liberar %@.",
-  "%@ frei. MacSpace kann %@ freigeben."
+  "%@ frei. MacSpace kann %@ freigeben.",
+  "剩余 %@。MacSpace 可释放 %@。"
  ],
  "%@ update": [
   "Atualização do %@",
   "Mise à jour %@",
   "Actualización de %@",
-  "Update auf %@"
+  "Update auf %@",
+  "%@ 更新"
  ],
  "%@ used": [
   "%@ usados",
   "%@ utilisés",
   "%@ usados",
-  "%@ belegt"
+  "%@ belegt",
+  "已用 %@"
  ],
  "%lld cleanups": [
   "%lld limpezas",
   "%lld nettoyages",
   "%lld limpiezas",
-  "%lld Bereinigungen"
+  "%lld Bereinigungen",
+  "%lld 次清理"
  ],
  "%lld items": [
   "%lld itens",
   "%lld éléments",
   "%lld elementos",
-  "%lld Objekte"
+  "%lld Objekte",
+  "%lld 项"
  ],
  "%lld needed": [
   "%lld necessárias",
   "%lld requises",
   "%lld necesarios",
-  "%lld erforderlich"
+  "%lld erforderlich",
+  "需要 %lld 项"
  ],
  "%lld smaller": [
   "%lld menores",
   "%lld plus petits",
   "%lld más pequeños",
-  "%lld kleinere"
+  "%lld kleinere",
+  "另外 %lld 个较小项"
  ],
  "%lld%% of %@": [
   "%lld%% de %@",
   "%lld %% de %@",
   "%lld %% de %@",
-  "%lld %% von %@"
+  "%lld %% von %@",
+  "%lld%%，共 %@"
  ],
  ", beta": [
   ", beta",
   ", bêta",
   ", beta",
-  ", Beta"
+  ", Beta",
+  "，测试版"
  ],
  "1 cleanup": [
   "1 limpeza",
   "1 nettoyage",
   "1 limpieza",
-  "1 Bereinigung"
+  "1 Bereinigung",
+  "1 次清理"
  ],
  "1 item": [
   "1 item",
   "1 élément",
   "1 elemento",
-  "1 Objekt"
+  "1 Objekt",
+  "1 项"
  ],
  "1 needed": [
   "1 necessária",
   "1 requise",
   "1 necesario",
-  "1 erforderlich"
+  "1 erforderlich",
+  "需要 1 项"
  ],
  "Allow Full Disk Access": [
   "Permitir Acesso Total ao Disco",
   "Autoriser l’accès complet au disque",
   "Permitir acceso total al disco",
-  "Festplattenvollzugriff erlauben"
+  "Festplattenvollzugriff erlauben",
+  "允许完全磁盘访问"
  ],
  "Allow Notifications": [
   "Permitir Notificações",
   "Autoriser les notifications",
   "Permitir notificaciones",
-  "Mitteilungen erlauben"
+  "Mitteilungen erlauben",
+  "允许通知"
  ],
  "Appearance": [
   "Aparência",
   "Apparence",
   "Apariencia",
-  "Erscheinungsbild"
+  "Erscheinungsbild",
+  "外观"
  ],
  "Applies the Debloat policies you turn on.": [
   "Aplica as políticas do Debloat que você ativar.",
   "Applique les règles Debloat que vous activez.",
   "Aplica las políticas de Debloat que actives.",
-  "Wendet die Debloat-Richtlinien an, die du aktivierst."
+  "Wendet die Debloat-Richtlinien an, die du aktivierst.",
+  "应用你启用的 Debloat 策略。"
  ],
  "Approve in Settings": [
   "Aprovar nos Ajustes",
   "Approuver dans Réglages",
   "Aprobar en Ajustes",
-  "In Einstellungen genehmigen"
+  "In Einstellungen genehmigen",
+  "在设置中批准"
  ],
  "Approve the helper": [
   "Aprove o auxiliar",
   "Approuvez l’assistant",
   "Aprueba el asistente",
-  "Hilfsprogramm genehmigen"
+  "Hilfsprogramm genehmigen",
+  "批准辅助程序"
  ],
  "Automatic cleanup": [
   "Limpeza automática",
   "Nettoyage automatique",
   "Limpieza automática",
-  "Automatische Bereinigung"
+  "Automatische Bereinigung",
+  "自动清理"
  ],
  "Automatic cleanup: %@": [
   "Limpeza automática: %@",
   "Nettoyage automatique : %@",
   "Limpieza automática: %@",
-  "Automatische Bereinigung: %@"
+  "Automatische Bereinigung: %@",
+  "自动清理：%@"
  ],
  "Back": [
   "Voltar",
   "Retour",
   "Atrás",
-  "Zurück"
+  "Zurück",
+  "返回"
  ],
  "Cancel": [
   "Cancelar",
   "Annuler",
   "Cancelar",
-  "Abbrechen"
+  "Abbrechen",
+  "取消"
  ],
  "Check Now": [
   "Verificar Agora",
   "Vérifier maintenant",
   "Comprobar ahora",
-  "Jetzt prüfen"
+  "Jetzt prüfen",
+  "立即检查"
  ],
  "Check for Updates…": [
   "Buscar Atualizações…",
   "Rechercher des mises à jour…",
   "Buscar actualizaciones…",
-  "Nach Updates suchen …"
+  "Nach Updates suchen …",
+  "检查更新…"
  ],
  "Check for updates automatically": [
   "Buscar atualizações automaticamente",
   "Rechercher les mises à jour automatiquement",
   "Buscar actualizaciones automáticamente",
-  "Automatisch nach Updates suchen"
+  "Automatisch nach Updates suchen",
+  "自动检查更新"
  ],
  "Clean automatically": [
   "Limpar automaticamente",
   "Nettoyer automatiquement",
   "Limpiar automáticamente",
-  "Automatisch bereinigen"
+  "Automatisch bereinigen",
+  "自动清理"
  ],
  "Cleanup": [
   "Limpeza",
   "Nettoyage",
   "Limpieza",
-  "Bereinigung"
+  "Bereinigung",
+  "清理"
  ],
  "Close": [
   "Fechar",
   "Fermer",
   "Cerrar",
-  "Schließen"
+  "Schließen",
+  "关闭"
  ],
  "Maximize": [
   "Maximizar",
   "Agrandir",
   "Maximizar",
-  "Maximieren"
+  "Maximieren",
+  "最大化"
  ],
  "Minimize": [
   "Minimizar",
   "Réduire",
   "Minimizar",
-  "Minimieren"
+  "Minimieren",
+  "最小化"
  ],
  "Restore": [
   "Restaurar",
   "Restaurer",
   "Restaurar",
-  "Wiederherstellen"
+  "Wiederherstellen",
+  "还原"
  ],
  "Close Window": [
   "Fechar Janela",
   "Fermer la fenêtre",
   "Cerrar ventana",
-  "Fenster schließen"
+  "Fenster schließen",
+  "关闭窗口"
  ],
  "Configuration profile": [
   "Perfil de configuração",
   "Profil de configuration",
   "Perfil de configuración",
-  "Konfigurationsprofil"
+  "Konfigurationsprofil",
+  "配置描述文件"
  ],
  "Continue": [
   "Continuar",
   "Continuer",
   "Continuar",
-  "Fortfahren"
+  "Fortfahren",
+  "继续"
  ],
  "Could not install the helper: %@": [
   "Não foi possível instalar o auxiliar: %@",
   "Impossible d’installer l’assistant : %@",
   "No se ha podido instalar el asistente: %@",
-  "Das Hilfsprogramm konnte nicht installiert werden: %@"
+  "Das Hilfsprogramm konnte nicht installiert werden: %@",
+  "无法安装辅助程序：%@"
  ],
  "Couldn't free space. Try again later.": [
   "Não foi possível liberar espaço. Tente novamente mais tarde.",
   "Impossible de libérer de l’espace. Réessayez plus tard.",
   "No se ha podido liberar espacio. Inténtalo más tarde.",
-  "Speicher konnte nicht freigegeben werden. Versuche es später erneut."
+  "Speicher konnte nicht freigegeben werden. Versuche es später erneut.",
+  "无法释放空间，请稍后重试。"
  ],
  "Day": [
   "Dia",
   "Jour",
   "Día",
-  "Tag"
+  "Tag",
+  "日间"
  ],
  "Does the few things that need an administrator.": [
   "Faz as poucas tarefas que exigem um administrador.",
   "Effectue les quelques tâches qui demandent un administrateur.",
   "Realiza las pocas tareas que requieren un administrador.",
-  "Erledigt die wenigen Aufgaben, die einen Administrator erfordern."
+  "Erledigt die wenigen Aufgaben, die einen Administrator erfordern.",
+  "执行少量需要管理员权限的操作。"
  ],
  "Drag into the Full Disk Access list": [
   "Arraste para a lista de Acesso Total ao Disco",
   "Faites glisser dans la liste Accès complet au disque",
   "Arrastra a la lista de Acceso total al disco",
-  "In die Liste „Festplattenvollzugriff“ ziehen"
+  "In die Liste „Festplattenvollzugriff“ ziehen",
+  "拖入完全磁盘访问列表"
  ],
  "Every 3 days": [
   "A cada 3 dias",
   "Tous les 3 jours",
   "Cada 3 días",
-  "Alle 3 Tage"
+  "Alle 3 Tage",
+  "每 3 天"
  ],
  "Every day": [
   "Todos os dias",
   "Tous les jours",
   "Cada día",
-  "Täglich"
+  "Täglich",
+  "每天"
  ],
  "Every week": [
   "Toda semana",
   "Toutes les semaines",
   "Cada semana",
-  "Wöchentlich"
+  "Wöchentlich",
+  "每周"
  ],
  "Finishing in the background": [
   "Concluindo em segundo plano",
   "Fin en arrière-plan",
   "Terminando en segundo plano",
-  "Wird im Hintergrund abgeschlossen"
+  "Wird im Hintergrund abgeschlossen",
+  "正在后台完成"
  ],
  "Follow System": [
   "Seguir o Sistema",
   "Comme le système",
   "Seguir al sistema",
-  "Wie System"
+  "Wie System",
+  "跟随系统"
  ],
  "Freed %@": [
   "%@ liberados",
   "%@ libérés",
   "%@ liberados",
-  "%@ freigegeben"
+  "%@ freigegeben",
+  "已释放 %@"
  ],
  "Freed in total": [
   "Liberado no total",
   "Libéré au total",
   "Liberado en total",
-  "Insgesamt freigegeben"
+  "Insgesamt freigegeben",
+  "累计释放"
  ],
  "Frees caches, old reports and other files that are safe to delete.": [
   "Libera caches, relatórios antigos e outros arquivos que podem ser apagados com segurança.",
   "Libère les caches, les anciens rapports et d’autres fichiers supprimables sans risque.",
   "Libera cachés, informes antiguos y otros archivos que se pueden eliminar sin riesgo.",
-  "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können."
+  "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können.",
+  "释放缓存、旧报告及其他可安全删除的文件。"
  ],
  "Full Disk Access": [
   "Acesso Total ao Disco",
   "Accès complet au disque",
   "Acceso total al disco",
-  "Festplattenvollzugriff"
+  "Festplattenvollzugriff",
+  "完全磁盘访问"
  ],
  "Full Disk Access is on": [
   "O Acesso Total ao Disco está ativado",
   "L’accès complet au disque est activé",
   "El acceso total al disco está activado",
-  "Festplattenvollzugriff ist aktiviert"
+  "Festplattenvollzugriff ist aktiviert",
+  "已开启完全磁盘访问"
  ],
  "General": [
   "Geral",
   "Général",
   "General",
-  "Allgemein"
+  "Allgemein",
+  "通用"
  ],
  "Get notified": [
   "Receba notificações",
   "Soyez averti",
   "Recibe avisos",
-  "Mitteilungen erhalten"
+  "Mitteilungen erhalten",
+  "接收通知"
  ],
  "Granted": [
   "Concedido",
   "Accordé",
   "Concedido",
-  "Erteilt"
+  "Erteilt",
+  "已授予"
  ],
  "Helper approved": [
   "Auxiliar aprovado",
   "Assistant approuvé",
   "Asistente aprobado",
-  "Hilfsprogramm genehmigt"
+  "Hilfsprogramm genehmigt",
+  "辅助程序已获批准"
  ],
  "Hide the sidebar": [
   "Ocultar a barra lateral",
   "Masquer la barre latérale",
   "Ocultar la barra lateral",
-  "Seitenleiste ausblenden"
+  "Seitenleiste ausblenden",
+  "隐藏边栏"
  ],
  "How often": [
   "Frequência",
   "Fréquence",
   "Frecuencia",
-  "Wie oft"
+  "Wie oft",
+  "频率"
  ],
  "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications.": [
   "Em segundo plano, o MacSpace não tem ícone na barra de menus nem no Dock. Abra-o de novo pela pasta Aplicativos.",
   "En arrière-plan, MacSpace n’a pas d’icône dans la barre des menus ni dans le Dock. Rouvrez-le depuis Applications.",
   "En segundo plano, MacSpace no tiene icono en la barra de menús ni en el Dock. Vuelve a abrirlo desde Aplicaciones.",
-  "Im Hintergrund hat MacSpace kein Symbol in der Menüleiste oder im Dock. Öffne es erneut über „Programme“."
+  "Im Hintergrund hat MacSpace kein Symbol in der Menüleiste oder im Dock. Öffne es erneut über „Programme“.",
+  "在后台运行时，MacSpace 不显示菜单栏或程序坞图标。可从“应用程序”重新打开。"
  ],
  "Install helper": [
   "Instalar auxiliar",
   "Installer l’assistant",
   "Instalar asistente",
-  "Hilfsprogramm installieren"
+  "Hilfsprogramm installieren",
+  "安装辅助程序"
  ],
  "It does the few tasks that need an administrator.": [
   "Ele faz as poucas tarefas que exigem um administrador.",
   "Il effectue les quelques tâches qui demandent un administrateur.",
   "Realiza las pocas tareas que requieren un administrador.",
-  "Es erledigt die wenigen Aufgaben, die einen Administrator erfordern."
+  "Es erledigt die wenigen Aufgaben, die einen Administrator erfordern.",
+  "它负责少量需要管理员权限的任务。"
  ],
  "Keep running in the background": [
   "Continuar em segundo plano",
   "Rester actif en arrière-plan",
   "Seguir en segundo plano",
-  "Im Hintergrund weiterlaufen"
+  "Im Hintergrund weiterlaufen",
+  "在后台继续运行"
  ],
  "Keep running in the menu bar": [
   "Continuar na barra de menus",
   "Rester dans la barre des menus",
   "Seguir en la barra de menús",
-  "In der Menüleiste weiterlaufen"
+  "In der Menüleiste weiterlaufen",
+  "在菜单栏中继续运行"
  ],
  "Later": [
   "Mais tarde",
   "Plus tard",
   "Más tarde",
-  "Später"
+  "Später",
+  "稍后"
  ],
  "Loading": [
   "Carregando",
   "Chargement",
   "Cargando",
-  "Wird geladen"
+  "Wird geladen",
+  "正在加载"
  ],
  "loading…": [
   "carregando…",
   "chargement…",
   "cargando…",
-  "wird geladen …"
+  "wird geladen …",
+  "正在加载…"
  ],
  "Loading…": [
   "Carregando…",
   "Chargement…",
   "Cargando…",
-  "Wird geladen …"
+  "Wird geladen …",
+  "正在加载…"
  ],
  "MacSpace": [
+  "MacSpace",
   "MacSpace",
   "MacSpace",
   "MacSpace",
@@ -417,447 +486,522 @@
   "Agora o MacSpace pode fazer as tarefas que exigem um administrador.",
   "MacSpace peut maintenant effectuer les tâches qui demandent un administrateur.",
   "MacSpace ya puede realizar las tareas que requieren un administrador.",
-  "MacSpace kann jetzt die Aufgaben erledigen, die einen Administrator erfordern."
+  "MacSpace kann jetzt die Aufgaben erledigen, die einen Administrator erfordern.",
+  "MacSpace 现在可以执行需要管理员权限的任务。"
  ],
  "MacSpace can now see everything in System Data.": [
   "Agora o MacSpace vê tudo em Dados do Sistema.",
   "MacSpace voit maintenant tout le contenu de Données système.",
   "MacSpace ya puede ver todo lo que hay en Datos del sistema.",
-  "MacSpace sieht jetzt alles in „Systemdaten“."
+  "MacSpace sieht jetzt alles in „Systemdaten“.",
+  "MacSpace 现在可以查看所有系统数据。"
  ],
  "MacSpace freed %@": [
   "O MacSpace liberou %@",
   "MacSpace a libéré %@",
   "MacSpace ha liberado %@",
-  "MacSpace hat %@ freigegeben"
+  "MacSpace hat %@ freigegeben",
+  "MacSpace 已释放 %@"
  ],
  "MacSpace has not been tested on this release yet.": [
   "O MacSpace ainda não foi testado nesta versão.",
   "MacSpace n’a pas encore été testé sur cette version.",
   "MacSpace aún no se ha probado en esta versión.",
-  "MacSpace wurde mit dieser Version noch nicht getestet."
+  "MacSpace wurde mit dieser Version noch nicht getestet.",
+  "此 macOS 版本尚未经过 MacSpace 测试。"
  ],
  "MacSpace keeps an eye on your disk.": [
   "O MacSpace fica de olho no seu disco.",
   "MacSpace surveille votre disque.",
   "MacSpace vigila tu disco.",
-  "MacSpace behält deinen Speicher im Blick."
+  "MacSpace behält deinen Speicher im Blick.",
+  "MacSpace 会关注磁盘状态。"
  ],
  "MacSpace needs it to see everything in System Data.": [
   "O MacSpace precisa dele para ver tudo em Dados do Sistema.",
   "MacSpace en a besoin pour voir tout le contenu de Données système.",
   "MacSpace lo necesita para ver todo lo que hay en Datos del sistema.",
-  "MacSpace braucht ihn, um alles in „Systemdaten“ zu sehen."
+  "MacSpace braucht ihn, um alles in „Systemdaten“ zu sehen.",
+  "MacSpace 需要此权限才能查看所有系统数据。"
  ],
  "Modules": [
   "Módulos",
   "Modules",
   "Módulos",
-  "Module"
+  "Module",
+  "模块"
  ],
  "Modules that could not be used": [
   "Módulos que não puderam ser usados",
   "Modules inutilisables",
   "Módulos que no se pudieron usar",
-  "Module, die nicht verwendet werden konnten"
+  "Module, die nicht verwendet werden konnten",
+  "无法使用的模块"
  ],
  "More about this": [
   "Saiba mais",
   "En savoir plus",
   "Más información",
-  "Mehr dazu"
+  "Mehr dazu",
+  "了解更多"
  ],
  "Move MacSpace to the Applications folder, then reopen it.": [
   "Mova o MacSpace para a pasta Aplicativos e abra-o de novo.",
   "Placez MacSpace dans le dossier Applications, puis rouvrez-le.",
   "Mueve MacSpace a la carpeta Aplicaciones y vuelve a abrirlo.",
-  "Bewege MacSpace in den Ordner „Programme“ und öffne es erneut."
+  "Bewege MacSpace in den Ordner „Programme“ und öffne es erneut.",
+  "将 MacSpace 移到“应用程序”文件夹，然后重新打开。"
  ],
  "Move MacSpace to your Applications folder first.": [
   "Primeiro, mova o MacSpace para a pasta Aplicativos.",
   "Placez d’abord MacSpace dans le dossier Applications.",
   "Primero mueve MacSpace a la carpeta Aplicaciones.",
-  "Bewege MacSpace zuerst in den Ordner „Programme“."
+  "Bewege MacSpace zuerst in den Ordner „Programme“.",
+  "请先将 MacSpace 移到“应用程序”文件夹。"
  ],
  "Needed": [
   "Necessário",
   "Requis",
   "Necesario",
-  "Erforderlich"
+  "Erforderlich",
+  "需要"
  ],
  "Needed to measure everything on the disk.": [
   "Necessário para medir tudo no disco.",
   "Nécessaire pour mesurer tout le disque.",
   "Necesario para medir todo el disco.",
-  "Erforderlich, um alles auf dem Speicher zu messen."
+  "Erforderlich, um alles auf dem Speicher zu messen.",
+  "需要此权限才能测量整个磁盘。"
  ],
  "Needs %@": [
   "Requer %@",
   "Requiert %@",
   "Requiere %@",
-  "Erfordert %@"
+  "Erfordert %@",
+  "需要 %@"
  ],
  "Needs attention": [
   "Requer atenção",
   "Requiert votre attention",
   "Requiere atención",
-  "Erfordert Aufmerksamkeit"
+  "Erfordert Aufmerksamkeit",
+  "需要处理"
  ],
  "Needs macOS %@ or later.": [
   "Requer o macOS %@ ou posterior.",
   "Requiert macOS %@ ou version ultérieure.",
   "Requiere macOS %@ o posterior.",
-  "Erfordert macOS %@ oder neuer."
+  "Erfordert macOS %@ oder neuer.",
+  "需要 macOS %@ 或更高版本。"
  ],
  "Night": [
   "Noite",
   "Nuit",
   "Noche",
-  "Nacht"
+  "Nacht",
+  "夜间"
  ],
  "No module needs a permission.": [
   "Nenhum módulo precisa de permissão.",
   "Aucun module n’a besoin d’autorisation.",
   "Ningún módulo necesita permisos.",
-  "Kein Modul benötigt eine Berechtigung."
+  "Kein Modul benötigt eine Berechtigung.",
+  "没有模块需要权限。"
  ],
  "No modules are on": [
   "Nenhum módulo ativado",
   "Aucun module activé",
   "No hay módulos activados",
-  "Keine Module aktiviert"
+  "Keine Module aktiviert",
+  "没有已开启的模块"
  ],
  "No modules were found.": [
   "Nenhum módulo encontrado.",
   "Aucun module trouvé.",
   "No se han encontrado módulos.",
-  "Keine Module gefunden."
+  "Keine Module gefunden.",
+  "未找到模块。"
  ],
  "Not in this build": [
   "Não incluído nesta versão",
   "Absent de cette version",
   "No incluido en esta versión",
-  "Nicht in diesem Build"
+  "Nicht in diesem Build",
+  "此构建中不包含"
  ],
  "Not installed": [
   "Não instalado",
   "Non installé",
   "No instalado",
-  "Nicht installiert"
+  "Nicht installiert",
+  "未安装"
  ],
  "Not responding": [
   "Não está respondendo",
   "Ne répond pas",
   "No responde",
-  "Antwortet nicht"
+  "Antwortet nicht",
+  "无响应"
  ],
  "Nothing cleaned yet.": [
   "Nada foi limpo ainda.",
   "Rien n’a encore été nettoyé.",
   "Aún no se ha limpiado nada.",
-  "Noch nichts bereinigt."
+  "Noch nichts bereinigt.",
+  "尚无清理记录。"
  ],
  "Nothing to free": [
   "Nada a liberar",
   "Rien à libérer",
   "Nada que liberar",
-  "Nichts freizugeben"
+  "Nichts freizugeben",
+  "没有可释放的内容"
  ],
  "Notifications": [
   "Notificações",
   "Notifications",
   "Notificaciones",
-  "Mitteilungen"
+  "Mitteilungen",
+  "通知"
  ],
  "Open Login Items": [
   "Abrir Itens de Início",
   "Ouvrir Ouverture",
   "Abrir Ítems de inicio",
-  "Anmeldeobjekte öffnen"
+  "Anmeldeobjekte öffnen",
+  "打开登录项"
  ],
  "Open MacSpace": [
   "Abrir o MacSpace",
   "Ouvrir MacSpace",
   "Abrir MacSpace",
-  "MacSpace öffnen"
+  "MacSpace öffnen",
+  "打开 MacSpace"
  ],
  "Open Panel": [
   "Abrir Painel",
   "Ouvrir le panneau",
   "Abrir panel",
-  "Panel öffnen"
+  "Panel öffnen",
+  "打开面板"
  ],
  "Open System Settings": [
   "Abrir Ajustes do Sistema",
   "Ouvrir Réglages Système",
   "Abrir Ajustes del Sistema",
-  "Systemeinstellungen öffnen"
+  "Systemeinstellungen öffnen",
+  "打开系统设置"
  ],
  "Open at login": [
   "Abrir ao iniciar sessão",
   "Ouvrir à la connexion",
   "Abrir al iniciar sesión",
-  "Beim Anmelden öffnen"
+  "Beim Anmelden öffnen",
+  "登录时打开"
  ],
  "Overview": [
   "Visão Geral",
   "Aperçu",
   "Resumen",
-  "Übersicht"
+  "Übersicht",
+  "概览"
  ],
  "Permissions": [
   "Permissões",
   "Autorisations",
   "Permisos",
-  "Berechtigungen"
+  "Berechtigungen",
+  "权限"
  ],
  "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints.": [
   "Clique em Instalar auxiliar. Se o macOS ainda não o reconhecer, execute no Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register e envie a mensagem exibida.",
   "Cliquez sur Installer l’assistant. Si macOS ne le reconnaît toujours pas, exécutez dans Terminal : /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register et envoyez le message affiché.",
   "Pulsa Instalar asistente. Si macOS sigue sin reconocerlo, ejecuta en Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register y envía el mensaje que muestre.",
-  "Klicke auf „Hilfsprogramm installieren“. Erkennt macOS es weiterhin nicht, führe im Terminal /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register aus und sende die ausgegebene Meldung."
+  "Klicke auf „Hilfsprogramm installieren“. Erkennt macOS es weiterhin nicht, führe im Terminal /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register aus und sende die ausgegebene Meldung.",
+  "点击“安装辅助程序”。如果 macOS 仍无法识别，请在终端运行：/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register，并发送输出的信息。"
  ],
  "Privileged helper": [
   "Auxiliar privilegiado",
   "Assistant privilégié",
   "Asistente con privilegios",
-  "Privilegiertes Hilfsprogramm"
+  "Privilegiertes Hilfsprogramm",
+  "特权辅助程序"
  ],
  "Quit": [
   "Encerrar",
   "Quitter",
   "Salir",
-  "Beenden"
+  "Beenden",
+  "退出"
  ],
  "Quit MacSpace": [
   "Encerrar o MacSpace",
   "Quitter MacSpace",
   "Salir de MacSpace",
-  "MacSpace beenden"
+  "MacSpace beenden",
+  "退出 MacSpace"
  ],
  "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update.": [
   "Encerre o MacSpace e copie-o de novo. As permissões dadas a esta cópia seriam perdidas na próxima atualização.",
   "Quittez MacSpace et copiez-le à nouveau. Les autorisations accordées à cette copie seraient perdues à la prochaine mise à jour.",
   "Sal de MacSpace y vuelve a copiarlo. Los permisos concedidos a esta copia se perderían en la próxima actualización.",
-  "Beende MacSpace und kopiere es erneut. Berechtigungen für diese Kopie gingen beim nächsten Update verloren."
+  "Beende MacSpace und kopiere es erneut. Berechtigungen für diese Kopie gingen beim nächsten Update verloren.",
+  "退出 MacSpace 并重新拷贝。授予此副本的权限会在下次更新时丢失。"
  ],
  "Recent cleanups": [
   "Limpezas recentes",
   "Nettoyages récents",
   "Limpiezas recientes",
-  "Letzte Bereinigungen"
+  "Letzte Bereinigungen",
+  "最近清理"
  ],
  "Refresh": [
   "Atualizar",
   "Actualiser",
   "Actualizar",
-  "Aktualisieren"
+  "Aktualisieren",
+  "刷新"
  ],
  "Repair helper": [
   "Reparar auxiliar",
   "Réparer l’assistant",
   "Reparar asistente",
-  "Hilfsprogramm reparieren"
+  "Hilfsprogramm reparieren",
+  "修复辅助程序"
  ],
  "Repairing…": [
   "Reparando…",
   "Réparation…",
   "Reparando…",
-  "Wird repariert …"
+  "Wird repariert …",
+  "正在修复…"
  ],
  "Restart to finish": [
   "Reinicie para concluir",
   "Redémarrez pour terminer",
   "Reinicia para terminar",
-  "Zum Abschließen neu starten"
+  "Zum Abschließen neu starten",
+  "重新启动以完成"
  ],
  "Settings": [
   "Ajustes",
   "Réglages",
   "Ajustes",
-  "Einstellungen"
+  "Einstellungen",
+  "设置"
  ],
  "Settings › Permissions": [
   "Ajustes › Permissões",
   "Réglages › Autorisations",
   "Ajustes › Permisos",
-  "Einstellungen › Berechtigungen"
+  "Einstellungen › Berechtigungen",
+  "设置 › 权限"
  ],
  "Settings › Recent cleanups": [
   "Ajustes › Limpezas recentes",
   "Réglages › Nettoyages récents",
   "Ajustes › Limpiezas recientes",
-  "Einstellungen › Letzte Bereinigungen"
+  "Einstellungen › Letzte Bereinigungen",
+  "设置 › 最近清理"
  ],
  "Settings…": [
   "Ajustes…",
   "Réglages…",
   "Ajustes…",
-  "Einstellungen …"
+  "Einstellungen …",
+  "设置…"
  ],
  "Shader Studio": [
   "Shader Studio",
   "Shader Studio",
   "Shader Studio",
-  "Shader Studio"
+  "Shader Studio",
+  "着色器工作室"
  ],
  "Show in Finder": [
   "Mostrar no Finder",
   "Afficher dans le Finder",
   "Mostrar en el Finder",
-  "Im Finder zeigen"
+  "Im Finder zeigen",
+  "在访达中显示"
  ],
  "Show the sidebar": [
   "Mostrar a barra lateral",
   "Afficher la barre latérale",
   "Mostrar la barra lateral",
-  "Seitenleiste einblenden"
+  "Seitenleiste einblenden",
+  "显示边栏"
  ],
  "The helper couldn't be installed. Try again in Settings > Permissions.": [
   "Não foi possível instalar o auxiliar. Tente de novo em Ajustes > Permissões.",
   "Impossible d’installer l’assistant. Réessayez dans Réglages > Autorisations.",
   "No se ha podido instalar el asistente. Vuelve a intentarlo en Ajustes > Permisos.",
-  "Das Hilfsprogramm konnte nicht installiert werden. Versuche es erneut unter Einstellungen > Berechtigungen."
+  "Das Hilfsprogramm konnte nicht installiert werden. Versuche es erneut unter Einstellungen > Berechtigungen.",
+  "无法安装辅助程序。请在“设置 > 权限”中重试。"
  ],
  "Theme": [
   "Tema",
   "Thème",
   "Tema",
-  "Thema"
+  "Thema",
+  "主题"
  ],
  "This build of MacSpace does not contain the helper.": [
   "Esta versão do MacSpace não contém o auxiliar.",
   "Cette version de MacSpace ne contient pas l’assistant.",
   "Esta versión de MacSpace no incluye el asistente.",
-  "Dieser Build von MacSpace enthält das Hilfsprogramm nicht."
+  "Dieser Build von MacSpace enthält das Hilfsprogramm nicht.",
+  "此 MacSpace 构建不包含辅助程序。"
  ],
  "This copy of MacSpace is incomplete": [
   "Esta cópia do MacSpace está incompleta",
   "Cette copie de MacSpace est incomplète",
   "Esta copia de MacSpace está incompleta",
-  "Diese Kopie von MacSpace ist unvollständig"
+  "Diese Kopie von MacSpace ist unvollständig",
+  "此 MacSpace 副本不完整"
  ],
  "Turn on MacSpace in the list. Not there? Drag this icon into it.": [
   "Ative o MacSpace na lista. Não está lá? Arraste este ícone para ela.",
   "Activez MacSpace dans la liste. Absent ? Faites-y glisser cette icône.",
   "Activa MacSpace en la lista. ¿No aparece? Arrastra este icono a ella.",
-  "Aktiviere MacSpace in der Liste. Nicht dabei? Zieh dieses Symbol hinein."
+  "Aktiviere MacSpace in der Liste. Nicht dabei? Zieh dieses Symbol hinein.",
+  "在列表中开启 MacSpace。没有找到？将此图标拖入列表。"
  ],
  "Turn on MacSpace under Allow in the Background.": [
   "Ative o MacSpace em Permitir em Segundo Plano.",
   "Activez MacSpace sous Autoriser en arrière-plan.",
   "Activa MacSpace en Permitir en segundo plano.",
-  "Aktiviere MacSpace unter „Im Hintergrund erlauben“."
+  "Aktiviere MacSpace unter „Im Hintergrund erlauben“.",
+  "在“允许在后台”下开启 MacSpace。"
  ],
  "Unknown": [
   "Desconhecido",
   "Inconnu",
   "Desconocido",
-  "Unbekannt"
+  "Unbekannt",
+  "未知"
  ],
  "Updates": [
   "Atualizações",
   "Mises à jour",
   "Actualizaciones",
-  "Updates"
+  "Updates",
+  "更新"
  ],
  "Version": [
   "Versão",
   "Version",
   "Versión",
-  "Version"
+  "Version",
+  "版本"
  ],
  "When MacSpace frees space, or your disk is almost full.": [
   "Quando o MacSpace liberar espaço ou o disco estiver quase cheio.",
   "Quand MacSpace libère de l’espace ou que votre disque est presque plein.",
   "Cuando MacSpace libere espacio o tu disco esté casi lleno.",
-  "Wenn MacSpace Speicher freigibt oder dein Speicher fast voll ist."
+  "Wenn MacSpace Speicher freigibt oder dein Speicher fast voll ist.",
+  "释放空间或磁盘空间即将用尽时通知。"
  ],
  "When a cleanup finishes in the background": [
   "Quando uma limpeza terminar em segundo plano",
   "Quand un nettoyage se termine en arrière-plan",
   "Cuando una limpieza termine en segundo plano",
-  "Wenn eine Bereinigung im Hintergrund fertig ist"
+  "Wenn eine Bereinigung im Hintergrund fertig ist",
+  "后台清理完成时"
  ],
  "When automatic cleanup frees space": [
   "Quando a limpeza automática liberar espaço",
   "Quand le nettoyage automatique libère de l’espace",
   "Cuando la limpieza automática libere espacio",
-  "Wenn die automatische Bereinigung Speicher freigibt"
+  "Wenn die automatische Bereinigung Speicher freigibt",
+  "自动清理释放空间时"
  ],
  "When the disk is almost full": [
   "Quando o disco estiver quase cheio",
   "Quand le disque est presque plein",
   "Cuando el disco esté casi lleno",
-  "Wenn der Speicher fast voll ist"
+  "Wenn der Speicher fast voll ist",
+  "磁盘空间即将用尽时"
  ],
  "When the window closes": [
   "Ao fechar a janela",
   "À la fermeture de la fenêtre",
   "Al cerrar la ventana",
-  "Beim Schließen des Fensters"
+  "Beim Schließen des Fensters",
+  "关闭窗口时"
  ],
  "Working…": [
   "Trabalhando…",
   "En cours…",
   "Trabajando…",
-  "Wird ausgeführt …"
+  "Wird ausgeführt …",
+  "正在处理…"
  ],
  "You can free up to %@ right now.": [
   "Você pode liberar até %@ agora.",
   "Vous pouvez libérer jusqu’à %@ dès maintenant.",
   "Puedes liberar hasta %@ ahora mismo.",
-  "Du kannst jetzt bis zu %@ freigeben."
+  "Du kannst jetzt bis zu %@ freigeben.",
+  "现在最多可释放 %@。"
  ],
  "You're all set": [
   "Tudo pronto",
   "Tout est prêt",
   "Todo listo",
-  "Alles bereit"
+  "Alles bereit",
+  "已准备就绪"
  ],
  "Your disk is almost full": [
   "Seu disco está quase cheio",
   "Votre disque est presque plein",
   "Tu disco está casi lleno",
-  "Dein Speicher ist fast voll"
+  "Dein Speicher ist fast voll",
+  "磁盘空间即将用尽"
  ],
  "Automatic": [
   "Automática",
   "Automatique",
   "Automática",
-  "Automatisch"
+  "Automatisch",
+  "自动"
  ],
  "By you": [
   "Por você",
   "Par vous",
   "Por ti",
-  "Von dir"
+  "Von dir",
+  "由你执行"
  ],
  "disabled": [
   "desativados",
   "désactivés",
   "desactivados",
-  "deaktiviert"
+  "deaktiviert",
+  "已停用"
  ],
  "disk": [
   "disco",
   "disque",
   "disco",
-  "Speicher"
+  "Speicher",
+  "磁盘"
  ],
  "enabled": [
   "ativados",
   "activés",
   "activados",
-  "aktiviert"
+  "aktiviert",
+  "已启用"
  ],
  "By MacSpace": [
   "Pelo MacSpace",
   "Par MacSpace",
   "Por MacSpace",
-  "Von MacSpace"
+  "Von MacSpace",
+  "由 MacSpace 执行"
  ],
  "macOS": [
+  "macOS",
   "macOS",
   "macOS",
   "macOS",
@@ -867,117 +1011,137 @@
   "O macOS está tratando o MacSpace como um app baixado, então o auxiliar não pode ser instalado. No Terminal, execute: xattr -dr com.apple.quarantine /Applications/MacSpace.app e abra o MacSpace de novo. (Uma versão notarizada não precisa disso.)",
   "macOS traite MacSpace comme une app téléchargée : l’assistant ne peut donc pas être installé. Dans Terminal, exécutez : xattr -dr com.apple.quarantine /Applications/MacSpace.app, puis rouvrez MacSpace. (Une version notarisée n’en a pas besoin.)",
   "macOS trata MacSpace como una app descargada, así que no se puede instalar el asistente. En Terminal, ejecuta: xattr -dr com.apple.quarantine /Applications/MacSpace.app y vuelve a abrir MacSpace. (Una versión notarizada no lo necesita.)",
-  "macOS behandelt MacSpace als geladene App, daher kann das Hilfsprogramm nicht installiert werden. Führe im Terminal xattr -dr com.apple.quarantine /Applications/MacSpace.app aus und öffne MacSpace erneut. (Eine notarisierte Version braucht das nicht.)"
+  "macOS behandelt MacSpace als geladene App, daher kann das Hilfsprogramm nicht installiert werden. Führe im Terminal xattr -dr com.apple.quarantine /Applications/MacSpace.app aus und öffne MacSpace erneut. (Eine notarisierte Version braucht das nicht.)",
+  "macOS 将 MacSpace 视为下载的应用，因此无法安装辅助程序。在终端运行：xattr -dr com.apple.quarantine /Applications/MacSpace.app，然后重新打开 MacSpace。（经过公证的版本无需此操作。）"
  ],
  "macOS update": [
   "Atualização do macOS",
   "Mise à jour de macOS",
   "Actualización de macOS",
-  "macOS-Update"
+  "macOS-Update",
+  "macOS 更新"
  ],
  "of %@": [
   "de %@",
   "sur %@",
   "de %@",
-  "von %@"
+  "von %@",
+  "共 %@"
  ],
  "reading…": [
   "lendo…",
   "lecture…",
   "leyendo…",
-  "wird gelesen …"
+  "wird gelesen …",
+  "正在读取…"
  ],
  "settings": [
   "ajustes",
   "réglages",
   "ajustes",
-  "Einstellungen"
+  "Einstellungen",
+  "设置"
  ],
  "undone": [
   "desfeito",
   "annulé",
   "deshecho",
-  "rückgängig"
+  "rückgängig",
+  "已被还原"
  ],
  "working…": [
   "trabalhando…",
   "en cours…",
   "trabajando…",
-  "wird ausgeführt …"
+  "wird ausgeführt …",
+  "正在处理…"
  ],
  "Kept while Apple Intelligence is on": [
   "Mantido enquanto a Apple Intelligence estiver ativa",
   "Conservé tant qu’Apple Intelligence est activé",
   "Se conserva mientras Apple Intelligence esté activado",
-  "Bleibt, solange Apple Intelligence aktiv ist"
+  "Bleibt, solange Apple Intelligence aktiv ist",
+  "Apple 智能开启时保留"
  ],
  "All done": [
   "Pronto",
   "Terminé",
   "Listo",
-  "Fertig"
+  "Fertig",
+  "全部完成"
  ],
  "System": [
   "Sistema",
   "Système",
   "Sistema",
-  "System"
+  "System",
+  "系统"
  ],
  "About": [
   "Sobre",
   "À propos",
   "Acerca de",
-  "Über"
+  "Über",
+  "关于"
  ],
  "Restoring settings…": [
   "Restaurando ajustes…",
   "Restauration des réglages…",
   "Restaurando ajustes…",
-  "Einstellungen wiederherstellen…"
+  "Einstellungen wiederherstellen…",
+  "正在还原设置…"
  ],
  "Uninstall MacSpace…": [
   "Desinstalar o MacSpace…",
   "Désinstaller MacSpace…",
   "Desinstalar MacSpace…",
-  "MacSpace deinstallieren…"
+  "MacSpace deinstallieren…",
+  "卸载 MacSpace…"
  ],
  "Uninstall MacSpace?": [
   "Desinstalar o MacSpace?",
   "Désinstaller MacSpace ?",
   "¿Desinstalar MacSpace?",
-  "MacSpace deinstallieren?"
+  "MacSpace deinstallieren?",
+  "卸载 MacSpace？"
  ],
  "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.": [
   "Restaura os ajustes alterados pelo MacSpace e move o app para o Lixo. Seu histórico é mantido. Arquivos apagados não podem ser restaurados.",
   "Restaure les réglages modifiés par MacSpace et place l’app dans la Corbeille. Votre historique est conservé. Les fichiers supprimés ne peuvent pas être restaurés.",
   "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.",
-  "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden."
+  "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.",
+  "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。"
  ],
  "Uninstall": [
   "Desinstalar",
   "Désinstaller",
   "Desinstalar",
-  "Deinstallieren"
+  "Deinstallieren",
+  "卸载"
  ],
  "Couldn’t uninstall MacSpace": [
   "Não foi possível desinstalar o MacSpace",
   "Impossible de désinstaller MacSpace",
   "No se pudo desinstalar MacSpace",
-  "MacSpace konnte nicht deinstalliert werden"
+  "MacSpace konnte nicht deinstalliert werden",
+  "无法卸载 MacSpace"
  ],
  "Move MacSpace to the Trash from Applications.": [
   "Mova o MacSpace de Aplicativos para o Lixo.",
   "Placez MacSpace dans la Corbeille depuis Applications.",
   "Mueve MacSpace de Aplicaciones a la Papelera.",
-  "Verschiebe MacSpace aus Programme in den Papierkorb."
+  "Verschiebe MacSpace aus Programme in den Papierkorb.",
+  "从“应用程序”将 MacSpace 移到废纸篓。"
  ],
  "Wait for the current task to finish, then try again.": [
   "Aguarde a tarefa atual terminar e tente novamente.",
   "Attendez la fin de la tâche en cours, puis réessayez.",
   "Espera a que termine la tarea actual y vuelve a intentarlo.",
-  "Warte, bis die aktuelle Aufgabe beendet ist, und versuche es erneut."
+  "Warte, bis die aktuelle Aufgabe beendet ist, und versuche es erneut.",
+  "请等待当前任务完成后重试。"
  ],
  "GitHub": [
+  "GitHub",
   "GitHub",
   "GitHub",
   "GitHub",

@@ -11,7 +11,7 @@
 
 import Foundation
 
-let languages = ["pt-BR", "fr", "es", "de"]
+let languages = ["pt-BR", "fr", "es", "de", "zh-Hans"]
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let source = root.appendingPathComponent("Localization")
 
@@ -36,6 +36,11 @@ for file in tables.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
         for (language, translation) in zip(languages, translations) where placeholders(translation) != placeholders(key) {
             problems.append("\(name) \(language): \"\(translation)\" does not keep the placeholders of \"\(key)\"")
         }
+    }
+    // Validate the whole table before indexing translations or writing any output.
+    guard problems.isEmpty else {
+        FileHandle.standardError.write((problems.joined(separator: "\n") + "\n").data(using: .utf8)!)
+        exit(1)
     }
     for (index, language) in (["en"] + languages).enumerated() {
         let folder = destination.appendingPathComponent("\(language).lproj")
