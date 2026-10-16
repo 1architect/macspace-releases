@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Tile attention marks share the corner’s center and keep their expanding ring inside the tile (#17).
+
 - Rolling figures, including the All done count, no longer have their animation cut off above and below (#22).
 
 - Apple Intelligence uses the system language after a language change and reports a failed off-switch instead of silently accepting it (#20).
