@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Xcode documentation is no longer offered as a manual cleanup; Xcode has no removal control for it (#13).
+
 - While a module cleans, its tile reads "freeing space… 40%" instead of putting a middot after the ellipsis.
 - You can now drag the window from anywhere on the All done page.
 

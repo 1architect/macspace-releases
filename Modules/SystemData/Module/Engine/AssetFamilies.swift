@@ -52,8 +52,8 @@ public struct AssetFamilyScanner {
              steps: [], verified: true),
         Rule(id: "developer-docs", title: loc("Apple developer documentation"), tokens: ["documentationasset"],
              heldBy: loc("Downloaded for Xcode; macOS marks it precious and nothing subscribes to it."),
-             steps: [loc("In Xcode > Settings > Components, remove the documentation."),
-                     loc("Xcode downloads it again when you open the docs.")], verified: false),
+             // Xcode no longer offers a removal control for these protected assets.
+             steps: [], verified: false),
         Rule(id: "photos-models", title: loc("Photos models (Spatial Photos)"), tokens: ["spatialphotos"],
              heldBy: loc("macOS's model catalog, for the Photos spatial effect."),
              steps: [], verified: false),
