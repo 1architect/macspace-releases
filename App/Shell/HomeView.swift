@@ -763,7 +763,8 @@ struct TileContent: View {
                                       drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize,
                                       restingSize: restingSize) } else { Color.clear }
             if showsCaption {
-                TileCaption(title: info.title, figure: info.figure, status: info.status, size: captionSize, loading: info.loading)
+                TileCaption(title: info.title, figure: info.figure, status: info.status, size: captionSize, loading: info.loading,
+                            layoutWidth: (captionWidth ?? restingSize?.width).map { max(1, $0 - 2 * captionPadding) })
                     .padding([.top, .horizontal], captionPadding)
                     .padding(.bottom, Self.captionBottom(size: captionSize))
                     .frame(width: captionWidth, alignment: .trailing)
