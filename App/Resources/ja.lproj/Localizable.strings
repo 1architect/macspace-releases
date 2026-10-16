@@ -17,6 +17,7 @@
 "1 item" = "1項目";
 "1 needed" = "1件必要";
 "About" = "このアプリについて";
+"About MacSpace" = "MacSpaceについて";
 "All done" = "完了";
 "Allow Full Disk Access" = "フルディスクアクセスを許可";
 "Allow Notifications" = "通知を許可";
@@ -44,6 +45,7 @@
 "Couldn't free space. Try again later." = "空き容量を増やせませんでした。後でもう一度お試しください。";
 "Couldn’t uninstall MacSpace" = "MacSpaceをアンインストールできませんでした";
 "Day" = "昼";
+"Developed by\n%@" = "開発者\n%@";
 "Does the few things that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Drag into the Full Disk Access list" = "フルディスクアクセスのリストにドラッグ";
 "Every 3 days" = "3日ごと";
@@ -102,6 +104,7 @@
 "Nothing cleaned yet." = "まだクリーンアップしていません。";
 "Nothing to free" = "解放できるものはありません";
 "Notifications" = "通知";
+"OK" = "OK";
 "Open Login Items" = "ログイン項目を開く";
 "Open MacSpace" = "MacSpaceを開く";
 "Open Panel" = "パネルを開く";
@@ -139,9 +142,11 @@
 "Uninstall" = "アンインストール";
 "Uninstall MacSpace?" = "MacSpaceをアンインストールしますか？";
 "Uninstall MacSpace…" = "MacSpaceをアンインストール…";
+"Uninstall…" = "アンインストール…";
 "Unknown" = "不明";
 "Updates" = "アップデート";
 "Version" = "バージョン";
+"Version %@" = "バージョン %@";
 "Wait for the current task to finish, then try again." = "現在の処理が終わってから再度お試しください。";
 "When MacSpace frees space, or your disk is almost full." = "空き容量が増えたときやディスクがほぼ満杯のときに通知します。";
 "When a cleanup finishes in the background" = "バックグラウンドでのクリーンアップ完了時";

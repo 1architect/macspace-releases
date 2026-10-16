@@ -148,6 +148,7 @@ public final class StatusItemController: NSObject {
         menu.addItem(.separator())
         menu.addItem(entry(String(localized: "Settings…"), #selector(openSettings), key: ","))
         menu.addItem(.separator())
+        menu.addItem(entry(String(localized: "About MacSpace"), #selector(showAbout), key: ""))
         menu.addItem(entry(String(localized: "Open Panel"), #selector(openApp), key: "o"))
         menu.addItem(entry(String(localized: "Quit MacSpace"), #selector(quit), key: "q"))
         return menu
@@ -167,6 +168,7 @@ public final class StatusItemController: NSObject {
     }
 
     @objc private func openApp() { AppRouter.shared.open() }
+    @objc private func showAbout() { if let host { AboutMacSpace.show(host: host) } }
     @objc private func openSettings() { AppRouter.shared.open(.settings) }
     @objc private func quit() { NSApp.terminate(nil) }
 

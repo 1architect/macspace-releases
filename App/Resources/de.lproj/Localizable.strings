@@ -17,6 +17,7 @@
 "1 item" = "1 Objekt";
 "1 needed" = "1 erforderlich";
 "About" = "Über";
+"About MacSpace" = "Über MacSpace";
 "All done" = "Fertig";
 "Allow Full Disk Access" = "Festplattenvollzugriff erlauben";
 "Allow Notifications" = "Mitteilungen erlauben";
@@ -44,6 +45,7 @@
 "Couldn't free space. Try again later." = "Speicher konnte nicht freigegeben werden. Versuche es später erneut.";
 "Couldn’t uninstall MacSpace" = "MacSpace konnte nicht deinstalliert werden";
 "Day" = "Tag";
+"Developed by\n%@" = "Entwickelt von\n%@";
 "Does the few things that need an administrator." = "Erledigt die wenigen Aufgaben, die einen Administrator erfordern.";
 "Drag into the Full Disk Access list" = "In die Liste „Festplattenvollzugriff“ ziehen";
 "Every 3 days" = "Alle 3 Tage";
@@ -102,6 +104,7 @@
 "Nothing cleaned yet." = "Noch nichts bereinigt.";
 "Nothing to free" = "Nichts freizugeben";
 "Notifications" = "Mitteilungen";
+"OK" = "OK";
 "Open Login Items" = "Anmeldeobjekte öffnen";
 "Open MacSpace" = "MacSpace öffnen";
 "Open Panel" = "Panel öffnen";
@@ -139,9 +142,11 @@
 "Uninstall" = "Deinstallieren";
 "Uninstall MacSpace?" = "MacSpace deinstallieren?";
 "Uninstall MacSpace…" = "MacSpace deinstallieren…";
+"Uninstall…" = "Deinstallieren…";
 "Unknown" = "Unbekannt";
 "Updates" = "Updates";
 "Version" = "Version";
+"Version %@" = "Version %@";
 "Wait for the current task to finish, then try again." = "Warte, bis die aktuelle Aufgabe beendet ist, und versuche es erneut.";
 "When MacSpace frees space, or your disk is almost full." = "Wenn MacSpace Speicher freigibt oder dein Speicher fast voll ist.";
 "When a cleanup finishes in the background" = "Wenn eine Bereinigung im Hintergrund fertig ist";

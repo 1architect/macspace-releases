@@ -4,34 +4,53 @@ import MacSpaceSdk
 import ServiceManagement
 import SwiftUI
 
-struct AboutSettingsSection: View {
-    @ObservedObject var host: ModuleHost
-    @State private var uninstalling = false
+/// The application menu's About command, matching MacBat's native alert layout.
+@MainActor
+public enum AboutMacSpace {
+    private static var uninstalling = false
 
-    var body: some View {
-        Section("About") {
-            LabeledContent("MacSpace", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-            Link("GitHub", destination: URL(string: "https://github.com/1architect/macspace-releases")!)
-            Button(uninstalling ? String(localized: "Restoring settings…") : String(localized: "Uninstall MacSpace…")) {
-                let alert = NSAlert()
-                alert.messageText = String(localized: "Uninstall MacSpace?")
-                alert.informativeText = String(localized: "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.")
-                alert.addButton(withTitle: String(localized: "Cancel"))
-                alert.addButton(withTitle: String(localized: "Uninstall"))
-                guard alert.runModal() == .alertSecondButtonReturn else { return }
-                uninstalling = true
-                Task {
-                    do { try await AppUninstaller.uninstall(host: host) }
-                    catch {
-                        let failure = NSAlert()
-                        failure.messageText = String(localized: "Couldn’t uninstall MacSpace")
-                        failure.informativeText = error.localizedDescription
-                        failure.runModal()
-                    }
-                    uninstalling = false
-                }
+    static func makeAlert(bundle: Bundle = .main) -> AppAlert {
+        let alert = AppAlert()
+        alert.icon = NSApp.applicationIconImage
+        alert.messageText = "MacSpace"
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        alert.informativeText = [String(format: String(localized: "Version %@"), version), "",
+                                 String(format: String(localized: "Developed by\n%@"), "Gio Mantovani/1architect")].joined(separator: "\n")
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.addButton(withTitle: String(localized: "Uninstall…")).hasDestructiveAction = true
+        alert.addButton(withTitle: String(localized: "GitHub"))
+        return alert
+    }
+
+    public static func show(host: ModuleHost) {
+        guard !uninstalling else { return }
+        switch makeAlert().runModal() {
+        case .alertSecondButtonReturn: confirmUninstall(host: host)
+        case .alertThirdButtonReturn: NSWorkspace.shared.open(URL(string: "https://github.com/1architect/macspace-releases")!)
+        default: break
+        }
+    }
+
+    private static func confirmUninstall(host: ModuleHost) {
+        let alert = AppAlert()
+        alert.messageText = String(localized: "Uninstall MacSpace?")
+        alert.informativeText = String(localized: "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.addButton(withTitle: String(localized: "Uninstall")).hasDestructiveAction = true
+        guard alert.runModal() == .alertSecondButtonReturn else { return }
+        uninstalling = true
+        Task {
+            defer { uninstalling = false }
+            do { try await AppUninstaller.uninstall(host: host) }
+            catch {
+                let failure = AppAlert()
+                failure.messageText = String(localized: "Couldn’t uninstall MacSpace")
+                failure.informativeText = error.localizedDescription
+                failure.addButton(withTitle: String(localized: "OK"))
+                failure.runModal()
             }
-            .disabled(uninstalling)
         }
     }
 }

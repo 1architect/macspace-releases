@@ -4,7 +4,7 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:517"
+      "App\/Renderer\/ScreenView.swift:518"
     ],
     "table" : "App",
     "translations" : {
@@ -42,7 +42,7 @@
     "key" : "%@ in total",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:434"
+      "App\/Renderer\/ScreenView.swift:435"
     ],
     "table" : "App",
     "translations" : {
@@ -306,9 +306,9 @@
   {
     "id" : "App|About",
     "key" : "About",
-    "kind" : "Section header",
+    "kind" : "Other",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:12"
+
     ],
     "table" : "App",
     "translations" : {
@@ -323,11 +323,31 @@
     }
   },
   {
+    "id" : "App|About MacSpace",
+    "key" : "About MacSpace",
+    "kind" : "Text",
+    "places" : [
+      "App\/Shell\/MenuBarContent.swift:151",
+      "App\/Main\/MacSpaceMain.swift:83"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Über MacSpace",
+      "en" : "About MacSpace",
+      "es" : "Acerca de MacSpace",
+      "fr" : "À propos de MacSpace",
+      "ja" : "MacSpaceについて",
+      "ko" : "MacSpace 정보",
+      "pt-BR" : "Sobre o MacSpace",
+      "zh-Hans" : "关于 MacSpace"
+    }
+  },
+  {
     "id" : "App|All done",
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:510"
+      "App\/Renderer\/ScreenView.swift:511"
     ],
     "table" : "App",
     "translations" : {
@@ -422,7 +442,7 @@
     "key" : "Approve in Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:235"
+      "App\/Settings\/SettingsView.swift:234"
     ],
     "table" : "App",
     "translations" : {
@@ -517,8 +537,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:314",
-      "App\/Shell\/MainView.swift:346"
+      "App\/Shell\/MainView.swift:317",
+      "App\/Shell\/MainView.swift:349"
     ],
     "table" : "App",
     "translations" : {
@@ -575,7 +595,7 @@
     "key" : "Cancel",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:19",
+      "App\/Settings\/AboutMacSpace.swift:40",
       "App\/Renderer\/ActionButton.swift:39"
     ],
     "table" : "App",
@@ -614,7 +634,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:83"
+      "App\/Main\/MacSpaceMain.swift:86"
     ],
     "table" : "App",
     "translations" : {
@@ -691,7 +711,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Shell\/WindowControls.swift:17",
-      "App\/Shell\/MainView.swift:314"
+      "App\/Shell\/MainView.swift:317"
     ],
     "table" : "App",
     "translations" : {
@@ -710,7 +730,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:348"
+      "App\/Shell\/MainView.swift:351"
     ],
     "table" : "App",
     "translations" : {
@@ -770,8 +790,8 @@
     "key" : "Could not install the helper: %@",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:221",
-      "App\/Settings\/SettingsView.swift:240"
+      "App\/Settings\/SettingsView.swift:220",
+      "App\/Settings\/SettingsView.swift:239"
     ],
     "table" : "App",
     "translations" : {
@@ -809,7 +829,7 @@
     "key" : "Couldn’t uninstall MacSpace",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:27"
+      "App\/Settings\/AboutMacSpace.swift:49"
     ],
     "table" : "App",
     "translations" : {
@@ -840,6 +860,25 @@
       "ko" : "주간",
       "pt-BR" : "Dia",
       "zh-Hans" : "日间"
+    }
+  },
+  {
+    "id" : "App|Developed by\n%@",
+    "key" : "Developed by\n%@",
+    "kind" : "Text",
+    "places" : [
+      "App\/Settings\/AboutMacSpace.swift:18"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Entwickelt von\n%@",
+      "en" : "Developed by\n%@",
+      "es" : "Desarrollado por\n%@",
+      "fr" : "Développé par\n%@",
+      "ja" : "開発者\n%@",
+      "ko" : "개발자\n%@",
+      "pt-BR" : "Desenvolvido por\n%@",
+      "zh-Hans" : "开发者\n%@"
     }
   },
   {
@@ -1111,9 +1150,9 @@
   {
     "id" : "App|GitHub",
     "key" : "GitHub",
-    "kind" : "Message",
+    "kind" : "Text",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:14"
+      "App\/Settings\/AboutMacSpace.swift:22"
     ],
     "table" : "App",
     "translations" : {
@@ -1132,7 +1171,7 @@
     "key" : "Granted",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:187"
+      "App\/Settings\/SettingsView.swift:186"
     ],
     "table" : "App",
     "translations" : {
@@ -1227,7 +1266,7 @@
     "key" : "Install helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:235"
+      "App\/Settings\/SettingsView.swift:234"
     ],
     "table" : "App",
     "translations" : {
@@ -1341,7 +1380,7 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:184"
+      "App\/Renderer\/ScreenView.swift:193"
     ],
     "table" : "App",
     "translations" : {
@@ -1360,7 +1399,7 @@
     "key" : "Loading…",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:721"
+      "App\/Renderer\/ScreenView.swift:711"
     ],
     "table" : "App",
     "translations" : {
@@ -1377,14 +1416,14 @@
   {
     "id" : "App|MacSpace",
     "key" : "MacSpace",
-    "kind" : "Label",
+    "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:13",
+      "App\/Settings\/AboutMacSpace.swift:15",
       "App\/Shell\/HomeView.swift:18",
       "App\/Shell\/MenuBarContent.swift:101",
       "App\/Shell\/StandardWindowView.swift:220",
       "App\/Main\/MacSpaceMain.swift:68",
-      "App\/Main\/MacSpaceMain.swift:88"
+      "App\/Main\/MacSpaceMain.swift:91"
     ],
     "table" : "App",
     "translations" : {
@@ -1632,7 +1671,7 @@
     "key" : "Move MacSpace to the Trash from Applications.",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:53"
+      "App\/Settings\/AboutMacSpace.swift:72"
     ],
     "table" : "App",
     "translations" : {
@@ -1670,7 +1709,7 @@
     "key" : "Needed",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:197"
+      "App\/Settings\/SettingsView.swift:196"
     ],
     "table" : "App",
     "translations" : {
@@ -1784,7 +1823,7 @@
     "key" : "No module needs a permission.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:128"
+      "App\/Settings\/SettingsView.swift:127"
     ],
     "table" : "App",
     "translations" : {
@@ -1860,7 +1899,7 @@
     "key" : "Not installed",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:195"
+      "App\/Settings\/SettingsView.swift:194"
     ],
     "table" : "App",
     "translations" : {
@@ -1879,7 +1918,7 @@
     "key" : "Not responding",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:182"
+      "App\/Settings\/SettingsView.swift:181"
     ],
     "table" : "App",
     "translations" : {
@@ -1951,6 +1990,26 @@
     }
   },
   {
+    "id" : "App|OK",
+    "key" : "OK",
+    "kind" : "Text",
+    "places" : [
+      "App\/Settings\/AboutMacSpace.swift:20",
+      "App\/Settings\/AboutMacSpace.swift:51"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "OK",
+      "en" : "OK",
+      "es" : "Aceptar",
+      "fr" : "OK",
+      "ja" : "OK",
+      "ko" : "확인",
+      "pt-BR" : "OK",
+      "zh-Hans" : "好"
+    }
+  },
+  {
     "id" : "App|Open Login Items",
     "key" : "Open Login Items",
     "kind" : "Text",
@@ -1993,7 +2052,7 @@
     "key" : "Open Panel",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:151"
+      "App\/Shell\/MenuBarContent.swift:152"
     ],
     "table" : "App",
     "translations" : {
@@ -2012,7 +2071,7 @@
     "key" : "Open System Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:190",
+      "App\/Settings\/SettingsView.swift:189",
       "App\/Shell\/Onboarding.swift:245"
     ],
     "table" : "App",
@@ -2147,7 +2206,7 @@
     "kind" : "Title",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:22",
-      "App\/Shell\/MenuBarContent.swift:152"
+      "App\/Shell\/MenuBarContent.swift:153"
     ],
     "table" : "App",
     "translations" : {
@@ -2224,7 +2283,7 @@
     "key" : "Repair helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:216"
+      "App\/Settings\/SettingsView.swift:215"
     ],
     "table" : "App",
     "translations" : {
@@ -2243,7 +2302,7 @@
     "key" : "Repairing…",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:216"
+      "App\/Settings\/SettingsView.swift:215"
     ],
     "table" : "App",
     "translations" : {
@@ -2262,7 +2321,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:722"
+      "App\/Renderer\/ScreenView.swift:712"
     ],
     "table" : "App",
     "translations" : {
@@ -2300,7 +2359,7 @@
     "key" : "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:18"
+      "App\/Settings\/AboutMacSpace.swift:38"
     ],
     "table" : "App",
     "translations" : {
@@ -2317,9 +2376,9 @@
   {
     "id" : "App|Restoring settings…",
     "key" : "Restoring settings…",
-    "kind" : "Button",
+    "kind" : "Other",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:15"
+
     ],
     "table" : "App",
     "translations" : {
@@ -2340,8 +2399,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:298",
-      "App\/Shell\/MainView.swift:347",
+      "App\/Shell\/MainView.swift:301",
+      "App\/Shell\/MainView.swift:350",
       "App\/Shell\/StandardWindowView.swift:157",
       "App\/Shell\/StandardWindowView.swift:222"
     ],
@@ -2362,7 +2421,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:297"
+      "App\/Shell\/MainView.swift:300"
     ],
     "table" : "App",
     "translations" : {
@@ -2381,7 +2440,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:296"
+      "App\/Shell\/MainView.swift:299"
     ],
     "table" : "App",
     "translations" : {
@@ -2419,7 +2478,7 @@
     "key" : "Shader Studio",
     "kind" : "Text",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:105"
+      "App\/Main\/MacSpaceMain.swift:108"
     ],
     "table" : "App",
     "translations" : {
@@ -2439,8 +2498,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:407",
-      "App\/Renderer\/WidgetView.swift:408"
+      "App\/Renderer\/WidgetView.swift:380",
+      "App\/Renderer\/WidgetView.swift:381"
     ],
     "table" : "App",
     "translations" : {
@@ -2459,7 +2518,7 @@
     "key" : "Show the sidebar",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:320"
+      "App\/Shell\/MainView.swift:323"
     ],
     "table" : "App",
     "translations" : {
@@ -2611,7 +2670,7 @@
     "key" : "Uninstall",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:20"
+      "App\/Settings\/AboutMacSpace.swift:41"
     ],
     "table" : "App",
     "translations" : {
@@ -2630,7 +2689,7 @@
     "key" : "Uninstall MacSpace?",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:17"
+      "App\/Settings\/AboutMacSpace.swift:37"
     ],
     "table" : "App",
     "translations" : {
@@ -2647,9 +2706,9 @@
   {
     "id" : "App|Uninstall MacSpace…",
     "key" : "Uninstall MacSpace…",
-    "kind" : "Button",
+    "kind" : "Other",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:15"
+
     ],
     "table" : "App",
     "translations" : {
@@ -2664,11 +2723,30 @@
     }
   },
   {
+    "id" : "App|Uninstall…",
+    "key" : "Uninstall…",
+    "kind" : "Text",
+    "places" : [
+      "App\/Settings\/AboutMacSpace.swift:21"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Deinstallieren…",
+      "en" : "Uninstall…",
+      "es" : "Desinstalar…",
+      "fr" : "Désinstaller…",
+      "ja" : "アンインストール…",
+      "ko" : "제거…",
+      "pt-BR" : "Desinstalar…",
+      "zh-Hans" : "卸载…"
+    }
+  },
+  {
     "id" : "App|Unknown",
     "key" : "Unknown",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:206"
+      "App\/Settings\/SettingsView.swift:205"
     ],
     "table" : "App",
     "translations" : {
@@ -2723,11 +2801,30 @@
     }
   },
   {
+    "id" : "App|Version %@",
+    "key" : "Version %@",
+    "kind" : "Message",
+    "places" : [
+      "App\/Settings\/AboutMacSpace.swift:17"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Version %@",
+      "en" : "Version %@",
+      "es" : "Versión %@",
+      "fr" : "Version %@",
+      "ja" : "バージョン %@",
+      "ko" : "버전 %@",
+      "pt-BR" : "Versão %@",
+      "zh-Hans" : "版本 %@"
+    }
+  },
+  {
     "id" : "App|Wait for the current task to finish, then try again.",
     "key" : "Wait for the current task to finish, then try again.",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutSettings.swift:55"
+      "App\/Settings\/AboutMacSpace.swift:74"
     ],
     "table" : "App",
     "translations" : {
@@ -2841,7 +2938,7 @@
     "key" : "Working…",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:720",
+      "App\/Renderer\/ScreenView.swift:710",
       "App\/Registry\/ModuleHandle.swift:410"
     ],
     "table" : "App",

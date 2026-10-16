@@ -79,6 +79,9 @@ struct MacSpaceMain: App {
         .windowResizability(.contentMinSize)
         .commands {
             DesignCommands()
+            CommandGroup(replacing: .appInfo) {
+                Button("About MacSpace") { AboutMacSpace.show(host: host) }
+            }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updates.checkForUpdates() }.disabled(!updates.canCheck)
             }
