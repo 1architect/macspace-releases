@@ -19,9 +19,24 @@ struct WidgetForm<Top: View>: View {
     @Environment(\.sectionChoice) private var sectionChoice
     /// Collapsible sections the user has flipped from how they start.
     @State private var flipped: Set<String> = []
-    /// The widgets that are in. Those already there when the page opens come in with the page; those that arrive later (when the
-    /// module answers after the page opened, or a refresh brings new ones) rise in one after another.
-    @State private var revealed: Set<String> = []
+    @Environment(\.pageContentReveal) private var pageReveal
+
+    private func item(_ id: String) -> PageItemReveal {
+        PageItemReveal(index: Self.itemIDs(widgets).firstIndex(of: id) ?? 0, reveal: pageReveal)
+    }
+
+    static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
+        widgets.flatMap { widget -> [String] in
+            let header = [widget.id + ":header"]
+            switch widget {
+            case let .section(section): return header + itemIDs(section.widgets)
+            case let .list(list): return header + list.rows.map(\.id)
+            case let .toggles(list): return header + list.rows.map(\.id)
+            case let .steps(steps): return header + steps.steps.indices.map { "\(steps.id):\($0)" }
+            default: return header + [widget.id]
+            }
+        }
+    }
 
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
         Binding(get: { section.startsCollapsed == flipped.contains(section.id) },
@@ -46,13 +61,6 @@ struct WidgetForm<Top: View>: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .onAppear { revealed = Set(widgets.map(\.id)) }
-        .onChange(of: widgets.map(\.id)) { _, ids in
-            revealed.formIntersection(ids)
-            for (order, id) in ids.filter({ !revealed.contains($0) }).enumerated() {
-                withAnimation(Theme.layout.delay(0.05 + Double(order) * 0.07)) { _ = revealed.insert(id) }
-            }
-        }
     }
 
     private struct Item: Identifiable {
@@ -65,11 +73,10 @@ struct WidgetForm<Top: View>: View {
     /// One group per widget, all built the same way, so the first one stays the same view when its widget changes kind.
     private func section(for widget: ScreenWidget?, leading: Bool) -> some View {
         let title = widget.map(Self.title) ?? (text: nil, help: nil)
-        let shown = widget.map { revealed.contains($0.id) } ?? true
         return Section {
-            if let widget { content(of: widget).modifier(Rise(shown: shown)) }
+            if let widget { content(of: widget) }
         } header: {
-            header(title.text, help: title.help, leading: leading, shown: shown, part: widget.flatMap(Self.part))
+            header(title.text, help: title.help, leading: leading, id: widget?.id ?? Item.leading, part: widget.flatMap(Self.part))
         }
     }
 
@@ -106,16 +113,16 @@ struct WidgetForm<Top: View>: View {
 
     /// A section's header: its title (with its description behind an (i)), with the page's top above it on the first section.
     @ViewBuilder
-    private func header(_ title: String?, help: String? = nil, leading: Bool, shown: Bool = true, part: String? = nil) -> some View {
+    private func header(_ title: String?, help: String? = nil, leading: Bool, id: String, part: String? = nil) -> some View {
         let hasTitle = !(title ?? "").isEmpty
         if leading {
             // The top stays put; only the title rises in with its rows.
             VStack(alignment: .leading, spacing: 14) {
                 top
-                if hasTitle, let title { titled(title, help: help, part: part).modifier(Rise(shown: shown)) }
+                if hasTitle, let title { titled(title, help: help, part: part).modifier(item(id + ":header")) }
             }
         } else if hasTitle, let title {
-            titled(title, help: help, part: part).modifier(Rise(shown: shown))
+            titled(title, help: help, part: part).modifier(item(id + ":header"))
         }
     }
 
@@ -146,37 +153,46 @@ struct WidgetForm<Top: View>: View {
     @ViewBuilder
     private func rows(for widget: ScreenWidget) -> some View {
         switch widget {
-        case let .banner(banner): BannerRow(banner: banner, handler: handler)
-        case let .usage(usage): UsageBarView(usage: usage)
-        case let .chart(chart): BarChartView(chart: chart)
+        case let .banner(banner): BannerRow(banner: banner, handler: handler).modifier(item(banner.id))
+        case let .usage(usage): UsageBarView(usage: usage).modifier(item(usage.id))
+        case let .chart(chart): BarChartView(chart: chart).modifier(item(chart.id))
         case let .list(list):
             if list.rows.isEmpty, let empty = list.emptyMessage { Text(empty).foregroundStyle(.secondary) }
-            ForEach(list.rows) { row in RowView(row: row, handler: handler) }
+            ForEach(list.rows) { row in RowView(row: row, handler: handler).modifier(item(row.id)) }
         case let .toggles(toggles):
-            ForEach(toggles.rows) { row in ToggleRowView(row: row, handler: handler) }
-        case let .button(button): ButtonRow(button: button, handler: handler)
+            ForEach(toggles.rows) { row in ToggleRowView(row: row, handler: handler).modifier(item(row.id)) }
+        case let .button(button): ButtonRow(button: button, handler: handler).modifier(item(button.id))
         case let .steps(steps):
             ForEach(Array(steps.steps.enumerated()), id: \.offset) { index, step in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
                     Text(step)
                 }
+                .modifier(item("\(steps.id):\(index)"))
             }
-        case let .text(text): TextWidgetView(text: text)
+        case let .text(text): TextWidgetView(text: text).modifier(item(text.id))
         case let .section(section):
             ForEach(section.widgets) { inner in AnyView(WidgetRows(widget: inner, handler: handler)) }
         }
     }
 }
 
-/// A part of the page coming in: it rises a little as it fades in.
-private struct Rise: ViewModifier {
-    let shown: Bool
+/// Each header, row and legend item enters independently, including when a refresh finishes.
+struct PageItemReveal: ViewModifier {
+    let index: Int
+    var reveal: CGFloat? = nil
+    @Environment(\.pageContentReveal) private var inheritedReveal
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
 
     func body(content: Content) -> some View {
         content
-            .opacity(shown ? 1 : 0)
-            .offset(y: shown ? 0 : 14)
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 14)
+            .modifier(ZoomReveal(index: index, reveal: reduceMotion ? 1 : (reveal ?? inheritedReveal)))
+            .onAppear {
+                withAnimation(reduceMotion ? nil : Theme.layout.delay(Double(min(index, 12)) * 0.035)) { shown = true }
+            }
     }
 }
 

@@ -37,6 +37,14 @@ final class RenderTests: XCTestCase {
                                isCollapsible: true)),
     ])
 
+    func testCascadeOrdersIndividualRowsAndHeaders() {
+        let ids = WidgetForm<EmptyView>.itemIDs(Self.sample.widgets)
+        XCTAssertLessThan(ids.firstIndex(of: "l:header")!, ids.firstIndex(of: "r1")!)
+        XCTAssertEqual(ids.firstIndex(of: "r2")!, ids.firstIndex(of: "r1")! + 1)
+        XCTAssertTrue(ids.contains("t1"))
+        XCTAssertTrue(ids.contains("x"), "nested section items take part too")
+    }
+
     private var content: some View {
         VStack(alignment: .leading, spacing: 14) {
             WidgetForm(widgets: Self.sample.widgets, handler: { _, _, _ in nil }) { EmptyView() }.frame(height: 900)

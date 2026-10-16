@@ -11,6 +11,8 @@ struct ScreenView: View {
     var reveal: CGFloat = 1
     @Environment(\.design) private var design
 
+    private var hidesDetails: Bool { handle.isRefreshing || handle.isCleaning }
+
     /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
     private var hasFooter: Bool {
         handle.screen?.primary != nil || handle.screen == nil || handle.isRefreshing || handle.isCleaning || handle.lastResult != nil
@@ -132,7 +134,7 @@ struct ScreenView: View {
         }
         .animation(Theme.push, value: groups.map(\.id))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
-        .modifier(ZoomReveal(index: 1, reveal: reveal))
+        .environment(\.pageContentReveal, reveal)
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
             ActionDock(handle: handle)
@@ -161,10 +163,11 @@ struct ScreenView: View {
             if let content = self.content {
                 // While the module reads the Mac again (Refresh, or after an action), only the blocks stay, pulsing: the legend and the
                 // groups under them fold away and rise in again with the new figures, instead of showing figures about to change.
-                let refreshing = content.loaded && handle.isRefreshing
+                let refreshing = hidesDetails
                 WidgetForm(widgets: refreshing ? [] : Self.without(handle.finishedRows, in: content.widgets), handler: handler, showsTop: content.hero != nil) {
                     if let hero = content.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning)
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || refreshing)
+                            .modifier(ZoomReveal(index: 0, reveal: reveal))
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
@@ -200,7 +203,13 @@ struct ScreenView: View {
             widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
                                         rows: group.children.filter { !handle.finishedRows.contains($0.id) }))]
         }
-        return WidgetForm(widgets: widgets, handler: handler, showsTop: false) { EmptyView() }
+        return WidgetForm(widgets: hidesDetails ? [] : widgets, handler: handler,
+                          showsTop: hidesDetails && content?.hero != nil) {
+            if hidesDetails, let hero = content?.hero {
+                HeroBlocks(usage: hero, tint: tint, loading: true)
+                    .padding(.bottom, 4)
+            }
+        }
             .animation(Theme.layout, value: handle.finishedRows)
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
@@ -226,6 +235,7 @@ struct ScreenView: View {
 extension EnvironmentValues {
     /// Where a page's scroll area starts: under the glass window's corner buttons and title, or right under a standard window's
     /// toolbar (`StandardWindowView`).
+    @Entry var pageContentReveal: CGFloat = 1
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
     /// The page's own color, which the glass along its edges is tinted with so it does not lighten it (`EdgeGlass`).
     @Entry var pageGround: Color?
@@ -405,7 +415,6 @@ struct HeroBlocks: View {
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
             if !loading {
                 legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(Theme.layout, value: loading)
@@ -431,9 +440,10 @@ struct HeroBlocks: View {
             .foregroundStyle(palette.soft)
             .frame(height: 14, alignment: .leading)
             .animation(Theme.hover, value: hovered)
+            .modifier(PageItemReveal(index: 0))
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
                 // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
-                ForEach(usage.segments, id: \.id) { segment in
+                ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
                     HStack(spacing: 6) {
                         // A part left out of the blocks (too small to draw) is an outline: it has no block to share a color with.
                         Group {
@@ -448,6 +458,7 @@ struct HeroBlocks: View {
                         Text(ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                             .contentTransition(.numericText())
                     }
+                    .modifier(PageItemReveal(index: index + 1))
                 }
             }
             .animation(Theme.value, value: usage.segments)
