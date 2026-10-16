@@ -17,6 +17,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Back dismisses All Done immediately, including while the cleaned page is still refreshing.
+
 - Page rows and their shades cascade down after loading and up before refreshing or freeing space, without animating during tile open and close (#23).
 
 - Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).
