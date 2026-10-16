@@ -49,7 +49,7 @@ struct WindowControls: View {
                 .frame(width: glyph, height: glyph)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.diameter, height: Self.diameter)
-                .contentShape(Circle())
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(ControlStyle())
         .help(help)
@@ -64,7 +64,11 @@ struct WindowControls: View {
             let pressed = configuration.isPressed
             configuration.label
                 .opacity(pressed ? 0.55 : 1)
-                .background { Circle().fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0)).padding(2) }
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0))
+                        .padding(4)
+                }
                 .scaleEffect(pressed ? 0.88 : 1)
                 .onHover { hovering = $0 }
                 .animation(Theme.press, value: pressed)
