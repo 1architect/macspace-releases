@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).
+
 - Tile captions choose their wrapped position from the destination width before the app’s opening animation (#19).
 
 - Tile attention marks share the corner’s center and keep their expanding ring inside the tile (#17).
