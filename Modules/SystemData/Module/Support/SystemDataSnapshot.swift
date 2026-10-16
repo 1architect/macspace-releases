@@ -132,6 +132,8 @@ actor SystemDataStore {
             guard let privileged, cached.helperError != nil, inflight == nil,
                   now.timeIntervalSince(helperAskedAt ?? cached.takenAt) >= Self.helperRetry else { return cached }
             helperAskedAt = now
+            progress?(0)
+            defer { progress?(1) }
             var retry = cached
             retry.helperTried = false
             retry.helperError = nil

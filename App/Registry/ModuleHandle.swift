@@ -134,7 +134,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     private var module: (any MacSpaceModule)?
     /// Refreshes under way, and whether an action is running: both make the module busy.
-    private var refreshes = 0
+    private var refreshes: Set<Int> = []
+    private var refreshRequests: Set<Int> = []
+    private var loadingGeneration: Int?
     private var performing = false
     /// Bumped by each refresh: a slower, older one that finishes last must not put back figures older than the newest.
     private var refreshGeneration = 0
@@ -201,26 +203,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         groupPath = []
     }
 
-    /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
-    /// `quiet` reads the module again without showing it: the charts do not pulse and Refresh does not spin (after a switch, whose
-    /// row already shows the change).
+    /// `reload` asks the module to check the system again (the Refresh button), retaining measurements it can still validate.
+    /// `quiet` suppresses presentation-only cache reads. If the module reports real scan work, that work shows progress normally.
     public func refresh(reload: Bool = false, quiet: Bool = false) async {
         guard !preparingForUninstall, state == .ready, let module else { return }
         let context = context()
         refreshGeneration += 1
         let generation = refreshGeneration
         let started = Date()
-        if !quiet {
-            refreshes += 1
-            if loading == nil {
-                loading = LoadFill(started: started, expected: settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess)
-            }
-            updateBusy()
-        }
+        let expected = settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess
+        refreshRequests.insert(generation)
+        if !quiet { showRefresh(generation, started: started, expected: expected) }
         defer {
-            if !quiet {
-                refreshes -= 1
-                if refreshes == 0 { loading = nil }
+            refreshRequests.remove(generation)
+            if refreshes.remove(generation) != nil {
+                if refreshes.isEmpty { loading = nil; loadingGeneration = nil }
                 updateBusy()
             }
         }
@@ -229,15 +226,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // What the module says of its progress fills the Loading… button (`LoadFill.reported`).
         let reports: LoadProgressSink = { [weak self] fraction in
             Task { @MainActor in
-                guard let self, !quiet, generation == self.refreshGeneration, self.loading != nil,
-                      fraction > self.loading?.reported ?? -1 else { return }
+                guard let self, fraction.isFinite, generation == self.refreshGeneration,
+                      self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
+                if !self.refreshes.contains(generation) {
+                    guard self.isWatched else { return }
+                    self.showRefresh(generation, started: started, expected: expected)
+                }
+                let fraction = min(max(fraction, 0), 1)
+                guard fraction > self.loading?.reported ?? -1 else { return }
                 self.loading?.reported = fraction
             }
         }
         async let nextScreen = module.screen(context: context, progress: reports)
         let (newTile, newScreen) = await (nextTile, nextScreen)
         guard generation == refreshGeneration, state == .ready else { return }
-        if !quiet { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
+        if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = Date()
         // Only what changed is published: each published value redraws the tile and the page, and the readings that follow the Mac
         // by themselves mostly find it unchanged.
@@ -250,9 +253,18 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         scheduleAutoRefresh()
     }
 
+    private func showRefresh(_ generation: Int, started: Date, expected: TimeInterval) {
+        refreshes.insert(generation)
+        if loadingGeneration != generation {
+            loading = LoadFill(started: started, expected: expected)
+            loadingGeneration = generation
+        }
+        updateBusy()
+    }
+
     private func updateBusy() {
-        isBusy = performing || refreshes > 0
-        isRefreshing = refreshes > 0
+        isBusy = performing || !refreshes.isEmpty
+        isRefreshing = !refreshes.isEmpty
     }
 
     /// Runs an action. Missing permissions stop it before the module is called. Returns what the module answered (nil when it was not

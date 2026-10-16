@@ -638,6 +638,7 @@ private struct ActionDock: View {
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     private var phase: ActionPill.Phase? {
+        if handle.isRefreshing { return .loading(handle.loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
