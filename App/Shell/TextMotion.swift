@@ -50,8 +50,8 @@ struct RollingText: View {
                     .transition(reduceMotion ? .opacity : Self.roll(delay: Double(index) * 0.025))
             }
         }
-        // The pieces roll inside the line, not across the lines around it.
-        .mask { Rectangle().padding(.vertical, -1) }
+        // A line-height mask cut through moving digits and their blur. Let the transition
+        // draw outside the resting glyph bounds; the containing page owns its clipping.
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.22), value: text)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
