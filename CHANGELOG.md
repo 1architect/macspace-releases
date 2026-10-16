@@ -17,6 +17,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Confirmation dialogs keep the icon, heading and complete message aligned left after every layout pass.
+
 - Back dismisses All Done immediately, including while the cleaned page is still refreshing.
 
 - Page rows and their shades cascade down after loading and up before refreshing or freeing space, without animating during tile open and close (#23).
