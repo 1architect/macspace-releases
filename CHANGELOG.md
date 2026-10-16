@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Apple Intelligence uses the system language after a language change and reports a failed off-switch instead of silently accepting it (#20).
+
 - Xcode documentation is no longer offered as a manual cleanup; Xcode has no removal control for it (#13).
 
 - While a module cleans, its tile reads "freeing space… 40%" instead of putting a middot after the ellipsis.
