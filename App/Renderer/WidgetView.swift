@@ -263,6 +263,7 @@ enum Tooltip {
 
 struct BadgeView: View {
     let badge: Badge
+    var wraps = false
     @Environment(\.design) private var design
 
     /// What needs the user is drawn in the action color, with its deep form for the text.
@@ -273,12 +274,22 @@ struct BadgeView: View {
     var body: some View {
         Text(badge.text)
             .font(.system(size: 11, weight: .semibold))
-            .lineLimit(1)
+            .lineLimit(wraps ? nil : 1)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 8)
-            .frame(height: 18)
+            .padding(.vertical, wraps ? 3 : 0)
+            .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
             .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
     }
+}
+
+/// Status and error messages share the module badges' pill shape. Longer errors stay readable.
+struct StatusFlag: View {
+    let text: String
+    var tone: Tone = .caution
+
+    var body: some View { BadgeView(badge: Badge(text, tone: tone), wraps: true) }
 }
 
 /// A notice: icon, title and action. Its message is what the notice says, so it stays visible.

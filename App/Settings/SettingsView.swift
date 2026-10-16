@@ -157,8 +157,8 @@ private struct ModuleToggleRow: View {
         Toggle(isOn: Binding(get: { handle.isEnabled }, set: { value in Task { await host.setEnabled(value, module: handle.id) } })) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(handle.manifest.name)
-                if let incompatible { Text(incompatible).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
-                if case let .failed(reason) = handle.state { Text(reason).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
+                if let incompatible { StatusFlag(text: incompatible) }
+                if case let .failed(reason) = handle.state { StatusFlag(text: reason) }
             }
         }
         .disabled(incompatible != nil)
@@ -176,14 +176,14 @@ private struct PermissionRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 InfoTitle(title: permission.title, info: permission.detail)
-                if let helperError { Text(helperError).font(.caption).foregroundStyle(DesignSettings.shared.design.action) }
+                if let helperError { StatusFlag(text: helperError) }
                 if permission == .privilegedHelper, PrivilegedHelperInstaller.status == .enabled, ((helperStatus ?? status) == .missing) {
-                    Text("Not responding").font(.caption).foregroundStyle(DesignSettings.shared.design.action)
+                    StatusFlag(text: String(localized: "Not responding"))
                 }
             }
             Spacer()
             switch (permission == .privilegedHelper ? helperStatus : nil) ?? status {
-            case .granted: Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green).labelStyle(.titleAndIcon)
+            case .granted: StatusFlag(text: String(localized: "Granted"), tone: .positive)
             case .missing:
                 if permission == .fullDiskAccess {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
@@ -191,9 +191,9 @@ private struct PermissionRow: View {
                     helperButton
                 } else if permission == .configurationProfile {
                     // None installed: nothing is wrong until a policy is switched off, which opens the profile to approve.
-                    Text("Not installed").foregroundStyle(.secondary)
+                    StatusFlag(text: String(localized: "Not installed"), tone: .neutral)
                 } else {
-                    Label("Needed", systemImage: "exclamationmark.circle.fill").foregroundStyle(DesignSettings.shared.design.action)
+                    StatusFlag(text: String(localized: "Needed"))
                 }
             case .unknown:
                 if permission == .privilegedHelper {
@@ -202,7 +202,7 @@ private struct PermissionRow: View {
                         helperButton
                     }
                 } else {
-                    Text("Unknown").foregroundStyle(.secondary)
+                    StatusFlag(text: String(localized: "Unknown"), tone: .neutral)
                 }
             }
         }

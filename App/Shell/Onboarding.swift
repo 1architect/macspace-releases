@@ -260,7 +260,8 @@ struct OnboardingView: View {
         let action: () -> Void = done ? { onboarding.next() } : { onboarding.approveHelper() }
         let later: (() -> Void)? = done ? nil : { onboarding.next() }
         return StepScreen(title: granted ? String(localized: "Helper approved") : String(localized: "Approve the helper"), line: line,
-                          button: done ? String(localized: "Continue") : String(localized: "Open Login Items"), action: action, later: later) {
+                          button: done ? String(localized: "Continue") : String(localized: "Open Login Items"), action: action, later: later,
+                          isNotice: !granted && !notFound && onboarding.helperError != nil) {
             BigSwitch(on: granted)
         }
     }
@@ -291,6 +292,7 @@ private struct StepScreen<Visual: View>: View {
     let button: String
     let action: () -> Void
     var later: (() -> Void)?
+    var isNotice = false
     @ViewBuilder let visual: Visual
     @Environment(\.design) private var design
     @State private var shown = false
@@ -305,8 +307,10 @@ private struct StepScreen<Visual: View>: View {
                 .contentTransition(.interpolate)
                 .opacity(shown ? 1 : 0)
                 .offset(y: shown ? 0 : 12)
-            Text(line)
-                .font(.system(size: 15, weight: .light))
+            Group {
+                if isNotice { StatusFlag(text: line) }
+                else { Text(line).font(.system(size: 15, weight: .light)) }
+            }
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
                 .fixedSize(horizontal: false, vertical: true)
