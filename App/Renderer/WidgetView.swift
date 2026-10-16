@@ -83,6 +83,8 @@ struct WidgetForm<Top: View>: View {
                 }
                 Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
+            // Match the native grouped Form’s 20-point inset above its first section header.
+            .padding(.top, 20)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
