@@ -66,15 +66,15 @@ run.
 
 ## Localization
 
-MacSpace speaks six languages: English, Portuguese (Brazil), French, Spanish, German and Simplified Chinese. **Every text that appears on screen
-needs a translation in all five other languages.** The check below fails without them.
+MacSpace speaks eight languages: English, Portuguese (Brazil), French, Spanish, German, Simplified Chinese, Japanese and Korean. **Every text that appears on screen
+needs a translation in all seven other languages.** The check below fails without them.
 
 Translations live in `Localization/<Table>.json`. `App.json` holds the app's texts, and there is one table for each module
 (`SystemData.json`, `Siri.json`, `OtherSystemFiles.json`, `Debloat.json`). Each entry maps the English text, exactly as the code has
-it, to its translations in this order: Portuguese (Brazil), French, Spanish, German, Simplified Chinese (zh-Hans).
+it, to its translations in this order: Portuguese (Brazil), French, Spanish, German, Simplified Chinese (zh-Hans), Japanese (ja), Korean (ko).
 
 ```json
-"Recent cleanups": ["Limpezas recentes", "Nettoyages récents", "Limpiezas recientes", "Letzte Bereinigungen", "最近清理"]
+"Recent cleanups": ["Limpezas recentes", "Nettoyages récents", "Limpiezas recientes", "Letzte Bereinigungen", "最近清理", "最近のクリーンアップ", "최근 정리"]
 ```
 
 After you change any text, run both commands from the repository root:
@@ -89,7 +89,7 @@ What they do:
 - `swift Scripts/Localize.swift` reads every table and writes `<language>.lproj/Localizable.strings` into `App/Resources` (for
   `App.json`) and into `Modules/<Module>/Bundle` (for a module's table). `Scripts/Assemble.sh` copies these files into the app. The
   generated files are committed, so commit them with your change and never edit them by hand. The script stops if a translation
-  drops a placeholder (`%@`, `%lld`, `%%`) from the English text, or if an entry does not have exactly five translations.
+  drops a placeholder (`%@`, `%lld`, `%%`) from the English text, or if an entry does not have exactly seven translations.
 - `--check` does the same and then builds the whole package with the compiler's string extraction, in a temporary folder, so it
   takes a while. It lists every text the code shows that no table has, and it exits with an error when any is missing. It skips the
   developer tools, the command-line tool and the helper, which stay in English. A format with no words to translate (`%@ · %@`)
@@ -184,7 +184,7 @@ Keep each pull request to one change. Before you open it:
 
 1. `swift test` passes.
 2. `swift Scripts/Localize.swift --check` is clean, and the generated `.strings` files are in your commit.
-3. New or changed on-screen text has a translation in all six UI languages.
+3. New or changed on-screen text has a translation in all eight UI languages.
 4. UI changes include screenshots, in the night and the day look when both are affected.
 5. [CHANGELOG.md](CHANGELOG.md) has an entry under "Unreleased", in the right group (Added, Changed, Deprecated, Removed, Fixed
    or Security), written for people who use the app.
