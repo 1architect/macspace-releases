@@ -32,7 +32,7 @@ public enum ConfirmationAlert {
     /// Whether the user confirmed the action; true when it asks nothing.
     static func ask(_ action: Action) -> Bool {
         guard let confirmation = action.confirmation else { return true }
-        let alert = NSAlert()
+        let alert = AppAlert()
         alert.messageText = confirmation.title
         alert.informativeText = confirmation.message
         alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = action.role == .destructive
@@ -41,18 +41,9 @@ public enum ConfirmationAlert {
         return alert.runModal() == .alertFirstButtonReturn
     }
 
-    /// One shape for every confirmation: both texts left aligned, the title in at most two lines and the description in at most two.
-    public static func standardize(_ alert: NSAlert) {
-        alert.layout()
-        for case let label as NSTextField in alert.window.contentView?.subviews ?? [] {
-            guard label.stringValue == alert.messageText || label.stringValue == alert.informativeText else { continue }
-            label.alignment = .left
-            label.maximumNumberOfLines = 2
-            label.lineBreakMode = .byTruncatingTail
-            label.cell?.truncatesLastVisibleLine = true
-        }
-        alert.layout()
-    }
+    /// Keep the same layout for startup warnings and module confirmations.
+    public static func standardize(_ alert: NSAlert) { alert.layout() }
+
 }
 
 /// Buttons in rows are the system's, as in Settings; the page's main action is the pill.
