@@ -30,78 +30,56 @@ macOS lets you control. It is free and open source, and it **collects no data ab
 
 ## What it does
 
-MacSpace has four modules. Each has a tile on the home page and a page of its own. Click a tile
-to open its page. **Back** goes up one level. You can switch any module off in Settings.
+MacSpace has four modules. You can switch them on or off in Settings.
 
 **System Data.** System Data is the part of the disk that System Settings does not explain.
 MacSpace works it out the way System Settings does (used space, less macOS and every other
 category), so the figure is close to the one you see there. Then it breaks it down: caches, logs,
-reports, system assets, app data, document version history. What it cannot name shows as
-**Not identified**. It is never left out.
+reports, system assets, app data, document version history. 
 
-The main button, **Free** with a size, deletes what is safe: caches of apps that are closed,
-diagnostic and crash reports older than 7 days, and unused system assets. Under **Free now**, each
-item has its own button. Two items are kept apart because they need more care: **Document version
-history** (earlier versions of your documents; only the latest version stays) and **Leftover macOS
-update files** (files of an update that is already installed). The **System log** (what macOS
-records for troubleshooting) and the **Trash** have their own buttons too, never the main one. For
+The main button, **Free**, deletes what is safe. Items that are kept apart because they need more care have their own buttons. For
 everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by hand.
-A click on a block of the chart opens the items it is made of, and the folder button on a row shows
-its files in the Finder. What macOS keeps closed to every app is named **Protected by macOS**. Under
-**Free now**, the caches of open apps can be checked too: **Free** quits those apps first. With
-**Cache cleaner** in Settings, another app (CleanMyMac, Mole, OnyX, Pearcleaner, Purge or Sensei,
-when installed) can free the caches in place of MacSpace.
+App caches apps can be checked too: **Free** asks you if it can quit opened apps first. You can also chose another installed cleaner in settings to do deal with them instead of MacSpace.
 
 <p align="center">
   <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
 </p>
 
-**Siri & Apple Intelligence.** One switch, **Apple Intelligence**, on the page and on the tile.
+**Siri & Apple Intelligence.** 
 Switched off, MacSpace sets Siri to a language other than your Mac's. That is how macOS decides
 that Apple Intelligence is unavailable. MacSpace then deletes the models macOS keeps on disk,
 which can be about 12 GB. Switch it on again and MacSpace puts your Siri language and voice
-back. With Siri's iCloud sync on, the language change also reaches your iPhone and iPad. The
-page says so and shows how to turn the sync off. It also names other accounts that keep Apple
-Intelligence on, because the models are shared by all accounts. An optional check, **Check that
-Apple Intelligence stays off** in Settings, tells you if macOS turns it back on. In a virtual
-machine macOS does not offer Apple Intelligence, so the page only says that.
+back. 
 
 <p align="center">
   <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
 </p>
 
 **Other System Files.** Space outside System Data that macOS counts as purgeable. macOS frees it
-when the disk is nearly full. **Free up to** asks it to do that now. The size is macOS's
-estimate, which is why it says "up to". Copies of cloud files kept on this Mac (OneDrive, iCloud
+when the disk is nearly full. **Free up to** forces macOS to do the cleaning. Copies of cloud files kept on this Mac (OneDrive, iCloud
 Drive and other cloud folders) have a row and a button of their own, **Remove Downloads**. The
-files stay in the cloud and download again when you open them. A macOS update that is ready to
-install is listed under **Waiting to install**. MacSpace does not delete it. Time Machine's local
-snapshots (copies of your Mac it keeps for a day) have a row of their own: **Free** deletes all but
-the newest and the one the next backup starts from. A connected backup disk lists its backups, and
-you can choose old ones to free. The latest backup always stays.
+files stay in the cloud and download again when you open them. 
+This module also cleans stale macOS updates and old Time Machine snapshots.
 
 <p align="center">
   <img src="Docs/Screenshots/en/OtherSystemFiles.png" alt="The Other System Files page: a chart of what macOS counts as purgeable, the Free now list and the Free up to button" width="720">
 </p>
 
-**Debloat.** Twelve switches for analytics, advertising and background data collection that
-macOS lets you control. Each switch is named **Disable …**: on means MacSpace switched that
-feature off. **Disable all** switches off everything still on. **Enable all** puts back what
-MacSpace changed, using the settings it saved first. While MacSpace runs, it checks every 15
-minutes and switches off again anything macOS turned back on (policies excepted), and can tell
-you when it does.
+**Debloat.** Twelve switches for analytics, advertising and background data collection. If the toggle is on, it means MacSpace switched that
+feature off. While MacSpace runs, it checks every 15
+minutes and switches off again anything macOS turned back on.
 
 | Switch | What it does | Takes effect after |
 |---|---|---|
-| Share analytics with Apple | Stops sending usage and crash data to Apple and app developers. | Nothing |
-| Improve Siri & Dictation | Stops sharing Siri and Dictation recordings with Apple. | Nothing |
+| Share analytics with Apple | Stops sending usage and crash data to Apple and app developers. | Toggle |
+| Improve Siri & Dictation | Stops sharing Siri and Dictation recordings with Apple. | Toggle |
 | Dictation and translation on Apple servers | Dictation and translation stay on this Mac. Languages without an on-device model stop working. | Reopening apps |
 | Personalized ads | Apple stops picking ads based on what you do. | Reopening apps |
 | Advertising identifier | Apps can't track you with the advertising identifier or ask to. | Reopening apps |
 | Siri AI | Turns off Siri AI. Spotlight goes back to classic search. | A restart |
 | Visual Intelligence | Turns off Visual Intelligence. Visual Look Up may stop working too. | A restart |
 | Spotlight internet results | Spotlight stops sending your searches to Apple. No more web results in Spotlight. | Reopening apps |
-| Hang tracing (tailspin) | Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory. | Nothing |
+| Hang tracing (tailspin) | Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory. | Toggle |
 | Crash report dialog | No more "quit unexpectedly" dialogs. | A restart |
 | Game Center | Turns off Game Center. | Logging out |
 | Apple News | Hides Apple News and its widgets. | Logging out |
@@ -116,21 +94,18 @@ policy too, because macOS ignores the setting there.
 
 **Also in MacSpace.** **Clean automatically** (Settings, off until you turn it on) frees what the
 modules can free without asking, every day, every 3 days or every week, while MacSpace is running.
-Debloat takes no part, and version history is never deleted. **Recent cleanups** lists what each one
+**Recent cleanups** lists what each one
 freed. MacSpace notifies you when automatic cleanup frees at least 100 MB, when an action that took
 a while ends while MacSpace is not in front, and when the disk is almost full (once a day at most).
 Each notification can be switched off. **When the window closes**, MacSpace can quit, keep running
 in the menu bar (the default) or keep running unseen in the background. Right-click the menu bar
-icon for a menu with each module, **Settings…**, **Open Panel** and **Quit MacSpace**. MacSpace
-speaks English, Portuguese (Brazil), French, Spanish and German, and follows your system language.
-When a cleanup ends, **All done** says how much it freed. The window keeps its size and place, and
-on the home page, pointing at the ✕ shows **Minimize** and **Maximize**.
+icon for a menu with each module, **Settings…**, **Open Panel** and **Quit MacSpace**. 
 
 ---
 
 ## Install
 
-### Homebrew (official)
+### Homebrew
 
 ```bash
 brew install --cask 1architect/macspace/macspace
@@ -198,17 +173,16 @@ missing.
 
 The helper is a launch daemon, `com.macspace.helper`. It runs only named operations that are built
 into it, a caller cannot send it commands, and it accepts only clients signed by the same developer
-team as MacSpace. Among other things, it can measure the size of system folders (never of a home
-folder), delete the document version history and the leftover files of an installed macOS update,
+team as MacSpace. Among other things, it can measure the size of system folders, delete the document version history and the leftover files of an installed macOS update,
 erase the system log, delete the symbols for crash reports, delete the old Time Machine backups you
-choose, change the Debloat switches that need an administrator, and remove the MacSpace profile.
-[Security](SECURITY.md) has the full list.
+choose, change the Debloat switches that need an administrator, and remove the MacSpace profile. Please refer to
+[Security](SECURITY.md) for more info.
 
 ---
 
 ## Safety
 
-**What it deletes.** Only what it can name. Nothing goes to the Trash.
+**What it deletes.** 
 
 - Caches that apps rebuild: the caches in the per-user system cache folder (`/var/folders/…/C`)
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
@@ -229,7 +203,7 @@ choose, change the Debloat switches that need an administrator, and remove the M
 - Only when you press its own button: the system log, with Apple's own `log erase`; the symbols
   macOS keeps to read crash reports, which it rebuilds; everything in the Trash; Time Machine's
   local snapshots, all but the newest and the one the next backup starts from; and the backups you
-  choose on a connected backup disk, never the latest. Snapshots and backups are never deleted while
+  choose on a connected backup disk, leaving the latest on. Snapshots and backups are never deleted while
   a backup runs.
 - Only the caches you choose under **App caches**: folders in `~/Library/Caches` and, with Full Disk
   Access, what is in the caches folder of each app's container
@@ -260,9 +234,6 @@ MacSpace restores your Siri language and voice, and macOS may download the model
 caches rebuild. Deleted reports, version history, logs, items in the Trash, snapshots and backups
 do not come back.
 
-**Virtual machines.** In a virtual machine, **Siri & Apple Intelligence** does nothing and says
-why. Debloat still lists switches there that cannot take effect in a virtual machine.
-
 How macOS behaves, with measurements, is in [Docs/Research.md](Docs/Research.md).
 
 ---
@@ -280,7 +251,7 @@ the [Privacy Policy](PRIVACY.md) and the [Security Policy](SECURITY.md).
 
 ## Uninstall
 
-There is no uninstaller. To remove MacSpace and everything it changed:
+To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpace** then **About MacSpace** then click **Uninstall**. The uninstaller automates the process below. If you prefer to do it manually please follow this order:
 
 1. **Undo what MacSpace changed.** In **Debloat**, press **Enable all**. This also removes the
    overrides Debloat wrote outside MacSpace's own folders, which stay in place if you just delete
