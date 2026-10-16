@@ -149,7 +149,7 @@ struct ScreenView: View {
         // Above "All done": disabled, it could not move the window while the module reads the Mac again after the cleanup.
         .disabled(handle.isBusy && handle.progress != nil)
         .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
-                                  leaving: reveal < 1) { [handle] in
+                                  leaving: reveal < 1, navigation: handle.groupPath) { [handle] in
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
@@ -480,9 +480,9 @@ private struct AllDoneOverlay: View {
     /// The page is closing under it (Back to the dashboard): it goes at once, with nothing left to do. Left where it was, it
     /// stayed over the tile shrinking back onto the dashboard, its count half rolled (2026-10-13).
     let leaving: Bool
-    let finished: () -> Void
-    @State private var shown = false
-    @State private var run: Task<Void, Never>?
+    let navigation: [String]
+    let finished: @MainActor () -> Void
+    @StateObject private var lifetime = AllDoneLifetime()
     @State private var count: Task<Void, Never>?
     /// The words have come in.
     @State private var appeared = false
@@ -503,7 +503,7 @@ private struct AllDoneOverlay: View {
 
     var body: some View {
         ZStack {
-            if shown {
+            if lifetime.shown {
                 ZStack {
                     Rectangle().fill(ground ?? .clear)
                     // In the large tile's caption styles: its title, and its status line under it.
@@ -530,41 +530,30 @@ private struct AllDoneOverlay: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .animation(Theme.push, value: shown)
-        .allowsHitTesting(shown)
+        .animation(Theme.push, value: lifetime.shown)
+        .allowsHitTesting(lifetime.shown)
         // Only a new success: a page opened again later must not say it again.
         .onChange(of: token) { _, _ in
-            run?.cancel()
             count?.cancel()
-            run = Task { @MainActor in
-                counted = freed.flatMap { $0 > 0 ? $0 : nil }
-                progress = 0
-                appeared = false
-                shown = true
-                count = Task { @MainActor in await countUp() }
-                // Long enough to read the figure once it has counted up.
-                try? await Task.sleep(for: counted == nil ? .seconds(1.2) : .seconds(2))
-                while reloadingNow, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(100)) }
-                guard !Task.isCancelled else { return }
-                finished()
-                try? await Task.sleep(for: .milliseconds(60))
-                shown = false
-            }
+            guard !leaving else { lifetime.dismiss(); return }
+            counted = freed.flatMap { $0 > 0 ? $0 : nil }
+            progress = 0
+            appeared = false
+            lifetime.reloading = reloading
+            lifetime.present(hold: counted == nil ? .seconds(1.2) : .seconds(2), finished: finished)
+            count = Task { @MainActor in await countUp() }
         }
-        .onDisappear { run?.cancel(); count?.cancel(); shown = false }
-        .onChange(of: leaving) { _, now in
-            guard now, shown else { return }
-            run?.cancel()
-            count?.cancel()
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) { shown = false }
-        }
-        .onChange(of: reloading, initial: true) { _, now in reloadingNow = now }
+        .onDisappear { dismiss() }
+        .onChange(of: leaving) { _, now in if now { dismiss() } }
+        .onChange(of: navigation) { _, _ in dismiss() }
+        .onChange(of: reloading, initial: true) { _, now in lifetime.reloading = now }
     }
 
-    /// `reloading` as it is now, for the task that waits on it (a task keeps the value it started with).
-    @State private var reloadingNow = false
+    private func dismiss() {
+        count?.cancel()
+        count = nil
+        lifetime.dismiss()
+    }
 
     /// The words come in as the page slides in, then the figure counts up from zero, quickly at first and slowing to its value.
     private func countUp() async {
