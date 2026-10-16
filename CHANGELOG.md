@@ -11,8 +11,6 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 - Closing or hiding the last window releases module pages and cached scans while retaining menu bar summaries (#11).
 
-- The app icon uses a mint and midnight palette to distinguish its modular mark from Tailscale (#18).
-
 ### Fixed
 
 - Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).
