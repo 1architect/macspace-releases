@@ -49,7 +49,7 @@ struct WindowControls: View {
                 .frame(width: glyph, height: glyph)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.diameter, height: Self.diameter)
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: Self.diameter / 2, style: .continuous))
         }
         .buttonStyle(ControlStyle())
         .help(help)
@@ -65,7 +65,7 @@ struct WindowControls: View {
             configuration.label
                 .opacity(pressed ? 0.55 : 1)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: (WindowControls.diameter - 8) / 2, style: .continuous)
                         .fill(.white.opacity(hovering ? (pressed ? 0.06 : 0.12) : 0))
                         .padding(4)
                 }
