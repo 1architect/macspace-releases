@@ -21,6 +21,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Page rows and their shades cascade down after loading and up before refreshing or freeing space, without animating during tile open and close (#23).
+
 - Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).
 
 - Tile captions choose their wrapped position from the destination width before the app’s opening animation (#19).

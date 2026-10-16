@@ -11,7 +11,11 @@ struct ScreenView: View {
     var reveal: CGFloat = 1
     @Environment(\.design) private var design
 
-    private var hidesDetails: Bool { handle.isRefreshing || handle.isCleaning }
+    @StateObject private var details = PageDetailsVisibility()
+    private var hidesDetails: Bool { !details.visible }
+
+    private var legendCount: Int { (content?.hero?.segments.count).map { $0 + 1 } ?? 0 }
+    private var cascadeCount: Int { legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count }
 
     /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
     private var hasFooter: Bool {
@@ -134,7 +138,7 @@ struct ScreenView: View {
         }
         .animation(Theme.push, value: groups.map(\.id))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
-        .environment(\.pageContentReveal, reveal)
+        .environment(\.pageCascadeCount, cascadeCount)
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
             ActionDock(handle: handle)
@@ -151,6 +155,13 @@ struct ScreenView: View {
         } }
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
+        .onAppear {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { details.update(busy: handle.isRefreshing || handle.isCleaning, initial: true) }
+        }
+        .onChange(of: handle.isRefreshing || handle.isCleaning) { _, busy in details.update(busy: busy) }
+        .onDisappear { details.cancel() }
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
         .onChange(of: groups.count) { _, count in
             if count < handle.groupPath.count { handle.groupPath = Array(handle.groupPath.prefix(count)) }
@@ -164,17 +175,15 @@ struct ScreenView: View {
                 // While the module reads the Mac again (Refresh, or after an action), only the blocks stay, pulsing: the legend and the
                 // groups under them fold away and rise in again with the new figures, instead of showing figures about to change.
                 let refreshing = hidesDetails
-                WidgetForm(widgets: refreshing ? [] : Self.without(handle.finishedRows, in: content.widgets), handler: handler, showsTop: content.hero != nil) {
+                WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
+                           detailsVisible: !refreshing, cascadeOffset: legendCount) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || refreshing)
-                            .modifier(ZoomReveal(index: 0, reveal: reveal))
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
                     }
                 }
-                .animation(Theme.layout, value: refreshing ? [] : content.widgets.map(\.id))
-                .animation(Theme.layout, value: handle.finishedRows)
             } else {
                 // Nothing in the page's place while the module reads the Mac: its ground breathes (`TileBackdrop.loading`) and the
                 // button says Loading… (`ActionDock`). A placeholder of rows stood there before, and stayed for good when the module
@@ -193,7 +202,7 @@ struct ScreenView: View {
     private func groupPage(_ group: Row) -> some View {
         let widgets: [ScreenWidget]
         if let selection = group.selection, !selection.sections.isEmpty {
-            let byID = Dictionary(group.children.filter { !handle.finishedRows.contains($0.id) }.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let byID = Dictionary(group.children.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             widgets = selection.sections.compactMap { section -> ScreenWidget? in
                 let rows = section.rows.compactMap { byID[$0] }
                 guard !rows.isEmpty else { return nil }
@@ -201,16 +210,10 @@ struct ScreenView: View {
             }
         } else {
             widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
-                                        rows: group.children.filter { !handle.finishedRows.contains($0.id) }))]
+                                        rows: group.children))]
         }
-        return WidgetForm(widgets: hidesDetails ? [] : widgets, handler: handler,
-                          showsTop: hidesDetails && content?.hero != nil) {
-            if hidesDetails, let hero = content?.hero {
-                HeroBlocks(usage: hero, tint: tint, loading: true)
-                    .padding(.bottom, 4)
-            }
-        }
-            .animation(Theme.layout, value: handle.finishedRows)
+        return WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails) { EmptyView() }
+            .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
             .environment(\.rowChoice, group.selection.map { selection in
@@ -235,7 +238,7 @@ struct ScreenView: View {
 extension EnvironmentValues {
     /// Where a page's scroll area starts: under the glass window's corner buttons and title, or right under a standard window's
     /// toolbar (`StandardWindowView`).
-    @Entry var pageContentReveal: CGFloat = 1
+    @Entry var pageCascadeCount: Int = 0
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
     /// The page's own color, which the glass along its edges is tinted with so it does not lighten it (`EdgeGlass`).
     @Entry var pageGround: Color?
@@ -380,6 +383,7 @@ struct HeroBlocks: View {
     var loading = false
     @Environment(\.design) private var design
     @Environment(\.openGroup) private var openGroup
+    @Environment(\.pageCascadeCount) private var cascadeCount
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
     @State private var hovered: String?
     @State private var blocksSize = CGSize.zero
@@ -413,11 +417,8 @@ struct HeroBlocks: View {
                     openGroup(group.id)
                 }
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
-            if !loading {
-                legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
-            }
+            legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
         }
-        .animation(Theme.layout, value: loading)
     }
 
     private func legend(segments: [UsageSegment], blocks: [(segment: UsageSegment, weight: Double)], hoveredSegment: UsageSegment?) -> some View {
@@ -440,7 +441,7 @@ struct HeroBlocks: View {
             .foregroundStyle(palette.soft)
             .frame(height: 14, alignment: .leading)
             .animation(Theme.hover, value: hovered)
-            .modifier(PageItemReveal(index: 0))
+            .modifier(PageItemReveal(index: 0, count: cascadeCount, visible: !loading))
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
                 // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
                 ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
@@ -458,7 +459,7 @@ struct HeroBlocks: View {
                         Text(ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                             .contentTransition(.numericText())
                     }
-                    .modifier(PageItemReveal(index: index + 1))
+                    .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: !loading))
                 }
             }
             .animation(Theme.value, value: usage.segments)

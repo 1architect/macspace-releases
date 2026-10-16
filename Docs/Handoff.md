@@ -88,7 +88,7 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    SDK version, minimum macOS, permissions, options, background tasks) **without running any code**. Compatible, enabled modules are
    then loaded through their principal class (`MacSpaceModuleEntry`). All modules load side by side.
 2. **Declarative UI.** A module returns a `Screen` of widgets (banner, usage bar, chart, list, toggles, button, steps, text,
-   section) and a summary widget for the Home tile. The app draws them. Actions come back as `ActionRequest`s; the app checks the
+   section) and a summary widget for the Home tile. The app draws them. Module pages use grouped SwiftUI rows whose shades and separators belong to each row, so the legend, headings and rows can cascade together. Native Form group backgrounds stayed visible during row transitions. Loading and cleaning share one visibility controller; tile zooms hide the entire page until settled. Actions come back as `ActionRequest`s; the app checks the
    action's `requires` permissions and shows its confirmation first. A row's subtitle is a count after its title, and its facts are pills
    (`Row.badges`) right after it; its detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
    Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short
