@@ -172,6 +172,8 @@ struct TileCaption: View, @preconcurrency Animatable {
     let status: String
     var size: CGFloat = 22
     var loading = false
+    /// The destination width is known before the tile begins its entrance animation.
+    var layoutWidth: CGFloat?
     @Environment(\.design) private var design
 
     /// The size follows the tile into another cell frame by frame, as the tile grows or shrinks: set at once, the text took its new
@@ -186,11 +188,19 @@ struct TileCaption: View, @preconcurrency Animatable {
     var body: some View {
         let bold = Font(CaptionFont.title(size: size))
         VStack(alignment: .trailing, spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(title).font(bold).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    if let figure { Text(figure).font(bold).lineLimit(1) }
+            Group {
+                if let layoutWidth {
+                    let layout = CaptionLayout(info: TileInfo(title: title, figure: figure, status: status), size: size, width: layoutWidth)
+                    if layout.oneLine {
+                        Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
+                    } else {
+                        stackedTitle(bold)
+                    }
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
+                        stackedTitle(bold)
+                    }
                 }
             }
             .contentTransition(.numericText())
@@ -204,6 +214,15 @@ struct TileCaption: View, @preconcurrency Animatable {
         // No shadow behind the text: a blurred shadow of every caption was redrawn on every frame any tile moved.
         .animation(Theme.value, value: status)
     }
+
+    private func stackedTitle(_ font: Font) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(title).font(font).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            if let figure { Text(figure).font(font).lineLimit(1) }
+        }
+        .frame(width: layoutWidth, alignment: .trailing)
+    }
+
 }
 
 /// The page's main action is the amber pill, the action color; `.normal` actions get a quiet translucent one. With Liquid Glass on,
