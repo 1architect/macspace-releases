@@ -3,34 +3,27 @@ import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
 
-/// A module's widgets as a system grouped form, the same as Settings: a header above each group, one row per item with its control on
-/// the right. The form keeps its look whatever the palette and glass settings. Descriptions (subtitles, details, footnotes) and steps
-/// to follow are behind a small (i) after the title (`InfoButton`), which opens them in a balloon.
-///
-/// Sections are built in this view's own functions, not in wrapper views: the form only lays out sections it can see directly.
+/// The module's grouped rows. Each row draws its own shade and separator, so both leave with
+/// its text during a cascade. A native Form draws those backgrounds outside the row's animation.
 struct WidgetForm<Top: View>: View {
     let widgets: [ScreenWidget]
     let handler: ActionHandler
-    /// Whether `top` is drawn. It goes in the first section's header: a section of its own, with no rows, changed how the form drew the
-    /// next header.
     var showsTop = true
-    /// Drawn above the first group, without a group of its own (the page's hero).
+    var detailsVisible = true
+    var cascadeOffset = 0
     @ViewBuilder var top: Top
     @Environment(\.sectionChoice) private var sectionChoice
-    /// Collapsible sections the user has flipped from how they start.
+    @Environment(\.pageCascadeCount) private var cascadeCount
+    @Environment(\.pageBottomRoom) private var bottomRoom
     @State private var flipped: Set<String> = []
-    @Environment(\.pageContentReveal) private var pageReveal
-
-    private func item(_ id: String) -> PageItemReveal {
-        PageItemReveal(index: Self.itemIDs(widgets).firstIndex(of: id) ?? 0, reveal: pageReveal)
-    }
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
         widgets.flatMap { widget -> [String] in
             let header = [widget.id + ":header"]
             switch widget {
-            case let .section(section): return header + itemIDs(section.widgets)
-            case let .list(list): return header + list.rows.map(\.id)
+            case let .section(section):
+                return header + (section.isCollapsible ? [section.id + ":disclosure"] : []) + itemIDs(section.widgets)
+            case let .list(list): return header + (list.rows.isEmpty ? [list.id + ":empty"] : list.rows.map(\.id))
             case let .toggles(list): return header + list.rows.map(\.id)
             case let .steps(steps): return header + steps.steps.indices.map { "\(steps.id):\($0)" }
             default: return header + [widget.id]
@@ -38,178 +31,158 @@ struct WidgetForm<Top: View>: View {
         }
     }
 
+    private func item(_ id: String) -> PageItemReveal {
+        let ids = Self.itemIDs(widgets)
+        return PageItemReveal(index: cascadeOffset + (ids.firstIndex(of: id) ?? 0),
+                              count: max(cascadeCount, cascadeOffset + ids.count), visible: detailsVisible)
+    }
+
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
-        Binding(get: { section.startsCollapsed == flipped.contains(section.id) },
-                set: { open in
-                    let flip = open == section.startsCollapsed
-                    if flip { flipped.insert(section.id) } else { flipped.remove(section.id) }
-                })
+        Binding(get: { section.startsCollapsed == flipped.contains(section.id) }, set: { open in
+            if open == section.startsCollapsed { flipped.insert(section.id) } else { flipped.remove(section.id) }
+        })
     }
 
     var body: some View {
-        // The first group keeps one identity whatever the widgets are, and is there even before there are any (while the page loads):
-        // the top, in its header, then stays the same view from loading to loaded, and its blocks move into place instead of being
-        // drawn anew.
-        let items: [Item] = widgets.isEmpty && showsTop
-            ? [Item(id: Item.leading, widget: nil)]
-            : widgets.enumerated().map { Item(id: $0.offset == 0 ? Item.leading : $0.element.id, widget: $0.element) }
-        Form {
-            ForEach(items) { item in
-                section(for: item.widget, leading: showsTop && item.id == Item.leading)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
+                ForEach(widgets) { widget in
+                    let title = Self.title(widget)
+                    let rows = entries(widget)
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let text = title.text, !text.isEmpty {
+                            header(text, help: title.help, part: Self.part(widget))
+                                .foregroundStyle(.secondary)
+                                .accessibilityAddTraits(.isHeader)
+                                .padding(.horizontal, 10)
+                                .modifier(item(widget.id + ":header"))
+                        }
+                        VStack(spacing: 0) {
+                            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                                row.view
+                                    .frame(maxWidth: .infinity, minHeight: 18, alignment: .leading)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 10)
+                                    .background {
+                                        UnevenRoundedRectangle(topLeadingRadius: index == 0 ? 10 : 0,
+                                                               bottomLeadingRadius: index == rows.count - 1 ? 10 : 0,
+                                                               bottomTrailingRadius: index == rows.count - 1 ? 10 : 0,
+                                                               topTrailingRadius: index == 0 ? 10 : 0)
+                                            .fill(.primary.opacity(0.045))
+                                    }
+                                    .overlay(alignment: .top) {
+                                        if index > 0 {
+                                            Rectangle().fill(.primary.opacity(0.07)).frame(height: 0.5).padding(.horizontal, 10)
+                                        }
+                                    }
+                                    .modifier(item(row.id))
+                            }
+                        }
+                    }
+                }
+                Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
-            PageBottomRoom()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
+        .font(.system(size: 13))
+        .buttonStyle(.bordered)
     }
 
-    private struct Item: Identifiable {
-        // Computed: a type nested in a generic one cannot store a static.
-        static var leading: String { "leading-section" }
+    private struct Entry: Identifiable {
         let id: String
-        let widget: ScreenWidget?
+        let view: AnyView
+        init<V: View>(_ id: String, _ view: V) { self.id = id; self.view = AnyView(view) }
     }
 
-    /// One group per widget, all built the same way, so the first one stays the same view when its widget changes kind.
-    private func section(for widget: ScreenWidget?, leading: Bool) -> some View {
-        let title = widget.map(Self.title) ?? (text: nil, help: nil)
-        return Section {
-            if let widget { content(of: widget) }
-        } header: {
-            header(title.text, help: title.help, leading: leading, id: widget?.id ?? Item.leading, part: widget.flatMap(Self.part))
+    private func entries(_ widget: ScreenWidget) -> [Entry] {
+        switch widget {
+        case let .banner(banner): return [Entry(banner.id, BannerRow(banner: banner, handler: handler))]
+        case let .usage(usage): return [Entry(usage.id, UsageBarView(usage: usage))]
+        case let .chart(chart): return [Entry(chart.id, BarChartView(chart: chart))]
+        case let .list(list):
+            if list.rows.isEmpty, let empty = list.emptyMessage { return [Entry(list.id + ":empty", Text(empty).foregroundStyle(.secondary))] }
+            return list.rows.map { Entry($0.id, RowView(row: $0, handler: handler)) }
+        case let .toggles(list): return list.rows.map { Entry($0.id, ToggleRowView(row: $0, handler: handler)) }
+        case let .button(button): return [Entry(button.id, ButtonRow(button: button, handler: handler))]
+        case let .text(text): return [Entry(text.id, TextWidgetView(text: text))]
+        case let .steps(steps):
+            return steps.steps.enumerated().map { index, step in
+                Entry("\(steps.id):\(index)", HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
+                    Text(step)
+                })
+            }
+        case let .section(section):
+            guard section.isCollapsible else { return section.widgets.flatMap(entries) }
+            let binding = expansion(section)
+            let disclosure = Entry(section.id + ":disclosure", HStack(spacing: 8) {
+                Button { withAnimation(Theme.layout) { binding.wrappedValue.toggle() } } label: {
+                    Image(systemName: binding.wrappedValue ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(section.title)
+                }.buttonStyle(.plain)
+                InfoButton(text: section.subtitle)
+            })
+            return [disclosure] + (binding.wrappedValue ? section.widgets.flatMap(entries) : [])
         }
     }
 
-    /// The group's title and its tooltip. A part that folds names itself in its disclosure row instead.
     private static func title(_ widget: ScreenWidget) -> (text: String?, help: String?) {
         switch widget {
         case let .section(section): return section.isCollapsible ? (nil, nil) : (section.title, section.subtitle)
         case let .list(list): return (list.title, nil)
-        case let .toggles(toggles): return (toggles.title, toggles.footnote)
+        case let .toggles(list): return (list.title, list.footnote)
         case let .usage(usage): return (usage.title, usage.footnote)
         case let .chart(chart): return (chart.title, nil)
         case let .steps(steps): return (steps.title, nil)
-        case .banner, .button, .text: return (nil, nil)
+        default: return (nil, nil)
         }
     }
 
     @ViewBuilder
-    private func content(of widget: ScreenWidget) -> some View {
-        if case let .section(section) = widget {
-            if section.isCollapsible {
-                // A part that folds is one disclosure row, as macOS forms show them; its rows open under it.
-                DisclosureGroup(isExpanded: expansion(section)) {
-                    ForEach(section.widgets) { inner in rows(for: inner) }
-                } label: {
-                    InfoTitle(title: section.title, info: section.subtitle)
-                }
-            } else {
-                ForEach(section.widgets) { inner in rows(for: inner) }
-            }
-        } else {
-            rows(for: widget)
-        }
-    }
-
-    /// A section's header: its title (with its description behind an (i)), with the page's top above it on the first section.
-    @ViewBuilder
-    private func header(_ title: String?, help: String? = nil, leading: Bool, id: String, part: String? = nil) -> some View {
-        let hasTitle = !(title ?? "").isEmpty
-        if leading {
-            // The top stays put; only the title rises in with its rows.
-            VStack(alignment: .leading, spacing: 14) {
-                top
-                if hasTitle, let title { titled(title, help: help, part: part).modifier(item(id + ":header")) }
-            }
-        } else if hasTitle, let title {
-            titled(title, help: help, part: part).modifier(item(id + ":header"))
-        }
-    }
-
-    /// A header's title, after the box that checks its whole part on a choosing page (`Selection.sections`).
-    @ViewBuilder
-    private func titled(_ title: String, help: String?, part: String?) -> some View {
+    private func header(_ title: String, help: String?, part: String?) -> some View {
         if let part, let choice = sectionChoice, choice.hasRows(part) {
             HStack(spacing: 8) {
                 Toggle(title, isOn: Binding(get: { choice.isOn(part) }, set: { _ in choice.toggle(part) }))
-                    .toggleStyle(.checkbox)
-                    .labelsHidden()
+                    .toggleStyle(.checkbox).labelsHidden()
                 InfoTitle(title: title, info: help)
             }
-        } else {
-            InfoTitle(title: title, info: help)
-        }
+        } else { InfoTitle(title: title, info: help) }
     }
 
-    /// The part of a choosing page a list is (`ScreenView.groupPage`), by its section's id.
     private static func part(_ widget: ScreenWidget) -> String? {
         guard case let .list(list) = widget, list.id.hasPrefix(sectionPrefix) else { return nil }
         return String(list.id.dropFirst(sectionPrefix.count))
     }
-
     static var sectionPrefix: String { "group-section:" }
+}
 
-    /// The rows a widget contributes to a group.
-    @ViewBuilder
-    private func rows(for widget: ScreenWidget) -> some View {
-        switch widget {
-        case let .banner(banner): BannerRow(banner: banner, handler: handler).modifier(item(banner.id))
-        case let .usage(usage): UsageBarView(usage: usage).modifier(item(usage.id))
-        case let .chart(chart): BarChartView(chart: chart).modifier(item(chart.id))
-        case let .list(list):
-            if list.rows.isEmpty, let empty = list.emptyMessage { Text(empty).foregroundStyle(.secondary) }
-            ForEach(list.rows) { row in RowView(row: row, handler: handler).modifier(item(row.id)) }
-        case let .toggles(toggles):
-            ForEach(toggles.rows) { row in ToggleRowView(row: row, handler: handler).modifier(item(row.id)) }
-        case let .button(button): ButtonRow(button: button, handler: handler).modifier(item(button.id))
-        case let .steps(steps):
-            ForEach(Array(steps.steps.enumerated()), id: \.offset) { index, step in
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
-                    Text(step)
-                }
-                .modifier(item("\(steps.id):\(index)"))
-            }
-        case let .text(text): TextWidgetView(text: text).modifier(item(text.id))
-        case let .section(section):
-            ForEach(section.widgets) { inner in AnyView(WidgetRows(widget: inner, handler: handler)) }
-        }
+/// Shared ordering for the legend, headers and rows; departure runs from the bottom up.
+enum PageCascade {
+    static func delay(index: Int, count: Int, visible: Bool) -> Double {
+        let last = max(count - 1, 0)
+        let position = min(max(index, 0), last)
+        let step = min(0.035, 0.6 / Double(max(last, 1)))
+        return Double(visible ? position : last - position) * step
     }
 }
 
-/// Each header, row and legend item enters independently, including when a refresh finishes.
 struct PageItemReveal: ViewModifier {
     let index: Int
-    var reveal: CGFloat? = nil
-    @Environment(\.pageContentReveal) private var inheritedReveal
+    var count = 1
+    var visible = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var shown = false
 
     func body(content: Content) -> some View {
         content
-            .opacity(shown || reduceMotion ? 1 : 0)
-            .offset(y: shown || reduceMotion ? 0 : 14)
-            .modifier(ZoomReveal(index: index, reveal: reduceMotion ? 1 : (reveal ?? inheritedReveal)))
-            .onAppear {
-                withAnimation(reduceMotion ? nil : Theme.layout.delay(Double(min(index, 12)) * 0.035)) { shown = true }
-            }
-    }
-}
-
-/// The rows of a widget nested two sections deep (rare): drawn as plain rows.
-private struct WidgetRows: View {
-    let widget: ScreenWidget
-    let handler: ActionHandler
-
-    var body: some View {
-        switch widget {
-        case let .list(list): ForEach(list.rows) { RowView(row: $0, handler: handler) }
-        case let .toggles(toggles): ForEach(toggles.rows) { ToggleRowView(row: $0, handler: handler) }
-        case let .button(button): ButtonRow(button: button, handler: handler)
-        case let .banner(banner): BannerRow(banner: banner, handler: handler)
-        case let .text(text): TextWidgetView(text: text)
-        default: EmptyView()
-        }
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible || reduceMotion ? 0 : -14)
+            .allowsHitTesting(visible)
+            .accessibilityHidden(!visible)
+            // No onAppear animation: opening and closing a tile keeps its original transition.
+            .animation(reduceMotion ? nil : .smooth(duration: 0.22).delay(PageCascade.delay(index: index, count: count, visible: visible)), value: visible)
     }
 }
 
@@ -461,12 +434,15 @@ struct ToggleRowView: View {
             let result = await handler(row.action, ["value": value ? "true" : "false"], true)
             return result.map { $0.outcome != .failed } ?? false
         }) { isOn in
-            Toggle(isOn: isOn) {
-                HStack(spacing: 8) {
-                    Text(row.title)
-                    InfoButton(text: Tooltip.join(row.subtitle, row.detail))
-                    if let badge = row.badge { BadgeView(badge: badge) }
-                }
+            HStack(spacing: 8) {
+                Text(row.title)
+                InfoButton(text: Tooltip.join(row.subtitle, row.detail))
+                if let badge = row.badge { BadgeView(badge: badge) }
+                Spacer(minLength: 8)
+                Toggle(row.title, isOn: isOn)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
             }
         }
         .disabled(!row.isEnabled)
