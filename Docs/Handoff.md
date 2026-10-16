@@ -100,7 +100,7 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    and no hero.
 3. **Switches show the feature.** On every toggle, on means the feature runs and off means MacSpace switched it off. Debloat follows
    this too; keep it for new modules.
-4. **Caching.** Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button
+4. **Caching.** When no window is visible, the host releases screen row trees and invalidates scan caches, keeping only tile summaries for the menu bar. Reopening restores the screen even if its last read was recent (#11). Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button
    calls the module's `invalidate()` first.
 5. **Privileged work** goes through the helper. A module's `Privileged/` library declares named operations (`siri.orphan-subscriptions.*`,
    `debloat.*`, `systemdata.measure`, `systemdata.versions.delete`); `Helper/MacSpaceHelper.swift` registers them. The helper accepts

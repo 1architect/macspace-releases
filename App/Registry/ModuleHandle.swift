@@ -235,7 +235,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             settings.setLastTile(newTile, module: id)
         }
         if tileIsStale { tileIsStale = false }
-        if screen != newScreen { screen = newScreen }
+        if isWatched, screen != newScreen { screen = newScreen }
+        if !isWatched { await module.invalidate() }
         scheduleAutoRefresh()
     }
 
@@ -291,9 +292,16 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !watched {
             autoRefresh?.cancel()
             autoRefresh = nil
+            // Keep the compact tile for the menu bar, release the row trees and scan cache.
+            screen = nil
+            groupPath = []
+            Task { [weak self] in
+                guard let self, !self.isWatched, !self.performing else { return }
+                await self.module?.invalidate()
+            }
         } else if state == .ready {
             let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
-            if age >= Self.fastestAutoRefresh { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
+            if screen == nil || age >= Self.fastestAutoRefresh { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
         }
     }
 

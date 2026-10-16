@@ -55,6 +55,25 @@ final class HostTests: XCTestCase {
         XCTAssertEqual(handle.state, .ready)
     }
 
+    func testClosingTheWindowReleasesPagesButKeepsMenuBarTile() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let calls = Calls()
+        let host = try makeHost(modules: [(Fixtures.manifest(), "A")], calls: calls, directory: directory)
+        await host.reload()
+        let handle = try XCTUnwrap(host.handles.first)
+        let tile = try XCTUnwrap(handle.tile)
+        XCTAssertNotNil(handle.screen)
+        handle.setWatched(false)
+        XCTAssertNil(handle.screen)
+        XCTAssertEqual(handle.tile, tile)
+        await handle.refresh(quiet: true)
+        XCTAssertNil(handle.screen, "background work must not retain a hidden page")
+        handle.setWatched(true)
+        for _ in 0..<100 where handle.screen == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(handle.screen, "reopening restores even a recently read page")
+    }
+
     /// A group opened from a group's page goes on top of it, and Back returns to that page, then to the module's page.
     func testGroupPagesStackAndBackReturnsToThePageUnder() async throws {
         let directory = try Fixtures.temporaryDirectory()
