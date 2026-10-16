@@ -260,9 +260,6 @@ public struct MainView: View {
                     card(layer, in: size, target: full, face: true)
                     page(for: layer.destination)
                         .id(layer.destination)
-                        // Include row shades and native controls in the page visibility gate.
-                        .opacity(pageSettled && isOpen ? 1 : 0)
-                        .animation(nil, value: pageSettled && isOpen)
                         .frame(width: full.width, height: full.height)
                         // One page swapped for another (Command-comma over a module's page, and Back to it) slides across.
                         .transition(.asymmetric(insertion: .move(edge: swapForward ? .trailing : .leading).combined(with: .opacity),
