@@ -2,7 +2,7 @@ import Foundation
 
 /// Version of the module contract. A module built for another version is shown as incompatible and not loaded.
 public enum SdkVersion {
-    public static let current = 2
+    public static let current = 3
 }
 
 /// `Manifest.json` inside a module bundle. The app reads it before running any module code, so the module list, the

@@ -17,6 +17,12 @@ actor ModelPurger {
     private var running: Task<Void, Never>?
     private var lastStarted: Date?
 
+    func stopAndWait() async {
+        let task = running
+        task?.cancel()
+        await task?.value
+    }
+
     var isRunning: Bool { running != nil }
 
     /// Purges after `delay` (the time mobileassetd takes to drop its locks); if macOS keeps the models, `PurgeRetrier` asks again.
@@ -27,6 +33,7 @@ actor ModelPurger {
         lastStarted = now
         running = Task.detached(priority: .utility) {
             if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+            guard !Task.isCancelled else { await self.finish(); return }
             let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
                 SiriModule.recordBackground(freed, summary: loc("Released Apple Intelligence models"))
                 await done()

@@ -16,6 +16,7 @@
 "1 cleanup" = "1 limpieza";
 "1 item" = "1 elemento";
 "1 needed" = "1 necesario";
+"About" = "Acerca de";
 "All done" = "Listo";
 "Allow Full Disk Access" = "Permitir acceso total al disco";
 "Allow Notifications" = "Permitir notificaciones";
@@ -41,6 +42,7 @@
 "Continue" = "Continuar";
 "Could not install the helper: %@" = "No se ha podido instalar el asistente: %@";
 "Couldn't free space. Try again later." = "No se ha podido liberar espacio. Inténtalo más tarde.";
+"Couldn’t uninstall MacSpace" = "No se pudo desinstalar MacSpace";
 "Day" = "Día";
 "Does the few things that need an administrator." = "Realiza las pocas tareas que requieren un administrador.";
 "Drag into the Full Disk Access list" = "Arrastra a la lista de Acceso total al disco";
@@ -56,6 +58,7 @@
 "Full Disk Access is on" = "El acceso total al disco está activado";
 "General" = "General";
 "Get notified" = "Recibe avisos";
+"GitHub" = "GitHub";
 "Granted" = "Concedido";
 "Helper approved" = "Asistente aprobado";
 "Hide the sidebar" = "Ocultar la barra lateral";
@@ -82,6 +85,7 @@
 "Modules that could not be used" = "Módulos que no se pudieron usar";
 "More about this" = "Más información";
 "Move MacSpace to the Applications folder, then reopen it." = "Mueve MacSpace a la carpeta Aplicaciones y vuelve a abrirlo.";
+"Move MacSpace to the Trash from Applications." = "Mueve MacSpace de Aplicaciones a la Papelera.";
 "Move MacSpace to your Applications folder first." = "Primero mueve MacSpace a la carpeta Aplicaciones.";
 "Needed" = "Necesario";
 "Needed to measure everything on the disk." = "Necesario para medir todo el disco.";
@@ -116,6 +120,8 @@
 "Repairing…" = "Reparando…";
 "Restart to finish" = "Reinicia para terminar";
 "Restore" = "Restaurar";
+"Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.";
+"Restoring settings…" = "Restaurando ajustes…";
 "Settings" = "Ajustes";
 "Settings › Permissions" = "Ajustes › Permisos";
 "Settings › Recent cleanups" = "Ajustes › Limpiezas recientes";
@@ -130,9 +136,13 @@
 "This copy of MacSpace is incomplete" = "Esta copia de MacSpace está incompleta";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "Activa MacSpace en la lista. ¿No aparece? Arrastra este icono a ella.";
 "Turn on MacSpace under Allow in the Background." = "Activa MacSpace en Permitir en segundo plano.";
+"Uninstall" = "Desinstalar";
+"Uninstall MacSpace?" = "¿Desinstalar MacSpace?";
+"Uninstall MacSpace…" = "Desinstalar MacSpace…";
 "Unknown" = "Desconocido";
 "Updates" = "Actualizaciones";
 "Version" = "Versión";
+"Wait for the current task to finish, then try again." = "Espera a que termine la tarea actual y vuelve a intentarlo.";
 "When MacSpace frees space, or your disk is almost full." = "Cuando MacSpace libere espacio o tu disco esté casi lleno.";
 "When a cleanup finishes in the background" = "Cuando una limpieza termine en segundo plano";
 "When automatic cleanup frees space" = "Cuando la limpieza automática libere espacio";

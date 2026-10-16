@@ -32,6 +32,12 @@ public final class BackgroundScheduler {
         }
     }
 
+    func stopAndWait() async {
+        let tasks = Array(running.values)
+        stopAll()
+        for task in tasks { await task.value }
+    }
+
     public func stopAll() {
         running.values.forEach { $0.cancel() }
         running.removeAll()

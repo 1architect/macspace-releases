@@ -53,6 +53,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            AboutSettingsSection(host: host)
             MacOSReleaseSection()
             PageBottomRoom()
         }

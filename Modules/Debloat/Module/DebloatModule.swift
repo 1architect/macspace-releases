@@ -15,6 +15,39 @@ public struct DebloatModule: MacSpaceModule {
 
     public init() {}
 
+    public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
+        await Self.prepareForUninstall(engine: DebloatStore.liveEngine(), context: context)
+    }
+
+    static func prepareForUninstall(engine: DebloatEngine, context: ModuleContext) async -> ActionResult {
+        let ids = Array(Set(engine.journal.allEntries.filter { $0.action == .apply && $0.revertedAt == nil }.map(\.controlID))
+            .union(engine.wantedPolicies().map(\.id))).sorted()
+        do {
+            if !ids.isEmpty {
+                let results = try await DebloatCoordinator(engine: engine, channel: context.privileged)
+                    .execute(.revert, controlIDs: ids, options: DebloatPlanOptions())
+                let checked = await Self.removeProfiles(results, engine: engine, channel: context.privileged)
+                let failures = checked.flatMap { result in
+                    result.plan.blockers + result.plan.steps.compactMap(\.blocker) + result.steps.filter { [.failed, .blocked, .pendingApproval].contains($0.outcome) }
+                        .map { $0.detail ?? $0.settingID }
+                }
+                if !failures.isEmpty { return .failed(loc("Couldn't change it"), details: failures) }
+            }
+            // Profiles from older builds may predate the journal. Remove every MacSpace
+            // profile, including those no current control claims, and verify the result.
+            guard let installed = engine.system.installedProfiles() else { return .failed(loc("Couldn't remove a profile")) }
+            let identifiers = installed.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }.map(\.identifier)
+            guard !identifiers.isEmpty else { return .succeeded("") }
+            let result = await Self.removeProfiles(identifiers, context: context)
+            guard result.outcome == .succeeded else { return result }
+            guard let remaining = engine.system.installedProfiles(),
+                  !remaining.contains(where: { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }) else {
+                return .failed(loc("Couldn't remove a profile"))
+            }
+            return .succeeded("")
+        } catch { return .failed(error.localizedDescription) }
+    }
+
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {

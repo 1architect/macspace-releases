@@ -176,6 +176,10 @@ public protocol MacSpaceModule: Sendable {
 
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult
 
+    /// Restores only reversible settings changed by this module before app removal.
+    /// Deleted files cannot be restored. A failure keeps the app and helper installed.
+    func prepareForUninstall(context: ModuleContext) async -> ActionResult
+
     /// Runs a task declared in the manifest's `backgroundTasks`.
     func runBackgroundTask(_ id: String, context: ModuleContext) async
 
@@ -189,6 +193,8 @@ public protocol MacSpaceModule: Sendable {
 }
 
 public extension MacSpaceModule {
+    func prepareForUninstall(context: ModuleContext) async -> ActionResult { .succeeded("") }
+
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await screen(context: context) }
 
     func invalidate() async {}
