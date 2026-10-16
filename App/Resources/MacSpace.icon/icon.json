@@ -3,7 +3,7 @@
     "refractivity",
     "specular-location"
   ],
-  "fill" : "system-dark",
+  "fill" : { "solid" : "srgb:0.03529,0.09412,0.16078,1.00000" },
   "groups" : [
     {
       "hidden" : false,
@@ -27,7 +27,7 @@
         {
           "blend-mode" : "normal",
           "fill" : {
-            "automatic-gradient" : "display-p3:0.48547,0.48547,0.48547,1.00000"
+            "automatic-gradient" : "srgb:0.12941,0.82745,0.70588,1.00000"
           },
           "glass" : false,
           "hidden" : false,

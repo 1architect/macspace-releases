@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Changed
+
+- The app icon uses a mint and midnight palette to distinguish its modular mark from Tailscale (#18).
+
 ### Fixed
 
 - Tile captions choose their wrapped position from the destination width before the app’s opening animation (#19).
