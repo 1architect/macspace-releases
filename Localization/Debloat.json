@@ -1,107 +1,737 @@
 {
- "%@ was turned back on": ["%@ foi reativado", "%@ a été réactivé", "%@ se ha vuelto a activar", "%@ wurde wieder aktiviert"],
- "%@ was turned back on by macOS": ["%@ foi reativado pelo macOS", "%@ a été réactivé par macOS", "macOS ha vuelto a activar %@", "%@ wurde von macOS wieder aktiviert"],
- "%lld awaiting approval": ["%lld aguardando aprovação", "%lld en attente d’approbation", "%lld pendientes de aprobación", "%lld warten auf Genehmigung"],
- "%lld features were turned back on": ["%lld recursos foram reativados", "%lld fonctions ont été réactivées", "Se han vuelto a activar %lld funciones", "%lld Funktionen wurden wieder aktiviert"],
- "%lld features were turned back on by macOS": ["%lld recursos foram reativados pelo macOS", "%lld fonctions ont été réactivées par macOS", "macOS ha vuelto a activar %lld funciones", "%lld Funktionen wurden von macOS wieder aktiviert"],
- "%lld undone by macOS": ["%lld desfeitos pelo macOS", "%lld annulées par macOS", "%lld deshechas por macOS", "%lld von macOS rückgängig gemacht"],
- "%lld/%lld disabled": ["%lld/%lld desativados", "%lld/%lld désactivées", "%lld/%lld desactivadas", "%lld/%lld deaktiviert"],
- "Advertising": ["Publicidade", "Publicité", "Publicidad", "Werbung"],
- "After restart": ["Após reiniciar", "Après redémarrage", "Tras reiniciar", "Nach Neustart"],
- "Already disabled": ["Já desativado", "Déjà désactivé", "Ya desactivado", "Bereits deaktiviert"],
- "Already enabled": ["Já ativado", "Déjà activé", "Ya activado", "Bereits aktiviert"],
- "Analytics and telemetry": ["Análises e telemetria", "Analyse et télémétrie", "Análisis y telemetría", "Analyse und Telemetrie"],
- "Apple Intelligence features": ["Recursos do Apple Intelligence", "Fonctions d’Apple Intelligence", "Funciones de Apple Intelligence", "Apple Intelligence-Funktionen"],
- "Apple stops picking ads based on what you do.": ["A Apple deixa de escolher anúncios com base no que você faz.", "Apple cesse de choisir des publicités selon ce que vous faites.", "Apple deja de elegir anuncios según lo que haces.", "Apple wählt Werbung nicht mehr nach deinen Aktivitäten aus."],
- "Approve in System Settings": ["Aprovar nos Ajustes do Sistema", "Approuver dans Réglages Système", "Aprobar en Ajustes del Sistema", "In den Systemeinstellungen genehmigen"],
- "Approve the profile in System Settings": ["Aprove o perfil nos Ajustes do Sistema", "Approuvez le profil dans Réglages Système", "Aprueba el perfil en Ajustes del Sistema", "Genehmige das Profil in den Systemeinstellungen"],
- "Apps": ["Apps", "Apps", "Apps", "Apps"],
- "Apps can't track you with the advertising identifier or ask to.": ["Os apps não podem rastrear você com o identificador de publicidade nem pedir para isso.", "Les apps ne peuvent ni vous suivre avec l’identifiant publicitaire ni vous le demander.", "Las apps no pueden rastrearte con el identificador de publicidad ni pedírtelo.", "Apps können dich nicht über die Werbe-ID tracken oder danach fragen."],
- "Background analysis": ["Análise em segundo plano", "Analyse en arrière-plan", "Análisis en segundo plano", "Hintergrundanalyse"],
- "Cannot read": ["Não é possível ler", "Illisible", "No se puede leer", "Nicht lesbar"],
- "Cannot take effect here": ["Não tem efeito aqui", "Sans effet ici", "No tiene efecto aquí", "Hier wirkungslos"],
- "Couldn't change it": ["Não foi possível alterar", "Impossible de le modifier", "No se ha podido cambiar", "Konnte nicht geändert werden"],
- "Couldn't open the profile": ["Não foi possível abrir o perfil", "Impossible d’ouvrir le profil", "No se ha podido abrir el perfil", "Profil konnte nicht geöffnet werden"],
- "Couldn't remove a profile": ["Não foi possível remover um perfil", "Impossible de supprimer un profil", "No se ha podido eliminar un perfil", "Ein Profil konnte nicht entfernt werden"],
- "Couldn't remove the profile": ["Não foi possível remover o perfil", "Impossible de supprimer le profil", "No se ha podido eliminar el perfil", "Profil konnte nicht entfernt werden"],
- "Debloat": ["Debloat", "Debloat", "Debloat", "Debloat"],
- "Diagnostics": ["Diagnóstico", "Diagnostic", "Diagnóstico", "Diagnose"],
- "Dictation and translation stay on this Mac. Languages without an on-device model stop working.": ["O ditado e a tradução ficam neste Mac. Idiomas sem modelo no dispositivo deixam de funcionar.", "La dictée et la traduction restent sur ce Mac. Les langues sans modèle sur l’appareil ne fonctionnent plus.", "El dictado y la traducción se quedan en este Mac. Los idiomas sin modelo en el dispositivo dejan de funcionar.", "Diktat und Übersetzung bleiben auf diesem Mac. Sprachen ohne Modell auf dem Gerät funktionieren nicht mehr."],
- "Disable": ["Desativar", "Désactiver", "Desactivar", "Deaktivieren"],
- "Disable %@": ["Desativar %@", "Désactiver %@", "Desactivar %@", "%@ deaktivieren"],
- "Disable %@ again": ["Desativar %@ de novo", "Désactiver de nouveau %@", "Volver a desactivar %@", "%@ erneut deaktivieren"],
- "Disable %lld features again": ["Desativar %lld recursos de novo", "Désactiver de nouveau %lld fonctions", "Volver a desactivar %lld funciones", "%lld Funktionen erneut deaktivieren"],
- "Disable %lld features?": ["Desativar %lld recursos?", "Désactiver %lld fonctions ?", "¿Desactivar %lld funciones?", "%lld Funktionen deaktivieren?"],
- "Disable all": ["Desativar tudo", "Tout désactiver", "Desactivar todo", "Alle deaktivieren"],
- "Disabled": ["Desativado", "Désactivé", "Desactivado", "Deaktiviert"],
- "Disabling one asks you to approve a profile in System Settings > General > Device Management.": ["Desativar uma delas pede que você aprove um perfil em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.", "En désactiver une vous demande d’approuver un profil dans Réglages Système > Général > Gestion de l’appareil.", "Desactivar una te pide aprobar un perfil en Ajustes del Sistema > General > Gestión de dispositivos.", "Beim Deaktivieren musst du ein Profil unter Systemeinstellungen > Allgemein > Geräteverwaltung genehmigen."],
- "Disabling…": ["Desativando…", "Désactivation…", "Desactivando…", "Wird deaktiviert …"],
- "Each one can be enabled again.": ["Cada um pode ser reativado.", "Chacune peut être réactivée.", "Cada una se puede volver a activar.", "Jede lässt sich wieder aktivieren."],
- "Enable": ["Ativar", "Activer", "Activar", "Aktivieren"],
- "Enable all": ["Ativar tudo", "Tout activer", "Activar todo", "Alle aktivieren"],
- "Enable all %lld features again?": ["Reativar todos os %lld recursos?", "Réactiver les %lld fonctions ?", "¿Volver a activar las %lld funciones?", "Alle %lld Funktionen wieder aktivieren?"],
- "Enabled": ["Ativado", "Activé", "Activado", "Aktiviert"],
- "Enabling…": ["Ativando…", "Activation…", "Activando…", "Wird aktiviert …"],
- "Experiments": ["Experimentos", "Expériences", "Experimentos", "Experimente"],
- "Finish": ["Concluir", "Terminer", "Terminar", "Abschließen"],
- "Hides Apple News and its widgets.": ["Oculta o Apple News e seus widgets.", "Masque Apple News et ses widgets.", "Oculta Apple News y sus widgets.", "Blendet Apple News und seine Widgets aus."],
- "Install the helper in Settings": ["Instale o auxiliar nos Ajustes", "Installez l’assistant dans Réglages", "Instala el asistente en Ajustes", "Installiere das Hilfsprogramm in den Einstellungen"],
- "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management.": ["Não foi possível remover o perfil (%@); remova \"%@\" em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.", "Impossible de supprimer son profil (%@) ; supprimez « %@ » dans Réglages Système > Général > Gestion de l’appareil.", "No se ha podido eliminar su perfil (%@); elimina «%@» en Ajustes del Sistema > General > Gestión de dispositivos.", "Das Profil konnte nicht entfernt werden (%@); entferne „%@“ unter Systemeinstellungen > Allgemein > Geräteverwaltung."],
- "Its profile was removed.": ["O perfil foi removido.", "Son profil a été supprimé.", "Se ha eliminado su perfil.", "Das Profil wurde entfernt."],
- "Log out to apply.": ["Encerre a sessão para aplicar.", "Fermez la session pour appliquer.", "Cierra sesión para aplicarlo.", "Zum Anwenden abmelden."],
- "MacSpace disabled it again, most recently %@.": ["O MacSpace o desativou de novo, pela última vez %@.", "MacSpace l’a désactivée de nouveau, la dernière fois %@.", "MacSpace la volvió a desactivar, la última vez %@.", "MacSpace hat sie erneut deaktiviert, zuletzt %@."],
- "MacSpace disabled them again, most recently %@.": ["O MacSpace os desativou de novo, pela última vez %@.", "MacSpace les a désactivées de nouveau, la dernière fois %@.", "MacSpace las volvió a desactivar, la última vez %@.", "MacSpace hat sie erneut deaktiviert, zuletzt %@."],
- "MacSpace restores the settings it saved before disabling them.": ["O MacSpace restaura os ajustes que salvou antes de desativá-los.", "MacSpace rétablit les réglages enregistrés avant de les désactiver.", "MacSpace restaura los ajustes que guardó antes de desactivarlas.", "MacSpace stellt die Einstellungen wieder her, die es vor dem Deaktivieren gesichert hat."],
- "No control was named.": ["Nenhum controle foi indicado.", "Aucun réglage n’a été indiqué.", "No se ha indicado ningún control.", "Keine Einstellung angegeben."],
- "No controls were selected.": ["Nenhum controle foi selecionado.", "Aucun réglage sélectionné.", "No se ha seleccionado ningún control.", "Keine Einstellungen ausgewählt."],
- "No more \"quit unexpectedly\" dialogs.": ["Chega de avisos de \"encerrou inesperadamente\".", "Plus de fenêtres « s’est fermé de façon inattendue ».", "Se acabaron los avisos de «se ha cerrado inesperadamente».", "Keine Dialoge „unerwartet beendet“ mehr."],
- "Not on this macOS": ["Não existe neste macOS", "Absent de ce macOS", "No existe en este macOS", "Nicht in diesem macOS"],
- "Not working": ["Não funciona", "Inopérant", "No funciona", "Wirkt nicht"],
- "Nothing to approve": ["Nada a aprovar", "Rien à approuver", "Nada que aprobar", "Nichts zu genehmigen"],
- "Nothing to remove": ["Nada a remover", "Rien à supprimer", "Nada que eliminar", "Nichts zu entfernen"],
- "Partly off": ["Parcialmente desativado", "Partiellement désactivé", "Desactivado en parte", "Teilweise aus"],
- "Policies": ["Políticas", "Règles", "Políticas", "Richtlinien"],
- "Reopen apps to apply.": ["Reabra os apps para aplicar.", "Rouvrez les apps pour appliquer.", "Vuelve a abrir las apps para aplicarlo.", "Zum Anwenden Apps neu öffnen."],
- "Restart to apply.": ["Reinicie para aplicar.", "Redémarrez pour appliquer.", "Reinicia para aplicarlo.", "Zum Anwenden neu starten."],
- "Siri": ["Siri", "Siri", "Siri", "Siri"],
- "Some are not tested yet.": ["Alguns ainda não foram testados.", "Certaines ne sont pas encore testées.", "Algunas aún no se han probado.", "Einige sind noch nicht getestet."],
- "Spotlight stops sending your searches to Apple. No more web results in Spotlight.": ["O Spotlight deixa de enviar suas buscas para a Apple. Sem resultados da web no Spotlight.", "Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight.", "Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight.", "Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight."],
- "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.": ["Impede o macOS de gravar a atividade o tempo todo para relatórios de travamento. Libera cerca de 100 MB de memória.", "Empêche macOS d’enregistrer en continu l’activité pour les rapports de blocage. Libère environ 100 Mo de mémoire.", "Impide que macOS grabe la actividad sin parar para los informes de bloqueos. Libera unos 100 MB de memoria.", "Verhindert, dass macOS ständig Aktivität für Hängeberichte aufzeichnet. Gibt etwa 100 MB Arbeitsspeicher frei."],
- "Stops sending usage and crash data to Apple and app developers.": ["Deixa de enviar dados de uso e de falhas para a Apple e os desenvolvedores.", "Cesse d’envoyer les données d’utilisation et de plantage à Apple et aux développeurs.", "Deja de enviar datos de uso y de fallos a Apple y a los desarrolladores.", "Sendet keine Nutzungs- und Absturzdaten mehr an Apple und App-Entwickler."],
- "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.": ["Deixa de enviar dados de uso e de falhas para a Apple, inclusive nas versões beta do macOS, que ignoram o ajuste acima.", "Cesse d’envoyer les données d’utilisation et de plantage à Apple, y compris sur les versions bêta de macOS, qui ignorent le réglage ci-dessus.", "Deja de enviar datos de uso y de fallos a Apple, también en las versiones beta de macOS, que ignoran el ajuste anterior.", "Sendet keine Nutzungs- und Absturzdaten mehr an Apple, auch in Betaversionen von macOS, die die Einstellung oben ignorieren."],
- "Stops sharing Siri and Dictation recordings with Apple.": ["Deixa de compartilhar gravações da Siri e do Ditado com a Apple.", "Cesse de partager les enregistrements de Siri et de la dictée avec Apple.", "Deja de compartir las grabaciones de Siri y del dictado con Apple.", "Teilt keine Aufnahmen von Siri und Diktat mehr mit Apple."],
- "Suggestions and search": ["Sugestões e busca", "Suggestions et recherche", "Sugerencias y búsqueda", "Vorschläge und Suche"],
- "Turns off Game Center.": ["Desativa o Game Center.", "Désactive Game Center.", "Desactiva Game Center.", "Deaktiviert Game Center."],
- "Turns off Visual Intelligence. Visual Look Up may stop working too.": ["Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar.", "Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner.", "Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar.", "Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr."],
- "Undone by macOS": ["Desfeito pelo macOS", "Annulé par macOS", "Deshecho por macOS", "Von macOS rückgängig gemacht"],
- "Unknown action %@.": ["Ação desconhecida %@.", "Action inconnue %@.", "Acción desconocida %@.", "Unbekannte Aktion %@."],
- "Waiting for approval": ["Aguardando aprovação", "En attente d’approbation", "Pendiente de aprobación", "Wartet auf Genehmigung"],
- "debloat": ["debloat", "debloat", "debloat", "Debloat"],
- "macOS asks you to approve the policy profile once.": ["O macOS pede que você aprove o perfil de políticas uma vez.", "macOS vous demande d’approuver une fois le profil de règles.", "macOS te pide aprobar el perfil de políticas una vez.", "macOS bittet dich einmal, das Richtlinienprofil zu genehmigen."],
- "macOS switched %@ back on. MacSpace disabled it again.": ["O macOS reativou %@. O MacSpace o desativou de novo.", "macOS a réactivé %@. MacSpace l’a désactivé de nouveau.", "macOS ha vuelto a activar %@. MacSpace lo ha desactivado de nuevo.", "macOS hat %@ wieder aktiviert. MacSpace hat es erneut deaktiviert."],
- "macOS switched %@ back on. MacSpace disabled them again.": ["O macOS reativou %@. O MacSpace os desativou de novo.", "macOS a réactivé %@. MacSpace les a désactivés de nouveau.", "macOS ha vuelto a activar %@. MacSpace los ha desactivado de nuevo.", "macOS hat %@ wieder aktiviert. MacSpace hat sie erneut deaktiviert."],
- "Turn off analytics, ads and background data collection that macOS lets you control.": ["Desative análises, anúncios e a coleta de dados em segundo plano que o macOS permite controlar.", "Désactivez l’analyse, les publicités et la collecte de données en arrière-plan que macOS vous laisse contrôler.", "Desactiva los análisis, los anuncios y la recogida de datos en segundo plano que macOS te deja controlar.", "Schalte Analyse, Werbung und Datensammlung im Hintergrund aus, die macOS dich steuern lässt."],
- "Notify me when macOS undoes a change": ["Avisar quando o macOS desfizer uma alteração", "M’avertir quand macOS annule une modification", "Avisarme cuando macOS deshaga un cambio", "Mitteilen, wenn macOS eine Änderung rückgängig macht"],
- "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again.": ["Mostra uma notificação quando o macOS reativa um recurso desativado e o MacSpace o desativa de novo.", "Affiche une notification quand macOS réactive une fonction désactivée et que MacSpace la désactive de nouveau.", "Muestra una notificación cuando macOS vuelve a activar una función desactivada y MacSpace la desactiva de nuevo.", "Zeigt eine Mitteilung, wenn macOS eine deaktivierte Funktion wieder einschaltet und MacSpace sie erneut deaktiviert."],
- "Keep features disabled": ["Manter recursos desativados", "Garder les fonctions désactivées", "Mantener las funciones desactivadas", "Funktionen deaktiviert halten"],
- "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on.": ["Verifica a cada 15 minutos enquanto o MacSpace está aberto e desativa de novo qualquer recurso que o macOS tenha reativado.", "Vérifie toutes les 15 minutes tant que MacSpace est ouvert et désactive de nouveau toute fonction réactivée par macOS.", "Lo comprueba cada 15 minutos mientras MacSpace está abierto y vuelve a desactivar cualquier función que macOS haya activado.", "Prüft alle 15 Minuten, solange MacSpace geöffnet ist, und deaktiviert jede Funktion erneut, die macOS wieder eingeschaltet hat."],
- "Share analytics with Apple": ["Compartilhar análises com a Apple", "Partager l’analyse avec Apple", "Compartir análisis con Apple", "Analysedaten mit Apple teilen"],
- "Personalized ads": ["Anúncios personalizados", "Publicités personnalisées", "Anuncios personalizados", "Personalisierte Werbung"],
- "Advertising identifier": ["Identificador de publicidade", "Identifiant publicitaire", "Identificador de publicidad", "Werbe-ID"],
- "Siri AI": ["Siri AI", "Siri AI", "Siri AI", "Siri AI"],
- "Visual Intelligence": ["Inteligência Visual", "Intelligence visuelle", "Inteligencia visual", "Visuelle Intelligenz"],
- "Generative search indexing": ["Indexação para busca generativa", "Indexation pour la recherche générative", "Indexación para búsqueda generativa", "Indizierung für generative Suche"],
- "Hang tracing (tailspin)": ["Rastreamento de travamentos (tailspin)", "Suivi des blocages (tailspin)", "Rastreo de bloqueos (tailspin)", "Hänger-Aufzeichnung (tailspin)"],
- "Crash report dialog": ["Aviso de relatório de falhas", "Fenêtre de rapport de plantage", "Aviso de informe de fallos", "Absturzbericht-Dialog"],
- "Improve Siri & Dictation": ["Melhorar Siri e Ditado", "Améliorer Siri et Dictée", "Mejorar Siri y Dictado", "Siri & Diktat verbessern"],
- "Dictation and translation on Apple servers": ["Ditado e tradução nos servidores da Apple", "Dictée et traduction sur les serveurs d’Apple", "Dictado y traducción en los servidores de Apple", "Diktat und Übersetzung auf Apple-Servern"],
- "Spotlight internet results": ["Resultados da internet no Spotlight", "Résultats Internet dans Spotlight", "Resultados de internet en Spotlight", "Internetergebnisse in Spotlight"],
- "Game Center": ["Game Center", "Game Center", "Game Center", "Game Center"],
- "Apple News": ["Apple News", "Apple News", "Apple News", "Apple News"],
- "Set by another profile": ["Definido por outro perfil", "Défini par un autre profil", "Definido por otro perfil", "Von einem anderen Profil festgelegt"],
- "Breaks Mail search": ["Quebra a busca do Mail", "Casse la recherche de Mail", "Rompe la búsqueda de Mail", "Stört die Suche in Mail"],
- "No longer works": ["Não funciona mais", "Ne fonctionne plus", "Ya no funciona", "Funktioniert nicht mehr"],
- "Switch it off, then restart your Mac.": ["Desligue e reinicie o Mac.", "Désactivez-le, puis redémarrez votre Mac.", "Desactívalo y reinicia el Mac.", "Schalte es aus und starte deinen Mac neu."],
- "Switch it off. To turn off Apple Intelligence, use the Siri page.": ["Desligue. Para desativar a Apple Intelligence, use a página Siri.", "Désactivez-le. Pour désactiver Apple Intelligence, utilisez la page Siri.", "Desactívalo. Para desactivar Apple Intelligence, usa la página Siri.", "Schalte es aus. Um Apple Intelligence auszuschalten, nutze die Seite Siri."],
- "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.": ["Desativa a Siri AI. O Spotlight volta à busca clássica. Os outros recursos da Apple Intelligence continuam ativos.", "Désactive Siri AI. Spotlight revient à la recherche classique. Les autres fonctions d’Apple Intelligence restent activées.", "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. Las demás funciones de Apple Intelligence siguen activadas.", "Schaltet Siri AI aus. Spotlight kehrt zur klassischen Suche zurück. Die anderen Funktionen von Apple Intelligence bleiben aktiv."]
+ "%@ was turned back on": [
+  "%@ foi reativado",
+  "%@ a été réactivé",
+  "%@ se ha vuelto a activar",
+  "%@ wurde wieder aktiviert",
+  "%@ 已重新开启"
+ ],
+ "%@ was turned back on by macOS": [
+  "%@ foi reativado pelo macOS",
+  "%@ a été réactivé par macOS",
+  "macOS ha vuelto a activar %@",
+  "%@ wurde von macOS wieder aktiviert",
+  "macOS 重新开启了 %@"
+ ],
+ "%lld awaiting approval": [
+  "%lld aguardando aprovação",
+  "%lld en attente d’approbation",
+  "%lld pendientes de aprobación",
+  "%lld warten auf Genehmigung",
+  "%lld 项等待批准"
+ ],
+ "%lld features were turned back on": [
+  "%lld recursos foram reativados",
+  "%lld fonctions ont été réactivées",
+  "Se han vuelto a activar %lld funciones",
+  "%lld Funktionen wurden wieder aktiviert",
+  "%lld 项功能被重新开启"
+ ],
+ "%lld features were turned back on by macOS": [
+  "%lld recursos foram reativados pelo macOS",
+  "%lld fonctions ont été réactivées par macOS",
+  "macOS ha vuelto a activar %lld funciones",
+  "%lld Funktionen wurden von macOS wieder aktiviert",
+  "macOS 重新开启了 %lld 项功能"
+ ],
+ "%lld undone by macOS": [
+  "%lld desfeitos pelo macOS",
+  "%lld annulées par macOS",
+  "%lld deshechas por macOS",
+  "%lld von macOS rückgängig gemacht",
+  "macOS 还原了 %lld 项"
+ ],
+ "%lld/%lld disabled": [
+  "%lld/%lld desativados",
+  "%lld/%lld désactivées",
+  "%lld/%lld desactivadas",
+  "%lld/%lld deaktiviert",
+  "已停用 %lld/%lld 项"
+ ],
+ "Advertising": [
+  "Publicidade",
+  "Publicité",
+  "Publicidad",
+  "Werbung",
+  "广告"
+ ],
+ "After restart": [
+  "Após reiniciar",
+  "Après redémarrage",
+  "Tras reiniciar",
+  "Nach Neustart",
+  "重新启动后生效"
+ ],
+ "Already disabled": [
+  "Já desativado",
+  "Déjà désactivé",
+  "Ya desactivado",
+  "Bereits deaktiviert",
+  "已停用"
+ ],
+ "Already enabled": [
+  "Já ativado",
+  "Déjà activé",
+  "Ya activado",
+  "Bereits aktiviert",
+  "已启用"
+ ],
+ "Analytics and telemetry": [
+  "Análises e telemetria",
+  "Analyse et télémétrie",
+  "Análisis y telemetría",
+  "Analyse und Telemetrie",
+  "分析与遥测"
+ ],
+ "Apple Intelligence features": [
+  "Recursos do Apple Intelligence",
+  "Fonctions d’Apple Intelligence",
+  "Funciones de Apple Intelligence",
+  "Apple Intelligence-Funktionen",
+  "Apple 智能功能"
+ ],
+ "Apple stops picking ads based on what you do.": [
+  "A Apple deixa de escolher anúncios com base no que você faz.",
+  "Apple cesse de choisir des publicités selon ce que vous faites.",
+  "Apple deja de elegir anuncios según lo que haces.",
+  "Apple wählt Werbung nicht mehr nach deinen Aktivitäten aus.",
+  "Apple 不再根据你的活动选择广告。"
+ ],
+ "Approve in System Settings": [
+  "Aprovar nos Ajustes do Sistema",
+  "Approuver dans Réglages Système",
+  "Aprobar en Ajustes del Sistema",
+  "In den Systemeinstellungen genehmigen",
+  "在系统设置中批准"
+ ],
+ "Approve the profile in System Settings": [
+  "Aprove o perfil nos Ajustes do Sistema",
+  "Approuvez le profil dans Réglages Système",
+  "Aprueba el perfil en Ajustes del Sistema",
+  "Genehmige das Profil in den Systemeinstellungen",
+  "在系统设置中批准描述文件"
+ ],
+ "Apps": [
+  "Apps",
+  "Apps",
+  "Apps",
+  "Apps",
+  "应用"
+ ],
+ "Apps can't track you with the advertising identifier or ask to.": [
+  "Os apps não podem rastrear você com o identificador de publicidade nem pedir para isso.",
+  "Les apps ne peuvent ni vous suivre avec l’identifiant publicitaire ni vous le demander.",
+  "Las apps no pueden rastrearte con el identificador de publicidad ni pedírtelo.",
+  "Apps können dich nicht über die Werbe-ID tracken oder danach fragen.",
+  "应用无法通过广告标识符跟踪你或请求跟踪。"
+ ],
+ "Background analysis": [
+  "Análise em segundo plano",
+  "Analyse en arrière-plan",
+  "Análisis en segundo plano",
+  "Hintergrundanalyse",
+  "后台分析"
+ ],
+ "Cannot read": [
+  "Não é possível ler",
+  "Illisible",
+  "No se puede leer",
+  "Nicht lesbar",
+  "无法读取"
+ ],
+ "Cannot take effect here": [
+  "Não tem efeito aqui",
+  "Sans effet ici",
+  "No tiene efecto aquí",
+  "Hier wirkungslos",
+  "无法在此生效"
+ ],
+ "Couldn't change it": [
+  "Não foi possível alterar",
+  "Impossible de le modifier",
+  "No se ha podido cambiar",
+  "Konnte nicht geändert werden",
+  "无法更改"
+ ],
+ "Couldn't open the profile": [
+  "Não foi possível abrir o perfil",
+  "Impossible d’ouvrir le profil",
+  "No se ha podido abrir el perfil",
+  "Profil konnte nicht geöffnet werden",
+  "无法打开描述文件"
+ ],
+ "Couldn't remove a profile": [
+  "Não foi possível remover um perfil",
+  "Impossible de supprimer un profil",
+  "No se ha podido eliminar un perfil",
+  "Ein Profil konnte nicht entfernt werden",
+  "无法移除描述文件"
+ ],
+ "Couldn't remove the profile": [
+  "Não foi possível remover o perfil",
+  "Impossible de supprimer le profil",
+  "No se ha podido eliminar el perfil",
+  "Profil konnte nicht entfernt werden",
+  "无法移除此描述文件"
+ ],
+ "Debloat": [
+  "Debloat",
+  "Debloat",
+  "Debloat",
+  "Debloat",
+  "Debloat"
+ ],
+ "Diagnostics": [
+  "Diagnóstico",
+  "Diagnostic",
+  "Diagnóstico",
+  "Diagnose",
+  "诊断"
+ ],
+ "Dictation and translation stay on this Mac. Languages without an on-device model stop working.": [
+  "O ditado e a tradução ficam neste Mac. Idiomas sem modelo no dispositivo deixam de funcionar.",
+  "La dictée et la traduction restent sur ce Mac. Les langues sans modèle sur l’appareil ne fonctionnent plus.",
+  "El dictado y la traducción se quedan en este Mac. Los idiomas sin modelo en el dispositivo dejan de funcionar.",
+  "Diktat und Übersetzung bleiben auf diesem Mac. Sprachen ohne Modell auf dem Gerät funktionieren nicht mehr.",
+  "听写和翻译在此 Mac 上处理。没有本地模型的语言将无法使用。"
+ ],
+ "Disable": [
+  "Desativar",
+  "Désactiver",
+  "Desactivar",
+  "Deaktivieren",
+  "停用"
+ ],
+ "Disable %@": [
+  "Desativar %@",
+  "Désactiver %@",
+  "Desactivar %@",
+  "%@ deaktivieren",
+  "停用 %@"
+ ],
+ "Disable %@ again": [
+  "Desativar %@ de novo",
+  "Désactiver de nouveau %@",
+  "Volver a desactivar %@",
+  "%@ erneut deaktivieren",
+  "再次停用 %@"
+ ],
+ "Disable %lld features again": [
+  "Desativar %lld recursos de novo",
+  "Désactiver de nouveau %lld fonctions",
+  "Volver a desactivar %lld funciones",
+  "%lld Funktionen erneut deaktivieren",
+  "再次停用 %lld 项功能"
+ ],
+ "Disable %lld features?": [
+  "Desativar %lld recursos?",
+  "Désactiver %lld fonctions ?",
+  "¿Desactivar %lld funciones?",
+  "%lld Funktionen deaktivieren?",
+  "停用 %lld 项功能？"
+ ],
+ "Disable all": [
+  "Desativar tudo",
+  "Tout désactiver",
+  "Desactivar todo",
+  "Alle deaktivieren",
+  "全部停用"
+ ],
+ "Disabled": [
+  "Desativado",
+  "Désactivé",
+  "Desactivado",
+  "Deaktiviert",
+  "已停用"
+ ],
+ "Disabling one asks you to approve a profile in System Settings > General > Device Management.": [
+  "Desativar uma delas pede que você aprove um perfil em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.",
+  "En désactiver une vous demande d’approuver un profil dans Réglages Système > Général > Gestion de l’appareil.",
+  "Desactivar una te pide aprobar un perfil en Ajustes del Sistema > General > Gestión de dispositivos.",
+  "Beim Deaktivieren musst du ein Profil unter Systemeinstellungen > Allgemein > Geräteverwaltung genehmigen.",
+  "停用功能时，会要求你在“系统设置 > 通用 > 设备管理”中批准描述文件。"
+ ],
+ "Disabling…": [
+  "Desativando…",
+  "Désactivation…",
+  "Desactivando…",
+  "Wird deaktiviert …",
+  "正在停用…"
+ ],
+ "Each one can be enabled again.": [
+  "Cada um pode ser reativado.",
+  "Chacune peut être réactivée.",
+  "Cada una se puede volver a activar.",
+  "Jede lässt sich wieder aktivieren.",
+  "每项功能都可以重新启用。"
+ ],
+ "Enable": [
+  "Ativar",
+  "Activer",
+  "Activar",
+  "Aktivieren",
+  "启用"
+ ],
+ "Enable all": [
+  "Ativar tudo",
+  "Tout activer",
+  "Activar todo",
+  "Alle aktivieren",
+  "全部启用"
+ ],
+ "Enable all %lld features again?": [
+  "Reativar todos os %lld recursos?",
+  "Réactiver les %lld fonctions ?",
+  "¿Volver a activar las %lld funciones?",
+  "Alle %lld Funktionen wieder aktivieren?",
+  "重新启用全部 %lld 项功能？"
+ ],
+ "Enabled": [
+  "Ativado",
+  "Activé",
+  "Activado",
+  "Aktiviert",
+  "已启用"
+ ],
+ "Enabling…": [
+  "Ativando…",
+  "Activation…",
+  "Activando…",
+  "Wird aktiviert …",
+  "正在启用…"
+ ],
+ "Experiments": [
+  "Experimentos",
+  "Expériences",
+  "Experimentos",
+  "Experimente",
+  "实验功能"
+ ],
+ "Finish": [
+  "Concluir",
+  "Terminer",
+  "Terminar",
+  "Abschließen",
+  "完成"
+ ],
+ "Hides Apple News and its widgets.": [
+  "Oculta o Apple News e seus widgets.",
+  "Masque Apple News et ses widgets.",
+  "Oculta Apple News y sus widgets.",
+  "Blendet Apple News und seine Widgets aus.",
+  "隐藏 Apple News 及其小组件。"
+ ],
+ "Install the helper in Settings": [
+  "Instale o auxiliar nos Ajustes",
+  "Installez l’assistant dans Réglages",
+  "Instala el asistente en Ajustes",
+  "Installiere das Hilfsprogramm in den Einstellungen",
+  "在设置中安装辅助程序"
+ ],
+ "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management.": [
+  "Não foi possível remover o perfil (%@); remova \"%@\" em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.",
+  "Impossible de supprimer son profil (%@) ; supprimez « %@ » dans Réglages Système > Général > Gestion de l’appareil.",
+  "No se ha podido eliminar su perfil (%@); elimina «%@» en Ajustes del Sistema > General > Gestión de dispositivos.",
+  "Das Profil konnte nicht entfernt werden (%@); entferne „%@“ unter Systemeinstellungen > Allgemein > Geräteverwaltung.",
+  "无法移除其描述文件（%@）；请在“系统设置 > 通用 > 设备管理”中移除“%@”。"
+ ],
+ "Its profile was removed.": [
+  "O perfil foi removido.",
+  "Son profil a été supprimé.",
+  "Se ha eliminado su perfil.",
+  "Das Profil wurde entfernt.",
+  "其描述文件已移除。"
+ ],
+ "Log out to apply.": [
+  "Encerre a sessão para aplicar.",
+  "Fermez la session pour appliquer.",
+  "Cierra sesión para aplicarlo.",
+  "Zum Anwenden abmelden.",
+  "注销后生效。"
+ ],
+ "MacSpace disabled it again, most recently %@.": [
+  "O MacSpace o desativou de novo, pela última vez %@.",
+  "MacSpace l’a désactivée de nouveau, la dernière fois %@.",
+  "MacSpace la volvió a desactivar, la última vez %@.",
+  "MacSpace hat sie erneut deaktiviert, zuletzt %@.",
+  "MacSpace 已再次停用，最近一次为 %@。"
+ ],
+ "MacSpace disabled them again, most recently %@.": [
+  "O MacSpace os desativou de novo, pela última vez %@.",
+  "MacSpace les a désactivées de nouveau, la dernière fois %@.",
+  "MacSpace las volvió a desactivar, la última vez %@.",
+  "MacSpace hat sie erneut deaktiviert, zuletzt %@.",
+  "MacSpace 已再次停用这些功能，最近一次为 %@。"
+ ],
+ "MacSpace restores the settings it saved before disabling them.": [
+  "O MacSpace restaura os ajustes que salvou antes de desativá-los.",
+  "MacSpace rétablit les réglages enregistrés avant de les désactiver.",
+  "MacSpace restaura los ajustes que guardó antes de desactivarlas.",
+  "MacSpace stellt die Einstellungen wieder her, die es vor dem Deaktivieren gesichert hat.",
+  "MacSpace 会还原停用前保存的设置。"
+ ],
+ "No control was named.": [
+  "Nenhum controle foi indicado.",
+  "Aucun réglage n’a été indiqué.",
+  "No se ha indicado ningún control.",
+  "Keine Einstellung angegeben.",
+  "未指定控制项。"
+ ],
+ "No controls were selected.": [
+  "Nenhum controle foi selecionado.",
+  "Aucun réglage sélectionné.",
+  "No se ha seleccionado ningún control.",
+  "Keine Einstellungen ausgewählt.",
+  "未选择控制项。"
+ ],
+ "No more \"quit unexpectedly\" dialogs.": [
+  "Chega de avisos de \"encerrou inesperadamente\".",
+  "Plus de fenêtres « s’est fermé de façon inattendue ».",
+  "Se acabaron los avisos de «se ha cerrado inesperadamente».",
+  "Keine Dialoge „unerwartet beendet“ mehr.",
+  "不再显示“意外退出”对话框。"
+ ],
+ "Not on this macOS": [
+  "Não existe neste macOS",
+  "Absent de ce macOS",
+  "No existe en este macOS",
+  "Nicht in diesem macOS",
+  "不适用于此 macOS"
+ ],
+ "Not working": [
+  "Não funciona",
+  "Inopérant",
+  "No funciona",
+  "Wirkt nicht",
+  "未生效"
+ ],
+ "Nothing to approve": [
+  "Nada a aprovar",
+  "Rien à approuver",
+  "Nada que aprobar",
+  "Nichts zu genehmigen",
+  "没有待批准的内容"
+ ],
+ "Nothing to remove": [
+  "Nada a remover",
+  "Rien à supprimer",
+  "Nada que eliminar",
+  "Nichts zu entfernen",
+  "没有可移除的内容"
+ ],
+ "Partly off": [
+  "Parcialmente desativado",
+  "Partiellement désactivé",
+  "Desactivado en parte",
+  "Teilweise aus",
+  "部分关闭"
+ ],
+ "Policies": [
+  "Políticas",
+  "Règles",
+  "Políticas",
+  "Richtlinien",
+  "策略"
+ ],
+ "Reopen apps to apply.": [
+  "Reabra os apps para aplicar.",
+  "Rouvrez les apps pour appliquer.",
+  "Vuelve a abrir las apps para aplicarlo.",
+  "Zum Anwenden Apps neu öffnen.",
+  "重新打开应用后生效。"
+ ],
+ "Restart to apply.": [
+  "Reinicie para aplicar.",
+  "Redémarrez pour appliquer.",
+  "Reinicia para aplicarlo.",
+  "Zum Anwenden neu starten.",
+  "重新启动后生效。"
+ ],
+ "Siri": [
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri"
+ ],
+ "Some are not tested yet.": [
+  "Alguns ainda não foram testados.",
+  "Certaines ne sont pas encore testées.",
+  "Algunas aún no se han probado.",
+  "Einige sind noch nicht getestet.",
+  "部分功能尚未测试。"
+ ],
+ "Spotlight stops sending your searches to Apple. No more web results in Spotlight.": [
+  "O Spotlight deixa de enviar suas buscas para a Apple. Sem resultados da web no Spotlight.",
+  "Spotlight cesse d’envoyer vos recherches à Apple. Plus de résultats web dans Spotlight.",
+  "Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight.",
+  "Spotlight sendet deine Suchen nicht mehr an Apple. Keine Webergebnisse mehr in Spotlight.",
+  "Spotlight 不再向 Apple 发送搜索内容，也不再显示网页结果。"
+ ],
+ "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.": [
+  "Impede o macOS de gravar a atividade o tempo todo para relatórios de travamento. Libera cerca de 100 MB de memória.",
+  "Empêche macOS d’enregistrer en continu l’activité pour les rapports de blocage. Libère environ 100 Mo de mémoire.",
+  "Impide que macOS grabe la actividad sin parar para los informes de bloqueos. Libera unos 100 MB de memoria.",
+  "Verhindert, dass macOS ständig Aktivität für Hängeberichte aufzeichnet. Gibt etwa 100 MB Arbeitsspeicher frei.",
+  "停止 macOS 持续记录用于无响应报告的活动，释放约 100 MB 内存。"
+ ],
+ "Stops sending usage and crash data to Apple and app developers.": [
+  "Deixa de enviar dados de uso e de falhas para a Apple e os desenvolvedores.",
+  "Cesse d’envoyer les données d’utilisation et de plantage à Apple et aux développeurs.",
+  "Deja de enviar datos de uso y de fallos a Apple y a los desarrolladores.",
+  "Sendet keine Nutzungs- und Absturzdaten mehr an Apple und App-Entwickler.",
+  "停止向 Apple 和应用开发者发送使用情况及崩溃数据。"
+ ],
+ "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.": [
+  "Deixa de enviar dados de uso e de falhas para a Apple, inclusive nas versões beta do macOS, que ignoram o ajuste acima.",
+  "Cesse d’envoyer les données d’utilisation et de plantage à Apple, y compris sur les versions bêta de macOS, qui ignorent le réglage ci-dessus.",
+  "Deja de enviar datos de uso y de fallos a Apple, también en las versiones beta de macOS, que ignoran el ajuste anterior.",
+  "Sendet keine Nutzungs- und Absturzdaten mehr an Apple, auch in Betaversionen von macOS, die die Einstellung oben ignorieren.",
+  "停止向 Apple 发送使用情况及崩溃数据，包括忽略上述设置的 macOS 测试版。"
+ ],
+ "Stops sharing Siri and Dictation recordings with Apple.": [
+  "Deixa de compartilhar gravações da Siri e do Ditado com a Apple.",
+  "Cesse de partager les enregistrements de Siri et de la dictée avec Apple.",
+  "Deja de compartir las grabaciones de Siri y del dictado con Apple.",
+  "Teilt keine Aufnahmen von Siri und Diktat mehr mit Apple.",
+  "停止与 Apple 共享 Siri 和听写录音。"
+ ],
+ "Suggestions and search": [
+  "Sugestões e busca",
+  "Suggestions et recherche",
+  "Sugerencias y búsqueda",
+  "Vorschläge und Suche",
+  "建议与搜索"
+ ],
+ "Turns off Game Center.": [
+  "Desativa o Game Center.",
+  "Désactive Game Center.",
+  "Desactiva Game Center.",
+  "Deaktiviert Game Center.",
+  "关闭 Game Center。"
+ ],
+ "Turns off Visual Intelligence. Visual Look Up may stop working too.": [
+  "Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar.",
+  "Désactive l’intelligence visuelle. Recherche visuelle peut aussi cesser de fonctionner.",
+  "Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar.",
+  "Deaktiviert Visuelle Intelligenz. Visuelles Nachschlagen funktioniert dann eventuell auch nicht mehr.",
+  "关闭视觉智能。“实况查询”也可能停止工作。"
+ ],
+ "Undone by macOS": [
+  "Desfeito pelo macOS",
+  "Annulé par macOS",
+  "Deshecho por macOS",
+  "Von macOS rückgängig gemacht",
+  "已被 macOS 还原"
+ ],
+ "Unknown action %@.": [
+  "Ação desconhecida %@.",
+  "Action inconnue %@.",
+  "Acción desconocida %@.",
+  "Unbekannte Aktion %@.",
+  "未知操作 %@。"
+ ],
+ "Waiting for approval": [
+  "Aguardando aprovação",
+  "En attente d’approbation",
+  "Pendiente de aprobación",
+  "Wartet auf Genehmigung",
+  "等待批准"
+ ],
+ "debloat": [
+  "debloat",
+  "debloat",
+  "debloat",
+  "Debloat",
+  "精简"
+ ],
+ "macOS asks you to approve the policy profile once.": [
+  "O macOS pede que você aprove o perfil de políticas uma vez.",
+  "macOS vous demande d’approuver une fois le profil de règles.",
+  "macOS te pide aprobar el perfil de políticas una vez.",
+  "macOS bittet dich einmal, das Richtlinienprofil zu genehmigen.",
+  "macOS 只会要求你批准一次策略描述文件。"
+ ],
+ "macOS switched %@ back on. MacSpace disabled it again.": [
+  "O macOS reativou %@. O MacSpace o desativou de novo.",
+  "macOS a réactivé %@. MacSpace l’a désactivé de nouveau.",
+  "macOS ha vuelto a activar %@. MacSpace lo ha desactivado de nuevo.",
+  "macOS hat %@ wieder aktiviert. MacSpace hat es erneut deaktiviert.",
+  "macOS 重新开启了 %@，MacSpace 已再次停用。"
+ ],
+ "macOS switched %@ back on. MacSpace disabled them again.": [
+  "O macOS reativou %@. O MacSpace os desativou de novo.",
+  "macOS a réactivé %@. MacSpace les a désactivés de nouveau.",
+  "macOS ha vuelto a activar %@. MacSpace los ha desactivado de nuevo.",
+  "macOS hat %@ wieder aktiviert. MacSpace hat sie erneut deaktiviert.",
+  "macOS 重新开启了 %@，MacSpace 已再次停用这些功能。"
+ ],
+ "Turn off analytics, ads and background data collection that macOS lets you control.": [
+  "Desative análises, anúncios e a coleta de dados em segundo plano que o macOS permite controlar.",
+  "Désactivez l’analyse, les publicités et la collecte de données en arrière-plan que macOS vous laisse contrôler.",
+  "Desactiva los análisis, los anuncios y la recogida de datos en segundo plano que macOS te deja controlar.",
+  "Schalte Analyse, Werbung und Datensammlung im Hintergrund aus, die macOS dich steuern lässt.",
+  "关闭 macOS 允许你控制的分析、广告和后台数据收集。"
+ ],
+ "Notify me when macOS undoes a change": [
+  "Avisar quando o macOS desfizer uma alteração",
+  "M’avertir quand macOS annule une modification",
+  "Avisarme cuando macOS deshaga un cambio",
+  "Mitteilen, wenn macOS eine Änderung rückgängig macht",
+  "macOS 还原更改时通知我"
+ ],
+ "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again.": [
+  "Mostra uma notificação quando o macOS reativa um recurso desativado e o MacSpace o desativa de novo.",
+  "Affiche une notification quand macOS réactive une fonction désactivée et que MacSpace la désactive de nouveau.",
+  "Muestra una notificación cuando macOS vuelve a activar una función desactivada y MacSpace la desactiva de nuevo.",
+  "Zeigt eine Mitteilung, wenn macOS eine deaktivierte Funktion wieder einschaltet und MacSpace sie erneut deaktiviert.",
+  "macOS 重新开启已停用的功能，而 MacSpace 再次停用时显示通知。"
+ ],
+ "Keep features disabled": [
+  "Manter recursos desativados",
+  "Garder les fonctions désactivées",
+  "Mantener las funciones desactivadas",
+  "Funktionen deaktiviert halten",
+  "保持功能停用"
+ ],
+ "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on.": [
+  "Verifica a cada 15 minutos enquanto o MacSpace está aberto e desativa de novo qualquer recurso que o macOS tenha reativado.",
+  "Vérifie toutes les 15 minutes tant que MacSpace est ouvert et désactive de nouveau toute fonction réactivée par macOS.",
+  "Lo comprueba cada 15 minutos mientras MacSpace está abierto y vuelve a desactivar cualquier función que macOS haya activado.",
+  "Prüft alle 15 Minuten, solange MacSpace geöffnet ist, und deaktiviert jede Funktion erneut, die macOS wieder eingeschaltet hat.",
+  "MacSpace 运行时每 15 分钟检查一次，再次停用 macOS 重新开启的功能。"
+ ],
+ "Share analytics with Apple": [
+  "Compartilhar análises com a Apple",
+  "Partager l’analyse avec Apple",
+  "Compartir análisis con Apple",
+  "Analysedaten mit Apple teilen",
+  "与 Apple 共享分析"
+ ],
+ "Personalized ads": [
+  "Anúncios personalizados",
+  "Publicités personnalisées",
+  "Anuncios personalizados",
+  "Personalisierte Werbung",
+  "个性化广告"
+ ],
+ "Advertising identifier": [
+  "Identificador de publicidade",
+  "Identifiant publicitaire",
+  "Identificador de publicidad",
+  "Werbe-ID",
+  "广告标识符"
+ ],
+ "Siri AI": [
+  "Siri AI",
+  "Siri AI",
+  "Siri AI",
+  "Siri AI",
+  "Siri AI"
+ ],
+ "Visual Intelligence": [
+  "Inteligência Visual",
+  "Intelligence visuelle",
+  "Inteligencia visual",
+  "Visuelle Intelligenz",
+  "视觉智能"
+ ],
+ "Generative search indexing": [
+  "Indexação para busca generativa",
+  "Indexation pour la recherche générative",
+  "Indexación para búsqueda generativa",
+  "Indizierung für generative Suche",
+  "生成式搜索索引"
+ ],
+ "Hang tracing (tailspin)": [
+  "Rastreamento de travamentos (tailspin)",
+  "Suivi des blocages (tailspin)",
+  "Rastreo de bloqueos (tailspin)",
+  "Hänger-Aufzeichnung (tailspin)",
+  "无响应跟踪（tailspin）"
+ ],
+ "Crash report dialog": [
+  "Aviso de relatório de falhas",
+  "Fenêtre de rapport de plantage",
+  "Aviso de informe de fallos",
+  "Absturzbericht-Dialog",
+  "崩溃报告对话框"
+ ],
+ "Improve Siri & Dictation": [
+  "Melhorar Siri e Ditado",
+  "Améliorer Siri et Dictée",
+  "Mejorar Siri y Dictado",
+  "Siri & Diktat verbessern",
+  "改进 Siri 与听写"
+ ],
+ "Dictation and translation on Apple servers": [
+  "Ditado e tradução nos servidores da Apple",
+  "Dictée et traduction sur les serveurs d’Apple",
+  "Dictado y traducción en los servidores de Apple",
+  "Diktat und Übersetzung auf Apple-Servern",
+  "在 Apple 服务器上进行听写和翻译"
+ ],
+ "Spotlight internet results": [
+  "Resultados da internet no Spotlight",
+  "Résultats Internet dans Spotlight",
+  "Resultados de internet en Spotlight",
+  "Internetergebnisse in Spotlight",
+  "Spotlight 互联网结果"
+ ],
+ "Game Center": [
+  "Game Center",
+  "Game Center",
+  "Game Center",
+  "Game Center",
+  "Game Center"
+ ],
+ "Apple News": [
+  "Apple News",
+  "Apple News",
+  "Apple News",
+  "Apple News",
+  "Apple News"
+ ],
+ "Set by another profile": [
+  "Definido por outro perfil",
+  "Défini par un autre profil",
+  "Definido por otro perfil",
+  "Von einem anderen Profil festgelegt",
+  "由其他描述文件设置"
+ ],
+ "Breaks Mail search": [
+  "Quebra a busca do Mail",
+  "Casse la recherche de Mail",
+  "Rompe la búsqueda de Mail",
+  "Stört die Suche in Mail",
+  "会导致邮件搜索失效"
+ ],
+ "No longer works": [
+  "Não funciona mais",
+  "Ne fonctionne plus",
+  "Ya no funciona",
+  "Funktioniert nicht mehr",
+  "不再生效"
+ ],
+ "Switch it off, then restart your Mac.": [
+  "Desligue e reinicie o Mac.",
+  "Désactivez-le, puis redémarrez votre Mac.",
+  "Desactívalo y reinicia el Mac.",
+  "Schalte es aus und starte deinen Mac neu.",
+  "将其关闭，然后重新启动 Mac。"
+ ],
+ "Switch it off. To turn off Apple Intelligence, use the Siri page.": [
+  "Desligue. Para desativar a Apple Intelligence, use a página Siri.",
+  "Désactivez-le. Pour désactiver Apple Intelligence, utilisez la page Siri.",
+  "Desactívalo. Para desactivar Apple Intelligence, usa la página Siri.",
+  "Schalte es aus. Um Apple Intelligence auszuschalten, nutze die Seite Siri.",
+  "将其关闭。如需关闭 Apple 智能，请使用 Siri 页面。"
+ ],
+ "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.": [
+  "Desativa a Siri AI. O Spotlight volta à busca clássica. Os outros recursos da Apple Intelligence continuam ativos.",
+  "Désactive Siri AI. Spotlight revient à la recherche classique. Les autres fonctions d’Apple Intelligence restent activées.",
+  "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. Las demás funciones de Apple Intelligence siguen activadas.",
+  "Schaltet Siri AI aus. Spotlight kehrt zur klassischen Suche zurück. Die anderen Funktionen von Apple Intelligence bleiben aktiv.",
+  "关闭 Siri AI。Spotlight 恢复传统搜索，其他 Apple 智能功能保持开启。"
+ ]
 }

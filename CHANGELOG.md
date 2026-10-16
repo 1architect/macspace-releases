@@ -9,6 +9,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
+- Simplified Chinese throughout the app and all four modules (#8).
+
 - About includes GitHub and an uninstaller that restores each module’s settings before removing the helper and moving MacSpace to the Trash (#15).
 
 ### Fixed

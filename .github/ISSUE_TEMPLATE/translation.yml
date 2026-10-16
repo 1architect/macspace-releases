@@ -16,6 +16,7 @@ body:
         - French, fr
         - Spanish, es
         - German, de
+        - Simplified Chinese, zh-Hans
         - English, en
     validations:
       required: true

@@ -28,7 +28,7 @@ struct TextProposal: Codable, Equatable {
 @MainActor
 final class TextEditorStore: ObservableObject {
     static let shared = TextEditorStore()
-    static let languages = ["en", "pt-BR", "fr", "es", "de"]
+    static let languages = ["en", "pt-BR", "fr", "es", "de", "zh-Hans"]
     private static let key = "design.textProposals"
 
     let texts: [CatalogText]
@@ -88,7 +88,7 @@ final class TextEditorStore: ObservableObject {
                       "- The English of each text is its key in `Localization/<Table>.json` and a literal in the code at the places listed "
                       + "(`loc(\"…\")`, `String(localized: \"…\")`, `Text(\"…\")`; interpolations stand for the placeholders %@ and %lld).",
                       "- A new English: change the literal at every place and the key in the table, keeping its placeholders.",
-                      "- Translations (pt-BR, fr, es, de, in that order in the table): use the proposed ones; for a language with none, "
+                      "- Translations (pt-BR, fr, es, de, zh-Hans, in that order in the table): use the proposed ones; for a language with none, "
                       + "translate the new English in the same voice as the table's other texts.",
                       "- A note says what is wrong or what is wanted; follow it.",
                       "- Then run `swift Scripts/Localize.swift`, build, and run the tests.", ""]

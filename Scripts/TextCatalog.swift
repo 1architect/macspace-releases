@@ -10,7 +10,7 @@
 
 import Foundation
 
-let languages = ["pt-BR", "fr", "es", "de"]
+let languages = ["pt-BR", "fr", "es", "de", "zh-Hans"]
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
 /// The kind of element for a text passed as `label` to `call` (the innermost call around the text that is not a wrapper such as
