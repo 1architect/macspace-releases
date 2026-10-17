@@ -79,6 +79,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
                         guard let self, let window = self.window else { return }
                         WindowControls.fitGlassAfterSystemFill(window)
                         self.shadowWindow?.follow(window)
+                        self.showShadow(animated: false)
                     }
                 })
             }
@@ -86,7 +87,8 @@ struct GlassWindowConfigurator: NSViewRepresentable {
 
         private func showShadow(animated: Bool) {
             guard let shadowWindow else { return }
-            let alpha: CGFloat = wantsShadow ? 1 : 0
+            // A filled window reaches the usable screen edges; its separate shadow must disappear there too.
+            let alpha: CGFloat = wantsShadow && window.map({ !WindowControls.isZoomed($0) }) == true ? 1 : 0
             if animated {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = wantsShadow ? 0.3 : 0.15
