@@ -85,8 +85,9 @@ struct WindowControls: View {
     /// Whether the window fills its screen's visible area (the screen less the menu bar and the Dock).
     static func isZoomed(_ window: NSWindow) -> Bool {
         guard let visible = window.screen?.visibleFrame else { return false }
-        return abs(window.frame.minX - visible.minX) < 2 && abs(window.frame.minY - visible.minY) < 2
-            && abs(window.frame.width - visible.width) < 2 && abs(window.frame.height - visible.height) < 2
+        let glass = window.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
+        return abs(glass.minX - visible.minX) < 2 && abs(glass.minY - visible.minY) < 2
+            && abs(glass.width - visible.width) < 2 && abs(glass.height - visible.height) < 2
     }
 
     /// Fills the screen's visible area, or goes back to the size and place it had before. Returns whether it is now zoomed. AppKit's
@@ -101,7 +102,8 @@ struct WindowControls: View {
             return false
         }
         unzoomedFrames[window.windowNumber] = window.frame
-        window.setFrame(visible, display: true, animate: true)
+        let frame = visible.insetBy(dx: -Theme.resizeMargin, dy: -Theme.resizeMargin)
+        window.setFrame(frame, display: true, animate: true)
         return true
     }
 
