@@ -90,6 +90,19 @@ struct WindowControls: View {
             && abs(glass.width - visible.width) < 2 && abs(glass.height - visible.height) < 2
     }
 
+    /// macOS Fill sizes the native frame, which includes the clear resize band. Move that band outside the usable screen too.
+    static func fitGlassAfterSystemFill(_ window: NSWindow) {
+        guard let visible = window.screen?.visibleFrame,
+              let frame = glassFrameAfterSystemFill(window.frame, visible: visible) else { return }
+        window.setFrame(frame, display: true)
+    }
+
+    static func glassFrameAfterSystemFill(_ frame: CGRect, visible: CGRect) -> CGRect? {
+        guard abs(frame.minX - visible.minX) < 2, abs(frame.minY - visible.minY) < 2,
+              abs(frame.width - visible.width) < 2, abs(frame.height - visible.height) < 2 else { return nil }
+        return visible.insetBy(dx: -Theme.resizeMargin, dy: -Theme.resizeMargin)
+    }
+
     /// Fills the screen's visible area, or goes back to the size and place it had before. Returns whether it is now zoomed. AppKit's
     /// own zoom does nothing for a window without a title bar.
     @discardableResult

@@ -50,6 +50,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             // Its size and place are kept between launches.
             window.setFrameAutosaveName(Self.frameName)
             window.setFrameUsingName(Self.frameName)
+            WindowControls.fitGlassAfterSystemFill(window)
             // The edges are resized from a band across the glass's edge, not from the window's invisible outer edge (`ResizeBand`).
             if let frameView = window.contentView?.superview, !frameView.subviews.contains(where: { $0 is ResizeBand }) {
                 let band = ResizeBand(frame: frameView.bounds)
@@ -76,6 +77,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
                         guard let self, let window = self.window else { return }
+                        WindowControls.fitGlassAfterSystemFill(window)
                         self.shadowWindow?.follow(window)
                     }
                 })
