@@ -22,18 +22,23 @@ struct TileInfo: Equatable {
         if let tile = handle.tile {
             // Read again (Refresh, the first reading), the status line says so, in its own style: the old figures dimmed read as the
             // new ones.
-            let reading = handle.tileIsStale || handle.isRefreshing
+            let reading = handle.isRefreshing || (handle.tileIsStale && !handle.isCleaning)
             self.init(title: tile.title, figure: tile.figure,
-                      status: handle.isCleaning ? Self.cleaningStatus(handle.progress) : (reading ? Self.loadingStatus : tile.status),
+                      status: reading ? Self.loadingStatus(handle.loading?.reported) : (handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
         } else {
-            self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus, loading: true)
+            self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus(handle.loading?.reported), loading: true)
         }
     }
 
     /// A tile's status line while its module reads the Mac.
     static var loadingStatus: String { String(localized: "loading…") }
+
+    static func loadingStatus(_ fraction: Double?) -> String {
+        guard let fraction, fraction.isFinite else { return loadingStatus }
+        return loadingStatus + " \(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
+    }
 
     /// While a module cleans, its status line ("free up to 3.74 GB") says what it is doing and how far it is, as the page's pill
     /// does, and its chart breathes: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's

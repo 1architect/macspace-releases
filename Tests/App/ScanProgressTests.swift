@@ -62,6 +62,7 @@ final class ScanProgressTests: XCTestCase {
             await control.advance(0.4)
             for _ in 0..<100 where handle.loading?.reported != 0.4 { try await Task.sleep(for: .milliseconds(5)) }
             XCTAssertEqual(handle.loading?.reported, 0.4)
+            XCTAssertEqual(TileInfo(handle).status, TileInfo.loadingStatus + " 40%")
             XCTAssertEqual(handle.loading?.fraction(at: Date()), 0.4, "the orange button uses actual scan progress")
             await control.advance(0.2)
             try await Task.sleep(for: .milliseconds(10))
@@ -72,6 +73,7 @@ final class ScanProgressTests: XCTestCase {
             XCTAssertFalse(handle.isBusy)
             XCTAssertNil(handle.loading)
             XCTAssertFalse(TileInfo(handle).loading)
+            XCTAssertEqual(TileInfo(handle).status, "ready")
             // A queued/late callback must not bring loading back after the read has completed.
             await control.advance(0.8)
             try await Task.sleep(for: .milliseconds(10))
