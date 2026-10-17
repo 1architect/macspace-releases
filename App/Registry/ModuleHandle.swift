@@ -203,7 +203,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         groupPath = []
     }
 
-    /// `reload` asks the module to check the system again (the Refresh button), retaining measurements it can still validate.
+    /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
     /// `quiet` suppresses presentation-only cache reads. If the module reports real scan work, that work shows progress normally.
     public func refresh(reload: Bool = false, quiet: Bool = false) async {
         guard !preparingForUninstall, state == .ready, let module else { return }

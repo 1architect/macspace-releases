@@ -17,6 +17,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Scans show reported progress in the action button and after “loading…” on Home, including helper retries.
+- Window zoom fits the visible glass to the screen, accounting for the resize margin.
+
 - About MacSpace opens from the application and status menus with MacBat’s layout, version, author, GitHub and uninstall; it is no longer a Settings section (#15).
 
 - Confirmation dialogs keep the icon, heading and complete message aligned left after every layout pass.
