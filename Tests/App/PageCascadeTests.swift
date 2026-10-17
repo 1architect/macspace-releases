@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import MacSpaceApp
 
 final class PageCascadeTests: XCTestCase {
@@ -19,11 +20,15 @@ final class PageCascadeTests: XCTestCase {
 final class PageDetailsVisibilityTests: XCTestCase {
     func testFastRefreshWaitsForTheDepartureBeforeRevealing() async throws {
         let state = PageDetailsVisibility(departure: .milliseconds(80))
+        let revealed = expectation(description: "Page details return after the departure")
+        let observation = state.$visible.dropFirst().filter { $0 }.sink { _ in revealed.fulfill() }
+        defer { observation.cancel() }
+        let started = ContinuousClock.now
         state.update(busy: true)
         state.update(busy: false)
-        try await Task.sleep(for: .milliseconds(10))
         XCTAssertFalse(state.visible)
-        try await Task.sleep(for: .milliseconds(100))
+        await fulfillment(of: [revealed], timeout: 5)
+        XCTAssertGreaterThanOrEqual(started.duration(to: .now), .milliseconds(80))
         XCTAssertTrue(state.visible)
     }
 
