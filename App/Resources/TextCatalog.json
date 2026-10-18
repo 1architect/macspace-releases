@@ -23,7 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:520"
+      "App\/Renderer\/ScreenView.swift:521",
+      "App\/Renderer\/ScreenView.swift:586"
     ],
     "table" : "App",
     "translations" : {
@@ -404,7 +405,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:513"
+      "App\/Renderer\/ScreenView.swift:514"
     ],
     "table" : "App",
     "translations" : {
@@ -1514,7 +1515,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:191",
-      "App\/Renderer\/ScreenView.swift:735"
+      "App\/Renderer\/ScreenView.swift:756"
     ],
     "table" : "App",
     "translations" : {
@@ -2493,7 +2494,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:736"
+      "App\/Renderer\/ScreenView.swift:757"
     ],
     "table" : "App",
     "translations" : {
@@ -3148,7 +3149,7 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:734",
+      "App\/Renderer\/ScreenView.swift:755",
       "App\/Renderer\/RowActionFlag.swift:79",
       "App\/Renderer\/RowActionFlag.swift:86",
       "App\/Registry\/ModuleHandle.swift:480"

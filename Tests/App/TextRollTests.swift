@@ -4,30 +4,42 @@ import XCTest
 
 @MainActor
 final class TextRollTests: XCTestCase {
-    func testCounterGrowthKeepsTheLabelAndUnitIdentities() {
-        for (before, after) in [("Free 9,9 GB", "Free 10,4 GB"), ("Loading 9%", "Loading 10%"), ("Free 999 MB", "Free 1999 MB")] {
-            let old = RollingText.pieces(before)
-            let new = RollingText.pieces(after)
-            XCTAssertEqual(old.first?.id, new.first?.id)
-            XCTAssertEqual(old.last?.id, new.last?.id, "adding a digit cannot replace the unchanged unit")
+    func testNumericFieldsKeepTheirIdentityAndDecimalSeparators() {
+        for (before, after) in [("Free 9,9 GB", "Free 10,4 GB"), ("Loading 9%", "Loading 100%"), ("Free 999 MB", "Free 1999 MB")] {
+            let old = TextFields.split(before)
+            let new = TextFields.split(after)
+            XCTAssertEqual(old.map(\.id), new.map(\.id))
             XCTAssertEqual(old.first?.text, new.first?.text)
             XCTAssertEqual(old.last?.text, new.last?.text)
-            XCTAssertEqual(Set(new.map(\.id)).count, new.count)
+            XCTAssertEqual(new.filter(\.numeric).count, 1)
         }
     }
 
-    func testDigitsKeepTheirPlaceFromTheRightAsACounterGrows() {
-        let old = RollingText.pieces("9 MB")
-        let new = RollingText.pieces("19 MB")
-        XCTAssertEqual(old[0].id, new[1].id)
-        XCTAssertNotEqual(new[0].id, new[1].id)
-        XCTAssertEqual(old[1].id, new[2].id)
+    func testFieldsPreserveUnicodeAndWhitespace() {
+        for text in ["Free 25 GB", "加载 42%", "解放 2,5 GB\n完了", "تنزيل ٤٢٪", "1\u{202F}234,5 MB"] {
+            XCTAssertEqual(TextFields.split(text).map(\.text).joined(), text)
+        }
     }
 
-    func testOriginalCounterPreservesUnicodeAndWhitespace() {
-        for text in ["Free 25 GB", "加载 42%", "解放 2,5 GB\n完了", "تنزيل ٤٢٪"] {
-            XCTAssertEqual(RollingText.pieces(text).map(\.text).joined(), text)
+    func testPercentageFieldKeepsTheCaptionWidthFixed() throws {
+        var widths: [CGFloat] = []
+        for progress in [1, 9, 10, 17, 22, 60, 64, 75, 100] {
+            let label = ChangingText(text: "carregando \(progress)%", alignment: .trailing)
+                .font(Font(CaptionFont.status(size: 22))).lineLimit(1)
+            let renderer = ImageRenderer(content: label)
+            renderer.render { size, _ in widths.append(size.width) }
         }
+        XCTAssertEqual(Set(widths).count, 1, "a trailing caption must not move its unchanged word as progress changes")
+    }
+
+    func testAllDoneNumericReservationDoesNotChangeDuringCountUp() throws {
+        var widths: [CGFloat] = []
+        for value in ["0", "1", "9", "10", "11", "99", "111"] {
+            let renderer = ImageRenderer(content: ChangingText(text: "\(value) MB freed", alignment: .center, maximumText: "111 MB freed")
+                .font(.system(size: 22)).lineLimit(1))
+            renderer.render { size, _ in widths.append(size.width) }
+        }
+        XCTAssertEqual(Set(widths).count, 1, "counting cannot push the centered words sideways")
     }
 
     func testNativeTransitionUsesOnlyCurrentTextForRestingLayout() throws {
@@ -53,9 +65,9 @@ final class CaptionDigitTests: XCTestCase {
 
     func testReportedOnesUseTheOriginalCaptionFontMetrics() throws {
         for font in [CaptionFont.title(size: 22), CaptionFont.status(size: 22), CaptionFont.title(size: 16), CaptionFont.status(size: 16)] {
-            for text in ["31,11 GB", "liberar 2,21 GB", "11", "22", "9", "10", "111,11 GB", "IA desativada", "carregando 30%"] {
+            for text in ["31,11 GB", "liberar 2,21 GB", "11", "22", "9", "10", "111,11 GB", "IA desativada", "liberar 30 GB"] {
                 let expected = try size(Text(verbatim: text).font(Font(font)))
-                let actual = try size(ChangingText(text: text, alignment: .trailing).font(Font(font)))
+                let actual = try size(ChangingText(text: text, alignment: .trailing).font(Font(font)).lineLimit(1))
                 XCTAssertEqual(actual, expected, "animation must inherit the caption font's original digit spacing")
             }
         }
@@ -79,12 +91,5 @@ final class CaptionDigitTests: XCTestCase {
         }
     }
 
-    func testNativeNumericAnimationKeepsItsIdentityButUnrelatedPhrasesDoNot() {
-        for (old, new) in [("11", "22"), ("9", "10"), ("31,11 GB", "31,22 GB"), ("carregando 9%", "carregando 10%")] {
-            XCTAssertEqual(TextChangeIdentity(old), TextChangeIdentity(new))
-        }
-        for (old, new) in [("IA desativada", "carregando 30%"), ("carregando 30%", "IA desativada"), ("Free", "Freeing in the background")] {
-            XCTAssertNotEqual(TextChangeIdentity(old), TextChangeIdentity(new), "unrelated phrases cannot reuse the native numeric interpolation")
-        }
-    }
+
 }

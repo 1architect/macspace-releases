@@ -91,7 +91,7 @@ private struct RowActionFlag: View {
             if result != nil { dismiss() } else if !working { Task { await run() } }
         } label: {
             PillMorph {
-                ReservedPillLabel(samples: reservedLabels ?? samples, reserveWidth: working || result != nil) {
+                ReservedPillLabel(samples: PillLabelSamples.matching(text, samples: reservedLabels ?? samples), reserveWidth: working || result != nil) {
                     ChangingText(text: text)
                 }
             }

@@ -1,6 +1,17 @@
 import SwiftUI
 
-/// Idle flags fit their title. While working, known phase labels determine a stable width instead of the changing text.
+/// Only variants of the current numeric phase share a width. Unrelated future notices must not leave an empty tail.
+struct PillLabelSamples {
+    static func matching(_ text: String, samples: [String]) -> [String] {
+        func phrase(_ value: String) -> [String] {
+            TextFields.split(value).filter { !$0.numeric }.map(\.text)
+        }
+        guard text.contains(where: \.isNumber) else { return [text] }
+        return [text] + samples.filter { phrase($0) == phrase(text) }
+    }
+}
+
+/// Idle flags fit their title. Numeric progress variants reserve a stable width within their phase.
 struct ReservedPillLabel<Label: View>: View {
     let samples: [String]
     let reserveWidth: Bool

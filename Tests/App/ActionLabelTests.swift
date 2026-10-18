@@ -13,15 +13,19 @@ final class ActionLabelTests: XCTestCase {
         return try XCTUnwrap(measured)
     }
 
-    func testRowFlagKeepsItsWidthAndItsNeighboursAcrossProgressAndResult() throws {
-        let phases = ["Liberar", "Liberando espaço", "Removendo downloads", "Removendo Zero KB", "Removendo 116,6 MB", "Concluído"]
-        let expected = try size(ReservedPillLabel(samples: phases, reserveWidth: true) { ChangingText(text: phases[0]) })
-        for text in phases + ["An unexpectedly long error message that must truncate without moving the controls"] {
-            let flag = ReservedPillLabel(samples: phases, reserveWidth: true) { ChangingText(text: text) }
-            XCTAssertEqual(try size(flag), expected)
-            XCTAssertEqual(try size(HStack(spacing: 6) { flag; Color.clear.frame(width: 28, height: 18) }).width, expected.width + 34)
-            XCTAssertEqual(expected.height, 18)
+    func testRowFlagReservesNumericVariantsWithoutReservingUnrelatedFuturePhrases() throws {
+        let samples = ["Liberar", "Liberando espaço", "Liberando em segundo plano", "Removendo 111,1 MB", "Removendo 888,8 MB"]
+        func label(_ text: String) -> some View {
+            ReservedPillLabel(samples: PillLabelSamples.matching(text, samples: samples), reserveWidth: true) {
+                ChangingText(text: text)
+            }
         }
+        let short = try size(label("Liberando espaço"))
+        let expected = try size(Text(verbatim: "Liberando espaço").font(.system(size: 11, weight: .semibold)))
+        XCTAssertEqual(short.width, expected.width + 16, accuracy: 0.5)
+        XCTAssertLessThan(short.width, try size(label("Liberando em segundo plano")).width)
+        XCTAssertEqual(try size(label("Removendo 111,1 MB")), try size(label("Removendo 888,8 MB")))
+        XCTAssertEqual(short.height, 18)
     }
 
     func testIdleFreeFlagDoesNotDrawTheEmptyProgressReservation() throws {

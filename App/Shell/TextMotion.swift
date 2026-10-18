@@ -1,136 +1,100 @@
 import SwiftUI
 
-/// Text whose changes roll in like an odometer: each digit that changes rolls up out of view and the new one rolls in from below, a
-/// little after the one to its left, with a short blur; words that change cross over the same way, as one piece, so they keep their
-/// kerning. Used for what All done counts up; SwiftUI's numeric transition moved the whole line at once and blurred it.
-struct RollingText: View {
-    let text: String
-    /// Its own font, or the one around it.
-    var font: Font? = nil
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.font) private var inherited
-
-    /// Runs of the text: each digit on its own, everything between digits as one piece.
-    struct Piece: Identifiable, Equatable {
-        let id: String
-        let text: String
-        let isDigit: Bool
-    }
-
-    static func pieces(_ text: String) -> [Piece] {
-        var pieces: [Piece] = []
-        var run = ""
-        func flush() {
-            guard !run.isEmpty else { return }
-            pieces.append(Piece(id: "\(pieces.count):\(run)", text: run, isDigit: false))
-            run = ""
-        }
-        for character in text {
-            if character.isNumber {
-                flush()
-                pieces.append(Piece(id: "\(pieces.count):\(character)", text: String(character), isDigit: true))
-            } else {
-                run.append(character)
-            }
-        }
-        flush()
-        var group = 0
-        var word = 0
-        var index = 0
-        while index < pieces.count {
-            if pieces[index].isDigit {
-                let end = pieces[index...].firstIndex(where: { !$0.isDigit }) ?? pieces.count
-                for digit in index..<end {
-                    pieces[digit] = Piece(id: "number:\(group):\(end - digit - 1)", text: pieces[digit].text, isDigit: true)
-                }
-                group += 1
-                index = end
-            } else {
-                pieces[index] = Piece(id: "word:\(word)", text: pieces[index].text, isDigit: false)
-                word += 1
-                index += 1
-            }
-        }
-        return pieces
-    }
-
-    var body: some View {
-        let pieces = Self.pieces(text)
-        HStack(spacing: 0) {
-            ForEach(Array(pieces.enumerated()), id: \.element.id) { index, piece in
-                let value = piece.text.replacingOccurrences(of: " ", with: "\u{00A0}")
-                Text(value).hidden()
-                    .overlay(alignment: .leading) {
-                        Text(value).id(value)
-                            .transition(reduceMotion ? .opacity : Self.roll(delay: Double(index) * 0.025))
-                            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.22), value: value)
-                    }
-                    .font(font ?? inherited)
-                    .monospacedDigit()
-                    .fixedSize()
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .transaction { $0.animation = nil }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
-    }
-
-    /// The old piece rolls up and away, the new one rolls in from below, each with a little blur.
-    static func roll(delay: Double) -> AnyTransition {
-        .asymmetric(insertion: .modifier(active: Roll(offset: 0.9, blur: 3, opacity: 0), identity: Roll(offset: 0, blur: 0, opacity: 1))
-                        .animation(.spring(duration: 0.45, bounce: 0.22).delay(delay)),
-                    removal: .modifier(active: Roll(offset: -0.9, blur: 3, opacity: 0), identity: Roll(offset: 0, blur: 0, opacity: 1))
-                        .animation(.easeIn(duration: 0.22).delay(delay)))
-    }
-
-    private struct Roll: ViewModifier {
-        /// In line heights.
-        let offset: CGFloat
-        let blur: CGFloat
-        let opacity: Double
-
-        func body(content: Content) -> some View {
-            content
-                .visualEffect { effect, proxy in effect.offset(y: offset * proxy.size.height) }
-                .blur(radius: blur)
-                .opacity(opacity)
-        }
-    }
-}
-
 extension EnvironmentValues {
     /// Changed values retain the page's cascade order.
     @Entry var textChangeDelay: Double = 0
 }
 
-/// A new phrase gets a new drawing identity; numeric updates within the same phrase keep the native numeric transition.
-/// Digit count does not affect the identity, so 9 -> 10 retains the original animation.
-struct TextChangeIdentity: Hashable {
-    let phrase: String
-    init(_ text: String) { phrase = String(text.filter { !$0.isNumber }) }
+/// Numeric fields retain their identity as their digit count changes. Decimal/group separators stay inside the field,
+/// so the native transition can align the number rather than treating each digit as an independently moving view.
+struct TextFields {
+    struct Field: Identifiable, Equatable {
+        let id: Int
+        let text: String
+        let numeric: Bool
+    }
+
+    static func split(_ text: String) -> [Field] {
+        let characters = Array(text)
+        var fields: [Field] = []
+        var run = ""
+        var numeric = false
+        for (index, character) in characters.enumerated() {
+            let separator = ".,٫٬\u{202F}\u{00A0}".contains(character)
+                && index > 0 && index + 1 < characters.count
+                && characters[index - 1].isNumber && characters[index + 1].isNumber
+            let isNumber = character.isNumber || separator
+            if !run.isEmpty, isNumber != numeric {
+                fields.append(Field(id: fields.count, text: run, numeric: numeric))
+                run = ""
+            }
+            numeric = isNumber
+            run.append(character)
+        }
+        if !run.isEmpty { fields.append(Field(id: fields.count, text: run, numeric: numeric)) }
+        return fields
+    }
+
+    static func reservation(for field: Field, in text: String, maximumText: String?) -> String? {
+        guard field.numeric else { return nil }
+        if let maximumText,
+           let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) {
+            return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
+        }
+        let following = split(text).first(where: { $0.id == field.id + 1 })?.text ?? ""
+        return following.hasPrefix("%") || following.hasPrefix("٪") ? "888" : nil
+    }
 }
 
-/// Retain the native numeric-text transition without interpolating unrelated phrases. Only the current label measures the view;
-/// the animated Text stays anchored in its overlay, outside parent width/layout animations.
+/// The original native text/number transition, shared by captions, buttons and the All done counter.
+/// Parent layout animation cannot move the drawing. Percentage/counting fields reserve their numeric width only;
+/// their visible digits keep the inherited proportional font and unchanged words keep their position.
 struct ChangingText: View {
     let text: String
     var alignment: Alignment = .leading
+    var maximumText: String? = nil
+    @Environment(\.lineLimit) private var lineLimit
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.textChangeDelay) private var cascadeDelay
 
     var body: some View {
-        Text(verbatim: text).hidden()
-            .overlay(alignment: alignment) {
-                Text(verbatim: text)
-                    .contentTransition(reduceMotion ? .opacity : .numericText())
-                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value.delay(cascadeDelay), value: text)
-                    .id(TextChangeIdentity(text))
-                    .transition(reduceMotion ? .opacity : RollingText.roll(delay: cascadeDelay))
-                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value, value: TextChangeIdentity(text))
+        Group {
+            if lineLimit == 1 {
+                HStack(spacing: 0) {
+                    ForEach(fields) { field in
+                        let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
+                        if let reservation = TextFields.reservation(for: field, in: text, maximumText: maximumText) {
+                            Text(verbatim: reservation).hidden()
+                                .overlay(alignment: .trailing) { animated(value) }
+                        } else {
+                            Text(verbatim: value).hidden()
+                                .overlay(alignment: alignment) { animated(value) }
+                        }
+                    }
+                }
+            } else {
+                // Multiline descriptions retain Text's native wrapping and shaping.
+                Text(verbatim: text).hidden()
+                    .overlay(alignment: alignment) { animated(text) }
             }
-            .transaction { $0.animation = nil }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(text)
+        }
+        .transaction { $0.animation = nil }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+
+    private var fields: [TextFields.Field] {
+        let split = TextFields.split(text)
+        // Keep ordinary labels shaped as one Text, including kerning across word/number boundaries.
+        guard split.contains(where: { TextFields.reservation(for: $0, in: text, maximumText: maximumText) != nil }) else {
+            return [TextFields.Field(id: 0, text: text, numeric: false)]
+        }
+        return split
+    }
+
+    private func animated(_ value: String) -> some View {
+        Text(verbatim: value)
+            .contentTransition(reduceMotion ? .opacity : .numericText())
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value.delay(cascadeDelay), value: value)
     }
 }

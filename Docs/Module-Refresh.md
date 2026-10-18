@@ -61,19 +61,18 @@ The legend grid no longer animates its layout when measured segments change. Its
 
 ## Text motion and action labels
 
-`ChangingText` uses the original native `.numericText()` transition with `Theme.value` for numeric updates within the same phrase.
-`TextChangeIdentity` excludes digits from its key: 9 -> 10 keeps the native transition, but “IA desativada” -> “carregando 30%” creates
-a new drawing identity using the existing `RollingText.roll` transition. This prevents native interpolation between unrelated
-letters. Current text alone measures layout; outgoing text stays in the anchored overlay. Font and digit spacing are inherited,
-matching `CaptionLayout` measurements; only explicit aligned counters request tabular digits. Parent transactions do not animate
-the line's frame. Reduce Motion uses opacity. Changed values keep the existing page cascade delay. All done uses its original per-piece asymmetric roll/blur,
-with word identities and digit places independent of digit count, so adding a digit does not replace an unchanged suffix.
+`ChangingText` uses the original native `.numericText()` transition with `Theme.value` for both text and number changes.
+Captions, row flags, page buttons and All done share this implementation. Do not replace a whole phrase's view identity, add a
+whole-line move/roll, or substitute a fade (except with Reduce Motion). Single-line percentage/count labels keep decimal numbers together in
+stable fields; ordinary labels remain one native Text to preserve kerning. Percentage fields reserve three digits, so proportional glyph widths cannot push the unchanged loading word
+left/right. All done reserves the widest numeric mask from its count sequence, including fractional intermediate values.
+Visible font and digit spacing are inherited; only explicit callers request tabular digits. Drawing stays in an anchored overlay
+outside parent layout animation. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
 
-Idle row flags fit their title. `ReservedPillLabel` measures the widest working label once; `PillMorph` expands the shell only
-when work starts and contracts when idle returns. Progress and result retain the reserved width, so changing counters do not move
-nearby controls. Optional `Action.labelSamples` supplies known variable labels; cloud rows include the waiting message, zero, unit
-boundaries and source total. Unexpected longer messages truncate and expose their full text in help. This optional JSON hint decodes
-as nil for older saved actions and does not change the module protocol version.
+Idle row flags fit their title. `ReservedPillLabel` reserves known numeric variants of the current phase; unrelated future phrases
+such as background cleanup do not widen “Freeing space.” `PillMorph` handles phase-boundary shell resizing with the existing page
+button behavior. Optional `Action.labelSamples` supplies numeric variants; it decodes as nil for older saved actions and does not
+change the module protocol version. Full messages remain available in help.
 
 The orange page button keeps horizontal `PillMorph` resizing but is always 31 points high and one line. `SingleLineActionLabel`
 measures its ideal width independently of the shell's intermediate proposal and caps it to the dock's available width. Long notices
@@ -131,3 +130,8 @@ caption font metrics for 31,11 GB and 2,21 GB, explicit tabular callers, digit/p
 entry points, unrelated target/error results and interrupted dock departures. `localize.txt` verifies all eight UI languages.
 The supplied 04.03.56 recording was sampled as a file: its loading phrase overshoots the tile's right edge and overlaps the unrelated
 status during the numeric transition. Visual verification of the new motion remains with the user; no GUI automation was used.
+
+`results/text-anchor-20261018/all-tests.txt`: 492 tests, 488 passed and four optional skips. This supersedes the phrase-identity
+roll and the reservation across unrelated phases above. Offscreen checks cover proportional caption metrics, fixed percentage
+field width through 100%, a stable All done numeric field, phase-specific row widths and the one-line 31-point button. Both supplied
+04.20.16 and 04.24.36 recordings were decoded as files. Runtime motion still requires the user's visual verification.

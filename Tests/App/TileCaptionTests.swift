@@ -59,15 +59,10 @@ final class TileCaptionTests: XCTestCase {
         XCTAssertEqual(Set(stride(from: 250.0, through: 900.0, by: 1).map { CaptionSize.tile(height: $0, large: true) }), [18, 22])
     }
 
-    /// Each digit rolls on its own; the words between them keep together, so they keep their kerning.
-    func testRollingTextSplitsDigitsFromWords() {
-        let pieces = RollingText.pieces("liberar 209,3 MB")
-        XCTAssertEqual(pieces.map(\.text), ["liberar ", "2", "0", "9", ",", "3", " MB"])
-        XCTAssertEqual(pieces.filter(\.isDigit).count, 4)
-        // Slots retain their layout identity; changed content gets the new identity inside its drawing overlay.
-        let next = RollingText.pieces("liberar 212,3 MB")
-        XCTAssertEqual(pieces.map(\.id), next.map(\.id))
-        let contents = Set(pieces.map { "\($0.id)|\($0.text)" })
-        XCTAssertEqual(contents.intersection(next.map { "\($0.id)|\($0.text)" }).count, 5)
+    /// A decimal number stays one native numeric transition, with stable word and unit fields.
+    func testChangingTextKeepsDecimalNumbersTogether() {
+        let fields = TextFields.split("liberar 209,3 MB")
+        XCTAssertEqual(fields.map(\.text), ["liberar ", "209,3", " MB"])
+        XCTAssertEqual(fields.map(\.id), TextFields.split("liberar 212,3 MB").map(\.id))
     }
 }

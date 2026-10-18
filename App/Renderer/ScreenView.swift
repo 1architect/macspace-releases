@@ -490,6 +490,7 @@ private struct AllDoneOverlay: View {
     @State private var appeared = false
     /// What is counted on this page, kept from when it opened.
     @State private var counted: UInt64?
+    @State private var countWidthText: String?
     /// How far the count is, 0 to 1.
     @State private var progress = 0.0
     @Environment(\.design) private var design
@@ -517,8 +518,11 @@ private struct AllDoneOverlay: View {
                             .opacity(appeared ? 1 : 0)
                             .blur(radius: appeared || reduceMotion ? 0 : 6)
                         if let counted {
-                            RollingText(text: String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)),
-                                        font: Font(CaptionFont.status(size: Self.textSize)))
+                            ChangingText(text: String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)),
+                                         alignment: .center,
+                                         maximumText: countWidthText)
+                                .font(Font(CaptionFont.status(size: Self.textSize)))
+                                .lineLimit(1)
                                 .foregroundStyle(design.ink)
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
@@ -539,6 +543,7 @@ private struct AllDoneOverlay: View {
             count?.cancel()
             guard !leaving else { lifetime.dismiss(); return }
             counted = freed.flatMap { $0 > 0 ? $0 : nil }
+            countWidthText = counted.map(Self.countingWidthText)
             progress = 0
             appeared = false
             lifetime.reloading = reloading
@@ -570,6 +575,22 @@ private struct AllDoneOverlay: View {
             withAnimation(.snappy(duration: 0.1)) { progress = 1 - pow(1 - t, 3) }
             try? await Task.sleep(for: Self.countStep)
         }
+    }
+
+    /// Reserve the widest numeric mask from this exact count sequence, including fractional intermediate values.
+    static func countingWidthText(_ total: UInt64) -> String {
+        let font = CaptionFont.status(size: textSize)
+        return (0...countSteps).map { step in
+            let t = Double(step) / Double(countSteps)
+            let bytes = UInt64(Double(total) * (1 - pow(1 - t, 3)))
+            return String(format: String(localized: "%@ freed"), counting(bytes, toward: total))
+        }.max { left, right in
+            func width(_ value: String) -> CGFloat {
+                let mask = value.map { $0.isNumber ? "8" : String($0) }.joined()
+                return (mask as NSString).size(withAttributes: [.font: font]).width
+            }
+            return width(left) < width(right)
+        } ?? ""
     }
 
     /// `bytes` in the unit of `total` ("4,2 MB" on the way to "9,9 MB"), so the count does not change unit as it goes.
