@@ -436,11 +436,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
         // button's text.
-        let celebrates = !quiet && rowID == nil && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
+        let continuesInRow = result.outcome == .succeeded && !result.restartRequired && result.presentation?.screen.activeRow(for: request) != nil
+        let celebrates = !quiet && rowID == nil && !continuesInRow && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
         if let rowID, !quiet {
-            resultRowID = result.message.isEmpty ? nil : rowID
-            rowResult = result.message.isEmpty ? nil : result
-        } else if (!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired { lastResult = result }
+            resultRowID = result.message.isEmpty || continuesInRow ? nil : rowID
+            rowResult = result.message.isEmpty || continuesInRow ? nil : result
+        } else if !continuesInRow && ((!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired) { lastResult = result }
         // A long action that ends while the user is in another app says so in Notification Center.
         if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
         if let freed = result.freedBytes {

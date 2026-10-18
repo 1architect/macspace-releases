@@ -159,14 +159,20 @@ selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be un
 **Freeing looks the same everywhere.** The page action morphs into the existing progress pill and All done page. Individual row
 buttons are text flags with the folder flag's hover behavior; they morph into an inline cleaning flag with the same progress fill.
 A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
-it runs. Animate flag insertion/removal with the existing vertical cascade. Text and number changes use the original native
-numeric-text transition (fade only with Reduce Motion), with the current label measuring layout and the animated text anchored in
-an overlay. Do not animate the whole text line's layout. All done retains its original per-piece roll and blur.
+it runs. Animate flag insertion/removal with the existing vertical cascade. Numeric changes within a phrase use the original native
+numeric-text transition. A different phrase gets a new drawing identity and the existing vertical roll/blur; do not interpolate
+unrelated words through the numeric transition. Reduce Motion uses opacity. The current label alone measures layout; animated
+text stays anchored in an overlay. Inherit the caller's font and digit spacing; tabular digits belong only to explicit counters or
+aligned values. Do not animate the whole text line's layout. All done retains its original per-piece roll and blur.
 Idle row flags fit their title. Calculate the widest working label before use; modules provide `Action.labelSamples` for variable
 progress text. Expand once when work starts, keep that width throughout progress and result, and shrink when the idle action returns.
 Use the existing anchored shell morph only at these phase boundaries; progress updates must not move adjacent controls. Longer unexpected messages truncate, with
 full text in help. The orange page button is always one line and 31 points high: cap its width to the page and truncate rather than
 wrap. Its shell may resize horizontally; measure the destination label independently of the shell's intermediate width.
+Background continuation occupies the same action flag using `Row.activity`; keep its action id and parameters. Do not add a
+second badge or successful completion flag for the same work. Matching background activity suppresses All done while preserving
+verified savings, history and failures. When no page action remains, the bottom button fades in place in a fixed-height dock;
+release footer space only after its departure completes, and scope footer layout animation to the scroll area.
 A progress fill replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`

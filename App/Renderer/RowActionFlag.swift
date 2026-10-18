@@ -24,23 +24,33 @@ struct RowActionFlags: View {
     private var actions: [Action] {
         if !row.actions.isEmpty { return row.actions }
         if activity.rowID == row.id, let action = activity.action { return [action] }
-        if activity.resultID == row.id { return retainedActions }
+        if row.activity != nil || activity.resultID == row.id { return retainedActions }
         return []
+    }
+
+    private var result: ActionResult? {
+        guard activity.resultID == row.id, let result = activity.result else { return nil }
+        if row.activity != nil, result.outcome == .succeeded, !result.restartRequired { return nil }
+        return result
+    }
+
+    private var needsAttention: Bool {
+        result.map { $0.outcome != .succeeded || $0.restartRequired } ?? false
     }
 
     var body: some View {
         HStack(spacing: 6) {
             ForEach(actions, id: \.id) { action in
                 RowActionFlag(action: action,
-                              progress: row.activity ?? (activity.rowID == row.id ? activity.progress ?? ActionProgress(message: action.workingTitle ?? "") : nil),
-                              result: activity.resultID == row.id ? activity.result : nil,
+                              progress: needsAttention ? nil : row.activity ?? (activity.rowID == row.id ? activity.progress ?? ActionProgress(message: action.workingTitle ?? "") : nil),
+                              result: result,
                               dismiss: activity.dismiss) {
                     guard ConfirmationAlert.ask(action) else { return }
                     _ = await handler(action, [:], false, row.id)
                 }
                 .transition(PageCascade.transition(index: actions.firstIndex(where: { $0.id == action.id }) ?? 0, count: actions.count))
             }
-            if actions.isEmpty, activity.resultID == row.id, let result = activity.result, !result.message.isEmpty {
+            if actions.isEmpty, let result, !result.message.isEmpty {
                 StatusFlag(text: result.message, tone: result.outcome == .succeeded ? .neutral : .caution)
                     .onTapGesture(perform: activity.dismiss)
                     .transition(PageCascade.transition(index: 0, count: 1))

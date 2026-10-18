@@ -32,12 +32,59 @@ final class TextRollTests: XCTestCase {
 
     func testNativeTransitionUsesOnlyCurrentTextForRestingLayout() throws {
         for text in ["Free", "Free selected 2.1 GB", "Loading", "999 MB", "1000 MB", "正在加载", "Liberar selecionados 2,1 GB"] {
-            let expected = ImageRenderer(content: Text(verbatim: text).monospacedDigit().font(.system(size: 13)))
+            let expected = ImageRenderer(content: Text(verbatim: text).font(.system(size: 13)))
             let actual = ImageRenderer(content: ChangingText(text: text).font(.system(size: 13)))
             var expectedSize: CGSize?, actualSize: CGSize?
             expected.render { size, _ in expectedSize = size }
             actual.render { size, _ in actualSize = size }
             XCTAssertEqual(try XCTUnwrap(actualSize), try XCTUnwrap(expectedSize), "an animation overlay cannot add width or height")
+        }
+    }
+}
+
+@MainActor
+final class CaptionDigitTests: XCTestCase {
+    private func size<V: View>(_ view: V) throws -> CGSize {
+        let renderer = ImageRenderer(content: view)
+        var measured: CGSize?
+        renderer.render { value, _ in measured = value }
+        return try XCTUnwrap(measured)
+    }
+
+    func testReportedOnesUseTheOriginalCaptionFontMetrics() throws {
+        for font in [CaptionFont.title(size: 22), CaptionFont.status(size: 22), CaptionFont.title(size: 16), CaptionFont.status(size: 16)] {
+            for text in ["31,11 GB", "liberar 2,21 GB", "11", "22", "9", "10", "111,11 GB", "IA desativada", "carregando 30%"] {
+                let expected = try size(Text(verbatim: text).font(Font(font)))
+                let actual = try size(ChangingText(text: text, alignment: .trailing).font(Font(font)))
+                XCTAssertEqual(actual, expected, "animation must inherit the caption font's original digit spacing")
+            }
+        }
+    }
+
+    func testCaptionLayoutAndDrawingAgreeForOnesNearTheWrappingBoundary() throws {
+        let text = "dados do sistema 31,11 GB"
+        let actual = try size(ChangingText(text: text).font(Font(CaptionFont.title(size: 22))))
+        let info = TileInfo(title: "dados do sistema", figure: "31,11 GB", status: "liberar 2,21 GB")
+        let fitting = CaptionLayout(info: info, size: 22, width: actual.width + 1)
+        XCTAssertTrue(fitting.oneLine)
+        XCTAssertEqual(fitting.titleWidth, ceil(actual.width), accuracy: 1)
+        XCTAssertFalse(CaptionLayout(info: info, size: 22, width: actual.width - 1).oneLine)
+    }
+
+    func testExplicitMonospacedCallersStillControlTheirDigits() throws {
+        for text in ["111,11 GB", "888,88 GB"] {
+            let expected = try size(Text(verbatim: text).font(.system(size: 13)).monospacedDigit())
+            let actual = try size(ChangingText(text: text).font(.system(size: 13)).monospacedDigit())
+            XCTAssertEqual(actual, expected)
+        }
+    }
+
+    func testNativeNumericAnimationKeepsItsIdentityButUnrelatedPhrasesDoNot() {
+        for (old, new) in [("11", "22"), ("9", "10"), ("31,11 GB", "31,22 GB"), ("carregando 9%", "carregando 10%")] {
+            XCTAssertEqual(TextChangeIdentity(old), TextChangeIdentity(new))
+        }
+        for (old, new) in [("IA desativada", "carregando 30%"), ("carregando 30%", "IA desativada"), ("Free", "Freeing in the background")] {
+            XCTAssertNotEqual(TextChangeIdentity(old), TextChangeIdentity(new), "unrelated phrases cannot reuse the native numeric interpolation")
         }
     }
 }

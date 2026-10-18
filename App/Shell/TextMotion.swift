@@ -77,7 +77,7 @@ struct RollingText: View {
     }
 
     /// The old piece rolls up and away, the new one rolls in from below, each with a little blur.
-    private static func roll(delay: Double) -> AnyTransition {
+    static func roll(delay: Double) -> AnyTransition {
         .asymmetric(insertion: .modifier(active: Roll(offset: 0.9, blur: 3, opacity: 0), identity: Roll(offset: 0, blur: 0, opacity: 1))
                         .animation(.spring(duration: 0.45, bounce: 0.22).delay(delay)),
                     removal: .modifier(active: Roll(offset: -0.9, blur: 3, opacity: 0), identity: Roll(offset: 0, blur: 0, opacity: 1))
@@ -104,7 +104,14 @@ extension EnvironmentValues {
     @Entry var textChangeDelay: Double = 0
 }
 
-/// Restore the original native numeric-text transition. Only the current label measures the view;
+/// A new phrase gets a new drawing identity; numeric updates within the same phrase keep the native numeric transition.
+/// Digit count does not affect the identity, so 9 -> 10 retains the original animation.
+struct TextChangeIdentity: Hashable {
+    let phrase: String
+    init(_ text: String) { phrase = String(text.filter { !$0.isNumber }) }
+}
+
+/// Retain the native numeric-text transition without interpolating unrelated phrases. Only the current label measures the view;
 /// the animated Text stays anchored in its overlay, outside parent width/layout animations.
 struct ChangingText: View {
     let text: String
@@ -113,12 +120,14 @@ struct ChangingText: View {
     @Environment(\.textChangeDelay) private var cascadeDelay
 
     var body: some View {
-        Text(verbatim: text).monospacedDigit().hidden()
+        Text(verbatim: text).hidden()
             .overlay(alignment: alignment) {
-                Text(verbatim: text).monospacedDigit()
+                Text(verbatim: text)
                     .contentTransition(reduceMotion ? .opacity : .numericText())
                     .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value.delay(cascadeDelay), value: text)
-                    .frame(maxWidth: .infinity, alignment: alignment)
+                    .id(TextChangeIdentity(text))
+                    .transition(reduceMotion ? .opacity : RollingText.roll(delay: cascadeDelay))
+                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value, value: TextChangeIdentity(text))
             }
             .transaction { $0.animation = nil }
             .accessibilityElement(children: .ignore)

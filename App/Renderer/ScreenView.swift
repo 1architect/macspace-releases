@@ -140,7 +140,6 @@ struct ScreenView: View {
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .environment(\.pageCascadeCount, cascadeCount)
-        .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
             ActionDock(handle: handle, isVisible: $dockVisible)
                 .padding(.leading, PageInsets.side)
@@ -194,6 +193,7 @@ struct ScreenView: View {
         }
         .scrollIndicators(.never)
         .modifier(PageScrollArea(hasFooter: hasFooter))
+        .animation(Theme.layout, value: hasFooter)
     }
 
     /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
@@ -215,6 +215,7 @@ struct ScreenView: View {
             .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
             .scrollIndicators(.never)
             .modifier(PageScrollArea(hasFooter: hasFooter))
+            .animation(Theme.layout, value: hasFooter)
             .environment(\.rowChoice, group.selection.map { selection in
                 RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in
                     withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
@@ -595,6 +596,8 @@ private struct ActionDock: View {
     /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
     @State private var showsPassingNotice = false
     @State private var availableWidth: CGFloat?
+    @State private var displayedPhase: ActionPill.Phase?
+    @StateObject private var lifetime = ActionDockLifetime()
 
     /// What the page has to say, from its banners: the first one.
     private var notice: Banner? { ScreenView.banners(in: handle.screen?.widgets ?? []).first }
@@ -654,28 +657,42 @@ private struct ActionDock: View {
 
     var body: some View {
         Group {
-            if let phase {
+            if let phase = displayedPhase {
                 ActionPill(phase: phase, maximumWidth: availableWidth, dismiss: {
                     if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
                 }) { [handle] action in
                     guard ConfirmationAlert.ask(action) else { return }
                     await handle.perform(action)
                 }
-                .transition(.blurReplace)
+                .transition(.opacity)
             }
         }
         // The page's width, less its margins: the pill keeps a warning on one line wherever it fits (`ActionPill`).
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 31, maxHeight: 31, alignment: .bottomLeading)
         .padding(.trailing, PageInsets.side)
         .onGeometryChange(for: CGFloat.self) { max(0, $0.size.width - PageInsets.side) } action: { availableWidth = $0 }
-        .animation(Theme.layout, value: phase != nil)
-        .onChange(of: phase != nil, initial: true) { _, shown in isVisible = shown }
+        .onChange(of: phase, initial: true) { _, next in show(next) }
+        .onChange(of: lifetime.reservesSpace, initial: true) { _, reserved in isVisible = reserved }
+        .onDisappear { lifetime.cancel() }
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
             guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
             showsPassingNotice = true
             try? await Task.sleep(for: .seconds(5))
             if !Task.isCancelled { showsPassingNotice = false }
         }
+    }
+
+    private func show(_ next: ActionPill.Phase?) {
+        let token = lifetime.update(shown: next != nil)
+        if let next {
+            if displayedPhase == nil {
+                withAnimation(Theme.layout) { displayedPhase = next }
+            } else { displayedPhase = next }
+        } else if displayedPhase != nil {
+            withAnimation(Theme.layout, completionCriteria: .removed) { displayedPhase = nil } completion: {
+                lifetime.finishDeparture(token)
+            }
+        } else { lifetime.finishDeparture(token) }
     }
 }
 

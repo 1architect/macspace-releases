@@ -111,3 +111,86 @@ final class RowCleanupTests: XCTestCase {
         XCTAssertEqual(request?.rowID, "item")
     }
 }
+
+private struct ContinuingCleanupModule: MacSpaceModule {
+    let control: RowCleanupControl
+    var outcome: ActionResult.Outcome = .succeeded
+    var backgroundPath = "/target"
+    init() { control = RowCleanupControl() }
+    init(control: RowCleanupControl, outcome: ActionResult.Outcome = .succeeded, backgroundPath: String = "/target") {
+        self.control = control
+        self.outcome = outcome
+        self.backgroundPath = backgroundPath
+    }
+    private func action(_ path: String) -> Action { Action(id: "clean", title: "Free", parameters: ["path": path]) }
+    func tile(context: ModuleContext) async -> Tile { await control.read(); return Tile(title: "Before", status: "measured") }
+    func screen(context: ModuleContext) async -> Screen {
+        await control.read()
+        return Screen(title: "Before", primary: action("/target"), widgets: [.list(ListWidget(id: "rows", rows: [Row(id: "item", title: "Files", actions: [action("/target")])]))])
+    }
+    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        progress(ActionProgress(fraction: 0.5, message: "Freeing"))
+        await control.wait(request)
+        var row = Row(id: "item", title: "Files", actions: [action(backgroundPath)])
+        row.activity = ActionProgress(message: "Freeing in the background")
+        return ActionResult(outcome: outcome, message: "Freed 5 bytes", freedBytes: 5,
+                            presentation: ModulePresentation(tile: Tile(title: "After", status: "freeing"),
+                                                             screen: Screen(title: "After", widgets: [.list(ListWidget(id: "rows", rows: [row]))])))
+    }
+}
+
+@MainActor
+final class CleanupHandoffTests: XCTestCase {
+    private func perform(rowID: String?, outcome: ActionResult.Outcome = .succeeded, backgroundPath: String = "/target") async throws -> ModuleHandle {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
+        let control = RowCleanupControl()
+        let module = ContinuingCleanupModule(control: control, outcome: outcome, backgroundPath: backgroundPath)
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
+        await handle.activate()
+        let before = await control.reads
+        let action = Task { await handle.perform(Action(id: "clean", title: "Free", parameters: ["path": "/target"]), rowID: rowID) }
+        for _ in 0..<100 {
+            if await control.request != nil { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        await control.finish()
+        let result = await action.value
+        XCTAssertEqual(result?.freedBytes, 5, "verified savings and history data survive the UI handoff")
+        let after = await control.reads
+        XCTAssertEqual(after, before, "background handoff uses the verified presentation without a new scan")
+        return handle
+    }
+
+    func testBothEntryPointsHandBackgroundWorkToTheOriginalRowWithoutAnotherResult() async throws {
+        for rowID: String? in [nil, "item"] {
+            let handle = try await perform(rowID: rowID)
+            defer { handle.deactivate() }
+            XCTAssertNil(handle.screen?.primary)
+            XCTAssertNotNil(handle.screen?.activeRow(for: ActionRequest(actionID: "clean", parameters: ["path": "/target"])))
+            XCTAssertNil(handle.lastResult, "the dock has no completion result to keep it on screen")
+            XCTAssertNil(handle.rowResult, "the continuing flag is the one inline presentation")
+            XCTAssertNil(handle.resultRowID)
+            XCTAssertEqual(handle.allDone, 0)
+            XCTAssertFalse(handle.isShowingCompletion, "ongoing background work is not All done")
+        }
+    }
+
+    func testAnUnrelatedBackgroundTargetCannotSuppressCompletion() async throws {
+        let handle = try await perform(rowID: nil, backgroundPath: "/another-target")
+        defer { handle.deactivate() }
+        XCTAssertEqual(handle.allDone, 1)
+    }
+
+    func testFailuresRemainVisibleEvenWhenTheSameRowHasBackgroundActivity() async throws {
+        let row = try await perform(rowID: "item", outcome: .failed)
+        defer { row.deactivate() }
+        XCTAssertEqual(row.rowResult?.outcome, .failed)
+        let page = try await perform(rowID: nil, outcome: .failed)
+        defer { page.deactivate() }
+        XCTAssertEqual(page.lastResult?.outcome, .failed)
+        XCTAssertEqual(page.allDone, 0)
+    }
+}

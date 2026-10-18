@@ -248,7 +248,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var detail: String?
     /// Steps shown when the row is expanded (for example a manual cleanup guide).
     public var steps: [String]
-    /// Background row work uses the same inline flag as a user-started row action.
+    /// Background row work uses the same inline flag as a user-started row action. Keep its action metadata with stable id and
+    /// parameters so the flag retains identity, and the host can recognize a foreground result handed to background work.
     public var activity: ActionProgress?
     public var actions: [Action]
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with

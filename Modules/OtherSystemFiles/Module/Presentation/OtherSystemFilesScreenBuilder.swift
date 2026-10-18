@@ -89,16 +89,16 @@ enum OtherSystemFilesScreenBuilder {
     }
 
     /// "Up to": the size is macOS's estimate, which can count more than macOS then deletes. No button while MacSpace is already
-    /// asking macOS again in the background.
+    /// asking macOS again in the background; the row retains its action identity for the inline activity flag.
     static func freeAction(_ snapshot: PurgeableSnapshot, prominent: Bool) -> Action? {
         let bytes = snapshot.freeableBytes
-        guard bytes >= threshold, !snapshot.retrying else { return nil }
+        guard bytes >= threshold, !prominent || !snapshot.retrying else { return nil }
         let size = ByteFormat.string(bytes)
         return Action(id: "purgeFiles", title: prominent ? loc("Free up to \(size)") : loc("Free"), symbol: prominent ? "sparkles" : nil,
                       role: prominent ? .prominent : .normal,
                       confirmation: Confirmation(title: loc("Free up to \(size) of purgeable app files?"),
                                                  message: loc("Apps download them again if they need them."),
-                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
+                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space"), labelSamples: [loc("Freeing in the background")])
     }
 
     /// A macOS update downloaded and prepared, waiting for a restart: Software Update installs it, and macOS removes it then.
@@ -120,9 +120,10 @@ enum OtherSystemFilesScreenBuilder {
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
             let detail = snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail
-            rows.append((Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes),
-                             badge: snapshot.retrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil, symbol: service.symbol,
-                             detail: detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? []), snapshot.freeableBytes))
+            var row = Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes), symbol: service.symbol,
+                          detail: detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? [])
+            if snapshot.retrying { row.activity = ActionProgress(message: loc("Freeing in the background")) }
+            rows.append((row, snapshot.freeableBytes))
         }
         if let snapshots = snapshotsRow(snapshot), snapshots.freeable { rows.append((snapshots.row, snapshots.bytes)) }
         guard !rows.isEmpty else { return nil }

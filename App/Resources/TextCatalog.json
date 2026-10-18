@@ -23,7 +23,7 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:519"
+      "App\/Renderer\/ScreenView.swift:520"
     ],
     "table" : "App",
     "translations" : {
@@ -61,7 +61,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:434"
+      "App\/Renderer\/ScreenView.swift:435"
     ],
     "table" : "App",
     "translations" : {
@@ -194,7 +194,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:325"
+      "Sdk\/Interface\/Widgets.swift:326"
     ],
     "table" : "App",
     "translations" : {
@@ -327,7 +327,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:325"
+      "Sdk\/Interface\/Widgets.swift:326"
     ],
     "table" : "App",
     "translations" : {
@@ -404,7 +404,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:512"
+      "App\/Renderer\/ScreenView.swift:513"
     ],
     "table" : "App",
     "translations" : {
@@ -1513,8 +1513,8 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:192",
-      "App\/Renderer\/ScreenView.swift:718"
+      "App\/Renderer\/ScreenView.swift:191",
+      "App\/Renderer\/ScreenView.swift:735"
     ],
     "table" : "App",
     "translations" : {
@@ -2493,7 +2493,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:719"
+      "App\/Renderer\/ScreenView.swift:736"
     ],
     "table" : "App",
     "translations" : {
@@ -3148,10 +3148,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:717",
-      "App\/Renderer\/RowActionFlag.swift:69",
-      "App\/Renderer\/RowActionFlag.swift:76",
-      "App\/Registry\/ModuleHandle.swift:479"
+      "App\/Renderer\/ScreenView.swift:734",
+      "App\/Renderer\/RowActionFlag.swift:79",
+      "App\/Renderer\/RowActionFlag.swift:86",
+      "App\/Registry\/ModuleHandle.swift:480"
     ],
     "table" : "App",
     "translations" : {
@@ -5484,7 +5484,7 @@
     "key" : "%@ files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:229"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:230"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5503,7 +5503,7 @@
     "key" : "%@ free",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:196"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5541,7 +5541,7 @@
     "key" : "%lld backups",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5579,7 +5579,7 @@
     "key" : "%lld snapshots",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:142"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:143"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5598,7 +5598,7 @@
     "key" : "1 backup",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5636,7 +5636,7 @@
     "key" : "1 snapshot",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:142"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:143"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5713,8 +5713,8 @@
     "key" : "Backing up now",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:145",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:146",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:196"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5733,7 +5733,7 @@
     "key" : "Backups not readable",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:186"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:187"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5752,7 +5752,7 @@
     "key" : "Cannot be undone",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:144"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:145"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5771,7 +5771,7 @@
     "key" : "Cloud files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:229"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:230"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5790,7 +5790,7 @@
     "key" : "Connect it to see its backups and free old ones.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:183"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5828,7 +5828,7 @@
     "key" : "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:150"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:151"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5908,7 +5908,7 @@
     "key" : "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5948,9 +5948,9 @@
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:97",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:153",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:203"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:157",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:204"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5988,7 +5988,7 @@
     "key" : "Free %lld Time Machine snapshots?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6007,7 +6007,7 @@
     "key" : "Free 1 Time Machine snapshot?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6026,7 +6026,7 @@
     "key" : "Free now",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:130"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:131"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6045,7 +6045,7 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:200"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6083,7 +6083,7 @@
     "key" : "Free the selected backups?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:202"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6157,9 +6157,10 @@
   {
     "id" : "OtherSystemFiles|Freeing in the background",
     "key" : "Freeing in the background",
-    "kind" : "Pill",
+    "kind" : "Button",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:124"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:125"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6183,7 +6184,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:189",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:190",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:157"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6240,7 +6241,7 @@
     "key" : "Latest",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:191"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:192"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6259,7 +6260,7 @@
     "key" : "Left alone",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:277"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:278"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6297,7 +6298,7 @@
     "key" : "Not connected",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:181"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6358,7 +6359,7 @@
     "key" : "Other purgeable documents",
     "kind" : "Row title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:243"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:244"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6588,7 +6589,7 @@
     "key" : "They are deleted from %@ for good. Files that are only in them can't be restored.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:202"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:203"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6607,7 +6608,7 @@
     "key" : "Time Machine backup disks",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:174"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:175"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6741,8 +6742,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:84",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:148",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:277"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:149",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:278"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -8760,7 +8761,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:128",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:338",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:325"
+      "Sdk\/Interface\/Widgets.swift:326"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -8896,7 +8897,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:128",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:338",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:325"
+      "Sdk\/Interface\/Widgets.swift:326"
     ],
     "table" : "SystemData",
     "translations" : {

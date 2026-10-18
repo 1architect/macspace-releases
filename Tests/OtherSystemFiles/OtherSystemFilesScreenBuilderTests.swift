@@ -160,8 +160,17 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertTrue(OtherSystemFilesScreenBuilder.tile(snap).status.hasPrefix("freeing"))
         XCTAssertTrue(OtherSystemFilesScreenBuilder.segments(snap).contains { $0.tone == .caution })
         guard case let .section(free)? = OtherSystemFilesScreenBuilder.freeNow(snap), case let .list(list) = free.widgets[0] else { return XCTFail() }
-        XCTAssertEqual(list.rows[0].badge?.text, "Freeing in the background")
-        XCTAssertTrue(list.rows[0].actions.isEmpty)
+        XCTAssertTrue(list.rows[0].badges.isEmpty, "the background status occupies the original action flag, not a second badge")
+        XCTAssertEqual(list.rows[0].activity?.message, "Freeing in the background")
+        XCTAssertNil(list.rows[0].activity?.fraction)
+        let idle = OtherSystemFilesScreenBuilder.freeAction(snapshot(measured), prominent: false)
+        XCTAssertEqual(list.rows[0].actions.first?.id, idle?.id)
+        XCTAssertEqual(list.rows[0].actions.first?.parameters, idle?.parameters)
+        XCTAssertTrue(list.rows[0].actions.first?.labelSamples?.contains("Freeing in the background") == true)
+        snap.retrying = false
+        guard case let .section(ready)? = OtherSystemFilesScreenBuilder.freeNow(snap), case let .list(readyList) = ready.widgets[0] else { return XCTFail() }
+        XCTAssertNil(readyList.rows[0].activity)
+        XCTAssertNotNil(OtherSystemFilesScreenBuilder.freeAction(snap, prominent: true))
     }
 
     func testWhatWasFreedIsTakenOffAnEstimateThatHasNotMovedYet() {

@@ -11,7 +11,7 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract versio
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
 - Page cleanup uses the same live page as reload: keep existing details visible and interactive and pulse the graph while working; retain the All done completion. Row actions use only the inline text flag and its progress fill, without hiding the page. `ActionRequest.rowID` identifies the target UI row.
 - A verified `ActionResult.presentation` updates the tile and page atomically without another scan. Modules retain unrelated cached measurements. Background row actions publish `Row.activity` using the same flag.
-- Dock visibility alone controls the bottom fade reservation, so an expired notice or removed primary action leaves no extra bottom fade.
+- Dock lifetime controls the bottom fade reservation: hold it until the outgoing button has finished fading in place, then release it. A new phase cancels a stale departure completion.
 - Back dismisses All done to the module page before considering group or home navigation.
 - Confirmations share a left-aligned icon, heading and message, including cache cleanup.
 
@@ -61,9 +61,12 @@ The legend grid no longer animates its layout when measured segments change. Its
 
 ## Text motion and action labels
 
-`ChangingText` uses the original native `.numericText()` transition with `Theme.value`, retaining the anchored current-text
-measurement and excluding outgoing content from layout. Parent layout transactions do not animate the line's frame. Reduce Motion
-uses opacity. Changed values keep the existing page cascade delay. All done uses its original per-piece asymmetric roll/blur,
+`ChangingText` uses the original native `.numericText()` transition with `Theme.value` for numeric updates within the same phrase.
+`TextChangeIdentity` excludes digits from its key: 9 -> 10 keeps the native transition, but “IA desativada” -> “carregando 30%” creates
+a new drawing identity using the existing `RollingText.roll` transition. This prevents native interpolation between unrelated
+letters. Current text alone measures layout; outgoing text stays in the anchored overlay. Font and digit spacing are inherited,
+matching `CaptionLayout` measurements; only explicit aligned counters request tabular digits. Parent transactions do not animate
+the line's frame. Reduce Motion uses opacity. Changed values keep the existing page cascade delay. All done uses its original per-piece asymmetric roll/blur,
 with word identities and digit places independent of digit count, so adding a digit does not replace an unchanged suffix.
 
 Idle row flags fit their title. `ReservedPillLabel` measures the widest working label once; `PillMorph` expands the shell only
@@ -79,6 +82,14 @@ proposal during shell resizing, which could make even “Carregando” wrap; the
 
 Progress fills carry the fraction without duplicate percentage text; cloud flags retain the removed-byte count. Inserted/removed
 rows and flags keep the vertical cascade, while unchanged rows remain in place.
+
+Other System Files retains the `purgeFiles` row action during retries, with “Freeing in the background” in `Row.activity` rather than
+a separate badge. The same flag owns foreground progress and background work. A successful result whose verified presentation
+contains matching row activity (action id and exact target parameters) does not create a second completion flag or All done page.
+Failures, restart requests and unrelated background targets still keep their result UI. Savings/history are recorded as before.
+The orange dock fades out with an opacity transition in a stable 31-point frame. `ActionDockLifetime` retains footer space until
+SwiftUI's `.removed` animation completion, without a timer; a newer phase invalidates the old completion. Footer animation belongs
+to the scroll area and cannot reposition the exiting dock.
 
 ## Window controls and confirmations
 
@@ -114,3 +125,9 @@ remains with the user; supplied recording frames were read as files without cont
 `results/compact-free-20261018/app-tests.txt`: 117 App tests, 115 passed and two optional snapshots skipped. Idle flag sizing fits
 the title plus normal padding in English, Portuguese and Japanese; progress/result retain the fixed reservation and neighbouring
 control footprint. The orange action remains one line at 31 points high.
+
+`results/digits-cleanup-handoff-20261018/all-tests.txt`: 492 tests, 488 passed and four optional skips. Regression coverage includes
+caption font metrics for 31,11 GB and 2,21 GB, explicit tabular callers, digit/phrase identities, fixed progress widths, both cleanup
+entry points, unrelated target/error results and interrupted dock departures. `localize.txt` verifies all eight UI languages.
+The supplied 04.03.56 recording was sampled as a file: its loading phrase overshoots the tile's right edge and overlaps the unrelated
+status during the numeric transition. Visual verification of the new motion remains with the user; no GUI automation was used.

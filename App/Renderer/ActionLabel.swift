@@ -10,7 +10,7 @@ struct ReservedPillLabel<Label: View>: View {
         ReservedPillLayout(reserveWidth: reserveWidth) {
             label
             ForEach(Array(samples.enumerated()), id: \.offset) { _, sample in
-                Text(verbatim: sample).monospacedDigit().hidden().accessibilityHidden(true)
+                Text(verbatim: sample).hidden().accessibilityHidden(true)
             }
         }
         .font(.system(size: 11, weight: .semibold))
