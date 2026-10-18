@@ -37,7 +37,7 @@
 "Free up to %@ of purgeable app files?" = "消去可能なアプリファイルを最大%@解放しますか？";
 "Freed %@ on %@" = "%@を%@で解放しました";
 "Freeing in the background" = "バックグラウンドで解放中";
-"Freeing space…" = "空き容量を増やしています…";
+"Freeing space" = "空き容量を増やしています";
 "Install the helper in Settings" = "設定でヘルパーをインストール";
 "Installs at the next restart" = "次回の再起動時にインストール";
 "Latest" = "最新";
@@ -51,8 +51,8 @@
 "Purgeable app files" = "消去可能なアプリファイル";
 "Purgeable documents" = "消去可能な書類";
 "Quick Look thumbnails" = "クイックルックのサムネイル";
+"Removing %lld%%, %@" = "削除中 %lld%%、%@";
 "Removing downloads" = "ダウンロードを削除中";
-"Removing · %lld%%, %@" = "削除中 · %lld%%、%@";
 "Spotlight index" = "Spotlightインデックス";
 "System assets" = "システムアセット";
 "That cloud folder is no longer on this Mac" = "このクラウドフォルダはこのMacにありません";
@@ -71,5 +71,5 @@
 "nothing to free" = "解放できるものはありません";
 "other system files" = "その他のシステムファイル";
 "other system files %@" = "その他のシステムファイル %@";
-"removing downloads · %lld%%" = "ダウンロードを削除中 · %lld%%";
+"removing downloads %lld%%" = "ダウンロードを削除中 %lld%%";
 "unavailable" = "利用不可";

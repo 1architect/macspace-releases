@@ -584,14 +584,14 @@
   "バックグラウンドで解放中",
   "백그라운드에서 확보 중"
  ],
- "Freeing space…": [
-  "Liberando espaço…",
-  "Libération d’espace…",
-  "Liberando espacio…",
-  "Speicher wird freigegeben …",
-  "正在释放空间…",
-  "空き容量を増やしています…",
-  "공간 확보 중…"
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
  ],
  "From a deleted account. Copy what you need, then delete it.": [
   "De uma conta apagada. Copie o que precisar e apague-a.",

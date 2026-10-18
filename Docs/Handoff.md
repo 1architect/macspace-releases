@@ -88,7 +88,10 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    SDK version, minimum macOS, permissions, options, background tasks) **without running any code**. Compatible, enabled modules are
    then loaded through their principal class (`MacSpaceModuleEntry`). All modules load side by side.
 2. **Declarative UI.** A module returns a `Screen` of widgets (banner, usage bar, chart, list, toggles, button, steps, text,
-   section) and a summary widget for the Home tile. The app draws them. Module pages use grouped SwiftUI rows whose shades and separators belong to each row, so the legend, headings and rows can cascade together. Native Form group backgrounds stayed visible during row transitions. Loading and cleaning share one visibility controller; tile zooms hide the entire page until settled. Actions come back as `ActionRequest`s; the app checks the
+   section) and a summary widget for the Home tile. The app draws them. All shipped modules implement `screen(context:progress:)`:
+   real scan progress reaches both the page's Loading button and Home tile percentage, including when the page joins a scan the
+   tile already started. Cached reads stay quiet. Automatic scans keep existing page details visible; initial and explicit loading use the existing cascade. Concurrent work combines progress with `LoadProgressRelay.parallelParts`.
+   Module pages use grouped SwiftUI rows whose shades and separators belong to each row, so the legend, headings and rows can cascade together. Native Form group backgrounds stayed visible during row transitions. Loading and cleaning share one visibility controller; tile zooms hide the entire page until settled. Actions come back as `ActionRequest`s; the app checks the
    action's `requires` permissions and shows its confirmation first. A row's subtitle is a count after its title, and its facts are pills
    (`Row.badges`) right after it; its detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
    Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short
@@ -102,6 +105,9 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    this too; keep it for new modules.
 4. **Caching.** Each module keeps one shared scan (`…Store`) so the Home tile and the page do not scan twice. The Refresh button
    calls the module's `invalidate()` first.
+   Current polling intervals, cache lifetimes and visible-loading behavior are documented in [Module refresh behavior](Module-Refresh.md).
+Contract version 4 adds tile scan progress and lightweight status updates; visible canvases determine which modules are followed. See [Module refresh behavior](Module-Refresh.md).
+
 About MacSpace is the app menu’s About command (also in the status menu), using MacBat’s native alert layout with version, author, GitHub and uninstall. It is not a Settings section. Module contract version 3 adds the uninstall hook. Modules implement `prepareForUninstall(context:)` to restore reversible changes before the helper is removed. The host calls disabled modules too; failures keep the app installed. Siri restores its saved language and voice, Debloat reverts journaled settings and removes its own profiles. Cleaners use the default no-op because freed files cannot be restored.
 
 5. **Privileged work** goes through the helper. A module's `Privileged/` library declares named operations (`siri.orphan-subscriptions.*`,

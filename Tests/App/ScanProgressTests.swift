@@ -22,9 +22,10 @@ private actor ScanControl {
 
 private struct ScanningModule: MacSpaceModule {
     let control: ScanControl
-    init() { control = ScanControl() }
-    init(control: ScanControl) { self.control = control }
-    func tile(context: ModuleContext) async -> Tile { Tile(title: "test", status: "ready") }
+    let refreshAfter: TimeInterval?
+    init() { control = ScanControl(); refreshAfter = nil }
+    init(control: ScanControl, refreshAfter: TimeInterval? = nil) { self.control = control; self.refreshAfter = refreshAfter }
+    func tile(context: ModuleContext) async -> Tile { Tile(title: "test", status: "ready", refreshAfter: refreshAfter) }
     func screen(context: ModuleContext) async -> Screen { Screen(title: "Test", widgets: []) }
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         await control.scan(progress)
@@ -35,10 +36,10 @@ private struct ScanningModule: MacSpaceModule {
 
 @MainActor
 final class ScanProgressTests: XCTestCase {
-    private func handle(_ directory: URL, control: ScanControl) async throws -> ModuleHandle {
+    private func handle(_ directory: URL, control: ScanControl, refreshAfter: TimeInterval? = nil) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let module = ScanningModule(control: control)
+        let module = ScanningModule(control: control, refreshAfter: refreshAfter)
         let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         return handle
@@ -57,7 +58,8 @@ final class ScanProgressTests: XCTestCase {
                 try await Task.sleep(for: .milliseconds(5))
             }
             XCTAssertTrue(handle.isRefreshing)
-            XCTAssertTrue(handle.isBusy)
+            XCTAssertEqual(handle.isBusy, !quiet, "automatic scans keep actions interactive")
+            XCTAssertEqual(handle.isReloading, !quiet, "only explicit loading hides existing page details")
             XCTAssertTrue(TileInfo(handle).loading, "the home widget pulses during either scan")
             await control.advance(0.4)
             for _ in 0..<100 where handle.loading?.reported != 0.4 { try await Task.sleep(for: .milliseconds(5)) }
@@ -71,6 +73,7 @@ final class ScanProgressTests: XCTestCase {
             await task.value
             XCTAssertFalse(handle.isRefreshing)
             XCTAssertFalse(handle.isBusy)
+            XCTAssertFalse(handle.isReloading)
             XCTAssertNil(handle.loading)
             XCTAssertFalse(TileInfo(handle).loading)
             XCTAssertEqual(TileInfo(handle).status, "ready")
@@ -99,5 +102,53 @@ final class ScanProgressTests: XCTestCase {
         XCTAssertNil(handle.loading)
         await control.finish()
         await task.value
+    }
+
+    func testAutomaticInvalidationKeepsThePageVisibleAndAnExplicitRefreshSupersedesOldWork() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let control = ScanControl()
+        let handle = try await handle(directory, control: control)
+        defer { handle.deactivate() }
+        await control.arm()
+        let old = Task { await handle.refresh(reload: true, quiet: true) }
+        for _ in 0..<100 {
+            if await control.started, handle.isRefreshing { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertTrue(handle.isRefreshing)
+        XCTAssertFalse(handle.isReloading, "automatic invalidation reports progress without folding the page")
+        XCTAssertFalse(handle.isBusy)
+        await handle.refresh(reload: true)
+        XCTAssertFalse(handle.isRefreshing, "an obsolete scan cannot keep a newer completed read loading")
+        XCTAssertFalse(handle.isReloading)
+        XCTAssertNil(handle.loading)
+        await control.advance(0.9)
+        try await Task.sleep(for: .milliseconds(10))
+        XCTAssertFalse(handle.isRefreshing)
+        await control.finish()
+        await old.value
+        XCTAssertFalse(handle.isRefreshing)
+    }
+
+    func testPendingAutomaticTimerCannotInterruptAnExplicitReload() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let control = ScanControl()
+        let handle = try await handle(directory, control: control, refreshAfter: 2)
+        defer { handle.deactivate() }
+        await control.arm()
+        let manual = Task { await handle.refresh(reload: true) }
+        for _ in 0..<100 {
+            if await control.started { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        try await Task.sleep(for: .milliseconds(2200))
+        XCTAssertTrue(handle.isReloading, "the pending two-second timer must not fold the explicit loading state early")
+        XCTAssertTrue(handle.isBusy)
+        await control.finish()
+        await manual.value
+        XCTAssertFalse(handle.isReloading)
+        XCTAssertFalse(handle.isRefreshing)
     }
 }

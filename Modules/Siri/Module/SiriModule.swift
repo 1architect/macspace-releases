@@ -37,14 +37,22 @@ public struct SiriModule: MacSpaceModule {
         SiriScreenBuilder.tile(await snapshot())
     }
 
+    public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
+        SiriScreenBuilder.tile(await snapshot(progress: progress))
+    }
+
     public func screen(context: ModuleContext) async -> Screen {
         SiriScreenBuilder.screen(await snapshot())
     }
 
+    public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
+        SiriScreenBuilder.screen(await snapshot(progress: progress))
+    }
+
     /// The state, after starting the release of leftover models if they are due one: MacSpace does it by itself. `waits` holds the
     /// caller until the release is over.
-    private func snapshot(waits: Bool = false) async -> SiriSnapshot {
-        var snapshot = await store.snapshot()
+    private func snapshot(waits: Bool = false, progress: LoadProgressSink? = nil) async -> SiriSnapshot {
+        var snapshot = await store.snapshot(progress: progress)
         let store = self.store
         let running = await ModelAutoReleaser.shared.check(snapshot, release: {
             Self.recordBackground(Self.release(progress: { _ in }).freedBytes ?? 0, summary: loc("Leftover Apple Intelligence models"))
@@ -116,7 +124,7 @@ public struct SiriModule: MacSpaceModule {
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "purgeAssets":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             let store = self.store
             return Self.purge { freed in
                 Self.recordBackground(freed, summary: loc("Unused system assets"))

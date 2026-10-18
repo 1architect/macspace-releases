@@ -124,7 +124,7 @@ public struct APFSVolumeUsage: Equatable, Sendable {
     }
 }
 
-/// The apps Spotlight has indexed, wherever they are: what Settings lists under Applications.
+/// The apps Spotlight has indexed. Settings applies additional scopes and filters to this list.
 public enum IndexedApps {
     public static func paths() -> [String] {
         guard let query = MDQueryCreate(kCFAllocatorDefault, "kMDItemContentType == 'com.apple.application-bundle'" as CFString, nil, nil),
@@ -187,11 +187,30 @@ public struct SettingsStorageMeter {
 
     /// Every place a category other than System Data claims, for telling what in a folder is System Data. The home folder outside
     /// `~/Library` is Documents and is not listed: test it with `isDocuments`.
-    public func claimedPlaces(apps: [String]) -> [String] { places(apps: apps).flatMap(\.paths) }
+    public func claimedPlaces(apps: [String]) -> [String] { places(apps: applicationPaths(apps)).flatMap(\.paths) }
 
     /// The places Settings lists in its live categories, measured once per scan.
     public static func liveClaimedPlaces(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> [String] {
-        SettingsStorageMeter(home: home).claimedPlaces(apps: IndexedApps.outermost(IndexedApps.paths()))
+        SettingsStorageMeter(home: home).claimedPlaces(apps: IndexedApps.paths())
+    }
+
+    /// STMApplicationSizer searches home, /Applications and /System/Applications; the last belongs to macOS. It also skips
+    /// home Library, the trash, bundles without identifiers, and nested apps even when Spotlight has not indexed their parent.
+    func applicationPaths(_ paths: [String]) -> [String] {
+        let applicationRoot = system("/Applications")
+        let excludedIDs: Set<String> = ["com.apple.Music", "com.apple.iBooksX", "com.apple.mail", "com.apple.TV",
+                                        "com.apple.podcasts", "com.apple.Photos", "com.apple.MobileSMS"]
+        return IndexedApps.outermost(paths.filter { candidate in
+            guard candidate.hasPrefix(applicationRoot + "/") || candidate.hasPrefix(home.path + "/"),
+                  !candidate.hasPrefix(path("Library") + "/"), !candidate.hasPrefix(path(".Trash") + "/"),
+                  let id = Bundle(path: candidate)?.bundleIdentifier, !id.isEmpty, !excludedIDs.contains(id) else { return false }
+            var parent = URL(fileURLWithPath: candidate).deletingLastPathComponent()
+            while parent.path != "/" {
+                if ApplicationBundles.isApplication(parent.path) { return false }
+                parent.deleteLastPathComponent()
+            }
+            return true
+        })
     }
 
     /// Whether Settings counts `path` as Documents: in the home folder, outside `~/Library` (and outside the places other categories
@@ -206,9 +225,8 @@ public struct SettingsStorageMeter {
         // The Music app's media folder, wherever its library keeps it ("Media" or the localized "Media.localized").
         for name in ["Music/Music/Media", "Music/Music/Media.localized"] where FileManager.default.fileExists(atPath: path(name)) { musicMedia.append(path(name)) }
         return [
-            // The whole /Applications folder (what apps keep beside their bundles in it too: 0.77 GB here), the apps Spotlight finds
-            // elsewhere, and the apps' containers.
-            ("applications", [system("/Applications")] + apps.filter { !$0.hasPrefix("/Applications/") } + appContainers(apps: apps)
+            // The whole /Applications folder (including files beside bundles), eligible indexed apps in home, and containers.
+            ("applications", [system("/Applications")] + apps.filter { !$0.hasPrefix(system("/Applications") + "/") } + appContainers(apps: apps)
                 + [path("Library/Application Support/Steam")]),
             ("developer", [system("/Library/Developer/CommandLineTools"), system("/Library/Developer/CoreSimulator"), path("Library/Developer"),
                            path("Library/Caches/com.apple.dt.Xcode"), system("/AppleInternal/Developer")]),
@@ -267,7 +285,7 @@ public struct SettingsStorageMeter {
     public func measure() -> SettingsStorage? {
         guard let (capacity, available) = space(), capacity >= available else { return nil }
         let systemVolumes = dataDevice().map { APFSVolumeUsage.systemVolumes(volumes(), dataDevice: $0) } ?? 0
-        let apps = IndexedApps.outermost(self.apps())
+        let apps = applicationPaths(self.apps())
         let places = places(apps: apps)
         // Documents: the home folder without ~/Library, ~/Applications, the trash and every place another category claims there (the
         // media folders Settings names, the apps Spotlight found); Desktop and Documents too when iCloud Drive keeps them.
@@ -276,7 +294,8 @@ public struct SettingsStorageMeter {
                      "Movies/TV/Media", "Movies/TV/TV Library"] { excluded.insert(path(name)) }
         if desktopAndDocumentsInICloud() { excluded.formUnion([path("Desktop"), path("Documents")]) }
         // Every place, and the home folder for Documents, measured side by side: one after the other they took 10 seconds.
-        let jobs = places.flatMap { $0.paths.map { (path: $0, excluding: Set<String>()) } } + [(path: home.path, excluding: excluded)]
+        let jobs = places.flatMap { $0.paths.map { AllocatedSize.Job(path: $0) } }
+            + [AllocatedSize.Job(path: home.path, excluding: excluded, excludingApplications: true)]
         let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers)
         var next = 0
         var categories = places.map { place in
@@ -291,7 +310,19 @@ public struct SettingsStorageMeter {
 /// Allocated sizes of folder trees, as `du` counts them: each file's blocks once (a hard-linked file at its first path), folders still only in the cloud skipped
 /// (listing them would make the cloud app fetch them).
 public enum AllocatedSize {
-    public static func allocatedBytes(_ root: String, excluding excluded: Set<String>) -> UInt64 {
+    public struct Job: Sendable {
+        public var path: String
+        public var excluding: Set<String>
+        public var excludingApplications: Bool
+
+        public init(path: String, excluding: Set<String> = [], excludingApplications: Bool = false) {
+            self.path = path
+            self.excluding = excluding
+            self.excludingApplications = excludingApplications
+        }
+    }
+
+    public static func allocatedBytes(_ root: String, excluding excluded: Set<String>, excludingApplications: Bool = false) -> UInt64 {
         var info = stat()
         guard lstat(root, &info) == 0 else { return 0 }
         guard info.st_mode & S_IFMT == S_IFDIR else { return UInt64(max(info.st_blocks, 0)) * 512 }
@@ -300,7 +331,10 @@ public enum AllocatedSize {
         struct Sums { var total: UInt64 = 0, links = Set<UInt64>() }
         return DirectoryWalk.walk(root, extended: false, initial: Sums()) { sums, path, entry in
             if !excluded.isEmpty, excluded.contains(path()) { return .skip }
-            if entry.isDirectory { return entry.isDataless ? .skip : .descend }
+            if excludingApplications && ApplicationBundles.isApplication(path()) { return .skip }
+            if entry.isDirectory {
+                return entry.isDataless ? .skip : .descend
+            }
             if entry.linkCount > 1, entry.isRegularFile, let inode = HardLinks.inode(path()), !sums.links.insert(inode).inserted { return .skip }
             sums.total += entry.allocatedBytes
             return .skip
@@ -309,12 +343,27 @@ public enum AllocatedSize {
 
     /// Several trees at once, `workers` at a time, in the order given.
     public static func allocatedBytes(_ jobs: [(path: String, excluding: Set<String>)], workers: Int) -> [UInt64] {
+        allocatedBytes(jobs.map { Job(path: $0.path, excluding: $0.excluding) }, workers: workers)
+    }
+
+    public static func allocatedBytes(_ jobs: [Job], workers: Int) -> [UInt64] {
         let results = LockedArray(repeating: UInt64(0), count: jobs.count)
         let queue = JobCounter(count: jobs.count)
         DispatchQueue.concurrentPerform(iterations: min(max(workers, 1), max(jobs.count, 1))) { _ in
-            while let index = queue.next() { results.set(index, allocatedBytes(jobs[index].path, excluding: jobs[index].excluding)) }
+            while let index = queue.next() {
+                let job = jobs[index]
+                results.set(index, allocatedBytes(job.path, excluding: job.excluding, excludingApplications: job.excludingApplications))
+            }
         }
         return results.values
+    }
+}
+
+private enum ApplicationBundles {
+    /// Match the Documents reporter's case-sensitive suffix check followed by NSURLIsApplicationKey, rather than guessing from
+    /// an extension alone. Check files too: macOS can return true for a regular file named *.app.
+    static func isApplication(_ path: String) -> Bool {
+        path.hasSuffix(".app") && (try? URL(fileURLWithPath: path).resourceValues(forKeys: [.isApplicationKey]))?.isApplication == true
     }
 }
 

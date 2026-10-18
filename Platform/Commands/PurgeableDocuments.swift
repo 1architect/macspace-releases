@@ -1,11 +1,8 @@
 import Darwin
 import Foundation
 
-/// The documents macOS counts as purgeable (CacheDelete's `com.apple.fspurgeable_document`), found by the flag APFS keeps on each
-/// file (`EF_IS_PURGEABLE`). Cloud apps built on File Provider (OneDrive, Google Drive, Dropbox) and iCloud Drive set it on the files
-/// they downloaded and keep in the cloud: macOS may delete the local copy when space runs low, and the file downloads again when it
-/// is opened. Measured on 26B5091g (2026-10-06): 22.94 GB flagged in OneDrive's folder against 21.15 GB reported by CacheDelete, and
-/// nothing flagged anywhere else in the home folder.
+/// Uploaded local cloud copies that can be offered for explicit eviction. APFS's purgeable flag and CacheDelete's pressure-based
+/// estimate are not eligibility checks: OneDrive can have uploaded, unpinned local files without that flag.
 public enum PurgeableDocuments {
     /// One cloud folder holding purgeable documents.
     public struct Source: Sendable, Equatable {
@@ -40,15 +37,17 @@ public enum PurgeableDocuments {
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var cached: (at: Date, sources: [Source])?
+    nonisolated(unsafe) private static var generation = 0
 
     /// `scan`, at most once every `maxAge` seconds: a cloud folder can hold millions of files.
-    public static func scan(maxAge: TimeInterval, now: Date = Date()) -> [Source] {
+    public static func scan(maxAge: TimeInterval, now: Date = Date(), progress: @escaping @Sendable (Double) -> Void = { _ in }) -> [Source] {
         lock.lock()
-        if let cached, now.timeIntervalSince(cached.at) < maxAge { lock.unlock(); return cached.sources }
+        if let cached, now.timeIntervalSince(cached.at) < maxAge { lock.unlock(); progress(1); return cached.sources }
+        let started = generation
         lock.unlock()
-        let sources = scan()
+        let sources = scan(progress: progress)
         lock.lock()
-        cached = (now, sources)
+        if started == generation { cached = (now, sources) }
         lock.unlock()
         return sources
     }
@@ -58,12 +57,20 @@ public enum PurgeableDocuments {
 
     /// The cloud folders of `home` (every File Provider service's `Library/CloudStorage/*`, whatever it is, and iCloud Drive), each
     /// with what is purgeable in it; those with nothing purgeable are left out. Largest first.
-    public static func scan(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> [Source] {
+    public static func scan(home: URL = FileManager.default.homeDirectoryForCurrentUser,
+                            progress: @escaping @Sendable (Double) -> Void = { _ in }) -> [Source] {
         let cloudStorage = home.appendingPathComponent("Library/CloudStorage")
         var roots = ((try? FileManager.default.contentsOfDirectory(atPath: cloudStorage.path)) ?? [])
             .filter { !$0.hasPrefix(".") }.map { (name: displayName($0), url: cloudStorage.appendingPathComponent($0)) }
         roots.append((name: "iCloud Drive", url: home.appendingPathComponent("Library/Mobile Documents")))
-        return roots.compactMap { scan($0.url, name: $0.name) }.filter { $0.bytes > 0 }.sorted { $0.bytes > $1.bytes }
+        let count = Double(roots.count)
+        progress(0)
+        return roots.enumerated().compactMap { index, root in
+            defer { progress(Double(index + 1) / count) }
+            return scan(root.url, name: root.name, progress: { fraction in
+                progress((Double(index) + fraction) / count)
+            })
+        }.filter { $0.bytes > 0 }.sorted { $0.bytes > $1.bytes }
     }
 
     /// "OneDrive-Pessoal" -> "OneDrive (Pessoal)": File Provider names the folder after the service and the account.
@@ -72,25 +79,39 @@ public enum PurgeableDocuments {
         return "\(folder[..<dash]) (\(folder[folder.index(after: dash)...]))"
     }
 
-    /// What is purgeable under one folder, by its top-level folders. nil when it cannot be read.
-    static func scan(_ root: URL, name: String) -> Source? {
+    /// Uploaded local copies under one folder, by its top-level folders. nil when it cannot be read.
+    static func scan(_ root: URL, name: String, progress: @escaping @Sendable (Double) -> Void = { _ in },
+                     state: @escaping @Sendable (URL) -> CloudState = CloudState.read) -> Source? {
         let rootPath = root.path
-        var folders: [String: Folder] = [:]
-        var bytes: UInt64 = 0
-        var files = 0
-        let walked = walk(rootPath, timeLimit: timeLimit) { path, allocated in
-            bytes += allocated
-            files += 1
-            let relative = path.dropFirst(rootPath.count).drop { $0 == "/" }
-            let top = relative.contains("/") ? String(relative.prefix { $0 != "/" }) : "(top level)"
-            folders[top, default: Folder(name: top, bytes: 0, files: 0)].bytes += allocated
-            folders[top, default: Folder(name: top, bytes: 0, files: 0)].files += 1
-        }
+        let started = Date()
+        var found: [(path: String, bytes: UInt64)] = []
+        progress(0)
+        // Enumerating first gives metadata inspection a real denominator. File Provider resource reads dominate the scan; a
+        // bounded number run together, and parent Keep Downloaded markers are read once per scan rather than once per file.
+        let walked = walk(rootPath, timeLimit: timeLimit) { found.append(($0, $1)) }
         guard walked else { return nil }
-        return Source(name: name, path: rootPath, bytes: bytes, files: files, folders: folders.values.sorted { $0.bytes > $1.bytes })
+        progress(0.05)
+        let candidates = found
+        let queue = JobCounter(count: candidates.count)
+        let pinned = ScanPins(root: root)
+        let totals = CloudScanTotals()
+        DispatchQueue.concurrentPerform(iterations: min(4, max(candidates.count, 1))) { _ in
+            while let index = queue.next(), Date().timeIntervalSince(started) <= timeLimit {
+                let candidate = candidates[index]
+                let url = URL(fileURLWithPath: candidate.path)
+                let eligible = !pinned.isKept(url) && state(url).canEvict
+                let relative = candidate.path.dropFirst(rootPath.count).drop { $0 == "/" }
+                let top = relative.contains("/") ? String(relative.prefix { $0 != "/" }) : "(top level)"
+                let done = totals.record(bytes: candidate.bytes, folder: top, eligible: eligible)
+                progress(0.05 + 0.95 * Double(done) / Double(candidates.count))
+            }
+        }
+        progress(1)
+        return Source(name: name, path: rootPath, bytes: totals.bytes, files: totals.files,
+                      folders: totals.folders.values.sorted { $0.bytes > $1.bytes })
     }
 
-    /// Calls `visit` with each file under `rootPath` that APFS flags purgeable and its allocated size, until `timeLimit` seconds have
+    /// Calls `visit` with each locally allocated file under `rootPath` and its allocated size, until `timeLimit` seconds have
     /// passed. False when the folder cannot be read.
     static func walk(_ rootPath: String, timeLimit: TimeInterval, _ visit: (String, UInt64) -> Void) -> Bool {
         guard FileManager.default.fileExists(atPath: rootPath), let rootCopy = strdup(rootPath) else { return false }
@@ -98,9 +119,6 @@ public enum PurgeableDocuments {
         var paths: [UnsafeMutablePointer<CChar>?] = [rootCopy, nil]
         guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return false }
         defer { fts_close(fts) }
-        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0,
-                            fileattr: attrgroup_t(ATTR_FILE_ALLOCSIZE), forkattr: attrgroup_t(ATTR_CMNEXT_EXT_FLAGS))
-        var buffer = [UInt8](repeating: 0, count: 32)
         let started = Date()
         while let entry = fts_read(fts) {
             if Date().timeIntervalSince(started) > timeLimit { break }
@@ -110,12 +128,10 @@ public enum PurgeableDocuments {
                 continue
             }
             guard Int32(entry.pointee.fts_info) == FTS_F, let cPath = entry.pointee.fts_path else { continue }
-            // File attributes come before the extended common ones: length, then the allocated size, then the extended flags.
-            let result = buffer.withUnsafeMutableBytes { getattrlist(cPath, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }
-            guard result == 0 else { continue }
-            let allocated = buffer.withUnsafeBytes { UInt64(max($0.loadUnaligned(fromByteOffset: 4, as: Int64.self), 0)) }
-            let flags = buffer.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 12, as: UInt64.self) }
-            guard flags & UInt64(EF_IS_PURGEABLE) != 0 else { continue }
+            let info = entry.pointee.fts_statp.pointee
+            guard info.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
+            let allocated = UInt64(max(info.st_blocks, 0)) * 512
+            guard allocated > 0 else { continue }
             visit(String(cString: cPath), allocated)
         }
         return true
@@ -125,6 +141,7 @@ public enum PurgeableDocuments {
     public static func forget() {
         lock.lock()
         cached = nil
+        generation += 1
         lock.unlock()
     }
 
@@ -157,10 +174,41 @@ public enum PurgeableDocuments {
     /// mostly waits on the cloud app, so several go together.
     static let concurrentRemovals = 8
 
+    struct CloudState: Sendable {
+        var ubiquitous: Bool?
+        var uploaded: Bool?
+        var uploading: Bool?
+        var conflicted: Bool?
+
+        var canEvict: Bool { ubiquitous == true && uploaded == true && uploading == false && conflicted == false }
+
+        static func read(_ url: URL) -> CloudState {
+            let values = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemIsUploadedKey,
+                                                          .ubiquitousItemIsUploadingKey, .ubiquitousItemHasUnresolvedConflictsKey])
+            return CloudState(ubiquitous: values?.isUbiquitousItem, uploaded: values?.ubiquitousItemIsUploaded,
+                              uploading: values?.ubiquitousItemIsUploading, conflicted: values?.ubiquitousItemHasUnresolvedConflicts)
+        }
+    }
+
+    /// File Provider's Keep Downloaded marker can be inherited from a parent. Respect it for the whole cloud root as well.
+    static func isKeptDownloaded(_ url: URL, root: URL) -> Bool {
+        var path = url.standardizedFileURL.path
+        let boundary = root.standardizedFileURL.path
+        while path == boundary || path.hasPrefix(boundary + "/") {
+            var value: UInt8 = 0
+            let length = getxattr(path, "com.apple.fileprovider.pinned#PX", &value, 1, 0, XATTR_NOFOLLOW)
+            if length > 0 && value != 0 && value != 48 { return true }
+            if length < 0 && errno != ENOATTR && errno != ENOTSUP { return true }
+            if path == boundary { break }
+            path = (path as NSString).deletingLastPathComponent
+        }
+        return false
+    }
+
     /// Removes the local copies of the files in a cloud folder that are already in the cloud, as Finder's Free Up Space does, with
     /// the API made for it (`FileManager.evictUbiquitousItem`), which iCloud Drive and every File Provider app (OneDrive, Google
-    /// Drive, Dropbox) answer. Only files macOS itself counts as purgeable: a file set to Always Keep on This Device is not, and each
-    /// must also be uploaded, not uploading and without conflicts. The files stay in the cloud and download again when opened.
+    /// Drive, Dropbox) answer. Each file must be uploaded, not uploading, without conflicts and not marked Keep Downloaded. The
+    /// provider makes the final eviction decision. The files stay in the cloud and download again when opened.
     /// The largest go first, so the space comes back early; `progress` gets the files done, their number, and the bytes removed.
     public static func removeDownloads(in root: URL, progress: @escaping @Sendable (Int, Int, UInt64) -> Void = { _, _, _ in }) -> Removal {
         guard isCloudFolder(root.path) else { return Removal() }
@@ -174,9 +222,8 @@ public enum PurgeableDocuments {
             for index in stride(from: worker, to: total, by: concurrentRemovals) {
                 let candidate = candidates[index]
                 let url = URL(fileURLWithPath: candidate.path)
-                let values = try? url.resourceValues(forKeys: [.ubiquitousItemIsUploadedKey, .ubiquitousItemIsUploadingKey, .ubiquitousItemHasUnresolvedConflictsKey])
                 let outcome: Result<UInt64, Error>?
-                if values?.ubiquitousItemIsUploaded == true, values?.ubiquitousItemIsUploading != true, values?.ubiquitousItemHasUnresolvedConflicts != true {
+                if CloudState.read(url).canEvict, !isKeptDownloaded(url, root: root) {
                     do { try FileManager.default.evictUbiquitousItem(at: url); outcome = .success(candidate.bytes) }
                     catch { outcome = .failure(error) }
                 } else {
@@ -187,6 +234,57 @@ public enum PurgeableDocuments {
             }
         }
         return state.removal
+    }
+}
+
+/// Only the scan memoizes inherited markers. Eviction always checks the current markers again (`isKeptDownloaded`).
+private final class ScanPins: @unchecked Sendable {
+    private let lock = NSLock()
+    private let root: String
+    private var parents: [String: Bool] = [:]
+
+    init(root: URL) { self.root = root.standardizedFileURL.path }
+
+    func isKept(_ url: URL) -> Bool {
+        let path = url.standardizedFileURL.path
+        if Self.marker(path) { return true }
+        return lock.withLock { inherited((path as NSString).deletingLastPathComponent) }
+    }
+
+    private func inherited(_ path: String) -> Bool {
+        guard path == root || path.hasPrefix(root + "/") else { return false }
+        if let cached = parents[path] { return cached }
+        let kept = Self.marker(path) || (path != root && inherited((path as NSString).deletingLastPathComponent))
+        parents[path] = kept
+        return kept
+    }
+
+    private static func marker(_ path: String) -> Bool {
+        var value: UInt8 = 0
+        let length = getxattr(path, "com.apple.fileprovider.pinned#PX", &value, 1, 0, XATTR_NOFOLLOW)
+        if length > 0 { return value != 0 && value != 48 }
+        return length < 0 && errno != ENOATTR && errno != ENOTSUP
+    }
+}
+
+private final class CloudScanTotals: @unchecked Sendable {
+    private let lock = NSLock()
+    private var done = 0
+    private(set) var bytes: UInt64 = 0
+    private(set) var files = 0
+    private(set) var folders: [String: PurgeableDocuments.Folder] = [:]
+
+    func record(bytes: UInt64, folder: String, eligible: Bool) -> Int {
+        lock.withLock {
+            done += 1
+            if eligible {
+                self.bytes += bytes
+                files += 1
+                folders[folder, default: .init(name: folder, bytes: 0, files: 0)].bytes += bytes
+                folders[folder, default: .init(name: folder, bytes: 0, files: 0)].files += 1
+            }
+            return done
+        }
     }
 }
 

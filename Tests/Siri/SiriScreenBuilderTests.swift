@@ -25,6 +25,46 @@ final class SiriScreenBuilderTests: XCTestCase {
                      releaseBlockers: blockers, watch: nil, cliPath: "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
     }
 
+    func testStoreSharesProgressWithPageJoiningTileAndKeepsCachedReadsQuiet() async throws {
+        let fixture = snapshot(.atRisk)
+        let reads = SnapshotReads()
+        let started = expectation(description: "scan started")
+        let joined = expectation(description: "page joined current scan")
+        let release = DispatchSemaphore(value: 0)
+        let heard = LoadProgressRelay()
+        let store = SiriStore(builder: { progress in
+            let read = reads.next()
+            progress.report(0.25)
+            if read == 1 {
+                started.fulfill()
+                reads.waitForRelease(release)
+            }
+            progress.report(0.75)
+            return fixture
+        })
+        // The tile starts the scan without a sink. The page joins it later and must receive its current progress immediately.
+        let tile = Task { await store.snapshot() }
+        await fulfillment(of: [started], timeout: 2)
+        let page = Task { await store.snapshot(progress: { value in
+            heard.report(value)
+            if value == 0.25 { joined.fulfill() }
+        }) }
+        await fulfillment(of: [joined], timeout: 2)
+        release.signal()
+        _ = await (tile.value, page.value)
+        XCTAssertEqual(reads.total, 1)
+        XCTAssertEqual(heard.fraction, 1)
+        let cachedProgress = LoadProgressRelay()
+        _ = await store.snapshot(progress: cachedProgress.report)
+        XCTAssertNil(cachedProgress.fraction, "cached reads must not restore widget loading")
+        XCTAssertEqual(reads.total, 1)
+        await store.invalidate()
+        let refreshed = LoadProgressRelay()
+        _ = await store.snapshot(progress: refreshed.report)
+        XCTAssertEqual(reads.total, 2)
+        XCTAssertEqual(refreshed.fraction, 1)
+    }
+
     private func other(_ name: String?) -> AppleIntelligenceAccount {
         AppleIntelligenceAccount(guid: "G-\(name ?? "gone")", name: name, isCurrentUser: false, useCases: ["x_isIFPEnabled_true_language_pt"])
     }
@@ -208,8 +248,19 @@ final class SiriScreenBuilderTests: XCTestCase {
 extension SiriScreenBuilderTests {
     /// While the models change, the tile asks to be read again every few seconds, so it follows a download without Refresh.
     func testTheTileAsksForQuickReadingsWhileTheModelsChange() {
-        XCTAssertEqual(SiriScreenBuilder.tile(snapshot(.atRisk)).refreshAfter, 5, "on: macOS may be downloading")
+        XCTAssertNil(SiriScreenBuilder.tile(snapshot(.atRisk)).refreshAfter, "AI being on alone does not require fast polling")
+        var downloading = snapshot(.atRisk)
+        downloading.downloadingModelBytes = 1_000_000
+        XCTAssertEqual(SiriScreenBuilder.tile(downloading).refreshAfter, 5)
         XCTAssertEqual(SiriScreenBuilder.tile(snapshot(.releasing)).refreshAfter, 5)
         XCTAssertNil(SiriScreenBuilder.tile(snapshot(.protected)).refreshAfter, "settled: the usual minute")
     }
+}
+
+private final class SnapshotReads: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    func next() -> Int { lock.withLock { count += 1; return count } }
+    var total: Int { lock.withLock { count } }
+    func waitForRelease(_ release: DispatchSemaphore) { _ = release.wait(timeout: .now() + 5) }
 }

@@ -41,14 +41,14 @@
 "Disable %lld features?" = "停用 %lld 项功能？";
 "Disable all" = "全部停用";
 "Disabled" = "已停用";
+"Disabling" = "正在停用";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "停用功能时，会要求你在“系统设置 > 通用 > 设备管理”中批准描述文件。";
-"Disabling…" = "正在停用…";
 "Each one can be enabled again." = "每项功能都可以重新启用。";
 "Enable" = "启用";
 "Enable all" = "全部启用";
 "Enable all %lld features again?" = "重新启用全部 %lld 项功能？";
 "Enabled" = "已启用";
-"Enabling…" = "正在启用…";
+"Enabling" = "正在启用";
 "Experiments" = "实验功能";
 "Finish" = "完成";
 "Game Center" = "Game Center";

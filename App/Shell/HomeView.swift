@@ -33,7 +33,7 @@ struct TileInfo: Equatable {
     }
 
     /// A tile's status line while its module reads the Mac.
-    static var loadingStatus: String { String(localized: "loading…") }
+    static var loadingStatus: String { String(localized: "loading") }
 
     static func loadingStatus(_ fraction: Double?) -> String {
         guard let fraction, fraction.isFinite else { return loadingStatus }
@@ -44,7 +44,7 @@ struct TileInfo: Equatable {
     /// does, and its chart breathes: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's
     /// lowercase, except in German, where the message starts with a noun.
     static func cleaningStatus(_ progress: ActionProgress?) -> String {
-        var text = progress?.message ?? String(localized: "working…")
+        var text = progress?.message ?? String(localized: "working")
         if Bundle.main.preferredLocalizations.first?.hasPrefix("de") != true, let first = text.first {
             text = first.lowercased() + text.dropFirst()
         }
@@ -220,7 +220,7 @@ struct TileFace: View {
             // What the pointer is on, and nothing otherwise: its name and size, in the tile's small text, just under the blocks and as
             // wide as them, on every tile. Beside the caption, it had no room on a small tile and named nothing there.
             Group {
-                if let hovered { Text("\(hovered.label) · \(ByteFormat.string(hovered.bytes))") }
+                if let hovered { Text("\(hovered.label) \(ByteFormat.string(hovered.bytes))") }
             }
             .font(TileType.current.smallText)
             .foregroundStyle(palette.soft)

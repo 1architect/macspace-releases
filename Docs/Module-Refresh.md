@@ -1,0 +1,59 @@
+# Module refresh behavior
+
+Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract version 4.
+
+## Loading and updating
+
+- **First load and explicit Refresh:** use the existing loading pill, progress and page cascade. Explicit Refresh invalidates cached measurements first.
+- **Automatic scan:** retain the current page, group stack, choices and scroll-view identity. Report real progress in the existing widget/pill; page details remain visible and interactive. Forced automatic invalidation (such as profile approval checks) follows this rule too.
+- **Status update:** refresh live operation counters from the last measurement without querying services or enumerating files. It produces no loading state.
+- Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
+- Successful cleanup keeps its existing working/All done flow and verification behavior.
+
+`ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes initial/explicit loading that hides page details. `ScreenView` uses `isReloading` and actual cleanup activity for the existing details cascade.
+
+## What is followed
+
+Each canvas registers its destination and uses the existing `WindowReader` to identify its window. Visible destinations are combined across windows:
+
+- Home follows all dashboard tiles; automatic normal reads request tile progress without constructing unused module pages.
+- An open module follows that module's tile and page. Opening it refreshes its page presentation even when its tile was just read on Home.
+- Settings does not poll modules. Modules covered by another page are not polled unless another visible window shows their page or a dashboard.
+- Minimized/closed windows and a hidden app do not contribute visible destinations. Closing the last canvas does not re-enable polling.
+- Separately enabled watches and automatic cleanup continue without a visible module. Their completion refreshes the UI only when that module is watched. User actions still verify their results.
+
+## Intervals and caches
+
+Ordinary polling is 60 seconds after the preceding refresh finishes while MacSpace is active, or 600 seconds when another app is active with a MacSpace window still visible. Fast operation polling overrides either interval; its minimum is two seconds.
+
+| Module | Measurement cache | Fast status/scan polling |
+|---|---|---|
+| System Data | 600 seconds | None. A failed helper measurement can be retried after 60 seconds without repeating the full scan. |
+| Other System Files | 60 seconds; cloud eligibility separately 600 seconds | Every 2 seconds during cloud removal, using the status-only path. Periodic UI polls retain measured data even past its TTL while removals run. Once all removals finish, one fresh measurement is requested. Explicit Refresh can still force a measurement during removal. |
+| Siri & Apple Intelligence | 4 seconds | Every 5 seconds only while models are downloading, releasing, purging, automatically releasing, or an asset purge is being retried. AI being enabled alone uses the ordinary interval. |
+| Debloat | 15 seconds | None. App activation forces a quiet invalidating read when this module is visible, so profile approvals are recognized without folding the page. |
+
+When a window becomes visible again, watched modules whose last UI refresh is at least two seconds old are read again. App activation otherwise catches up visible modules whose last UI refresh is at least 60 seconds old. The ordinary age refers to the last host refresh; each module independently owns the age of its measured snapshot.
+
+The optional Siri watch runs every 900 seconds and is disabled by default. The Debloat watch also runs every 900 seconds and is enabled by default. Their schedules are independent of presentation polling. System Data, Other System Files and Siri participate in separately configured automatic cleanup.
+
+## Module contract version 4
+
+- `tile(context:progress:)` reads the dashboard presentation and reports real scan progress. All four shipped modules implement it and share the scan with concurrent page requests.
+- `screen(context:progress:)` reads a page and reports scan progress. Cached presentations stay quiet.
+- `status(context:)` optionally returns a lightweight `(tile, screen)` presentation based on already measured data and current counters. It must not enumerate files or query services. Returning nil asks for an ordinary read. The host checks this entry point on automatic reads and bypasses it for explicit invalidation.
+- `Tile.refreshAfter` requests the next automatic update sooner. Other System Files implements `status` for background removal. Other modules currently return nil and use their ordinary measurement/cache path.
+- `invalidate()` drops measured data; it does not publish UI by itself. `ActionResult.refresh` requests a presentation refresh after an action.
+- The host owns visibility, timers and whether loading is explicit or automatic. Modules supply measurements, counters and their progress; no new UI elements were introduced.
+
+The SDK and all four bundled manifests are version 4. A version-3 module is rejected by the existing compatibility check instead of being loaded against the changed protocol.
+
+## Legend animation
+
+The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label owns its existing numeric-text animation. Page navigation transitions remain unchanged.
+
+## Verification and references
+
+`results/refresh-policy-20261017/all-tests.txt` and `app-final-tests.txt`: 458 tests covered, 454 passed, four optional tests skipped. The final AppTests run includes the pending-timer regression added after the all-target run. Regression cases cover quiet/manual loading, automatic invalidation, stale-read retirement, lightweight status, retained selections, tile-only dashboard reads, visibility across canvases, removal completion and Siri polling conditions. Visual confirmation of the legend and interactions is performed by the user.
+
+Main sources: `App/Registry/ModuleHandle.swift`, `App/Registry/ModuleHost.swift`, `App/Shell/MainView.swift`, `App/Renderer/ScreenView.swift`, `Sdk/Contract/Module.swift`, `Sdk/Interface/Tile.swift`, and each module's snapshot store/screen builder.

@@ -260,7 +260,7 @@ final class AppCacheTests: XCTestCase {
         XCTAssertNotNil(selection.choices["appcache:open"], "its app is open: chosen, it is freed once MacSpace may quit the app")
         XCTAssertEqual(selection.noteNames.keys.sorted(), ["appcache:open"], "its app is named in the confirmation, which quits it")
         XCTAssertEqual(selection.note, "Quits %@.")
-        XCTAssertEqual(selection.action.workingTitle, "Freeing space…")
+        XCTAssertEqual(selection.action.workingTitle, "Freeing space")
         XCTAssertEqual(selection.action.id, "freeCaches")
         XCTAssertNotNil(selection.save)
         let gone = try XCTUnwrap(row.children.first { $0.id == "appcache:gone" })

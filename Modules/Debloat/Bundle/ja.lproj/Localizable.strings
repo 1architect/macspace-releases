@@ -41,14 +41,14 @@
 "Disable %lld features?" = "%lld個の機能を無効にしますか？";
 "Disable all" = "すべて無効にする";
 "Disabled" = "無効";
+"Disabling" = "無効にしています";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "無効にすると「システム設定 > 一般 > デバイス管理」でプロファイルの承認を求められます。";
-"Disabling…" = "無効にしています…";
 "Each one can be enabled again." = "どの機能も再び有効にできます。";
 "Enable" = "有効にする";
 "Enable all" = "すべて有効にする";
 "Enable all %lld features again?" = "%lld個すべての機能を再び有効にしますか？";
 "Enabled" = "有効";
-"Enabling…" = "有効にしています…";
+"Enabling" = "有効にしています";
 "Experiments" = "実験";
 "Finish" = "完了";
 "Game Center" = "Game Center";

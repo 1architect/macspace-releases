@@ -21,7 +21,8 @@ final class ZoomMathTests: XCTestCase {
 }
 
 final class BentoTests: XCTestCase {
-    func testLoadingStatusAddsScanProgressAfterAnEllipsis() {
+    func testLoadingStatusAddsScanProgressWithoutEllipsis() {
+        XCTAssertFalse(TileInfo.loadingStatus.contains("…"))
         XCTAssertEqual(TileInfo.loadingStatus(nil), TileInfo.loadingStatus)
         XCTAssertEqual(TileInfo.loadingStatus(0), TileInfo.loadingStatus + " 0%")
         XCTAssertEqual(TileInfo.loadingStatus(0.4), TileInfo.loadingStatus + " 40%")
@@ -31,9 +32,9 @@ final class BentoTests: XCTestCase {
         XCTAssertEqual(TileInfo.loadingStatus(.nan), TileInfo.loadingStatus)
     }
 
-    func testCleaningStatusAddsProgressAfterAnEllipsis() {
-        let progress = ActionProgress(fraction: 0.4, message: "Freeing space…")
-        XCTAssertEqual(TileInfo.cleaningStatus(progress), "freeing space… 40%")
+    func testCleaningStatusAddsProgressWithoutEllipsis() {
+        let progress = ActionProgress(fraction: 0.4, message: "Freeing space")
+        XCTAssertEqual(TileInfo.cleaningStatus(progress), "freeing space 40%")
     }
 
     func testTheSketchedDashboardPacksIntoTwoFullRowsOfThree() {

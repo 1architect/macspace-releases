@@ -25,8 +25,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
-    /// The module is reading the Mac again (Refresh, or after an action): the tile's and the page's charts pulse as while loading.
+    /// Actual scan work: the tile and loading pill report progress. Only `isReloading` hides the page's existing details.
     @Published public private(set) var isRefreshing = false
+    /// Initial/explicit loading hides page details. Automatic scans keep existing content interactive and report progress only.
+    @Published public private(set) var isReloading = false
     /// The module is being read, as the user sees it (`isRefreshing`): since when, and how long it took last time. The page's button
     /// fills over that time (`LoadFill`), as it fills while an action runs.
     @Published public private(set) var loading: LoadFill?
@@ -135,6 +137,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var module: (any MacSpaceModule)?
     /// Refreshes under way, and whether an action is running: both make the module busy.
     private var refreshes: Set<Int> = []
+    private var blockingRefreshes: Set<Int> = []
     private var refreshRequests: Set<Int> = []
     private var loadingGeneration: Int?
     private var performing = false
@@ -187,7 +190,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
         }
         state = .ready
-        await refresh()
+        if isWatched { await refresh() }
     }
 
     /// Drops the module's UI state. The loaded code stays in memory (bundles cannot be unloaded safely); it is simply not called.
@@ -204,41 +207,56 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
-    /// `quiet` suppresses presentation-only cache reads. If the module reports real scan work, that work shows progress normally.
+    /// `quiet` preserves existing content during automatic work. Status/cache reads stay silent; real scans report progress.
     public func refresh(reload: Bool = false, quiet: Bool = false) async {
         guard !preparingForUninstall, state == .ready, let module else { return }
+        guard !quiet || !performing else { return }
+        // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
+        autoRefresh?.cancel()
+        autoRefresh = nil
         let context = context()
         refreshGeneration += 1
+        clearRefreshPresentation()
         let generation = refreshGeneration
         let started = Date()
         let expected = settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess
         refreshRequests.insert(generation)
-        if !quiet { showRefresh(generation, started: started, expected: expected) }
+        let blocking = !quiet || (screen == nil && screenIsVisible)
+        if !quiet || blocking { showRefresh(generation, started: started, expected: expected, blocking: blocking) }
         defer {
             refreshRequests.remove(generation)
+            blockingRefreshes.remove(generation)
             if refreshes.remove(generation) != nil {
                 if refreshes.isEmpty { loading = nil; loadingGeneration = nil }
                 updateBusy()
             }
         }
         if reload { await module.invalidate() }
-        async let nextTile = module.tile(context: context)
-        // What the module says of its progress fills the Loading… button (`LoadFill.reported`).
+        // What the module says of its progress fills the Loading button (`LoadFill.reported`).
         let reports: LoadProgressSink = { [weak self] fraction in
             Task { @MainActor in
                 guard let self, fraction.isFinite, generation == self.refreshGeneration,
                       self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
                 if !self.refreshes.contains(generation) {
                     guard self.isWatched else { return }
-                    self.showRefresh(generation, started: started, expected: expected)
+                    self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
                 }
                 let fraction = min(max(fraction, 0), 1)
                 guard fraction > self.loading?.reported ?? -1 else { return }
                 self.loading?.reported = fraction
             }
         }
-        async let nextScreen = module.screen(context: context, progress: reports)
-        let (newTile, newScreen) = await (nextTile, nextScreen)
+        let newTile: Tile
+        let newScreen: Screen?
+        let readsScreen = !quiet || screenIsVisible
+        if quiet, !reload, let status = await module.status(context: context) {
+            newTile = status.tile
+            newScreen = readsScreen ? status.screen : nil
+        } else {
+            async let nextTile = module.tile(context: context, progress: reports)
+            async let nextScreen: Screen? = readsScreen ? module.screen(context: context, progress: reports) : nil
+            (newTile, newScreen) = await (nextTile, nextScreen)
+        }
         guard generation == refreshGeneration, state == .ready else { return }
         if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = Date()
@@ -249,12 +267,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             settings.setLastTile(newTile, module: id)
         }
         if tileIsStale { tileIsStale = false }
-        if screen != newScreen { screen = newScreen }
+        if let newScreen, screen != newScreen { screen = newScreen }
         scheduleAutoRefresh()
     }
 
-    private func showRefresh(_ generation: Int, started: Date, expected: TimeInterval) {
+    private func showRefresh(_ generation: Int, started: Date, expected: TimeInterval, blocking: Bool) {
         refreshes.insert(generation)
+        if blocking { blockingRefreshes.insert(generation) }
         if loadingGeneration != generation {
             loading = LoadFill(started: started, expected: expected)
             loadingGeneration = generation
@@ -263,8 +282,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private func updateBusy() {
-        isBusy = performing || !refreshes.isEmpty
-        isRefreshing = !refreshes.isEmpty
+        let busy = performing || !blockingRefreshes.isEmpty
+        if isBusy != busy { isBusy = busy }
+        let refreshing = !refreshes.isEmpty
+        if isRefreshing != refreshing { isRefreshing = refreshing }
+        let reloading = !blockingRefreshes.isEmpty
+        if isReloading != reloading { isReloading = reloading }
+    }
+
+    /// A newer read or action supersedes old reads immediately; their late completion must not keep the widget loading.
+    private func clearRefreshPresentation() {
+        refreshes.removeAll()
+        blockingRefreshes.removeAll()
+        if loading != nil { loading = nil }
+        loadingGeneration = nil
+        updateBusy()
     }
 
     /// Runs an action. Missing permissions stop it before the module is called. Returns what the module answered (nil when it was not
@@ -296,7 +328,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// MacSpace at a few percent of CPU in the background. Coming back to MacSpace reads again the modules whose figures are older
     /// than a minute (`appBecameActive`).
     static let backgroundRefreshInterval: TimeInterval = 600
-    static let fastestAutoRefresh: TimeInterval = 3
+    static let fastestAutoRefresh: TimeInterval = 2
     /// Whether MacSpace is the app in front; injectable for tests.
     static var isAppActive: @MainActor () -> Bool = { NSApp?.isActive ?? true }
     private var autoRefresh: Task<Void, Never>?
@@ -305,18 +337,23 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// itself: with the window closed, those readings (a full scan of the disk for System Data, every two minutes) were what kept
     /// MacSpace at 30% CPU in the background.
     public private(set) var isWatched = true
+    public private(set) var screenIsVisible = true
 
     /// Called by the host when the last window goes away or the first one comes back. Back in view, the module is read again at
     /// once if its figures are old, which also starts the periodic readings again.
-    public func setWatched(_ watched: Bool) {
-        guard watched != isWatched else { return }
+    public func setWatched(_ watched: Bool, screenVisible: Bool = true) {
+        let openedPage = watched && screenVisible && !screenIsVisible
+        guard watched != isWatched || screenVisible != screenIsVisible else { return }
         isWatched = watched
+        screenIsVisible = screenVisible
         if !watched {
             autoRefresh?.cancel()
             autoRefresh = nil
         } else if state == .ready {
             let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
-            if age >= Self.fastestAutoRefresh { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
+            if openedPage || age >= Self.fastestAutoRefresh {
+                Task { if isWatched { await refresh(quiet: true) } }
+            } else { scheduleAutoRefresh() }
         }
     }
 
@@ -324,7 +361,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     func appBecameActive() {
         guard state == .ready, isWatched else { return }
         let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
-        if age >= Self.autoRefreshInterval, !performing { Task { await refresh(quiet: true) } } else { scheduleAutoRefresh() }
+        if age >= Self.autoRefreshInterval, !performing {
+            Task { if isWatched { await refresh(quiet: true) } }
+        } else { scheduleAutoRefresh() }
     }
 
     /// Schedules the next quiet reading after the one that just finished.
@@ -337,6 +376,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         autoRefresh = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, self.state == .ready, self.isWatched else { return }
+            // This timer has fired. The read may cancel a pending timer, without canceling its own task.
+            self.autoRefresh = nil
             // Not while an action runs: it reads the module again itself when it ends.
             if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true) }
         }
@@ -353,6 +394,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             lastResult = result
             return result
         }
+        refreshGeneration += 1
+        clearRefreshPresentation()
         performing = true
         let started = Date()
         if !quiet {
@@ -411,7 +454,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     /// Disabled modules may still own settings from an earlier session.
     func prepareForUninstall() async -> ActionResult {
-        guard !isBusy else { return .failed(String(localized: "Working…")) }
+        guard !isBusy else { return .failed(String(localized: "Working")) }
         do {
             if module == nil { module = try loader(descriptor) }
             guard let module else { return .failed(manifest.name) }
@@ -446,7 +489,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if let report {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: report.freedBytes, trigger: .automatic, summary: report.summary)
         }
-        await refresh(quiet: true)
+        if isWatched { await refresh(quiet: true) }
         return report
     }
 
@@ -454,7 +497,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard !preparingForUninstall, state == .ready, let module else { return }
         await module.runBackgroundTask(taskID, context: context())
         // A task may have changed something (the Debloat watch switching a feature off again): the tile and page show it.
-        await refresh(quiet: true)
+        if isWatched { await refresh(quiet: true) }
     }
 }
 

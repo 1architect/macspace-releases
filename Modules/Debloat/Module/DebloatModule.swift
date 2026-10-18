@@ -54,20 +54,35 @@ public struct DebloatModule: MacSpaceModule {
         DebloatScreenBuilder.tile(await snapshot(context))
     }
 
+    public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
+        DebloatScreenBuilder.tile(await snapshot(context, progress: progress))
+    }
+
     public func screen(context: ModuleContext) async -> Screen {
         DebloatScreenBuilder.screen(await snapshot(context))
+    }
+
+    public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
+        DebloatScreenBuilder.screen(await snapshot(context, progress: progress))
     }
 
     /// The snapshot, after the helper removed the profiles of earlier versions once the one profile holds everything they did: no
     /// approval, and nothing switched off comes back on. Tried once per set, so a failure does not repeat on every read. Retired
     /// controls that do harm are switched back on first (`undoRetired`).
-    private func snapshot(_ context: ModuleContext) async -> DebloatSnapshot {
-        var snapshot = await store.snapshot()
-        if await undoRetired(snapshot, context: context) { snapshot = await store.snapshot() }
+    private func snapshot(_ context: ModuleContext, progress: LoadProgressSink? = nil) async -> DebloatSnapshot {
+        let relay = LoadProgressRelay()
+        if let progress { relay.attach(progress) }
+        // A cached presentation stays quiet. A scan leaves room for repairs and the verification scan they may require.
+        defer { if relay.fraction != nil { relay.report(1) } }
+        var snapshot = await store.snapshot(progress: progress == nil ? nil : relay.part(0...0.8))
+        if await undoRetired(snapshot, context: context) {
+            snapshot = await store.snapshot(progress: progress == nil ? nil : relay.part(0.8...0.9))
+        }
         guard case let .cleanUp(identifiers) = snapshot.profileWork, context.privileged != nil, await store.firstCleanUp(identifiers) else { return snapshot }
+        if progress != nil { relay.report(0.9) }
         _ = await Self.removeProfiles(identifiers, context: context)
         await store.invalidate()
-        return await store.snapshot()
+        return await store.snapshot(progress: progress == nil ? nil : relay.part(0.9...1))
     }
 
     /// A retired control that does harm (Generative search indexing stops Mail search; the Apple Intelligence features policy makes
@@ -156,7 +171,7 @@ public struct DebloatModule: MacSpaceModule {
     static func change(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed(loc("No controls were selected.")) }
-        progress(ActionProgress(message: action == .apply ? loc("Disabling…") : loc("Enabling…")))
+        progress(ActionProgress(message: action == .apply ? loc("Disabling") : loc("Enabling")))
         let engine = DebloatStore.liveEngine()
         let coordinator = DebloatCoordinator(engine: engine, channel: context.privileged)
         do {

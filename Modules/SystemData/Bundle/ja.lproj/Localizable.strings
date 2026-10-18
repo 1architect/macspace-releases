@@ -98,7 +98,7 @@
 "Free the system log?" = "システムログを解放しますか？";
 "Free up to %@ of unused system assets?" = "未使用のシステムアセットを最大%@解放しますか？";
 "Freeing in the background" = "バックグラウンドで解放中";
-"Freeing space…" = "空き容量を増やしています…";
+"Freeing space" = "空き容量を増やしています";
 "Frees about %@. Homebrew downloads them again when it needs them." = "約%@を解放します。必要に応じてHomebrewが再ダウンロードします。";
 "From a deleted account. Copy what you need, then delete it." = "削除済みアカウントのファイルです。必要なものをコピーしてから削除してください。";
 "From an update that's already installed." = "インストール済み更新のファイルです。";

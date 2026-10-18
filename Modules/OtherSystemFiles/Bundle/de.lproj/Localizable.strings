@@ -37,7 +37,7 @@
 "Free up to %@ of purgeable app files?" = "Bis zu %@ an löschbaren App-Dateien freigeben?";
 "Freed %@ on %@" = "%@ auf %@ freigegeben";
 "Freeing in the background" = "Wird im Hintergrund freigegeben";
-"Freeing space…" = "Speicher wird freigegeben …";
+"Freeing space" = "Speicher wird freigegeben";
 "Install the helper in Settings" = "Installiere den Helfer in den Einstellungen";
 "Installs at the next restart" = "Wird beim nächsten Neustart installiert";
 "Latest" = "Neuestes";
@@ -51,8 +51,8 @@
 "Purgeable app files" = "Löschbare App-Dateien";
 "Purgeable documents" = "Löschbare Dokumente";
 "Quick Look thumbnails" = "Übersicht-Miniaturen";
+"Removing %lld%%, %@" = "Wird entfernt %lld %%, %@";
 "Removing downloads" = "Downloads werden entfernt";
-"Removing · %lld%%, %@" = "Wird entfernt · %lld %%, %@";
 "Spotlight index" = "Spotlight-Index";
 "System assets" = "Systemressourcen";
 "That cloud folder is no longer on this Mac" = "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac";
@@ -71,5 +71,5 @@
 "nothing to free" = "nichts freizugeben";
 "other system files" = "andere Systemdateien";
 "other system files %@" = "andere Systemdateien %@";
-"removing downloads · %lld%%" = "Downloads werden entfernt · %lld %%";
+"removing downloads %lld%%" = "Downloads werden entfernt %lld %%";
 "unavailable" = "nicht verfügbar";

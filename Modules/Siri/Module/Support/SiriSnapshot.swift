@@ -1,6 +1,7 @@
 import Foundation
 import MacSpacePlatform
 import MacSpaceSiriPrivileged
+import MacSpaceSdk
 
 /// What the Siri & Apple Intelligence screens are built from.
 struct SiriSnapshot: Sendable {
@@ -41,10 +42,11 @@ struct SiriPlanFailure: Error, Sendable, Equatable {
 }
 
 actor SiriStore {
-    typealias Builder = @Sendable () -> SiriSnapshot
+    typealias Builder = @Sendable (LoadProgressRelay) -> SiriSnapshot
 
     private var cached: SiriSnapshot?
     private var inflight: Task<SiriSnapshot, Never>?
+    private var relay: LoadProgressRelay?
     private let builder: Builder
     /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
     /// came back with the figures from before the action.
@@ -54,39 +56,49 @@ actor SiriStore {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 4, now: Date = Date()) async -> SiriSnapshot {
+    func snapshot(maxAge: TimeInterval = 4, now: Date = Date(), progress: LoadProgressSink? = nil) async -> SiriSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.
         if let inflight {
+            if let progress { relay?.attach(progress) }
             let waitedFor = generation
             let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge)
+            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, progress: progress)
         }
         let builder = self.builder
-        let task = Task.detached(priority: .utility) { builder() }
+        let relay = LoadProgressRelay()
+        if let progress { relay.attach(progress) }
+        relay.report(0)
+        let task = Task.detached(priority: .utility) {
+            defer { relay.report(1) }
+            return builder(relay)
+        }
         let started = generation
         inflight = task
+        self.relay = relay
         let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge) }
+        guard started == generation else { return await snapshot(maxAge: maxAge, progress: progress) }
         cached = fresh
         inflight = nil
+        self.relay = nil
         return fresh
     }
 
     func invalidate() {
         cached = nil
         inflight = nil
+        relay = nil
         generation += 1
     }
 
-    static func liveSnapshot() -> SiriSnapshot {
-        var snapshot = liveSnapshotOnThisMac()
+    static func liveSnapshot(progress: LoadProgressRelay) -> SiriSnapshot {
+        var snapshot = liveSnapshotOnThisMac(progress: progress)
         snapshot.isVirtualMachine = Machine.isVirtualMachine
         return snapshot
     }
 
-    private static func liveSnapshotOnThisMac() -> SiriSnapshot {
+    private static func liveSnapshotOnThisMac(progress: LoadProgressRelay) -> SiriSnapshot {
         let guardian = AppleIntelligenceLanguageGuard()
         let environment = LiveSiriLanguageEnvironment()
         let status = guardian.status()
@@ -96,11 +108,14 @@ actor SiriStore {
         } catch {
             plan = .failure(SiriPlanFailure(message: "\(error)"))
         }
+        progress.report(0.15)
         let accounts = AppleIntelligenceAccountsReport.live()
+        progress.report(0.3)
         let cli = ToolLocator.cli()
         var purgeable: UInt64?
         if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
         else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+        progress.report(0.65)
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`). Not offered at all while Apple Intelligence
         // is on: MacSpace leaves the system assets alone then (`SystemAssetGuard`).
         purgeable = SystemAssetGuard.holdsAssets ? nil : purgeable.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -109,6 +124,7 @@ actor SiriStore {
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
         let models = modelBytes()
+        progress.report(0.9)
         snapshot.recordedModelBytes = models.installed
         snapshot.installedModelBytes = models.installed
         snapshot.downloadingModelBytes = models.downloading

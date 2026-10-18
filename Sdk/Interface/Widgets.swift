@@ -52,9 +52,9 @@ public struct Action: Codable, Equatable, Sendable {
     public var parameters: [String: String]
     public var confirmation: Confirmation?
     public var requires: [Permission]
-    /// What the button says while the action runs, and nothing else: "Freeing space…" for every action that frees space.
+    /// What the button says while the action runs, and nothing else: "Freeing space" for every action that frees space.
     /// The button fills from the left as the action advances (`ActionProgress.fraction`); the module's progress messages are not
-    /// shown. nil: "Working…".
+    /// shown. nil: "Working".
     public var workingTitle: String?
 
     public init(id: String, title: String, symbol: String? = nil, role: ActionRole = .normal, parameters: [String: String] = [:],
@@ -78,7 +78,7 @@ public struct Screen: Codable, Equatable, Sendable {
     /// The big bar at the top of the page, drawn without a card.
     public var hero: UsageBar?
     /// The page's one main action, pinned at the bottom (the "Free" pill). Every other action sits next to what it acts on. Whether
-    /// or not a page has one, the pill is there while the module reads the Mac, saying Loading… and breathing as it fills, and the
+    /// or not a page has one, the pill is there while the module reads the Mac, saying Loading and breathing as it fills, and the
     /// page shows nothing else meanwhile but its ground breathing: no placeholder rows. While an action runs it says only the
     /// action's `workingTitle` (`ActionProgress`).
     public var primary: Action?
@@ -325,7 +325,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 /// with the checked ids, one per line, in the parameter `ids` (ids can hold commas, a folder's name for one). While the boxes are
 /// exactly `suggested`, the button is titled `suggestedTitle` instead ("Free recommended 1.2 GB").
 ///
-/// With `sections`, the page lists the rows in those parts, in that order, each under its title ("Recommended · 3 items · 1.2 GB")
+/// With `sections`, the page lists the rows in those parts, in that order, each under its title ("Recommended 3 items 1.2 GB")
 /// and, when it has rows to choose, a box that checks or clears them all. With `save`, every change is sent to the module at once (`save` with the
 /// parameters `ids`, the checked rows, and `all`, the sections whose header box is on, one per line), so the module can keep the
 /// choice: it then decides what its other buttons and automatic cleaning free, and sends it back in `checked` and `SelectionSection.all`.

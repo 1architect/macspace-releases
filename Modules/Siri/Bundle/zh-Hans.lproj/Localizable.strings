@@ -31,7 +31,7 @@
 "Free" = "释放";
 "Free up to %@" = "最多释放 %@";
 "Free up to %@?" = "最多释放 %@？";
-"Freeing space…" = "正在释放空间…";
+"Freeing space" = "正在释放空间";
 "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri." = "开启后，MacSpace 对 Apple 智能的操作会影响所有设备。如需更改，请打开“系统设置”，在边栏顶部选择 Apple 账户，然后在“已存储到 iCloud”下点按“查看全部”并关闭 Siri。";
 "Its models are gone." = "模型已移除。";
 "Keeps the models" = "保留模型";

@@ -593,23 +593,14 @@
   "読み込み中",
   "로드 중"
  ],
- "loading…": [
-  "carregando…",
-  "chargement…",
-  "cargando…",
-  "wird geladen …",
-  "正在加载…",
-  "読み込み中…",
-  "로드 중…"
- ],
- "Loading…": [
-  "Carregando…",
-  "Chargement…",
-  "Cargando…",
-  "Wird geladen …",
-  "正在加载…",
-  "読み込み中…",
-  "로드 중…"
+ "loading": [
+  "carregando",
+  "chargement",
+  "cargando",
+  "wird geladen",
+  "正在加载",
+  "読み込み中",
+  "로드 중"
  ],
  "MacSpace": [
   "MacSpace",
@@ -989,14 +980,14 @@
   "ヘルパーを修復",
   "보조 프로그램 복구"
  ],
- "Repairing…": [
-  "Reparando…",
-  "Réparation…",
-  "Reparando…",
-  "Wird repariert …",
-  "正在修复…",
-  "修復中…",
-  "복구 중…"
+ "Repairing": [
+  "Reparando",
+  "Réparation",
+  "Reparando",
+  "Wird repariert",
+  "正在修复",
+  "修復中",
+  "복구 중"
  ],
  "Restart to finish": [
   "Reinicie para concluir",
@@ -1196,14 +1187,14 @@
   "ウインドウを閉じたとき",
   "윈도우를 닫을 때"
  ],
- "Working…": [
-  "Trabalhando…",
-  "En cours…",
-  "Trabajando…",
-  "Wird ausgeführt …",
-  "正在处理…",
-  "処理中…",
-  "작업 중…"
+ "Working": [
+  "Trabalhando",
+  "En cours",
+  "Trabajando",
+  "Wird ausgeführt",
+  "正在处理",
+  "処理中",
+  "작업 중"
  ],
  "You can free up to %@ right now.": [
   "Você pode liberar até %@ agora.",
@@ -1322,14 +1313,14 @@
   "%@中",
   "%@ 중"
  ],
- "reading…": [
-  "lendo…",
-  "lecture…",
-  "leyendo…",
-  "wird gelesen …",
-  "正在读取…",
-  "読み取り中…",
-  "읽는 중…"
+ "reading": [
+  "lendo",
+  "lecture",
+  "leyendo",
+  "wird gelesen",
+  "正在读取",
+  "読み取り中",
+  "읽는 중"
  ],
  "settings": [
   "ajustes",
@@ -1349,14 +1340,14 @@
   "元に戻された項目",
   "되돌려짐"
  ],
- "working…": [
-  "trabalhando…",
-  "en cours…",
-  "trabajando…",
-  "wird ausgeführt …",
-  "正在处理…",
-  "処理中…",
-  "작업 중…"
+ "working": [
+  "trabalhando",
+  "en cours",
+  "trabajando",
+  "wird ausgeführt",
+  "正在处理",
+  "処理中",
+  "작업 중"
  ],
  "Kept while Apple Intelligence is on": [
   "Mantido enquanto a Apple Intelligence estiver ativa",
@@ -1394,14 +1385,14 @@
   "このアプリについて",
   "정보"
  ],
- "Restoring settings…": [
-  "Restaurando ajustes…",
-  "Restauration des réglages…",
-  "Restaurando ajustes…",
-  "Einstellungen wiederherstellen…",
-  "正在还原设置…",
-  "設定を復元中…",
-  "설정 복원 중…"
+ "Restoring settings": [
+  "Restaurando ajustes",
+  "Restauration des réglages",
+  "Restaurando ajustes",
+  "Einstellungen wiederherstellen",
+  "正在还原设置",
+  "設定を復元中",
+  "설정 복원 중"
  ],
  "Uninstall MacSpace…": [
   "Desinstalar o MacSpace…",

@@ -50,7 +50,7 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(Selection.ids(nil), [])
         // A choosing page can name its checked rows in the confirmation, and an action say what its button shows while it runs.
         group.selection?.action.confirmation = Confirmation(title: "T", confirmTitle: "Free")
-        group.selection?.action.workingTitle = "Freeing space…"
+        group.selection?.action.workingTitle = "Freeing space"
         group.selection?.noteNames = ["c": "C"]
         group.selection?.note = "Quits %@."
         XCTAssertEqual(try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(group)), group)
@@ -69,6 +69,22 @@ final class SdkTests: XCTestCase {
     }
 
     /// A reading's progress reaches every caller, a late one at the fraction reached so far, never backwards, in steps of a percent.
+    func testParallelLoadProgressWaitsForEveryPartAndIncludesLateWork() {
+        let relay = LoadProgressRelay()
+        let parts = relay.parallelParts(weights: [1, 3])
+        parts[0](1)
+        XCTAssertEqual(relay.fraction, 0.25)
+        parts[1](0.5)
+        XCTAssertEqual(relay.fraction, 0.625)
+        parts[1](0.1)
+        XCTAssertEqual(relay.fraction, 0.625, "a delayed report cannot reduce the combined progress")
+        parts[1](1)
+        XCTAssertEqual(relay.fraction, 1)
+        let mixed = LoadProgressRelay()
+        mixed.parallelParts(weights: [0.2, 0.65, 0.05, 0.1]).forEach { $0(1) }
+        XCTAssertEqual(mixed.fraction, 1, "completed work ends at exactly one despite floating-point weight sums")
+    }
+
     func testLoadProgressRelay() {
         final class Heard: @unchecked Sendable { var values: [Double] = []; let lock = NSLock(); func add(_ v: Double) { lock.withLock { values.append(v) } } }
         let relay = LoadProgressRelay()

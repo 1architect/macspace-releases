@@ -169,7 +169,9 @@ public struct CacheDeleteClient {
     static func rawQuery(volume: String, urgency: Int, services: [String]? = nil) -> [String: Any]? {
         typealias Copy = @convention(c) (CFDictionary) -> Unmanaged<CFTypeRef>?
         guard let symbol = symbol(querySymbol) else { return nil }
-        var info: [String: Any] = ["CACHE_DELETE_VOLUME": volume, "CACHE_DELETE_URGENCY_LIMIT": urgency]
+        // The daemon's result cache can remain unchanged after gigabytes of cloud files become purgeable. The modules already
+        // cache their snapshots; each actual measurement must ask the services for a fresh reading.
+        var info: [String: Any] = ["CACHE_DELETE_VOLUME": volume, "CACHE_DELETE_URGENCY_LIMIT": urgency, "CACHE_DELETE_NO_CACHE": true]
         if let services { info["CACHE_DELETE_SERVICES"] = services }
         return unsafeBitCast(symbol, to: Copy.self)(info as CFDictionary)?.takeRetainedValue() as? [String: Any]
     }

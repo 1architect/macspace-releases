@@ -98,7 +98,7 @@
 "Free the system log?" = "Liberar o registro do sistema?";
 "Free up to %@ of unused system assets?" = "Liberar até %@ de recursos do sistema sem uso?";
 "Freeing in the background" = "Liberando em segundo plano";
-"Freeing space…" = "Liberando espaço…";
+"Freeing space" = "Liberando espaço";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libera cerca de %@. O Homebrew os baixa de novo quando precisar.";
 "From a deleted account. Copy what you need, then delete it." = "De uma conta apagada. Copie o que precisar e apague-a.";
 "From an update that's already installed." = "De uma atualização já instalada.";

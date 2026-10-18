@@ -38,6 +38,100 @@ final class SettingsStorageTests: XCTestCase {
         XCTAssertFalse(SettingsStorageMeter.isDocuments("/Users/me/Library", home: "/Users/me"))
         XCTAssertFalse(SettingsStorageMeter.isDocuments("/opt/homebrew", home: "/Users/me"))
     }
+
+    func testDocumentsExcludesUnindexedAppsButKeepsOrdinaryFilesAndOtherCategorySizing() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let app = try makeApp(root.appendingPathComponent(".cache/Unindexed.app"))
+        let document = root.appendingPathComponent("document.bin")
+        let namedLikeApp = root.appendingPathComponent("notes.txt")
+        let applicationFile = root.appendingPathComponent("file.app")
+        try Data(repeating: 1, count: 4_000_000).write(to: document)
+        try Data(repeating: 2, count: 1_000_000).write(to: namedLikeApp)
+        try Data(repeating: 3, count: 1_000_000).write(to: applicationFile)
+        XCTAssertEqual(try app.resourceValues(forKeys: [.isApplicationKey]).isApplication, true)
+        XCTAssertNotEqual(try namedLikeApp.resourceValues(forKeys: [.isApplicationKey]).isApplication, true)
+        let documents = AllocatedSize.allocatedBytes(document.path, excluding: []) + AllocatedSize.allocatedBytes(namedLikeApp.path, excluding: [])
+        let appBytes = AllocatedSize.allocatedBytes(app.path, excluding: []) + AllocatedSize.allocatedBytes(applicationFile.path, excluding: [])
+        XCTAssertGreaterThan(appBytes, 0)
+        XCTAssertEqual(AllocatedSize.allocatedBytes(root.path, excluding: [], excludingApplications: true), documents)
+        XCTAssertEqual(AllocatedSize.allocatedBytes(root.path, excluding: []), documents + appBytes,
+                       "Other categories must retain their existing bundle sizing")
+        XCTAssertEqual(AllocatedSize.allocatedBytes([
+            AllocatedSize.Job(path: root.path), AllocatedSize.Job(path: root.path, excludingApplications: true)
+        ], workers: 2), [documents + appBytes, documents])
+    }
+
+    func testApplicationsUsesAppleScopesAndRejectsNestedAppsWithUnindexedParents() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("Users/me")
+        var meter = SettingsStorageMeter(home: home)
+        meter.root = root.path
+        let installed = try makeApp(root.appendingPathComponent("Applications/Installed.app"))
+        let personal = try makeApp(home.appendingPathComponent("Developer/Personal.app"))
+        let outside = try makeApp(root.appendingPathComponent("usr/local/share/dotnet/Helper.app"))
+        let shared = try makeApp(root.appendingPathComponent("Library/Support/Helper.app"))
+        let library = try makeApp(home.appendingPathComponent("Library/Support/Helper.app"))
+        let trash = try makeApp(home.appendingPathComponent(".Trash/Deleted.app"))
+        let parent = try makeApp(home.appendingPathComponent("Developer/Unindexed.app"))
+        let nested = try makeApp(parent.appendingPathComponent("Contents/Helpers/Nested.app"))
+        let inputs = [installed, personal, outside, shared, library, trash, nested].map(\.path)
+        XCTAssertEqual(Set(meter.applicationPaths(inputs)), Set([installed.path, personal.path]))
+        let claims = meter.claimedPlaces(apps: inputs)
+        XCTAssertTrue(claims.contains(personal.path))
+        XCTAssertFalse(claims.contains(outside.path))
+        XCTAssertFalse(claims.contains(shared.path))
+        XCTAssertFalse(claims.contains(library.path))
+    }
+
+    /// Fixed used space makes the direction observable: bytes misclassified into Apps/Documents lower the System Data remainder.
+    func testCategoryCorrectionsRestoreSystemDataWithoutChangingUsedSpace() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("Users/me")
+        let installed = try makeApp(root.appendingPathComponent("Applications/Installed.app"))
+        let personal = try makeApp(home.appendingPathComponent("Developer/Indexed.app"))
+        let unindexed = try makeApp(home.appendingPathComponent(".cache/Unindexed.app"))
+        let outside = try makeApp(root.appendingPathComponent("usr/local/share/dotnet/Helper.app"))
+        let document = home.appendingPathComponent("document.bin")
+        try Data(repeating: 3, count: 4_000_000).write(to: document)
+        var meter = SettingsStorageMeter(home: home)
+        meter.root = root.path
+        meter.apps = { [installed.path, personal.path, outside.path] }
+        meter.space = { (100_000_000, 10_000_000) }
+        meter.dataDevice = { nil }
+        meter.desktopAndDocumentsInICloud = { false }
+        let reading = try XCTUnwrap(meter.measure())
+        let appBytes = [installed, personal].map { AllocatedSize.allocatedBytes($0.path, excluding: []) }.reduce(0, +)
+        let documentBytes = AllocatedSize.allocatedBytes(document.path, excluding: [])
+        XCTAssertEqual(reading.bytes("applications"), appBytes)
+        XCTAssertEqual(reading.bytes("documents"), documentBytes)
+        XCTAssertEqual(reading.used, 90_000_000)
+        XCTAssertEqual(reading.systemData, reading.used - appBytes - documentBytes)
+        let previous = SettingsStorage(capacity: reading.capacity, used: reading.used, macOS: reading.macOS, categories: [
+            .init(id: "applications", bytes: appBytes + AllocatedSize.allocatedBytes(outside.path, excluding: [])),
+            .init(id: "documents", bytes: documentBytes + AllocatedSize.allocatedBytes(unindexed.path, excluding: []))
+        ])
+        XCTAssertEqual(reading.systemData - previous.systemData,
+                       AllocatedSize.allocatedBytes(outside.path, excluding: []) + AllocatedSize.allocatedBytes(unindexed.path, excluding: []))
+    }
+
+    private func temporaryRoot() throws -> URL {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("settings-storage-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root
+    }
+
+    private func makeApp(_ url: URL) throws -> URL {
+        let contents = url.appendingPathComponent("Contents")
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        let plist: [String: Any] = ["CFBundleIdentifier": "local.macspace.sizing-test", "CFBundlePackageType": "APPL",
+                                    "CFBundleName": "SizingTest", "CFBundleExecutable": "Control"]
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: contents.appendingPathComponent("Info.plist"))
+        try Data(repeating: 7, count: 8_000_000).write(to: contents.appendingPathComponent("payload.bin"))
+        return url
+    }
 }
 
 final class CloneLedgerTests: XCTestCase {

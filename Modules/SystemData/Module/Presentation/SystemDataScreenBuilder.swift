@@ -350,7 +350,7 @@ enum SystemDataScreenBuilder {
         // The title says it all; the message only names the open apps whose chosen caches go with it, which quit (`CachesPage.quitNote`).
         let message = CachesPage.quitNote(CachesPage.chosen(snapshot)) ?? ""
         return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
+                      confirmation: Confirmation(title: loc("Free \(ByteFormat.string(total))?"), message: message, confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     // MARK: Sections
@@ -367,7 +367,7 @@ enum SystemDataScreenBuilder {
             rows.append((Row(id: "reports", title: loc("Old diagnostic and crash reports"), trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
                              detail: loc("\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days."),
                              actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
+                                title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
                              paths: paths(of: "reports:diagnostic", snapshot)), snapshot.reports.totalBytes))
         }
         if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
@@ -379,7 +379,7 @@ enum SystemDataScreenBuilder {
                              badge: badge, symbol: "square.stack.3d.down.right",
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
                              actions: snapshot.assetsRetrying || snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
+                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
                              paths: paths(of: "assets:system", snapshot)), assets))
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
@@ -409,7 +409,7 @@ enum SystemDataScreenBuilder {
                     actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free \(size) in the Trash?"),
                                                                 message: loc("Everything in the Trash is deleted for good."),
-                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))],
+                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
                     paths: [Self.trashPath]), bytes)
     }
 
@@ -431,7 +431,7 @@ enum SystemDataScreenBuilder {
                                      confirmation: Confirmation(title: loc("Free the system log?"),
                                                                 message: loc("Console's history is deleted."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space"))],
                     paths: item.paths), bytes)
     }
 
@@ -451,7 +451,7 @@ enum SystemDataScreenBuilder {
                                      confirmation: Confirmation(title: loc("Free the symbols for crash reports?"),
                                                                 message: loc("macOS builds them again the next time it reads a crash report."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))]), bytes)
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space"))]), bytes)
     }
 
     /// Where the scan found the item with this id, for the row's Show in Finder.
@@ -590,7 +590,7 @@ enum SystemDataScreenBuilder {
                       detail: loc("From an update that's already installed."),
                       actions: [Action(id: "deleteStagedUpdate", title: loc("Free"), role: .destructive,
                                        confirmation: Confirmation(title: loc("Free the leftover update files?"), confirmTitle: loc("Free")),
-                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
+                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space"))],
                       paths: item.paths)
         return .section(SectionWidget(id: "leftover-update", title: loc("Leftover update files"),
                                       widgets: [.list(ListWidget(id: "leftover-update-list", rows: [row]))]))
@@ -611,7 +611,7 @@ enum SystemDataScreenBuilder {
                                      confirmation: Confirmation(title: loc("Free stuck wallpaper downloads?"),
                                                                 message: loc("macOS downloads them again if they're needed."),
                                                                 confirmTitle: loc("Free")),
-                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
+                                     requires: [.privilegedHelper], workingTitle: loc("Freeing space"))],
                     paths: snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.flatMap(\.paths)), bytes)
     }
 
@@ -627,7 +627,7 @@ enum SystemDataScreenBuilder {
                                        confirmation: Confirmation(title: loc("Free all version history?"),
                                                                   message: loc("You won't be able to revert any document to an earlier version. Save and close your documents first."),
                                                                   confirmTitle: loc("Free")),
-                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space…"))],
+                                       requires: [.privilegedHelper], workingTitle: loc("Freeing space"))],
                       paths: item.paths), bytes)
     }
 

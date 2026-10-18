@@ -37,7 +37,7 @@
 "Free up to %@ of purgeable app files?" = "释放最多 %@ 可清除的应用文件？";
 "Freed %@ on %@" = "已释放 %@（%@）";
 "Freeing in the background" = "正在后台释放";
-"Freeing space…" = "正在释放空间…";
+"Freeing space" = "正在释放空间";
 "Install the helper in Settings" = "在设置中安装辅助程序";
 "Installs at the next restart" = "下次重新启动时安装";
 "Latest" = "最新";
@@ -51,8 +51,8 @@
 "Purgeable app files" = "可清除的应用文件";
 "Purgeable documents" = "可清除文稿";
 "Quick Look thumbnails" = "快速查看缩略图";
+"Removing %lld%%, %@" = "正在移除 %lld%%，%@";
 "Removing downloads" = "正在移除下载";
-"Removing · %lld%%, %@" = "正在移除 · %lld%%，%@";
 "Spotlight index" = "Spotlight 索引";
 "System assets" = "系统资源";
 "That cloud folder is no longer on this Mac" = "此云端文件夹已不在此 Mac 上";
@@ -71,5 +71,5 @@
 "nothing to free" = "没有可释放的内容";
 "other system files" = "其他系统文件";
 "other system files %@" = "其他系统文件 %@";
-"removing downloads · %lld%%" = "正在移除下载 · %lld%%";
+"removing downloads %lld%%" = "正在移除下载 %lld%%";
 "unavailable" = "不可用";

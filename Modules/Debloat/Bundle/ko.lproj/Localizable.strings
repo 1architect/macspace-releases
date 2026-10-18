@@ -41,14 +41,14 @@
 "Disable %lld features?" = "기능 %lld개를 끌까요?";
 "Disable all" = "모두 끄기";
 "Disabled" = "꺼짐";
+"Disabling" = "끄는 중";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "기능을 끄면 시스템 설정 > 일반 > 기기 관리에서 프로파일 승인을 요청합니다.";
-"Disabling…" = "끄는 중…";
 "Each one can be enabled again." = "각 기능은 다시 켤 수 있습니다.";
 "Enable" = "켜기";
 "Enable all" = "모두 켜기";
 "Enable all %lld features again?" = "기능 %lld개를 모두 다시 켤까요?";
 "Enabled" = "켜짐";
-"Enabling…" = "켜는 중…";
+"Enabling" = "켜는 중";
 "Experiments" = "실험 기능";
 "Finish" = "완료";
 "Game Center" = "Game Center";

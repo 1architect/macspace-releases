@@ -239,7 +239,7 @@ private struct TextRow: View {
                 Text(translation).foregroundStyle(.secondary).textSelection(.enabled)
             }
             if !text.places.isEmpty {
-                Text(text.places.joined(separator: "  ·  ")).font(.caption.monospaced()).foregroundStyle(.tertiary).lineLimit(1)
+                Text(text.places.joined(separator: " ")).font(.caption.monospaced()).foregroundStyle(.tertiary).lineLimit(1)
                     .truncationMode(.middle)
             }
             HStack {

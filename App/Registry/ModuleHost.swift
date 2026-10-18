@@ -120,8 +120,10 @@ public final class ModuleHost: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 ConfigurationProfiles.shared.refresh()
-                for handle in self.activeHandles {
-                    if handle.manifest.permissions.contains(.configurationProfile) { Task { await handle.refresh(reload: true, quiet: true) } }
+                for handle in self.activeHandles where handle.isWatched {
+                    if handle.manifest.permissions.contains(.configurationProfile) {
+                        Task { if handle.isWatched { await handle.refresh(reload: true, quiet: true) } }
+                    }
                     else { handle.appBecameActive() }
                 }
             }
@@ -130,6 +132,37 @@ public final class ModuleHost: ObservableObject {
 
     private var visibilityObservers: [NSObjectProtocol] = []
     private var watched = true
+    /// Each canvas owns its destination. Multiple windows contribute independently; a dashboard needs all tiles, a module page
+    /// needs only its module, and Settings needs no module polling. Background jobs are scheduled separately.
+    private var visibleDestinations: [UUID: Destination] = [:]
+    private var canvasWindows: [UUID: WindowBox] = [:]
+    private var hadCanvas = false
+
+    func setVisibleDestination(_ destination: Destination?, for canvas: UUID, window: WindowBox? = nil) {
+        visibleDestinations[canvas] = destination
+        canvasWindows[canvas] = destination == nil ? nil : window
+        if destination != nil { hadCanvas = true }
+        updateModuleVisibility()
+    }
+
+    private func visibility(for id: String) -> (watched: Bool, screen: Bool) {
+        guard !visibleDestinations.isEmpty else { return (watched && !hadCanvas, true) }
+        let destinations = visibleDestinations.filter { canvas, _ in
+            guard let box = canvasWindows[canvas] else { return true }
+            guard let window = box.window else { return false }
+            return window.isVisible && !window.isMiniaturized
+        }.values
+        let page = destinations.contains(.module(id))
+        let dashboard = destinations.contains(.home) || destinations.contains(.storage)
+        return (watched && (page || dashboard), page)
+    }
+
+    private func updateModuleVisibility() {
+        for handle in handles {
+            let scope = visibility(for: handle.id)
+            handle.setWatched(scope.watched, screenVisible: scope.screen)
+        }
+    }
 
     /// Modules are read again by themselves only while a window of MacSpace is on screen (`ModuleHandle.setWatched`): running in the
     /// menu bar or unseen in the background, nothing is shown, so nothing is measured. The background tasks and automatic cleanup
@@ -158,9 +191,8 @@ public final class ModuleHost: ObservableObject {
 
     private func updateWatched(closing: NSWindow?) {
         let now = !NSApp.isHidden && BackgroundPresence.hasOpenWindow(besides: closing, includingMiniaturized: false)
-        guard now != watched else { return }
         watched = now
-        for handle in handles { handle.setWatched(now) }
+        updateModuleVisibility()
     }
 
     /// Scans the modules folder and activates every enabled module.
@@ -173,7 +205,8 @@ public final class ModuleHost: ObservableObject {
         handles = found.modules.map { descriptor in
             if let known = existing[descriptor.id], known.descriptor == descriptor { return known }
             let handle = ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
-            handle.setWatched(watched)
+            let scope = visibility(for: handle.id)
+            handle.setWatched(scope.watched, screenVisible: scope.screen)
             return handle
         }
         observeStates()
@@ -199,7 +232,7 @@ public final class ModuleHost: ObservableObject {
     public func setOption(_ value: OptionValue, _ optionID: String, module id: String) {
         settings.setOption(value, optionID, module: id)
         guard let handle = handles.first(where: { $0.id == id }) else { return }
-        Task { await handle.refresh(quiet: true) }
+        if handle.isWatched { Task { await handle.refresh(quiet: true) } }
     }
 
     public func setBackgroundTask(_ enabled: Bool, _ taskID: String, module id: String) {

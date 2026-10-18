@@ -76,11 +76,18 @@ older, coarser view of the same idea; an app cannot ask it either (`SAAppSizer` 
   (`+[SPInfoDocumentsStorageUsageReporter defaultExcludedURLs]`, `operationDidFinish:`). So **anything in `~/Library` that no
   category claims is System Data**, including `~/Library/CloudStorage`, and the home folder's hidden tool folders (`.claude`,
   `.config`) are Documents. Settings' own figure is also stored in `com.apple.StorageManagement.Service` as `SPLastDocumentsSize`.
-- **Applications** is app bundles (the whole `/Applications` folder, plus apps Spotlight has indexed elsewhere), third-party
+- **Documents also skips application bundles independently of Spotlight.** Rechecked on 2026-10-17: the callback in
+  `SPInfoSizeDirectoryOperation` skips a path ending in `.app` when `NSURLIsApplicationKey` is true, whether indexed or not.
+  MacSpace's Documents sizer now applies this same check; the original difference and post-fix comparison are measured below.
+- **Applications** is app bundles, third-party
   containers and third-party group containers, Safari's container, and Apple's team-prefixed group containers
   (`PTN9T2S29T.com.apple.videoProApps`); only `group.com.apple.…` stays with macOS. Apps' support folders in
   `~/Library/Application Support` are **not** counted (Firefox: 536 MB in Settings' list is its bundle; its 2.31 GB profile is not
   in it).
+  **Scope correction (2026-10-17):** `STMApplicationSizer` sets its Spotlight search scopes to the user's home directory,
+  `/Applications/`, and `/System/Applications`, then filters user-Library apps, nested apps and several built-in identifiers.
+  MacSpace retains the global `IndexedApps.paths()` lookup but filters its results for this category. The older claim that every indexed app anywhere belongs to this
+  category was an inference, not a measured rule; system-wide helpers outside those scopes must not be added on that basis.
 - **Mail** is `~/Library/Mail`; **Messages** is `~/Library/Messages/Attachments` only; **Music** is the library's media folder;
   **Other Users** is `/Users/Shared`; **Developer** is the Command Line Tools; **Photos** is the system library.
 
@@ -105,7 +112,7 @@ After the OneDrive downloads were removed (2026-10-06, 18:00): used 188.68 = App
 Photos, Mail, Messages, Music 0.88 + Other Users 0.0014 + macOS 47.45 + System Data 32.3. MacSpace's own sum, with the prepared
 update left out, was 38.5 GB against 32.3, and the whole gap is accounted for as follows.
 
-- **Measured: apps elsewhere.** Spotlight indexes 2.16 GB of app bundles outside `/Applications` (Autodesk installers' helper
+- **Measured: apps elsewhere; classification inference superseded on 2026-10-17.** Spotlight indexes 2.16 GB of app bundles outside `/Applications` (Autodesk installers' helper
   apps, Claude Code's own `claude.app`, the .NET runtimes in `/usr/local/share/dotnet`, development builds). **Inferred:** Settings
   lists every app Spotlight has indexed under Applications, wherever it is; about 2.0 GB of them sat in folders MacSpace counted as
   System Data and are now taken off them (`SystemDataItem.appBundleBytes`).
@@ -126,6 +133,46 @@ update left out, was 38.5 GB against 32.3, and the whole gap is accounted for as
 - **Measured: why total and breakdown differ.** Nothing has to list what System Data holds, because the total is Settings'
   remainder. The page's items are only the breakdown, and what they leave out of the total is a "Not identified" block, so a rule
   that goes wrong shows as a measured amount instead of a wrong total.
+
+### Category discrepancy investigated on 2026-10-17
+
+**Measured, without UI automation.** The signed app's earlier reading subtracted 35.24 GB of Applications and 21.56 GB of
+Documents, against Settings' displayed 33.94 GB and 20.71 GB. Those are net category differences, not evidence of their cause.
+Comparing the actual Apple implementations identifies two classification errors in MacSpace:
+
+- `SPInfoSizeDirectoryOperation`'s callback excludes all real `.app` bundles. Calling that same read-only operation and
+  MacSpace's `AllocatedSize` on the same folders, with identical exclusions, gave 1,692,827,648 versus 1,258,737,664 bytes for
+  `~/.cache` (434,089,984 over in MacSpace), and 1,203,286,016 versus 875,343,872 for `~/.codex` (327,942,144 over).
+  A controlled temporary folder with a 4 MB document and an unindexed 8 MB application returned 12,009,472 bytes from MacSpace
+  and 4,001,792 from Apple, exactly excluding the 8,007,680-byte application. This proves the filter difference independently of
+  live-file changes or stale Settings readings. Clones alone explain only 301 MB of the Documents tree and are not the full cause.
+- `STMApplicationSizer.initWithDelegate:` constructs three query scopes: home, `/Applications/`, `/System/Applications`.
+  MacSpace adds globally indexed apps from outside those scopes: 768,618,496 bytes under `/usr/local/share/dotnet` and
+  822,824,960 under `/Library` in this run (Autodesk helpers and Apple helper bundles). The native category does not claim those
+  simply because Spotlight calls them applications. They belong in the remainder unless another category claims them.
+
+Both mistakes subtract bytes from the System Data remainder that Apple's corresponding categories do not subtract. The live
+examples are not a byte-for-byte reconciliation of the earlier rounded readings: files and the indexed application set changed
+between measurements. Evidence and reproducible programs are in `results/storage-discrepancy-20261017/`.
+
+**Implemented and remeasured.** Documents now applies Apple's suffix/resource-key application exclusion during its walk, including
+unindexed bundles. Application category paths and System Data's claimed paths now use the native search scopes and the verified
+home Library, trash, identifier and nested-application filters. The global indexed-app lookup is retained for other callers.
+The controlled fixture (also including a regular file named `.app`, which macOS marks as an application) now returns exactly
+4,001,792 bytes from both implementations. Twelve of thirteen real Documents subtrees match Apple's operation exactly, including
+`~/.cache` and `~/.codex`; the Documents folder itself differs by 4,096 bytes. This does not establish byte-perfect parity of the
+complete live storage reading. Regression tests hold used space constant and check that both corrections raise System Data by
+exactly the misclassified allocations. The earlier cloud-cleanup fix remains in this branch.
+
+### Other System Files loading measured on 2026-10-17
+
+The initial read-only baseline took 5.917 seconds to inspect cloud downloads, 0.992 seconds for a fresh CacheDelete query and
+0.029 seconds for the remaining update/Time Machine checks (6.938 seconds sequentially). Cloud eligibility inspection now uses
+four workers and memoizes inherited Keep Downloaded markers within the scan; eviction still checks every current marker again.
+The cloud scan then took 2.860 seconds and returned exactly the same 4,109 files and 9,467,731,968 bytes. The complete live snapshot,
+with independent service, cloud, update and Time Machine reads running together, took 2.785 seconds. These are local measurements,
+not a bound for every provider or backup disk. The fresh CacheDelete query and cloud eligibility rules are retained. Source,
+outputs and test evidence are in `results/module-loading-20261017/`.
 
 ### What fills it, and what each item is (one Mac, typical sizes)
 
@@ -274,11 +321,19 @@ Disk Access, among them the Foundation Model families (`UAF_FM_GenerativeModels`
 - **Measured and inferred, removing cloud downloads on request.** Foundation sees the provider's files as cloud items
   (`isUbiquitousItem` 1, downloading status current, `ubiquitousItemIsUploaded` 1, on one file), so the public
   `FileManager.evictUbiquitousItem(at:)`, Finder's Free Up Space, is the way to remove a local copy, for iCloud Drive and every
-  File Provider app alike. `fileproviderctl` and `brctl` have no evict command on this build. Remove Downloads takes only files APFS
-  flags purgeable (Always Keep on This Device files are not), uploaded, not uploading and without conflicts. Removing 21 GB of
+  File Provider app alike. `fileproviderctl` and `brctl` have no evict command on this build. Remove Downloads takes uploaded local
+  cloud files, not uploading and without conflicts, leaving Keep Downloaded markers (including inherited markers) alone. Removing 21 GB of
   downloads took Settings' System Data from 44.46 to 32.3 GB and used space from 203.24 to 188.81 GB. **Not yet run from the app:**
   whether every provider answers an eviction, and how fast for 8,000 files, is unknown. Purging `fspurgeable_document` would do
   it for every provider at once, unasked; not offered.
+- **Measured, stale cloud estimates and missing manual cleanup (2026-10-17).** CacheDelete's ordinary query returned exactly
+  17,342,464 bytes for `fspurgeable_document` while the same query with `CACHE_DELETE_NO_CACHE = true` returned 6,128,812,032.
+  The native APFS purge statistics also increased while the cached answer stayed fixed. Actual service measurements now bypass
+  this daemon cache; the modules still cache their snapshots. OneDrive held about 9.47 GB locally: initially 8.30 GB lacked
+  `EF_IS_PURGEABLE`, and 1.18 GB carried it. Large files in both sets were uploaded, idle, conflict-free, and File Provider reported
+  a lazy content policy with `isKeepDownloaded = 0`. Neither the pressure estimate nor the APFS flag determines whether the user
+  can explicitly evict a local copy. The scan now checks cloud upload state directly (4,109 candidates, 9,467,731,968 bytes in
+  9.44 seconds), runs independently of CacheDelete, and shows the actual candidates without scaling them to the pressure estimate.
 
 ### Caches in Application Support
 
@@ -661,6 +716,7 @@ Earlier notes that later measurements corrected, so nobody rebuilds on them.
 | Settings' macOS ≈ System volume + Preboot + `AssetsV2` (32.4 against 31.06 GB) | Every volume but Data, plus the Recovery container, plus about 3.9 GB of the Data volume (section 1). |
 | Settings' Applications ≈ `/Applications` + both `Application Support` folders | Bundles + third-party containers and group containers; support folders are not counted. |
 | Apps' support files are System Data (**inferred**) | Confirmed for `~/Library/Application Support`; the decoded rules say anything unclaimed is. |
+| Every Spotlight-indexed app anywhere belongs to Applications (**inferred**) | The Applications extension searches home, `/Applications`, and `/System/Applications`; globally indexed helpers under `/Library` and `/usr/local` are outside those scopes. Documents also excludes unindexed application bundles while walking. Rechecked 2026-10-17. |
 | MacSpace shows more than Settings (51 against 44.5 GB) because Settings over-counts Apple Intelligence (**inferred**) | Partly true while the models are installed (19.89 against 11.35 GB), but the larger gaps were the prepared update counted as System Data, CloudStorage (12 GB), apps outside `/Applications` and clones. MacSpace now computes Settings' remainder. |
 | System Data total within 0.9 GB of Settings (42.83 against 41.95) | Replaced by the remainder rule; a "Not identified" block shows what the breakdown leaves out. |
 | Command Line Tools 1.31–1.41 GB against Settings' 1.42 | The same 1.42 GB on the same build. |

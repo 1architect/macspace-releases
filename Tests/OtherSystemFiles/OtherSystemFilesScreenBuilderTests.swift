@@ -15,6 +15,89 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
 
     private func snapshot(_ services: [String: UInt64]?) -> PurgeableSnapshot { PurgeableSnapshot(services: services, takenAt: Date()) }
 
+    func testRemovalStatusSkipsExpiredScansUntilAllRemovalsFinishThenMeasuresOnce() async throws {
+        let reads = SnapshotReads()
+        let store = PurgeableStore(builder: { _ in
+            let number = reads.next()
+            return PurgeableSnapshot(services: ["measurement": UInt64(number)], takenAt: number == 1 ? .distantPast : Date())
+        })
+        _ = await store.snapshot()
+        await store.beginRemoval()
+        let progress = CloudDownloadRemovals.Progress(done: 4, total: 100, bytes: 10_000)
+        let first = await store.status(removing: ["OneDrive": progress, "iCloud": progress])
+        XCTAssertEqual(first?.removing.count, 2)
+        XCTAssertEqual(first?.services?["measurement"], 1)
+        let next = await store.status(removing: ["OneDrive": progress])
+        XCTAssertEqual(next?.removing.count, 1)
+        XCTAssertEqual(reads.total, 1, "an expired snapshot still serves status without file/provider queries")
+        let completed = await store.status(removing: [:])
+        XCTAssertNil(completed, "completion asks the host for a real measurement")
+        let fresh = await store.snapshot()
+        XCTAssertEqual(fresh.services?["measurement"], 2)
+        _ = await store.status(removing: [:])
+        _ = await store.snapshot()
+        XCTAssertEqual(reads.total, 2, "the completion transition invalidates only once")
+        await store.beginRemoval()
+        await store.invalidate()
+        let afterManualInvalidation = await store.status(removing: ["OneDrive": progress])
+        XCTAssertNil(afterManualInvalidation, "explicit refresh can force a new scan during a removal")
+    }
+
+    func testStoreSharesProgressWithPageJoiningTileAndKeepsCachedReadsQuiet() async throws {
+        let fixture = snapshot([:])
+        let reads = SnapshotReads()
+        let started = expectation(description: "scan started")
+        let joined = expectation(description: "page joined current scan")
+        let release = DispatchSemaphore(value: 0)
+        let heard = LoadProgressRelay()
+        let store = PurgeableStore(builder: { progress in
+            let read = reads.next()
+            progress.report(0.25)
+            if read == 1 {
+                started.fulfill()
+                reads.waitForRelease(release)
+            }
+            progress.report(0.75)
+            return fixture
+        })
+        // The tile starts the scan without a sink. The page joins it later and must receive its current progress immediately.
+        let tile = Task { await store.snapshot() }
+        await fulfillment(of: [started], timeout: 2)
+        let page = Task { await store.snapshot(progress: { value in
+            heard.report(value)
+            if value == 0.25 { joined.fulfill() }
+        }) }
+        await fulfillment(of: [joined], timeout: 2)
+        release.signal()
+        _ = await (tile.value, page.value)
+        XCTAssertEqual(reads.total, 1)
+        XCTAssertEqual(heard.fraction, 1)
+        let cachedProgress = LoadProgressRelay()
+        _ = await store.snapshot(progress: cachedProgress.report)
+        XCTAssertNil(cachedProgress.fraction, "cached reads must not restore widget loading")
+        XCTAssertEqual(reads.total, 1)
+        await store.invalidate()
+        let refreshed = LoadProgressRelay()
+        _ = await store.snapshot(progress: refreshed.report)
+        XCTAssertEqual(reads.total, 2)
+        XCTAssertEqual(refreshed.fraction, 1)
+    }
+
+    func testCloudCleanupSurvivesSmallMissingOrUnavailablePressureEstimate() throws {
+        for services: [String: UInt64]? in [nil, [:], [CacheDeleteService.fsPurgeableDocument: 17_342_464]] {
+            var snap = snapshot(services)
+            let path = "/h/Library/CloudStorage/OneDrive-Pessoal"
+            snap.documents = [.init(name: "OneDrive (Pessoal)", path: path, bytes: 8_300_000_000, files: 4_000, folders: [])]
+            let row = try XCTUnwrap(OtherSystemFilesScreenBuilder.cloudRows(snap).first)
+            XCTAssertEqual(row.trailing, ByteFormat.string(8_300_000_000))
+            XCTAssertEqual(row.actions.first?.parameters["path"], path)
+            XCTAssertEqual(OtherSystemFilesScreenBuilder.cloudShares(snap), [8_300_000_000])
+            XCTAssertNotNil(OtherSystemFilesScreenBuilder.freeNow(snap))
+            XCTAssertFalse(OtherSystemFilesScreenBuilder.screen(snap).widgets.isEmpty)
+            XCTAssertNotEqual(OtherSystemFilesScreenBuilder.tile(snap).status, "unavailable")
+        }
+    }
+
     func testOnlyThePurgeableAppFilesAreFreed() throws {
         let snap = snapshot(measured)
         XCTAssertEqual(snap.freeableBytes, 4_888_453_120)
@@ -139,11 +222,11 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         snap.documents = [PurgeableDocuments.Source(name: "OneDrive (Personal)", path: path, bytes: 20_000_000_000, files: 8_000, folders: [])]
         snap.removing = [path: CloudDownloadRemovals.Progress(done: 2_000, total: 8_000, bytes: 9_000_000_000)]
         let row = try XCTUnwrap(OtherSystemFilesScreenBuilder.cloudRows(snap).first)
-        XCTAssertEqual(row.badge?.text, "Removing · 25%, 9 GB")
+        XCTAssertEqual(row.badge?.text, "Removing 25%, 9 GB")
         XCTAssertTrue(row.actions.isEmpty, "no second removal while one runs")
         let tile = OtherSystemFilesScreenBuilder.tile(snap)
-        XCTAssertEqual(tile.refreshAfter, 3)
-        XCTAssertEqual(tile.status, "removing downloads · 25%")
+        XCTAssertEqual(tile.refreshAfter, 2)
+        XCTAssertEqual(tile.status, "removing downloads 25%")
         XCTAssertNotNil(OtherSystemFilesScreenBuilder.screen(snap).primary, "the app files can still be freed meanwhile")
         snap.removing = [:]
         XCTAssertNil(OtherSystemFilesScreenBuilder.tile(snap).refreshAfter)
@@ -229,4 +312,12 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(blocks.map(\.id), [CacheDeleteService.fsPurgeableData])
         XCTAssertNil(blocks.first?.group)
     }
+}
+
+private final class SnapshotReads: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    func next() -> Int { lock.withLock { count += 1; return count } }
+    var total: Int { lock.withLock { count } }
+    func waitForRelease(_ release: DispatchSemaphore) { _ = release.wait(timeout: .now() + 5) }
 }

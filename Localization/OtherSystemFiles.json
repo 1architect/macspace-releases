@@ -161,14 +161,14 @@
   "バックグラウンドで解放中",
   "백그라운드에서 확보 중"
  ],
- "Freeing space…": [
-  "Liberando espaço…",
-  "Libération d’espace…",
-  "Liberando espacio…",
-  "Speicher wird freigegeben …",
-  "正在释放空间…",
-  "空き容量を増やしています…",
-  "공간 확보 중…"
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
  ],
  "Left alone": [
   "Mantido como está",
@@ -260,14 +260,14 @@
   "ダウンロードを削除中",
   "다운로드 제거 중"
  ],
- "Removing · %lld%%, %@": [
-  "Removendo · %lld%%, %@",
-  "Suppression · %lld %%, %@",
-  "Eliminando · %lld %%, %@",
-  "Wird entfernt · %lld %%, %@",
-  "正在移除 · %lld%%，%@",
-  "削除中 · %lld%%、%@",
-  "제거 중 · %lld%%, %@"
+ "Removing %lld%%, %@": [
+  "Removendo %lld%%, %@",
+  "Suppression %lld %%, %@",
+  "Eliminando %lld %%, %@",
+  "Wird entfernt %lld %%, %@",
+  "正在移除 %lld%%，%@",
+  "削除中 %lld%%、%@",
+  "제거 중 %lld%%, %@"
  ],
  "Spotlight index": [
   "Índice do Spotlight",
@@ -386,14 +386,14 @@
   "その他のシステムファイル %@",
   "기타 시스템 파일 %@"
  ],
- "removing downloads · %lld%%": [
-  "removendo downloads · %lld%%",
-  "suppression des téléchargements · %lld %%",
-  "eliminando descargas · %lld %%",
-  "Downloads werden entfernt · %lld %%",
-  "正在移除下载 · %lld%%",
-  "ダウンロードを削除中 · %lld%%",
-  "다운로드 제거 중 · %lld%%"
+ "removing downloads %lld%%": [
+  "removendo downloads %lld%%",
+  "suppression des téléchargements %lld %%",
+  "eliminando descargas %lld %%",
+  "Downloads werden entfernt %lld %%",
+  "正在移除下载 %lld%%",
+  "ダウンロードを削除中 %lld%%",
+  "다운로드 제거 중 %lld%%"
  ],
  "unavailable": [
   "indisponível",

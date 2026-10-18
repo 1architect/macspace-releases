@@ -22,6 +22,10 @@ public struct SystemDataModule: MacSpaceModule {
         SystemDataScreenBuilder.tile(await snapshot(context: context))
     }
 
+    public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
+        SystemDataScreenBuilder.tile(await snapshot(context: context, progress: progress))
+    }
+
     public func screen(context: ModuleContext) async -> Screen {
         SystemDataScreenBuilder.screen(await snapshot(context: context))
     }
@@ -60,10 +64,10 @@ public struct SystemDataModule: MacSpaceModule {
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
                 return .failed(loc("Already gone"))
             }
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return Self.clean([item])
         case "cleanReports":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return Self.cleanReports(snapshot.reports)
         case "openFullDiskAccess":
             NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
@@ -72,16 +76,16 @@ public struct SystemDataModule: MacSpaceModule {
             if let url = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension") { NSWorkspace.shared.open(url) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "deleteStagedUpdate":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return await Self.deleteStagedUpdate(context.privileged)
         case "deleteWallpaperDownloads":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return await Self.deleteWallpaperDownloads(context.privileged)
         case "deleteVersions":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return await Self.deleteVersions(context.privileged)
         case "purgeAssets":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return Self.purgeAssets(store: store)
         case "freeCaches":
             // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
@@ -91,24 +95,24 @@ public struct SystemDataModule: MacSpaceModule {
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "emptyTrash":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return Self.emptyTrash()
         case "eraseUnifiedLog":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return await Self.eraseUnifiedLog(context.privileged)
         case "deleteSymbolicationCache":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             return await Self.deleteSymbolicationCache(context.privileged)
         case "cleanAll":
             let log = SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil
             var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, progress: progress, span: log ? 0...0.8 : 0...1)
             // The system log too, which only this button and its own row erase: automatic cleaning never does (it cannot be undone).
             if log {
-                progress(ActionProgress(fraction: 0.85, message: loc("Freeing space…")))
+                progress(ActionProgress(fraction: 0.85, message: loc("Freeing space")))
                 let erased = await Self.eraseUnifiedLog(context.privileged)
                 cleaned.freed += erased.freedBytes ?? 0
                 cleaned.details += erased.details
-                progress(ActionProgress(fraction: 1, message: loc("Freeing space…")))
+                progress(ActionProgress(fraction: 1, message: loc("Freeing space")))
             }
             return .succeeded(Self.freedMessage(cleaned.freed), details: cleaned.details, freedBytes: cleaned.freed)
         default:
@@ -135,11 +139,11 @@ public struct SystemDataModule: MacSpaceModule {
         var details: [String] = []
         let before = DataVolume.freeBytes()
         let caches = CachesPage.chosen(snapshot)
-        progress(ActionProgress(fraction: at(0.03), message: loc("Freeing space…")))
+        progress(ActionProgress(fraction: at(0.03), message: loc("Freeing space")))
         if !caches.isEmpty { details += await freeCaches(caches, in: snapshot, quitApps: quitApps, progress: progress, span: at(0.03)...at(0.6)).details }
-        progress(ActionProgress(fraction: at(0.6), message: loc("Freeing space…")))
+        progress(ActionProgress(fraction: at(0.6), message: loc("Freeing space")))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
-        progress(ActionProgress(fraction: at(0.75), message: loc("Freeing space…")))
+        progress(ActionProgress(fraction: at(0.75), message: loc("Freeing space")))
         if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying, !snapshot.assetsHeld { details += purgeAssets(store: store).details }
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
@@ -167,7 +171,7 @@ public struct SystemDataModule: MacSpaceModule {
                            span: ClosedRange<Double> = 0...1) async -> ActionResult {
         var entries = entries
         guard !entries.isEmpty else { return .failed(loc("Already gone")) }
-        let working = loc("Freeing space…")
+        let working = loc("Freeing space")
         // The bar moves at once, and through the quitting too: an app that asks to save can take a while, and the button stood still.
         func at(_ share: Double) -> Double { span.lowerBound + (span.upperBound - span.lowerBound) * share }
         let quitting = quitApps ? entries.indices.filter { entries[$0].open } : []

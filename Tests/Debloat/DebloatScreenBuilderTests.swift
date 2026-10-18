@@ -24,6 +24,46 @@ final class DebloatScreenBuilderTests: XCTestCase {
                         environment: environment, cannotTakeEffect: blocked, takenAt: Date())
     }
 
+    func testStoreSharesProgressWithPageJoiningTileAndKeepsCachedReadsQuiet() async throws {
+        let fixture = snapshot([])
+        let reads = SnapshotReads()
+        let started = expectation(description: "scan started")
+        let joined = expectation(description: "page joined current scan")
+        let release = DispatchSemaphore(value: 0)
+        let heard = LoadProgressRelay()
+        let store = DebloatStore(builder: { progress in
+            let read = reads.next()
+            progress.report(0.25)
+            if read == 1 {
+                started.fulfill()
+                reads.waitForRelease(release)
+            }
+            progress.report(0.75)
+            return fixture
+        })
+        // The tile starts the scan without a sink. The page joins it later and must receive its current progress immediately.
+        let tile = Task { await store.snapshot() }
+        await fulfillment(of: [started], timeout: 2)
+        let page = Task { await store.snapshot(progress: { value in
+            heard.report(value)
+            if value == 0.25 { joined.fulfill() }
+        }) }
+        await fulfillment(of: [joined], timeout: 2)
+        release.signal()
+        _ = await (tile.value, page.value)
+        XCTAssertEqual(reads.total, 1)
+        XCTAssertEqual(heard.fraction, 1)
+        let cachedProgress = LoadProgressRelay()
+        _ = await store.snapshot(progress: cachedProgress.report)
+        XCTAssertNil(cachedProgress.fraction, "cached reads must not restore widget loading")
+        XCTAssertEqual(reads.total, 1)
+        await store.invalidate()
+        let refreshed = LoadProgressRelay()
+        _ = await store.snapshot(progress: refreshed.report)
+        XCTAssertEqual(reads.total, 2)
+        XCTAssertEqual(refreshed.fraction, 1)
+    }
+
     /// A retired switch is listed only while it is applied, can then only be switched off, and is never counted, switched off by
     /// Disable all or re-applied; Enable all removes it.
     func testARetiredSwitchShowsOnlyWhereItIsAppliedAndOnlyToBeRemoved() throws {
@@ -224,4 +264,12 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(failed.outcome, .failed)
         XCTAssertFalse(failed.details.isEmpty)
     }
+}
+
+private final class SnapshotReads: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    func next() -> Int { lock.withLock { count += 1; return count } }
+    var total: Int { lock.withLock { count } }
+    func waitForRelease(_ release: DispatchSemaphore) { _ = release.wait(timeout: .now() + 5) }
 }

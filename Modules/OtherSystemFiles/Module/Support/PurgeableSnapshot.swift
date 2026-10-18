@@ -53,14 +53,19 @@ struct TimeMachineState: Sendable, Equatable {
         }
     }
 
-    static func live() -> TimeMachineState {
+    static func live(progress: LoadProgressSink = { _ in }) -> TimeMachineState {
         var state = TimeMachineState(snapshots: TimeMachine.localSnapshots())
-        state.disks = (TimeMachine.destinations() ?? []).map { destination in
+        progress(0.25)
+        let destinations = TimeMachine.destinations() ?? []
+        progress(0.5)
+        state.disks = destinations.enumerated().map { index, destination in
+            defer { progress(0.5 + 0.4 * Double(index + 1) / Double(destinations.count)) }
             guard let mount = destination.mountPoint else { return BackupDisk(destination: destination) }
             let capacity = TimeMachine.capacity(of: mount)
             return BackupDisk(destination: destination, backups: TimeMachine.backups(at: mount), totalBytes: capacity?.total, freeBytes: capacity?.free)
         }
         state.backingUp = TimeMachine.isBackingUp()
+        progress(1)
         return state
     }
 }
@@ -108,12 +113,16 @@ struct PurgeableService: Equatable {
 }
 
 actor PurgeableStore {
+    typealias Builder = @Sendable (LoadProgressRelay) async -> PurgeableSnapshot
     private var cached: PurgeableSnapshot?
+    private let builder: Builder
+    private var relay: LoadProgressRelay?
     /// Where an earlier version kept what macOS declined; nothing is hidden any more, so it is only removed.
     static let legacyDeclinedKeys = ["otherSystemFiles.declinedEstimate", "purge.declined.\(CacheDeleteService.fsPurgeableData)",
                                      "purge.declined.\(CacheDeleteService.mobileAsset)"]
 
-    init() {
+    init(builder: @escaping Builder = PurgeableStore.liveSnapshot) {
+        self.builder = builder
         for key in Self.legacyDeclinedKeys { UserDefaults.standard.removeObject(forKey: key) }
     }
 
@@ -130,19 +139,52 @@ actor PurgeableStore {
     /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
     /// came back with the figures from before the action.
     private var generation = 0
+    private var followingRemovals = false
 
-    func snapshot(maxAge: TimeInterval = 60) async -> PurgeableSnapshot {
+    func beginRemoval() { followingRemovals = true }
+
+    /// Keep the measured data during removal, even past its TTL; only live counters change. Completion forces one fresh reading.
+    func status(removing: [String: CloudDownloadRemovals.Progress]) -> PurgeableSnapshot? {
+        guard !removing.isEmpty else {
+            if followingRemovals {
+                followingRemovals = false
+                PurgeableDocuments.forget()
+                invalidate()
+            }
+            return nil
+        }
+        guard var snapshot = cached else { return nil }
+        snapshot.removing = follow(removing)
+        return snapshot
+    }
+
+    func follow(_ removing: [String: CloudDownloadRemovals.Progress]) -> [String: CloudDownloadRemovals.Progress] {
+        followingRemovals = !removing.isEmpty
+        return removing
+    }
+
+    func snapshot(maxAge: TimeInterval = 60, progress: LoadProgressSink? = nil) async -> PurgeableSnapshot {
         if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
         let started = generation
         if let inflight {
+            if let progress { relay?.attach(progress) }
             let raw = await inflight.value
-            return started == generation ? settle(raw) : await snapshot(maxAge: maxAge)
+            return started == generation ? settle(raw) : await snapshot(maxAge: maxAge, progress: progress)
         }
-        let task = Task.detached(priority: .utility) { Self.liveSnapshot() }
+        let relay = LoadProgressRelay()
+        if let progress { relay.attach(progress) }
+        relay.report(0)
+        let builder = self.builder
+        let task = Task.detached(priority: .utility) {
+            defer { relay.report(1) }
+            return await builder(relay)
+        }
         inflight = task
+        self.relay = relay
         let raw = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge) }
+        guard started == generation else { return await snapshot(maxAge: maxAge, progress: progress) }
         inflight = nil
+        self.relay = nil
         return settle(raw)
     }
 
@@ -198,19 +240,30 @@ actor PurgeableStore {
     func invalidate() {
         cached = nil
         inflight = nil
+        relay = nil
         generation += 1
     }
 
     /// Asked in the CLI child process, so a changed private interface crashes it and not the app.
-    static func liveSnapshot() -> PurgeableSnapshot {
-        let urgency = CacheDeleteService.fsPurgeableDataUrgency
-        let services: [String: UInt64]?
-        if let cli = ToolLocator.cli() { services = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
-        else { services = CacheDeleteClient().purgeableByService(urgency: urgency) }
-        // Where the purgeable documents are, only when macOS counts some: a few seconds for a large cloud folder.
-        let documents = (services?[CacheDeleteService.fsPurgeableDocument] ?? 0) >= 50_000_000 ? PurgeableDocuments.scan(maxAge: 600) : []
-        var snapshot = PurgeableSnapshot(services: services, takenAt: Date(), documents: documents, updates: PreparedUpdate.find())
-        snapshot.timeMachine = TimeMachineState.live()
+    static func liveSnapshot(progress: LoadProgressRelay) async -> PurgeableSnapshot {
+        let parts = progress.parallelParts(weights: [0.2, 0.65, 0.05, 0.1])
+        async let services = Task.detached(priority: .utility) {
+            defer { parts[0](1) }
+            let urgency = CacheDeleteService.fsPurgeableDataUrgency
+            if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
+            return CacheDeleteClient().purgeableByService(urgency: urgency)
+        }.value
+        // Explicit eviction is independent of APFS's pressure-based purge estimate. File Provider can evict uploaded local
+        // copies that have not been marked purgeable, and CacheDelete can report only a small fraction of their allocated sizes.
+        async let documents = Task.detached(priority: .utility) { PurgeableDocuments.scan(maxAge: 600, progress: parts[1]) }.value
+        async let updates = Task.detached(priority: .utility) {
+            defer { parts[2](1) }
+            return PreparedUpdate.find()
+        }.value
+        async let timeMachine = Task.detached(priority: .utility) { TimeMachineState.live(progress: parts[3]) }.value
+        let values = await (services, documents, updates, timeMachine)
+        var snapshot = PurgeableSnapshot(services: values.0, takenAt: Date(), documents: values.1, updates: values.2)
+        snapshot.timeMachine = values.3
         // macOS's figure for the snapshots lags: it stayed at 1.72 GB after both were deleted (26B5101f). With none listed, it is 0.
         if snapshot.timeMachine.snapshots?.all.isEmpty == true, snapshot.services?[CacheDeleteService.timeMachineSnapshots] != nil {
             snapshot.services?[CacheDeleteService.timeMachineSnapshots] = 0

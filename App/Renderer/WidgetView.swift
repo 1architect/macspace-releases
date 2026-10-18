@@ -265,6 +265,7 @@ struct BadgeView: View {
     let badge: Badge
     var wraps = false
     @Environment(\.design) private var design
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// What needs the user is drawn in the action color, with its deep form for the text.
     private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
@@ -273,6 +274,7 @@ struct BadgeView: View {
     /// the warning pill's font, so the facts read as one set.
     var body: some View {
         Text(badge.text)
+            .contentTransition(reduceMotion ? .opacity : .numericText())
             .font(.system(size: 11, weight: .semibold))
             .lineLimit(wraps ? nil : 1)
             .fixedSize(horizontal: false, vertical: true)
@@ -281,6 +283,7 @@ struct BadgeView: View {
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
             .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
+            .animation(reduceMotion ? nil : Theme.value, value: badge.text)
     }
 }
 

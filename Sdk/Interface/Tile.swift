@@ -28,8 +28,9 @@ public struct Tile: Codable, Equatable, Sendable {
     /// What the module frees through macOS's purge, by CacheDelete service. The disk tile's "purgeable" adds these up across modules
     /// (a service two modules free counts once), so it says what the app can purge, not what macOS estimates in general.
     public var purgeableByService: [String: UInt64]
-    /// What the tile shows is changing (a download, a removal): the app asks again after this many seconds instead of its usual
-    /// minute. nil for the usual pace.
+    /// What the tile shows is changing (a download, a removal): the app asks `status` after this many seconds instead of its usual
+    /// minute. A nil status falls back to a normal read; `status` can keep counters current without scanning. The host follows only
+    /// visible tiles/pages and clamps this interval to at least two seconds. nil for the usual pace.
     public var refreshAfter: Double?
     /// What the switch of a `state` chart runs when it is flipped on the dashboard, with `value` "true" or "false", as a switch row on
     /// the page. nil leaves the switch shown but not flippable.

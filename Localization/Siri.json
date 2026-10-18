@@ -260,14 +260,14 @@
   "最大%@を解放しますか？",
   "최대 %@ 확보할까요?"
  ],
- "Freeing space…": [
-  "Liberando espaço…",
-  "Libération d’espace…",
-  "Liberando espacio…",
-  "Speicher wird freigegeben …",
-  "正在释放空间…",
-  "空き容量を増やしています…",
-  "공간 확보 중…"
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
  ],
  "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.": [
   "Se ativa, o MacSpace atuará no Apple Intelligence em todos os seus dispositivos.\nPara alterar abra os Ajustes do Mac, selecione \"conta Apple\" no topo da barra lateral - salvos no iCloud - ver tudo - e desative a opção Siri.",

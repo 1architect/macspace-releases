@@ -212,7 +212,7 @@ private struct PermissionRow: View {
     /// One macOS says is enabled but that does not answer is registered again (`PrivilegedHelperInstaller.repair`).
     @ViewBuilder private var helperButton: some View {
         if PrivilegedHelperInstaller.status == .enabled {
-            Button(repairing ? String(localized: "Repairing…") : String(localized: "Repair helper")) {
+            Button(repairing ? String(localized: "Repairing") : String(localized: "Repair helper")) {
                 helperError = nil
                 repairing = true
                 Task {

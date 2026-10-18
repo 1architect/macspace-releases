@@ -41,14 +41,14 @@
 "Disable %lld features?" = "¿Desactivar %lld funciones?";
 "Disable all" = "Desactivar todo";
 "Disabled" = "Desactivado";
+"Disabling" = "Desactivando";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "Desactivar una te pide aprobar un perfil en Ajustes del Sistema > General > Gestión de dispositivos.";
-"Disabling…" = "Desactivando…";
 "Each one can be enabled again." = "Cada una se puede volver a activar.";
 "Enable" = "Activar";
 "Enable all" = "Activar todo";
 "Enable all %lld features again?" = "¿Volver a activar las %lld funciones?";
 "Enabled" = "Activado";
-"Enabling…" = "Activando…";
+"Enabling" = "Activando";
 "Experiments" = "Experimentos";
 "Finish" = "Terminar";
 "Game Center" = "Game Center";

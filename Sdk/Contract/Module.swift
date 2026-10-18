@@ -39,7 +39,7 @@ public struct ActionProgress: Codable, Equatable, Sendable {
 
 public typealias ProgressSink = @Sendable (ActionProgress) -> Void
 
-/// How far a module's reading of the Mac has come, 0...1 (`MacSpaceModule.screen(context:progress:)`). The page's Loading… button
+/// How far a module's reading of the Mac has come, 0...1 (`MacSpaceModule.screen(context:progress:)`). The page's Loading button
 /// fills by it, as it fills by `ActionProgress.fraction` while an action runs.
 public typealias LoadProgressSink = @Sendable (Double) -> Void
 
@@ -79,6 +79,37 @@ public final class LoadProgressRelay: @unchecked Sendable {
     /// Progress over `span` of this reading: a step of it that reports 0...1 of its own.
     public func part(_ span: ClosedRange<Double>) -> LoadProgressSink {
         { [self] fraction in report(span.lowerBound + (span.upperBound - span.lowerBound) * min(max(fraction, 0), 1)) }
+    }
+
+    /// Independent work running together contributes its own share. A fast part finishing cannot hide progress from a slower one.
+    public func parallelParts(weights: [Double]) -> [LoadProgressSink] {
+        precondition(!weights.isEmpty && weights.allSatisfy { $0.isFinite && $0 > 0 })
+        let parts = ParallelLoadProgress(weights: weights, relay: self)
+        return weights.indices.map { index in { fraction in parts.report(fraction, at: index) } }
+    }
+}
+
+private final class ParallelLoadProgress: @unchecked Sendable {
+    private let lock = NSLock()
+    private let weights: [Double]
+    private var values: [Double]
+    private let relay: LoadProgressRelay
+
+    init(weights: [Double], relay: LoadProgressRelay) {
+        let total = weights.reduce(0, +)
+        self.weights = weights.map { $0 / total }
+        values = weights.map { _ in 0 }
+        self.relay = relay
+    }
+
+    func report(_ fraction: Double, at index: Int) {
+        guard fraction.isFinite else { return }
+        let combined = lock.withLock {
+            values[index] = max(values[index], min(max(fraction, 0), 1))
+            if values.allSatisfy({ $0 == 1 }) { return 1.0 }
+            return zip(values, weights).map(*).reduce(0, +)
+        }
+        relay.report(combined)
     }
 }
 
@@ -166,12 +197,21 @@ public protocol MacSpaceModule: Sendable {
     /// The module's tile on the dashboard.
     func tile(context: ModuleContext) async -> Tile
 
+    /// Dashboard reads report scan progress without constructing a page. Share the scan with concurrent page requests.
+    func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile
+
+    /// A lightweight automatic update from already measured data and live operation counters. nil asks the host for a normal
+    /// scan. Do not enumerate files or query services here. The host calls this before automatic reads, never for explicit reloads.
+    func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)?
+
     /// The module's full page.
     func screen(context: ModuleContext) async -> Screen
 
     /// The module's full page, saying how far reading the Mac has come (0...1) while it takes long enough to be seen: the page's
-    /// Loading… button fills by it. The default reports nothing, and the app fills the button over the time the module took last
-    /// time instead.
+    /// Loading button and Home tile show it. Shipped modules report actual scan work and share that progress between concurrent
+    /// tile/page reads. Cached snapshots report nothing. Automatic scans keep existing page details visible; explicit reloads and
+    /// first loads use the app's loading cascade. The default is a compatibility fallback for modules without progress:
+    /// the app fills the button over the time the module took last time instead.
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen
 
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult
@@ -193,6 +233,9 @@ public protocol MacSpaceModule: Sendable {
 }
 
 public extension MacSpaceModule {
+    func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile { await tile(context: context) }
+
+    func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? { nil }
     func prepareForUninstall(context: ModuleContext) async -> ActionResult { .succeeded("") }
 
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await screen(context: context) }

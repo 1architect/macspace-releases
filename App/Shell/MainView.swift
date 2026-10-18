@@ -109,6 +109,8 @@ public struct MainView: View {
     @State private var returnTo: ZoomLayer?
     /// Which way the last swap of one page for another went: forward slides the new page in from the right, back from the left.
     @State private var swapForward = true
+    @State private var refreshCanvas = UUID()
+    @State private var refreshWindow = WindowBox()
 
     /// Drawn inside the standard window instead of as a window of its own: no glass backdrop, frame, shadow or window motion.
     let embedded: Bool
@@ -158,6 +160,11 @@ public struct MainView: View {
                 content(proxy.size)
             }
             .coordinateSpace(name: ZoomSpace.name)
+            .background { WindowReader(box: refreshWindow) }
+            .onChange(of: isOpen ? layer?.destination : .home, initial: true) { _, destination in
+                host.setVisibleDestination(destination ?? .home, for: refreshCanvas, window: refreshWindow)
+            }
+            .onDisappear { host.setVisibleDestination(nil, for: refreshCanvas) }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { container = $0 }
             .padding(Theme.frame)
             cornerControls
@@ -227,7 +234,7 @@ public struct MainView: View {
             else if text.hasPrefix("pill:"), case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
                 let parts = text.split(separator: ":").map(String.init)
                 switch parts[1] {
-                case "working": handle.previewPill(cleaning: true, progress: ActionProgress(fraction: parts.count > 2 ? Double(parts[2]) : nil, message: "Freeing space…"), result: nil)
+                case "working": handle.previewPill(cleaning: true, progress: ActionProgress(fraction: parts.count > 2 ? Double(parts[2]) : nil, message: "Freeing space"), result: nil)
                 case "done": handle.previewPill(cleaning: false, progress: nil, result: .succeeded("Freed 712,7 MB"))
                 case "later": handle.previewPill(cleaning: false, progress: nil, result: ActionResult(outcome: .succeeded, message: "Finishing in the background"))
                 case "fail": handle.previewPill(cleaning: false, progress: nil, result: .failed("Couldn't free it"))

@@ -31,7 +31,7 @@
 "Free" = "확보";
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@?" = "최대 %@ 확보할까요?";
-"Freeing space…" = "공간 확보 중…";
+"Freeing space" = "공간 확보 중";
 "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri." = "켜면 MacSpace의 Apple Intelligence 변경이 모든 기기에 적용됩니다. 시스템 설정의 사이드바 상단에서 Apple 계정을 선택하고 iCloud에 저장됨 아래의 모두 보기를 클릭한 후 Siri를 끄세요.";
 "Its models are gone." = "모델이 삭제되었습니다.";
 "Keeps the models" = "모델 유지";

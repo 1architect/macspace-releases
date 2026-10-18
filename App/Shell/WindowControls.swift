@@ -134,7 +134,7 @@ final class WindowBox {
 }
 
 /// Tells `box` which window it is in.
-private struct WindowReader: NSViewRepresentable {
+struct WindowReader: NSViewRepresentable {
     let box: WindowBox
 
     final class ReaderView: NSView {

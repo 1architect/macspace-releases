@@ -1,6 +1,7 @@
 import Foundation
 import MacSpacePlatform
 import MacSpaceDebloatPrivileged
+import MacSpaceSdk
 
 /// What the Debloat screens are built from.
 struct DebloatSnapshot: Sendable {
@@ -19,10 +20,11 @@ struct DebloatSnapshot: Sendable {
 }
 
 actor DebloatStore {
-    typealias Builder = @Sendable () -> DebloatSnapshot
+    typealias Builder = @Sendable (LoadProgressRelay) -> DebloatSnapshot
 
     private var cached: DebloatSnapshot?
     private var inflight: Task<DebloatSnapshot, Never>?
+    private var relay: LoadProgressRelay?
     private let builder: Builder
     /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
     /// came back with the figures from before the action.
@@ -32,23 +34,32 @@ actor DebloatStore {
         self.builder = builder
     }
 
-    func snapshot(maxAge: TimeInterval = 15, now: Date = Date()) async -> DebloatSnapshot {
+    func snapshot(maxAge: TimeInterval = 15, now: Date = Date(), progress: LoadProgressSink? = nil) async -> DebloatSnapshot {
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
         // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
         // the figures from before the action.
         if let inflight {
+            if let progress { relay?.attach(progress) }
             let waitedFor = generation
             let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge)
+            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, progress: progress)
         }
         let builder = self.builder
-        let task = Task.detached(priority: .utility) { builder() }
+        let relay = LoadProgressRelay()
+        if let progress { relay.attach(progress) }
+        relay.report(0)
+        let task = Task.detached(priority: .utility) {
+            defer { relay.report(1) }
+            return builder(relay)
+        }
         let started = generation
         inflight = task
+        self.relay = relay
         let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge) }
+        guard started == generation else { return await snapshot(maxAge: maxAge, progress: progress) }
         cached = fresh
         inflight = nil
+        self.relay = nil
         return fresh
     }
 
@@ -62,6 +73,7 @@ actor DebloatStore {
     func invalidate() {
         cached = nil
         inflight = nil
+        relay = nil
         generation += 1
     }
 
@@ -87,14 +99,16 @@ actor DebloatStore {
         undoneRetired.insert(ids).inserted
     }
 
-    static func liveSnapshot() -> DebloatSnapshot {
+    static func liveSnapshot(progress: LoadProgressRelay) -> DebloatSnapshot {
         let engine = liveEngine()
         let environment = engine.system.environment()
+        progress.report(0.15)
         // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta), and a retired
         // one only where it is still applied.
         let offered = engine.controls.filter { $0.isOffered(in: environment) }
-        let statuses = Dictionary(engine.status(of: offered).map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
+        let statuses = Dictionary(engine.status(of: offered, progress: progress.part(0.15...0.85)).map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
         let controls = offered.filter { control in isShown(control, in: environment, status: { statuses[control.id] ?? engine.status(of: control) }) }
+        progress.report(0.9)
         return DebloatSnapshot(controls: controls, statuses: statuses.filter { id, _ in controls.contains { $0.id == id } },
                                environment: environment,
                                cannotTakeEffect: Set(controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date(),

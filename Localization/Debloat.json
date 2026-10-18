@@ -323,14 +323,14 @@
   "無効にすると「システム設定 > 一般 > デバイス管理」でプロファイルの承認を求められます。",
   "기능을 끄면 시스템 설정 > 일반 > 기기 관리에서 프로파일 승인을 요청합니다."
  ],
- "Disabling…": [
-  "Desativando…",
-  "Désactivation…",
-  "Desactivando…",
-  "Wird deaktiviert …",
-  "正在停用…",
-  "無効にしています…",
-  "끄는 중…"
+ "Disabling": [
+  "Desativando",
+  "Désactivation",
+  "Desactivando",
+  "Wird deaktiviert",
+  "正在停用",
+  "無効にしています",
+  "끄는 중"
  ],
  "Each one can be enabled again.": [
   "Cada um pode ser reativado.",
@@ -377,14 +377,14 @@
   "有効",
   "켜짐"
  ],
- "Enabling…": [
-  "Ativando…",
-  "Activation…",
-  "Activando…",
-  "Wird aktiviert …",
-  "正在启用…",
-  "有効にしています…",
-  "켜는 중…"
+ "Enabling": [
+  "Ativando",
+  "Activation",
+  "Activando",
+  "Wird aktiviert",
+  "正在启用",
+  "有効にしています",
+  "켜는 중"
  ],
  "Experiments": [
   "Experimentos",

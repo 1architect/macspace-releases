@@ -9,10 +9,10 @@ enum OtherSystemFilesScreenBuilder {
     static let threshold: UInt64 = 50_000_000
 
     static func tile(_ snapshot: PurgeableSnapshot) -> Tile {
-        guard snapshot.services != nil || !snapshot.updates.isEmpty else { return Tile(title: loc("other system files"), status: loc("unavailable")) }
+        guard snapshot.services != nil || !snapshot.updates.isEmpty || !snapshot.documents.isEmpty else { return Tile(title: loc("other system files"), status: loc("unavailable")) }
         let freeable = snapshot.freeableBytes
         let status: String
-        if let removal = snapshot.removing.values.first { status = loc("removing downloads · \(Int((removal.fraction * 100).rounded()))%") }
+        if let removal = snapshot.removing.values.first { status = loc("removing downloads \(Int((removal.fraction * 100).rounded()))%") }
         else if freeable < threshold { status = loc("nothing to free") }
         else if snapshot.retrying { status = loc("freeing \(ByteFormat.string(freeable))") }
         else { status = loc("free up to \(ByteFormat.string(freeable))") }
@@ -24,7 +24,7 @@ enum OtherSystemFilesScreenBuilder {
                     reclaimableBytes: freeable >= threshold ? freeable : nil,
                     purgeableByService: [CacheDeleteService.fsPurgeableData: freeable],
                     // Read again every few seconds while downloads are being removed, so the row and the tile follow it.
-                    refreshAfter: snapshot.removing.isEmpty ? nil : 3)
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
     }
 
     /// What is outside System Data, largest first: what macOS counts as purgeable (what MacSpace frees in the caution tone) and a
@@ -71,7 +71,7 @@ enum OtherSystemFilesScreenBuilder {
 
     /// The bar, then what MacSpace frees, on its own and row by row, then everything else macOS counts as purgeable, row by row.
     static func screen(_ snapshot: PurgeableSnapshot) -> Screen {
-        guard snapshot.services != nil || !snapshot.updates.isEmpty else {
+        guard snapshot.services != nil || !snapshot.updates.isEmpty || !snapshot.documents.isEmpty else {
             return Screen(title: loc("Other System Files"), widgets: [.banner(Banner(id: "unavailable", severity: .warning,
                 title: loc("macOS's purge service did not answer"),
                 message: loc("MacSpace could not measure right now. Try the refresh button.")))])
@@ -98,7 +98,7 @@ enum OtherSystemFilesScreenBuilder {
                       role: prominent ? .prominent : .normal,
                       confirmation: Confirmation(title: loc("Free up to \(size) of purgeable app files?"),
                                                  message: loc("Apps download them again if they need them."),
-                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
+                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     /// A macOS update downloaded and prepared, waiting for a restart: Software Update installs it, and macOS removes it then.
@@ -145,7 +145,7 @@ enum OtherSystemFilesScreenBuilder {
         if backingUp { badges.append(Badge(loc("Backing up now"), tone: .caution)) }
         let dates = snapshots.all.reversed().map { snapshot in
             let kept = snapshots.keptStamps.contains(snapshot.stamp)
-            return snapshot.date.formatted(date: .abbreviated, time: .shortened) + (kept ? " · " + loc("kept") : "")
+            return snapshot.date.formatted(date: .abbreviated, time: .shortened) + (kept ? " " + loc("kept") : "")
         }
         let detail = loc("Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.")
             + "\n\n" + dates.joined(separator: "\n")
@@ -153,7 +153,7 @@ enum OtherSystemFilesScreenBuilder {
         let free = Action(id: "freeSnapshots", title: loc("Free"), role: .destructive,
                           confirmation: Confirmation(title: removable.count == 1 ? loc("Free 1 Time Machine snapshot?") : loc("Free \(removable.count) Time Machine snapshots?"),
                                                      message: loc("Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay."),
-                                                     confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
+                                                     confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
         let row = Row(id: service.id, title: service.title, subtitle: count, trailing: bytes > 0 ? size : nil, badges: badges, symbol: service.symbol,
                       detail: detail, actions: removable.isEmpty || backingUp ? [] : [free])
         return (row, bytes, !removable.isEmpty)
@@ -201,7 +201,7 @@ enum OtherSystemFilesScreenBuilder {
                                confirmation: Confirmation(title: loc("Free the selected backups?"),
                                                           message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
                                                           confirmTitle: loc("Free")),
-                               requires: [.privilegedHelper], workingTitle: loc("Freeing space…")),
+                               requires: [.privilegedHelper], workingTitle: loc("Freeing space")),
                 choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }))
         }
         return group
@@ -210,16 +210,12 @@ enum OtherSystemFilesScreenBuilder {
     /// One row per cloud service holding downloads, each with its button. Empty while none were found.
     static func cloudRows(_ snapshot: PurgeableSnapshot) -> [Row] {
         let bytes = snapshot.services?[CacheDeleteService.fsPurgeableDocument] ?? 0
-        guard bytes >= threshold else { return [] }
         return (documentsRows(bytes, snapshot) ?? []).filter { $0.id.hasPrefix("documents:") }
     }
 
     /// The sizes of the cloud rows, in their order.
     static func cloudShares(_ snapshot: PurgeableSnapshot) -> [UInt64] {
-        let bytes = snapshot.services?[CacheDeleteService.fsPurgeableDocument] ?? 0
-        guard bytes >= threshold else { return [] }
-        let found = snapshot.documents.map(\.bytes).reduce(0, +)
-        return snapshot.documents.sorted { $0.bytes > $1.bytes }.map { found > bytes ? UInt64((Double(bytes) * Double($0.bytes) / Double(max(found, 1))).rounded()) : $0.bytes }
+        snapshot.documents.sorted { $0.bytes > $1.bytes }.map(\.bytes)
     }
 
     /// Removes one cloud service's downloads; the size is the row's.
@@ -227,7 +223,7 @@ enum OtherSystemFilesScreenBuilder {
         Action(id: "removeDownloads", title: loc("Free"), parameters: ["path": source.path],
                confirmation: Confirmation(title: loc("Free \(ByteFormat.string(bytes)) of \(source.name) downloads?"),
                                           message: loc("The files stay in \(source.name) and download again when you open them."),
-                                          confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
+                                          confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     /// A service's name; the purgeable documents are named after the cloud service that holds them, once it is known.
@@ -241,20 +237,17 @@ enum OtherSystemFilesScreenBuilder {
     static func documentsRows(_ bytes: UInt64, _ snapshot: PurgeableSnapshot) -> [Row]? {
         guard !snapshot.documents.isEmpty else { return nil }
         let detail = loc("Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.")
-        // The rows add up to macOS's figure: where the files found come to more (read at another moment, or flagged at an urgency
-        // macOS does not count), each cloud service gets its share of it. Its folders keep the sizes found.
+        // These are explicit eviction candidates, not shares of CacheDelete's pressure-based estimate. Do not scale a provider's
+        // actual downloads down to that estimate: it can be zero while gigabytes of uploaded local files can be evicted.
         let found = snapshot.documents.map(\.bytes).reduce(0, +)
-        func share(_ source: PurgeableDocuments.Source) -> UInt64 {
-            found > bytes ? UInt64((Double(bytes) * Double(source.bytes) / Double(max(found, 1))).rounded()) : source.bytes
-        }
         var rows = snapshot.documents.sorted { $0.bytes > $1.bytes }.map { source in
             // While its downloads are being removed: how far, and no button.
             let removal = snapshot.removing[source.path]
             return Row(id: "documents:\(source.path)", title: loc("\(source.name) files on this Mac"), subtitle: source.files == 1 ? loc("1 file") : loc("\(source.files) files"),
-                       trailing: ByteFormat.string(share(source)),
-                       badge: removal.map { Badge($0.total == 0 ? loc("Removing downloads") : loc("Removing · \(Int(($0.fraction * 100).rounded()))%, \(ByteFormat.string($0.bytes))"), tone: .caution) },
+                       trailing: ByteFormat.string(source.bytes),
+                       badge: removal.map { Badge($0.total == 0 ? loc("Removing downloads") : loc("Removing \(Int(($0.fraction * 100).rounded()))%, \(ByteFormat.string($0.bytes))"), tone: .caution) },
                        symbol: "icloud.and.arrow.down", detail: detail + folderList(source),
-                       actions: removal == nil ? [removeDownloadsAction(source, bytes: share(source))] : [], paths: [source.path])
+                       actions: removal == nil ? [removeDownloadsAction(source, bytes: source.bytes)] : [], paths: [source.path])
         }
         // What no cloud folder accounts for is named.
         if bytes > found, bytes - found >= threshold * 10 {

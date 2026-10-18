@@ -16,20 +16,36 @@ public struct OtherSystemFilesModule: MacSpaceModule {
 
     public init() {}
 
-    public func invalidate() async { await store.invalidate() }
+    public func invalidate() async {
+        PurgeableDocuments.forget()
+        await store.invalidate()
+    }
 
     public func tile(context: ModuleContext) async -> Tile {
         OtherSystemFilesScreenBuilder.tile(await snapshot())
+    }
+
+    public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
+        OtherSystemFilesScreenBuilder.tile(await snapshot(progress: progress))
+    }
+
+    public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
+        guard let snapshot = await store.status(removing: CloudDownloadRemovals.shared.current()) else { return nil }
+        return (OtherSystemFilesScreenBuilder.tile(snapshot), OtherSystemFilesScreenBuilder.screen(snapshot))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
         OtherSystemFilesScreenBuilder.screen(await snapshot())
     }
 
+    public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
+        OtherSystemFilesScreenBuilder.screen(await snapshot(progress: progress))
+    }
+
     /// The last reading, with how far the removals of cloud downloads running now are: read live, not cached with the figures.
-    private func snapshot() async -> PurgeableSnapshot {
-        var snapshot = await store.snapshot()
-        snapshot.removing = CloudDownloadRemovals.shared.current()
+    private func snapshot(progress: LoadProgressSink? = nil) async -> PurgeableSnapshot {
+        var snapshot = await store.snapshot(progress: progress)
+        snapshot.removing = await store.follow(CloudDownloadRemovals.shared.current())
         return snapshot
     }
 
@@ -37,7 +53,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         let result = await handle(request, context: context, progress: progress)
         // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
         // and a cache dropped later (in a task of its own) gave it the figures from before the action.
-        await store.invalidate()
+        if request.actionID != "removeDownloads" || result.outcome != .succeeded { await store.invalidate() }
         return result
     }
 
@@ -49,15 +65,16 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             NSWorkspace.shared.open(PreparedUpdate.settingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "removeDownloads":
+            await store.beginRemoval()
             return Self.removeDownloads(request.parameters["path"] ?? "", store: store)
         case "freeSnapshots":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             let estimate = await store.currentRawSnapshotsEstimate()
             let result = Self.freeSnapshots()
             if let freed = result.freedBytes, freed > 0 { await store.noteSnapshotsRemoved(freed, estimate: estimate) }
             return result
         case "deleteBackups":
-            progress(ActionProgress(message: loc("Freeing space…")))
+            progress(ActionProgress(message: loc("Freeing space")))
             let stamps = Selection.ids(request.parameters["ids"]).compactMap { $0.hasPrefix("backup:") ? String($0.dropFirst("backup:".count)) : nil }
             return await Self.deleteBackups(stamps, from: request.parameters["mountPoint"] ?? "", channel: context.privileged)
         default:
@@ -116,7 +133,6 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             if removal.kept > 0 { summary += ", \(removal.kept) kept (not uploaded yet, in conflict, or refused)" }
             CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
                                          trigger: .manual, summary: summary)
-            Task { await store.invalidate() }
         }
         return ActionResult(outcome: .succeeded, message: "", refresh: true)
     }
@@ -180,8 +196,8 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         var reported: UInt64 = 0
         var elapsed: Double = 0
         var lastError: String?
-        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, loc("Freeing space…")),
-                     (CacheDeleteService.fsPurgeableDataForceUrgency, loc("Freeing space…"))]
+        let steps = [(CacheDeleteService.fsPurgeableDataUrgency, loc("Freeing space")),
+                     (CacheDeleteService.fsPurgeableDataForceUrgency, loc("Freeing space"))]
         for (index, step) in steps.enumerated() {
             progress(ActionProgress(fraction: Double(index) / Double(steps.count), message: step.1))
             let result: CacheDeletePurgeResult

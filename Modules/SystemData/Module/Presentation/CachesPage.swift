@@ -232,14 +232,14 @@ enum CachesPage {
             let partRows = members.map { row($0, part: part) }
             rows += partRows
             let count = members.count == 1 ? loc("1 item") : loc("\(members.count) items")
-            let title = [partTitle(part), count, ByteFormat.string(members.map(\.bytes).reduce(0, +))].joined(separator: " · ")
+            let title = [partTitle(part), count, ByteFormat.string(members.map(\.bytes).reduce(0, +))].joined(separator: " ")
             sections.append(SelectionSection(id: part.rawValue, title: title, rows: partRows.map(\.id), all: choices.all.contains(part.rawValue)))
         }
         var group = Row.group(id: groupID, title: loc("Caches you can free"), totalBytes: all.map(\.bytes).reduce(0, +), rows: rows)
         let choosable = all.filter(self.choosable)
         group.selection = Selection(
             action: Action(id: "freeCaches", title: loc("Free selected"), confirmation: Confirmation(title: loc("Free the selected caches?"), confirmTitle: loc("Free")),
-                           workingTitle: loc("Freeing space…")),
+                           workingTitle: loc("Freeing space")),
             choices: Dictionary(choosable.map { ($0.id, $0.bytes) }, uniquingKeysWith: { first, _ in first }),
             checked: checked(all, choices).sorted(),
             suggested: choosable.filter(\.recommended).map(\.id),

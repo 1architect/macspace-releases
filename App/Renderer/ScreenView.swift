@@ -158,9 +158,9 @@ struct ScreenView: View {
         .onAppear {
             var instant = Transaction()
             instant.disablesAnimations = true
-            withTransaction(instant) { details.update(busy: handle.isRefreshing || handle.isCleaning, initial: true) }
+            withTransaction(instant) { details.update(busy: handle.isReloading || handle.isCleaning, initial: true) }
         }
-        .onChange(of: handle.isRefreshing || handle.isCleaning) { _, busy in details.update(busy: busy) }
+        .onChange(of: handle.isReloading || handle.isCleaning) { _, busy in details.update(busy: busy) }
         .onDisappear { details.cancel() }
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
         .onChange(of: groups.count) { _, count in
@@ -186,7 +186,7 @@ struct ScreenView: View {
                 }
             } else {
                 // Nothing in the page's place while the module reads the Mac: its ground breathes (`TileBackdrop.loading`) and the
-                // button says Loading… (`ActionDock`). A placeholder of rows stood there before, and stayed for good when the module
+                // button says Loading (`ActionDock`). A placeholder of rows stood there before, and stayed for good when the module
                 // could not read the Mac (2026-10-13).
                 Color.clear
                     .accessibilityElement()
@@ -209,7 +209,7 @@ struct ScreenView: View {
                 return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows))
             }
         } else {
-            widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " · "),
+            widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " "),
                                         rows: group.children))]
         }
         return WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails) { EmptyView() }
@@ -430,7 +430,7 @@ struct HeroBlocks: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(BlockColor.fill(hoveredSegment, shade: BlockLayout.shade(of: hoveredSegment, in: blocks) ?? 0, tint: tint, design: design))
                         .frame(width: 9, height: 9)
-                    Text("\(hoveredSegment.label) · \(ByteFormat.string(hoveredSegment.bytes))")
+                    Text("\(hoveredSegment.label) \(ByteFormat.string(hoveredSegment.bytes))")
                 } else if !segments.isEmpty {
                     Text("\(ByteFormat.string(usage.totalBytes ?? segments.reduce(0) { $0 + $1.bytes })) in total")
                     // How the total was reached, and what it leaves out.
@@ -458,11 +458,14 @@ struct HeroBlocks: View {
                         Text(segment.label).font(.caption).lineLimit(1)
                         Text(ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                             .contentTransition(.numericText())
+                            .animation(Theme.value, value: segment.bytes)
                     }
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: !loading))
                 }
             }
-            .animation(Theme.value, value: usage.segments)
+            // Grid placement must settle without a horizontal layout animation. Each item retains its existing vertical cascade,
+            // and each value owns its numeric transition instead of animating every grid cell when the measured order changes.
+            .transaction { $0.animation = nil }
         }
     }
 }
@@ -638,7 +641,7 @@ private struct ActionDock: View {
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     private var phase: ActionPill.Phase? {
-        if handle.isRefreshing { return .loading(handle.loading) }
+        if handle.isReloading { return .loading(handle.loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
@@ -708,8 +711,8 @@ private struct ActionPill: View {
     private var text: String {
         switch phase {
         case let .idle(action): return action.title
-        case let .working(title, _): return title ?? String(localized: "Working…")
-        case .loading: return String(localized: "Loading…")
+        case let .working(title, _): return title ?? String(localized: "Working")
+        case .loading: return String(localized: "Loading")
         case let .done(result): return result.restartRequired ? String(localized: "Restart to finish") : result.message
         case let .notice(banner): return banner.title
         }
@@ -737,7 +740,7 @@ private struct ActionPill: View {
                 Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: Self.wrapWidth, alignment: .leading)
             }
-            .contentTransition(.interpolate)
+            .contentTransition(reduceMotion ? .opacity : .numericText())
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
@@ -749,6 +752,7 @@ private struct ActionPill: View {
         .studioPickable(.mainButton, in: Self.shape)
         .onHover { hovering = $0 }
         .animation(Theme.hover, value: hovering)
+        .animation(reduceMotion ? nil : Theme.value, value: text)
         .task(id: phase) {
             // A success goes back to the action by itself; anything else stays until it is clicked.
             guard case let .done(result) = phase, result.outcome == .succeeded, !result.restartRequired else { return }

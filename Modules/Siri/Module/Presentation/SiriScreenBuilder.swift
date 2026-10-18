@@ -40,7 +40,7 @@ enum SiriScreenBuilder {
     /// The models are changing (downloading while on, being released or deleted): the app reads again every few seconds so the size
     /// follows what macOS does.
     static func refreshAfter(_ snapshot: SiriSnapshot) -> Double? {
-        let changing = snapshot.status.state == .atRisk || snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0
+        let changing = snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0
             || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.assetsRetrying
         return changing ? 5 : nil
     }
@@ -115,7 +115,7 @@ enum SiriScreenBuilder {
         // No button while MacSpace is already asking macOS again in the background.
         guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold, !snapshot.assetsRetrying else { return nil }
         return Action(id: "purgeAssets", title: loc("Free up to \(ByteFormat.string(bytes))"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free up to \(ByteFormat.string(bytes))?"), message: loc("Deletes Apple Intelligence models and other downloads macOS no longer needs."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space…"))
+                      confirmation: Confirmation(title: loc("Free up to \(ByteFormat.string(bytes))?"), message: loc("Deletes Apple Intelligence models and other downloads macOS no longer needs."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {
