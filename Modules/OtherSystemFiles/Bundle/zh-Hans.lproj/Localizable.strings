@@ -22,7 +22,7 @@
 "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "Time Machine 保留一天的此 Mac 副本，无需备份磁盘也能恢复文件。释放时保留最新快照和下次备份所需的快照。";
 "Couldn't free it" = "无法释放";
 "Deleted by macOS when the disk is full" = "磁盘满时由 macOS 删除";
-"Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "应用标记为可安全删除的文件。macOS 仅在磁盘空间即将用尽时删除。";
+"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "应用标记为可安全删除的文件。磁盘空间即将用尽时，系统会释放这些文件。如果未能释放，MacSpace 会在后台继续尝试。";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "无法再从这些时间点在此 Mac 上恢复文件。备份磁盘上的备份不受影响。";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "macOS 在磁盘空间不足时自行删除的文件。系统设置将此空间视为可用。";
 "Free" = "释放";
@@ -67,7 +67,6 @@
 "free up to %@" = "最多释放 %@";
 "freeing %@" = "正在释放 %@";
 "kept" = "保留";
-"macOS kept them when asked; MacSpace keeps asking it." = "macOS 暂未删除，MacSpace 会继续请求。";
 "macOS's purge service did not answer" = "macOS 清除服务无响应";
 "nothing to free" = "没有可释放的内容";
 "other system files" = "其他系统文件";

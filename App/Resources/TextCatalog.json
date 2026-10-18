@@ -1515,7 +1515,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:191",
-      "App\/Renderer\/ScreenView.swift:756"
+      "App\/Renderer\/ScreenView.swift:752"
     ],
     "table" : "App",
     "translations" : {
@@ -2494,7 +2494,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:757"
+      "App\/Renderer\/ScreenView.swift:753"
     ],
     "table" : "App",
     "translations" : {
@@ -3149,7 +3149,7 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:755",
+      "App\/Renderer\/ScreenView.swift:751",
       "App\/Renderer\/RowActionFlag.swift:94",
       "App\/Renderer\/RowActionFlag.swift:101",
       "App\/Registry\/ModuleHandle.swift:480"
@@ -5487,7 +5487,7 @@
     "key" : "%@ files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:230"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:229"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5506,7 +5506,7 @@
     "key" : "%@ free",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:196"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5544,7 +5544,7 @@
     "key" : "%lld backups",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5582,7 +5582,7 @@
     "key" : "%lld snapshots",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:143"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:142"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5601,7 +5601,7 @@
     "key" : "1 backup",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5639,7 +5639,7 @@
     "key" : "1 snapshot",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:143"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:142"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5716,8 +5716,8 @@
     "key" : "Backing up now",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:146",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:196"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:145",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5736,7 +5736,7 @@
     "key" : "Backups not readable",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:187"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:186"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5755,7 +5755,7 @@
     "key" : "Cannot be undone",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:145"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:144"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5774,7 +5774,7 @@
     "key" : "Cloud files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:230"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:229"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5793,7 +5793,7 @@
     "key" : "Connect it to see its backups and free old ones.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:183"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5831,7 +5831,7 @@
     "key" : "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:151"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:150"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5888,22 +5888,22 @@
     }
   },
   {
-    "id" : "OtherSystemFiles|Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.",
-    "key" : "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.",
+    "id" : "OtherSystemFiles|Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
+    "key" : "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
     "kind" : "Row detail",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Support\/PurgeableSnapshot.swift:84"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
-      "de" : "Dateien, die Apps als löschbar markiert haben. macOS löscht sie erst, wenn der Speicher fast voll ist.",
-      "en" : "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.",
-      "es" : "Archivos que las apps marcaron como seguros de eliminar. macOS solo los elimina cuando el disco está casi lleno.",
-      "fr" : "Fichiers que les apps ont marqués comme supprimables. macOS ne les supprime que lorsque le disque est presque plein.",
-      "ja" : "アプリが安全に削除できると指定したファイルです。macOSはディスクがほぼ満杯のときだけ削除します。",
-      "ko" : "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. macOS는 디스크가 거의 찼을 때만 삭제합니다.",
-      "pt-BR" : "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.",
-      "zh-Hans" : "应用标记为可安全删除的文件。macOS 仅在磁盘空间即将用尽时删除。"
+      "de" : "Dateien, die Apps als sicher löschbar markiert haben. Das System gibt sie frei, wenn der Speicher fast voll ist. Werden sie nicht freigegeben, versucht MacSpace es im Hintergrund erneut.",
+      "en" : "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
+      "es" : "Archivos que las apps marcaron como seguros de eliminar. El sistema los libera cuando el disco está casi lleno. Si no se liberan, MacSpace vuelve a intentarlo en segundo plano.",
+      "fr" : "Fichiers que les apps ont marqués comme pouvant être supprimés sans risque. Le système les libère lorsque le disque est presque plein. S’ils ne sont pas libérés, MacSpace fait de nouvelles tentatives en arrière-plan.",
+      "ja" : "アプリが安全に削除できると指定したファイルです。ディスクがほぼ満杯になると、システムが解放します。解放されなかった場合、MacSpaceがバックグラウンドで再試行します。",
+      "ko" : "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. 디스크가 거의 차면 시스템이 공간을 확보합니다. 확보되지 않으면 MacSpace가 백그라운드에서 다시 시도합니다.",
+      "pt-BR" : "Arquivos que os apps marcaram como seguros para apagar. O sistema só os libera quando o disco está quase cheio. Se não forem liberados, o MacSpace faz novas tentativas em segundo plano.",
+      "zh-Hans" : "应用标记为可安全删除的文件。磁盘空间即将用尽时，系统会释放这些文件。如果未能释放，MacSpace 会在后台继续尝试。"
     }
   },
   {
@@ -5911,7 +5911,7 @@
     "key" : "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5951,9 +5951,9 @@
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:97",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:157",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:204"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:153",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:203"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5991,7 +5991,7 @@
     "key" : "Free %lld Time Machine snapshots?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6010,7 +6010,7 @@
     "key" : "Free 1 Time Machine snapshot?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6029,7 +6029,7 @@
     "key" : "Free now",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:131"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:130"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6048,7 +6048,7 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:200"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6086,7 +6086,7 @@
     "key" : "Free the selected backups?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:202"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6163,7 +6163,7 @@
     "kind" : "Button",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:125"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:124"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6187,7 +6187,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:189",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:190",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:157"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6244,7 +6244,7 @@
     "key" : "Latest",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:192"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:191"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6263,7 +6263,7 @@
     "key" : "Left alone",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:278"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:277"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6301,7 +6301,7 @@
     "key" : "Not connected",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:181"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6362,7 +6362,7 @@
     "key" : "Other purgeable documents",
     "kind" : "Row title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:244"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:243"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6592,7 +6592,7 @@
     "key" : "They are deleted from %@ for good. Files that are only in them can't be restored.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:203"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:202"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6611,7 +6611,7 @@
     "key" : "Time Machine backup disks",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:175"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:174"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6745,8 +6745,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:84",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:149",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:278"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:148",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:277"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6758,25 +6758,6 @@
       "ko" : "유지됨",
       "pt-BR" : "mantido",
       "zh-Hans" : "保留"
-    }
-  },
-  {
-    "id" : "OtherSystemFiles|macOS kept them when asked; MacSpace keeps asking it.",
-    "key" : "macOS kept them when asked; MacSpace keeps asking it.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:122"
-    ],
-    "table" : "OtherSystemFiles",
-    "translations" : {
-      "de" : "macOS hat sie auf Anfrage behalten; MacSpace fragt weiter nach.",
-      "en" : "macOS kept them when asked; MacSpace keeps asking it.",
-      "es" : "macOS los conservó cuando se le pidió; MacSpace sigue pidiéndolo.",
-      "fr" : "macOS les a conservés quand on lui a demandé ; MacSpace continue de demander.",
-      "ja" : "macOSが削除しなかったため、引き続き要求しています。",
-      "ko" : "macOS가 삭제하지 않아 MacSpace가 계속 요청합니다.",
-      "pt-BR" : "O macOS os manteve quando solicitado; o MacSpace continua pedindo.",
-      "zh-Hans" : "macOS 暂未删除，MacSpace 会继续请求。"
     }
   },
   {

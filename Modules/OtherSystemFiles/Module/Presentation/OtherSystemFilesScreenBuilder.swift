@@ -119,9 +119,8 @@ enum OtherSystemFilesScreenBuilder {
         var rows = Array(zip(cloudRows(snapshot), cloudShares(snapshot)))
         if snapshot.freeableBytes >= threshold {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
-            let detail = snapshot.retrying ? service.detail + " " + loc("macOS kept them when asked; MacSpace keeps asking it.") : service.detail
             var row = Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes), symbol: service.symbol,
-                          detail: detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? [])
+                          detail: service.detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? [])
             if snapshot.retrying { row.activity = ActionProgress(message: loc("Freeing in the background")) }
             rows.append((row, snapshot.freeableBytes))
         }

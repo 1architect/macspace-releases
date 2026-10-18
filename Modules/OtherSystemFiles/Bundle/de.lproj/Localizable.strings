@@ -22,7 +22,7 @@
 "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "Kopien dieses Mac, die Time Machine einen Tag lang behält, damit Dateien ohne Backup-Volume wiederhergestellt werden können. Freigeben lässt die neueste und die, von der das nächste Backup ausgeht.";
 "Couldn't free it" = "Konnte nicht freigegeben werden";
 "Deleted by macOS when the disk is full" = "Von macOS gelöscht, wenn der Speicher voll ist";
-"Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "Dateien, die Apps als löschbar markiert haben. macOS löscht sie erst, wenn der Speicher fast voll ist.";
+"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "Dateien, die Apps als sicher löschbar markiert haben. Das System gibt sie frei, wenn der Speicher fast voll ist. Werden sie nicht freigegeben, versucht MacSpace es im Hintergrund erneut.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Dateien aus diesen Stunden lassen sich auf diesem Mac nicht mehr wiederherstellen. Die Backups auf dem Backup-Volume bleiben.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Dateien, die macOS bei Platzmangel selbst löscht. Die Systemeinstellungen zählen diesen Speicher als verfügbar.";
 "Free" = "Freigeben";
@@ -67,7 +67,6 @@
 "free up to %@" = "bis zu %@ freigeben";
 "freeing %@" = "%@ werden freigegeben";
 "kept" = "bleibt";
-"macOS kept them when asked; MacSpace keeps asking it." = "macOS hat sie auf Anfrage behalten; MacSpace fragt weiter nach.";
 "macOS's purge service did not answer" = "Der Bereinigungsdienst von macOS hat nicht geantwortet";
 "nothing to free" = "nichts freizugeben";
 "other system files" = "andere Systemdateien";

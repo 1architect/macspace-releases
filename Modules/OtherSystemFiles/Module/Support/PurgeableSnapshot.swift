@@ -81,7 +81,7 @@ struct PurgeableService: Equatable {
 
     static let known: [PurgeableService] = [
         PurgeableService(id: CacheDeleteService.fsPurgeableData, title: loc("Purgeable app files"),
-                         detail: loc("Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full."), symbol: "arrow.down.circle.dotted"),
+                         detail: loc("Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background."), symbol: "arrow.down.circle.dotted"),
         // One figure, no folders: the caches of third-party apps' containers are listed and freed on System Data's caches page
         // (`CachesPage`), and an item is listed on one page only. Apple's are macOS's.
         PurgeableService(id: CacheDeleteService.appContainerCaches, title: loc("App container caches"),

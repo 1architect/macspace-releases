@@ -89,14 +89,14 @@
   "ディスクが満杯になるとmacOSが削除",
   "디스크가 가득 차면 macOS가 삭제"
  ],
- "Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full.": [
-  "Arquivos que os apps marcaram como seguros para apagar. O macOS só os apaga quando o disco está quase cheio.",
-  "Fichiers que les apps ont marqués comme supprimables. macOS ne les supprime que lorsque le disque est presque plein.",
-  "Archivos que las apps marcaron como seguros de eliminar. macOS solo los elimina cuando el disco está casi lleno.",
-  "Dateien, die Apps als löschbar markiert haben. macOS löscht sie erst, wenn der Speicher fast voll ist.",
-  "应用标记为可安全删除的文件。macOS 仅在磁盘空间即将用尽时删除。",
-  "アプリが安全に削除できると指定したファイルです。macOSはディスクがほぼ満杯のときだけ削除します。",
-  "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. macOS는 디스크가 거의 찼을 때만 삭제합니다."
+ "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.": [
+  "Arquivos que os apps marcaram como seguros para apagar. O sistema só os libera quando o disco está quase cheio. Se não forem liberados, o MacSpace faz novas tentativas em segundo plano.",
+  "Fichiers que les apps ont marqués comme pouvant être supprimés sans risque. Le système les libère lorsque le disque est presque plein. S’ils ne sont pas libérés, MacSpace fait de nouvelles tentatives en arrière-plan.",
+  "Archivos que las apps marcaron como seguros de eliminar. El sistema los libera cuando el disco está casi lleno. Si no se liberan, MacSpace vuelve a intentarlo en segundo plano.",
+  "Dateien, die Apps als sicher löschbar markiert haben. Das System gibt sie frei, wenn der Speicher fast voll ist. Werden sie nicht freigegeben, versucht MacSpace es im Hintergrund erneut.",
+  "应用标记为可安全删除的文件。磁盘空间即将用尽时，系统会释放这些文件。如果未能释放，MacSpace 会在后台继续尝试。",
+  "アプリが安全に削除できると指定したファイルです。ディスクがほぼ満杯になると、システムが解放します。解放されなかった場合、MacSpaceがバックグラウンドで再試行します。",
+  "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. 디스크가 거의 차면 시스템이 공간을 확보합니다. 확보되지 않으면 MacSpace가 백그라운드에서 다시 시도합니다."
  ],
  "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available.": [
   "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.",
@@ -349,15 +349,6 @@
   "正在释放 %@",
   "%@を解放中",
   "%@ 확보 중"
- ],
- "macOS kept them when asked; MacSpace keeps asking it.": [
-  "O macOS os manteve quando solicitado; o MacSpace continua pedindo.",
-  "macOS les a conservés quand on lui a demandé ; MacSpace continue de demander.",
-  "macOS los conservó cuando se le pidió; MacSpace sigue pidiéndolo.",
-  "macOS hat sie auf Anfrage behalten; MacSpace fragt weiter nach.",
-  "macOS 暂未删除，MacSpace 会继续请求。",
-  "macOSが削除しなかったため、引き続き要求しています。",
-  "macOS가 삭제하지 않아 MacSpace가 계속 요청합니다."
  ],
  "macOS's purge service did not answer": [
   "O serviço de limpeza do macOS não respondeu",

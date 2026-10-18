@@ -22,7 +22,7 @@
 "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "バックアップディスクなしでも復元できるよう、Time Machineが1日保持するMacのコピーです。最新のものと次のバックアップの起点は残します。";
 "Couldn't free it" = "解放できませんでした";
 "Deleted by macOS when the disk is full" = "ディスクが満杯になるとmacOSが削除";
-"Files apps marked as safe to delete. macOS only deletes them when the disk is nearly full." = "アプリが安全に削除できると指定したファイルです。macOSはディスクがほぼ満杯のときだけ削除します。";
+"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "アプリが安全に削除できると指定したファイルです。ディスクがほぼ満杯になると、システムが解放します。解放されなかった場合、MacSpaceがバックグラウンドで再試行します。";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "このMac上のその時刻からは復元できなくなります。バックアップディスクのバックアップは残ります。";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "容量不足時にmacOSが自動で削除するファイルです。システム設定では使用可能な容量に含まれます。";
 "Free" = "解放";
@@ -67,7 +67,6 @@
 "free up to %@" = "最大%@を解放";
 "freeing %@" = "%@を解放中";
 "kept" = "保持";
-"macOS kept them when asked; MacSpace keeps asking it." = "macOSが削除しなかったため、引き続き要求しています。";
 "macOS's purge service did not answer" = "macOSの消去サービスから応答がありません";
 "nothing to free" = "解放できるものはありません";
 "other system files" = "その他のシステムファイル";
