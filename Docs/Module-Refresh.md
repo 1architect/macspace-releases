@@ -64,9 +64,10 @@ The legend grid no longer animates its layout when measured segments change. Its
 `ChangingText` uses the original native `.numericText()` transition with `Theme.value` for both text and number changes.
 Captions, row flags, page buttons and All done share this implementation. Do not replace a whole phrase's view identity, add a
 whole-line move/roll, or substitute a fade (except with Reduce Motion). Single-line percentage/count labels keep decimal numbers together in
-stable fields; ordinary labels remain one native Text to preserve kerning. Percentage fields reserve three digits, so proportional glyph widths cannot push the unchanged loading word
+stable fields; ordinary labels remain one native Text to preserve kerning. Loading labels ending in a percentage reserve three digits, so proportional glyph widths cannot push the unchanged loading word
 left/right. The number and percent sign form one leading-aligned drawing inside that reservation, leaving unused width after
-the sign rather than creating a gap after the loading word or before the sign. All done reserves the widest numeric mask from its count sequence, including fractional intermediate values.
+the sign rather than creating a gap after the loading word or before the sign. Percentages inside sentences, such as disk usage
+("47% of 245.11 GB"), retain a single native Text with its original spaces and kerning. All done reserves the widest numeric mask from its count sequence, including fractional intermediate values.
 Visible font and digit spacing are inherited; only explicit callers request tabular digits. Drawing stays in an anchored overlay
 outside parent layout animation. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
 

@@ -57,7 +57,7 @@ struct TextFields {
         }
         if let sign = field.text.last, "%٪".contains(sign) { return "888" + String(sign) }
         let following = split(text).first(where: { $0.id == field.id + 1 })?.text ?? ""
-        return following.hasPrefix("%") || following.hasPrefix("٪") ? "888" : nil
+        return following == "%" || following == "٪" ? "888" : nil
     }
 }
 

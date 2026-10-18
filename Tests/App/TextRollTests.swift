@@ -54,6 +54,18 @@ final class TextRollTests: XCTestCase {
         }
     }
 
+    func testStorageSentenceRetainsItsNaturalSpacingAndWidth() throws {
+        for text in ["47% de 245,11 GB", "47% of 245.11 GB", "47 % de 245,11 Go", "47 % von 245,11 GB"] {
+            let font = Font(CaptionFont.status(size: 22))
+            let expected = ImageRenderer(content: Text(verbatim: text).font(font).lineLimit(1))
+            let actual = ImageRenderer(content: ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1))
+            var naturalSize: CGSize?, actualSize: CGSize?
+            expected.render { size, _ in naturalSize = size }
+            actual.render { size, _ in actualSize = size }
+            XCTAssertEqual(try XCTUnwrap(actualSize), try XCTUnwrap(naturalSize), "a percentage inside a sentence must preserve native kerning and spaces")
+        }
+    }
+
     func testAllDoneNumericReservationDoesNotChangeDuringCountUp() throws {
         var widths: [CGFloat] = []
         for value in ["0", "1", "9", "10", "11", "99", "111"] {
