@@ -194,7 +194,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:321"
+      "Sdk\/Interface\/Widgets.swift:325"
     ],
     "table" : "App",
     "translations" : {
@@ -327,7 +327,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:321"
+      "Sdk\/Interface\/Widgets.swift:325"
     ],
     "table" : "App",
     "translations" : {
@@ -1514,7 +1514,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:192",
-      "App\/Renderer\/ScreenView.swift:715"
+      "App\/Renderer\/ScreenView.swift:718"
     ],
     "table" : "App",
     "translations" : {
@@ -2493,7 +2493,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:716"
+      "App\/Renderer\/ScreenView.swift:719"
     ],
     "table" : "App",
     "translations" : {
@@ -3148,8 +3148,9 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:714",
-      "App\/Renderer\/RowActionFlag.swift:68",
+      "App\/Renderer\/ScreenView.swift:717",
+      "App\/Renderer\/RowActionFlag.swift:69",
+      "App\/Renderer\/RowActionFlag.swift:76",
       "App\/Registry\/ModuleHandle.swift:479"
     ],
     "table" : "App",
@@ -8759,7 +8760,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:128",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:338",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:321"
+      "Sdk\/Interface\/Widgets.swift:325"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -8895,7 +8896,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:128",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:338",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:321"
+      "Sdk\/Interface\/Widgets.swift:325"
     ],
     "table" : "SystemData",
     "translations" : {

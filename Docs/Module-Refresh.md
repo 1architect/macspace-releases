@@ -59,28 +59,25 @@ The SDK and all four bundled manifests are version 5. A version-4 module is reje
 
 The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label retains the vertical roll/blur style with an anchored overlay that keeps outgoing glyphs out of layout. Fade-only content changes are reserved for Reduce Motion. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
 
-## Text motion
+## Text motion and action labels
 
-`ChangingText` draws rolling word/digit runs through `VerticalRollRenderer`. Only changed runs receive the existing vertical
-travel, blur and stagger; its drawing transform has zero horizontal travel at every frame. Unchanged runs are drawn once at their
-resting layout positions. Native numeric content transitions are not used because their internal glyph-position interpolation
-cannot be restricted to the vertical axis. The current text alone measures the label, using tabular digits, and outgoing runs
-remain drawing overlays. Text still owns shaping, kerning, wrapping and truncation. All done uses the same renderer in a fixed-width
-centered counter. Interrupted rolls cancel pending completion work before starting the next update.
+`ChangingText` uses the original native `.numericText()` transition with `Theme.value`, retaining the anchored current-text
+measurement and excluding outgoing content from layout. Parent layout transactions do not animate the line's frame. Reduce Motion
+uses opacity. Changed values keep the existing page cascade delay. All done uses its original per-piece asymmetric roll/blur,
+with word identities and digit places independent of digit count, so adding a digit does not replace an unchanged suffix.
 
-Dock and badge container animations track presence/count changes, rather than the entire action phase or badge contents. Working
-and hover color animations are scoped to the background so they cannot animate the text line's frame when a label changes.
+Row flags no longer use `PillMorph`. `ReservedPillLabel` measures the widest idle/working label once and holds it through progress
+and result. Optional `Action.labelSamples` supplies known variable labels; cloud rows include the waiting message, zero, unit
+boundaries and source total. Unexpected longer messages truncate and expose their full text in help. This optional JSON hint decodes
+as nil for older saved actions and does not change the module protocol version.
 
-Row and page action pills share `PillMorph` for resizing: the shell interpolates its footprint using `Theme.layout`, while its label
-is placed at its destination size against the leading edge. Glyphs retain `ChangingText` vertical roll/blur independently of shell
-geometry. The same action identity survives idle, progress and result. Progress fills carry the fraction without duplicate percentage
-text; cloud flags retain the removed-byte count. Inserted/removed rows and flags use `PageCascade` vertical arrival/departure with
-staggered timing. Changed values reuse the same page order for their roll/blur delay; unchanged rows are never replayed. Action labels
-begin their roll immediately with the shell resize.
+The orange page button keeps horizontal `PillMorph` resizing but is always 31 points high and one line. `SingleLineActionLabel`
+measures its ideal width independently of the shell's intermediate proposal and caps it to the dock's available width. Long notices
+truncate with full help text. No wrapping fallback is allowed. The original label measurements inherited a narrow intermediate
+proposal during shell resizing, which could make even “Carregando” wrap; the separate ideal measurement prevents that feedback.
 
-`Tests/App/TextRollTests.swift` covers unchanged labels/units across digit growth, changed-word/digit matching, Unicode preservation,
-zero horizontal travel through spring overshoot, blur/vertical endpoints and Reduce Motion.
-`results/vertical-text-20261018/app-tests.txt`: 111 AppTests, 109 passed and two optional render snapshots skipped.
+Progress fills carry the fraction without duplicate percentage text; cloud flags retain the removed-byte count. Inserted/removed
+rows and flags keep the vertical cascade, while unchanged rows remain in place.
 
 ## Window controls and confirmations
 
@@ -107,3 +104,8 @@ snapshots skipped. Offscreen layout tests verify shell interpolation with a fixe
 page cleanup retains its presentation until verified values arrive. `localize.txt` records compiler extraction in all eight languages.
 
 Main sources: `App/Registry/ModuleHandle.swift`, `App/Registry/ModuleHost.swift`, `App/Shell/MainView.swift`, `App/Renderer/ScreenView.swift`, `Sdk/Contract/Module.swift`, `Sdk/Interface/Tile.swift`, and each module's snapshot store/screen builder.
+
+`results/stable-flags-20261018/verified-all-tests.txt`: 481 tests, 477 passed and four optional tests skipped. This follow-up covers
+stable row widths, original native text transitions and single-line page actions. Regression tests exercise the reported Portuguese labels under narrow intermediate proposals, fixed flag widths across
+progress/result text, capped notices, counter identities and optional action-label serialization. Visual animation verification
+remains with the user; supplied recording frames were read as files without controlling the application.

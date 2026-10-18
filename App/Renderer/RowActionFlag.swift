@@ -60,6 +60,7 @@ private struct RowActionFlag: View {
     let dismiss: () -> Void
     let run: @MainActor () async -> Void
     @State private var hovering = false
+    @State private var reservedLabels: [String]?
     @Environment(\.design) private var design
 
     private var working: Bool { progress != nil }
@@ -71,18 +72,18 @@ private struct RowActionFlag: View {
         return action.title
     }
 
+    private var samples: [String] {
+        [action.title, action.workingTitle ?? String(localized: "Working")] + (action.labelSamples ?? [])
+    }
+
     var body: some View {
         Button {
             if result != nil { dismiss() } else if !working { Task { await run() } }
         } label: {
-            PillMorph {
+            ReservedPillLabel(samples: reservedLabels ?? samples) {
                 ChangingText(text: text)
-                    .font(.system(size: 11, weight: .semibold))
-                    .lineLimit(1)
-                    .fixedSize()
-                    .padding(.horizontal, 8)
-                    .frame(height: 18)
             }
+            .environment(\.textChangeDelay, 0)
             .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))
             .background {
                 Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
@@ -95,7 +96,8 @@ private struct RowActionFlag: View {
         .buttonStyle(.plain)
         .pointerStyle(.link)
         .onHover { hovering = $0 }
-        .help(result?.details.joined(separator: "\n") ?? "")
+        .help(([text] + (result?.details ?? [])).joined(separator: "\n"))
+        .onAppear { if reservedLabels == nil { reservedLabels = samples } }
         .task(id: result) {
             guard result?.outcome == .succeeded else { return }
             do { try await Task.sleep(for: .seconds(4)) } catch { return }

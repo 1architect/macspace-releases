@@ -159,12 +159,14 @@ selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be un
 **Freeing looks the same everywhere.** The page action morphs into the existing progress pill and All done page. Individual row
 buttons are text flags with the folder flag's hover behavior; they morph into an inline cleaning flag with the same progress fill.
 A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
-it runs. Animate flag insertion/removal and changing contents with the existing motion. Text and number changes retain the rolling
-glyph animation (fade only with Reduce Motion). Changed glyphs move vertically only; unchanged runs stay still. Keep changing
-text anchored; outgoing text must not participate in layout. Row and page action pills share `PillMorph`: animate the shell size
-while laying out the label at its destination size from the leading edge. Do not interpolate the glyph layout with the shell.
-Inserted/removed rows and flags use the existing vertical cascade; unchanged identities stay in place. A measured progress fill
-replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.
+it runs. Animate flag insertion/removal with the existing vertical cascade. Text and number changes use the original native
+numeric-text transition (fade only with Reduce Motion), with the current label measuring layout and the animated text anchored in
+an overlay. Do not animate the whole text line's layout. All done retains its original per-piece roll and blur.
+Row flags reserve the widest idle/working label before use; modules provide `Action.labelSamples` for variable progress text.
+Keep that width throughout idle, progress and result so adjacent controls do not move. Longer unexpected messages truncate, with
+full text in help. The orange page button is always one line and 31 points high: cap its width to the page and truncate rather than
+wrap. Its shell may resize horizontally; measure the destination label independently of the shell's intermediate width.
+A progress fill replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
 with the updated tile and screen. Retain unrelated measurements. Do not deduct a volume free-space delta from an item's size:

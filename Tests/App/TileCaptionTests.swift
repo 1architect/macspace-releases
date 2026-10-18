@@ -64,8 +64,10 @@ final class TileCaptionTests: XCTestCase {
         let pieces = RollingText.pieces("liberar 209,3 MB")
         XCTAssertEqual(pieces.map(\.text), ["liberar ", "2", "0", "9", ",", "3", " MB"])
         XCTAssertEqual(pieces.filter(\.isDigit).count, 4)
-        // A changed digit gets a new identity (it rolls); the unchanged pieces keep theirs (they stay).
+        // Slots retain their layout identity; changed content gets the new identity inside its drawing overlay.
         let next = RollingText.pieces("liberar 212,3 MB")
-        XCTAssertEqual(Set(pieces.map(\.id)).intersection(next.map(\.id)).count, 5)
+        XCTAssertEqual(pieces.map(\.id), next.map(\.id))
+        let contents = Set(pieces.map { "\($0.id)|\($0.text)" })
+        XCTAssertEqual(contents.intersection(next.map { "\($0.id)|\($0.text)" }).count, 5)
     }
 }

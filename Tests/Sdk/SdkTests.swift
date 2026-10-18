@@ -2,6 +2,18 @@ import XCTest
 import MacSpaceSdk
 
 final class SdkTests: XCTestCase {
+    func testActionLabelSamplesRoundTripAndOlderActionsStillDecode() throws {
+        let action = Action(id: "free", title: "Free", workingTitle: "Freeing", labelSamples: ["Removing downloads", "Removing 999 MB"])
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(Action.self, from: encoder.encode(action)), action)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(action)) as? [String: Any])
+        legacy.removeValue(forKey: "labelSamples")
+        let decoded = try decoder.decode(Action.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(decoded.labelSamples)
+        XCTAssertEqual(decoded.workingTitle, action.workingTitle)
+    }
+
     func testScreenSurvivesAJSONRoundTrip() throws {
         let action = Action(id: "clean", title: "Clean", symbol: "trash", role: .destructive, parameters: ["id": "x"],
                             confirmation: Confirmation(title: "Clean?", message: "m", confirmTitle: "Clean"), requires: [.privilegedHelper])

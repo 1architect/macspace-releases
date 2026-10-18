@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The row flag and page button resize the same shell. Its label is always laid out at its destination size,
+/// The page button resizes horizontally. Its label is always laid out at its destination size,
 /// anchored at the leading edge; only the shell's footprint interpolates. This leaves glyph motion to ChangingText.
 struct PillMorph<Label: View>: View {
     @ViewBuilder var label: Label

@@ -594,6 +594,7 @@ private struct ActionDock: View {
     @Binding var isVisible: Bool
     /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
     @State private var showsPassingNotice = false
+    @State private var availableWidth: CGFloat?
 
     /// What the page has to say, from its banners: the first one.
     private var notice: Banner? { ScreenView.banners(in: handle.screen?.widgets ?? []).first }
@@ -654,7 +655,7 @@ private struct ActionDock: View {
     var body: some View {
         Group {
             if let phase {
-                ActionPill(phase: phase, dismiss: {
+                ActionPill(phase: phase, maximumWidth: availableWidth, dismiss: {
                     if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
                 }) { [handle] action in
                     guard ConfirmationAlert.ask(action) else { return }
@@ -666,6 +667,7 @@ private struct ActionDock: View {
         // The page's width, less its margins: the pill keeps a warning on one line wherever it fits (`ActionPill`).
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.trailing, PageInsets.side)
+        .onGeometryChange(for: CGFloat.self) { max(0, $0.size.width - PageInsets.side) } action: { availableWidth = $0 }
         .animation(Theme.layout, value: phase != nil)
         .onChange(of: phase != nil, initial: true) { _, shown in isVisible = shown }
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
@@ -693,6 +695,7 @@ private struct ActionPill: View {
     }
 
     let phase: Phase
+    let maximumWidth: CGFloat?
     let dismiss: () -> Void
     let run: @MainActor (Action) async -> Void
     @Environment(\.design) private var design
@@ -732,25 +735,16 @@ private struct ActionPill: View {
             case .working, .loading: break
             }
         } label: {
-            // Words only, no symbol. On one line wherever the page has room for it: in a pill 360 points wide, a warning such as
-            // "Inteligência Visual foi reativado pelo macOS" broke onto two lines. Never cut: a message too long for the page wraps
-            // in a pill of that width, which grows to hold it.
             PillMorph {
-                ViewThatFits(in: .horizontal) {
-                    ChangingText(text: text).lineLimit(1).fixedSize()
-                    ChangingText(text: text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: Self.wrapWidth, alignment: .leading)
-                }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ink)
-                .padding(.horizontal, 15)
-                .padding(.vertical, 7)
+                SingleLineActionLabel(text: text, maximumWidth: maximumWidth)
+                    .foregroundStyle(ink)
             }
             .background { background.animation(Theme.hover, value: hovering) }
             .contentShape(Self.shape)
         }
         .buttonStyle(.plain)
         .studioPickable(.mainButton, in: Self.shape)
+        .help(text)
         .onHover { hovering = $0 }
         .task(id: phase) {
             // A success goes back to the action by itself; anything else stays until it is clicked.
@@ -782,10 +776,7 @@ private struct ActionPill: View {
         .modifier(PillGlass(enabled: design.glass))
     }
 
-    /// How wide a message that does not fit on one line wraps.
-    static let wrapWidth: CGFloat = 330
-
-    /// A capsule on one line (half its height), a rounded box once the message wraps.
+    /// The button is always one line and 31 points high.
     static let shape = RoundedRectangle(cornerRadius: 15.5, style: .continuous)
 
     private var isWorking: Bool {

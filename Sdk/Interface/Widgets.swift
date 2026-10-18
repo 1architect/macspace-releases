@@ -57,9 +57,12 @@ public struct Action: Codable, Equatable, Sendable {
     /// The button fills from the left as the action advances (`ActionProgress.fraction`); the module's progress messages are not
     /// shown. nil: "Working".
     public var workingTitle: String?
+    /// Representative future labels for the inline flag. The host reserves the widest label before work starts,
+    /// so progress changes cannot resize the flag or push neighbouring controls. Unknown longer results truncate with help text.
+    public var labelSamples: [String]?
 
     public init(id: String, title: String, symbol: String? = nil, role: ActionRole = .normal, parameters: [String: String] = [:],
-                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil) {
+                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil, labelSamples: [String]? = nil) {
         self.id = id
         self.title = title
         self.symbol = symbol
@@ -68,6 +71,7 @@ public struct Action: Codable, Equatable, Sendable {
         self.confirmation = confirmation
         self.requires = requires
         self.workingTitle = workingTitle
+        self.labelSamples = labelSamples
     }
 }
 
