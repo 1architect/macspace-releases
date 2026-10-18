@@ -147,7 +147,13 @@ enum SiriScreenBuilder {
         if var status = snapshot.phoneFeatures {
             if let native = snapshot.featureSettings[.phone] { status.managedOff = status.managedOff && native.managedOff }
             if let native = snapshot.featureSettings[.phone], status.state == .off, native.state != .off {
-                status.state = native.state == .on ? .on : .unknown
+                switch native.state {
+                case .on: status.state = .on
+                case .off: break
+                case .changedElsewhere: status.state = .changedElsewhere
+                case .unknown: status.state = .unknown
+                case .unsupported: status.state = .unsupported
+                }
                 status.managedOff = false
             }
             var row = phoneFeatureRow(status)

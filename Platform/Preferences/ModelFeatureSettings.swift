@@ -90,7 +90,10 @@ public struct ModelFeatureSettings: Sendable {
             let matches = try zip(slots, values).allSatisfy { slot, data in
                 guard let off = slot.off else { return data == nil }
                 if data == nil { return slot.absentDefault == off }
-                guard let value = try Self.unpack(data!) as? NSNumber, CFGetTypeID(value) == CFBooleanGetTypeID() else { return false }
+                // TelephonyUtilities can normalize a written CFBoolean to CFNumber 0/1. Compare the Boolean value,
+                // while refusing strings and other numbers instead of treating every nonzero value as enabled.
+                guard let value = try Self.unpack(data!) as? NSNumber,
+                      value == NSNumber(value: 0) || value == NSNumber(value: 1) else { return false }
                 return value.boolValue == off
             }
             if journal?.wantsOff == true {

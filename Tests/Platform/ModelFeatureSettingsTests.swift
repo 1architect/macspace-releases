@@ -57,6 +57,33 @@ final class ModelFeatureSettingsTests: XCTestCase {
         XCTAssertNil(prefs.values["com.apple.TelephonyUtilities/CallRecordingDisabled"])
         XCTAssertNil(prefs.values["com.apple.Accessibility/LiveTranscriptionInCallEnabled"])
     }
+    func testPhoneIntegerBooleanReadbackKeepsVerifiedOffAndRestoresOriginalRepresentation() throws {
+        let (settings, prefs) = try fixture()
+        let screening = "com.apple.TelephonyUtilities/CallScreeningDisabled"
+        let original = try ModelFeatureSettings.pack(1)
+        prefs.values[screening] = original
+        try settings.setOff(true, feature: .phone)
+        // The live TelephonyUtilities preference comes back as CFNumber 1 after writing Boolean true.
+        prefs.values[screening] = try ModelFeatureSettings.pack(1)
+        prefs.values["com.apple.TelephonyUtilities/CallRecordingDisabled"] = try ModelFeatureSettings.pack(1)
+        prefs.values["com.apple.Accessibility/FaceTimeCaptions"] = try ModelFeatureSettings.pack(0)
+        prefs.values["com.apple.Accessibility/LiveTranscriptionInCallEnabled"] = try ModelFeatureSettings.pack(0)
+        XCTAssertEqual(settings.status(.phone).state, .off)
+        XCTAssertTrue(settings.status(.phone).managedOff)
+        try settings.setOff(false, feature: .phone)
+        XCTAssertEqual(prefs.values[screening], original, "rollback preserves the original integer representation")
+        XCTAssertFalse(settings.hasSavedSettings(.phone))
+    }
+    func testPhoneInvalidBooleanValuesNeverAuthorizeCleanup() throws {
+        let (settings, prefs) = try fixture()
+        try settings.setOff(true, feature: .phone)
+        let screening = "com.apple.TelephonyUtilities/CallScreeningDisabled"
+        for value: Any in ["1", 2, -1, 1.5, 0] {
+            prefs.values[screening] = try ModelFeatureSettings.pack(value)
+            XCTAssertEqual(settings.status(.phone).state, .changedElsewhere, "value: \(value)")
+            XCTAssertFalse(settings.status(.phone).managedOff, "value: \(value)")
+        }
+    }
     func testExternalVoiceChangeStopsAutomaticOwnershipAndRestoreBeforeAnyWrite() throws {
         let (settings, prefs) = try fixture()
         prefs.values["com.apple.assistant.support/Assistant Enabled"] = try ModelFeatureSettings.pack(true)

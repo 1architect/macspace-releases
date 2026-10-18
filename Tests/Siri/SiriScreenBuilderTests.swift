@@ -154,6 +154,24 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS")
     }
 
+    func testPhoneSwitchPreservesNativeWarningsInsteadOfReportingEveryMismatchAsUnknown() throws {
+        var snap = snapshot(.protected)
+        snap.phoneFeatures = .init(state: .off, managedOff: true, effective: [:], requestedOff: true)
+        let cases: [(ModelFeatureSettings.State, String?)] = [
+            (.off, nil), (.changedElsewhere, "Changed outside MacSpace"),
+            (.unknown, "State unknown"), (.unsupported, nil)
+        ]
+        for (state, badge) in cases {
+            snap.featureSettings = [.phone: .init(state: state, managedOff: state == .off, requestedOff: true)]
+            let row = try XCTUnwrap(SiriScreenBuilder.switchList(snap).rows.last)
+            XCTAssertEqual(row.id, "phone")
+            XCTAssertFalse(row.isOn)
+            XCTAssertEqual(row.badge?.text, badge, "state: \(state)")
+            if state == .off { XCTAssertTrue(row.isEnabled) }
+            if state == .unsupported { XCTAssertTrue(row.detail?.contains("not been verified") == true) }
+        }
+    }
+
     func testSwitchNeverAsksAndNeedsFullDiskAccess() throws {
         let off = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows.first)
         XCTAssertNil(off.action.confirmation, "the switch moves at once; a failure moves it back")
