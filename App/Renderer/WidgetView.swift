@@ -339,8 +339,6 @@ struct BannerRow: View {
 struct RowView: View {
     let row: Row
     let handler: ActionHandler
-    @Environment(\.rowActivity) private var activity
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
 
@@ -394,9 +392,8 @@ struct RowView: View {
                 InfoButton(text: row.detail, steps: row.steps)
                 if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             }
-            // The row owns the flag's neighbours. Animate this layout at the phase change too; animating only the
-            // capsule's internal layout makes the info/folder controls jump straight to the destination positions.
-            .animation(reduceMotion ? nil : Theme.layout, value: activity.flagLayout(for: row))
+            // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
+            // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             Spacer(minLength: 8)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
         }

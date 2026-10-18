@@ -34,11 +34,13 @@ struct PillMorphLayout: Layout {
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        size ?? subviews[0].sizeThatFits(proposal)
+        size ?? subviews[0].sizeThatFits(.unspecified)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let natural = subviews[0].sizeThatFits(proposal)
+        // The parent may still be allocating the old capsule width. Measuring that temporary proposal fed intermediate widths
+        // back into onGeometryChange and restarted the spring, squeezing badges/text before growing again.
+        let natural = subviews[0].sizeThatFits(.unspecified)
         subviews[0].place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(natural))
     }
 }

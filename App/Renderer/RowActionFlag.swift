@@ -10,21 +10,6 @@ struct RowActivity {
     var dismiss: () -> Void = {}
 }
 
-extension RowActivity {
-    /// Labels only: fraction ticks must not restart the surrounding controls' layout animation.
-    func flagLayout(for row: Row) -> [String] {
-        var labels = row.actions.map(\.title)
-        if let progress = row.activity {
-            labels += [progress.message, "working"]
-        } else if rowID == row.id {
-            let message = progress?.message ?? ""
-            labels += [message.isEmpty ? action?.workingTitle ?? "" : message, "working"]
-        }
-        if resultID == row.id, let result { labels.append(result.message) }
-        return labels
-    }
-}
-
 extension EnvironmentValues {
     @Entry var rowActivity = RowActivity()
 }
