@@ -18,9 +18,10 @@ final class WindowZoomTests: XCTestCase {
     func testCustomZoomFillsTheGlassAndRestoresThePreviousFrame() throws {
         _ = NSApplication.shared
         let screen = try XCTUnwrap(NSScreen.main)
-        let original = CGRect(x: screen.visibleFrame.midX - 350, y: screen.visibleFrame.midY - 245, width: 700, height: 490)
-        let window = NSWindow(contentRect: original, styleMask: [.borderless, .resizable], backing: .buffered, defer: false)
+        let requested = CGRect(x: screen.visibleFrame.midX - 350, y: screen.visibleFrame.midY - 245, width: 700, height: 490)
+        let window = NSWindow(contentRect: requested, styleMask: [.borderless, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        let original = window.frame // AppKit aligns the requested frame to this screen's backing pixels.
         XCTAssertTrue(WindowControls.toggleZoom(window))
         XCTAssertTrue(WindowControls.isZoomed(window))
         XCTAssertEqual(window.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin), screen.visibleFrame)

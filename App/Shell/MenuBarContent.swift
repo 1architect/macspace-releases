@@ -202,8 +202,15 @@ public final class BackgroundPresence {
             // After the window is gone, so it no longer counts as open.
             DispatchQueue.main.async { MainActor.assumeIsolated { BackgroundPresence.shared.hideIfUnseen(closing: closing) } }
         })
-        observers.append(center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated { BackgroundPresence.shared.show() }
+        observers.append(center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { notification in
+            // Status-item/popover windows must not bring the Dock icon and application menu back.
+            guard let window = notification.object as? NSWindow else { return }
+            MainActor.assumeIsolated {
+                if Self.isAppWindow(window) { BackgroundPresence.shared.show() }
+            }
+        })
+        observers.append(center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { BackgroundPresence.shared.hideIfUnseen(closing: nil) }
         })
     }
 
@@ -214,7 +221,16 @@ public final class BackgroundPresence {
 
     private func hideIfUnseen(closing: NSWindow?) {
         guard GeneralSettings.keepsRunning(), !Self.hasOpenWindow(besides: closing) else { return }
-        NSApp.setActivationPolicy(.accessory)
+        guard NSApp.activationPolicy() != .accessory else { return }
+        // Let AppKit hand the menu bar back once, then remove our Dock presence. Changing policy while still active rebuilt
+        // the menu bar during the last window's close transition. The resign-active observer finishes this handoff.
+        if NSApp.isActive { NSApp.hide(nil) } else { NSApp.setActivationPolicy(.accessory) }
+    }
+
+    static func isAppWindow(_ window: NSWindow) -> Bool {
+        // A native auxiliary panel has a title bar; our canvas has its stable scene identifier.
+        let id = window.identifier?.rawValue ?? ""
+        return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass) || id.hasPrefix(MacSpaceWindow.standard)
     }
 
     /// A window of MacSpace's own is on screen or in the Dock (menus, popovers and the status item's window do not count).
@@ -222,9 +238,7 @@ public final class BackgroundPresence {
     static func hasOpenWindow(besides closing: NSWindow?, includingMiniaturized: Bool = true) -> Bool {
         NSApp.windows.contains { window in
             guard window !== closing, window.isVisible || (includingMiniaturized && window.isMiniaturized) else { return false }
-            // The glass window has no title bar.
-            let id = window.identifier?.rawValue ?? ""
-            return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass) || id.hasPrefix(MacSpaceWindow.standard)
+            return isAppWindow(window)
         }
     }
 }

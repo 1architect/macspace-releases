@@ -367,6 +367,8 @@ struct GlassGround: View, @preconcurrency Animatable {
     let height: CGFloat
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.controlActiveState) private var activeState
+    @Environment(\.design) private var design
+    private var usesFallback: Bool { reduceTransparency || activeState != .key }
 
     var animatableData: CGFloat {
         get { width }
@@ -374,36 +376,21 @@ struct GlassGround: View, @preconcurrency Animatable {
     }
 
     var body: some View {
-        Group {
-            if activeState != .key && !reduceTransparency {
-                // Glass in a window that is not key is drawn in its inactive look, a dark grey disc, by AppKit's glass and
-                // SwiftUI's alike, whatever the view asks for (tried 2026-10-12). The buttons keep their look instead: the
-                // active glass drawn as it shows.
-                // As the active clear glass shows (`ClearGlassCircle`): its 14 % black tint over the page, and light caught on
-                // both rims, strongest at the top left. A dark top edge read as a hole, not glass (2026-10-13).
-                Capsule().fill(.black.opacity(0.14))
-                    .overlay {
-                        Capsule().fill(RadialGradient(colors: [.white.opacity(0.10), .clear], center: .topLeading,
-                                                      startRadius: 0, endRadius: height))
-                    }
-                    .overlay {
-                        Capsule().strokeBorder(LinearGradient(stops: [.init(color: .white.opacity(0.6), location: 0),
-                                                                      .init(color: .white.opacity(0.08), location: 0.45),
-                                                                      .init(color: .white.opacity(0.08), location: 0.6),
-                                                                      .init(color: .white.opacity(0.35), location: 1)],
-                                                              startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-                    }
-            } else if reduceTransparency {
-                // With Reduce Transparency the system draws glass as an opaque disc in its own default colors: one button came
-                // out near black and another white, its white symbol lost. A solid light over the page's color instead, the
-                // same for every button, with a fine edge.
-                Capsule().fill(.white.opacity(0.18))
-                    .overlay { Capsule().strokeBorder(.white.opacity(0.28), lineWidth: 0.5) }
+        ZStack {
+            if usesFallback {
+                // Inactive controls share the Reduce Transparency treatment, in the current day/night palette.
+                Capsule().fill(design.isLight ? .white.opacity(0.18) : .black.opacity(0.18))
+                    .overlay { Capsule().strokeBorder(.white.opacity(design.isLight ? 0.28 : 0.18), lineWidth: 0.5) }
+                    .transition(.opacity)
             } else {
-                ClearGlassCircle(diameter: height)
+                ClearGlassCircle(diameter: height, isLight: design.isLight)
+                    .id(design.isLight)
+                    .transition(.opacity)
             }
         }
         .frame(width: width, height: height)
+        .animation(Theme.hover, value: usesFallback)
+        .animation(Theme.hover, value: design.isLight)
     }
 }
 
@@ -411,6 +398,7 @@ struct GlassGround: View, @preconcurrency Animatable {
 /// Reduce Transparency (`GlassCircleStyle`). It never takes clicks; the SwiftUI button above it does.
 private struct ClearGlassCircle: NSViewRepresentable {
     let diameter: CGFloat
+    let isLight: Bool
 
     final class GlassView: NSGlassEffectView {
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
@@ -419,9 +407,9 @@ private struct ClearGlassCircle: NSViewRepresentable {
     func makeNSView(context: Context) -> GlassView {
         let glass = GlassView()
         glass.cornerRadius = diameter / 2
-        glass.appearance = NSAppearance(named: .darkAqua)
+        glass.appearance = NSAppearance(named: isLight ? .aqua : .darkAqua)
         glass.style = .clear
-        glass.tintColor = NSColor.black.withAlphaComponent(0.14)
+        glass.tintColor = NSColor.black.withAlphaComponent(isLight ? 0.07 : 0.14)
         return glass
     }
 
