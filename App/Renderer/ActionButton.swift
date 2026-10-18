@@ -42,7 +42,7 @@ public enum ConfirmationAlert {
     }
 
     /// Keep the same layout for startup warnings and module confirmations.
-    public static func standardize(_ alert: NSAlert) { alert.layout() }
+    public static func standardize(_ alert: AppAlert) { alert.layout() }
 
 }
 

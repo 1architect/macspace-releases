@@ -1,3 +1,4 @@
+import MacSpaceSdk
 import SwiftUI
 import XCTest
 @testable import MacSpaceApp
@@ -64,4 +65,21 @@ final class ActionLabelTests: XCTestCase {
             }
         }
     }
+    func testRowLayoutAnimatesAtWorkStartAndLabelChangesButNotFractionTicks() {
+        let action = Action(id: "free", title: "Liberar", workingTitle: "Liberando espaço")
+        let row = Row(id: "logs", title: "Registro do sistema", actions: [action])
+        let idle = RowActivity().flagLayout(for: row)
+        var activity = RowActivity(rowID: row.id, action: action)
+        let started = activity.flagLayout(for: row)
+        XCTAssertNotEqual(started, idle, "starting work must animate the row even before the module sends progress")
+        activity.progress = ActionProgress(fraction: 0.1, message: "Liberando espaço")
+        XCTAssertEqual(activity.flagLayout(for: row), started)
+        activity.progress = ActionProgress(fraction: 0.9, message: "Liberando espaço")
+        XCTAssertEqual(activity.flagLayout(for: row), started, "fraction updates must not restart neighbouring controls")
+        activity.progress = ActionProgress(message: "Liberando em segundo plano")
+        XCTAssertNotEqual(activity.flagLayout(for: row), started)
+        activity.rowID = "another-row"
+        XCTAssertEqual(activity.flagLayout(for: row), idle)
+    }
+
 }

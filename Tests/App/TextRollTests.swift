@@ -49,7 +49,7 @@ final class TextRollTests: XCTestCase {
             let text = "carregando \(progress)%"
             let font = Font(CaptionFont.status(size: 22))
             let natural = try inkWidth(Text(verbatim: text).font(font).lineLimit(1))
-            let actual = try inkWidth(ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1))
+            let actual = try inkWidth(ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1).multilineTextAlignment(.trailing))
             XCTAssertEqual(actual, natural, accuracy: 2, "reserved width cannot create a visible gap before the number or its sign")
         }
     }

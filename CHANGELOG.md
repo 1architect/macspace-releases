@@ -17,6 +17,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Loading captions preserve the space before their percentage under the tile's trailing alignment. Row Free flags animate neighbouring controls as their capsule changes phase.
+- All app dialogs enforce left alignment of the icon, heading and message at drawing time, including attributed paragraph styles in cache confirmations.
+
 - Loading percentages keep normal spacing after the loading word; unused reserved width follows the percent sign. Disk usage sentences retain their original spaces and kerning.
 
 - Buttons, captions and All done share the original native text/number transition. Percentage and count fields keep unchanged words stationary without forcing monospaced visible digits; phase changes no longer replace the whole line with a vertical roll.

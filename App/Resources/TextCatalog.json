@@ -2671,8 +2671,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:420",
-      "App\/Renderer\/WidgetView.swift:421"
+      "App\/Renderer\/WidgetView.swift:425",
+      "App\/Renderer\/WidgetView.swift:426"
     ],
     "table" : "App",
     "translations" : {
@@ -3150,8 +3150,8 @@
     "kind" : "Text",
     "places" : [
       "App\/Renderer\/ScreenView.swift:755",
-      "App\/Renderer\/RowActionFlag.swift:79",
-      "App\/Renderer\/RowActionFlag.swift:86",
+      "App\/Renderer\/RowActionFlag.swift:94",
+      "App\/Renderer\/RowActionFlag.swift:101",
       "App\/Registry\/ModuleHandle.swift:480"
     ],
     "table" : "App",
@@ -3441,6 +3441,8 @@
     "key" : "working",
     "kind" : "Text",
     "places" : [
+      "App\/Renderer\/RowActionFlag.swift:18",
+      "App\/Renderer\/RowActionFlag.swift:21",
       "App\/Shell\/HomeView.swift:47",
       "App\/Shell\/MainView.swift:237"
     ],

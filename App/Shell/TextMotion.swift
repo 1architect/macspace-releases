@@ -55,9 +55,9 @@ struct TextFields {
            let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) {
             return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
         }
-        if let sign = field.text.last, "%٪".contains(sign) { return "888" + String(sign) }
+        if let sign = field.text.last, "%٪".contains(sign) { return "100" + String(sign) }
         let following = split(text).first(where: { $0.id == field.id + 1 })?.text ?? ""
-        return following == "%" || following == "٪" ? "888" : nil
+        return following == "%" || following == "٪" ? "100" : nil
     }
 }
 
@@ -87,6 +87,9 @@ struct ChangingText: View {
                         }
                     }
                 }
+                // Each field has its own measured space. Inheriting a trailing paragraph alignment shifts the word's ink
+                // into that space, visually joining it to the next number even though the string still contains a space.
+                .multilineTextAlignment(.leading)
             } else {
                 // Multiline descriptions retain Text's native wrapping and shaping.
                 Text(verbatim: text).hidden()

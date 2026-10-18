@@ -64,12 +64,13 @@ The legend grid no longer animates its layout when measured segments change. Its
 `ChangingText` uses the original native `.numericText()` transition with `Theme.value` for both text and number changes.
 Captions, row flags, page buttons and All done share this implementation. Do not replace a whole phrase's view identity, add a
 whole-line move/roll, or substitute a fade (except with Reduce Motion). Single-line percentage/count labels keep decimal numbers together in
-stable fields; ordinary labels remain one native Text to preserve kerning. Loading labels ending in a percentage reserve three digits, so proportional glyph widths cannot push the unchanged loading word
+stable fields; ordinary labels remain one native Text to preserve kerning. Loading labels ending in a percentage reserve the width of the actual maximum, 100%, so proportional glyph widths cannot push the unchanged loading word
 left/right. The number and percent sign form one leading-aligned drawing inside that reservation, leaving unused width after
 the sign rather than creating a gap after the loading word or before the sign. Percentages inside sentences, such as disk usage
 ("47% of 245.11 GB"), retain a single native Text with its original spaces and kerning. All done reserves the widest numeric mask from its count sequence, including fractional intermediate values.
 Visible font and digit spacing are inherited; only explicit callers request tabular digits. Drawing stays in an anchored overlay
-outside parent layout animation. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
+outside parent layout animation. Each single-line field explicitly uses leading paragraph alignment; it must not inherit the tile's
+trailing paragraph alignment, which can draw a trailing space before the word instead of after it. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
 
 Idle row flags fit their title. `ReservedPillLabel` reserves known numeric variants of the current phase; unrelated future phrases
 such as background cleanup do not widen “Freeing space.” `PillMorph` handles phase-boundary shell resizing with the existing page
@@ -82,7 +83,9 @@ truncate with full help text. No wrapping fallback is allowed. The original labe
 proposal during shell resizing, which could make even “Carregando” wrap; the separate ideal measurement prevents that feedback.
 
 Progress fills carry the fraction without duplicate percentage text; cloud flags retain the removed-byte count. Inserted/removed
-rows and flags keep the vertical cascade, while unchanged rows remain in place.
+rows and flags keep the vertical cascade, while unchanged rows remain in place. A row flag's phase change also animates its containing
+controls HStack with `Theme.layout`, so info/folder controls follow the resizing capsule instead of jumping. Fraction-only ticks do
+not restart that layout animation; Reduce Motion disables it.
 
 Other System Files retains the `purgeFiles` row action during retries, with “Freeing in the background” in `Row.activity` rather than
 a separate badge. The same flag owns foreground progress and background work. A successful result whose verified presentation
@@ -99,8 +102,11 @@ uses the selected day/night appearance. Last-window closure hides the active app
 activation has passed to another app. Status/popover windows cannot promote the app back to regular presence. This addresses a
 suspected cause of the reported menu-bar flicker; the visible result requires user verification.
 
-All `AppAlert` layout passes align the actual icon and text frames to the native 20-point leading inset, in addition to setting left
-text alignment. This includes short cache confirmations whose native field frames are centered.
+Every app-owned dialog must use `AppAlert`, including module/cache cleanup, startup, About, uninstall and error dialogs. Its modal
+entry explicitly installs the shared alignment pass. Both layout and the final view drawing pass align icon, heading and message to
+the native 20-point leading inset. Alignment applies to the image inside its frame and to attributed paragraph runs as well as the
+text-field property; an attributed centered paragraph can otherwise remain visibly centered while the cell reports left alignment.
+Preserve native buttons, fonts, complete messages and alert appearance. Do not add per-module confirmation layouts.
 
 ## Verification and references
 
@@ -137,3 +143,10 @@ status during the numeric transition. Visual verification of the new motion rema
 roll and the reservation across unrelated phases above. Offscreen checks cover proportional caption metrics, fixed percentage
 field width through 100%, a stable All done numeric field, phase-specific row widths and the one-line 31-point button. Both supplied
 04.20.16 and 04.24.36 recordings were decoded as files. Runtime motion still requires the user's visual verification.
+
+`results/confirmation-spacing-20261018/all-tests.txt`: 496 tests, 492 passed and four optional skips. The final focused run in
+`final-targeted-tests.txt` covers the maximum-100% reservation, inherited trailing paragraph alignment, row phase/fraction changes,
+pill geometry and alert pre-draw correction. Alert cases exercise all three native styles, short/long text, Portuguese cache
+confirmation, Japanese, About, startup and uninstall wording, including centered attributed paragraph styles after native relayout.
+All app-owned alert constructors were audited to use AppAlert; localization checks passed. Supplied video frames were decoded
+from the recording file; final visual verification remains with the user.
