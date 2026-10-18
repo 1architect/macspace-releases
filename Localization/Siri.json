@@ -107,6 +107,15 @@
   "すでにオンです",
   "이미 켜짐"
  ],
+ "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.": [
+  "Outra alteração afeta estes recursos. O MacSpace a preserva e não libera os modelos do Telefone automaticamente.",
+  "Une autre modification affecte ces fonctions. MacSpace la conserve et ne libère pas automatiquement les modèles de Téléphone.",
+  "Otro cambio afecta a estas funciones. MacSpace lo conserva y no libera automáticamente los modelos de Teléfono.",
+  "Eine andere Änderung wirkt sich auf diese Funktionen aus. MacSpace behält sie bei und gibt Telefonmodelle nicht automatisch frei.",
+  "其他更改影响了这些功能。MacSpace 会保留该更改，不会自动释放电话模型。",
+  "別の変更がこれらの機能に影響しています。MacSpaceはその変更を保持し、電話のモデルを自動的に解放しません。",
+  "다른 변경 사항이 이 기능에 영향을 줍니다. MacSpace는 해당 변경을 유지하고 전화 모델을 자동으로 해제하지 않습니다."
+ ],
  "Apple Intelligence": [
   "Apple Intelligence",
   "Apple Intelligence",
@@ -206,6 +215,51 @@
   "まだ解放できません",
   "아직 정리할 수 없음"
  ],
+ "Changed outside MacSpace": [
+  "Alterado fora do MacSpace",
+  "Modifié hors de MacSpace",
+  "Modificado fuera de MacSpace",
+  "Außerhalb von MacSpace geändert",
+  "已在 MacSpace 外更改",
+  "MacSpace以外で変更されました",
+  "MacSpace 외부에서 변경됨"
+ ],
+ "Check that Apple Intelligence stays off": [
+  "Verificar se o Apple Intelligence continua desativado",
+  "Vérifier qu’Apple Intelligence reste désactivé",
+  "Comprobar que Apple Intelligence siga desactivado",
+  "Prüfen, dass Apple Intelligence aus bleibt",
+  "检查 Apple 智能是否保持关闭",
+  "Apple Intelligenceがオフのままか確認",
+  "Apple Intelligence 꺼짐 유지 확인"
+ ],
+ "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.": [
+  "Verifica a cada 15 minutos enquanto o MacSpace está aberto e avisa se a desativação parar de funcionar.",
+  "Vérifie toutes les 15 minutes tant que MacSpace est ouvert et vous prévient si la désactivation ne fonctionne plus.",
+  "Lo comprueba cada 15 minutos mientras MacSpace está abierto y te avisa si la desactivación deja de funcionar.",
+  "Prüft alle 15 Minuten, solange MacSpace geöffnet ist, und meldet, wenn das Ausschalten nicht mehr wirkt.",
+  "MacSpace 运行时每 15 分钟检查一次，关闭机制失效时通知你。",
+  "MacSpaceの起動中は15分ごとに確認し、オフ設定が効かなくなったら通知します。",
+  "MacSpace가 열려 있는 동안 15분마다 확인하고 끄기 기능이 작동하지 않으면 알립니다."
+ ],
+ "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.": [
+  "Controla gravação e transcrição de chamadas, Correio de Voz ao Vivo e triagem de chamadas, legendas do FaceTime e tradução de chamadas para todas as contas deste Mac. As alterações exigem reinicialização.",
+  "Contrôle l’enregistrement et la transcription des appels, la messagerie vocale en direct et le filtrage des appels, les sous-titres FaceTime et la traduction des appels pour tous les comptes de ce Mac. Les modifications nécessitent un redémarrage.",
+  "Controla la grabación y transcripción de llamadas, el buzón de voz en directo y el filtrado de llamadas, los subtítulos de FaceTime y la traducción de llamadas para todas las cuentas de este Mac. Los cambios requieren reiniciar.",
+  "Steuert Anrufaufzeichnung und Transkription, Live-Voicemail und Anruffilter, FaceTime-Untertitel und Anrufübersetzung für alle Accounts auf diesem Mac. Änderungen erfordern einen Neustart.",
+  "控制此 Mac 上所有账户的通话录音和转写、实时语音留言和来电筛选、FaceTime 字幕及通话翻译。更改后需要重新启动。",
+  "このMacのすべてのアカウントの通話録音と文字起こし、ライブ留守番電話と着信スクリーニング、FaceTimeの字幕、通話の翻訳を制御します。変更には再起動が必要です。",
+  "이 Mac의 모든 계정에서 통화 녹음 및 전사, 실시간 음성 메시지 및 통화 스크리닝, FaceTime 자막, 통화 번역을 제어합니다. 변경 후 재시동해야 합니다."
+ ],
+ "Couldn't change Phone feature settings.": [
+  "Não foi possível alterar os ajustes dos recursos do Telefone.",
+  "Impossible de modifier les réglages des fonctions de Téléphone.",
+  "No se pudieron cambiar los ajustes de las funciones de Teléfono.",
+  "Die Einstellungen der Telefonfunktionen konnten nicht geändert werden.",
+  "无法更改电话功能设置。",
+  "電話の機能の設定を変更できませんでした。",
+  "전화 기능 설정을 변경하지 못했습니다."
+ ],
  "Couldn't check Apple Intelligence": [
   "Não foi possível verificar o Apple Intelligence",
   "Impossible de vérifier Apple Intelligence",
@@ -214,6 +268,24 @@
   "无法检查 Apple 智能",
   "Apple Intelligenceを確認できませんでした",
   "Apple Intelligence를 확인하지 못함"
+ ],
+ "Couldn't restore Phone feature settings.": [
+  "Não foi possível restaurar os ajustes dos recursos do Telefone.",
+  "Impossible de restaurer les réglages des fonctions de Téléphone.",
+  "No se pudieron restaurar los ajustes de las funciones de Teléfono.",
+  "Die Einstellungen der Telefonfunktionen konnten nicht wiederhergestellt werden.",
+  "无法恢复电话功能设置。",
+  "電話の機能の設定を復元できませんでした。",
+  "전화 기능 설정을 복원하지 못했습니다."
+ ],
+ "Couldn't verify the Phone feature change.": [
+  "Não foi possível verificar a alteração dos recursos do Telefone.",
+  "Impossible de vérifier la modification des fonctions de Téléphone.",
+  "No se pudo verificar el cambio de las funciones de Teléfono.",
+  "Die Änderung der Telefonfunktionen konnte nicht überprüft werden.",
+  "无法验证电话功能更改。",
+  "電話の機能の変更を確認できませんでした。",
+  "전화 기능 변경을 확인하지 못했습니다."
  ],
  "Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again.": [
   "Contas apagadas ainda usam os modelos. Remova os restos delas no MacSpace (Siri e Apple Intelligence), reinicie e tente de novo.",
@@ -323,6 +395,15 @@
   "%@でログインし、Apple Intelligenceをオフにしてください。",
   "%@ 계정으로 로그인하여 Apple Intelligence를 끄세요."
  ],
+ "MacSpace could not read every Phone feature setting.": [
+  "O MacSpace não conseguiu ler todos os ajustes dos recursos do Telefone.",
+  "MacSpace n’a pas pu lire tous les réglages des fonctions de Téléphone.",
+  "MacSpace no pudo leer todos los ajustes de las funciones de Teléfono.",
+  "MacSpace konnte nicht alle Einstellungen der Telefonfunktionen lesen.",
+  "MacSpace 无法读取所有电话功能设置。",
+  "MacSpaceは電話の機能の設定をすべて読み取れませんでした。",
+  "MacSpace가 모든 전화 기능 설정을 읽지 못했습니다."
+ ],
  "MacSpace needs it to read and verify the switch.": [
   "O MacSpace precisa para ler e verificar o botão.",
   "MacSpace en a besoin pour lire et vérifier l’interrupteur.",
@@ -331,6 +412,24 @@
   "MacSpace 需要此权限才能读取和验证开关状态。",
   "スイッチの状態を読み取り検証するために必要です。",
   "스위치 상태를 읽고 확인하려면 이 권한이 필요합니다."
+ ],
+ "MacSpace needs its helper to change the Phone features.": [
+  "O MacSpace precisa do auxiliar para alterar os recursos do Telefone.",
+  "MacSpace a besoin de son assistant pour modifier les fonctions de Téléphone.",
+  "MacSpace necesita su asistente para cambiar las funciones de Teléfono.",
+  "MacSpace benötigt seinen Hilfsdienst, um die Telefonfunktionen zu ändern.",
+  "MacSpace 需要辅助程序来更改电话功能。",
+  "電話の機能を変更するには、MacSpaceのヘルパーが必要です。",
+  "전화 기능을 변경하려면 MacSpace 보조 프로그램이 필요합니다."
+ ],
+ "MacSpace needs its helper to restore the Phone feature settings.": [
+  "O MacSpace precisa do auxiliar para restaurar os ajustes dos recursos do Telefone.",
+  "MacSpace a besoin de son assistant pour restaurer les réglages des fonctions de Téléphone.",
+  "MacSpace necesita su asistente para restaurar los ajustes de las funciones de Teléfono.",
+  "MacSpace benötigt seinen Hilfsdienst, um die Einstellungen der Telefonfunktionen wiederherzustellen.",
+  "MacSpace 需要辅助程序来恢复电话功能设置。",
+  "電話の機能の設定を復元するには、MacSpaceのヘルパーが必要です。",
+  "전화 기능 설정을 복원하려면 MacSpace 보조 프로그램이 필요합니다."
  ],
  "No supported Siri language with a base language different from %@ is available.": [
   "Não há nenhum idioma da Siri compatível com um idioma base diferente de %@.",
@@ -349,6 +448,15 @@
   "虚拟机中不可用",
   "仮想マシンでは利用できません",
   "가상 머신에서는 사용할 수 없음"
+ ],
+ "Notify me if Apple Intelligence turns back on": [
+  "Avisar se o Apple Intelligence for reativado",
+  "M’avertir si Apple Intelligence se réactive",
+  "Avisarme si Apple Intelligence se vuelve a activar",
+  "Mitteilen, wenn Apple Intelligence wieder angeht",
+  "Apple 智能重新开启时通知我",
+  "Apple Intelligenceが再びオンになったら通知",
+  "Apple Intelligence가 다시 켜지면 알림"
  ],
  "One account with Apple Intelligence on keeps the models on this Mac.": [
   "Uma única conta com o Apple Intelligence ativado mantém os modelos neste Mac.",
@@ -413,6 +521,24 @@
   "ほかのアカウント",
   "다른 계정"
  ],
+ "Phone feature settings updated.": [
+  "Ajustes dos recursos do Telefone atualizados.",
+  "Réglages des fonctions de Téléphone mis à jour.",
+  "Ajustes de las funciones de Teléfono actualizados.",
+  "Einstellungen der Telefonfunktionen aktualisiert.",
+  "电话功能设置已更新。",
+  "電話の機能の設定を更新しました。",
+  "전화 기능 설정이 업데이트되었습니다."
+ ],
+ "Phone features": [
+  "Recursos do Telefone",
+  "Fonctions de Téléphone",
+  "Funciones de Teléfono",
+  "Telefonfunktionen",
+  "电话功能",
+  "電話の機能",
+  "전화 기능"
+ ],
  "Released Apple Intelligence models": [
   "Modelos do Apple Intelligence liberados",
   "Modèles Apple Intelligence libérés",
@@ -440,6 +566,24 @@
   "残っているモデルを解放中",
   "잔여 모델 해제 중"
  ],
+ "Restart required": [
+  "Reinicialização necessária",
+  "Redémarrage nécessaire",
+  "Es necesario reiniciar",
+  "Neustart erforderlich",
+  "需要重新启动",
+  "再起動が必要です",
+  "재시동 필요"
+ ],
+ "Restart your Mac to apply this change.": [
+  "Reinicie o Mac para aplicar esta alteração.",
+  "Redémarrez votre Mac pour appliquer cette modification.",
+  "Reinicia el Mac para aplicar este cambio.",
+  "Starte deinen Mac neu, um diese Änderung anzuwenden.",
+  "重新启动 Mac 以应用此更改。",
+  "この変更を適用するにはMacを再起動してください。",
+  "이 변경 사항을 적용하려면 Mac을 재시동하세요."
+ ],
  "Restart. MacSpace then deletes the models.": [
   "Reinicie. Depois, o MacSpace apaga os modelos.",
   "Redémarrez. MacSpace supprime ensuite les modèles.",
@@ -448,6 +592,15 @@
   "请重新启动，MacSpace 随后会删除模型。",
   "再起動してください。その後MacSpaceがモデルを削除します。",
   "재시동하세요. 이후 MacSpace가 모델을 삭제합니다."
+ ],
+ "Shows a notification if macOS makes Apple Intelligence available again.": [
+  "Mostra uma notificação se o macOS disponibilizar o Apple Intelligence de novo.",
+  "Affiche une notification si macOS rend Apple Intelligence de nouveau disponible.",
+  "Muestra una notificación si macOS vuelve a habilitar Apple Intelligence.",
+  "Zeigt eine Mitteilung, wenn macOS Apple Intelligence wieder verfügbar macht.",
+  "macOS 重新启用 Apple 智能时显示通知。",
+  "macOSでApple Intelligenceが再び利用可能になると通知します。",
+  "macOS가 Apple Intelligence를 다시 활성화하면 알림을 표시합니다."
  ],
  "Siri & Apple Intelligence": [
   "Siri e Apple Intelligence",
@@ -485,6 +638,15 @@
   "SiriのiCloud同期は現在オンです",
   "Siri iCloud 동기화가 현재 켜져 있음"
  ],
+ "State unknown": [
+  "Estado desconhecido",
+  "État inconnu",
+  "Estado desconocido",
+  "Status unbekannt",
+  "状态未知",
+  "状態不明",
+  "상태 알 수 없음"
+ ],
  "Still installed for another account": [
   "Ainda instalado para outra conta",
   "Toujours installé pour un autre compte",
@@ -493,6 +655,15 @@
   "仍为其他账户保留",
   "ほかのアカウント用に保持",
   "다른 계정을 위해 유지됨"
+ ],
+ "Switch Apple Intelligence off and reclaim the space its models take.": [
+  "Desative o Apple Intelligence e recupere o espaço que seus modelos ocupam.",
+  "Désactivez Apple Intelligence et récupérez l’espace de ses modèles.",
+  "Desactiva Apple Intelligence y recupera el espacio que ocupan sus modelos.",
+  "Schalte Apple Intelligence aus und hol dir den Speicher seiner Modelle zurück.",
+  "关闭 Apple 智能并回收模型占用的空间。",
+  "Apple Intelligenceをオフにし、モデルの容量を取り戻します。",
+  "Apple Intelligence를 끄고 모델이 차지하는 공간을 확보합니다."
  ],
  "Switch it off again in MacSpace.": [
   "Desative-o de novo no MacSpace.",
@@ -547,6 +718,15 @@
   "无法读取系统或 Siri 语言。",
   "システムまたはSiriの言語を読み取れませんでした。",
   "시스템 또는 Siri 언어를 읽지 못했습니다."
+ ],
+ "These controls have not been verified on this macOS version.": [
+  "Estes controles não foram verificados nesta versão do macOS.",
+  "Ces commandes n’ont pas été vérifiées sur cette version de macOS.",
+  "Estos controles no se han verificado en esta versión de macOS.",
+  "Diese Steuerelemente wurden auf dieser macOS-Version noch nicht überprüft.",
+  "这些控制尚未在此 macOS 版本上验证。",
+  "このmacOSバージョンでは、これらの制御は検証されていません。",
+  "이 제어 기능은 현재 macOS 버전에서 검증되지 않았습니다."
  ],
  "This account was deleted, but macOS still keeps its models. In Terminal, run:": [
   "Esta conta foi apagada, mas o macOS ainda mantém os modelos dela. No Terminal, execute:",
@@ -790,50 +970,5 @@
   "状态未知",
   "状態不明",
   "상태 알 수 없음"
- ],
- "Switch Apple Intelligence off and reclaim the space its models take.": [
-  "Desative o Apple Intelligence e recupere o espaço que seus modelos ocupam.",
-  "Désactivez Apple Intelligence et récupérez l’espace de ses modèles.",
-  "Desactiva Apple Intelligence y recupera el espacio que ocupan sus modelos.",
-  "Schalte Apple Intelligence aus und hol dir den Speicher seiner Modelle zurück.",
-  "关闭 Apple 智能并回收模型占用的空间。",
-  "Apple Intelligenceをオフにし、モデルの容量を取り戻します。",
-  "Apple Intelligence를 끄고 모델이 차지하는 공간을 확보합니다."
- ],
- "Notify me if Apple Intelligence turns back on": [
-  "Avisar se o Apple Intelligence for reativado",
-  "M’avertir si Apple Intelligence se réactive",
-  "Avisarme si Apple Intelligence se vuelve a activar",
-  "Mitteilen, wenn Apple Intelligence wieder angeht",
-  "Apple 智能重新开启时通知我",
-  "Apple Intelligenceが再びオンになったら通知",
-  "Apple Intelligence가 다시 켜지면 알림"
- ],
- "Shows a notification if macOS makes Apple Intelligence available again.": [
-  "Mostra uma notificação se o macOS disponibilizar o Apple Intelligence de novo.",
-  "Affiche une notification si macOS rend Apple Intelligence de nouveau disponible.",
-  "Muestra una notificación si macOS vuelve a habilitar Apple Intelligence.",
-  "Zeigt eine Mitteilung, wenn macOS Apple Intelligence wieder verfügbar macht.",
-  "macOS 重新启用 Apple 智能时显示通知。",
-  "macOSでApple Intelligenceが再び利用可能になると通知します。",
-  "macOS가 Apple Intelligence를 다시 활성화하면 알림을 표시합니다."
- ],
- "Check that Apple Intelligence stays off": [
-  "Verificar se o Apple Intelligence continua desativado",
-  "Vérifier qu’Apple Intelligence reste désactivé",
-  "Comprobar que Apple Intelligence siga desactivado",
-  "Prüfen, dass Apple Intelligence aus bleibt",
-  "检查 Apple 智能是否保持关闭",
-  "Apple Intelligenceがオフのままか確認",
-  "Apple Intelligence 꺼짐 유지 확인"
- ],
- "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.": [
-  "Verifica a cada 15 minutos enquanto o MacSpace está aberto e avisa se a desativação parar de funcionar.",
-  "Vérifie toutes les 15 minutes tant que MacSpace est ouvert et vous prévient si la désactivation ne fonctionne plus.",
-  "Lo comprueba cada 15 minutos mientras MacSpace está abierto y te avisa si la desactivación deja de funcionar.",
-  "Prüft alle 15 Minuten, solange MacSpace geöffnet ist, und meldet, wenn das Ausschalten nicht mehr wirkt.",
-  "MacSpace 运行时每 15 分钟检查一次，关闭机制失效时通知你。",
-  "MacSpaceの起動中は15分ごとに確認し、オフ設定が効かなくなったら通知します。",
-  "MacSpace가 열려 있는 동안 15분마다 확인하고 끄기 기능이 작동하지 않으면 알립니다."
  ]
 }

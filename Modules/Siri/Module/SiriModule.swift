@@ -18,6 +18,11 @@ public struct SiriModule: MacSpaceModule {
     public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
         await ModelAutoReleaser.shared.waitForCurrentRelease()
         await ModelPurger.shared.stopAndWait()
+        if PhoneFeatureFlags().hasSavedSettings {
+            guard let channel = context.privileged else { return .failed(loc("MacSpace needs its helper to restore the Phone feature settings.")) }
+            do { _ = try await channel.perform(operation: SiriPrivilegedOperations.setPhoneFeatures, arguments: ["off": "false"]) }
+            catch { return .failed(loc("Couldn't restore Phone feature settings."), details: [error.localizedDescription]) }
+        }
         let environment = LiveSiriLanguageEnvironment()
         guard let saved = environment.loadSavedSettings() else { return .succeeded("") }
         do {
@@ -102,7 +107,11 @@ public struct SiriModule: MacSpaceModule {
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if request.actionID == "purgeAssets" { _ = await store.snapshot(maxAge: .infinity) }
         var result = await handle(request, context: context, progress: progress)
-        if result.refresh, request.actionID == "purgeAssets", var updated = await store.reconcileAssets() {
+        if result.refresh, request.actionID == "togglePhoneFeatures", var updated = await store.reconcilePhoneFeatures() {
+            updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
+            updated.purgingModels = await ModelPurger.shared.isRunning
+            result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
+        } else if result.refresh, request.actionID == "purgeAssets", var updated = await store.reconcileAssets() {
             updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
             updated.purgingModels = await ModelPurger.shared.isRunning
             result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
@@ -113,6 +122,26 @@ public struct SiriModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Machine.isVirtualMachine { return .failed(loc("Not available in a virtual machine")) }
         switch request.actionID {
+        case "togglePhoneFeatures":
+            guard let value = request.parameters["value"], ["true", "false"].contains(value), let channel = context.privileged else {
+                return .failed(loc("MacSpace needs its helper to change the Phone features."))
+            }
+            do {
+                let data = try await channel.perform(operation: SiriPrivilegedOperations.setPhoneFeatures, arguments: ["off": String(value == "false")])
+                let state = try JSONDecoder().decode(PhoneFeatureFlags.Status.self, from: data)
+                if state.state == .restartRequired || value == "true" && state.state == .unsupported {
+                    return .succeeded(loc("Restart your Mac to apply this change."), restartRequired: true)
+                }
+                guard state.state == .off || state.state == .on else {
+                    return ActionResult(outcome: .needsAttention, message: loc("Couldn't verify the Phone feature change."),
+                                        details: state.detail.map { [$0] } ?? [])
+                }
+                return .succeeded(loc("Phone feature settings updated."))
+            } catch {
+                // A durable intent may have been saved before a later write failed. Read its actual state back into the existing
+                // page instead of leaving an optimistic switch showing the pre-action state.
+                return ActionResult(outcome: .failed, message: loc("Couldn't change Phone feature settings."), details: [error.localizedDescription])
+            }
         case "toggle":
             let available = request.parameters["value"] == "true"
             let result = Self.setAvailability(available: available)

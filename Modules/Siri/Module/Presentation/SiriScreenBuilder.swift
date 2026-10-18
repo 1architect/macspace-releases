@@ -130,10 +130,42 @@ enum SiriScreenBuilder {
         }
         let detail = subtitle + (snapshot.cloudSyncEnabled == false ? "" : " " + loc("With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad."))
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why.
-        let rows = [ToggleRow(id: "ai", title: loc("Apple Intelligence"), isOn: available, isEnabled: enabled,
+        var rows = [ToggleRow(id: "ai", title: loc("Apple Intelligence"), isOn: available, isEnabled: enabled,
                               detail: detail,
                               action: switchAction)]
+        if let status = snapshot.phoneFeatures { rows.append(phoneFeatureRow(status)) }
         return ToggleList(id: "switch", rows: rows)
+    }
+
+    static func phoneFeatureRow(_ status: PhoneFeatureFlags.Status) -> ToggleRow {
+        let on: Bool
+        switch status.state {
+        case .off: on = false
+        case .on: on = true
+        default: on = status.requestedOff.map { !$0 } ?? true
+        }
+        var badge: Badge?
+        let detail: String
+        switch status.state {
+        case .restartRequired:
+            badge = Badge(loc("Restart required"), tone: .caution)
+            detail = loc("Restart your Mac to apply this change.")
+        case .changedElsewhere:
+            badge = Badge(loc("Changed outside MacSpace"), tone: .caution)
+            detail = loc("Another change affects these features. MacSpace keeps it and does not release Phone models automatically.")
+        case .unknown:
+            badge = Badge(loc("State unknown"), tone: .caution)
+            detail = loc("MacSpace could not read every Phone feature setting.")
+        case .unsupported:
+            detail = loc("These controls have not been verified on this macOS version.")
+        case .on, .off:
+            detail = loc("Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.")
+        }
+        return ToggleRow(id: "phone", title: loc("Phone features"), isOn: on,
+                         isEnabled: status.state != .unknown && status.state != .changedElsewhere
+                            && (status.state != .unsupported || status.requestedOff == true),
+                         badge: badge, detail: detail,
+                         action: Action(id: "togglePhoneFeatures", title: loc("Phone features"), requires: [.privilegedHelper]))
     }
 
     /// Switches Apple Intelligence, from the page's switch row and the tile's switch alike.

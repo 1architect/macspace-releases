@@ -47,6 +47,25 @@ Translation under More during a video call. The [Mac translation guide](https://
 places Phone translation under More during a phone call. Live Translation also depends on Apple Intelligence being on; absence
 while Apple Intelligence is already off is not independent evidence that this trial disabled translation.
 
+The user subsequently reported being unable to find these options anywhere in the UI. Record that as "not found"; it does not
+establish why an option is missing or complete a functional call test. Further UI hunting is not a prerequisite for continuing
+the guarded implementation; retain that explicit test limitation.
+
+## Code integration
+
+`Platform/Preferences/PhoneFeatureFlags.swift` implements the fixed five-gate transaction, effective-state checks, durable original
+entries, whole-operation drift preflight, and restart tracking. `siri.phone-features.set` accepts only `off=true|false` through the
+authenticated administrator helper; `siri.phone-features.status` is read-only. It imports the authorized trial's original entries
+only during an explicit helper change, preserving the pre-trial baseline. No arbitrary key or path is accepted.
+
+Siri & Apple Intelligence uses the existing ToggleRow with the existing caution badge while a restart is needed. The action
+reconciles only the Phone switch in the measured presentation, keeping language/account/model measurements and the existing
+page layout. Explicit re-enable and uninstall restore saved entries. An unreviewed future release can still restore entries it
+owns, even when creating new overrides is disabled.
+
+This implements feature-gate control. The shared owner-release state machine, its recurring cleanup integration, and the Siri and
+Spatial Photos controls are separate remaining Issue 16 work; this change does not claim those are already implemented.
+
 ### Research ABI correction
 
 `probe_call_screening_state.m` in the earlier Issue 16 research casts every function to `BOOL(void)`. That signature is unsafe for

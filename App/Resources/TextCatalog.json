@@ -7107,7 +7107,7 @@
     "key" : "%lld features",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:168"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:200"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7126,7 +7126,7 @@
     "key" : "1 feature",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:168"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:200"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7222,7 +7222,7 @@
     "key" : "Already off",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:166"
+      "Modules\/Siri\/Module\/SiriModule.swift:195"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7241,7 +7241,7 @@
     "key" : "Already on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:166"
+      "Modules\/Siri\/Module\/SiriModule.swift:195"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7256,12 +7256,31 @@
     }
   },
   {
+    "id" : "Siri|Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
+    "key" : "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:155"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Eine andere Änderung wirkt sich auf diese Funktionen aus. MacSpace behält sie bei und gibt Telefonmodelle nicht automatisch frei.",
+      "en" : "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
+      "es" : "Otro cambio afecta a estas funciones. MacSpace lo conserva y no libera automáticamente los modelos de Teléfono.",
+      "fr" : "Une autre modification affecte ces fonctions. MacSpace la conserve et ne libère pas automatiquement les modèles de Téléphone.",
+      "ja" : "別の変更がこれらの機能に影響しています。MacSpaceはその変更を保持し、電話のモデルを自動的に解放しません。",
+      "ko" : "다른 변경 사항이 이 기능에 영향을 줍니다. MacSpace는 해당 변경을 유지하고 전화 모델을 자동으로 해제하지 않습니다.",
+      "pt-BR" : "Outra alteração afeta estes recursos. O MacSpace a preserva e não libera os modelos do Telefone automaticamente.",
+      "zh-Hans" : "其他更改影响了这些功能。MacSpace 会保留该更改，不会自动释放电话模型。"
+    }
+  },
+  {
     "id" : "Siri|Apple Intelligence",
     "key" : "Apple Intelligence",
     "kind" : "Row title",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:133",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:140"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:172"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7319,7 +7338,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceWatcher.swift:82",
-      "Modules\/Siri\/Module\/SiriModule.swift:170"
+      "Modules\/Siri\/Module\/SiriModule.swift:199"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7338,7 +7357,7 @@
     "key" : "Apple Intelligence is on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:168"
+      "Modules\/Siri\/Module\/SiriModule.swift:197"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7433,7 +7452,7 @@
     "key" : "Before MacSpace can release them",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:187"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:219"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7452,7 +7471,7 @@
     "key" : "Can't free it yet",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:192"
+      "Modules\/Siri\/Module\/SiriModule.swift:221"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7464,6 +7483,25 @@
       "ko" : "아직 정리할 수 없음",
       "pt-BR" : "Ainda não é possível liberar",
       "zh-Hans" : "暂时无法释放"
+    }
+  },
+  {
+    "id" : "Siri|Changed outside MacSpace",
+    "key" : "Changed outside MacSpace",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:154"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Außerhalb von MacSpace geändert",
+      "en" : "Changed outside MacSpace",
+      "es" : "Modificado fuera de MacSpace",
+      "fr" : "Modifié hors de MacSpace",
+      "ja" : "MacSpace以外で変更されました",
+      "ko" : "MacSpace 외부에서 변경됨",
+      "pt-BR" : "Alterado fora do MacSpace",
+      "zh-Hans" : "已在 MacSpace 外更改"
     }
   },
   {
@@ -7505,6 +7543,44 @@
     }
   },
   {
+    "id" : "Siri|Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
+    "key" : "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:162"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Steuert Anrufaufzeichnung und Transkription, Live-Voicemail und Anruffilter, FaceTime-Untertitel und Anrufübersetzung für alle Accounts auf diesem Mac. Änderungen erfordern einen Neustart.",
+      "en" : "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
+      "es" : "Controla la grabación y transcripción de llamadas, el buzón de voz en directo y el filtrado de llamadas, los subtítulos de FaceTime y la traducción de llamadas para todas las cuentas de este Mac. Los cambios requieren reiniciar.",
+      "fr" : "Contrôle l’enregistrement et la transcription des appels, la messagerie vocale en direct et le filtrage des appels, les sous-titres FaceTime et la traduction des appels pour tous les comptes de ce Mac. Les modifications nécessitent un redémarrage.",
+      "ja" : "このMacのすべてのアカウントの通話録音と文字起こし、ライブ留守番電話と着信スクリーニング、FaceTimeの字幕、通話の翻訳を制御します。変更には再起動が必要です。",
+      "ko" : "이 Mac의 모든 계정에서 통화 녹음 및 전사, 실시간 음성 메시지 및 통화 스크리닝, FaceTime 자막, 통화 번역을 제어합니다. 변경 후 재시동해야 합니다.",
+      "pt-BR" : "Controla gravação e transcrição de chamadas, Correio de Voz ao Vivo e triagem de chamadas, legendas do FaceTime e tradução de chamadas para todas as contas deste Mac. As alterações exigem reinicialização.",
+      "zh-Hans" : "控制此 Mac 上所有账户的通话录音和转写、实时语音留言和来电筛选、FaceTime 字幕及通话翻译。更改后需要重新启动。"
+    }
+  },
+  {
+    "id" : "Siri|Couldn't change Phone feature settings.",
+    "key" : "Couldn't change Phone feature settings.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:143"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Die Einstellungen der Telefonfunktionen konnten nicht geändert werden.",
+      "en" : "Couldn't change Phone feature settings.",
+      "es" : "No se pudieron cambiar los ajustes de las funciones de Teléfono.",
+      "fr" : "Impossible de modifier les réglages des fonctions de Téléphone.",
+      "ja" : "電話の機能の設定を変更できませんでした。",
+      "ko" : "전화 기능 설정을 변경하지 못했습니다.",
+      "pt-BR" : "Não foi possível alterar os ajustes dos recursos do Telefone.",
+      "zh-Hans" : "无法更改电话功能设置。"
+    }
+  },
+  {
     "id" : "Siri|Couldn't check Apple Intelligence",
     "key" : "Couldn't check Apple Intelligence",
     "kind" : "Title",
@@ -7521,6 +7597,44 @@
       "ko" : "Apple Intelligence를 확인하지 못함",
       "pt-BR" : "Não foi possível verificar o Apple Intelligence",
       "zh-Hans" : "无法检查 Apple 智能"
+    }
+  },
+  {
+    "id" : "Siri|Couldn't restore Phone feature settings.",
+    "key" : "Couldn't restore Phone feature settings.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:24"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Die Einstellungen der Telefonfunktionen konnten nicht wiederhergestellt werden.",
+      "en" : "Couldn't restore Phone feature settings.",
+      "es" : "No se pudieron restaurar los ajustes de las funciones de Teléfono.",
+      "fr" : "Impossible de restaurer les réglages des fonctions de Téléphone.",
+      "ja" : "電話の機能の設定を復元できませんでした。",
+      "ko" : "전화 기능 설정을 복원하지 못했습니다.",
+      "pt-BR" : "Não foi possível restaurar os ajustes dos recursos do Telefone.",
+      "zh-Hans" : "无法恢复电话功能设置。"
+    }
+  },
+  {
+    "id" : "Siri|Couldn't verify the Phone feature change.",
+    "key" : "Couldn't verify the Phone feature change.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:136"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Die Änderung der Telefonfunktionen konnte nicht überprüft werden.",
+      "en" : "Couldn't verify the Phone feature change.",
+      "es" : "No se pudo verificar el cambio de las funciones de Teléfono.",
+      "fr" : "Impossible de vérifier la modification des fonctions de Téléphone.",
+      "ja" : "電話の機能の変更を確認できませんでした。",
+      "ko" : "전화 기능 변경을 확인하지 못했습니다.",
+      "pt-BR" : "Não foi possível verificar a alteração dos recursos do Telefone.",
+      "zh-Hans" : "无法验证电话功能更改。"
     }
   },
   {
@@ -7623,7 +7737,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:130",
+      "Modules\/Siri\/Module\/SiriModule.swift:159",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:118",
       "App\/Shell\/MainView.swift:237"
     ],
@@ -7644,7 +7758,7 @@
     "key" : "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:153"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:185"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7682,7 +7796,7 @@
     "key" : "Keeps the models",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:169"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:201"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7701,7 +7815,7 @@
     "key" : "Leftover Apple Intelligence models",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:58"
+      "Modules\/Siri\/Module\/SiriModule.swift:63"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7720,7 +7834,7 @@
     "key" : "Leftover models",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:195"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:227"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7739,7 +7853,7 @@
     "key" : "Log in as %@ and turn Apple Intelligence off there.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:163"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:195"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7751,6 +7865,25 @@
       "ko" : "%@ 계정으로 로그인하여 Apple Intelligence를 끄세요.",
       "pt-BR" : "Inicie sessão como %@ e desative o Apple Intelligence lá.",
       "zh-Hans" : "以 %@ 登录并关闭 Apple 智能。"
+    }
+  },
+  {
+    "id" : "Siri|MacSpace could not read every Phone feature setting.",
+    "key" : "MacSpace could not read every Phone feature setting.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:158"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "MacSpace konnte nicht alle Einstellungen der Telefonfunktionen lesen.",
+      "en" : "MacSpace could not read every Phone feature setting.",
+      "es" : "MacSpace no pudo leer todos los ajustes de las funciones de Teléfono.",
+      "fr" : "MacSpace n’a pas pu lire tous les réglages des fonctions de Téléphone.",
+      "ja" : "MacSpaceは電話の機能の設定をすべて読み取れませんでした。",
+      "ko" : "MacSpace가 모든 전화 기능 설정을 읽지 못했습니다.",
+      "pt-BR" : "O MacSpace não conseguiu ler todos os ajustes dos recursos do Telefone.",
+      "zh-Hans" : "MacSpace 无法读取所有电话功能设置。"
     }
   },
   {
@@ -7770,6 +7903,44 @@
       "ko" : "스위치 상태를 읽고 확인하려면 이 권한이 필요합니다.",
       "pt-BR" : "O MacSpace precisa para ler e verificar o botão.",
       "zh-Hans" : "MacSpace 需要此权限才能读取和验证开关状态。"
+    }
+  },
+  {
+    "id" : "Siri|MacSpace needs its helper to change the Phone features.",
+    "key" : "MacSpace needs its helper to change the Phone features.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:127"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "MacSpace benötigt seinen Hilfsdienst, um die Telefonfunktionen zu ändern.",
+      "en" : "MacSpace needs its helper to change the Phone features.",
+      "es" : "MacSpace necesita su asistente para cambiar las funciones de Teléfono.",
+      "fr" : "MacSpace a besoin de son assistant pour modifier les fonctions de Téléphone.",
+      "ja" : "電話の機能を変更するには、MacSpaceのヘルパーが必要です。",
+      "ko" : "전화 기능을 변경하려면 MacSpace 보조 프로그램이 필요합니다.",
+      "pt-BR" : "O MacSpace precisa do auxiliar para alterar os recursos do Telefone.",
+      "zh-Hans" : "MacSpace 需要辅助程序来更改电话功能。"
+    }
+  },
+  {
+    "id" : "Siri|MacSpace needs its helper to restore the Phone feature settings.",
+    "key" : "MacSpace needs its helper to restore the Phone feature settings.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:22"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "MacSpace benötigt seinen Hilfsdienst, um die Einstellungen der Telefonfunktionen wiederherzustellen.",
+      "en" : "MacSpace needs its helper to restore the Phone feature settings.",
+      "es" : "MacSpace necesita su asistente para restaurar los ajustes de las funciones de Teléfono.",
+      "fr" : "MacSpace a besoin de son assistant pour restaurer les réglages des fonctions de Téléphone.",
+      "ja" : "電話の機能の設定を復元するには、MacSpaceのヘルパーが必要です。",
+      "ko" : "전화 기능 설정을 복원하려면 MacSpace 보조 프로그램이 필요합니다.",
+      "pt-BR" : "O MacSpace precisa do auxiliar para restaurar os ajustes dos recursos do Telefone.",
+      "zh-Hans" : "MacSpace 需要辅助程序来恢复电话功能设置。"
     }
   },
   {
@@ -7796,7 +7967,7 @@
     "key" : "Not available in a virtual machine",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:114"
+      "Modules\/Siri\/Module\/SiriModule.swift:123"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7834,7 +8005,7 @@
     "key" : "One account with Apple Intelligence on keeps the models on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:172"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7853,7 +8024,7 @@
     "key" : "Open",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:156"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:188"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7929,7 +8100,7 @@
     "key" : "Or delete the account in System Settings > Users & Groups.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:164"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:196"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7948,7 +8119,7 @@
     "key" : "Other accounts",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:171"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:203"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7963,13 +8134,52 @@
     }
   },
   {
+    "id" : "Siri|Phone feature settings updated.",
+    "key" : "Phone feature settings updated.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:139"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Einstellungen der Telefonfunktionen aktualisiert.",
+      "en" : "Phone feature settings updated.",
+      "es" : "Ajustes de las funciones de Teléfono actualizados.",
+      "fr" : "Réglages des fonctions de Téléphone mis à jour.",
+      "ja" : "電話の機能の設定を更新しました。",
+      "ko" : "전화 기능 설정이 업데이트되었습니다.",
+      "pt-BR" : "Ajustes dos recursos do Telefone atualizados.",
+      "zh-Hans" : "电话功能设置已更新。"
+    }
+  },
+  {
+    "id" : "Siri|Phone features",
+    "key" : "Phone features",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:164",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:168"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Telefonfunktionen",
+      "en" : "Phone features",
+      "es" : "Funciones de Teléfono",
+      "fr" : "Fonctions de Téléphone",
+      "ja" : "電話の機能",
+      "ko" : "전화 기능",
+      "pt-BR" : "Recursos do Telefone",
+      "zh-Hans" : "电话功能"
+    }
+  },
+  {
     "id" : "Siri|Released Apple Intelligence models",
     "key" : "Released Apple Intelligence models",
     "kind" : "Message",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/ModelPurger.swift:38",
       "Modules\/Siri\/Module\/Engine\/ModelPurger.swift:41",
-      "Modules\/Siri\/Module\/SiriModule.swift:85"
+      "Modules\/Siri\/Module\/SiriModule.swift:90"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7988,7 +8198,7 @@
     "key" : "Released Apple Intelligence models and unused system assets",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:90"
+      "Modules\/Siri\/Module\/SiriModule.swift:95"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8007,7 +8217,7 @@
     "key" : "Releasing the leftover models",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:183"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:215"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8022,11 +8232,50 @@
     }
   },
   {
+    "id" : "Siri|Restart required",
+    "key" : "Restart required",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:151"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Neustart erforderlich",
+      "en" : "Restart required",
+      "es" : "Es necesario reiniciar",
+      "fr" : "Redémarrage nécessaire",
+      "ja" : "再起動が必要です",
+      "ko" : "재시동 필요",
+      "pt-BR" : "Reinicialização necessária",
+      "zh-Hans" : "需要重新启动"
+    }
+  },
+  {
+    "id" : "Siri|Restart your Mac to apply this change.",
+    "key" : "Restart your Mac to apply this change.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:133",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:152"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Starte deinen Mac neu, um diese Änderung anzuwenden.",
+      "en" : "Restart your Mac to apply this change.",
+      "es" : "Reinicia el Mac para aplicar este cambio.",
+      "fr" : "Redémarrez votre Mac pour appliquer cette modification.",
+      "ja" : "この変更を適用するにはMacを再起動してください。",
+      "ko" : "이 변경 사항을 적용하려면 Mac을 재시동하세요.",
+      "pt-BR" : "Reinicie o Mac para aplicar esta alteração.",
+      "zh-Hans" : "重新启动 Mac 以应用此更改。"
+    }
+  },
+  {
     "id" : "Siri|Restart. MacSpace then deletes the models.",
     "key" : "Restart. MacSpace then deletes the models.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:167"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:199"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8064,7 +8313,7 @@
     "key" : "Siri & Apple Intelligence",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:75",
+      "Modules\/Siri\/Module\/SiriModule.swift:80",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:103",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111",
       "App\/Settings\/ScreenshotToolView.swift:91"
@@ -8086,7 +8335,7 @@
     "key" : "Siri's iCloud sync",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:149"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:181"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8105,7 +8354,7 @@
     "key" : "Siri's iCloud sync is currently off",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:148"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:180"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8124,7 +8373,7 @@
     "key" : "Siri's iCloud sync is currently on",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:147"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:179"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8136,6 +8385,25 @@
       "ko" : "Siri iCloud 동기화가 현재 켜져 있음",
       "pt-BR" : "A sincronização da Siri com o iCloud está ativada",
       "zh-Hans" : "Siri 的 iCloud 同步目前已开启"
+    }
+  },
+  {
+    "id" : "Siri|State unknown",
+    "key" : "State unknown",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:157"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Status unbekannt",
+      "en" : "State unknown",
+      "es" : "Estado desconocido",
+      "fr" : "État inconnu",
+      "ja" : "状態不明",
+      "ko" : "상태 알 수 없음",
+      "pt-BR" : "Estado desconhecido",
+      "zh-Hans" : "状态未知"
     }
   },
   {
@@ -8219,7 +8487,7 @@
     "key" : "Takes about a minute.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:184"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8291,11 +8559,30 @@
     }
   },
   {
+    "id" : "Siri|These controls have not been verified on this macOS version.",
+    "key" : "These controls have not been verified on this macOS version.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:160"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Diese Steuerelemente wurden auf dieser macOS-Version noch nicht überprüft.",
+      "en" : "These controls have not been verified on this macOS version.",
+      "es" : "Estos controles no se han verificado en esta versión de macOS.",
+      "fr" : "Ces commandes n’ont pas été vérifiées sur cette version de macOS.",
+      "ja" : "このmacOSバージョンでは、これらの制御は検証されていません。",
+      "ko" : "이 제어 기능은 현재 macOS 버전에서 검증되지 않았습니다.",
+      "pt-BR" : "Estes controles não foram verificados nesta versão do macOS.",
+      "zh-Hans" : "这些控制尚未在此 macOS 版本上验证。"
+    }
+  },
+  {
     "id" : "Siri|This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "key" : "This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:165"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:197"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8333,7 +8620,7 @@
     "key" : "Turn it off to keep Siri's language change on this Mac.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:154"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:186"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8390,7 +8677,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:142"
+      "Modules\/Siri\/Module\/SiriModule.swift:171"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8409,7 +8696,7 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:133"
+      "Modules\/Siri\/Module\/SiriModule.swift:162"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8428,7 +8715,7 @@
     "key" : "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:192"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:224"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8467,7 +8754,7 @@
     "kind" : "Text",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:148",
-      "Modules\/Siri\/Module\/SiriModule.swift:27"
+      "Modules\/Siri\/Module\/SiriModule.swift:32"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8600,7 +8887,7 @@
     "key" : "macOS is removing the model",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:191"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
     ],
     "table" : "Siri",
     "translations" : {

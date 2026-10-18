@@ -5,13 +5,25 @@ import MacSpacePlatform
 public struct SiriPrivilegedOperations: PrivilegedOperationHandler {
     public static let planOrphans = "siri.orphan-subscriptions.plan"
     public static let removeOrphans = "siri.orphan-subscriptions.execute"
+    public static let phoneFeatureStatus = "siri.phone-features.status"
+    public static let setPhoneFeatures = "siri.phone-features.set"
 
     public init() {}
 
-    public var operations: Set<String> { [Self.planOrphans, Self.removeOrphans] }
-    public var readOnlyOperations: Set<String> { [Self.planOrphans] }
+    public var operations: Set<String> { [Self.planOrphans, Self.removeOrphans, Self.phoneFeatureStatus, Self.setPhoneFeatures] }
+    public var readOnlyOperations: Set<String> { [Self.planOrphans, Self.phoneFeatureStatus] }
 
     public func handle(_ operation: String, arguments: [String: String], caller: PrivilegedCaller) throws -> Data {
+        if operation == Self.phoneFeatureStatus {
+            guard arguments.isEmpty else { throw PrivilegedOperationError("Phone feature status takes no arguments.") }
+            return try JSONEncoder().encode(PhoneFeatureFlags().status())
+        }
+        if operation == Self.setPhoneFeatures {
+            guard arguments.count == 1, let value = arguments["off"], ["true", "false"].contains(value) else {
+                throw PrivilegedOperationError("Phone features take only off=true or off=false.")
+            }
+            return try JSONEncoder().encode(PhoneFeatureFlags().setOff(value == "true"))
+        }
         // The current user is the caller, not root: the cleaner must never remove that account's own rows.
         let cleaner = OrphanSubscriptionCleaner(currentUserGUID: UAFSubscriptionDatabase.userGUID(uid: caller.uid))
         let result: OrphanSubscriptionResult

@@ -102,6 +102,16 @@ libere. Con la sincronización de Siri con iCloud activada, estos cambios tambi�
 otros dispositivos de la misma cuenta de Apple. MacSpace no puede desactivar esa sincronización.
 Te dice dónde hacerlo.
 
+### Funciones de Teléfono
+
+El control de funciones de Teléfono en Siri y Apple Intelligence usa cinco anulaciones fijas de TelephonyUtilities en
+`/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: grabación, filtrado de llamadas, entrega de subtítulos de
+FaceTime y traducción de audio y vídeo del Mac. El asistente autenticado guarda las entradas originales en
+`/Library/Application Support/MacSpace/phone-features.json` antes de cambiarlas. Los cambios requieren reiniciar; el estado efectivo
+se comprueba por separado. Al reactivar se restauran las entradas originales, conservando las demás anulaciones. El asistente
+rechaza entradas modificadas fuera de MacSpace. Este control no instala perfiles ni cambia el idioma de Siri. La operación del
+asistente solo acepta activar o desactivar, sin rutas, dominios ni claves arbitrarios.
+
 ### Permisos
 
 macOS gestiona cada solicitud, así que MacSpace nunca ve tu contraseña.

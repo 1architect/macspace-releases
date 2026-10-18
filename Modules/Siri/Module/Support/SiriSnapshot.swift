@@ -35,6 +35,8 @@ struct SiriSnapshot: Sendable {
     var lockedModelBytes: UInt64 = 0
     /// Siri's iCloud sync is on (`SiriCloudSync.isEnabled`); nil when it cannot be read.
     var cloudSyncEnabled: Bool?
+    /// The system-wide Phone gates, distinct from Apple Intelligence's language switch.
+    var phoneFeatures: PhoneFeatureFlags.Status?
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -111,6 +113,19 @@ actor SiriStore {
         return updated
     }
 
+    /// Changing Phone's gates does not change the measured model sizes, language guard, or accounts. Update only this switch.
+    func reconcilePhoneFeatures(read: @escaping @Sendable () -> PhoneFeatureFlags.Status = { PhoneFeatureFlags().status() }) async -> SiriSnapshot? {
+        guard var updated = cached else { return nil }
+        generation += 1
+        let started = generation
+        inflight = nil
+        relay = nil
+        updated.phoneFeatures = await Task.detached(priority: .utility) { read() }.value
+        guard started == generation else { return cached }
+        cached = updated
+        return updated
+    }
+
     func invalidate() {
         cached = nil
         inflight = nil
@@ -157,6 +172,7 @@ actor SiriStore {
         snapshot.lockedModelBytes = models.locked
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         snapshot.cloudSyncEnabled = SiriCloudSync.isEnabled()
+        snapshot.phoneFeatures = PhoneFeatureFlags().status()
         return snapshot
     }
 

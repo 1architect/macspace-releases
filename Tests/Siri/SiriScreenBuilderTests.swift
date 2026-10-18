@@ -5,6 +5,44 @@ import MacSpaceSiriPrivileged
 @testable import MacSpaceSiri
 
 final class SiriScreenBuilderTests: XCTestCase {
+    func testPhoneSwitchUsesRequestedStateDuringRestartAndCanRestoreOnAnUnreviewedRelease() {
+        let offPending = PhoneFeatureFlags.Status(state: .restartRequired, managedOff: false, effective: [:], requestedOff: true)
+        let off = SiriScreenBuilder.phoneFeatureRow(offPending)
+        XCTAssertFalse(off.isOn)
+        XCTAssertTrue(off.isEnabled)
+        XCTAssertNotNil(off.badge)
+        XCTAssertNil(off.action.confirmation)
+        XCTAssertEqual(off.action.requires, [.privilegedHelper])
+        let on = SiriScreenBuilder.phoneFeatureRow(.init(state: .restartRequired, managedOff: false, effective: [:], requestedOff: false))
+        XCTAssertTrue(on.isOn)
+        XCTAssertTrue(SiriScreenBuilder.phoneFeatureRow(.init(state: .unsupported, managedOff: false, effective: [:], requestedOff: true)).isEnabled)
+        XCTAssertFalse(SiriScreenBuilder.phoneFeatureRow(.init(state: .unsupported, managedOff: false, effective: [:])).isEnabled)
+        XCTAssertFalse(SiriScreenBuilder.phoneFeatureRow(.init(state: .changedElsewhere, managedOff: false, effective: [:], requestedOff: true)).isEnabled)
+        XCTAssertFalse(SiriScreenBuilder.phoneFeatureRow(.init(state: .off, managedOff: false, effective: [:], requestedOff: false)).isOn,
+                       "Restoring originally disabled gates must not report that features are on")
+    }
+
+    func testPhoneChangeReconcilesOnlyItsSwitchAndRetainsMeasurements() async throws {
+        var fixture = snapshot(.protected, purgeable: 123_456_789)
+        fixture.installedModelBytes = 987_654_321
+        fixture.phoneFeatures = .init(state: .on, managedOff: false, effective: [:])
+        let before = fixture
+        let reads = SnapshotReads()
+        let store = SiriStore(builder: { _ in _ = reads.next(); return before })
+        _ = await store.snapshot()
+        let changed = PhoneFeatureFlags.Status(state: .off, managedOff: true, effective: [:], requestedOff: true)
+        let updated = await store.reconcilePhoneFeatures(read: { changed })
+        XCTAssertEqual(updated?.phoneFeatures, changed)
+        XCTAssertEqual(updated?.status, before.status)
+        XCTAssertEqual(updated?.installedModelBytes, before.installedModelBytes)
+        XCTAssertEqual(updated?.purgeableAssetsBytes, before.purgeableAssetsBytes)
+        XCTAssertEqual(updated?.takenAt, before.takenAt)
+        XCTAssertEqual(reads.total, 1)
+        let cached = await store.snapshot(maxAge: .infinity)
+        XCTAssertEqual(cached.phoneFeatures, changed)
+        XCTAssertEqual(reads.total, 1)
+    }
+
     private func status(_ state: AppleIntelligenceGuardState, languagesMatch: Bool? = nil) -> AppleIntelligenceGuardStatus {
         AppleIntelligenceGuardStatus(generatedAt: Date(), state: state, ineligibilitySource: nil, languagesMatch: languagesMatch, eligible: state == .atRisk,
                                      targetSelected: nil, targetInstalled: nil,

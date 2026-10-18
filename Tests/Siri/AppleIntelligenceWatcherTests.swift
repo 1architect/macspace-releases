@@ -93,8 +93,19 @@ final class AppleIntelligenceWatcherTests: XCTestCase {
 }
 
 final class SiriPrivilegedReadingsTests: XCTestCase {
-    /// Listing orphaned model subscriptions is open to every account; removing them needs an administrator.
-    func testOnlyThePlanIsOpenToEveryAccount() {
-        XCTAssertEqual(SiriPrivilegedOperations().readOnlyOperations, [SiriPrivilegedOperations.planOrphans])
+    /// Subscription and Phone-gate inspection is open to every account; mutations require an administrator.
+    func testOnlyReadingsAreOpenToEveryAccount() {
+        XCTAssertEqual(SiriPrivilegedOperations().readOnlyOperations, [SiriPrivilegedOperations.planOrphans, SiriPrivilegedOperations.phoneFeatureStatus])
+        XCTAssertFalse(SiriPrivilegedOperations().readOnlyOperations.contains(SiriPrivilegedOperations.setPhoneFeatures))
+    }
+
+    func testPhoneHelperRejectsExtraKeysAndUnrecognizedValuesBeforeAnyMutation() {
+        let handler = SiriPrivilegedOperations()
+        for parameters in [[String: String](), ["off": "yes"], ["off": "true", "path": "/tmp/flags"], ["off": "false", "domain": "Other"]] {
+            XCTAssertThrowsError(try handler.handle(SiriPrivilegedOperations.setPhoneFeatures, arguments: parameters,
+                                                   caller: PrivilegedCaller(uid: 501)))
+        }
+        XCTAssertThrowsError(try handler.handle(SiriPrivilegedOperations.phoneFeatureStatus, arguments: ["path": "/tmp/flags"],
+                                               caller: PrivilegedCaller(uid: 501)))
     }
 }

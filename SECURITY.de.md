@@ -103,6 +103,16 @@ iCloud-Synchronisierung von Siri erreichen diese Änderungen auch deine anderen 
 demselben Apple Account. MacSpace kann diese Synchronisierung nicht ausschalten. Es sagt dir, wo
 du das tun kannst.
 
+### Telefonfunktionen
+
+Die Telefonsteuerung unter Siri und Apple Intelligence verwendet fünf feste TelephonyUtilities-Überschreibungen in
+`/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: Anrufaufzeichnung, Anruffilter, FaceTime-Untertitelübermittlung
+und Audio-/Videoübersetzung auf dem Mac. Der authentifizierte Hilfsdienst speichert die ursprünglichen Einträge vor Änderungen in
+`/Library/Application Support/MacSpace/phone-features.json`. Änderungen erfordern einen Neustart; der tatsächliche Zustand wird
+separat geprüft. Beim erneuten Aktivieren werden die ursprünglichen Einträge wiederhergestellt und andere Überschreibungen
+beibehalten. Außerhalb von MacSpace geänderte Einträge werden nicht überschrieben. Diese Steuerung installiert kein Profil und
+ändert nicht die Siri-Sprache. Der Hilfsdienst akzeptiert nur Ein- oder Ausschalten, keine beliebigen Pfade, Domains oder Schlüssel.
+
 ### Berechtigungen
 
 macOS übernimmt jede Abfrage, daher sieht MacSpace nie dein Passwort.

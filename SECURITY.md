@@ -97,6 +97,16 @@ about a minute, to make macOS release them. With Siri's iCloud sync on, these ch
 your other devices on the same Apple Account. MacSpace cannot turn that sync off. It tells you
 where to do it.
 
+### Phone features
+
+The Phone features switch in Siri & Apple Intelligence uses five fixed TelephonyUtilities overrides in
+`/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: call recording, Call Screening, FaceTime caption delivery,
+and the Mac audio/video translation gates. The authenticated helper saves original entries in
+`/Library/Application Support/MacSpace/phone-features.json` before writing changes. Changes take effect after a restart; the
+running gates are checked separately. Re-enabling restores those original entries, preserving unrelated overrides. The helper
+refuses an entry changed outside MacSpace instead of overwriting it. This control installs no configuration profile and does not
+change Siri's Session Language. Its helper operation accepts only an on/off intent, with no arbitrary path, domain or key.
+
 ### Permissions
 
 macOS handles each prompt, so MacSpace never sees your password.
