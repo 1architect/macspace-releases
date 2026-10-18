@@ -16,7 +16,7 @@
 #   OUT_DIR=Build/Test Scripts/Assemble.sh   build somewhere else than Build/ (development and test builds, so they never replace the
 #                                            app that is copied to /Applications)
 #   FEED_URL=<url> Scripts/Assemble.sh       read updates from another appcast than the latest release's (a pre-release's feed, to
-#                                            test an update before it reaches users; Docs/Releasing.md)
+#                                            test an update before it reaches users)
 #
 # The app is assembled, signed and notarized in a staging folder and only moved to <OUT_DIR>/MacSpace.app once it verifies: that
 # path always holds a complete app. It used to be rebuilt in place, and a copy made while it was being signed came out with no

@@ -8,8 +8,7 @@
 # results/selftest-<date>/ in this repository (not committed); send report.md from there.
 #
 # Plain settings are written the way System Settings writes them (CFPreferences, then the setting's change notification). The
-# script checks that each notification is posted. Personalized ads and the ad identifier need none (self-tested 2026-10-03, see
-# Docs/Handoff.md).
+# script checks that each notification is posted. Personalized ads and the ad identifier need none (self-tested 2026-10-03).
 #
 # Not tested here, and why:
 # - Policies (the "Policies (need your approval)" section): macOS applies a configuration profile only after a person approves it.

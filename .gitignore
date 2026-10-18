@@ -8,7 +8,7 @@ Build/
 *.dmg
 
 # Signing and release secrets never belong in this public repository. They live in the maintainer's keychain or in the
-# private release repository (Docs/Handoff.md).
+# private release repository.
 # Certificates, keys and provisioning profiles
 *.p12
 *.pfx

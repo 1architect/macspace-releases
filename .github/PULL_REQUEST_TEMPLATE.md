@@ -14,4 +14,3 @@ Which commands you ran, and on which macOS version and build.
 - [ ] `CHANGELOG.md` has an entry under "Unreleased".
 - [ ] Screenshots of every UI change are attached, in the night and the day look.
 - [ ] A change to `README`, `PRIVACY` or `SECURITY` is made in all five languages, or this description says which ones are out of date.
-- [ ] `Docs/Handoff.md` is updated if the build, the tests or the structure changed.

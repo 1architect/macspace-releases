@@ -4,7 +4,7 @@ import Foundation
 
 /// The startup disk as System Settings > General > Storage divides it, computed the way its Storage pane computes it. Decoded from
 /// `StorageManagementService`, its category extensions and `Storage.appex` on macOS 27.2 (26B5091g) and checked against what
-/// Settings showed on the same Mac (Docs/Research.md, "How System Settings computes its categories"):
+/// Settings showed on the same Mac:
 ///
 /// - used is the volume's capacity less what is available for important use (free space and what macOS purges by itself);
 /// - macOS is every volume of the startup container but Data (System, Preboot, Recovery, Update, VM) and the separate Recovery

@@ -3,7 +3,7 @@ import Foundation
 
 /// A macOS update downloaded and prepared by Software Update, waiting for a restart: its images on the Preboot volume
 /// (`<volume group>/cryptex1/proposed`). System Settings counts it under macOS, with every volume of the startup container but Data,
-/// not in System Data (Docs/Research.md); it installs at the next restart, and macOS removes it then.
+/// not in System Data; it installs at the next restart, and macOS removes it then.
 public struct PreparedUpdate: Codable, Equatable, Sendable {
     /// "macOS 27.2 (26B5101f)", or "macOS update" when its manifest cannot be read.
     public var name: String

@@ -283,9 +283,6 @@ pas.
 dit pourquoi. Debloat y liste quand même des interrupteurs qui ne peuvent pas prendre effet dans
 une machine virtuelle.
 
-Le comportement de macOS, mesures à l’appui, est décrit dans [Docs/Research.md](Docs/Research.md)
-(en anglais).
-
 ---
 
 ## Confidentialité
@@ -336,8 +333,7 @@ Il n’y a pas de programme de désinstallation. Pour supprimer MacSpace et tout
 
 ## Compiler depuis les sources
 
-Le code source est ce dépôt. [Docs/Handoff.md](Docs/Handoff.md) (en anglais) explique comment il
-est organisé. Il vous faut macOS 27 et Xcode 27.
+Le code source est ce dépôt. Il vous faut macOS 27 et Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

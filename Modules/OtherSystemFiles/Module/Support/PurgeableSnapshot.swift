@@ -71,7 +71,7 @@ struct TimeMachineState: Sendable, Equatable {
     }
 }
 
-/// The services worth naming, and why each is or is not freed. Measured on the development Mac, 2026-10-02 (Docs/Research.md, CacheDelete).
+/// The services worth naming, and why each is or is not freed. Measured on the development Mac, 2026-10-02.
 struct PurgeableService: Equatable {
     let id: String
     let title: String

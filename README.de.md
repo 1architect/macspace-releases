@@ -285,9 +285,6 @@ Schnappschüsse und Backups kommen nicht zurück.
 und sagt, warum. Debloat listet dort weiterhin Schalter auf, die in einer virtuellen Maschine
 nicht wirken können.
 
-Wie sich macOS verhält, mit Messwerten, steht in [Docs/Research.md](Docs/Research.md) (auf
-Englisch).
-
 ---
 
 ## Datenschutz
@@ -338,8 +335,7 @@ Es gibt kein Deinstallationsprogramm. So entfernst du MacSpace und alles, was es
 
 ## Aus dem Quellcode bauen
 
-Der Quellcode ist dieses Repository. [Docs/Handoff.md](Docs/Handoff.md) (auf Englisch) erklärt,
-wie es aufgebaut ist. Du brauchst macOS 27 und Xcode 27.
+Der Quellcode ist dieses Repository. Du brauchst macOS 27 und Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

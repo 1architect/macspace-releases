@@ -272,8 +272,6 @@ backups apagados não voltam.
 **Máquinas virtuais.** Numa máquina virtual, **Siri e Apple Intelligence** não faz nada e diz por
 quê. O Debloat ainda lista ali interruptores que não podem ter efeito numa máquina virtual.
 
-Como o macOS se comporta, com medições, está em [Docs/Research.md](Docs/Research.md) (em inglês).
-
 ---
 
 ## Privacidade
@@ -323,8 +321,7 @@ Não há desinstalador. Para remover o MacSpace e tudo o que ele alterou:
 
 ## Compilar a partir do código-fonte
 
-O código-fonte é este repositório. O [Docs/Handoff.md](Docs/Handoff.md) (em inglês) explica como
-ele é organizado. Você precisa do macOS 27 e do Xcode 27.
+O código-fonte é este repositório. Você precisa do macOS 27 e do Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

@@ -275,8 +275,6 @@ registros, los ítems de la Papelera, las instantáneas y las copias eliminados 
 dice por qué. Debloat sigue mostrando allí interruptores que no pueden surtir efecto en una
 máquina virtual.
 
-Cómo se comporta macOS, con mediciones, está en [Docs/Research.md](Docs/Research.md) (en inglés).
-
 ---
 
 ## Privacidad
@@ -327,8 +325,7 @@ No hay desinstalador. Para quitar MacSpace y todo lo que cambió:
 
 ## Compilar desde el código fuente
 
-El código fuente es este repositorio. [Docs/Handoff.md](Docs/Handoff.md) (en inglés) explica
-cómo está organizado. Necesitas macOS 27 y Xcode 27.
+El código fuente es este repositorio. Necesitas macOS 27 y Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
