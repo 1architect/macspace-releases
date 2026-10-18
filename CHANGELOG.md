@@ -17,6 +17,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Cleanup row departures keep text, flags, shade and separators in one geometry group. Following sections wait for the row's cascade before closing its space instead of jumping ahead.
 - Cleanup flags measure their destination independently of the surrounding layout and use one resizing spring, preventing repeated squeezing and wobble of the flag and adjacent badges.
 - Analytics verification uses logged opt-in decisions, never ambiguous submission timestamps. Missing evidence shows Not verified, and interface explanations are translated instead of exposing English helper diagnostics.
 - Homebrew has an info pill explaining its safe cleanup, and `/usr/local` explains the separately installed tools it holds.

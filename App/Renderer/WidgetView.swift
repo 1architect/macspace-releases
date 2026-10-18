@@ -17,6 +17,7 @@ struct WidgetForm<Top: View>: View {
     @Environment(\.pageBottomRoom) private var bottomRoom
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flipped: Set<String> = []
+    @State private var previousStructure: PageCascade.Structure?
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
         widgets.flatMap { widget -> [String] in
@@ -50,6 +51,8 @@ struct WidgetForm<Top: View>: View {
     }
 
     var body: some View {
+        let itemIDs = Self.itemIDs(widgets)
+        let structure = PageCascade.Structure(ids: itemIDs, offset: cascadeOffset, count: cascadeCount)
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
@@ -62,6 +65,7 @@ struct WidgetForm<Top: View>: View {
                                 .foregroundStyle(.secondary)
                                 .accessibilityAddTraits(.isHeader)
                                 .padding(.horizontal, 10)
+                                .geometryGroup()
                                 .modifier(item(widget.id + ":header"))
                         }
                         VStack(spacing: 0) {
@@ -82,17 +86,22 @@ struct WidgetForm<Top: View>: View {
                                             Rectangle().fill(.primary.opacity(0.07)).frame(height: 0.5).padding(.horizontal, 10)
                                         }
                                     }
+                                    // Resolve parent placement once for the whole cell, before the cascade. Text's own content
+                                    // transactions must not animate/cancel its position separately from the shade and controls.
+                                    .geometryGroup()
                                     .modifier(item(row.id))
                                     .transition(transition(row.id))
                             }
                         }
-                        .animation(Theme.layout, value: rows.map(\.id))
                     }
+                    .geometryGroup()
                     .transition(transition(widget.id + ":header"))
                 }
                 Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
-            .animation(Theme.layout, value: widgets.map(\.id))
+            // A row removal changes later sections' positions even when no section id changed. Wait for the existing reverse
+            // cascade to finish before closing the gap; one transaction owns the form's structural layout.
+            .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: itemIDs)
             // Match the native grouped Form’s 20-point inset above its first section header.
             .padding(.top, 20)
             .padding(.horizontal, 20)
@@ -100,6 +109,7 @@ struct WidgetForm<Top: View>: View {
         }
         .font(.system(size: 13))
         .buttonStyle(.bordered)
+        .onChange(of: structure, initial: true) { _, next in previousStructure = next }
     }
 
     private struct Entry: Identifiable {
@@ -173,12 +183,38 @@ struct WidgetForm<Top: View>: View {
 
 /// Shared ordering for the legend, headers and rows; departure runs from the bottom up.
 enum PageCascade {
+    static let duration = 0.22
+
+    struct Structure: Equatable {
+        let ids: [String]
+        let offset: Int
+        let count: Int
+
+        init(ids: [String], offset: Int = 0, count: Int = 0) {
+            self.ids = ids
+            self.offset = offset
+            self.count = max(count, offset + ids.count)
+        }
+    }
     /// Same vertical arrival/departure as PageItemReveal, applied only to inserted/removed identities.
     static func transition(index: Int, count: Int, reduceMotion: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion) -> AnyTransition {
         let motion = reduceMotion ? AnyTransition.opacity : .opacity.combined(with: .offset(y: -14))
         return .asymmetric(
-            insertion: motion.animation(.smooth(duration: 0.22).delay(delay(index: index, count: count, visible: true))),
-            removal: motion.animation(.smooth(duration: 0.22).delay(delay(index: index, count: count, visible: false))))
+            insertion: motion.animation(.smooth(duration: duration).delay(delay(index: index, count: count, visible: true))),
+            removal: motion.animation(.smooth(duration: duration).delay(delay(index: index, count: count, visible: false))))
+    }
+
+    /// Keep the departing cell's space until its last cascade finishes, then move survivors/sections together.
+    static func layoutDelay(from previous: Structure?, to next: Structure) -> Double {
+        guard let previous else { return 0 }
+        let remaining = Set(next.ids)
+        return previous.ids.enumerated().filter { !remaining.contains($0.element) }
+            .map { delay(index: previous.offset + $0.offset, count: previous.count, visible: false) + duration }.max() ?? 0
+    }
+
+    static func layoutAnimation(from previous: Structure?, to next: Structure, reduceMotion: Bool) -> Animation {
+        let wait = layoutDelay(from: previous, to: next)
+        return (reduceMotion ? .linear(duration: 0) : Theme.layout).delay(wait)
     }
 
     static func delay(index: Int, count: Int, visible: Bool) -> Double {
@@ -203,7 +239,7 @@ struct PageItemReveal: ViewModifier {
             .allowsHitTesting(visible)
             .accessibilityHidden(!visible)
             // No onAppear animation: opening and closing a tile keeps its original transition.
-            .animation(reduceMotion ? nil : .smooth(duration: 0.22).delay(PageCascade.delay(index: index, count: count, visible: visible)), value: visible)
+            .animation(reduceMotion ? nil : .smooth(duration: PageCascade.duration).delay(PageCascade.delay(index: index, count: count, visible: visible)), value: visible)
     }
 }
 

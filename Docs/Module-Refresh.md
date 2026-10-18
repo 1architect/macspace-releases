@@ -93,8 +93,22 @@ proposal during shell resizing, which could make even “Carregando” wrap; the
 
 Progress fills carry the fraction without duplicate percentage text; cloud flags retain the removed-byte count. Inserted/removed
 rows and flags keep the vertical cascade, while unchanged rows remain in place. A row flag's phase change also animates its containing
-controls HStack with `Theme.layout`, so info/folder controls follow the resizing capsule instead of jumping. Fraction-only ticks do
-not restart that layout animation; Reduce Motion disables it.
+controls through the capsule's presented width. `PillMorph` measures/places its destination with an unspecified proposal, independent
+of the parent's intermediate allocation. The surrounding HStack has no second phase spring: its controls follow that single width
+each frame. A second spring and proposal-dependent measurements repeatedly squeezed the warning badge and retargeted the flag.
+Fraction-only ticks do not retarget the shell; Reduce Motion updates its width immediately.
+
+Cells (including shade and separator), headers and sections use SwiftUI's `geometryGroup()` before their cascade modifiers. This
+resolves ancestor placement as one transform before descendants' independent text transactions; labels and pill text cannot cancel
+the cell's motion and detach from its background. This is the row-animation use described in
+[Apple's geometryGroup documentation](https://developer.apple.com/documentation/swiftui/view/geometrygroup()). Text/number content
+motion retains its existing renderer, anchors and timings.
+
+The form's flattened item identities, rather than only section ids, drive structural layout. `PageCascade.Structure` preserves the
+previous whole-page order/offset/count. Gap closure waits for the latest departing item's existing reverse-cascade delay plus its
+0.22-second duration, then uses `Theme.layout` to move survivors and following sections together. Initial loads, numeric/status
+updates, reorder-only changes and insertions add no departure delay. New changes are ordinary SwiftUI transactions, with no timers
+or stale asynchronous removal callbacks. Reduce Motion retains opacity departure and closes the gap without spatial animation.
 
 Other System Files retains the `purgeFiles` row action during retries, with “Freeing in the background” in `Row.activity` rather than
 a separate badge. The same flag owns foreground progress and background work. A successful result whose verified presentation
@@ -186,3 +200,12 @@ user's visual check.
 The notification investigation on 2026-10-18 found that macOS's **Allow Notifications** for MacSpace was disabled, confirmed by the
 user in System Settings. This blocks all notification types regardless of the app's own switches. No notification rules were
 changed; the user enables that permission in System Settings. No UI automation was used.
+
+`results/cleanup-motion-20261018/all-tests.txt`: 513 tests, 508 passed and five optional skips. The supplied 13:53:13 recording
+(11.828 seconds) shows the warning badge repeatedly truncating/restoring at 4.4–5.6 seconds, then the departing row's title and pill
+text above their backgrounds at 5.8 seconds while following content closes the gap. Native AVFoundation decoded the file; no UI
+automation was used. The new intrinsic-measurement regression test was also run against the previous PillMorph implementation:
+`pill-before-regression.txt` records ten failed width assertions (a 176-point destination was repeatedly measured at intermediate
+20–140-point allocations). The restored fix passes in the full run. Cascade tests cover a row removal with unchanged section ids,
+several removals with changed legend offsets/counts, and immediate layout for initial load, insertion, stable ids and reordering.
+Shared text-motion and one-line button tests remain passing. Final runtime pill/cell animation verification belongs to the user.
