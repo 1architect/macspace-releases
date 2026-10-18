@@ -258,6 +258,11 @@ does it. **Not yet tried on a Mac with a backup disk.**
 
 ### System assets (`/System/Library/AssetsV2`)
 
+Issue 16's follow-up on Phone feature disablement without a profile is recorded in
+[Phone-Feature-Control.md](Phone-Feature-Control.md). It distinguishes tested native settings, the exact Mac-specific translation
+flags, model prewarming that can continue after user features are off, and the remaining restart/UI validation. It does not yet
+establish a fully validated combined Phone switch.
+
 **Measured.** 7.1 GB on one Mac (8.6 GB in 40 families before the Siri models went), almost all of it subscribed, so a purge frees
 nothing until the subscription goes. Subscriptions live in `/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db`
 (readable; opened read-only with `immutable=1`). Six families carry the SIP `restricted` flag and are unreadable even with Full

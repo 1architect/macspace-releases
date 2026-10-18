@@ -181,7 +181,7 @@ public struct LaunchdServiceSetting: Codable, Equatable, Sendable {
 
 /// An admin override in `/Library/Preferences/FeatureFlags/Domain/<domain>.plist`, read by libfeatureflags at boot.
 public struct FeatureFlagSetting: Codable, Equatable, Sendable {
-    public static let overrideDirectory = "/Library/Preferences/FeatureFlags/Domain"
+    public static let overrideDirectory = FeatureFlagOverrides.directory
     public let domain: String
     public let feature: String
     /// The debloated value of the flag.

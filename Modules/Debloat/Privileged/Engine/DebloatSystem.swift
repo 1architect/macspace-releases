@@ -425,7 +425,7 @@ public final class LiveDebloatSystem: DebloatSystem {
         return nil
     }
 
-    public static let featureFlagDirectories = ["/System/Library/FeatureFlags/Domain", "/System/Library/FeatureFlags/Unified/Domain"]
+    public static let featureFlagDirectories = FeatureFlagOverrides.declarations
 
     /// A flag's override as MacSpace wrote it. A flag macOS no longer declares is unavailable, so it is never written; but one an
     /// earlier build wrote while macOS still declared it is read as it is, so switching the control back on removes it. Before,
@@ -446,44 +446,15 @@ public final class LiveDebloatSystem: DebloatSystem {
     }
 
     public static func systemFeatureExists(domain: String, feature: String, fileManager: FileManager = .default) -> Bool {
-        featureFlagDirectories.contains { directory in
-            guard let data = fileManager.contents(atPath: "\(directory)/\(domain).plist"),
-                  let root = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
-            else { return false }
-            return root[feature] != nil
-        }
+        FeatureFlagOverrides.isDeclared(domain: domain, feature: feature, fileManager: fileManager)
     }
 
     /// Sets or removes `Enabled` for one feature, keeping every other entry in the override file. An override file
     /// left empty is deleted.
     public static func updateFeatureFlagOverride(_ flag: FeatureFlagSetting, enabled: Bool?, fileManager: FileManager = .default,
                                                  path: String? = nil) throws {
-        let path = path ?? flag.overridePath
-        var root: [String: Any] = [:]
-        if let data = fileManager.contents(atPath: path) {
-            guard let existing = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-                throw DebloatSystemError.commandFailed("\(path) is not a dictionary property list.")
-            }
-            root = existing
-        }
-        var entry = root[flag.feature] as? [String: Any] ?? [:]
-        if let enabled {
-            entry["Enabled"] = enabled
-            entry.removeValue(forKey: "DevelopmentPhase") // libfeatureflags rejects a flag with both keys
-        } else {
-            entry.removeValue(forKey: "Enabled")
-        }
-        root[flag.feature] = entry.isEmpty ? nil : entry
-
-        let url = URL(fileURLWithPath: path)
-        if root.isEmpty {
-            if fileManager.fileExists(atPath: path) { try fileManager.removeItem(at: url) }
-            return
-        }
-        try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
-                                        attributes: [.posixPermissions: 0o755])
-        try PropertyListSerialization.data(fromPropertyList: root, format: .xml, options: 0).write(to: url, options: .atomic)
-        try fileManager.setAttributes([.posixPermissions: 0o644], ofItemAtPath: path)
+        do { try FeatureFlagOverrides.update(feature: flag.feature, enabled: enabled, path: path ?? flag.overridePath, fileManager: fileManager) }
+        catch let error as FeatureFlagOverrides.Failure { throw DebloatSystemError.commandFailed(error.localizedDescription) }
     }
 
     private func profileURL(_ fileName: String) -> URL? {
@@ -517,11 +488,7 @@ public final class LiveDebloatSystem: DebloatSystem {
     }
 
     public func liveFeatureFlag(domain: String, feature: String) -> Bool? {
-        // RTLD_DEFAULT is (void *)-2 on Darwin.
-        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_os_feature_enabled_impl") else { return nil }
-        typealias FeatureEnabled = @convention(c) (UnsafePointer<CChar>, UnsafePointer<CChar>) -> Bool
-        let isEnabled = unsafeBitCast(symbol, to: FeatureEnabled.self)
-        return domain.withCString { d in feature.withCString { f in isEnabled(d, f) } }
+        FeatureFlagOverrides.effectiveValue(domain: domain, feature: feature)
     }
 
     public func write(_ setting: ControlSetting, value: SettingValue) throws {
