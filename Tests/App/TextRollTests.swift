@@ -32,6 +32,28 @@ final class TextRollTests: XCTestCase {
         XCTAssertEqual(Set(widths).count, 1, "a trailing caption must not move its unchanged word as progress changes")
     }
 
+    func testLoadingPercentageHasNormalVisibleSpacing() throws {
+        func inkWidth<V: View>(_ view: V) throws -> Int {
+            let renderer = ImageRenderer(content: view.foregroundStyle(.white))
+            renderer.scale = 2
+            let image = try XCTUnwrap(renderer.cgImage)
+            let width = image.width, height = image.height
+            var pixels = [UInt8](repeating: 0, count: width * height * 4)
+            let context = try XCTUnwrap(CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let columns = (0..<width).filter { x in (0..<height).contains { y in pixels[(y * width + x) * 4 + 3] > 16 } }
+            return try XCTUnwrap(columns.last) - XCTUnwrap(columns.first)
+        }
+        for progress in [1, 9, 17, 22, 64, 75, 100] {
+            let text = "carregando \(progress)%"
+            let font = Font(CaptionFont.status(size: 22))
+            let natural = try inkWidth(Text(verbatim: text).font(font).lineLimit(1))
+            let actual = try inkWidth(ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1))
+            XCTAssertEqual(actual, natural, accuracy: 2, "reserved width cannot create a visible gap before the number or its sign")
+        }
+    }
+
     func testAllDoneNumericReservationDoesNotChangeDuringCountUp() throws {
         var widths: [CGFloat] = []
         for value in ["0", "1", "9", "10", "11", "99", "111"] {

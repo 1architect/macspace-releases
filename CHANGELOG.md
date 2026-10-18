@@ -17,6 +17,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Loading percentages keep normal spacing after the loading word; unused reserved width follows the percent sign.
+
 - Buttons, captions and All done share the original native text/number transition. Percentage and count fields keep unchanged words stationary without forcing monospaced visible digits; phase changes no longer replace the whole line with a vertical roll.
 - Background cleanup continues in the original row flag without a duplicate completion. The bottom action fades in place before its footer space is released.
 

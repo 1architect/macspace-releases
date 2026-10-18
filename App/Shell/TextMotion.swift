@@ -35,12 +35,27 @@ struct TextFields {
         return fields
     }
 
+    /// Keep the sign beside the number; unused reservation belongs after the complete percentage, never between glyphs.
+    static func combiningPercentSigns(_ fields: [Field]) -> [Field] {
+        var result: [Field] = []
+        for field in fields {
+            if !field.numeric, let sign = field.text.first, "%٪".contains(sign),
+               let previous = result.last, previous.numeric {
+                result[result.count - 1] = Field(id: previous.id, text: previous.text + String(sign), numeric: true)
+                let remainder = String(field.text.dropFirst())
+                if !remainder.isEmpty { result.append(Field(id: field.id, text: remainder, numeric: false)) }
+            } else { result.append(field) }
+        }
+        return result
+    }
+
     static func reservation(for field: Field, in text: String, maximumText: String?) -> String? {
         guard field.numeric else { return nil }
         if let maximumText,
            let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) {
             return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
         }
+        if let sign = field.text.last, "%٪".contains(sign) { return "888" + String(sign) }
         let following = split(text).first(where: { $0.id == field.id + 1 })?.text ?? ""
         return following.hasPrefix("%") || following.hasPrefix("٪") ? "888" : nil
     }
@@ -65,7 +80,7 @@ struct ChangingText: View {
                         let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
                         if let reservation = TextFields.reservation(for: field, in: text, maximumText: maximumText) {
                             Text(verbatim: reservation).hidden()
-                                .overlay(alignment: .trailing) { animated(value) }
+                                .overlay(alignment: field.text.last.map { "%٪".contains($0) } == true ? .leading : .trailing) { animated(value) }
                         } else {
                             Text(verbatim: value).hidden()
                                 .overlay(alignment: alignment) { animated(value) }
@@ -89,7 +104,7 @@ struct ChangingText: View {
         guard split.contains(where: { TextFields.reservation(for: $0, in: text, maximumText: maximumText) != nil }) else {
             return [TextFields.Field(id: 0, text: text, numeric: false)]
         }
-        return split
+        return TextFields.combiningPercentSigns(split)
     }
 
     private func animated(_ value: String) -> some View {
