@@ -61,15 +61,25 @@ The legend grid no longer animates its layout when measured segments change. Its
 
 ## Text motion and action labels
 
-`ChangingText` uses the original native `.numericText()` transition with `Theme.value` for both text and number changes.
-Captions, row flags, page buttons and All done share this implementation. Do not replace a whole phrase's view identity, add a
-whole-line move/roll, or substitute a fade (except with Reduce Motion). Loading percentages measure their actual text, with no
-maximum-value reservation or trailing placeholder space. Only progress percentages use tabular digits, so 17% -> 59% stays steady
-while the visible percent sign reaches the caption's normal right inset. Digit-count changes (9% -> 10% -> 100%) take their natural
-width. Ordinary size/byte figures retain their original proportional spacing. A percentage inside a storage sentence retains its
-original spacing and kerning as one native Text. All done alone reserves numeric width from its explicit counting template.
-Drawing stays in an anchored overlay outside parent layout animation. Split count fields explicitly use leading paragraph alignment
-to preserve trailing spaces. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
+`ChangingText` routes numeric-only changes in an unchanged phrase through the native `.numericText()` transition with
+`Theme.value`. Phrase changes use `TextMotionState` and the shared word renderer in `App/Shell/WordMotion.swift`, for captions,
+row flags, page buttons and All done. The native numeric view is removed immediately at that boundary, so its unfinished 30% ->
+60% transition cannot keep painting over “IA desativada.” A word playback has one generation; replacement cancels its task, and a
+stale completion cannot clear a newer phrase. Counter updates during an entrance update its latest incoming snapshot without
+restarting the word cascade.
+
+Outgoing/incoming snapshots retain their fonts and measured bounds and share the caller's leading, center or trailing anchor.
+Changed words alone use the original roll/blur treatment (0.45-second spring, 0.22-second exit, 0.025-second stagger). Unchanged
+words draw once in the incoming paragraph. Native shaping and wrapping remain in one Text paragraph, with word attributes rather
+than independently measured word HStacks. No horizontal motion, whole-line slide or fade-only replacement is added. Reduce Motion
+uses the existing opacity fallback. A final renderer clip keeps glyphs/blur within each snapshot's trailing edge while retaining
+vertical travel. Numeric views are recreated from the latest text after word playback, with no older phrase retained underneath.
+
+Loading percentages keep their natural width and tabular digits, normal word spacing and the caption's right inset. Digit-count
+changes take their natural width. Other figures retain proportional spacing. All done alone reserves width from its explicit
+counting template. Single-line split fields use leading paragraph alignment to preserve trailing spaces; current text alone
+measures layout. Word layers are overlays and cannot change pill height, reserved row widths, footer space or button truncation.
+Changed text keeps the page cascade delay.
 
 Idle row flags fit their title. `ReservedPillLabel` reserves known numeric variants of the current phase; unrelated future phrases
 such as background cleanup do not widen “Freeing space.” `PillMorph` handles phase-boundary shell resizing with the existing page
@@ -156,3 +166,12 @@ plus natural word/sign spacing, steady equal-length progress widths and preserve
 percentage reservation; explicit All done counting reservations remain in place.
 
 `results/loading-right-edge-20261018/all-tests.txt`: 497 tests, 493 passed and four optional skips.
+
+`results/word-motion-20261018/final-motion-tests.txt` verifies numeric/phrase routing, stale completion cancellation, frozen fonts
+and bounds, Unicode/whitespace, unchanged word matching, Reduce Motion, rendered intermediate right bounds, complete target
+pixels for caption/flag/button/All done fonts and alignments, wrapped text and capped single-line ellipses. Truncated glyph
+contours allow one device pixel for the two native drawing paths' fractional-origin quantization; fitting labels match exactly.
+The renderer's exported time samples are in `results/word-motion-20261018/frames/` and `word-change.gif`; these are offscreen
+component frames, not a recording of the application. Runtime visual verification remains with the user.
+
+`results/word-motion-20261018/all-tests.txt`: 506 tests, 502 passed and 4 optional skips; localization checks passed.

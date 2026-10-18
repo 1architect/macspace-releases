@@ -22,7 +22,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 - Disk usage sentences retain their original spaces and kerning.
 
-- Buttons, captions and All done share the original native text/number transition. Count fields keep unchanged words stationary while size/byte figures retain their font spacing; phase changes no longer replace the whole line with a vertical roll.
+- Captions, flags, buttons and All done share separate numeric and word transitions. Phrase changes cancel unfinished numeric motion, preserve both texts’ fonts/bounds, and cascade only changed words around a fixed anchor; unrelated phrases no longer overlap or overshoot the tile edge.
 - Background cleanup continues in the original row flag without a duplicate completion. The bottom action fades in place before its footer space is released.
 
 - Refresh keeps module pages usable and pulses their graphs; home loading text and progress appear immediately for every scan.

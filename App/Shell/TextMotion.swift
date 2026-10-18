@@ -42,9 +42,7 @@ struct TextFields {
     }
 }
 
-/// The original native text/number transition, shared by captions, buttons and the All done counter.
-/// Parent layout animation cannot move the drawing. Progress percentages use natural width with tabular digits;
-/// other labels inherit their font spacing. Explicit counting templates can reserve numeric width for All done.
+/// Numeric-only changes retain the native transition. Phrase changes replace it with independently anchored word snapshots.
 struct ChangingText: View {
     let text: String
     var alignment: Alignment = .leading
@@ -53,54 +51,77 @@ struct ChangingText: View {
     @Environment(\.lineLimit) private var lineLimit
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.textChangeDelay) private var cascadeDelay
+    @State private var motion = TextMotionState()
+    @State private var measuredSize: CGSize?
+
+    private var snapshot: TextMotionSnapshot { TextMotionSnapshot(text, font: inheritedFont ?? .body, size: measuredSize) }
+    // Resolve before drawing as well as in onChange: a new phrase must never enter the numeric renderer for one frame first.
+    private var presentation: TextMotionState { motion.updating(to: snapshot) }
 
     var body: some View {
-        Group {
-            if lineLimit == 1 {
-                HStack(spacing: 0) {
-                    ForEach(fields) { field in
-                        let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
-                        if let reservation = TextFields.reservation(for: field, maximumText: maximumText) {
-                            Text(verbatim: reservation).hidden()
-                                .overlay(alignment: .trailing) { animated(value) }
-                        } else {
-                            Text(verbatim: value).hidden()
-                                .overlay(alignment: alignment) { animated(value) }
-                        }
+        measuredLabel.hidden()
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { measuredSize = $0 }
+            .overlay(alignment: alignment) {
+                if let change = presentation.change {
+                    WordChangePlayback(change: change, alignment: alignment, singleLine: lineLimit == 1,
+                                       reduceMotion: reduceMotion, delay: cascadeDelay) { id in
+                        var instant = Transaction()
+                        instant.disablesAnimations = true
+                        withTransaction(instant) { motion.complete(id) }
                     }
+                    .id(change.id)
+                    .transition(.identity)
+                } else {
+                    numericLabel.transition(.identity)
                 }
-                // Each field has its own measured space. Inheriting a trailing paragraph alignment shifts the word's ink
-                // into that space, visually joining it to the next number even though the string still contains a space.
-                .multilineTextAlignment(.leading)
-            } else {
-                // Multiline descriptions retain Text's native wrapping and shaping.
-                Text(verbatim: text).hidden()
-                    .overlay(alignment: alignment) { animated(text) }
             }
-        }
-        .font(isProgressPercentage ? (inheritedFont ?? .body).monospacedDigit() : inheritedFont)
-        .transaction { $0.animation = nil }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
+            .font(snapshot.font)
+            .transaction { $0.animation = nil }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
+            .onChange(of: snapshot, initial: true) { _, _ in
+                var instant = Transaction()
+                instant.disablesAnimations = true
+                withTransaction(instant) { motion = presentation }
+            }
+            .onDisappear { motion = TextMotionState() }
+    }
+
+    @ViewBuilder private var measuredLabel: some View {
+        if lineLimit == 1 {
+            HStack(spacing: 0) {
+                ForEach(fields) { field in
+                    Text(verbatim: TextFields.reservation(for: field, maximumText: maximumText) ?? field.text.replacingOccurrences(of: " ", with: "\u{00A0}"))
+                }
+            }
+            .multilineTextAlignment(.leading)
+        } else { Text(verbatim: text) }
+    }
+
+    @ViewBuilder private var numericLabel: some View {
+        if lineLimit == 1 {
+            HStack(spacing: 0) {
+                ForEach(fields) { field in
+                    let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
+                    Text(verbatim: TextFields.reservation(for: field, maximumText: maximumText) ?? value).hidden()
+                        .overlay(alignment: TextFields.reservation(for: field, maximumText: maximumText) == nil ? alignment : .trailing) {
+                            numeric(value)
+                        }
+                }
+            }
+            .multilineTextAlignment(.leading)
+        } else { numeric(text) }
     }
 
     private var fields: [TextFields.Field] {
         let split = TextFields.split(text)
-        // Keep ordinary labels shaped as one Text, including kerning across word/number boundaries.
         guard split.contains(where: { TextFields.reservation(for: $0, maximumText: maximumText) != nil }) else {
             return [TextFields.Field(id: 0, text: text, numeric: false)]
         }
         return split
     }
 
-    private var isProgressPercentage: Bool {
-        guard maximumText == nil else { return false }
-        let fields = TextFields.split(text)
-        return fields.count >= 2 && fields[fields.count - 2].numeric
-            && (fields.last?.text == "%" || fields.last?.text == "٪")
-    }
-
-    private func animated(_ value: String) -> some View {
+    private func numeric(_ value: String) -> some View {
         Text(verbatim: value)
             .contentTransition(reduceMotion ? .opacity : .numericText())
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value.delay(cascadeDelay), value: value)
