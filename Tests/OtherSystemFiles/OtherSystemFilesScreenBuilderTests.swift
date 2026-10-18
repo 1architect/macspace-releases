@@ -44,6 +44,14 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertNil(afterManualInvalidation, "explicit refresh can force a new scan during a removal")
     }
 
+    func testRepeatedTargetedPurgesAccumulateAgainstTheSameRawEstimate() {
+        let first = PurgeableStore.accumulating(nil, bytes: 200, estimate: 500)
+        let second = PurgeableStore.accumulating(first, bytes: 100, estimate: 500)
+        XCTAssertEqual(second.bytes, 300)
+        XCTAssertEqual(PurgeableStore.accumulating(second, bytes: 500, estimate: 500).bytes, 500)
+        XCTAssertEqual(PurgeableStore.accumulating(second, bytes: 20, estimate: 150).bytes, 20, "a new measurement starts a new baseline")
+    }
+
     func testCloudCompletionUpdatesItsProviderWithoutDiscardingOtherMeasurements() {
         let first = PurgeableDocuments.Source(name: "OneDrive", path: "/cloud/one", bytes: 900, files: 10, folders: [])
         let other = PurgeableDocuments.Source(name: "iCloud", path: "/cloud/two", bytes: 500, files: 8, folders: [])

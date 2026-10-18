@@ -43,6 +43,13 @@ final class TargetedMeasurementTests: XCTestCase {
         XCTAssertEqual(running.activity?.fraction, 0.5)
         XCTAssertEqual(SystemDataScreenBuilder.tile(updated).refreshAfter, 2)
     }
+    func testCleaningExcludedAppCopiesDoesNotChangeTheSystemDataBaseline() {
+        let original = snapshot([item("clone:app", bytes: 100, kind: .codeSignClone), item("unrelated", bytes: 300)])
+        let updated = TargetedSystemDataMeasurements.applying(["/test/clone:app": FileTreeSize(logicalBytes: 0, allocatedBytesEstimate: 0)], itemIDs: ["clone:app"], to: original)
+        XCTAssertEqual(updated.report.items[0].bytes, 0)
+        XCTAssertEqual(updated.settings, original.settings, "clones are excluded from System Data, so their cleanup cannot shrink that total")
+    }
+
     func testActionScopesDoNotIncludeUnrelatedFolders() {
         let original = snapshot([item("versions:documents", bytes: 100, kind: .documentVersions), item("unrelated", bytes: 300)])
         XCTAssertEqual(TargetedSystemDataMeasurements.itemIDs(ActionRequest(actionID: "deleteVersions"), snapshot: original), ["versions:documents"])

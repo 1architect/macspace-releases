@@ -173,10 +173,12 @@ actor PurgeableStore {
         guard var snapshot = cached else { return }
         switch request.actionID {
         case "purgeFiles":
+            snapshot.services?[CacheDeleteService.fsPurgeableData] = rawEstimate
             snapshot.services = Self.accounting(for: &removed, in: snapshot.services)
             snapshot.retrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.fsPurgeableData)
         case "freeSnapshots":
             snapshot.timeMachine.snapshots = TimeMachine.localSnapshots()
+            snapshot.services?[CacheDeleteService.timeMachineSnapshots] = rawSnapshotsEstimate
             snapshot.services = Self.accounting(for: &snapshotsRemoved, in: snapshot.services, service: CacheDeleteService.timeMachineSnapshots)
             if snapshot.timeMachine.snapshots?.all.isEmpty == true { snapshot.services?[CacheDeleteService.timeMachineSnapshots] = 0 }
         case "deleteBackups":
@@ -261,7 +263,14 @@ actor PurgeableStore {
     }
 
     /// MacSpace freed `bytes` while macOS estimated `estimate`.
-    func noteRemoved(_ bytes: UInt64, estimate: UInt64) { removed = (estimate, bytes) }
+    func noteRemoved(_ bytes: UInt64, estimate: UInt64) {
+        removed = Self.accumulating(removed, bytes: bytes, estimate: estimate)
+    }
+
+    static func accumulating(_ previous: (estimate: UInt64, bytes: UInt64)?, bytes: UInt64, estimate: UInt64) -> (estimate: UInt64, bytes: UInt64) {
+        let prior = previous.flatMap { $0.estimate == estimate ? $0.bytes : nil } ?? 0
+        return (estimate, min(estimate, prior + min(bytes, estimate - min(prior, estimate))))
+    }
 
     /// macOS's own figure for Time Machine's snapshots, as it gave it last.
     func currentRawSnapshotsEstimate() async -> UInt64 {
@@ -270,7 +279,7 @@ actor PurgeableStore {
     }
 
     /// MacSpace freed `bytes` of Time Machine's snapshots while macOS's figure for them was `estimate`.
-    func noteSnapshotsRemoved(_ bytes: UInt64, estimate: UInt64) { snapshotsRemoved = (estimate, bytes) }
+    func noteSnapshotsRemoved(_ bytes: UInt64, estimate: UInt64) { snapshotsRemoved = Self.accumulating(snapshotsRemoved, bytes: bytes, estimate: estimate) }
 
     func invalidate() {
         cached = nil

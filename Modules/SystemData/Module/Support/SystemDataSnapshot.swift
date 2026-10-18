@@ -141,7 +141,7 @@ actor SystemDataStore {
                                  changes: (revision: Int, completions: [CloudDownloadRemovals.Completion]),
                                  removing: [String: CloudDownloadRemovals.Progress]) -> SystemDataSnapshot {
         var updated = snapshot
-        let before = snapshot.report.items.reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
+        let before = SystemDataScreenBuilder.measured(snapshot.report).reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
         for change in changes.completions {
             if let source = change.source {
                 updated.cloudSources.removeAll { $0.path == change.path }

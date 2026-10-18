@@ -72,7 +72,7 @@ enum TargetedSystemDataMeasurements {
     static func applying(_ sizes: [String: FileTreeSize], itemIDs: Set<String>, entries: [CacheEntry] = [],
                          to snapshot: SystemDataSnapshot) -> SystemDataSnapshot {
         var updated = snapshot
-        let before = snapshot.report.items.reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
+        let before = SystemDataScreenBuilder.measured(snapshot.report).reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
         func size(_ paths: [String]) -> (bytes: UInt64, purgeable: UInt64)? {
             guard !paths.isEmpty, paths.allSatisfy({ sizes[$0] != nil }) else { return nil }
             return paths.reduce((0, 0)) { ($0.0 + sizes[$1]!.bytes, $0.1 + sizes[$1]!.purgeableBytes) }
@@ -115,7 +115,7 @@ enum TargetedSystemDataMeasurements {
     /// Reconcile the displayed baseline using the same scoped measurements as the graph. The next full scan replaces this
     /// estimate with macOS's categories again; a volume-wide free-space delta never changes individual items.
     static func updateTotals(_ snapshot: inout SystemDataSnapshot, previousCounted: UInt64) {
-        let after = snapshot.report.items.reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
+        let after = SystemDataScreenBuilder.measured(snapshot.report).reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
         if let used = snapshot.settings?.used {
             snapshot.settings?.used = after <= previousCounted ? used - min(used, previousCounted - after) : used + (after - previousCounted)
         }
