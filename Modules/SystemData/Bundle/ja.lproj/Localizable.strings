@@ -203,6 +203,8 @@
 "This permanently deletes %@." = "%@を完全に削除します。";
 "Tool cache" = "ツールキャッシュ";
 "Tool cache: ~/.cache/%@" = "ツールキャッシュ：~/.cache/%@";
+"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。";
+"Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。";
 "Trash" = "ゴミ箱";
 "Turn on the helper to see everything" = "ヘルパーをオンにしてすべて表示";
 "Unchanged for %lld days" = "%lld日間変更なし";

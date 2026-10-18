@@ -390,6 +390,12 @@ command reports to Homebrew's analytics and fetches its package list when it has
 `HOMEBREW_NO_AUTOREMOVE`, `HOMEBREW_NO_AUTO_UPDATE` and `HOMEBREW_NO_ANALYTICS`, from `/opt/homebrew/bin/brew` or
 `/usr/local/bin/brew`, and only when the package list is already there. A dry run takes under 1.5 s.
 
+**Rechecked, 2026-10-18 (26B5112a).** Both the standard and `--prune=all` dry runs returned success with no removable files on this
+Mac; the 3 GB installed prefix is not a cleanup estimate. `/usr/local` has no `bin/brew`: its contents include a Node executable,
+global npm packages, Python framework links and Parallels tools. It remains separate from `/opt/homebrew` and cannot safely be
+deleted as a cache. The Homebrew info pill was absent because its cleanup description was empty; both rows now explain ownership
+and the supported removal route. Dry-run output is in `results/issue-review-20261018/homebrew-*.txt`; no cleanup was executed.
+
 ### Other accounts' folders in `/private/var/folders`
 
 **Measured** (26B5101f, 2026-10-12). `/private/var/folders` holds one folder per account that has ever run: the user's own, root's,

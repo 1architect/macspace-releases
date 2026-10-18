@@ -203,6 +203,8 @@
 "This permanently deletes %@." = "将永久删除 %@。";
 "Tool cache" = "工具缓存";
 "Tool cache: ~/.cache/%@" = "工具缓存：~/.cache/%@";
+"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。";
+"Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Homebrew 安装的工具和库。可移除的旧版本和下载文件列在可清理的缓存中，已安装的软件包会保留。";
 "Trash" = "废纸篓";
 "Turn on the helper to see everything" = "开启辅助程序以查看所有内容";
 "Unchanged for %lld days" = "%lld 天未更改";

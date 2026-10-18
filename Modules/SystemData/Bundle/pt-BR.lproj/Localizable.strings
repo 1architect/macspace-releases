@@ -203,6 +203,8 @@
 "This permanently deletes %@." = "Isto apaga permanentemente %@.";
 "Tool cache" = "Cache de ferramenta";
 "Tool cache: ~/.cache/%@" = "Cache de ferramenta: ~/.cache/%@";
+"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.";
+"Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Ferramentas e bibliotecas instaladas pelo Homebrew. Versões antigas e downloads que podem ser removidos estão em Caches que podem ser liberados. Os pacotes instalados são mantidos.";
 "Trash" = "Lixo";
 "Turn on the helper to see everything" = "Ative o auxiliar para ver tudo";
 "Unchanged for %lld days" = "Sem mudanças há %lld dias";

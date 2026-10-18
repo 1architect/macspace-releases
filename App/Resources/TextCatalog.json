@@ -11715,7 +11715,6 @@
     "key" : "Remove it with the tool that made it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:568",
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:735"
     ],
     "table" : "SystemData",
@@ -12572,6 +12571,44 @@
       "ko" : "도구 캐시: ~\/.cache\/%@",
       "pt-BR" : "Cache de ferramenta: ~\/.cache\/%@",
       "zh-Hans" : "工具缓存：~\/.cache\/%@"
+    }
+  },
+  {
+    "id" : "SystemData|Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
+    "key" : "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:568"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Außerhalb von Homebrew installierte Werkzeuge und App-Dateien, etwa Node.js, Python und Parallels-Werkzeuge. Entferne einzelne Werkzeuge mit ihrem Installationsprogramm oder Paketmanager; das Löschen des ganzen Ordners kann ihre Funktion beeinträchtigen.",
+      "en" : "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
+      "es" : "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.",
+      "fr" : "Outils et fichiers d’apps installés en dehors de Homebrew, comme Node.js, Python et les outils Parallels. Supprimez chaque outil avec son installateur ou gestionnaire de paquets ; supprimer ce dossier entier peut les empêcher de fonctionner.",
+      "ja" : "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。",
+      "ko" : "Node.js, Python, Parallels 도구 등 Homebrew 외부에서 설치된 도구와 앱 파일입니다. 각 도구의 설치 프로그램이나 패키지 관리자로 제거하세요. 이 폴더 전체를 삭제하면 도구가 작동하지 않을 수 있습니다.",
+      "pt-BR" : "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.",
+      "zh-Hans" : "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。"
+    }
+  },
+  {
+    "id" : "SystemData|Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
+    "key" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:565"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Von Homebrew installierte Werkzeuge und Bibliotheken. Entfernbare alte Versionen und Downloads stehen unter den freigebbaren Caches. Installierte Pakete bleiben erhalten.",
+      "en" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
+      "es" : "Herramientas y bibliotecas instaladas por Homebrew. Las versiones antiguas y las descargas eliminables aparecen en Cachés que se pueden liberar. Los paquetes instalados se conservan.",
+      "fr" : "Outils et bibliothèques installés par Homebrew. Les anciennes versions et les téléchargements supprimables figurent dans les caches pouvant être libérés. Les paquets installés sont conservés.",
+      "ja" : "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。",
+      "ko" : "Homebrew로 설치한 도구와 라이브러리입니다. 삭제 가능한 이전 버전과 다운로드는 공간을 확보할 수 있는 캐시에 표시됩니다. 설치된 패키지는 유지됩니다.",
+      "pt-BR" : "Ferramentas e bibliotecas instaladas pelo Homebrew. Versões antigas e downloads que podem ser removidos estão em Caches que podem ser liberados. Os pacotes instalados são mantidos.",
+      "zh-Hans" : "Homebrew 安装的工具和库。可移除的旧版本和下载文件列在可清理的缓存中，已安装的软件包会保留。"
     }
   },
   {

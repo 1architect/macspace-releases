@@ -17,6 +17,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Homebrew has an info pill explaining its safe cleanup, and `/usr/local` explains the separately installed tools it holds.
 - Purgeable app files explain the existing background retries consistently in every language, without promising unlimited retries.
 - The page action reads its live phase directly, so a finished Siri/AI scan cannot retain a stale Loading button. Its normal fade still holds footer space until removal completes.
 - Loading captions retain normal spacing and reach the tile’s right inset. Tabular progress digits keep equal-length updates steady without blank reserved space. Row Free flags animate neighbouring controls as their capsule changes phase.
