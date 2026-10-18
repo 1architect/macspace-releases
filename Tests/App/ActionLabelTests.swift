@@ -13,14 +13,27 @@ final class ActionLabelTests: XCTestCase {
         return try XCTUnwrap(measured)
     }
 
-    func testRowFlagKeepsItsWidthAndItsNeighboursAcrossEveryPhase() throws {
+    func testRowFlagKeepsItsWidthAndItsNeighboursAcrossProgressAndResult() throws {
         let phases = ["Liberar", "Liberando espaço", "Removendo downloads", "Removendo Zero KB", "Removendo 116,6 MB", "Concluído"]
-        let expected = try size(ReservedPillLabel(samples: phases) { ChangingText(text: phases[0]) })
+        let expected = try size(ReservedPillLabel(samples: phases, reserveWidth: true) { ChangingText(text: phases[0]) })
         for text in phases + ["An unexpectedly long error message that must truncate without moving the controls"] {
-            let flag = ReservedPillLabel(samples: phases) { ChangingText(text: text) }
+            let flag = ReservedPillLabel(samples: phases, reserveWidth: true) { ChangingText(text: text) }
             XCTAssertEqual(try size(flag), expected)
             XCTAssertEqual(try size(HStack(spacing: 6) { flag; Color.clear.frame(width: 28, height: 18) }).width, expected.width + 34)
             XCTAssertEqual(expected.height, 18)
+        }
+    }
+
+    func testIdleFreeFlagDoesNotDrawTheEmptyProgressReservation() throws {
+        for (title, working) in [("Free", "Freeing space"), ("Liberar", "Liberando espaço"), ("解放", "選択した項目を解放しています")] {
+            let samples = [title, working]
+            let idle = try size(ReservedPillLabel(samples: samples, reserveWidth: false) { ChangingText(text: title) })
+            let active = try size(ReservedPillLabel(samples: samples, reserveWidth: true) { ChangingText(text: working) })
+            let titleSize = try size(Text(verbatim: title).monospacedDigit().font(.system(size: 11, weight: .semibold)))
+            XCTAssertEqual(idle.width, titleSize.width + 16, accuracy: 0.5, "idle capsule fits its title and normal padding")
+            XCTAssertLessThan(idle.width, active.width)
+            XCTAssertEqual(idle.height, 18)
+            XCTAssertEqual(active.height, 18)
         }
     }
 

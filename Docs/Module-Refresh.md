@@ -66,8 +66,9 @@ measurement and excluding outgoing content from layout. Parent layout transactio
 uses opacity. Changed values keep the existing page cascade delay. All done uses its original per-piece asymmetric roll/blur,
 with word identities and digit places independent of digit count, so adding a digit does not replace an unchanged suffix.
 
-Row flags no longer use `PillMorph`. `ReservedPillLabel` measures the widest idle/working label once and holds it through progress
-and result. Optional `Action.labelSamples` supplies known variable labels; cloud rows include the waiting message, zero, unit
+Idle row flags fit their title. `ReservedPillLabel` measures the widest working label once; `PillMorph` expands the shell only
+when work starts and contracts when idle returns. Progress and result retain the reserved width, so changing counters do not move
+nearby controls. Optional `Action.labelSamples` supplies known variable labels; cloud rows include the waiting message, zero, unit
 boundaries and source total. Unexpected longer messages truncate and expose their full text in help. This optional JSON hint decodes
 as nil for older saved actions and does not change the module protocol version.
 
@@ -109,3 +110,7 @@ Main sources: `App/Registry/ModuleHandle.swift`, `App/Registry/ModuleHost.swift`
 stable row widths, original native text transitions and single-line page actions. Regression tests exercise the reported Portuguese labels under narrow intermediate proposals, fixed flag widths across
 progress/result text, capped notices, counter identities and optional action-label serialization. Visual animation verification
 remains with the user; supplied recording frames were read as files without controlling the application.
+
+`results/compact-free-20261018/app-tests.txt`: 117 App tests, 115 passed and two optional snapshots skipped. Idle flag sizing fits
+the title plus normal padding in English, Portuguese and Japanese; progress/result retain the fixed reservation and neighbouring
+control footprint. The orange action remains one line at 31 points high.

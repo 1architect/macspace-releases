@@ -162,8 +162,9 @@ A row action never hides the page or opens All done. Background work uses `Row.a
 it runs. Animate flag insertion/removal with the existing vertical cascade. Text and number changes use the original native
 numeric-text transition (fade only with Reduce Motion), with the current label measuring layout and the animated text anchored in
 an overlay. Do not animate the whole text line's layout. All done retains its original per-piece roll and blur.
-Row flags reserve the widest idle/working label before use; modules provide `Action.labelSamples` for variable progress text.
-Keep that width throughout idle, progress and result so adjacent controls do not move. Longer unexpected messages truncate, with
+Idle row flags fit their title. Calculate the widest working label before use; modules provide `Action.labelSamples` for variable
+progress text. Expand once when work starts, keep that width throughout progress and result, and shrink when the idle action returns.
+Use the existing anchored shell morph only at these phase boundaries; progress updates must not move adjacent controls. Longer unexpected messages truncate, with
 full text in help. The orange page button is always one line and 31 points high: cap its width to the page and truncate rather than
 wrap. Its shell may resize horizontally; measure the destination label independently of the shell's intermediate width.
 A progress fill replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.

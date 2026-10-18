@@ -80,8 +80,10 @@ private struct RowActionFlag: View {
         Button {
             if result != nil { dismiss() } else if !working { Task { await run() } }
         } label: {
-            ReservedPillLabel(samples: reservedLabels ?? samples) {
-                ChangingText(text: text)
+            PillMorph {
+                ReservedPillLabel(samples: reservedLabels ?? samples, reserveWidth: working || result != nil) {
+                    ChangingText(text: text)
+                }
             }
             .environment(\.textChangeDelay, 0)
             .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))

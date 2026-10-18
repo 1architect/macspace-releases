@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// Reserve known phase labels once, before work starts. The visible label never determines the flag's width.
+/// Idle flags fit their title. While working, known phase labels determine a stable width instead of the changing text.
 struct ReservedPillLabel<Label: View>: View {
     let samples: [String]
+    let reserveWidth: Bool
     @ViewBuilder var label: Label
 
     var body: some View {
-        ReservedPillLayout {
+        ReservedPillLayout(reserveWidth: reserveWidth) {
             label
             ForEach(Array(samples.enumerated()), id: \.offset) { _, sample in
                 Text(verbatim: sample).monospacedDigit().hidden().accessibilityHidden(true)
@@ -20,7 +21,10 @@ struct ReservedPillLabel<Label: View>: View {
 }
 
 struct ReservedPillLayout: Layout {
+    let reserveWidth: Bool
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard reserveWidth else { return subviews[0].sizeThatFits(.unspecified) }
         let samples = subviews.dropFirst().map { $0.sizeThatFits(.unspecified) }
         return CGSize(width: samples.map(\.width).max() ?? 0, height: samples.map(\.height).max() ?? 0)
     }
