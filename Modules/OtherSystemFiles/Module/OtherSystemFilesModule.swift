@@ -43,17 +43,19 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     }
 
     /// The last reading, with how far the removals of cloud downloads running now are: read live, not cached with the figures.
-    private func snapshot(progress: LoadProgressSink? = nil) async -> PurgeableSnapshot {
-        var snapshot = await store.snapshot(progress: progress)
+    private func snapshot(maxAge: TimeInterval = 60, progress: LoadProgressSink? = nil) async -> PurgeableSnapshot {
+        var snapshot = await store.snapshot(maxAge: maxAge, progress: progress)
         snapshot.removing = await store.follow(CloudDownloadRemovals.shared.current())
         return snapshot
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let result = await handle(request, context: context, progress: progress)
-        // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
-        // and a cache dropped later (in a task of its own) gave it the figures from before the action.
-        if request.actionID != "removeDownloads" || result.outcome != .succeeded { await store.invalidate() }
+        var result = await handle(request, context: context, progress: progress)
+        if result.refresh {
+            await store.reconcile(request)
+            let snapshot = await snapshot(maxAge: .infinity)
+            result.presentation = ModulePresentation(tile: OtherSystemFilesScreenBuilder.tile(snapshot), screen: OtherSystemFilesScreenBuilder.screen(snapshot))
+        }
         return result
     }
 
@@ -66,7 +68,9 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "removeDownloads":
             await store.beginRemoval()
-            return Self.removeDownloads(request.parameters["path"] ?? "", store: store)
+            let snapshot = await snapshot()
+            guard let source = snapshot.documents.first(where: { $0.path == request.parameters["path"] }) else { return .failed(loc("That cloud folder is no longer on this Mac")) }
+            return CloudFileRows.start(source, moduleID: "com.macspace.other-system-files", moduleName: "Other System Files")
         case "freeSnapshots":
             progress(ActionProgress(message: loc("Freeing space")))
             let estimate = await store.currentRawSnapshotsEstimate()
@@ -123,20 +127,6 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// Starts removing the downloaded copies of one cloud service's files that are already in the cloud, in the background: with
     /// thousands of files it takes minutes, and the page stays usable while the row shows how far it is. Only a folder the last scan
     /// found (`PurgeableDocuments.isCloudFolder` checks it again). What it freed, measured on the volume, goes to the history.
-    static func removeDownloads(_ path: String, store: PurgeableStore) -> ActionResult {
-        guard PurgeableDocuments.isCloudFolder(path), let source = PurgeableDocuments.scan(maxAge: 600).first(where: { $0.path == path }) else {
-            return .failed(loc("That cloud folder is no longer on this Mac"))
-        }
-        let name = source.name
-        CloudDownloadRemovals.shared.start(URL(fileURLWithPath: path)) { removal, freed in
-            var summary = "\(name) downloads: \(removal.files) file(s) now only in the cloud"
-            if removal.kept > 0 { summary += ", \(removal.kept) kept (not uploaded yet, in conflict, or refused)" }
-            CleanupHistory.shared.record(moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", freedBytes: freed,
-                                         trigger: .manual, summary: summary)
-        }
-        return ActionResult(outcome: .succeeded, message: "", refresh: true)
-    }
-
     /// Deletes Time Machine's local snapshots except the two it still needs (`TimeMachine.LocalSnapshots`), read again first, one by
     /// one with `tmutil`, as the user (no helper needed, measured on 26B5101f). Never while a backup runs or while that is unknown, and
     /// never in automatic cleaning. The space freed is measured on the volume; what was deleted is read back from the list.

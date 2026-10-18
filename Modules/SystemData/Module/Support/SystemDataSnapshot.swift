@@ -5,6 +5,9 @@ import MacSpaceSystemDataPrivileged
 
 /// Everything the System Data screens are built from, measured once and shared by the dashboard tile and the page.
 struct SystemDataSnapshot: Sendable {
+    var cloudSources: [PurgeableDocuments.Source] = []
+    var cloudRevision = 0
+    var removing: [String: CloudDownloadRemovals.Progress] = [:]
     var report: SystemDataReport
     /// Bytes mobileassetd would delete under disk pressure; nil when CacheDelete is unavailable or not validated.
     var purgeableAssetsBytes: UInt64?
@@ -124,8 +127,58 @@ actor SystemDataStore {
     static let helperRetry: TimeInterval = 60
     private var helperAskedAt: Date?
 
+    func liveCloudSnapshot() -> SystemDataSnapshot? {
+        guard let cached else { return nil }
+        let changes = CloudDownloadRemovals.shared.changes(since: cached.cloudRevision)
+        let running = CloudDownloadRemovals.shared.current()
+        guard !running.isEmpty || !cached.removing.isEmpty || !changes.completions.isEmpty else { return nil }
+        let updated = Self.reconcilingCloud(cached, changes: changes, removing: running)
+        self.cached = updated
+        return updated
+    }
+
+    static func reconcilingCloud(_ snapshot: SystemDataSnapshot,
+                                 changes: (revision: Int, completions: [CloudDownloadRemovals.Completion]),
+                                 removing: [String: CloudDownloadRemovals.Progress]) -> SystemDataSnapshot {
+        var updated = snapshot
+        let before = snapshot.report.items.reduce(0) { $0 + SystemDataScreenBuilder.counted($1, snapshot) }
+        for change in changes.completions {
+            if let source = change.source {
+                updated.cloudSources.removeAll { $0.path == change.path }
+                if source.bytes > 0 { updated.cloudSources.append(source) }
+            }
+            for index in updated.report.items.indices where updated.report.items[index].kind == .cloudStorage && updated.report.items[index].paths == [change.path] {
+                guard let size = change.localSize, size.unreadableFolders == 0 else { continue }
+                let item = updated.report.items[index]
+                updated.report.items[index].bytes = size.bytes
+                updated.report.items[index].purgeableBytes = size.purgeableBytes
+                updated.report.items[index].elsewhereBytes = item.elsewhereBytes.map { $0 >= (item.bytes ?? 0) ? size.bytes : min($0, size.bytes) }
+            }
+        }
+        updated.cloudRevision = changes.revision
+        updated.removing = removing
+        TargetedSystemDataMeasurements.updateTotals(&updated, previousCounted: before)
+        return updated
+    }
+
+    /// The action already obtained this snapshot. Retire older scans and reconcile only its targets.
+    func reconcile(_ request: ActionRequest, privileged: (any PrivilegedChannel)?, choices: CacheChoices, cleaner: CacheCleaner) async -> SystemDataSnapshot? {
+        guard var cached else { return nil }
+        cached.choices = choices
+        cached.cleaner = cleaner
+        generation += 1
+        let started = generation
+        inflight = nil
+        relay = nil
+        let updated = await TargetedSystemDataMeasurements.reconcile(cached, request: request, privileged: privileged)
+        guard started == generation else { return self.cached }
+        self.cached = updated
+        return updated
+    }
+
     func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil,
                   progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
+        _ = liveCloudSnapshot()
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil {
             // A scan the helper did not measure kept saying so for the scan's whole life (ten minutes), though the helper was back:
             // the helper's part alone is asked again, the rest of the scan is kept.
@@ -184,6 +237,7 @@ actor SystemDataStore {
     /// The scan: the disk read path by path (most of its time), then what macOS says of the purgeable space and the asset families,
     /// and what was read beside it (`progress`, up to `scanned`).
     static func liveSnapshot(progress: LoadProgressRelay) -> SystemDataSnapshot {
+        let cloudRevision = CloudDownloadRemovals.shared.changes().revision
         // Homebrew's dry runs take a second or two; they run while the disk is read.
         let homebrew = HomebrewBox()
         let brewDone = DispatchSemaphore(value: 0)
@@ -205,6 +259,9 @@ actor SystemDataStore {
         var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         progress.report(0.75)
+        snapshot.cloudSources = PurgeableDocuments.scan(maxAge: 600, progress: progress.part(0.75...0.78))
+        snapshot.cloudRevision = cloudRevision
+        snapshot.removing = CloudDownloadRemovals.shared.current()
         snapshot.purgeableServices = services
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
         settingsDone.wait()

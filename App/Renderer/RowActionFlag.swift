@@ -30,6 +30,7 @@ struct RowActionFlags: View {
         HStack(spacing: 6) {
             ForEach(actions, id: \.id) { action in
                 RowActionFlag(action: action,
+                              usesActivityText: row.activity != nil,
                               progress: row.activity ?? (activity.rowID == row.id ? activity.progress ?? ActionProgress(message: action.workingTitle ?? "") : nil),
                               result: activity.resultID == row.id ? activity.result : nil,
                               dismiss: activity.dismiss) {
@@ -50,6 +51,7 @@ struct RowActionFlags: View {
 
 private struct RowActionFlag: View {
     let action: Action
+    var usesActivityText = false
     let progress: ActionProgress?
     let result: ActionResult?
     let dismiss: () -> Void
@@ -61,6 +63,7 @@ private struct RowActionFlag: View {
     private var text: String {
         if let progress {
             let title = progress.message.isEmpty ? action.workingTitle ?? String(localized: "Working") : progress.message
+            if usesActivityText { return title }
             return progress.fraction.map { title + " \(Int((min(max($0, 0), 1) * 100).rounded()))%" } ?? title
         }
         if let result, !result.message.isEmpty { return result.message }

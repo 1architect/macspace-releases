@@ -13,6 +13,7 @@ struct PurgeableSnapshot: Sendable, Equatable {
     var retrying = false
     /// The cloud folders holding the purgeable documents (`PurgeableDocuments`); empty when there are none or they were not looked for.
     var documents: [PurgeableDocuments.Source] = []
+    var cloudRevision = 0
     /// macOS updates downloaded and prepared, waiting for a restart (`PreparedUpdate`): System Settings counts them under macOS, so
     /// they are other system files, not System Data.
     var updates: [PreparedUpdate] = []
@@ -143,19 +144,50 @@ actor PurgeableStore {
 
     func beginRemoval() { followingRemovals = true }
 
-    /// Keep the measured data during removal, even past its TTL; only live counters change. Completion forces one fresh reading.
+    /// Running counters and completed target measurements do not query services or rescan other providers.
     func status(removing: [String: CloudDownloadRemovals.Progress]) -> PurgeableSnapshot? {
-        guard !removing.isEmpty else {
-            if followingRemovals {
-                followingRemovals = false
-                PurgeableDocuments.forget()
-                invalidate()
-            }
-            return nil
-        }
-        guard var snapshot = cached else { return nil }
+        guard let current = cached else { return nil }
+        let changes = CloudDownloadRemovals.shared.changes(since: current.cloudRevision)
+        guard !removing.isEmpty || followingRemovals || !changes.completions.isEmpty else { return nil }
+        var snapshot = Self.reconciling(current, changes: changes)
         snapshot.removing = follow(removing)
+        cached = snapshot
         return snapshot
+    }
+
+    static func reconciling(_ snapshot: PurgeableSnapshot,
+                            changes: (revision: Int, completions: [CloudDownloadRemovals.Completion])) -> PurgeableSnapshot {
+        var snapshot = snapshot
+        for change in changes.completions {
+            guard let source = change.source else { continue }
+            snapshot.documents.removeAll { $0.path == change.path }
+            if source.bytes > 0 { snapshot.documents.append(source) }
+        }
+        snapshot.documents.sort { $0.bytes > $1.bytes }
+        snapshot.cloudRevision = changes.revision
+        return snapshot
+    }
+
+    /// Verify only the action's affected service or backup target; preserve all unrelated measurements and their age.
+    func reconcile(_ request: ActionRequest) async {
+        guard var snapshot = cached else { return }
+        switch request.actionID {
+        case "purgeFiles":
+            snapshot.services = Self.accounting(for: &removed, in: snapshot.services)
+            snapshot.retrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.fsPurgeableData)
+        case "freeSnapshots":
+            snapshot.timeMachine.snapshots = TimeMachine.localSnapshots()
+            snapshot.services = Self.accounting(for: &snapshotsRemoved, in: snapshot.services, service: CacheDeleteService.timeMachineSnapshots)
+            if snapshot.timeMachine.snapshots?.all.isEmpty == true { snapshot.services?[CacheDeleteService.timeMachineSnapshots] = 0 }
+        case "deleteBackups":
+            guard let mount = request.parameters["mountPoint"], let index = snapshot.timeMachine.disks.firstIndex(where: { $0.destination.mountPoint == mount }) else { return }
+            snapshot.timeMachine.disks[index].backups = TimeMachine.backups(at: mount)
+            let capacity = TimeMachine.capacity(of: mount)
+            snapshot.timeMachine.disks[index].totalBytes = capacity?.total
+            snapshot.timeMachine.disks[index].freeBytes = capacity?.free
+        default: break
+        }
+        cached = Self.reconciling(snapshot, changes: CloudDownloadRemovals.shared.changes(since: snapshot.cloudRevision))
     }
 
     func follow(_ removing: [String: CloudDownloadRemovals.Progress]) -> [String: CloudDownloadRemovals.Progress] {
@@ -164,7 +196,10 @@ actor PurgeableStore {
     }
 
     func snapshot(maxAge: TimeInterval = 60, progress: LoadProgressSink? = nil) async -> PurgeableSnapshot {
-        if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge { return cached }
+        if let current = cached {
+            cached = Self.reconciling(current, changes: CloudDownloadRemovals.shared.changes(since: current.cloudRevision))
+        }
+        if let cached, Date().timeIntervalSince(cached.takenAt) < maxAge || followingRemovals { return cached }
         let started = generation
         if let inflight {
             if let progress { relay?.attach(progress) }
@@ -246,6 +281,7 @@ actor PurgeableStore {
 
     /// Asked in the CLI child process, so a changed private interface crashes it and not the app.
     static func liveSnapshot(progress: LoadProgressRelay) async -> PurgeableSnapshot {
+        let cloudRevision = CloudDownloadRemovals.shared.changes().revision
         let parts = progress.parallelParts(weights: [0.2, 0.65, 0.05, 0.1])
         async let services = Task.detached(priority: .utility) {
             defer { parts[0](1) }
@@ -264,6 +300,7 @@ actor PurgeableStore {
         let values = await (services, documents, updates, timeMachine)
         var snapshot = PurgeableSnapshot(services: values.0, takenAt: Date(), documents: values.1, updates: values.2)
         snapshot.timeMachine = values.3
+        snapshot.cloudRevision = cloudRevision
         // macOS's figure for the snapshots lags: it stayed at 1.72 GB after both were deleted (26B5101f). With none listed, it is 0.
         if snapshot.timeMachine.snapshots?.all.isEmpty == true, snapshot.services?[CacheDeleteService.timeMachineSnapshots] != nil {
             snapshot.services?[CacheDeleteService.timeMachineSnapshots] = 0

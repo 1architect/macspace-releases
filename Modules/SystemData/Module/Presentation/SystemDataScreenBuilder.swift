@@ -206,7 +206,8 @@ enum SystemDataScreenBuilder {
                     status: freeable >= worthARow ? loc("free \(ByteFormat.string(freeable))") : loc("nothing to free"),
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,
-                    purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
+                    purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0],
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
     }
 
     /// What fills System Data as blocks, largest first, with what can be freed split out as its own block in the caution tone (every
@@ -263,7 +264,7 @@ enum SystemDataScreenBuilder {
                 let small = all.filter { $0.item.id.hasPrefix("small:") }.map(\.bytes).reduce(0, +)
                 let sized = all.filter { !$0.item.id.hasPrefix("small:") && $0.bytes >= worthARow }
                 var rows = sized.map { entry -> (row: Row, bytes: UInt64) in
-                    var row = itemRow(entry.item, bytes: entry.bytes)
+                    var row = itemRow(entry.item, bytes: entry.bytes, snapshot: snapshot)
                     // The families macOS keeps closed are in the same folder but in no figure of this row: say where they are.
                     let closed = protectedAssetFamilies(snapshot)
                     if entry.item.id == "assets:system", isProtected(snapshot), !closed.isEmpty {
@@ -550,11 +551,18 @@ enum SystemDataScreenBuilder {
     /// it is app data.
     private static func leftAloneRows(_ items: [SystemDataItem], _ snapshot: SystemDataSnapshot) -> [Row] {
         let claimed = CachesPage.claimed(snapshot)
-        return items.map { itemRow($0, bytes: listed($0, snapshot, claimed: claimed)) }
+        return items.map { itemRow($0, bytes: listed($0, snapshot, claimed: claimed), snapshot: snapshot) }
     }
 
     /// An item as a row: its name, what kind of item it is as a pill, its size, what the user can do about it, and where its files are.
-    static func itemRow(_ item: SystemDataItem, bytes: UInt64) -> Row {
+    static func itemRow(_ item: SystemDataItem, bytes: UInt64, snapshot: SystemDataSnapshot? = nil) -> Row {
+        // The maintainer explicitly requests the same cloud cleanup on both module surfaces.
+        if item.kind == .cloudStorage, let snapshot,
+           let source = snapshot.cloudSources.first(where: { item.paths.contains($0.path) }), source.bytes > 0 {
+            var row = CloudFileRows.row(source, removing: snapshot.removing[source.path], id: item.id)
+            row.trailing = ByteFormat.string(bytes)
+            return row
+        }
         let (title, kind) = presentation(item)
         // What macOS manages needs no explanation: only what the user can do something about has one.
         let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description

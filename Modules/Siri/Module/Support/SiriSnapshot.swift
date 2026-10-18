@@ -85,6 +85,32 @@ actor SiriStore {
         return fresh
     }
 
+    /// A purge changes assets and model sizes, not language, account or switch state. Keep those measured fields.
+    func reconcileAssets() async -> SiriSnapshot? {
+        guard let cached else { return nil }
+        generation += 1
+        let started = generation
+        inflight = nil
+        relay = nil
+        let updated = await Task.detached(priority: .utility) {
+            var updated = cached
+            let raw: UInt64?
+            if let cli = ToolLocator.cli() { raw = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
+            else { raw = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+            updated.purgeableAssetsBytes = SystemAssetGuard.holdsAssets ? nil : raw.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
+            let models = Self.modelBytes()
+            updated.recordedModelBytes = models.installed
+            updated.installedModelBytes = models.installed
+            updated.downloadingModelBytes = models.downloading
+            updated.lockedModelBytes = models.locked
+            updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
+            return updated
+        }.value
+        guard started == generation else { return self.cached }
+        self.cached = updated
+        return updated
+    }
+
     func invalidate() {
         cached = nil
         inflight = nil

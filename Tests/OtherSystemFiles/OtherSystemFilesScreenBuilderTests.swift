@@ -15,7 +15,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
 
     private func snapshot(_ services: [String: UInt64]?) -> PurgeableSnapshot { PurgeableSnapshot(services: services, takenAt: Date()) }
 
-    func testRemovalStatusSkipsExpiredScansUntilAllRemovalsFinishThenMeasuresOnce() async throws {
+    func testRemovalStatusRetainsMeasurementsThroughCompletion() async throws {
         let reads = SnapshotReads()
         let store = PurgeableStore(builder: { _ in
             let number = reads.next()
@@ -31,7 +31,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(next?.removing.count, 1)
         XCTAssertEqual(reads.total, 1, "an expired snapshot still serves status without file/provider queries")
         let completed = await store.status(removing: [:])
-        XCTAssertNil(completed, "completion asks the host for a real measurement")
+        XCTAssertNotNil(completed, "completion uses the reconciled cached presentation without another full scan")
+        XCTAssertEqual(reads.total, 1)
         let fresh = await store.snapshot()
         XCTAssertEqual(fresh.services?["measurement"], 2)
         _ = await store.status(removing: [:])
@@ -41,6 +42,23 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         await store.invalidate()
         let afterManualInvalidation = await store.status(removing: ["OneDrive": progress])
         XCTAssertNil(afterManualInvalidation, "explicit refresh can force a new scan during a removal")
+    }
+
+    func testCloudCompletionUpdatesItsProviderWithoutDiscardingOtherMeasurements() {
+        let first = PurgeableDocuments.Source(name: "OneDrive", path: "/cloud/one", bytes: 900, files: 10, folders: [])
+        let other = PurgeableDocuments.Source(name: "iCloud", path: "/cloud/two", bytes: 500, files: 8, folders: [])
+        var original = snapshot(measured)
+        original.documents = [first, other]
+        let remaining = PurgeableDocuments.Source(name: "OneDrive", path: first.path, bytes: 300, files: 3, folders: [])
+        let receipt = CloudDownloadRemovals.Completion(revision: 1, path: first.path, source: remaining, localSize: nil)
+        let updated = PurgeableStore.reconciling(original, changes: (1, [receipt]))
+        XCTAssertEqual(updated.documents, [other, remaining])
+        XCTAssertEqual(updated.services, original.services, "cloud eviction must not fabricate a new CacheDelete pressure estimate")
+        XCTAssertEqual(updated.timeMachine, original.timeMachine)
+        XCTAssertEqual(updated.takenAt, original.takenAt)
+        let empty = PurgeableDocuments.Source(name: first.name, path: first.path, bytes: 0, files: 0, folders: [])
+        let final = PurgeableStore.reconciling(updated, changes: (2, [.init(revision: 2, path: first.path, source: empty, localSize: nil)]))
+        XCTAssertEqual(final.documents, [other])
     }
 
     func testStoreSharesProgressWithPageJoiningTileAndKeepsCachedReadsQuiet() async throws {
@@ -222,8 +240,9 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         snap.documents = [PurgeableDocuments.Source(name: "OneDrive (Personal)", path: path, bytes: 20_000_000_000, files: 8_000, folders: [])]
         snap.removing = [path: CloudDownloadRemovals.Progress(done: 2_000, total: 8_000, bytes: 9_000_000_000)]
         let row = try XCTUnwrap(OtherSystemFilesScreenBuilder.cloudRows(snap).first)
-        XCTAssertEqual(row.badge?.text, "Removing 25%, 9 GB")
-        XCTAssertTrue(row.actions.isEmpty, "no second removal while one runs")
+        XCTAssertEqual(row.activity?.message, "Removing 25%, 9 GB")
+        XCTAssertEqual(row.activity?.fraction, 0.25)
+        XCTAssertEqual(row.actions.first?.id, "removeDownloads", "the same flag morphs into disabled progress")
         let tile = OtherSystemFilesScreenBuilder.tile(snap)
         XCTAssertEqual(tile.refreshAfter, 2)
         XCTAssertEqual(tile.status, "removing downloads 25%")

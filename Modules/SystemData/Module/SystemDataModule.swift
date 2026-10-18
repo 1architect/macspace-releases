@@ -16,7 +16,7 @@ public struct SystemDataModule: MacSpaceModule {
 
     public init() {}
 
-    public func invalidate() async { await store.invalidate() }
+    public func invalidate() async { PurgeableDocuments.forget(); await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
         SystemDataScreenBuilder.tile(await snapshot(context: context))
@@ -35,6 +35,14 @@ public struct SystemDataModule: MacSpaceModule {
         SystemDataScreenBuilder.screen(await snapshot(context: context, progress: progress))
     }
 
+    public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
+        guard var snapshot = await store.liveCloudSnapshot() else { return nil }
+        snapshot.choices = CacheChoices.load()
+        snapshot.logFloor = SystemLogFloor.load()
+        snapshot.cleaner = CacheCleaner.read(context)
+        return (SystemDataScreenBuilder.tile(snapshot), SystemDataScreenBuilder.screen(snapshot))
+    }
+
     /// The scan, with what the user chose on the caches page and in Settings, which changes without the Mac changing.
     private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext,
                           progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
@@ -50,16 +58,20 @@ public struct SystemDataModule: MacSpaceModule {
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Self.choiceActions.contains(request.actionID) { return Self.choose(request) }
-        let result = await handle(request, context: context, progress: progress)
-        // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
-        // and a cache dropped later (in a task of its own) gave it the figures from before the action.
-        await store.invalidate()
+        var result = await handle(request, context: context, progress: progress)
+        if result.refresh, await store.reconcile(request, privileged: context.privileged, choices: CacheChoices.load(), cleaner: CacheCleaner.read(context)) != nil {
+            let updated = await snapshot(maxAge: .infinity, context: context)
+            result.presentation = ModulePresentation(tile: SystemDataScreenBuilder.tile(updated), screen: SystemDataScreenBuilder.screen(updated))
+        }
         return result
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         let snapshot = await snapshot(maxAge: 600, context: context)
         switch request.actionID {
+        case "removeDownloads":
+            guard let source = snapshot.cloudSources.first(where: { $0.path == request.parameters["path"] }) else { return .failed(loc("Already gone")) }
+            return CloudFileRows.start(source, moduleID: Self.moduleID, moduleName: "System Data")
         case "clean":
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
                 return .failed(loc("Already gone"))

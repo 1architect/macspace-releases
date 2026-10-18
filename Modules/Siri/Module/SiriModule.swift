@@ -100,10 +100,13 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let result = await handle(request, context: context, progress: progress)
-        // Forgotten before the result goes back, not after: the app reads the tile and the page again as soon as it has the result,
-        // and a cache dropped later (in a task of its own) gave it the figures from before the action.
-        await store.invalidate()
+        if request.actionID == "purgeAssets" { _ = await store.snapshot(maxAge: .infinity) }
+        var result = await handle(request, context: context, progress: progress)
+        if result.refresh, request.actionID == "purgeAssets", var updated = await store.reconcileAssets() {
+            updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
+            updated.purgingModels = await ModelPurger.shared.isRunning
+            result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
+        } else if result.refresh { await store.invalidate() }
         return result
     }
 

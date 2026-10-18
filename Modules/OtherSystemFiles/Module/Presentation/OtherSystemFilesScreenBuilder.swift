@@ -220,10 +220,7 @@ enum OtherSystemFilesScreenBuilder {
 
     /// Removes one cloud service's downloads; the size is the row's.
     static func removeDownloadsAction(_ source: PurgeableDocuments.Source, bytes: UInt64) -> Action {
-        Action(id: "removeDownloads", title: loc("Free"), parameters: ["path": source.path],
-               confirmation: Confirmation(title: loc("Free \(ByteFormat.string(bytes)) of \(source.name) downloads?"),
-                                          message: loc("The files stay in \(source.name) and download again when you open them."),
-                                          confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
+        CloudFileRows.action(source)
     }
 
     /// A service's name; the purgeable documents are named after the cloud service that holds them, once it is known.
@@ -236,18 +233,9 @@ enum OtherSystemFilesScreenBuilder {
     /// own), and what no cloud folder accounts for. nil while none were found.
     static func documentsRows(_ bytes: UInt64, _ snapshot: PurgeableSnapshot) -> [Row]? {
         guard !snapshot.documents.isEmpty else { return nil }
-        let detail = loc("Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.")
-        // These are explicit eviction candidates, not shares of CacheDelete's pressure-based estimate. Do not scale a provider's
-        // actual downloads down to that estimate: it can be zero while gigabytes of uploaded local files can be evicted.
         let found = snapshot.documents.map(\.bytes).reduce(0, +)
         var rows = snapshot.documents.sorted { $0.bytes > $1.bytes }.map { source in
-            // While its downloads are being removed: how far, and no button.
-            let removal = snapshot.removing[source.path]
-            return Row(id: "documents:\(source.path)", title: loc("\(source.name) files on this Mac"), subtitle: source.files == 1 ? loc("1 file") : loc("\(source.files) files"),
-                       trailing: ByteFormat.string(source.bytes),
-                       badge: removal.map { Badge($0.total == 0 ? loc("Removing downloads") : loc("Removing \(Int(($0.fraction * 100).rounded()))%, \(ByteFormat.string($0.bytes))"), tone: .caution) },
-                       symbol: "icloud.and.arrow.down", detail: detail + folderList(source),
-                       actions: removal == nil ? [removeDownloadsAction(source, bytes: source.bytes)] : [], paths: [source.path])
+            CloudFileRows.row(source, removing: snapshot.removing[source.path])
         }
         // What no cloud folder accounts for is named.
         if bytes > found, bytes - found >= threshold * 10 {

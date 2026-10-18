@@ -1510,5 +1510,104 @@
   "卸载…",
   "アンインストール…",
   "제거…"
+ ],
+ "Free": [
+  "Liberar",
+  "Libérer",
+  "Liberar",
+  "Freigeben",
+  "释放",
+  "解放",
+  "확보"
+ ],
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
+ ],
+ "1 file": [
+  "1 arquivo",
+  "1 fichier",
+  "1 archivo",
+  "1 Datei",
+  "1 个文件",
+  "1個のファイル",
+  "파일 1개"
+ ],
+ "%lld files": [
+  "%lld arquivos",
+  "%lld fichiers",
+  "%lld archivos",
+  "%lld Dateien",
+  "%lld 个文件",
+  "%lld個のファイル",
+  "파일 %lld개"
+ ],
+ "%@ files on this Mac": [
+  "Arquivos do %@ neste Mac",
+  "Fichiers %@ sur ce Mac",
+  "Archivos de %@ en este Mac",
+  "%@-Dateien auf diesem Mac",
+  "此 Mac 上的 %@ 文件",
+  "このMac上の%@のファイル",
+  "이 Mac의 %@ 파일"
+ ],
+ "Free %@ of %@ downloads?": [
+  "Liberar %@ de downloads do %@?",
+  "Libérer %@ de téléchargements de %@ ?",
+  "¿Liberar %@ de descargas de %@?",
+  "%@ an Downloads von %@ freigeben?",
+  "释放 %@ 的 %@ 下载？",
+  "%@分の%@のダウンロードを解放しますか？",
+  "%@의 %@ 다운로드를 정리할까요?"
+ ],
+ "The files stay in %@ and download again when you open them.": [
+  "Os arquivos continuam no %@ e são baixados de novo quando você os abre.",
+  "Les fichiers restent dans %@ et sont retéléchargés à l’ouverture.",
+  "Los archivos se quedan en %@ y se vuelven a descargar al abrirlos.",
+  "Die Dateien bleiben in %@ und werden beim Öffnen erneut geladen.",
+  "文件保留在 %@，打开时会重新下载。",
+  "ファイルは%@に残り、開くと再ダウンロードされます。",
+  "파일은 %@에 유지되며 열 때 다시 다운로드됩니다."
+ ],
+ "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.": [
+  "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.",
+  "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.",
+  "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.",
+  "Kopien von Cloud-Dateien auf diesem Mac. Beim Entfernen bleiben die Dateien in der Cloud.",
+  "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。",
+  "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。",
+  "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다."
+ ],
+ "Removing downloads": [
+  "Removendo downloads",
+  "Suppression des téléchargements",
+  "Eliminando descargas",
+  "Downloads werden entfernt",
+  "正在移除下载",
+  "ダウンロードを削除中",
+  "다운로드 제거 중"
+ ],
+ "That cloud folder is no longer on this Mac": [
+  "Essa pasta da nuvem não está mais neste Mac",
+  "Ce dossier cloud n’est plus sur ce Mac",
+  "Esa carpeta de la nube ya no está en este Mac",
+  "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac",
+  "此云端文件夹已不在此 Mac 上",
+  "このクラウドフォルダはこのMacにありません",
+  "이 클라우드 폴더가 더 이상 이 Mac에 없음"
+ ],
+ "Removing %lld%%, %@": [
+  "Removendo %lld%%, %@",
+  "Suppression %lld %%, %@",
+  "Eliminando %lld %%, %@",
+  "Wird entfernt %lld %%, %@",
+  "正在移除 %lld%%，%@",
+  "削除中 %lld%%、%@",
+  "제거 중 %lld%%, %@"
  ]
 }

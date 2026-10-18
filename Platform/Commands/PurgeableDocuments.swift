@@ -52,6 +52,24 @@ public enum PurgeableDocuments {
         return sources
     }
 
+    /// Reconcile only the affected provider after eviction. Other providers keep their measurements and cache age.
+    public static func refreshSource(_ root: URL) -> Source? {
+        guard isCloudFolder(root.path) else { return nil }
+        lock.lock()
+        let name = cached?.sources.first { $0.path == root.path }?.name ?? displayName(root.lastPathComponent)
+        lock.unlock()
+        guard let source = scan(root, name: name) else { return nil }
+        lock.lock()
+        generation += 1
+        if cached != nil {
+            cached?.sources.removeAll { $0.path == root.path }
+            if source.bytes > 0 { cached?.sources.append(source) }
+            cached?.sources.sort { $0.bytes > $1.bytes }
+        }
+        lock.unlock()
+        return source
+    }
+
     /// How long one cloud folder may take; past it the folder's figure is what was found so far.
     static let timeLimit: TimeInterval = 30
 
@@ -339,7 +357,19 @@ public final class CloudDownloadRemovals: @unchecked Sendable {
         public var fraction: Double { total > 0 ? Double(done) / Double(total) : 0 }
     }
 
+    public struct Completion: Sendable, Equatable {
+        public var revision: Int
+        public var path: String
+        public var source: PurgeableDocuments.Source?
+        public var localSize: FileTreeSize?
+        public init(revision: Int, path: String, source: PurgeableDocuments.Source?, localSize: FileTreeSize?) {
+            self.revision = revision; self.path = path; self.source = source; self.localSize = localSize
+        }
+    }
+
     private let lock = NSLock()
+    private var revision = 0
+    private var completed: [String: Completion] = [:]
     private var running: [String: Progress] = [:]
 
     /// The removals running now, by cloud folder.
@@ -347,6 +377,13 @@ public final class CloudDownloadRemovals: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return running
+    }
+
+    /// Completed target measurements since a module's snapshot, shared by both cloud-file surfaces.
+    public func changes(since previous: Int = 0) -> (revision: Int, completions: [Completion]) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (revision, completed.values.filter { $0.revision > previous }.sorted { $0.revision < $1.revision })
     }
 
     /// Starts removing the downloads in `root` in the background, unless that folder's removal is already running (then false).
@@ -366,10 +403,14 @@ public final class CloudDownloadRemovals: @unchecked Sendable {
                 self.running[path] = Progress(done: done, total: total, bytes: bytes)
                 self.lock.unlock()
             }
-            PurgeableDocuments.forget()
             var freed: UInt64 = 0
             if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
+            // Keep the progress flag through verification. No whole-module scan or service query is needed.
+            let source = PurgeableDocuments.refreshSource(root)
+            let local = FileTreeSizer(countsPurgeable: true).size(at: root)
             self.lock.lock()
+            self.revision += 1
+            self.completed[path] = Completion(revision: self.revision, path: path, source: source, localSize: local)
             self.running[path] = nil
             self.lock.unlock()
             finished(removal, freed)
