@@ -9,62 +9,34 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
-- Siri, Spatial Photos and Phone feature controls, with reversible settings and automatic cleanup of models requested again while the features stay off. Phone changes require a restart and use no configuration profile.
-- A one-shot cleanup for unused language assets in System Data, using macOS's model owners and cleanup service.
+- **Siri**, **Spatial Photos** and **Phone features** switches in Siri & Apple Intelligence. Each turns its feature off,
+  saves the original settings and deletes the models it leaves on disk. While MacSpace is open, it deletes them again if macOS
+  asks for them again. Phone features needs a restart and installs no profile. Switching a feature on restores what MacSpace saved.
+- **Unused system assets** in System Data also releases unused language data.
+- Simplified Chinese (#8), Japanese and Korean (#9), throughout the app and all four modules.
+- **About MacSpace**, in the application and menu bar menus, with the version, GitHub and an uninstaller that restores each
+  module's settings before it removes the helper and moves MacSpace to the Trash (#15).
+- Scans show their progress in the action button and on the Home tiles.
 
-- Japanese and Korean throughout the app and all four modules (#9).
+### Changed
 
-- Simplified Chinese throughout the app and all four modules (#8).
-
-- About includes GitHub and an uninstaller that restores each module’s settings before removing the helper and moving MacSpace to the Trash (#15).
+- Freeing a single row checks only what that row freed, without scanning the whole module again. Pages stay usable while they
+  refresh, and cloud files use the same cleanup in System Data and Other System Files.
+- The **All done** page shows a short countdown before it goes back, and starts it only once the page has its new figures.
+- Homebrew and `/usr/local` explain what they hold and what MacSpace frees there.
 
 ### Fixed
 
-- Cleanup row departures keep text, flags, shade and separators in one geometry group. Following sections wait for the row's cascade before closing its space instead of jumping ahead.
-- Cleanup flags measure their destination independently of the surrounding layout and use one resizing spring, preventing repeated squeezing and wobble of the flag and adjacent badges.
-- Analytics verification uses logged opt-in decisions, never ambiguous submission timestamps. Missing evidence shows Not verified, and interface explanations are translated instead of exposing English helper diagnostics.
-- Homebrew has an info pill explaining its safe cleanup, and `/usr/local` explains the separately installed tools it holds.
-- Purgeable app files explain the existing background retries consistently in every language, without promising unlimited retries.
-- The page action reads its live phase directly, so a finished Siri/AI scan cannot retain a stale Loading button. Its normal fade still holds footer space until removal completes.
-- Loading captions retain normal spacing and reach the tile’s right inset. Tabular progress digits keep equal-length updates steady without blank reserved space. Row Free flags animate neighbouring controls as their capsule changes phase.
-- All app dialogs enforce left alignment of the icon, heading and message at drawing time, including attributed paragraph styles in cache confirmations.
-
-- Disk usage sentences retain their original spaces and kerning.
-
-- Captions, flags, buttons and All done share separate numeric and word transitions. Phrase changes cancel unfinished numeric motion, preserve both texts’ fonts/bounds, and cascade only changed words around a fixed anchor; unrelated phrases no longer overlap or overshoot the tile edge.
-- Background cleanup continues in the original row flag without a duplicate completion. The bottom action fades in place before its footer space is released.
-
-- Refresh keeps module pages usable and pulses their graphs; home loading text and progress appear immediately for every scan.
-- Page-wide cleanup keeps details visible and interactive like reload. Animated progress pills omit redundant percentage text.
-- Individual cleanup uses an animated row flag and verifies affected targets without a full module scan. Cloud cleanup is shared by System Data and Other System Files.
-- Back from All done returns to the module; dock fades follow the action's actual visibility, and changing labels retain the original native text/number transition with anchored layout. Row flags fit their idle title and reserve numeric variants within the current phase; the orange page button stays on one line at a fixed height. Inserted/removed elements use the vertical cascade.
-- Confirmation icons and text align left. Inactive window controls fade to a day/night fallback, and closing the last window hands activation back before changing background presence.
-
-- Scans show reported progress in the action button and after “loading…” on Home, including helper retries.
-- Window zoom and macOS Fill fit the visible glass to the screen, accounting for the resize margin, and hide the window shadow while filled.
-
-- About MacSpace opens from the application and status menus with MacBat’s layout, version, author, GitHub and uninstall; it is no longer a Settings section (#15).
-
-- Confirmation dialogs keep the icon, heading and complete message aligned left after every layout pass.
-
-- Back dismisses All Done immediately, including while the cleaned page is still refreshing.
-
-- Page rows and their shades cascade down after loading and up before refreshing or freeing space, without animating during tile open and close (#23).
-
-- Cleaning and loading share the same page visibility: only the main chart remains, and rows and legend items return individually in a cascade (#23).
-
-- Tile captions choose their wrapped position from the destination width before the app’s opening animation (#19).
-
-- Tile attention marks share the corner’s center and keep their expanding ring inside the tile (#17).
-
-- Rolling figures, including the All done count, no longer have their animation cut off above and below (#22).
-
-- Apple Intelligence uses the system language after a language change and reports a failed off-switch instead of silently accepting it (#20).
-
-- Xcode documentation is no longer offered as a manual cleanup; Xcode has no removal control for it (#13).
-
-- While a module cleans, its tile reads "freeing space… 40%" instead of putting a middot after the ellipsis.
-- You can now drag the window from anywhere on the All done page.
+- A row's **Free** flag no longer pushes the buttons beside it around while it cleans.
+- Rows, legends and pages arrive and leave in one steady cascade, without jumps after a cleanup (#23).
+- Numbers and words in captions, buttons and **All done** change smoothly, without overlapping, cutting off or leaving the tile
+  (#19, #22).
+- A finished scan no longer leaves the Siri & Apple Intelligence button showing Loading.
+- Analytics shows Not verified when macOS gives no clear evidence, and its explanations are translated.
+- Dialogs keep their icon, heading and message aligned left.
+- Tile attention marks stay centered in their corner (#17).
+- Zoom and macOS's Fill fit the window to the screen and hide its shadow while it fills the screen. Inactive window controls fade
+  correctly.
 
 ## [1.1.0] - 2026-10-13
 

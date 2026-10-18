@@ -14,6 +14,9 @@ Intelligence off and deletes the models macOS keeps on disk afterwards. It frees
 apps marked purgeable, and it can turn off the analytics and background data collection that
 macOS lets you control. It is free and open source, and it **collects no data about you**.
 
+MacSpace is in English, Portuguese (Brazil), Spanish, French, German, Simplified Chinese, Japanese
+and Korean.
+
 [**Download MacSpace**](#install) ·
 [Privacy Policy](PRIVACY.md) ·
 [Security](SECURITY.md) ·
@@ -35,26 +38,36 @@ MacSpace has four modules. You can switch them on or off in Settings.
 **System Data.** System Data is the part of the disk that System Settings does not explain.
 MacSpace works it out the way System Settings does (used space, less macOS and every other
 category), so the figure is close to the one you see there. Then it breaks it down: caches, logs,
-reports, system assets, app data, document version history. 
+reports, system assets, app data, document version history.
 
-The main button, **Free**, deletes what is safe. Items that are kept apart because they need more care have their own buttons. For
-everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by hand.
-App caches apps can be checked too: **Free** asks you if it can quit opened apps first. You can also chose another installed cleaner in settings to do deal with them instead of MacSpace.
+The main button, **Free**, deletes what is safe. Items that need more care have their own buttons.
+For everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by
+hand. App caches can be chosen too: **Free** asks before it quits an open app. In Settings, you can
+choose another installed cleaner to handle app caches instead of MacSpace. **Unused system assets**
+has its own **Free**, which also releases unused language data (spelling and dictionary assets
+macOS may download again).
 
 <p align="center">
   <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
 </p>
 
-**Siri & Apple Intelligence.** 
-Switched off, MacSpace sets Siri to a language other than your Mac's. That is how macOS decides
-that Apple Intelligence is unavailable. MacSpace then deletes the models macOS keeps on disk,
-which can be about 12 GB. Switch it on again and MacSpace puts your Siri language and voice
-back. 
+**Siri & Apple Intelligence.** Switched off, MacSpace sets Siri to a language other than your
+Mac's. That is how macOS decides that Apple Intelligence is unavailable. MacSpace then deletes the
+models macOS keeps on disk, which can be about 12 GB. Switch it on again and MacSpace puts your
+Siri language and voice back.
 
-Separate **Siri**, **Spatial Photos** and **Phone features** switches disable those features and free their unused models.
-Phone changes require a restart and affect every account on this Mac; no profile is installed. While MacSpace is open, it checks
-every five minutes for models requested again for disabled features. Re-enabling restores saved settings. Models stay while
-Apple Intelligence is available. Other unused language assets have a **Free** action in **System Data**.
+Three more switches turn off a feature and delete the models it leaves on disk:
+
+| Switch | What it turns off | Takes effect after |
+|---|---|---|
+| Siri | Siri and its voice. Shared speech models stay while Dictation is on. | Toggle |
+| Spatial Photos | Spatial photo effects. | Toggle |
+| Phone features | Call recording and transcription, Live Voicemail and Call Screening, FaceTime captions and call translation, for every account on this Mac. No profile is installed. | A restart |
+
+These switches work only while Apple Intelligence is off, and only on macOS versions MacSpace has
+checked. macOS can ask for some of these models again even with the feature off, so while
+MacSpace is open it checks every five minutes and deletes them again. Switch a feature on again
+and MacSpace restores the settings it saved; macOS may download its models again.
 
 <p align="center">
   <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
@@ -231,11 +244,13 @@ System Integrity Protection and does not change the sealed system volume.
 **Free** on the document version history, the system log, the Trash and Time Machine's snapshots
 and backups carries a **Cannot be undone** badge. The **Apple
 Intelligence** switch and the single Debloat switches act at once, and go back by themselves if
-the change fails.
+the change fails. **Phone features** needs a restart, and the page says so until you restart.
 
 **What you can undo.** Debloat: switch a feature back on, or press **Enable all**. MacSpace
 restores the settings it saved before it changed them. Apple Intelligence: switch it on again.
-MacSpace restores your Siri language and voice, and macOS may download the models again. Deleted
+MacSpace restores your Siri language and voice, and macOS may download the models again. Siri,
+Spatial Photos and Phone features: switch them on again. MacSpace restores their settings and what
+they had asked macOS to keep, and macOS may download their models again. Deleted
 caches rebuild. Deleted reports, version history, logs, items in the Trash, snapshots and backups
 do not come back.
 
@@ -258,8 +273,9 @@ To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpa
 
 1. **Undo what MacSpace changed.** In **Debloat**, press **Enable all**. This also removes the
    overrides Debloat wrote outside MacSpace's own folders, which stay in place if you just delete
-   the app. If a restart is needed, the page says so. If you switched Apple Intelligence off and
-   want it back, switch it on in **Siri & Apple Intelligence**.
+   the app. If a restart is needed, the page says so. If you switched Apple Intelligence, Siri,
+   Spatial Photos or Phone features off and want them back, switch them on in
+   **Siri & Apple Intelligence**.
 2. **Remove the profile**, if one is still installed: in System Settings > General > Device
    Management, select **MacSpace: policies** (identifier `com.macspace.policies`) and remove it.
 3. **Quit MacSpace** (**Quit MacSpace** in the MacSpace menu, or in the menu of its menu bar
@@ -276,8 +292,8 @@ To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpa
    defaults delete com.macspace.app
    sudo rm -rf /Library/Application\ Support/MacSpace
    ```
-   The last line is needed only if you used Debloat or removed leftover Apple Intelligence
-   subscriptions. Run it after step 1: that folder holds the originals MacSpace restores.
+   The last line is needed only if you used Debloat or Phone features, or removed leftover Apple
+   Intelligence subscriptions. Run it after step 1: that folder holds the originals MacSpace restores.
 6. **Remove Full Disk Access:** in System Settings > Privacy & Security > Full Disk Access, select
    MacSpace and press the minus button.
 

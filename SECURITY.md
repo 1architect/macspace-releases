@@ -113,8 +113,9 @@ The separate Siri and Spatial Photos switches save your original settings before
 cleared while Siri is off; its Session Language is preserved. Phone also disables the local recording, screening and caption
 settings. Originals are kept in `~/Library/Application Support/MacSpace/feature-settings/`.
 
-Model requests are released through their owning Apple frameworks, with rollback objects saved under
-`~/Library/Application Support/MacSpace/asset-owners/`. These feature and language-model cleanups never edit the live subscription database or delete model
+Model requests are released through their owning Apple frameworks, in a separate MacSpace process that runs as you, never in
+the app or the helper. That process checks each method against the one MacSpace reviewed before calling it and stops on any
+difference. Rollback objects are saved, readable only by you, under `~/Library/Application Support/MacSpace/asset-owners/`. These feature and language-model cleanups never edit the live subscription database or delete model
 payloads directly. Physical cleanup uses the existing guarded macOS cleanup service. It waits while Apple Intelligence is
 available or its state is unreadable, keeps other accounts' requests, and keeps shared speech models while Dictation is active.
 
