@@ -7,9 +7,11 @@ be installed for this switch.
 ## Evidence on 26B5112a
 
 Results and runnable, bounded research probes are in
-`../MACSPACE/results/issue-16-phone-no-profile-20261018/`. This is a candidate implementation route with an explicit validation
-boundary: native settings were tested with Apple's in-memory data-source initializer; effective feature-flag overrides have
-**not** yet been applied/restarted on this machine. No current macOS feature setting was changed during these checks.
+`../MACSPACE/results/issue-16-phone-no-profile-20261018/`. Native settings were tested with Apple's in-memory data-source
+initializer. The user then explicitly authorized the five-flag trial, applied it using sudo, and restarted manually. The subsequent
+read-only probe confirmed that all five effective getters changed from true to false. This establishes that these overrides take
+effect without a configuration profile on this build. Manual Phone/FaceTime verification and the restore/restart check are still
+pending. The trial changed only the five feature overrides; it did not change native user preferences or clean models.
 
 | Feature | Native control / upstream gate | Evidence |
 | --- | --- | --- |
@@ -27,6 +29,23 @@ The existing Debloat mechanism supports root-owned overrides at
 `/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`. These are boot-time settings. Saving them is not proof that
 the running feature is disabled. The implementation must use the existing pending-restart behavior and verify the effective
 values after restarting. No daemon bootout, entitlement bypass, SIP change or profile is part of this route.
+
+### Authorized restart result
+
+`post-restart-controls.json` and `post-restart-comparison.json` record the result. The saved override file and the five actual
+`TUFeatureFlags` getters all read false. `TUCallRecordingEnabled(nil)` and `TUCallScreeningEnabled(nil,nil,nil)` both read false.
+FaceTime captions and in-call transcription also read false through their native getters, as they did before the trial; the trial
+does not prove that changing those native settings works. The rollback journal exists as a root-owned file with mode 0600.
+
+Do not collapse this evidence into a promise that every Phone/FaceTime screen was checked or that Telephony assets stopped
+prewarming. Those are separate checks. Keep the original entries until restoration or deliberate production adoption can preserve
+them; recording the trial's false overrides as the original baseline would break later re-enablement.
+
+The user's supplied Calls settings screenshot has no captions/translation controls and is not a functional check of those
+features. Apple's [FaceTime guide](https://support.apple.com/en-ie/guide/facetime/fctmcd23d9be/mac) places Live Captions and Live
+Translation under More during a video call. The [Mac translation guide](https://support.apple.com/en-gb/guide/mac-help/mchl58dfbdba/mac)
+places Phone translation under More during a phone call. Live Translation also depends on Apple Intelligence being on; absence
+while Apple Intelligence is already off is not independent evidence that this trial disabled translation.
 
 ### Research ABI correction
 
@@ -68,6 +87,6 @@ durably before changing them. Explicit `--restore` restores only those entries, 
 drift. Both need a manual restart for their effective state. Fixture checks cover absent entries, DevelopmentPhase restoration,
 unrelated changes, idempotent recovery and drift refusal. The trial does not change native user settings or clean any models.
 
-The remaining live check is: apply these overrides deliberately, restart manually, run the read-only runtime probe, and have the
-user verify the Phone/FaceTime controls. Then restore and verify again. Until that passes, the complete combined switch is not
-validated for production UI.
+Applying, restarting and reading the effective flags has passed. The remaining live check is the user's Phone/FaceTime
+verification, then restoring the saved original entries, restarting manually and checking the effective getters again. Until that
+passes, the complete combined switch is not fully validated for production UI.
