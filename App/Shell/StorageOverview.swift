@@ -65,8 +65,9 @@ final class StorageOverview: ObservableObject {
     }
 
     /// While a window shows the disk: reads it every `interval` seconds, so space freed or taken by anything shows within it.
-    /// Ends when the calling view goes away (its task is cancelled).
-    func watch(every interval: Double = 30) async {
+    /// Ends when the calling view goes away (its task is cancelled). A minute, as the modules: "available for important use" makes macOS work out its purgeable space at each reading, and the
+    /// tile is read again anyway after every cleanup and each time MacSpace comes back to the front.
+    func watch(every interval: Double = 60) async {
         while !Task.isCancelled {
             if lastRead.map({ Date().timeIntervalSince($0) >= interval / 2 }) ?? true { await refresh() }
             try? await Task.sleep(for: .seconds(interval))

@@ -319,7 +319,6 @@ private struct StandardWindowConfigurator: NSViewRepresentable {
             // An empty unified toolbar gives the window's buttons the place macOS gives them in a window with a toolbar.
             if window.toolbar == nil {
                 let toolbar = NSToolbar(identifier: "MacSpaceStandardWindow")
-                toolbar.showsBaselineSeparator = false
                 window.toolbar = toolbar
                 window.toolbarStyle = .unified
             }

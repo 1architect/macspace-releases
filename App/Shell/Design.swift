@@ -114,7 +114,19 @@ public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Made once per palette and tint: every block, dot and surface asks for its palette at every frame of a chart's animation.
+    private static let palettesLock = NSLock()
+    nonisolated(unsafe) private static var palettes: [String: TintPalette] = [:]
+
     func palette(_ tint: TileTint) -> TintPalette {
+        let key = rawValue + "|" + tint.rawValue
+        if let known = Self.palettesLock.withLock({ Self.palettes[key] }) { return known }
+        let made = makePalette(tint)
+        Self.palettesLock.withLock { Self.palettes[key] = made }
+        return made
+    }
+
+    private func makePalette(_ tint: TileTint) -> TintPalette {
         func make(_ base: UInt32, _ steps: [UInt32], _ text: UInt32) -> TintPalette {
             TintPalette(base: Color(hex: base), steps: steps.map { Color(hex: $0) }, text: Color(hex: text))
         }

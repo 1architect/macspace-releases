@@ -302,6 +302,8 @@ enum DitheredLight {
     @MainActor static func image(peak: Double) -> CGImage {
         let key = Int((min(max(peak, 0), 1) * 1000).rounded())
         if let image = cache[key] { return image }
+        // Each texture is 2 MB: dragging the brightness in the Shader Studio kept one for every step it passed.
+        if cache.count >= 8 { cache.removeAll() }
         let image = make(peak: Double(key) / 1000)
         cache[key] = image
         return image

@@ -229,8 +229,24 @@ enum Treemap {
     }
 
     /// The order `arranged` lays the values out in, by index.
+    /// Orders already worked out: the search below lays the blocks out up to 720 times, and every drawing of a chart and every
+    /// pointer move over one asked again for the same figures.
+    private static let ordersLock = NSLock()
+    nonisolated(unsafe) private static var orders: [String: [Int]] = [:]
+
     static func order(_ values: [Double], in rect: CGRect, style: ChartStyle = .columns) -> [Int] {
         guard values.count > 2, values.count <= 7 else { return Array(values.indices) }
+        let key = "\(style)|\(Int(rect.width.rounded()))x\(Int(rect.height.rounded()))|" + values.map { String($0) }.joined(separator: ",")
+        if let known = ordersLock.withLock({ orders[key] }) { return known }
+        let found = searchOrder(values, in: rect, style: style)
+        ordersLock.withLock {
+            if orders.count > 256 { orders.removeAll() }
+            orders[key] = found
+        }
+        return found
+    }
+
+    private static func searchOrder(_ values: [Double], in rect: CGRect, style: ChartStyle) -> [Int] {
         func thinnest(_ rects: [CGRect]) -> CGFloat {
             rects.filter { $0.width > 0.5 && $0.height > 0.5 }.map { min($0.width, $0.height) }.min() ?? 0
         }
@@ -863,7 +879,7 @@ struct AttentionMark: View {
             .frame(width: Self.diameter, height: Self.diameter)
             .background(Circle().fill(design.action))
             .background {
-                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
+                TimelineView(PulseSchedule(pulse: Self.pulse, rest: Self.rest, paused: reduceMotion || !appearsActive)) { context in
                     let progress = Self.progress(at: context.date)
                     Circle().strokeBorder(design.action, lineWidth: 1.5)
                         .frame(width: Self.diameter, height: Self.diameter)
@@ -876,6 +892,25 @@ struct AttentionMark: View {
     }
 
     /// How far the ring has gone out, 0...1, easing out; 0 during the rest.
+    /// 30 frames a second through the pulse, and none through the rest, when nothing moves: the mark stays on a tile for as long as
+    /// it needs the user, and was redrawn all that time.
+    struct PulseSchedule: TimelineSchedule {
+        let pulse: Double
+        let rest: Double
+        let paused: Bool
+
+        func entries(from start: Date, mode: TimelineScheduleMode) -> AnyIterator<Date> {
+            var next: Date? = start
+            return AnyIterator {
+                guard let current = next else { return nil }
+                if paused { next = nil; return current }
+                let t = current.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: pulse + rest)
+                next = current.addingTimeInterval(t < rest ? max(rest - t, 1.0 / 30) : 1.0 / 30)
+                return current
+            }
+        }
+    }
+
     static func progress(at date: Date) -> Double {
         let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: pulse + rest)
         guard t >= rest else { return 0 }

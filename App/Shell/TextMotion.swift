@@ -35,10 +35,9 @@ struct TextFields {
         return fields
     }
 
-    static func reservation(for field: Field, maximumText: String?) -> String? {
-        guard field.numeric, let maximumText,
-              let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) else { return nil }
-        return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
+    static func reservation(for field: Field, in maximum: [Field]) -> String? {
+        guard field.numeric, maximum.indices.contains(field.id), maximum[field.id].numeric else { return nil }
+        return maximum[field.id].text.map { $0.isNumber ? "8" : String($0) }.joined()
     }
 }
 
@@ -90,9 +89,7 @@ struct ChangingText: View {
     @ViewBuilder private var measuredLabel: some View {
         if lineLimit == 1 {
             HStack(spacing: 0) {
-                ForEach(fields) { field in
-                    Text(verbatim: TextFields.reservation(for: field, maximumText: maximumText) ?? field.text.replacingOccurrences(of: " ", with: "\u{00A0}"))
-                }
+                ForEach(cells) { cell in Text(verbatim: cell.reserved ?? cell.value) }
             }
             .multilineTextAlignment(.leading)
         } else { Text(verbatim: text) }
@@ -101,24 +98,34 @@ struct ChangingText: View {
     @ViewBuilder private var numericLabel: some View {
         if lineLimit == 1 {
             HStack(spacing: 0) {
-                ForEach(fields) { field in
-                    let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
-                    Text(verbatim: TextFields.reservation(for: field, maximumText: maximumText) ?? value).hidden()
-                        .overlay(alignment: TextFields.reservation(for: field, maximumText: maximumText) == nil ? alignment : .trailing) {
-                            numeric(value)
-                        }
+                ForEach(cells) { cell in
+                    Text(verbatim: cell.reserved ?? cell.value).hidden()
+                        .overlay(alignment: cell.reserved == nil ? alignment : .trailing) { numeric(cell.value) }
                 }
             }
             .multilineTextAlignment(.leading)
         } else { numeric(text) }
     }
 
-    private var fields: [TextFields.Field] {
-        let split = TextFields.split(text)
-        guard split.contains(where: { TextFields.reservation(for: $0, maximumText: maximumText) != nil }) else {
-            return [TextFields.Field(id: 0, text: text, numeric: false)]
+    private struct Cell: Identifiable {
+        let id: Int
+        /// The text, with spaces that never break.
+        let value: String
+        /// The widest figure this field reaches, while it is a number `maximumText` reserves room for.
+        let reserved: String?
+    }
+
+    /// The text and `maximumText` are split once a drawing: each field read the maximum again, three times a field.
+    private var cells: [Cell] {
+        guard let maximumText else { return [Cell(id: 0, value: text.replacingOccurrences(of: " ", with: "\u{00A0}"), reserved: nil)] }
+        let maximum = TextFields.split(maximumText)
+        let cells = TextFields.split(text).map {
+            Cell(id: $0.id, value: $0.text.replacingOccurrences(of: " ", with: "\u{00A0}"), reserved: TextFields.reservation(for: $0, in: maximum))
         }
-        return split
+        guard cells.contains(where: { $0.reserved != nil }) else {
+            return [Cell(id: 0, value: text.replacingOccurrences(of: " ", with: "\u{00A0}"), reserved: nil)]
+        }
+        return cells
     }
 
     private func numeric(_ value: String) -> some View {
