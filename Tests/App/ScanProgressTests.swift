@@ -64,7 +64,7 @@ final class ScanProgressTests: XCTestCase {
             await control.advance(0.4)
             for _ in 0..<100 where handle.loading?.reported != 0.4 { try await Task.sleep(for: .milliseconds(5)) }
             XCTAssertEqual(handle.loading?.reported, 0.4)
-            XCTAssertEqual(TileInfo(handle).status, "ready", "short scans keep the measured caption")
+            XCTAssertEqual(TileInfo(handle).status, TileInfo.loadingStatus + " 40%", "even a short scan reports loading and real progress immediately")
             XCTAssertEqual(handle.loading?.fraction(at: Date()), 0.4, "the orange button uses actual scan progress")
             await control.advance(0.2)
             try await Task.sleep(for: .milliseconds(10))
@@ -172,13 +172,10 @@ final class ScanProgressTests: XCTestCase {
         XCTAssertTrue(handle.isRefreshing, "the pending two-second timer must not interrupt the manual scan")
         XCTAssertFalse(handle.isReloading)
         XCTAssertFalse(handle.isBusy)
-        XCTAssertFalse(handle.showsLoadingCaption, "short scans retain their caption")
-        try await Task.sleep(for: .milliseconds(950))
-        XCTAssertTrue(handle.showsLoadingCaption, "a scan still running after three seconds shows loading")
+        XCTAssertTrue(TileInfo(handle).status.hasPrefix(TileInfo.loadingStatus), "loading has no three-second delay")
         await control.finish()
         await manual.value
         XCTAssertFalse(handle.isReloading)
         XCTAssertFalse(handle.isRefreshing)
-        XCTAssertFalse(handle.showsLoadingCaption)
     }
 }

@@ -5,7 +5,7 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract versio
 ## Loading and updating
 
 - **First load:** use the existing loading pill, progress and page cascade. **Every subsequent read, including explicit Refresh and returning from All done:** preserve the current page, scroll position, groups and choices. Explicit Refresh still invalidates measurements first.
-- Graphs pulse with the existing loading wave during every scan. Apply completed measurements only where values changed; do not replay the whole-page cascade. Home captions retain their measured status for the first three seconds; only longer scans show loading text/progress. This delay does not delay graph animations.
+- Graphs pulse with the existing loading wave during every scan. Apply completed measurements only where values changed; do not replay the whole-page cascade. Home captions show loading text/progress immediately for every scan, regardless of duration. Cached/status-only reads remain silent.
 - **Automatic scan:** retain the current page, group stack, choices and scroll-view identity. Report real progress in the existing widget/pill; page details remain visible and interactive. Forced automatic invalidation (such as profile approval checks) follows this rule too.
 - **Status update:** refresh live operation counters from the last measurement without querying services or enumerating files. It produces no loading state.
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
@@ -57,7 +57,7 @@ The SDK and all four bundled manifests are version 5. A version-4 module is reje
 
 ## Legend animation
 
-The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label owns an anchored vertical text transition. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
+The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label retains the existing numeric-text rolling transition with an anchored overlay that keeps outgoing glyphs out of layout. Fade-only content changes are reserved for Reduce Motion. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
 
 ## Window controls and confirmations
 
@@ -72,8 +72,9 @@ text alignment. This includes short cache confirmations whose native field frame
 ## Verification and references
 
 `results/live-cleanup-ui-20261018/verified-all-tests.txt`: 470 tests, 466 passed and four optional tests skipped (two live CacheDelete
-opt-ins and two saved render snapshots). `localization-check.txt` records compiler extraction and all eight UI languages. Regression
-coverage includes live/manual refresh, the three-second caption delay, retained choices, stale reads, targeted partial cleanup,
+opt-ins and two saved render snapshots). The follow-up `results/rolling-text-20261018/app-tests.txt` verifies the restored immediate
+loading behavior (106 AppTests, two optional skips). `localization-check.txt` records compiler extraction and all eight UI languages. Regression
+coverage includes live/manual refresh, immediate loading captions, retained choices, stale reads, targeted partial cleanup,
 excluded clones, repeated purges, shared cloud progress, JSON round trips, All done verification, inline permission failures,
 confirmation frames and window presence. Visual verification of transitions, OneDrive flags/fades, inactive day/night controls and
 the menu bar on close is performed by the user; no GUI automation is used.

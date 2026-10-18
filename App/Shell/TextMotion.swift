@@ -81,8 +81,8 @@ struct RollingText: View {
     }
 }
 
-/// The resting text alone determines layout. Outgoing glyphs draw in an overlay, so a changed word or number cannot push the
-/// line sideways or temporarily widen its neighbours while it departs. The motion stays vertical, with a short fade.
+/// Keep the existing numeric-text roll: changing glyphs roll and blur while unchanged text stays put. The resting text alone
+/// determines layout; the overlay animates its contents without animating the line's width or moving neighbouring elements.
 struct ChangingText: View {
     let text: String
     var alignment: Alignment = .leading
@@ -92,11 +92,9 @@ struct ChangingText: View {
         Text(text).hidden()
             .overlay(alignment: alignment) {
                 Text(text)
-                    .id(text)
-                    .transition(reduceMotion ? .opacity : .asymmetric(
-                        insertion: .offset(y: 5).combined(with: .opacity),
-                        removal: .offset(y: -5).combined(with: .opacity)))
+                    .contentTransition(reduceMotion ? .opacity : .numericText())
                     .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value, value: text)
+                    .frame(maxWidth: .infinity, alignment: alignment)
             }
             .transaction { $0.animation = nil }
             .accessibilityElement(children: .ignore)

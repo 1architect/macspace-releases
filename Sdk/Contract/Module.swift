@@ -224,7 +224,8 @@ public protocol MacSpaceModule: Sendable {
     /// The module's full page, saying how far reading the Mac has come (0...1) while it takes long enough to be seen: the page's
     /// Loading button and Home tile show it. Shipped modules report actual scan work and share that progress between concurrent
     /// tile/page reads. Cached snapshots report nothing. Every refresh retains existing page details, including manual reloads. Only
-    /// first loads use the loading cascade. Home captions show loading only after three seconds; graphs pulse immediately. The default is a compatibility fallback for modules without progress:
+    /// first loads use the loading cascade. Home captions show loading/progress immediately for every scan, and graphs pulse
+    /// immediately too. The default is a compatibility fallback for modules without progress:
     /// the app fills the button over the time the module took last time instead.
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen
 

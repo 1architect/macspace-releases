@@ -22,13 +22,13 @@ struct TileInfo: Equatable {
         if let tile = handle.tile {
             // Read again (Refresh, the first reading), the status line says so, in its own style: the old figures dimmed read as the
             // new ones.
-            let reading = handle.showsLoadingCaption
+            let reading = handle.isRefreshing || (handle.tileIsStale && !handle.isCleaning)
             self.init(title: tile.title, figure: tile.figure,
                       status: reading ? Self.loadingStatus(handle.loading?.reported) : (handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
         } else {
-            self.init(title: handle.manifest.name.lowercased(), status: handle.showsLoadingCaption ? Self.loadingStatus(handle.loading?.reported) : "", loading: true)
+            self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus(handle.loading?.reported), loading: true)
         }
     }
 

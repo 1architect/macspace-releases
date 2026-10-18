@@ -1862,7 +1862,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:416"
+      "App\/Registry\/ModuleHandle.swift:399"
     ],
     "table" : "App",
     "translations" : {
@@ -3131,7 +3131,7 @@
     "places" : [
       "App\/Renderer\/ScreenView.swift:714",
       "App\/Renderer\/RowActionFlag.swift:65",
-      "App\/Registry\/ModuleHandle.swift:496"
+      "App\/Registry\/ModuleHandle.swift:479"
     ],
     "table" : "App",
     "translations" : {

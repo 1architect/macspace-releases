@@ -29,10 +29,6 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isRefreshing = false
     /// Only the first page load hides details. Manual and automatic refreshes retain the current page.
     @Published public private(set) var isReloading = false
-    /// Home captions keep the last status during scans shorter than three seconds.
-    @Published public private(set) var showsLoadingCaption = false
-    static var loadingCaptionDelay: Duration = .seconds(3)
-    private var loadingCaptionTask: Task<Void, Never>?
     /// The module is being read, as the user sees it (`isRefreshing`): since when, and how long it took last time. The page's button
     /// fills over that time (`LoadFill`), as it fills while an action runs.
     @Published public private(set) var loading: LoadFill?
@@ -238,7 +234,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             refreshRequests.remove(generation)
             blockingRefreshes.remove(generation)
             if refreshes.remove(generation) != nil {
-                if refreshes.isEmpty { loading = nil; loadingGeneration = nil; clearLoadingCaption() }
+                if refreshes.isEmpty { loading = nil; loadingGeneration = nil }
                 updateBusy()
             }
         }
@@ -288,12 +284,6 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if loadingGeneration != generation {
             loading = LoadFill(started: started, expected: expected)
             loadingGeneration = generation
-            loadingCaptionTask?.cancel()
-            loadingCaptionTask = Task { [weak self] in
-                do { try await Task.sleep(for: Self.loadingCaptionDelay) } catch { return }
-                guard let self, self.loadingGeneration == generation, self.isRefreshing else { return }
-                self.showsLoadingCaption = true
-            }
         }
         updateBusy()
     }
@@ -308,14 +298,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     /// A newer read or action supersedes old reads immediately; their late completion must not keep the widget loading.
-    private func clearLoadingCaption() {
-        loadingCaptionTask?.cancel()
-        loadingCaptionTask = nil
-        if showsLoadingCaption { showsLoadingCaption = false }
-    }
-
     private func clearRefreshPresentation() {
-        clearLoadingCaption()
         refreshes.removeAll()
         blockingRefreshes.removeAll()
         if loading != nil { loading = nil }

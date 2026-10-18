@@ -159,7 +159,8 @@ selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be un
 **Freeing looks the same everywhere.** The page action morphs into the existing progress pill and All done page. Individual row
 buttons are text flags with the folder flag's hover behavior; they morph into an inline cleaning flag with the same progress fill.
 A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
-it runs. Animate flag insertion/removal and changing contents with the existing motion. Keep changing text anchored; outgoing text
+it runs. Animate flag insertion/removal and changing contents with the existing motion. Text and number changes retain the rolling
+glyph animation (fade only with Reduce Motion). Keep changing text anchored; outgoing text
 must not participate in layout. No middle dots or ellipses in loading/cleaning labels.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
@@ -171,8 +172,8 @@ apps that quit. The app icon, heading and message must share a left-aligned lead
 
 **Loading.** Only the first load has no rows and uses the existing cascade. Subsequent reads retain the current page, scroll and
 selection, including manual Refresh and returning from All done. Graphs use the current loading wave during every scan. Apply only
-changed measurements when it finishes. Home captions retain their previous text during scans shorter than three seconds; show
-loading/progress only if the scan is still running after that delay. Graph animations start immediately. Modules report real scan
+changed measurements when it finishes. Home captions show loading and reported progress immediately, regardless of scan duration.
+Graph animations also start immediately. Modules report real scan
 progress through `tile(context:progress:)` and `screen(context:progress:)`, sharing scans with `LoadProgressRelay`.
 
 **Charts.** Blocks stand in columns across the chart, each column's blocks stacked down it. On a tile, only the chart's outer
