@@ -26,10 +26,11 @@ final class AllDoneLifetime: ObservableObject {
         }
     }
 
-    func dismiss() {
+    func dismiss(animated: Bool = false) {
         generation += 1
         task?.cancel()
         task = nil
+        if animated { withAnimation(Theme.push) { shown = false }; return }
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) { shown = false }

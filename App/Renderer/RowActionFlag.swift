@@ -64,7 +64,8 @@ private struct RowActionFlag: View {
         if let progress {
             let title = progress.message.isEmpty ? action.workingTitle ?? String(localized: "Working") : progress.message
             if usesActivityText { return title }
-            return progress.fraction.map { title + " \(Int((min(max($0, 0), 1) * 100).rounded()))%" } ?? title
+            guard let fraction = progress.fraction, fraction.isFinite else { return title }
+            return title + " \(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
         }
         if let result, !result.message.isEmpty { return result.message }
         return action.title
@@ -111,7 +112,8 @@ struct ActionProgressFill: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
             let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
-            let value = fraction ?? load?.fraction(at: context.date)
+            let raw = fraction ?? load?.fraction(at: context.date)
+            let value = raw.flatMap { $0.isFinite ? $0 : nil }
             GeometryReader { geometry in
                 if let value {
                     Rectangle().fill(design.actionLight)

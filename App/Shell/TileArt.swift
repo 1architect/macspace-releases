@@ -541,8 +541,7 @@ struct BlocksView: View {
                     // As many lines as the block has room for under the size, up to three, rather than a name cut short.
                     Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(max(1, min(3, Int((rect.height - 26) / 14))))
                         .minimumScaleFactor(0.8)
-                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).lineLimit(1).minimumScaleFactor(0.75)
-                        .contentTransition(.numericText())
+                    ChangingText(text: ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).lineLimit(1).minimumScaleFactor(0.75)
                 }
                 .foregroundStyle(BlockColor.label(segment, shade: shade, tint: tint, design: design))
                 .padding(.horizontal, 7)

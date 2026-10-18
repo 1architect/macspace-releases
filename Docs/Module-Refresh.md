@@ -1,6 +1,6 @@
 # Module refresh behavior
 
-Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract version 5.
+Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract version 5.
 
 ## Loading and updating
 
@@ -51,16 +51,31 @@ The optional Siri watch runs every 900 seconds and is disabled by default. The D
 - System Data remeasures only action targets, including remaining files after partial cleanup; Other System Files reconciles its affected service or backup target; Siri asset purges remeasure only assets/model sizes. Their action results return a verified cached presentation. System Data adjusts its displayed baseline by the same counted target delta as its graph, retaining the full scan age. That reconciled baseline remains an estimate until the next complete category measurement.
 - Cloud completion keeps eligible downloadable bytes separate from total local bytes (pinned files may remain). Both modules use `CloudFileRows` and `CloudDownloadRemovals`; unknown/unreadable measurements retain the previous value. Volume free-space gains are history data, never item sizes.
 - `invalidate()` drops measured data; it does not publish UI by itself. `ActionResult.refresh` requests a presentation refresh after an action.
-- The host owns visibility, timers and whether loading is explicit or automatic. Modules supply measurements, counters and their progress; no new UI elements were introduced.
+- The host owns visibility, timers and whether loading is explicit or automatic. Modules supply measurements, counters and their progress; row actions reuse the existing capsule, hover and progress treatments.
 
 The SDK and all four bundled manifests are version 5. A version-4 module is rejected by the existing compatibility check instead of being loaded against the changed protocol.
 
 ## Legend animation
 
-The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label owns its existing numeric-text animation. Page navigation transitions remain unchanged.
+The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label owns an anchored vertical text transition. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
+
+## Window controls and confirmations
+
+Inactive controls use the same fallback as Reduce Transparency, with day/night colors and a fading transition. Active glass also
+uses the selected day/night appearance. Last-window closure hides the active app first and defers accessory-policy demotion until
+activation has passed to another app. Status/popover windows cannot promote the app back to regular presence. This addresses a
+suspected cause of the reported menu-bar flicker; the visible result requires user verification.
+
+All `AppAlert` layout passes align the actual icon and text frames to the native 20-point leading inset, in addition to setting left
+text alignment. This includes short cache confirmations whose native field frames are centered.
 
 ## Verification and references
 
-`results/refresh-policy-20261017/all-tests.txt` and `app-final-tests.txt`: 458 tests covered, 454 passed, four optional tests skipped. The final AppTests run includes the pending-timer regression added after the all-target run. Regression cases cover quiet/manual loading, automatic invalidation, stale-read retirement, lightweight status, retained selections, tile-only dashboard reads, visibility across canvases, removal completion and Siri polling conditions. Visual confirmation of the legend and interactions is performed by the user.
+`results/live-cleanup-ui-20261018/verified-all-tests.txt`: 470 tests, 466 passed and four optional tests skipped (two live CacheDelete
+opt-ins and two saved render snapshots). `localization-check.txt` records compiler extraction and all eight UI languages. Regression
+coverage includes live/manual refresh, the three-second caption delay, retained choices, stale reads, targeted partial cleanup,
+excluded clones, repeated purges, shared cloud progress, JSON round trips, All done verification, inline permission failures,
+confirmation frames and window presence. Visual verification of transitions, OneDrive flags/fades, inactive day/night controls and
+the menu bar on close is performed by the user; no GUI automation is used.
 
 Main sources: `App/Registry/ModuleHandle.swift`, `App/Registry/ModuleHost.swift`, `App/Shell/MainView.swift`, `App/Renderer/ScreenView.swift`, `Sdk/Contract/Module.swift`, `Sdk/Interface/Tile.swift`, and each module's snapshot store/screen builder.

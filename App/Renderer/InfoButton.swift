@@ -22,28 +22,32 @@ struct InfoButton: View {
     var hasContent: Bool { !paragraphs.isEmpty || !steps.isEmpty || !(note ?? "").isEmpty }
 
     var body: some View {
-        if hasContent {
-            Button { shown.toggle() } label: {
-                // A ring as tall as the folder beside it and of its line (11 and 1 points at 12 points), with the letter in SF,
-                // as the app's text: the symbol's own "i" has serifs. The letter is centered on its own outline, not on a line of
-                // text, which left it off center.
-                ZStack {
-                    Circle().strokeBorder(lineWidth: 1)
-                    SFLetter(letter: "i").frame(height: 6)
+        Group {
+            if hasContent {
+                Button { shown.toggle() } label: {
+                    // A ring as tall as the folder beside it and of its line (11 and 1 points at 12 points), with the letter in SF,
+                    // as the app's text: the symbol's own "i" has serifs. The letter is centered on its own outline, not on a line of
+                    // text, which left it off center.
+                    ZStack {
+                        Circle().strokeBorder(lineWidth: 1)
+                        SFLetter(letter: "i").frame(height: 6)
+                    }
+                    .frame(width: 11, height: 11)
+                    .rowPill(active: hovering || shown)
                 }
-                .frame(width: 11, height: 11)
-                .rowPill(active: hovering || shown)
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering = $0 }
-            .animation(Theme.hover, value: hovering || shown)
-            .accessibilityLabel(String(localized: "More about this"))
-            .popover(isPresented: $shown, arrowEdge: .bottom) {
-                InfoBalloon(paragraphs: paragraphs, steps: steps, note: note)
-                    .environment(\.colorScheme, design.colorScheme)
-                    .background(PopoverAppearance(isLight: design.isLight))
+                .buttonStyle(.plain)
+                .onHover { hovering = $0 }
+                .animation(Theme.hover, value: hovering || shown)
+                .accessibilityLabel(String(localized: "More about this"))
+                .popover(isPresented: $shown, arrowEdge: .bottom) {
+                    InfoBalloon(paragraphs: paragraphs, steps: steps, note: note)
+                        .environment(\.colorScheme, design.colorScheme)
+                        .background(PopoverAppearance(isLight: design.isLight))
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
         }
+        .animation(Theme.value, value: hasContent)
     }
 }
 

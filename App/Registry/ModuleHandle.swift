@@ -38,7 +38,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var loading: LoadFill?
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
-    /// An action the user started from a button (not a switch), or automatic cleanup, is running: the menu bar icon animates, and
+    /// An action the user started from a page button, or automatic cleanup, is running: the menu bar icon animates, and
     /// the page's charts pulse until the figures after it are in.
     @Published public private(set) var isCleaning = false
     /// The action the user started that is running, for its button's text (`Action.workingTitle`).
@@ -213,6 +213,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         tile = nil
         tileIsStale = false
         lastResult = nil
+        isShowingCompletion = false
         groupPath = []
     }
 
@@ -414,7 +415,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
                                       message: String(localized: "Needs \(ListFormatter.localizedString(byJoining: missing.map(\.title)))"),
                                       refresh: false)
-            lastResult = result
+            if let rowID, !quiet { resultRowID = rowID; rowResult = result } else { lastResult = result }
             return result
         }
         refreshGeneration += 1
@@ -454,8 +455,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // button's text.
         let celebrates = !quiet && rowID == nil && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
         if let rowID, !quiet {
-            resultRowID = rowID
-            rowResult = result
+            resultRowID = result.message.isEmpty ? nil : rowID
+            rowResult = result.message.isEmpty ? nil : result
         } else if (!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired { lastResult = result }
         // A long action that ends while the user is in another app says so in Notification Center.
         if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
@@ -463,6 +464,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: freed, trigger: .manual, summary: result.message)
         }
         performing = false
+        updateBusy()
         // "All done" as soon as the work is: reading the Mac again takes seconds of its own (a full scan for System Data). Meanwhile
         // the button stays full and keeps saying what the action did, the charts keep pulsing (`isCleaning`), and the rows the action
         // finished stay gone, until the new figures are in.

@@ -17,6 +17,11 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Refresh keeps module pages usable and pulses their graphs; home loading text appears only for scans longer than three seconds.
+- Individual cleanup uses an animated row flag and verifies affected targets without a full module scan. Cloud cleanup is shared by System Data and Other System Files.
+- Back from All done returns to the module; dock fades follow the action's actual visibility, and changing text stays anchored.
+- Confirmation icons and text align left. Inactive window controls fade to a day/night fallback, and closing the last window hands activation back before changing background presence.
+
 - Scans show reported progress in the action button and after “loading…” on Home, including helper retries.
 - Window zoom and macOS Fill fit the visible glass to the screen, accounting for the resize margin, and hide the window shadow while filled.
 

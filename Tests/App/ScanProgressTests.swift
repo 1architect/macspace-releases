@@ -31,7 +31,7 @@ private struct ScanningModule: MacSpaceModule {
         await control.scan(progress)
         return await screen(context: context)
     }
-    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("") }
+    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("Done") }
 }
 
 @MainActor
@@ -82,6 +82,31 @@ final class ScanProgressTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(10))
             XCTAssertFalse(handle.isRefreshing)
         }
+    }
+
+    func testPageActionVerificationLeavesTheExistingPageInteractiveBehindCompletion() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let control = ScanControl()
+        let handle = try await handle(directory, control: control)
+        defer { handle.deactivate() }
+        await control.arm()
+        let task = Task { await handle.perform(Action(id: "clean", title: "Free")) }
+        for _ in 0..<100 {
+            if await control.started, handle.isRefreshing { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertTrue(handle.isShowingCompletion)
+        XCTAssertTrue(handle.isCleaning, "graphs keep pulsing until verification finishes")
+        XCTAssertTrue(handle.isRefreshing)
+        XCTAssertFalse(handle.isBusy, "the action has finished; returning from All done must expose a live page")
+        XCTAssertFalse(handle.isReloading)
+        handle.dismissCompletion()
+        XCTAssertFalse(handle.isShowingCompletion)
+        XCTAssertNotNil(handle.screen)
+        await control.finish()
+        _ = await task.value
+        XCTAssertFalse(handle.isCleaning)
     }
 
     func testProgressFromHiddenScansDoesNotRestoreVisibleLoading() async throws {

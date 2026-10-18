@@ -21,7 +21,7 @@ struct CleanupSection: View {
                 }
             }
             LabeledContent("Freed in total") {
-                Text(ByteFormat.string(lifetime)).monospacedDigit().contentTransition(.numericText())
+                ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit()
             }
             SettingsLinkRow(title: String(localized: "Recent cleanups"), note: count == 1 ? String(localized: "1 cleanup") : String(localized: "\(count) cleanups")) { host.settingsPage = .cleanupHistory }
         }

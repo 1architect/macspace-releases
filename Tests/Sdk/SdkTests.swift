@@ -21,6 +21,19 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(screen.widgets.map(\.id), ["b", "u", "c", "l", "t", "bt", "st", "tx", "se"])
     }
 
+    func testTargetedPresentationAndBackgroundRowActivitySurviveSerialization() throws {
+        var row = Row(id: "cloud", title: "Cloud", actions: [Action(id: "free", title: "Free")])
+        row.activity = ActionProgress(fraction: 0.4, message: "Removing")
+        let screen = Screen(title: "Page", widgets: [.list(ListWidget(id: "rows", rows: [row]))])
+        let result = ActionResult(outcome: .succeeded, message: "", presentation: ModulePresentation(tile: Tile(title: "Tile", status: "measured"), screen: screen))
+        let roundTrip = try JSONDecoder().decode(ActionResult.self, from: JSONEncoder().encode(result))
+        XCTAssertEqual(roundTrip, result)
+        let request = ActionRequest(actionID: "free", rowID: "cloud")
+        XCTAssertEqual(try JSONDecoder().decode(ActionRequest.self, from: JSONEncoder().encode(request)), request)
+        let legacy = try JSONDecoder().decode(ActionRequest.self, from: Data(#"{"actionID":"free","parameters":{}}"#.utf8))
+        XCTAssertNil(legacy.rowID)
+    }
+
     func testManifestDecodesFromJSONWithDefaultsInTheModel() throws {
         let manifest = ModuleManifest(id: "com.example.m", name: "M", summary: "s", version: "1.0", symbol: "star",
                                       permissions: [.fullDiskAccess],

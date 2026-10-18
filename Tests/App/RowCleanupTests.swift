@@ -30,6 +30,22 @@ private struct RowCleanupModule: MacSpaceModule {
 
 @MainActor
 final class RowCleanupTests: XCTestCase {
+    func testMissingPermissionStaysOnTheInitiatingRow() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
+                                  permissions: FakePermissions(states: [.fullDiskAccess: .missing]), loader: { _ in FakeModule() })
+        await handle.activate()
+        defer { handle.deactivate() }
+        _ = await handle.perform(Action(id: "clean", title: "Free", requires: [.fullDiskAccess]), rowID: "item")
+        XCTAssertEqual(handle.resultRowID, "item")
+        XCTAssertEqual(handle.rowResult?.outcome, .needsAttention)
+        XCTAssertNil(handle.lastResult)
+        XCTAssertFalse(handle.isShowingCompletion)
+    }
+
     func testRowCleanupStaysInlineAndAppliesVerifiedPresentationWithoutAnotherScan() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

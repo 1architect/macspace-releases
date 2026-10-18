@@ -77,12 +77,16 @@ struct WidgetForm<Top: View>: View {
                                         }
                                     }
                                     .modifier(item(row.id))
+                                    .transition(.opacity)
                             }
                         }
+                        .animation(Theme.layout, value: rows.map(\.id))
                     }
+                    .transition(.opacity)
                 }
                 Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
+            .animation(Theme.layout, value: widgets.map(\.id))
             // Match the native grouped Form’s 20-point inset above its first section header.
             .padding(.top, 20)
             .padding(.horizontal, 20)
@@ -386,17 +390,22 @@ struct RevealButton: View {
     }
 
     var body: some View {
-        if !existing.isEmpty {
-            Button { RevealTarget.show(existing) } label: {
-                Image(systemName: "folder").rowPill(active: hovering)
+        let hasFiles = !existing.isEmpty
+        Group {
+            if hasFiles {
+                Button { RevealTarget.show(existing) } label: {
+                    Image(systemName: "folder").rowPill(active: hovering)
+                }
+                .buttonStyle(.plain)
+                .pointerStyle(.link)
+                .help(String(localized: "Show in Finder"))
+                .accessibilityLabel(String(localized: "Show in Finder"))
+                .onHover { hovering = $0 }
+                .animation(Theme.hover, value: hovering)
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
-            .buttonStyle(.plain)
-            .pointerStyle(.link)
-            .help(String(localized: "Show in Finder"))
-            .accessibilityLabel(String(localized: "Show in Finder"))
-            .onHover { hovering = $0 }
-            .animation(Theme.hover, value: hovering)
         }
+        .animation(Theme.value, value: hasFiles)
     }
 }
 

@@ -13,6 +13,7 @@ struct ScreenView: View {
 
     @StateObject private var details = PageDetailsVisibility()
     private var hidesDetails: Bool { !details.visible }
+    private var detailsAreBusy: Bool { handle.isReloading || (handle.isCleaning && handle.isBusy) }
 
     private var legendCount: Int { (content?.hero?.segments.count).map { $0 + 1 } ?? 0 }
     private var cascadeCount: Int { legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count }
@@ -147,21 +148,21 @@ struct ScreenView: View {
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
         .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
-                                  leaving: reveal < 1 || !handle.isShowingCompletion, navigation: handle.groupPath) { [handle] in
+                                  leaving: reveal < 1, dismissed: !handle.isShowingCompletion) { [handle] in
             handle.dismissCompletion()
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
-        .disabled(handle.isCleaning && handle.progress != nil)
+        .disabled(handle.isCleaning && handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
         .onAppear {
             var instant = Transaction()
             instant.disablesAnimations = true
-            withTransaction(instant) { details.update(busy: handle.isReloading || handle.isCleaning, initial: true) }
+            withTransaction(instant) { details.update(busy: detailsAreBusy, initial: true) }
         }
-        .onChange(of: handle.isReloading || handle.isCleaning) { _, busy in details.update(busy: busy) }
-        .onDisappear { details.cancel() }
+        .onChange(of: detailsAreBusy) { _, busy in details.update(busy: busy) }
+        .onDisappear { details.cancel(); handle.dismissCompletion() }
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
         .onChange(of: groups.count) { _, count in
             if count < handle.groupPath.count { handle.groupPath = Array(handle.groupPath.prefix(count)) }
@@ -172,13 +173,12 @@ struct ScreenView: View {
     private var mainPage: some View {
         Group {
             if let content = self.content {
-                // While the module reads the Mac again (Refresh, or after an action), only the blocks stay, pulsing: the legend and the
-                // groups under them fold away and rise in again with the new figures, instead of showing figures about to change.
+                // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
                 let refreshing = hidesDetails
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            detailsVisible: !refreshing, cascadeOffset: legendCount) {
                     if let hero = content.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning)
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning, detailsVisible: !hidesDetails)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
@@ -378,9 +378,9 @@ private struct EdgeGlass: View {
 struct HeroBlocks: View {
     let usage: UsageBar
     let tint: TileTint
-    /// The module is reading the Mac again: the blocks pulse, as a tile's do while it loads, and the lines under them fold away until
-    /// the new figures arrive.
+    /// Graph work and detail visibility are independent: live reloads pulse without hiding the existing legend.
     var loading = false
+    var detailsVisible = true
     @Environment(\.design) private var design
     @Environment(\.openGroup) private var openGroup
     @Environment(\.pageCascadeCount) private var cascadeCount
@@ -441,7 +441,7 @@ struct HeroBlocks: View {
             .foregroundStyle(palette.soft)
             .frame(height: 14, alignment: .leading)
             .animation(Theme.hover, value: hovered)
-            .modifier(PageItemReveal(index: 0, count: cascadeCount, visible: !loading))
+            .modifier(PageItemReveal(index: 0, count: cascadeCount, visible: detailsVisible))
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
                 // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
                 ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
@@ -456,11 +456,9 @@ struct HeroBlocks: View {
                         }
                         .frame(width: 9, height: 9)
                         Text(segment.label).font(.caption).lineLimit(1)
-                        Text(ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
-                            .contentTransition(.numericText())
-                            .animation(Theme.value, value: segment.bytes)
+                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                     }
-                    .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: !loading))
+                    .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
                 }
             }
             // Grid placement must settle without a horizontal layout animation. Each item retains its existing vertical cascade,
@@ -483,7 +481,7 @@ private struct AllDoneOverlay: View {
     /// The page is closing under it (Back to the dashboard): it goes at once, with nothing left to do. Left where it was, it
     /// stayed over the tile shrinking back onto the dashboard, its count half rolled (2026-10-13).
     let leaving: Bool
-    let navigation: [String]
+    let dismissed: Bool
     let finished: @MainActor () -> Void
     @StateObject private var lifetime = AllDoneLifetime()
     @State private var count: Task<Void, Never>?
@@ -548,14 +546,14 @@ private struct AllDoneOverlay: View {
         }
         .onDisappear { dismiss() }
         .onChange(of: leaving) { _, now in if now { dismiss() } }
-        .onChange(of: navigation) { _, _ in dismiss() }
+        .onChange(of: dismissed) { _, now in if now { dismiss(animated: true) } }
         .onChange(of: reloading, initial: true) { _, now in lifetime.reloading = now }
     }
 
-    private func dismiss() {
+    private func dismiss(animated: Bool = false) {
         count?.cancel()
         count = nil
-        lifetime.dismiss()
+        lifetime.dismiss(animated: animated)
     }
 
     /// The words come in as the page slides in, then the figure counts up from zero, quickly at first and slowing to its value.
@@ -644,7 +642,7 @@ private struct ActionDock: View {
     private var phase: ActionPill.Phase? {
         if handle.isReloading { return .loading(handle.loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
-        if handle.isCleaning { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
+        if handle.isCleaning && handle.isBusy { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
         // (`Screen.primary`).
         if handle.screen == nil || handle.isRefreshing { return .loading(handle.loading) }
