@@ -57,7 +57,22 @@ The SDK and all four bundled manifests are version 5. A version-4 module is reje
 
 ## Legend animation
 
-The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label retains the existing numeric-text rolling transition with an anchored overlay that keeps outgoing glyphs out of layout. Fade-only content changes are reserved for Reduce Motion. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
+The legend grid no longer animates its layout when measured segments change. Its inherited grid-layout animation is cleared; each element retains `PageItemReveal` for the existing vertical cascade, and each byte label retains the vertical roll/blur style with an anchored overlay that keeps outgoing glyphs out of layout. Fade-only content changes are reserved for Reduce Motion. Graph loading is independent of legend visibility, so live reads retain the legend. Page navigation transitions remain unchanged.
+
+## Text motion
+
+`ChangingText` draws rolling word/digit runs through `VerticalRollRenderer`. Only changed runs receive the existing vertical
+travel, blur and stagger; its drawing transform has zero horizontal travel at every frame. Unchanged runs are drawn once at their
+resting layout positions. Native numeric content transitions are not used because their internal glyph-position interpolation
+cannot be restricted to the vertical axis. The current text alone measures the label, using tabular digits, and outgoing runs
+remain drawing overlays. Text still owns shaping, kerning, wrapping and truncation. All done uses the same renderer in a fixed-width
+centered counter. Interrupted rolls cancel pending completion work before starting the next update.
+
+Dock and badge container animations track presence/count changes, rather than the entire action phase or badge contents. Working
+and hover color animations are scoped to the background so they cannot animate the text line's frame when a label changes.
+`Tests/App/TextRollTests.swift` covers unchanged labels/units across digit growth, changed-word/digit matching, Unicode preservation,
+zero horizontal travel through spring overshoot, blur/vertical endpoints and Reduce Motion.
+`results/vertical-text-20261018/app-tests.txt`: 111 AppTests, 109 passed and two optional render snapshots skipped.
 
 ## Window controls and confirmations
 

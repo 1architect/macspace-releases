@@ -83,6 +83,8 @@ private struct RowActionFlag: View {
                 .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))
                 .background {
                     Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
+                        .animation(Theme.value, value: working)
+                        .animation(Theme.hover, value: hovering)
                     if working { ActionProgressFill(fraction: progress?.fraction).clipShape(Capsule()) }
                 }
                 .contentShape(Capsule())
@@ -90,8 +92,6 @@ private struct RowActionFlag: View {
         .buttonStyle(.plain)
         .pointerStyle(.link)
         .onHover { hovering = $0 }
-        .animation(Theme.hover, value: hovering)
-        .animation(Theme.value, value: working)
         .help(result?.details.joined(separator: "\n") ?? "")
         .task(id: result) {
             guard result?.outcome == .succeeded else { return }

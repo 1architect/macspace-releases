@@ -666,7 +666,7 @@ private struct ActionDock: View {
         // The page's width, less its margins: the pill keeps a warning on one line wherever it fits (`ActionPill`).
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.trailing, PageInsets.side)
-        .animation(Theme.layout, value: phase)
+        .animation(Theme.layout, value: phase != nil)
         .onChange(of: phase != nil, initial: true) { _, shown in isVisible = shown }
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
             guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
@@ -744,13 +744,12 @@ private struct ActionPill: View {
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
             .padding(.vertical, 7)
-            .background { background }
+            .background { background.animation(Theme.hover, value: hovering) }
             .contentShape(Self.shape)
         }
         .buttonStyle(.plain)
         .studioPickable(.mainButton, in: Self.shape)
         .onHover { hovering = $0 }
-        .animation(Theme.hover, value: hovering)
         .task(id: phase) {
             // A success goes back to the action by itself; anything else stays until it is clicked.
             guard case let .done(result) = phase, result.outcome == .succeeded, !result.restartRequired else { return }

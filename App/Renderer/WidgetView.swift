@@ -337,7 +337,7 @@ struct RowView: View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
             ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
-                    .animation(Theme.value, value: row.badges)
+                    .animation(Theme.value, value: row.badges.count)
             InfoButton(text: row.detail)
             Spacer(minLength: 8)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -368,7 +368,7 @@ struct RowView: View {
             TitleLine(title: row.title, note: row.subtitle)
             HStack(spacing: 6) {
                 ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
-                    .animation(Theme.value, value: row.badges)
+                    .animation(Theme.value, value: row.badges.count)
                 RowActionFlags(row: row, handler: handler)
                 InfoButton(text: row.detail, steps: row.steps)
                 if !row.paths.isEmpty { RevealButton(paths: row.paths) }

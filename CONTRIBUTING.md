@@ -160,8 +160,9 @@ selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be un
 buttons are text flags with the folder flag's hover behavior; they morph into an inline cleaning flag with the same progress fill.
 A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
 it runs. Animate flag insertion/removal and changing contents with the existing motion. Text and number changes retain the rolling
-glyph animation (fade only with Reduce Motion). Keep changing text anchored; outgoing text
-must not participate in layout. No middle dots or ellipses in loading/cleaning labels.
+glyph animation (fade only with Reduce Motion). Changed glyphs move vertically only; unchanged runs stay still. Keep changing
+text anchored; outgoing text must not participate in layout. Do not animate an entire pill or badge layout when its text or progress
+changes; scope animations to glyph drawing, progress fill and appearance/disappearance. No middle dots or ellipses in loading/cleaning labels.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
 with the updated tile and screen. Retain unrelated measurements. Do not deduct a volume free-space delta from an item's size:
