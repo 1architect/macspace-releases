@@ -175,3 +175,14 @@ The renderer's exported time samples are in `results/word-motion-20261018/frames
 component frames, not a recording of the application. Runtime visual verification remains with the user.
 
 `results/word-motion-20261018/all-tests.txt`: 506 tests, 502 passed and 4 optional skips; localization checks passed.
+
+`results/issue-review-20261018/all-tests.txt`: 510 tests, 505 passed and five optional skips. Manual and quiet scan tests now also
+check the dock's current phase: Loading while scanning, no action after a no-action page finishes. Footer generation tests cover
+render/observer ordering, repeated absent phases and cancellation by a newer appearance. Analytics tests reject both false failure
+and false success from history timestamps, preserve real post-change IN/OUT evidence, and keep raw helper diagnostics out of UI
+copy. Compiler localization extraction passed for all eight languages. The final Siri button disappearance/fade requires the
+user's visual check.
+
+The notification investigation on 2026-10-18 found that macOS's **Allow Notifications** for MacSpace was disabled, confirmed by the
+user in System Settings. This blocks all notification types regardless of the app's own switches. No notification rules were
+changed; the user enables that permission in System Settings. No UI automation was used.

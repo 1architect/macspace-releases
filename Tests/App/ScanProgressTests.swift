@@ -1,5 +1,6 @@
 import XCTest
 import MacSpaceSdk
+import SwiftUI
 @testable import MacSpaceApp
 
 /// Holds a real progress-reporting read open so the UI's state can be checked before it completes.
@@ -58,6 +59,9 @@ final class ScanProgressTests: XCTestCase {
                 try await Task.sleep(for: .milliseconds(5))
             }
             XCTAssertTrue(handle.isRefreshing)
+            guard case .loading? = ActionDock(handle: handle, isVisible: .constant(false)).phase else {
+                return XCTFail("the dock must display the current scan")
+            }
             XCTAssertFalse(handle.isBusy, "all scans retain an interactive existing page")
             XCTAssertFalse(handle.isReloading, "manual refresh also keeps existing details")
             XCTAssertTrue(TileInfo(handle).loading, "the home widget pulses during either scan")
@@ -75,6 +79,8 @@ final class ScanProgressTests: XCTestCase {
             XCTAssertFalse(handle.isBusy)
             XCTAssertFalse(handle.isReloading)
             XCTAssertNil(handle.loading)
+            XCTAssertNil(ActionDock(handle: handle, isVisible: .constant(false)).phase,
+                         "a loaded page with no action must have no dock phase; cached Loading cannot survive completion")
             XCTAssertFalse(TileInfo(handle).loading)
             XCTAssertEqual(TileInfo(handle).status, "ready")
             // A queued/late callback must not bring loading back after the read has completed.

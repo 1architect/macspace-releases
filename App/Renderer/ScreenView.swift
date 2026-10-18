@@ -611,7 +611,7 @@ private struct AllDoneOverlay: View {
 
 /// The bottom-left corner of a page: one pill that is the main action, turns into the progress of what is running, then into its
 /// outcome, and back into the action. No note of its own: the outcome is the pill's text for a moment.
-private struct ActionDock: View {
+struct ActionDock: View {
     @ObservedObject var handle: ModuleHandle
     @Binding var isVisible: Bool
     /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
@@ -663,7 +663,7 @@ private struct ActionDock: View {
 
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
-    private var phase: ActionPill.Phase? {
+    var phase: ActionPill.Phase? {
         if handle.isReloading { return .loading(handle.loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning && handle.isBusy { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
@@ -715,7 +715,7 @@ private struct ActionDock: View {
 
 /// The main action's pill. Its shape stays while its text changes, so it grows and shrinks from one state to the next; while an
 /// action runs it fills from the left as the action advances, or breathes when the module gives no fraction.
-private struct ActionPill: View {
+struct ActionPill: View {
     enum Phase: Equatable {
         case idle(Action)
         /// The action's own working title (`Action.workingTitle`), which stays the same while it runs, and how far it is.
