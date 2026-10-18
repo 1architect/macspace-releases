@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Runs a module action with extra parameters and returns what the module answered (nil when it was not called). `quiet` is for a
 /// switch, which shows its change itself (`ModuleHandle.perform`).
-typealias ActionHandler = @MainActor (_ action: Action, _ extra: [String: String], _ quiet: Bool) async -> ActionResult?
+typealias ActionHandler = @MainActor (_ action: Action, _ extra: [String: String], _ quiet: Bool, _ rowID: String?) async -> ActionResult?
 
 struct ActionButton: View {
     let action: Action
@@ -16,7 +16,7 @@ struct ActionButton: View {
             // Asked once the button has finished handling the click, not from inside it.
             Task { @MainActor in
                 guard ConfirmationAlert.ask(action) else { return }
-                _ = await handler(action, [:], false)
+                _ = await handler(action, [:], false, nil)
             }
         } label: {
             if let symbol = action.symbol { Label(action.title, systemImage: symbol) } else { Text(action.title) }

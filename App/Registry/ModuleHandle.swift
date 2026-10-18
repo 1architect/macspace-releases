@@ -43,6 +43,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var isCleaning = false
     /// The action the user started that is running, for its button's text (`Action.workingTitle`).
     @Published public private(set) var runningAction: Action?
+    @Published public private(set) var runningRowID: String?
+    @Published public private(set) var rowResult: ActionResult?
+    @Published public private(set) var resultRowID: String?
     /// The rows the running action is done with (`ActionProgress.finished`): the page lets them go one after the other. Emptied once
     /// the page is read again after the action.
     @Published public private(set) var finishedRows: Set<String> = []
@@ -307,7 +310,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private func clearLoadingCaption() {
         loadingCaptionTask?.cancel()
         loadingCaptionTask = nil
-        showsLoadingCaption = false
+        if showsLoadingCaption { showsLoadingCaption = false }
     }
 
     private func clearRefreshPresentation() {
@@ -326,13 +329,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// it is read again quietly afterwards. Only a result the user must see is shown: a failure (the row then moves back) or something
     /// left to do.
     @discardableResult
-    public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false) async -> ActionResult? {
+    public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false, rowID: String? = nil) async -> ActionResult? {
         // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
         // both write the module's undo journal.
         let previous = lastAction
         let task = Task { @MainActor [weak self] () -> ActionResult? in
             _ = await previous?.value
-            return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet)
+            return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
         }
         lastAction = task
         return await task.value
@@ -403,7 +406,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
     }
 
-    private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool) async -> ActionResult? {
+    private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?) async -> ActionResult? {
         guard !preparingForUninstall, state == .ready, let module else { return nil }
         let missing = action.requires.filter { permissions.status(of: $0) == .missing }
         if !missing.isEmpty {
@@ -420,8 +423,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let started = Date()
         if !quiet {
             updateBusy()
-            isCleaning = true
+            isCleaning = rowID == nil
+            runningRowID = rowID
             runningAction = action
+            rowResult = nil
+            resultRowID = nil
             finishedRows = []
             progress = nil
         }
@@ -429,12 +435,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             if !quiet {
                 isCleaning = false
                 runningAction = nil
+                runningRowID = nil
             }
         }
         lastResult = nil
         actionGeneration += 1
         let generation = actionGeneration
-        let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new })
+        let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new }, rowID: rowID)
         let result = await module.perform(request, context: context()) { [weak self] update in
             guard !quiet else { return }
             Task { @MainActor in
@@ -445,8 +452,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
         // button's text.
-        let celebrates = !quiet && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
-        if (!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired { lastResult = result }
+        let celebrates = !quiet && rowID == nil && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
+        if let rowID, !quiet {
+            resultRowID = rowID
+            rowResult = result
+        } else if (!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired { lastResult = result }
         // A long action that ends while the user is in another app says so in Notification Center.
         if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
         if let freed = result.freedBytes {
@@ -464,7 +474,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
             if result.refresh { progress = ActionProgress(fraction: 1, message: progress?.message ?? "", finished: progress?.finished ?? []) }
         }
-        if result.refresh { await refresh(quiet: true) }
+        if let presentation = result.presentation {
+            if tile != presentation.tile { tile = presentation.tile; settings.setLastTile(presentation.tile, module: id) }
+            if screen != presentation.screen { screen = presentation.screen }
+            tileIsStale = false
+            lastRefreshed = Date()
+            scheduleAutoRefresh()
+        } else if result.refresh { await refresh(quiet: true) }
         if !quiet {
             updateBusy()
             progress = nil
@@ -484,6 +500,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     public func dismissResult() { lastResult = nil }
+    public func dismissRowResult() { rowResult = nil; resultRowID = nil }
 
     /// Shows a state of the page's action pill without running anything, for development captures (`DebugRemote`).
     func previewPill(cleaning: Bool, progress: ActionProgress?, result: ActionResult?) {

@@ -156,19 +156,24 @@ not grey text after the title. The (i) is only for what a pill cannot say. Never
 **One verb.** Every action that frees space is titled Free, on buttons and in confirmations ("Free", "Free 120 MB", "Free
 selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be undone keeps the "Cannot be undone" pill.
 
-**Freeing looks the same everywhere.** While an action frees space, its button says only "Freeing space…" (`Action.workingTitle`)
-and fills as the work advances; it shows no other text, no step and no count. An action that frees rows reports each one as it is
-done (`ActionProgress.finished`), and the rows leave the page one after another. When it ends, "All done" comes in as a page of
-its own, the words in its middle, then slides away as Back does; a page where the user chose what to free goes back to the one
-under it. The button starts filling as soon as the action starts. The charts pulse until the new figures are
-in. A failure, or something left to do, is the button's text until it is clicked.
+**Freeing looks the same everywhere.** The page action morphs into the existing progress pill and All done page. Individual row
+buttons are text flags with the folder flag's hover behavior; they morph into an inline cleaning flag with the same progress fill.
+A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
+it runs. Animate flag insertion/removal and changing contents with the existing motion. Keep changing text anchored; outgoing text
+must not participate in layout. No middle dots or ellipses in loading/cleaning labels.
 
-**Confirmations are short.** The title asks ("Free 250 MB?"). A message, when there is one, is one line about what the user would
-not expect: the apps that quit ("Quits Enscape and WhatsApp."). MacSpace never opens again an app it quit.
+**Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
+with the updated tile and screen. Retain unrelated measurements. Do not deduct a volume free-space delta from an item's size:
+concurrent writes and APFS sharing make those different quantities. A full scan can run later automatically or through Refresh.
 
-**Loading.** While a module reads the Mac, its page shows its ground breathing and the button saying "Loading…", and nothing
-else: no placeholder rows. The button fills as the reading advances: a module whose reading takes seconds reports how far it is
-(`screen(context:progress:)`, shared among its callers with `LoadProgressRelay`); any other fills over the time it took last time.
+**Confirmations are short.** The title asks ("Free 250 MB?"). A message is one line about what the user would not expect, such as
+apps that quit. The app icon, heading and message must share a left-aligned leading edge, including cache confirmations.
+
+**Loading.** Only the first load has no rows and uses the existing cascade. Subsequent reads retain the current page, scroll and
+selection, including manual Refresh and returning from All done. Graphs use the current loading wave during every scan. Apply only
+changed measurements when it finishes. Home captions retain their previous text during scans shorter than three seconds; show
+loading/progress only if the scan is still running after that delay. Graph animations start immediately. Modules report real scan
+progress through `tile(context:progress:)` and `screen(context:progress:)`, sharing scans with `LoadProgressRelay`.
 
 **Charts.** Blocks stand in columns across the chart, each column's blocks stacked down it. On a tile, only the chart's outer
 corners follow the tile's (its radius less the margin); the corners between blocks keep the blocks' own.

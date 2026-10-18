@@ -40,19 +40,20 @@ struct RollingText: View {
     var body: some View {
         let pieces = Self.pieces(text)
         HStack(spacing: 0) {
-            ForEach(Array(pieces.enumerated()), id: \.element.id) { index, piece in
-                // Spaces as no-break spaces: a space at a piece's end took no room, and "liberar" met the figure ("liberar20,7 MB").
-                Text(piece.text.replacingOccurrences(of: " ", with: "\u{00A0}"))
-                    // `.font(nil)` would put back the default font, not keep the one around it (the page's 11-point legend).
+            ForEach(Array(pieces.enumerated()), id: \.offset) { index, piece in
+                let value = piece.text.replacingOccurrences(of: " ", with: "\u{00A0}")
+                Text(value).hidden()
+                    .overlay(alignment: .leading) {
+                        Text(value).id(value)
+                            .transition(reduceMotion ? .opacity : Self.roll(delay: Double(index) * 0.025))
+                            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.22), value: value)
+                    }
                     .font(font ?? inherited)
                     .monospacedDigit()
                     .fixedSize()
-                    .transition(reduceMotion ? .opacity : Self.roll(delay: Double(index) * 0.025))
             }
         }
-        // A line-height mask cut through moving digits and their blur. Let the transition
-        // draw outside the resting glyph bounds; the containing page owns its clipping.
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.22), value: text)
+        .transaction { $0.animation = nil }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
     }
@@ -77,5 +78,28 @@ struct RollingText: View {
                 .blur(radius: blur)
                 .opacity(opacity)
         }
+    }
+}
+
+/// The resting text alone determines layout. Outgoing glyphs draw in an overlay, so a changed word or number cannot push the
+/// line sideways or temporarily widen its neighbours while it departs. The motion stays vertical, with a short fade.
+struct ChangingText: View {
+    let text: String
+    var alignment: Alignment = .leading
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Text(text).hidden()
+            .overlay(alignment: alignment) {
+                Text(text)
+                    .id(text)
+                    .transition(reduceMotion ? .opacity : .asymmetric(
+                        insertion: .offset(y: 5).combined(with: .opacity),
+                        removal: .offset(y: -5).combined(with: .opacity)))
+                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.value, value: text)
+            }
+            .transaction { $0.animation = nil }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
     }
 }

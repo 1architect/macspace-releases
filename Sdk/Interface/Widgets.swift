@@ -22,7 +22,8 @@ public struct Badge: Codable, Equatable, Sendable {
 }
 
 /// Asked before an action runs. Keep it short: the title asks the question ("Free 250 MB?"), and the message, when there is one, says
-/// in one line what the user would not expect (an app that will quit). Never how MacSpace works inside.
+/// in one line what the user would not expect (an app that will quit). Never how MacSpace works inside. The host must align
+/// the app icon, heading and message to a shared leading edge in every confirmation, including cache selection.
 public struct Confirmation: Codable, Equatable, Sendable {
     public var title: String
     public var message: String
@@ -243,6 +244,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var detail: String?
     /// Steps shown when the row is expanded (for example a manual cleanup guide).
     public var steps: [String]
+    /// Background row work uses the same inline flag as a user-started row action.
+    public var activity: ActionProgress?
     public var actions: [Action]
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
@@ -273,7 +276,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, children, paths, selection
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -290,6 +293,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
         actions = try container.decodeIfPresent([Action].self, forKey: .actions) ?? []
+        activity = try container.decodeIfPresent(ActionProgress.self, forKey: .activity)
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
         selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
@@ -306,6 +310,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)
+        try container.encodeIfPresent(activity, forKey: .activity)
         try container.encode(children, forKey: .children)
         try container.encode(paths, forKey: .paths)
         try container.encodeIfPresent(selection, forKey: .selection)

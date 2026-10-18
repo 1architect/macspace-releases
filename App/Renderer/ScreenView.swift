@@ -17,11 +17,9 @@ struct ScreenView: View {
     private var legendCount: Int { (content?.hero?.segments.count).map { $0 + 1 } ?? 0 }
     private var cascadeCount: Int { legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count }
 
-    /// The bottom-left dock is showing: the main action, the progress of an action, or its outcome.
-    private var hasFooter: Bool {
-        handle.screen?.primary != nil || handle.screen == nil || handle.isRefreshing || handle.isCleaning || handle.lastResult != nil
-            || !Self.banners(in: handle.screen?.widgets ?? []).isEmpty
-    }
+    @State private var dockVisible = false
+    /// The bottom fade reserves exactly the room used by the dock's actual phase, including notices that expire.
+    private var hasFooter: Bool { dockVisible }
 
     /// What the page shows: the module's screen, or while it loads, the tile's own blocks as the hero (pulsing), which then move to
     /// the page's figures as its rows come in under them. nil while there is nothing to show yet.
@@ -120,7 +118,7 @@ struct ScreenView: View {
     }
 
     private var handler: ActionHandler {
-        { [handle] action, extra, quiet in await handle.perform(action, extraParameters: extra, quiet: quiet) }
+        { [handle] action, extra, quiet, rowID in await handle.perform(action, extraParameters: extra, quiet: quiet, rowID: rowID) }
     }
 
     var body: some View {
@@ -137,12 +135,13 @@ struct ScreenView: View {
             }
         }
         .animation(Theme.push, value: groups.map(\.id))
+        .environment(\.rowActivity, RowActivity(rowID: handle.runningRowID, action: handle.runningAction, progress: handle.progress, resultID: handle.resultRowID, result: handle.rowResult, dismiss: handle.dismissRowResult))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .environment(\.pageCascadeCount, cascadeCount)
         .animation(Theme.layout, value: hasFooter)
         .overlay(alignment: .bottomLeading) {
-            ActionDock(handle: handle)
+            ActionDock(handle: handle, isVisible: $dockVisible)
                 .padding(.leading, PageInsets.side)
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
@@ -153,7 +152,7 @@ struct ScreenView: View {
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
-        .disabled(handle.isBusy && handle.progress != nil)
+        .disabled(handle.isCleaning && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
         .onAppear {
@@ -594,6 +593,7 @@ private struct AllDoneOverlay: View {
 /// outcome, and back into the action. No note of its own: the outcome is the pill's text for a moment.
 private struct ActionDock: View {
     @ObservedObject var handle: ModuleHandle
+    @Binding var isVisible: Bool
     /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
     @State private var showsPassingNotice = false
 
@@ -669,6 +669,7 @@ private struct ActionDock: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.trailing, PageInsets.side)
         .animation(Theme.layout, value: phase)
+        .onChange(of: phase != nil, initial: true) { _, shown in isVisible = shown }
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
             guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
             showsPassingNotice = true
@@ -737,11 +738,10 @@ private struct ActionPill: View {
             // "Inteligência Visual foi reativado pelo macOS" broke onto two lines. Never cut: a message too long for the page wraps
             // in a pill of that width, which grows to hold it.
             ViewThatFits(in: .horizontal) {
-                Text(text).lineLimit(1).fixedSize()
-                Text(text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                ChangingText(text: text).lineLimit(1).fixedSize()
+                ChangingText(text: text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: Self.wrapWidth, alignment: .leading)
             }
-            .contentTransition(reduceMotion ? .opacity : .numericText())
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink)
             .padding(.horizontal, 15)
@@ -753,7 +753,6 @@ private struct ActionPill: View {
         .studioPickable(.mainButton, in: Self.shape)
         .onHover { hovering = $0 }
         .animation(Theme.hover, value: hovering)
-        .animation(reduceMotion ? nil : Theme.value, value: text)
         .task(id: phase) {
             // A success goes back to the action by itself; anything else stays until it is clicked.
             guard case let .done(result) = phase, result.outcome == .succeeded, !result.restartRequired else { return }
@@ -771,24 +770,13 @@ private struct ActionPill: View {
                 Self.shape.fill(hovering && !isWorking ? lighter : fill)
             }
             if isWorking {
-                TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !appearsActive)) { context in
-                    let wave = LoadingWave.opacity(context.date, index: 0, count: 1, loading: true, reduceMotion: reduceMotion)
-                    let fraction: Double? = switch phase {
-                    case let .working(_, fraction): fraction
-                    case let .loading(fill?): fill.fraction(at: context.date)
-                    default: nil
-                    }
-                    GeometryReader { geometry in
-                        if let fraction {
-                            Rectangle().fill(design.actionLight)
-                                .frame(width: geometry.size.width * max(0.08, min(1, fraction)))
-                                .opacity(0.7 + 0.3 * wave)
-                                .animation(Theme.layout, value: fraction)
-                        } else {
-                            Rectangle().fill(design.actionLight).opacity(0.25 + 0.6 * wave)
-                        }
-                    }
-                }
+                ActionProgressFill(fraction: {
+                    if case let .working(_, fraction) = phase { return fraction }
+                    return nil
+                }(), load: {
+                    if case let .loading(load) = phase { return load }
+                    return nil
+                }())
                 .clipShape(Self.shape)
             }
         }

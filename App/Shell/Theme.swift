@@ -192,33 +192,32 @@ struct TileCaption: View, @preconcurrency Animatable {
                 if let layoutWidth {
                     let layout = CaptionLayout(info: TileInfo(title: title, figure: figure, status: status), size: size, width: layoutWidth)
                     if layout.oneLine {
-                        Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
+                        ChangingText(text: Self.joined(title, figure), alignment: .trailing).font(bold).lineLimit(1).fixedSize()
                     } else {
                         stackedTitle(bold)
                     }
                 } else {
                     ViewThatFits(in: .horizontal) {
-                        Text(Self.joined(title, figure)).font(bold).lineLimit(1).fixedSize()
+                        ChangingText(text: Self.joined(title, figure), alignment: .trailing).font(bold).lineLimit(1).fixedSize()
                         stackedTitle(bold)
                     }
                 }
             }
-            .contentTransition(.numericText())
-            Text(status)
+            ChangingText(text: status, alignment: .trailing)
                 .font(Font(CaptionFont.status(size: size)))
                 .lineLimit(1)
-                .contentTransition(.numericText())
+
         }
         .multilineTextAlignment(.trailing)
         .foregroundStyle(design.ink)
         // No shadow behind the text: a blurred shadow of every caption was redrawn on every frame any tile moved.
-        .animation(Theme.value, value: status)
+
     }
 
     private func stackedTitle(_ font: Font) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title).font(font).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            if let figure { Text(figure).font(font).lineLimit(1) }
+            if let figure { ChangingText(text: figure, alignment: .trailing).font(font).lineLimit(1) }
         }
         .frame(width: layoutWidth, alignment: .trailing)
     }

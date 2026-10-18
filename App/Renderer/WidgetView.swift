@@ -273,8 +273,7 @@ struct BadgeView: View {
     /// Every other pill has the colors of the row's (i) and folder pills (`rowPill`), grey text on a faint capsule of their height, in
     /// the warning pill's font, so the facts read as one set.
     var body: some View {
-        Text(badge.text)
-            .contentTransition(reduceMotion ? .opacity : .numericText())
+        ChangingText(text: badge.text)
             .font(.system(size: 11, weight: .semibold))
             .lineLimit(wraps ? nil : 1)
             .fixedSize(horizontal: false, vertical: true)
@@ -283,7 +282,7 @@ struct BadgeView: View {
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
             .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
-            .animation(reduceMotion ? nil : Theme.value, value: badge.text)
+            .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 }
 
@@ -334,9 +333,10 @@ struct RowView: View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
             ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
+                    .animation(Theme.value, value: row.badges)
             InfoButton(text: row.detail)
             Spacer(minLength: 8)
-            if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
+            if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
@@ -364,14 +364,13 @@ struct RowView: View {
             TitleLine(title: row.title, note: row.subtitle)
             HStack(spacing: 6) {
                 ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
+                    .animation(Theme.value, value: row.badges)
+                RowActionFlags(row: row, handler: handler)
                 InfoButton(text: row.detail, steps: row.steps)
                 if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             }
             Spacer(minLength: 8)
-            if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
-            ForEach(Array(row.actions.enumerated()), id: \.offset) { _, action in
-                ActionButton(action: action, compact: true, handler: handler)
-            }
+            if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
         }
     }
 }
@@ -447,7 +446,7 @@ struct ToggleRowView: View {
 
     var body: some View {
         LiveSwitch(isOn: row.isOn, apply: { value in
-            let result = await handler(row.action, ["value": value ? "true" : "false"], true)
+            let result = await handler(row.action, ["value": value ? "true" : "false"], true, row.id)
             return result.map { $0.outcome != .failed } ?? false
         }) { isOn in
             HStack(spacing: 8) {

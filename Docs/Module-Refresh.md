@@ -1,6 +1,6 @@
 # Module refresh behavior
 
-Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract version 4.
+Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract version 5.
 
 ## Loading and updating
 
@@ -9,7 +9,11 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract versio
 - **Automatic scan:** retain the current page, group stack, choices and scroll-view identity. Report real progress in the existing widget/pill; page details remain visible and interactive. Forced automatic invalidation (such as profile approval checks) follows this rule too.
 - **Status update:** refresh live operation counters from the last measurement without querying services or enumerating files. It produces no loading state.
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
-- Successful cleanup keeps its existing working/All done flow and verification behavior.
+- Page cleanup keeps its working/All done flow. Row actions use only the inline text flag and its progress fill, without hiding the page. `ActionRequest.rowID` identifies the target UI row.
+- A verified `ActionResult.presentation` updates the tile and page atomically without another scan. Modules retain unrelated cached measurements. Background row actions publish `Row.activity` using the same flag.
+- Dock visibility alone controls the bottom fade reservation, so an expired notice or removed primary action leaves no extra bottom fade.
+- Back dismisses All done to the module page before considering group or home navigation.
+- Confirmations share a left-aligned icon, heading and message, including cache cleanup.
 
 `ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes only the first load without an existing page. `ScreenView` uses `isReloading` and actual cleanup activity for the existing details cascade.
 
@@ -38,7 +42,7 @@ When a window becomes visible again, watched modules whose last UI refresh is at
 
 The optional Siri watch runs every 900 seconds and is disabled by default. The Debloat watch also runs every 900 seconds and is enabled by default. Their schedules are independent of presentation polling. System Data, Other System Files and Siri participate in separately configured automatic cleanup.
 
-## Module contract version 4
+## Module contract version 5
 
 - `tile(context:progress:)` reads the dashboard presentation and reports real scan progress. All four shipped modules implement it and share the scan with concurrent page requests.
 - `screen(context:progress:)` reads a page and reports scan progress. Cached presentations stay quiet.
@@ -47,7 +51,7 @@ The optional Siri watch runs every 900 seconds and is disabled by default. The D
 - `invalidate()` drops measured data; it does not publish UI by itself. `ActionResult.refresh` requests a presentation refresh after an action.
 - The host owns visibility, timers and whether loading is explicit or automatic. Modules supply measurements, counters and their progress; no new UI elements were introduced.
 
-The SDK and all four bundled manifests are version 4. A version-3 module is rejected by the existing compatibility check instead of being loaded against the changed protocol.
+The SDK and all four bundled manifests are version 5. A version-4 module is rejected by the existing compatibility check instead of being loaded against the changed protocol.
 
 ## Legend animation
 

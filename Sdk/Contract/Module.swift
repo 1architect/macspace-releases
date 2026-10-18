@@ -3,10 +3,13 @@ import Foundation
 public struct ActionRequest: Codable, Equatable, Sendable {
     public var actionID: String
     public var parameters: [String: String]
+    /// A row action updates inline; nil identifies a page action or switch.
+    public var rowID: String?
 
-    public init(actionID: String, parameters: [String: String] = [:]) {
+    public init(actionID: String, parameters: [String: String] = [:], rowID: String? = nil) {
         self.actionID = actionID
         self.parameters = parameters
+        self.rowID = rowID
     }
 }
 
@@ -116,6 +119,14 @@ private final class ParallelLoadProgress: @unchecked Sendable {
 /// What an action did. A success the user started from a button, that freed space or says something (`message`), is shown as "All
 /// done" in the middle of the page, never on the button; on a page that lets the user choose (`Row.selection`), the page then goes
 /// back to the one under it. A failure, or something left to do, is the button's text until it is clicked.
+/// A verified presentation after an action. Modules reconcile affected measurements in their cache and return both surfaces
+/// together, without asking the host to run a whole-module scan. Volume free-space deltas alone are not item measurements.
+public struct ModulePresentation: Codable, Equatable, Sendable {
+    public var tile: Tile
+    public var screen: Screen
+    public init(tile: Tile, screen: Screen) { self.tile = tile; self.screen = screen }
+}
+
 public struct ActionResult: Codable, Equatable, Sendable {
     public enum Outcome: String, Codable, Sendable {
         case succeeded
@@ -132,9 +143,11 @@ public struct ActionResult: Codable, Equatable, Sendable {
     public var restartRequired: Bool
     /// Space the action freed, measured on the volume, when it cleaned something. The app adds it to the cleanup history.
     public var freedBytes: UInt64?
+    public var presentation: ModulePresentation?
 
     public init(outcome: Outcome, message: String, details: [String] = [], refresh: Bool = true, restartRequired: Bool = false,
-                freedBytes: UInt64? = nil) {
+                freedBytes: UInt64? = nil, presentation: ModulePresentation? = nil) {
+        self.presentation = presentation
         self.outcome = outcome
         self.message = message
         self.details = details
