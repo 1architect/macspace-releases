@@ -17,6 +17,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- Analytics verification uses logged opt-in decisions, never ambiguous submission timestamps. Missing evidence shows Not verified, and interface explanations are translated instead of exposing English helper diagnostics.
 - Homebrew has an info pill explaining its safe cleanup, and `/usr/local` explains the separately installed tools it holds.
 - Purgeable app files explain the existing background retries consistently in every language, without promising unlimited retries.
 - The page action reads its live phase directly, so a finished Siri/AI scan cannot retain a stale Loading button. Its normal fade still holds footer space until removal completes.

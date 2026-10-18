@@ -434,7 +434,9 @@ final class DebloatEngineTests: XCTestCase {
         system.decisions = [SubmissionDecision(at: system.clock, optedIn: false)]
         XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .effective)
         system.decisions = []
-        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .ineffective, "without decisions the timestamp is all there is")
+        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .pending, "a success timestamp cannot turn missing decisions into a failure")
+        system.clock += DebloatEngine.submissionObservationWindow
+        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .notMeasured)
     }
 
     func testParsesSubmissionDecisionsFromNDJSON() {
@@ -469,16 +471,30 @@ final class DebloatEngineTests: XCTestCase {
         _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.system"]))
         XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .pending, "silence right after the change proves nothing")
         system.clock += DebloatEngine.submissionObservationWindow + 60
-        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .effective)
+        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .notMeasured, "silence cannot prove success when decisions are missing")
 
         system.history = DiagnosticSubmissionHistory(autoSubmit: false, thirdPartyDataSubmit: false, seedAutoSubmit: false,
                                                      lastFullSubmissionCalled: nil, lastFullSubmissionSuccess: system.clock + 100)
-        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .ineffective)
+        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .notMeasured, "an opt-out check-in may advance this timestamp")
 
         system.env.isPrerelease = true
         system.history = DiagnosticSubmissionHistory(autoSubmit: false, thirdPartyDataSubmit: false, seedAutoSubmit: true,
                                                      lastFullSubmissionCalled: nil, lastFullSubmissionSuccess: system.clock + 100)
         XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .notControllable)
+    }
+
+    func testMissingHistoryDoesNotDiscardAnAuthoritativeLoggedDecision() throws {
+        let (engine, system, _) = makeEngine()
+        system.env.runningAsRoot = true
+        system.preferences[systemPref.id] = .bool(true)
+        _ = engine.execute(try engine.plan(.apply, controlIDs: ["test.system"]))
+        system.history = nil
+        for optedIn in [false, true] {
+            system.decisions = [SubmissionDecision(at: system.clock + 60, optedIn: optedIn)]
+            XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, optedIn ? .ineffective : .effective)
+        }
+        system.decisions = nil
+        XCTAssertEqual(engine.status(of: try engine.control("test.system")).effect?.state, .notMeasured)
     }
 
     // MARK: Journal file store

@@ -3482,7 +3482,7 @@
     "key" : "%@ was turned back on by macOS",
     "kind" : "Notice",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:251"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:272"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3501,7 +3501,7 @@
     "key" : "%lld awaiting approval",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:157"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:178"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3539,7 +3539,7 @@
     "key" : "%lld features were turned back on by macOS",
     "kind" : "Notice",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:251"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:272"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3558,7 +3558,7 @@
     "key" : "%lld undone by macOS",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:156"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:177"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3577,7 +3577,7 @@
     "key" : "%lld\/%lld disabled",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:158"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3589,6 +3589,25 @@
       "ko" : "%lld\/%lld개 꺼짐",
       "pt-BR" : "%lld\/%lld desativados",
       "zh-Hans" : "已停用 %lld\/%lld 项"
+    }
+  },
+  {
+    "id" : "Debloat|A process covered by this setting is still running after the change.",
+    "key" : "A process covered by this setting is still running after the change.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:120"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Ein von dieser Einstellung betroffener Prozess läuft nach der Änderung weiterhin.",
+      "en" : "A process covered by this setting is still running after the change.",
+      "es" : "Un proceso afectado por este ajuste sigue ejecutándose después del cambio.",
+      "fr" : "Un processus concerné par ce réglage est toujours en cours d’exécution après la modification.",
+      "ja" : "変更後もこの設定の対象プロセスが実行されています。",
+      "ko" : "변경 후에도 이 설정이 제어하는 프로세스가 계속 실행 중입니다.",
+      "pt-BR" : "Um processo controlado por este ajuste ainda está em execução após a alteração.",
+      "zh-Hans" : "此次更改后，受此设置控制的进程仍在运行。"
     }
   },
   {
@@ -3748,7 +3767,7 @@
     "key" : "Apple stops picking ads based on what you do.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:78"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:79"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3767,7 +3786,7 @@
     "key" : "Approve in System Settings",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:192"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:213"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3824,7 +3843,7 @@
     "key" : "Apps can't track you with the advertising identifier or ask to.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:79"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:80"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3862,7 +3881,7 @@
     "key" : "Breaks Mail search",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:59"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:60"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3881,7 +3900,7 @@
     "key" : "Cannot read",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:52"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:53"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3901,7 +3920,7 @@
     "kind" : "Pill",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:35",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:45"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:46"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4037,7 +4056,7 @@
     "key" : "Debloat",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:294",
       "App\/Settings\/ScreenshotToolView.swift:92",
       "App\/Settings\/ScreenshotToolView.swift:92"
     ],
@@ -4096,7 +4115,7 @@
     "key" : "Dictation and translation stay on this Mac. Languages without an on-device model stop working.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:77"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:78"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4115,7 +4134,7 @@
     "key" : "Disable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:233"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:254"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4134,7 +4153,7 @@
     "key" : "Disable %@",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:103"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:124"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4153,7 +4172,7 @@
     "key" : "Disable %@ again",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:185"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:206"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4172,7 +4191,7 @@
     "key" : "Disable %lld features again",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:185"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:206"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4191,7 +4210,7 @@
     "key" : "Disable %lld features?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:233"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:254"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4210,7 +4229,7 @@
     "key" : "Disable all",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:231"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:252"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4267,7 +4286,7 @@
     "key" : "Disabling one asks you to approve a profile in System Settings > General > Device Management.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:270"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:291"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4286,7 +4305,7 @@
     "key" : "Each one can be enabled again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:228"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:249"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4305,7 +4324,7 @@
     "key" : "Enable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:219"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:240"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4324,7 +4343,7 @@
     "key" : "Enable all",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:215"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:236"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4343,7 +4362,7 @@
     "key" : "Enable all %lld features again?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:217"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:238"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4419,7 +4438,7 @@
     "key" : "Finish",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:196"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:217"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4495,7 +4514,7 @@
     "key" : "Hides Apple News and its widgets.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:90"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:91"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4609,7 +4628,7 @@
     "key" : "Log out to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:67"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:68"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4628,7 +4647,7 @@
     "key" : "MacSpace disabled it again, most recently %@.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:252"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4647,7 +4666,7 @@
     "key" : "MacSpace disabled them again, most recently %@.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:252"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4666,7 +4685,7 @@
     "key" : "MacSpace restores the settings it saved before disabling them.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:218"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:239"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4719,12 +4738,31 @@
     }
   },
   {
+    "id" : "Debloat|No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
+    "key" : "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:116"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Nach der Änderung konnte keine Diagnoseentscheidung gelesen werden. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein und beweist daher nicht, dass die Einstellung versagt hat.",
+      "en" : "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
+      "es" : "No se pudo leer ninguna decisión sobre los diagnósticos tras el cambio. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos, por lo que no demuestra que el ajuste haya fallado.",
+      "fr" : "Aucune décision concernant les diagnostics après la modification n’a pu être lue. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics, et ne prouve donc pas l’échec du réglage.",
+      "ja" : "変更後の診断送信の判断を読み取れませんでした。成功の記録は診断情報を含まないサーバへの接続の場合もあり、設定が機能していない証拠にはなりません。",
+      "ko" : "변경 후의 진단 정보 전송 결정을 읽을 수 없습니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있으므로 설정이 작동하지 않았다는 증거가 되지 않습니다.",
+      "pt-BR" : "Não foi possível ler uma decisão de envio de diagnósticos após a alteração. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos, e não prova que o ajuste falhou.",
+      "zh-Hans" : "无法读取此次更改后的诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络，因此不能证明此设置失效。"
+    }
+  },
+  {
     "id" : "Debloat|No longer works",
     "key" : "No longer works",
     "kind" : "Pill",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:37",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:60"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:61"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4743,7 +4781,7 @@
     "key" : "No more \"quit unexpectedly\" dialogs.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:88"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:89"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4762,7 +4800,7 @@
     "key" : "Not on this macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:51"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:52"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4774,6 +4812,25 @@
       "ko" : "이 macOS에서 사용할 수 없음",
       "pt-BR" : "Não existe neste macOS",
       "zh-Hans" : "不适用于此 macOS"
+    }
+  },
+  {
+    "id" : "Debloat|Not verified",
+    "key" : "Not verified",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:45"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Nicht verifiziert",
+      "en" : "Not verified",
+      "es" : "Sin verificar",
+      "fr" : "Non vérifié",
+      "ja" : "未確認",
+      "ko" : "확인되지 않음",
+      "pt-BR" : "Não verificado",
+      "zh-Hans" : "未经验证"
     }
   },
   {
@@ -4857,7 +4914,7 @@
     "key" : "Partly off",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:50"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:51"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4895,7 +4952,7 @@
     "key" : "Policies",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:269"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:290"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4914,7 +4971,7 @@
     "key" : "Reopen apps to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:66"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:67"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4933,7 +4990,7 @@
     "key" : "Restart to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:68"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:69"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5048,7 +5105,7 @@
     "key" : "Some are not tested yet.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:230"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:251"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5086,7 +5143,7 @@
     "key" : "Spotlight stops sending your searches to Apple. No more web results in Spotlight.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:86"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:87"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5105,7 +5162,7 @@
     "key" : "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:87"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:88"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5124,7 +5181,7 @@
     "key" : "Stops sending usage and crash data to Apple and app developers.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:74"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:75"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5143,7 +5200,7 @@
     "key" : "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:75"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:76"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5162,7 +5219,7 @@
     "key" : "Stops sharing Siri and Dictation recordings with Apple.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:76"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:77"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5200,7 +5257,7 @@
     "key" : "Switch it off, then restart your Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:83"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:84"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5219,7 +5276,7 @@
     "key" : "Switch it off. To turn off Apple Intelligence, use the Siri page.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:85"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:86"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5231,6 +5288,25 @@
       "ko" : "기능을 끄세요. Apple Intelligence를 끄려면 Siri 페이지를 사용하세요.",
       "pt-BR" : "Desligue. Para desativar a Apple Intelligence, use a página Siri.",
       "zh-Hans" : "将其关闭。如需关闭 Apple 智能，请使用 Siri 页面。"
+    }
+  },
+  {
+    "id" : "Debloat|This beta version of macOS ignores the regular analytics setting. Use the profile option instead.",
+    "key" : "This beta version of macOS ignores the regular analytics setting. Use the profile option instead.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:107"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Diese Betaversion von macOS ignoriert die normale Analyseeinstellung. Verwende die Option mit einem Profil.",
+      "en" : "This beta version of macOS ignores the regular analytics setting. Use the profile option instead.",
+      "es" : "Esta versión beta de macOS ignora el ajuste habitual de análisis. Usa la opción con un perfil.",
+      "fr" : "Cette version bêta de macOS ignore le réglage habituel d’analyse. Utilisez l’option avec un profil.",
+      "ja" : "このmacOSベータ版は通常の解析設定を無視します。プロファイルのオプションを使用してください。",
+      "ko" : "이 macOS 베타 버전은 일반 분석 설정을 무시합니다. 프로파일 옵션을 사용하세요.",
+      "pt-BR" : "Esta versão beta do macOS ignora o ajuste comum de análise. Use a opção com perfil.",
+      "zh-Hans" : "此 macOS 测试版会忽略常规分析设置。请使用配置描述文件选项。"
     }
   },
   {
@@ -5257,7 +5333,7 @@
     "key" : "Turns off Game Center.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:89"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:90"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5276,7 +5352,7 @@
     "key" : "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:80"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:81"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5295,7 +5371,7 @@
     "key" : "Turns off Visual Intelligence. Visual Look Up may stop working too.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:81"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:82"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5314,7 +5390,7 @@
     "key" : "Undone by macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:49"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:50"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5348,6 +5424,25 @@
     }
   },
   {
+    "id" : "Debloat|Verifying",
+    "key" : "Verifying",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:44"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Wird geprüft",
+      "en" : "Verifying",
+      "es" : "Verificando",
+      "fr" : "Vérification",
+      "ja" : "確認中",
+      "ko" : "확인 중",
+      "pt-BR" : "Verificando",
+      "zh-Hans" : "正在验证"
+    }
+  },
+  {
     "id" : "Debloat|Visual Intelligence",
     "key" : "Visual Intelligence",
     "kind" : "Other",
@@ -5371,7 +5466,7 @@
     "key" : "Waiting for approval",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:48"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:49"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5386,13 +5481,32 @@
     }
   },
   {
+    "id" : "Debloat|Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.",
+    "key" : "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:115"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Warten auf die nächste Diagnoseentscheidung von macOS. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein.",
+      "en" : "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.",
+      "es" : "Esperando la próxima decisión de macOS sobre los diagnósticos. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos.",
+      "fr" : "En attente de la prochaine décision de macOS concernant les diagnostics. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics.",
+      "ja" : "macOSによる次の診断送信の判断を待っています。成功の記録は、診断情報を含まないサーバへの接続の場合もあります。",
+      "ko" : "macOS의 다음 진단 정보 전송 결정을 기다리는 중입니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있습니다.",
+      "pt-BR" : "Aguardando a próxima decisão de envio de diagnósticos do macOS. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos.",
+      "zh-Hans" : "正在等待 macOS 下一次诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络。"
+    }
+  },
+  {
     "id" : "Debloat|debloat",
     "key" : "debloat",
     "kind" : "Tile title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:156",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:157",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:158"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:177",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:178",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5411,7 +5525,7 @@
     "key" : "macOS asks you to approve the policy profile once.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:229"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:250"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5423,6 +5537,44 @@
       "ko" : "macOS가 정책 프로파일 승인을 한 번 요청합니다.",
       "pt-BR" : "O macOS pede que você aprove o perfil de políticas uma vez.",
       "zh-Hans" : "macOS 只会要求你批准一次策略描述文件。"
+    }
+  },
+  {
+    "id" : "Debloat|macOS prevents this change from taking effect on this Mac.",
+    "key" : "macOS prevents this change from taking effect on this Mac.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:109"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "macOS verhindert, dass diese Änderung auf diesem Mac wirksam wird.",
+      "en" : "macOS prevents this change from taking effect on this Mac.",
+      "es" : "macOS impide que este cambio tenga efecto en este Mac.",
+      "fr" : "macOS empêche cette modification de prendre effet sur ce Mac.",
+      "ja" : "macOSがこのMacでの変更の適用を阻止しています。",
+      "ko" : "macOS가 이 Mac에서 이 변경 사항이 적용되지 않도록 합니다.",
+      "pt-BR" : "O macOS impede que esta alteração tenha efeito neste Mac.",
+      "zh-Hans" : "macOS 阻止此更改在这台 Mac 上生效。"
+    }
+  },
+  {
+    "id" : "Debloat|macOS still chose to send diagnostics after this change.",
+    "key" : "macOS still chose to send diagnostics after this change.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:114"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "macOS hat sich nach dieser Änderung weiterhin für das Senden von Diagnosedaten entschieden.",
+      "en" : "macOS still chose to send diagnostics after this change.",
+      "es" : "macOS siguió eligiendo enviar diagnósticos después de este cambio.",
+      "fr" : "macOS a encore choisi d’envoyer des diagnostics après cette modification.",
+      "ja" : "この変更後もmacOSは診断情報の送信を選択しています。",
+      "ko" : "이 변경 후에도 macOS가 진단 정보를 전송하기로 결정했습니다.",
+      "pt-BR" : "O macOS ainda decidiu enviar diagnósticos após esta alteração.",
+      "zh-Hans" : "此次更改后，macOS 仍决定发送诊断信息。"
     }
   },
   {

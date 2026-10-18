@@ -628,7 +628,7 @@ public final class LiveDebloatSystem: DebloatSystem {
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         // `log show --start` does not limit what it prints (it returned decisions from days before), so the decisions are filtered
         // by their own time here; one from before the change made a working policy read "Not working".
-        return output("/usr/bin/log", ["show", "--start", formatter.string(from: since), "--style", "ndjson", "--predicate",
+        return output("/usr/bin/log", ["show", "--info", "--start", formatter.string(from: since), "--style", "ndjson", "--predicate",
                                        "process == \"SubmitDiagInfo\" AND eventMessage BEGINSWITH \"Initiating submission for\""],
                       timeout: 60).map { SubmissionDecisionParser.parse($0).filter { $0.at >= since } }
     }

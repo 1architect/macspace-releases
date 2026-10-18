@@ -41,7 +41,8 @@ enum DebloatScreenBuilder {
         case .debloated:
             switch status.effect?.state {
             case .ineffective?: return Badge(loc("Not working"), tone: .critical)
-            case .pending?: return Badge(loc("After restart"), tone: .caution)
+            case .pending?: return Badge(control.effect?.kind == .diagnosticSubmission ? loc("Verifying") : loc("After restart"), tone: .caution)
+            case .notMeasured? where control.effect?.kind == .diagnosticSubmission: return Badge(loc("Not verified"), tone: .caution)
             case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical)
             default: return nil
             }
@@ -94,9 +95,29 @@ enum DebloatScreenBuilder {
     static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
         var lines: [String] = [plain[control.id] ?? control.summary]
         if let restart = restartText(control.restart) { lines.append(restart) }
-        let problem: Set<EffectState> = [.ineffective, .notControllable]
-        if let effect = status?.effect, problem.contains(effect.state), !effect.detail.isEmpty { lines.append(effect.detail) }
+        if let explanation = effectExplanation(control, status) { lines.append(explanation) }
         return lines.joined(separator: " ")
+    }
+
+    /// Helper/CLI diagnostics are technical English. The interface describes their structured state in the module's language.
+    static func effectExplanation(_ control: DebloatControl, _ status: ControlStatus?) -> String? {
+        guard let effect = status?.effect else { return nil }
+        if effect.state == .notControllable {
+            if control.effect?.kind == .diagnosticSubmission, control.mechanism == .systemPreference {
+                return loc("This beta version of macOS ignores the regular analytics setting. Use the profile option instead.")
+            }
+            return loc("macOS prevents this change from taking effect on this Mac.")
+        }
+        guard status?.state == .debloated else { return nil }
+        if control.effect?.kind == .diagnosticSubmission {
+            switch effect.state {
+            case .ineffective: return loc("macOS still chose to send diagnostics after this change.")
+            case .pending: return loc("Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.")
+            case .notMeasured: return loc("No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.")
+            default: return nil
+            }
+        }
+        return effect.state == .ineffective ? loc("A process covered by this setting is still running after the change.") : nil
     }
 
     /// What a switch is called: what switching it on does.

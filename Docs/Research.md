@@ -641,6 +641,11 @@ replaces one of the policies.
   records a successful full submission, so `LastFullSubmissionSuccess` is not evidence; the logged decision is. Which of the two
   keys is decisive was not isolated. On release builds the Settings switch is honoured; that control, `telemetry.diagnostics`, is
   the only one still marked "Not tested".
+- **Corrected verification, 2026-10-18.** The fallback still used `LastFullSubmissionSuccess` as failure evidence when no logged
+  decision was found, contradicting the measured check-in behavior above. On 26B5112a this Mac returned no matching decisions from
+  three days of logs, including info-level messages; the screenshot's timestamp alone cannot establish an upload. Neither a new
+  success timestamp nor silence now proves failure/success. A readable post-change IN/OUT decision remains authoritative; absent
+  decisions are pending initially, then unverified. The UI translates that state rather than appending raw English CLI diagnostics.
 - **Policies from ManagedConfiguration restriction keys** (not marked supervised-only): advertising identifier, on-device dictation
   and translation, Spotlight internet results, twelve Apple Intelligence feature keys, Game Center, News (an earlier catalog also
   forced `allowSiriServerLogging`; Improve Siri & Dictation is now a plain preference, written with its change notification,

@@ -943,5 +943,77 @@
   "关闭 Siri AI。Spotlight 恢复传统搜索，其他 Apple 智能功能保持开启。",
   "Siri AIをオフにします。Spotlightは従来の検索に戻り、ほかのApple Intelligence機能はオンのままです。",
   "Siri AI를 끕니다. Spotlight는 기존 검색으로 돌아가고 다른 Apple Intelligence 기능은 켜진 상태로 유지됩니다."
+ ],
+ "Verifying": [
+  "Verificando",
+  "Vérification",
+  "Verificando",
+  "Wird geprüft",
+  "正在验证",
+  "確認中",
+  "확인 중"
+ ],
+ "Not verified": [
+  "Não verificado",
+  "Non vérifié",
+  "Sin verificar",
+  "Nicht verifiziert",
+  "未经验证",
+  "未確認",
+  "확인되지 않음"
+ ],
+ "This beta version of macOS ignores the regular analytics setting. Use the profile option instead.": [
+  "Esta versão beta do macOS ignora o ajuste comum de análise. Use a opção com perfil.",
+  "Cette version bêta de macOS ignore le réglage habituel d’analyse. Utilisez l’option avec un profil.",
+  "Esta versión beta de macOS ignora el ajuste habitual de análisis. Usa la opción con un perfil.",
+  "Diese Betaversion von macOS ignoriert die normale Analyseeinstellung. Verwende die Option mit einem Profil.",
+  "此 macOS 测试版会忽略常规分析设置。请使用配置描述文件选项。",
+  "このmacOSベータ版は通常の解析設定を無視します。プロファイルのオプションを使用してください。",
+  "이 macOS 베타 버전은 일반 분석 설정을 무시합니다. 프로파일 옵션을 사용하세요."
+ ],
+ "macOS prevents this change from taking effect on this Mac.": [
+  "O macOS impede que esta alteração tenha efeito neste Mac.",
+  "macOS empêche cette modification de prendre effet sur ce Mac.",
+  "macOS impide que este cambio tenga efecto en este Mac.",
+  "macOS verhindert, dass diese Änderung auf diesem Mac wirksam wird.",
+  "macOS 阻止此更改在这台 Mac 上生效。",
+  "macOSがこのMacでの変更の適用を阻止しています。",
+  "macOS가 이 Mac에서 이 변경 사항이 적용되지 않도록 합니다."
+ ],
+ "macOS still chose to send diagnostics after this change.": [
+  "O macOS ainda decidiu enviar diagnósticos após esta alteração.",
+  "macOS a encore choisi d’envoyer des diagnostics après cette modification.",
+  "macOS siguió eligiendo enviar diagnósticos después de este cambio.",
+  "macOS hat sich nach dieser Änderung weiterhin für das Senden von Diagnosedaten entschieden.",
+  "此次更改后，macOS 仍决定发送诊断信息。",
+  "この変更後もmacOSは診断情報の送信を選択しています。",
+  "이 변경 후에도 macOS가 진단 정보를 전송하기로 결정했습니다."
+ ],
+ "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.": [
+  "Aguardando a próxima decisão de envio de diagnósticos do macOS. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos.",
+  "En attente de la prochaine décision de macOS concernant les diagnostics. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics.",
+  "Esperando la próxima decisión de macOS sobre los diagnósticos. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos.",
+  "Warten auf die nächste Diagnoseentscheidung von macOS. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein.",
+  "正在等待 macOS 下一次诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络。",
+  "macOSによる次の診断送信の判断を待っています。成功の記録は、診断情報を含まないサーバへの接続の場合もあります。",
+  "macOS의 다음 진단 정보 전송 결정을 기다리는 중입니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있습니다."
+ ],
+ "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.": [
+  "Não foi possível ler uma decisão de envio de diagnósticos após a alteração. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos, e não prova que o ajuste falhou.",
+  "Aucune décision concernant les diagnostics après la modification n’a pu être lue. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics, et ne prouve donc pas l’échec du réglage.",
+  "No se pudo leer ninguna decisión sobre los diagnósticos tras el cambio. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos, por lo que no demuestra que el ajuste haya fallado.",
+  "Nach der Änderung konnte keine Diagnoseentscheidung gelesen werden. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein und beweist daher nicht, dass die Einstellung versagt hat.",
+  "无法读取此次更改后的诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络，因此不能证明此设置失效。",
+  "変更後の診断送信の判断を読み取れませんでした。成功の記録は診断情報を含まないサーバへの接続の場合もあり、設定が機能していない証拠にはなりません。",
+  "변경 후의 진단 정보 전송 결정을 읽을 수 없습니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있으므로 설정이 작동하지 않았다는 증거가 되지 않습니다."
+ ],
+ "A process covered by this setting is still running after the change.": [
+  "Um processo controlado por este ajuste ainda está em execução após a alteração.",
+  "Un processus concerné par ce réglage est toujours en cours d’exécution après la modification.",
+  "Un proceso afectado por este ajuste sigue ejecutándose después del cambio.",
+  "Ein von dieser Einstellung betroffener Prozess läuft nach der Änderung weiterhin.",
+  "此次更改后，受此设置控制的进程仍在运行。",
+  "変更後もこの設定の対象プロセスが実行されています。",
+  "변경 후에도 이 설정이 제어하는 프로세스가 계속 실행 중입니다."
  ]
 }

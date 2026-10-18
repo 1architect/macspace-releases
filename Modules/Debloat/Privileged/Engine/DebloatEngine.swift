@@ -35,7 +35,7 @@ public final class DebloatEngine {
     public let system: any DebloatSystem
     public let journal: any DebloatJournalStoring
 
-    /// How long diagnostics must stay silent after a change before the change counts as effective.
+    /// How long to wait for a logged decision. Silence alone never proves that diagnostics stopped.
     public static let submissionObservationWindow: TimeInterval = 24 * 3600
 
     public init(controls: [DebloatControl] = DebloatCatalog.controls, system: any DebloatSystem, journal: any DebloatJournalStoring) {
@@ -223,12 +223,10 @@ public final class DebloatEngine {
         let notApplied = state == .partial ? "Partially applied" : (state == .drifted ? "Undone" : "Not applied")
         switch check.kind {
         case .diagnosticSubmission:
-            guard let history = system.diagnosticHistory() else {
-                return EffectStatus(state: .notMeasured, detail: "DiagnosticMessagesHistory.plist could not be read.")
-            }
-            let last = history.lastFullSubmissionSuccess
+            let history = system.diagnosticHistory()
+            let last = history?.lastFullSubmissionSuccess
             let lastText = last.map { "last successful submission \($0.ISO8601Format())" } ?? "no successful submission recorded"
-            if control.mechanism == .systemPreference, system.environment().isPrerelease == true, history.seedAutoSubmit == true {
+            if control.mechanism == .systemPreference, system.environment().isPrerelease == true, history?.seedAutoSubmit == true {
                 return EffectStatus(state: .notControllable,
                                     detail: "Prerelease build with SeedAutoSubmit set: diagnostics are submitted regardless of this setting (\(lastText)).")
             }
@@ -241,23 +239,24 @@ public final class DebloatEngine {
             // (measured on 26B5091g, 2026-09-29).
             // The latest decision is what counts: a policy is applied when its profile is approved, which can be a while after MacSpace
             // staged it (`appliedAt`), and SubmitDiagInfo kept deciding IN until then.
-            if let decisions = system.submissionDecisions(since: appliedAt)?.filter({ $0.at >= appliedAt }).sorted(by: { $0.at < $1.at }),
-               let latest = decisions.last {
+            guard let recorded = system.submissionDecisions(since: appliedAt) else {
+                return EffectStatus(state: .notMeasured, detail: "SubmitDiagInfo's opt-in decisions could not be read (\(lastText)); a success timestamp does not prove an upload.")
+            }
+            let decisions = recorded.filter { $0.at >= appliedAt }.sorted { $0.at < $1.at }
+            if let latest = decisions.last {
                 if latest.optedIn {
                     return EffectStatus(state: .ineffective, detail: "SubmitDiagInfo decided optIn: IN at \(latest.at.ISO8601Format()), after the change (\(lastText)).")
                 }
                 let outs = decisions.reversed().prefix { !$0.optedIn }.count
                 return EffectStatus(state: .effective, detail: "SubmitDiagInfo decided optIn: OUT \(outs) time(s) in a row, most recently at \(latest.at.ISO8601Format()) (\(lastText); opt-out runs still record a success).")
             }
-            if let last, last > appliedAt {
-                return EffectStatus(state: .ineffective, detail: "Diagnostics were submitted after the change at \(appliedAt.ISO8601Format()) (\(lastText)).")
-            }
-            // Submissions were observed every ~11–24 h, so silence only counts after a full window.
+            // The history timestamp advances even on opt-out check-ins. Its advancement and its silence are both inconclusive
+            // when logs have expired or cannot be read: never turn either into a failed or successful effect verification.
             let observed = system.now().timeIntervalSince(appliedAt)
             if observed < Self.submissionObservationWindow {
-                return EffectStatus(state: .pending, detail: "No submission since the change at \(appliedAt.ISO8601Format()), but only \(Int(observed / 3600)) h of the \(Int(Self.submissionObservationWindow / 3600)) h observation window have passed (\(lastText)).")
+                return EffectStatus(state: .pending, detail: "Waiting for a SubmitDiagInfo opt-in decision after the change at \(appliedAt.ISO8601Format()) (\(lastText)); a success timestamp does not prove an upload.")
             }
-            return EffectStatus(state: .effective, detail: "No successful submission in the \(Int(observed / 3600)) h since the change at \(appliedAt.ISO8601Format()) (\(lastText)).")
+            return EffectStatus(state: .notMeasured, detail: "No readable SubmitDiagInfo opt-in decision after the change at \(appliedAt.ISO8601Format()) (\(lastText)); the result cannot be verified from timestamps alone.")
 
         case .processesAbsent:
             guard let processes else { return EffectStatus(state: .notMeasured, detail: "The process list could not be read.") }

@@ -161,10 +161,24 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(badge(.drifted), "Undone by macOS")
         XCTAssertEqual(badge(.awaitingApproval), "Waiting for approval")
         XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .ineffective, detail: "")), "Not working")
-        XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .pending, detail: "")), "After restart")
+        XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .pending, detail: "")), "Verifying")
+        XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .notMeasured, detail: "")), "Not verified")
         XCTAssertEqual(badge(.unavailable), "Not on this macOS")
         let waiting = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .awaitingApproval)]))
         XCTAssertTrue(waiting.isOn, "applied, waiting only for the user's approval")
+    }
+
+    func testEffectProblemsUseLocalizedInterfaceTextRatherThanRawHelperDiagnostics() {
+        for effectState in [EffectState.ineffective, .notMeasured, .pending, .notControllable] {
+            let status = status(verifiedControl.id, .debloated, effect: EffectStatus(state: effectState, detail: "RAW_HELPER_DIAGNOSTIC 2026-10-17T14:27:29Z"))
+            let detail = DebloatScreenBuilder.detail(verifiedControl, status)
+            XCTAssertFalse(detail.contains("RAW_HELPER_DIAGNOSTIC"))
+            XCTAssertFalse(detail.contains("2026-10-17"))
+            XCTAssertNotEqual(detail, DebloatScreenBuilder.plain[verifiedControl.id])
+        }
+        let processControl = mainControl
+        let pending = status(processControl.id, .debloated, effect: EffectStatus(state: .pending, detail: "until reboot"))
+        XCTAssertEqual(DebloatScreenBuilder.badge(processControl, pending, cannotTakeEffect: false)?.text, "After restart")
     }
 
     func testSwitchingDisableOnAppliesTheProtection() {

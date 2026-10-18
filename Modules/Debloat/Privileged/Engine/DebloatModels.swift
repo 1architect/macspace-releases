@@ -368,7 +368,7 @@ public enum RestartRequirement: String, Codable, Sendable {
 
 public struct EffectCheck: Codable, Equatable, Sendable {
     public enum Kind: String, Codable, Sendable {
-        /// Diagnostics submission stops advancing after the control is applied.
+        /// SubmitDiagInfo's logged opt-in decision after the control is applied; history timestamps are inconclusive.
         case diagnosticSubmission
         /// The listed executables are not running.
         case processesAbsent
