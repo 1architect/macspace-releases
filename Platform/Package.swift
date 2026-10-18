@@ -8,9 +8,6 @@ let package = Package(
     products: [.library(name: "MacSpacePlatform", type: .dynamic, targets: ["MacSpacePlatform"])],
     dependencies: [.package(path: "../Sdk")],
     targets: [
-        .target(name: "AssetOwnerBridge", path: "AssetOwners/Native", publicHeadersPath: "include",
-                cSettings: [.unsafeFlags(["-fobjc-arc"])],
-                linkerSettings: [.linkedFramework("Foundation"), .linkedFramework("AppKit"), .linkedLibrary("sqlite3")]),
-        .target(name: "MacSpacePlatform", dependencies: ["AssetOwnerBridge", .product(name: "MacSpaceSdk", package: "Sdk")], path: ".", exclude: ["Package.swift", "AssetOwners/Native"]),
+        .target(name: "MacSpacePlatform", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk")], path: ".", exclude: ["Package.swift"]),
     ]
 )

@@ -78,8 +78,7 @@ struct MacSpaceCli {
             """)
             exit(arguments.isEmpty ? 0 : 64)
         }
-        let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }
-            ?? ModuleHost.defaultModulesDirectoryForCli()
+        let directory = CliModules.directory(arguments)
         let found = ModuleScanner.scan(directory: directory)
         for module in found.modules {
             let status: String

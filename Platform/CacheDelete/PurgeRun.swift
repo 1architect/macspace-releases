@@ -178,15 +178,16 @@ public struct PurgeRun: Sendable {
         return CacheDeleteClient().purge(services: [service], urgency: urgency)
     }
 
-    /// macOS's estimate for the service now, asked in the CLI child process. nil when it does not answer.
+    /// macOS's estimate for this service alone now, asked in the CLI child process. nil when it does not answer.
     public func estimate() -> UInt64? {
-        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency)?[service] }
-        return CacheDeleteClient().purgeableByService(urgency: urgency)?[service]
+        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableInSubprocess(executable: cli, service: service, urgency: urgency) }
+        return CacheDeleteClient().purgeableByService(urgency: urgency, services: [service])?[service]
     }
 
-    /// Purges, reporting macOS's estimate from just before. The estimate never decides whether to purge: it lags behind what macOS
-    /// can delete (it read 0 with 11 GB of released Apple Intelligence models unlocked, and the purge then removed 11.08 GB,
-    /// 2026-10-04). If macOS keeps everything, it is asked again in the background; `freedLater` is told when that frees something.
+    /// Purges at once. No estimate is asked first: it never decided whether to purge, since it lags behind what macOS can delete (it
+    /// read 0 with 11 GB of released Apple Intelligence models unlocked, and the purge then removed 11.08 GB, 2026-10-04), and asking
+    /// it delayed every Free. If macOS keeps everything, it is asked again in the background; `freedLater` is told when that frees
+    /// something.
     public func run(freedLater: @escaping @Sendable (UInt64) async -> Void = { _ in }) -> Outcome {
         if let reason = extraRefusal?() {
             retrier.cancel(service)
@@ -196,11 +197,9 @@ public struct PurgeRun: Sendable {
             retrier.cancel(service)
             return Outcome(estimate: nil, reported: 0, freed: 0, error: nil, skipped: true, held: true)
         }
-        let fresh = estimate()
         retrier.cancel(service)
-        if let reason = extraRefusal?() { return Outcome(estimate: fresh, reported: 0, freed: 0, error: reason, skipped: true, held: true) }
         let result = Self.purgeOnce(service: service, urgency: urgency)
-        let outcome = Outcome(estimate: fresh, reported: result.purgedBytes ?? 0, freed: result.freedBytes ?? 0, error: result.error, skipped: false)
+        let outcome = Outcome(estimate: nil, reported: result.purgedBytes ?? 0, freed: result.freedBytes ?? 0, error: result.error, skipped: false)
         if outcome.removedNothing {
             let run = self
             retrier.schedule(service: service, urgency: urgency, purge: {

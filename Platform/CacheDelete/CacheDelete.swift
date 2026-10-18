@@ -110,16 +110,8 @@ public struct CacheDeleteClient {
     /// The OS build, reported by the self-test; injectable for tests.
     public let build: String?
 
-    public init(build: String? = CacheDeleteClient.currentBuild()) {
+    public init(build: String? = MacOSRelease.current.build) {
         self.build = build
-    }
-
-    public static func currentBuild() -> String? {
-        var size = 0
-        guard sysctlbyname("kern.osversion", nil, &size, nil, 0) == 0, size > 0 else { return nil }
-        var buffer = [CChar](repeating: 0, count: size)
-        guard sysctlbyname("kern.osversion", &buffer, &size, nil, 0) == 0 else { return nil }
-        return String(cString: buffer)
     }
 
     public var support: CacheDeleteSupport {
@@ -155,9 +147,10 @@ public struct CacheDeleteClient {
 
     /// Per-service purgeable bytes at `urgency` (1 = lowest, what a service gives up most readily; 4 = highest).
     /// Read-only. nil if the framework or a function is unavailable.
-    public func purgeableByService(volume: String = dataVolume, urgency: Int = 1) -> [String: UInt64]? {
+    /// `services` limits the question to those services: each one asked computes a fresh, uncached figure, which takes time.
+    public func purgeableByService(volume: String = dataVolume, urgency: Int = 1, services: [String]? = nil) -> [String: UInt64]? {
         guard refusal == nil else { return nil }
-        return Self.rawQuery(volume: volume, urgency: urgency).map(Self.parseItemized)
+        return Self.rawQuery(volume: volume, urgency: urgency, services: services).map(Self.parseItemized)
     }
 
     /// The whole answer of the query, for research. Read-only; nil when refused.
@@ -229,8 +222,8 @@ public struct CacheDeleteClient {
 
     /// Runs the query in `executable` (the `macspace` CLI, e.g. embedded in the app bundle) so that an unexpected ABI
     /// change crashes that process, not the caller. nil on any failure.
-    public static func purgeableInSubprocess(executable: URL) -> UInt64? {
-        let output = runSubprocess(executable, ["purge-assets", "--json"])
+    public static func purgeableInSubprocess(executable: URL, service: String = CacheDeleteService.mobileAsset, urgency: Int = 1) -> UInt64? {
+        let output = runSubprocess(executable, ["purge-assets", "--json", "--service", service, "--urgency", "\(urgency)"])
         guard output.status == 0, let object = try? JSONSerialization.jsonObject(with: output.data) as? [String: Any] else { return nil }
         return (object["purgeableBytes"] as? NSNumber)?.uint64Value
     }

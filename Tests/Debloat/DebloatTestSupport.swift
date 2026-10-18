@@ -6,8 +6,8 @@ import MacSpacePlatform
 /// In-memory Mac: preferences, launchd overrides, processes and diagnostics history.
 final class FakeDebloatSystem: DebloatSystem {
     var clock = Date(timeIntervalSince1970: 1_800_000_000)
-    var env = DebloatEnvironment(productVersion: "27.2", build: "26B5091g", isPrerelease: true, sip: .enabled,
-                                 mdmEnrolled: false, depEnrolled: false, architecture: "arm64", userName: "tester",
+    var env = DebloatEnvironment(build: "26B5091g", isPrerelease: true, sip: .enabled,
+                                 userName: "tester",
                                  uid: 501, runningAsRoot: false, fullDiskAccess: true)
     var preferences: [String: PlistValue] = [:]
     var overrides: [String: Bool] = [:]

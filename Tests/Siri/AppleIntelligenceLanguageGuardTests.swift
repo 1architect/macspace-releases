@@ -47,7 +47,7 @@ final class AppleIntelligenceLanguageGuardTests: XCTestCase {
     private let guardian = AppleIntelligenceLanguageGuard()
 
     private func autoSet(selectors: Int, targets: Int, error: String? = nil) -> AutoSetConfigurationObservation {
-        AutoSetConfigurationObservation(sourcePath: "fixture.state", sha256: "abc", byteCount: 1, selectorCount: selectors,
+        AutoSetConfigurationObservation(selectorCount: selectors,
                                         targetCount: targets, targetSelectors: Array(repeating: AppleIntelligenceLanguageGuard.targetSpecifier, count: targets),
                                         error: error)
     }

@@ -27,11 +27,4 @@ public enum DataVolume {
         }
         return best
     }
-
-    /// Space macOS can reclaim by itself when needed (available for important use minus free), or nil if unreadable.
-    public static func purgeableEstimate() -> UInt64? {
-        guard let values = try? URL(fileURLWithPath: path).resourceValues(forKeys: [.volumeAvailableCapacityKey, .volumeAvailableCapacityForImportantUsageKey]),
-              let free = values.volumeAvailableCapacity, let important = values.volumeAvailableCapacityForImportantUsage else { return nil }
-        return important > Int64(free) ? UInt64(important - Int64(free)) : 0
-    }
 }

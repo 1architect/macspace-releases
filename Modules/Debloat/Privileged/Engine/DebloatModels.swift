@@ -479,18 +479,14 @@ public extension DebloatControl {
     }
 
     /// Whether a before/after experiment showed the effect, on any macOS build.
-    public var tested: Bool { !validatedBuilds.isEmpty }
+    var tested: Bool { !validatedBuilds.isEmpty }
 }
 
 public struct DebloatEnvironment: Codable, Equatable, Sendable {
-    public var productVersion: String?
     public var build: String?
     /// Beta/seed build: a four-digit build number with a lowercase suffix (e.g. 26B5091g), or SeedAutoSubmit set.
     public var isPrerelease: Bool?
     public var sip: SIPState
-    public var mdmEnrolled: Bool?
-    public var depEnrolled: Bool?
-    public var architecture: String?
     public var userName: String
     public var uid: UInt32
     public var runningAsRoot: Bool
@@ -501,16 +497,11 @@ public struct DebloatEnvironment: Codable, Equatable, Sendable {
     /// Start of the target user's login session (their loginwindow); the gui launchd domain is rebuilt from here.
     public var sessionStartedAt: Date?
 
-    public init(productVersion: String?, build: String?, isPrerelease: Bool?, sip: SIPState, mdmEnrolled: Bool?,
-                depEnrolled: Bool?, architecture: String?, userName: String, uid: UInt32, runningAsRoot: Bool,
+    public init(build: String?, isPrerelease: Bool?, sip: SIPState, userName: String, uid: UInt32, runningAsRoot: Bool,
                 fullDiskAccess: Bool?, bootedAt: Date? = nil, sessionStartedAt: Date? = nil) {
-        self.productVersion = productVersion
         self.build = build
         self.isPrerelease = isPrerelease
         self.sip = sip
-        self.mdmEnrolled = mdmEnrolled
-        self.depEnrolled = depEnrolled
-        self.architecture = architecture
         self.userName = userName
         self.uid = uid
         self.runningAsRoot = runningAsRoot

@@ -79,7 +79,6 @@ enum RootMeasurements {
             var item = SystemDataItem(id: place.id, title: place.title, kind: place.kind, paths: [place.path], bytes: bytes, readable: true, owners: [],
                                       inUse: false, cleanup: place.cleanup, notes: place.notes)
             item.purgeableBytes = purgeable[place.path]
-            item.guide = ManualCleanupGuides.guide(for: item)
             if let index = report.items.firstIndex(where: { $0.id == place.within }) {
                 let parent = report.items[index].bytes ?? 0
                 report.items[index].bytes = parent - min(parent, bytes)
@@ -89,7 +88,6 @@ enum RootMeasurements {
         }
         report.items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
         report.unreadable = report.unreadable.filter { sizes[$0] == nil }
-        report.warnings = report.unreadable.isEmpty ? [] : report.warnings
         report.measuredBytes = report.items.compactMap(\.bytes).reduce(0, +)
         result.report = report
         return result
@@ -245,25 +243,21 @@ actor SystemDataStore {
     /// and what was read beside it (`progress`, up to `scanned`).
     static func liveSnapshot(progress: LoadProgressRelay) -> SystemDataSnapshot {
         let cloudRevision = CloudDownloadRemovals.shared.changes().revision
-        // Homebrew's dry runs take a second or two; they run while the disk is read.
-        let homebrew = HomebrewBox()
-        let brewDone = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .utility).async { homebrew.plan = HomebrewCleanup.plan(); brewDone.signal() }
-        let developer = DeveloperBox()
-        let developerDone = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .utility).async { developer.caches = DeveloperCaches.scan(); developerDone.signal() }
-        // System Settings' categories are measured beside the items: one after the other, they added 10 seconds to every scan.
-        let settings = SettingsBox()
-        let settingsDone = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .utility).async { settings.storage = SettingsStorageMeter().measure(); settingsDone.signal() }
+        // Read while the disk is: Homebrew's dry runs take a second or two, System Settings' categories added 10 seconds to every
+        // scan one after the other, and CacheDelete computes a fresh figure for each of its services.
+        let homebrew = Background { HomebrewCleanup.plan() }
+        let developer = Background { DeveloperCaches.scan() }
+        let settings = Background { SettingsStorageMeter().measure() }
+        let purgeableServices = Background { livePurgeableServices() }
+        let assetFamilies = Background { AssetFamilyScanner().scan() }
         let report = SystemDataInspector().inspect(progress: progress.part(0...0.65))
-        let services = livePurgeableServices()
+        let services = purgeableServices.value
         progress.report(0.7)
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let reports = DiagnosticReportCleaner(directories: ["/Library/Logs/DiagnosticReports", home + "/Library/Logs/DiagnosticReports"])
             .plan(olderThanDays: DiagnosticReportCleaner.defaultOlderThanDays)
-        var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: AssetFamilyScanner().scan(), takenAt: Date(),
+        var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: assetFamilies.value, takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         progress.report(0.75)
         snapshot.cloudSources = PurgeableDocuments.scan(maxAge: 600, progress: progress.part(0.75...0.78))
@@ -273,13 +267,10 @@ actor SystemDataStore {
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
         snapshot.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil
         snapshot.supportsModelFeatureControls = PhoneFeatureFlags.supported.value
-        settingsDone.wait()
-        snapshot.settings = settings.storage
+        snapshot.settings = settings.value
         snapshot.trashEmptiesItself = CFPreferencesCopyAppValue("FXRemoveOldTrashItems" as CFString, "com.apple.finder" as CFString) as? Bool ?? false
-        brewDone.wait()
-        snapshot.homebrew = homebrew.plan
-        developerDone.wait()
-        snapshot.developerCaches = developer.caches
+        snapshot.homebrew = homebrew.value
+        snapshot.developerCaches = developer.value
         // Development (MACSPACE_DEBUG=1): the items as measured, for comparing them with System Settings' figure.
         #if DEBUG
         if ProcessInfo.processInfo.environment["MACSPACE_DEBUG"] == "1", let data = try? JSONEncoder().encode(report) {
@@ -298,25 +289,26 @@ actor SystemDataStore {
     /// How much is purgeable, asked in the CLI child process. Only mobileassetd's figure is used: the app-container-caches service
     /// also reports a figure (1.15 GB on 26B5091g), but purging it removed under 100 MB at any urgency, so it is not offered.
     static func livePurgeable() -> UInt64? {
-        let all: [String: UInt64]?
-        if let cli = ToolLocator.cli() { all = CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli) }
-        else { all = CacheDeleteClient().purgeableByService() }
+        // Asked of that service alone: every service asked computes a fresh figure, which slowed each scan.
+        let bytes = PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`).
-        return all?[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
+        return bytes.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
     }
 }
 
-/// Homebrew's plan, handed from the thread that asks Homebrew to the scan's.
-private final class HomebrewBox: @unchecked Sendable {
-    var plan: HomebrewCleanup.Plan?
-}
+/// Work started on another thread while the scan reads the disk; `value` waits for it.
+private final class Background<Value>: @unchecked Sendable {
+    private let done = DispatchSemaphore(value: 0)
+    private var result: Value?
 
-/// System Settings' categories, handed from the thread that measures them to the scan's.
-private final class SettingsBox: @unchecked Sendable {
-    var storage: SettingsStorage?
-}
+    init(_ work: @escaping @Sendable () -> Value) {
+        DispatchQueue.global(qos: .utility).async { self.result = work(); self.done.signal() }
+    }
 
-/// The developer caches, handed from the thread that scans them to the scan's.
-private final class DeveloperBox: @unchecked Sendable {
-    var caches: [DeveloperCache] = []
+    /// Waited for once; the semaphore orders the write before this read.
+    var value: Value {
+        done.wait()
+        done.signal()
+        return result!
+    }
 }

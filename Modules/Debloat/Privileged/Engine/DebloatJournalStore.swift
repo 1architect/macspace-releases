@@ -44,6 +44,8 @@ public final class DebloatJournalStore: DebloatJournalStoring {
 
     public func save(_ journal: DebloatJournal, _ privilege: DebloatPrivilege) throws {
         guard let url = url(privilege) else { throw DebloatSystemError.targetUserUnknown }
+        // Root never writes in a user's home folder: a link there could send the write anywhere.
+        guard privilege == .root || geteuid() != 0 else { throw DebloatSystemError.targetUserUnknown }
         let directory = url.deletingLastPathComponent()
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true,
                                         attributes: privilege == .root ? [.posixPermissions: 0o755] : nil)

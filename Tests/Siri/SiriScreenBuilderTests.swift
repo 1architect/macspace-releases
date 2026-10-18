@@ -337,6 +337,9 @@ extension SiriScreenBuilderTests {
         XCTAssertEqual(SiriScreenBuilder.tile(downloading).refreshAfter, 5)
         XCTAssertEqual(SiriScreenBuilder.tile(snapshot(.releasing)).refreshAfter, 5)
         XCTAssertNil(SiriScreenBuilder.tile(snapshot(.protected)).refreshAfter, "settled: the usual minute")
+        var retrying = snapshot(.protected)
+        retrying.assetsRetrying = true
+        XCTAssertNil(SiriScreenBuilder.tile(retrying).refreshAfter, "background requests are minutes apart: the usual minute")
     }
 }
 

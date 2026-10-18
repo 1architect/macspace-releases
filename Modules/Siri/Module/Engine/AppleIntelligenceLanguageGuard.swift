@@ -364,11 +364,9 @@ public struct AppleIntelligenceLanguageGuard {
 
     // MARK: Live reads
 
-    public func readInputs(fileManager: FileManager = .default, runner: any CommandRunning = ProcessCommandRunner(defaultTimeout: 10)) -> AppleIntelligenceGuardInputs {
+    public func readInputs(fileManager: FileManager = .default) -> AppleIntelligenceGuardInputs {
         let eligibility = (try? Data(contentsOf: URL(fileURLWithPath: Self.eligibilityPath))).map(parseEligibility)
-        let build = (try? runner.run("/usr/bin/sw_vers", ["-buildVersion"])).flatMap {
-            $0.exitCode == 0 ? String(decoding: $0.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) : nil
-        }
+        let build = MacOSRelease.current.build
         let context = LiveSiriLanguageEnvironment(fileManager: fileManager).context()
         return AppleIntelligenceGuardInputs(
             operatingSystemBuild: build, systemLanguage: context.systemLanguage, siriLanguage: context.siriLanguage,

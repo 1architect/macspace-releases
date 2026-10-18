@@ -218,11 +218,6 @@ enum OtherSystemFilesScreenBuilder {
         snapshot.documents.sorted { $0.bytes > $1.bytes }.map(\.bytes)
     }
 
-    /// Removes one cloud service's downloads; the size is the row's.
-    static func removeDownloadsAction(_ source: PurgeableDocuments.Source, bytes: UInt64) -> Action {
-        CloudFileRows.action(source)
-    }
-
     /// A service's name; the purgeable documents are named after the cloud service that holds them, once it is known.
     static func title(_ id: String, _ snapshot: PurgeableSnapshot) -> String {
         guard id == CacheDeleteService.fsPurgeableDocument, !snapshot.documents.isEmpty else { return PurgeableService.describe(id).title }
@@ -244,13 +239,6 @@ enum OtherSystemFilesScreenBuilder {
                             symbol: service.symbol, detail: service.detail))
         }
         return rows
-    }
-
-    /// The largest folders of a cloud service, one per line, for the row's description. Empty when none is worth naming.
-    static func folderList(_ source: PurgeableDocuments.Source) -> String {
-        let folders = source.folders.filter { $0.bytes >= threshold }
-        guard !folders.isEmpty else { return "" }
-        return "\n\n" + folders.map { "\($0.name): \(ByteFormat.string($0.bytes)), \($0.files == 1 ? loc("1 file") : loc("\($0.files) files"))" }.joined(separator: "\n")
     }
 
     /// The services MacSpace leaves alone, largest first.

@@ -28,4 +28,20 @@ final class AllDoneLifetimeTests: XCTestCase {
         XCTAssertEqual(finished, 0)
         state.dismiss()
     }
+
+    func testCountdownStartsOnlyAfterTheReloadAndThenReturns() async throws {
+        let state = AllDoneLifetime()
+        var finished = 0
+        state.reloading = true
+        state.present(hold: .milliseconds(1), countdown: .milliseconds(150)) { finished += 1 }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertFalse(state.countingDown, "the countdown waits for the module's new figures")
+        state.reloading = false
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(state.countingDown)
+        XCTAssertEqual(finished, 0, "a finished reload no longer returns at once")
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertEqual(finished, 1)
+        XCTAssertFalse(state.shown)
+    }
 }

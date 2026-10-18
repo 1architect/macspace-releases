@@ -82,7 +82,7 @@ final class AppCacheTests: XCTestCase {
             try Data(count: 3_000_000).write(to: caches.appendingPathComponent("\(name)/blob"))
         }
         let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil, systemPaths: [:])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
         inspector.hasFullDiskAccess = true
         inspector.appCacheOwner = { _ in .notInstalled }
         let listed = inspector.inspect().appCaches
@@ -108,7 +108,7 @@ final class AppCacheTests: XCTestCase {
         try write("Library/Containers/com.apple.Notes/Data/Library/Caches/blob", under: home)
         try write("Library/Group Containers/group.com.example.shared/Library/Caches/blob", under: home)
         let locations = SystemDataLocations(home: home, userSystemDirectory: nil, systemPaths: [:])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
         inspector.hasFullDiskAccess = true
         inspector.processCheck = .none
         inspector.containerOwner = { id in (.app(name: "Sandboxed", lastOpened: nil), [id, "com.example.Host"]) }
@@ -231,8 +231,7 @@ final class AppCacheTests: XCTestCase {
     // MARK: The page
 
     private func snapshot(_ caches: [AppCache], items: [SystemDataItem] = []) -> SystemDataSnapshot {
-        var report = SystemDataReport(schemaVersion: 1, generatedAt: now, volumes: [], items: items, measuredBytes: 0, cleanableBytes: 0,
-                                      manualCleanup: [], unreadable: [], warnings: [])
+        var report = SystemDataReport(schemaVersion: 1, generatedAt: now, items: items, measuredBytes: 0, unreadable: [])
         report.appCaches = caches
         return SystemDataSnapshot(report: report, purgeableAssetsBytes: nil,
                                   reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),

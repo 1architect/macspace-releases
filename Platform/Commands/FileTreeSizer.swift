@@ -80,6 +80,13 @@ public struct FileTreeSizer: Sendable {
         self.refusesLinks = refusesLinks
     }
 
+    /// Whether the folder opens, without reading what it holds (listing a large one only to throw the names away doubled its cost).
+    public static func canOpen(_ path: String) -> Bool {
+        guard let directory = opendir(path) else { return false }
+        closedir(directory)
+        return true
+    }
+
     /// Whether APFS flags the file purgeable: macOS may delete it when space runs low.
     public static func isPurgeable(_ path: String) -> Bool {
         var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0, fileattr: 0,

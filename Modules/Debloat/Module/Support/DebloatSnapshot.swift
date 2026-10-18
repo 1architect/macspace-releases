@@ -22,45 +22,14 @@ struct DebloatSnapshot: Sendable {
 actor DebloatStore {
     typealias Builder = @Sendable (LoadProgressRelay) -> DebloatSnapshot
 
-    private var cached: DebloatSnapshot?
-    private var inflight: Task<DebloatSnapshot, Never>?
-    private var relay: LoadProgressRelay?
-    private let builder: Builder
-    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
-    /// came back with the figures from before the action.
-    private var generation = 0
+    private let reading: SharedReading<DebloatSnapshot>
 
     init(builder: @escaping Builder = DebloatStore.liveSnapshot) {
-        self.builder = builder
+        reading = SharedReading { builder($0) }
     }
 
     func snapshot(maxAge: TimeInterval = 15, now: Date = Date(), progress: LoadProgressSink? = nil) async -> DebloatSnapshot {
-        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
-        // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
-        // the figures from before the action.
-        if let inflight {
-            if let progress { relay?.attach(progress) }
-            let waitedFor = generation
-            let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, progress: progress)
-        }
-        let builder = self.builder
-        let relay = LoadProgressRelay()
-        if let progress { relay.attach(progress) }
-        relay.report(0)
-        let task = Task.detached(priority: .utility) {
-            defer { relay.report(1) }
-            return builder(relay)
-        }
-        let started = generation
-        inflight = task
-        self.relay = relay
-        let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge, progress: progress) }
-        cached = fresh
-        inflight = nil
-        self.relay = nil
-        return fresh
+        await reading.value(maxAge: maxAge, now: now, progress: progress)
     }
 
     private var cleanedUp: Set<[String]> = []
@@ -70,12 +39,7 @@ actor DebloatStore {
         cleanedUp.insert(identifiers).inserted
     }
 
-    func invalidate() {
-        cached = nil
-        inflight = nil
-        relay = nil
-        generation += 1
-    }
+    func invalidate() async { await reading.invalidate() }
 
     static func liveEngine() -> DebloatEngine {
         DebloatEngine(system: LiveDebloatSystem(), journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))

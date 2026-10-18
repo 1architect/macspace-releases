@@ -126,7 +126,18 @@ public struct APFSVolumeUsage: Equatable, Sendable {
 
 /// The apps Spotlight has indexed. Settings applies additional scopes and filters to this list.
 public enum IndexedApps {
-    public static func paths() -> [String] {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var cached: (at: Date, paths: [String])?
+
+    /// Asked once per scan: Settings' categories and System Data's items both need it, at the same moment, and each asked Spotlight.
+    public static func paths(maxAge: TimeInterval = 30) -> [String] {
+        if let cached = lock.withLock({ cached }), Date().timeIntervalSince(cached.at) < maxAge { return cached.paths }
+        let paths = query()
+        lock.withLock { cached = (Date(), paths) }
+        return paths
+    }
+
+    static func query() -> [String] {
         guard let query = MDQueryCreate(kCFAllocatorDefault, "kMDItemContentType == 'com.apple.application-bundle'" as CFString, nil, nil),
               MDQueryExecute(query, CFOptionFlags(kMDQuerySynchronous.rawValue)) else { return [] }
         var paths: [String] = []
@@ -153,7 +164,7 @@ public struct SettingsStorageMeter {
     public var dataVolume = "/System/Volumes/Data"
     public var root = ""
     public var volumes: () -> [APFSVolumeUsage] = APFSVolumeUsage.live
-    public var apps: () -> [String] = IndexedApps.paths
+    public var apps: () -> [String] = { IndexedApps.paths() }
     /// (capacity, available for important use) of the Data volume.
     public var space: () -> (UInt64, UInt64)? = SettingsStorageMeter.liveSpace
     public var dataDevice: () -> String? = SettingsStorageMeter.liveDataDevice

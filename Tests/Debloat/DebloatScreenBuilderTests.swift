@@ -15,7 +15,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         ControlStatus(controlID: id, state: state, effect: effect, settings: [], tested: DebloatCatalog.control(id)?.tested ?? false, appliedAt: nil)
     }
 
-    private let environment = DebloatEnvironment(productVersion: "27.2", build: "26B5091g", isPrerelease: true, sip: .enabled, mdmEnrolled: false, depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
+    private let environment = DebloatEnvironment(build: "26B5091g", isPrerelease: true, sip: .enabled, userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
     /// The controls a beta build is offered, as the live snapshot filters them on a Mac where no retired control is applied.
     private var offered: [DebloatControl] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) && $0.retired == nil } }
 

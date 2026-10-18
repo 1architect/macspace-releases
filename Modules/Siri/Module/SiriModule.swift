@@ -88,7 +88,7 @@ public struct SiriModule: MacSpaceModule {
         }
         snapshot.purgingModels = await ModelPurger.shared.isRunning
         if !snapshot.releasingAutomatically, !snapshot.purgingModels { await checkFeatureModels() }
-        snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isRunning
+        snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
         snapshot.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
         return snapshot
     }
@@ -143,15 +143,20 @@ public struct SiriModule: MacSpaceModule {
         }
         if request.actionID == "purgeAssets" { _ = await store.snapshot(maxAge: .infinity) }
         var result = await handle(request, context: context, progress: progress)
-        if result.refresh, ["togglePhoneFeatures", "toggleModelFeature"].contains(request.actionID), var updated = await store.reconcilePhoneFeatures() {
-            updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
-            updated.purgingModels = await ModelPurger.shared.isRunning
-            result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
-        } else if result.refresh, request.actionID == "purgeAssets", var updated = await store.reconcileAssets() {
-            updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
-            updated.purgingModels = await ModelPurger.shared.isRunning
-            result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
-        } else if result.refresh { await store.invalidate() }
+        if result.refresh {
+            // Feature actions reconcile only feature state and a purge only the assets, keeping the page's other measurements.
+            var updated: SiriSnapshot?
+            switch request.actionID {
+            case "togglePhoneFeatures", "toggleModelFeature": updated = await store.reconcilePhoneFeatures()
+            case "purgeAssets": updated = await store.reconcileAssets()
+            default: break
+            }
+            if var updated {
+                updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
+                updated.purgingModels = await ModelPurger.shared.isRunning
+                result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
+            } else { await store.invalidate() }
+        }
         if changesFeature {
             await ManagedModelCleanup.shared.endChange()
             if request.parameters["value"] == "false", result.outcome == .succeeded { await checkFeatureModels(force: true) }
@@ -255,12 +260,12 @@ public struct SiriModule: MacSpaceModule {
         let environment = LiveSiriLanguageEnvironment()
         do {
             let plan = try guardian.plan(available ? .enable : .disable, context: environment.context(), scope: .thisMacOnly, saved: environment.loadSavedSettings())
-            let result = try guardian.apply(plan, environment: environment)
+            _ = try guardian.apply(plan, environment: environment)
             if plan.noChangeNeeded { return .succeeded(available ? loc("Already on") : loc("Already off")) }
             let state = guardian.status().state
             if available { return .succeeded(loc("Apple Intelligence is on"), details: plan.warnings) }
             let tail = state == .releasing ? "macOS is removing its model; this usually takes a few minutes." : "Verified: eligibility reads unavailable."
-            return .succeeded(loc("Apple Intelligence is off"), details: [tail] + (result.executed ? [] : []))
+            return .succeeded(loc("Apple Intelligence is off"), details: [tail])
         } catch {
             return .failed("\(error)")
         }
@@ -275,10 +280,7 @@ public struct SiriModule: MacSpaceModule {
 
     static func release(progress: @escaping ProgressSink) -> ActionResult {
         var count = 0
-        let result = AppleIntelligenceModelRelease(purge: {
-            if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeInSubprocess(executable: cli) }
-            return CacheDeleteClient().purge(services: [CacheDeleteService.mobileAsset])
-        }).run { step in
+        let result = AppleIntelligenceModelRelease().run { step in
             count += 1
             progress(ActionProgress(fraction: min(0.9, Double(count) * 0.2), message: step.detail))
         }

@@ -98,8 +98,7 @@ final class SymbolicationCacheTests: XCTestCase {
                                   paths: ["/System/Library/Caches/com.apple.coresymbolicationd"], bytes: bytes, readable: true, owners: [], inUse: false,
                                   cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "d", command: nil), notes: [])
         item.purgeableBytes = purgeable
-        return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0,
-                                                           manualCleanup: [], unreadable: [], warnings: []),
+        return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [item], measuredBytes: 0, unreadable: []),
                                   purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),
                                   takenAt: Date())
     }

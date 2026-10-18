@@ -60,7 +60,7 @@ enum PurgeCommand {
                 exit(64)
             }
         }
-        let purgeable = client.purgeableByService(urgency: urgency)?[service]
+        let purgeable = client.purgeableByService(urgency: urgency, services: [service])?[service]
         guard arguments.contains("--execute") else {
             if json { emit(["purgeableBytes": purgeable]) }
             print("What macOS would delete when space runs low (\(service)): \(ByteFormat.string(purgeable ?? 0))")

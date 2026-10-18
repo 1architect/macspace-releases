@@ -190,12 +190,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
                      (CacheDeleteService.fsPurgeableDataForceUrgency, loc("Freeing space"))]
         for (index, step) in steps.enumerated() {
             progress(ActionProgress(fraction: Double(index) / Double(steps.count), message: step.1))
-            let result: CacheDeletePurgeResult
-            if let cli = ToolLocator.cli() {
-                result = CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: step.0)
-            } else {
-                result = CacheDeleteClient().purge(services: [service], urgency: step.0)
-            }
+            let result = PurgeRun.purgeOnce(service: service, urgency: step.0)
             if let error = result.error { lastError = error; continue }
             reported += result.purgedBytes ?? 0
             elapsed += result.elapsedSeconds ?? 0

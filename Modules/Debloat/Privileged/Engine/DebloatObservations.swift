@@ -113,6 +113,18 @@ public struct LaunchdJobIndex: Sendable {
                           conditionallyDisabled: disabled is [String: Any])
     }
 
+    nonisolated(unsafe) private static var shared: (at: Date, index: LaunchdJobIndex)?
+    private static let sharedLock = NSLock()
+
+    /// The live index, read again every ten minutes: some 800 plists, which every reading of the page parsed again, and which
+    /// change only when an app installs or removes a service.
+    public static func live(maxAge: TimeInterval = 600, now: Date = Date()) -> LaunchdJobIndex {
+        if let shared = sharedLock.withLock({ shared }), now.timeIntervalSince(shared.at) < maxAge { return shared.index }
+        let index = load()
+        sharedLock.withLock { shared = (now, index) }
+        return index
+    }
+
     public static func load(fileManager: FileManager = .default) -> LaunchdJobIndex {
         var jobs: [LaunchdJob] = []
         for (directory, domain) in directories {

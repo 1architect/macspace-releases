@@ -168,8 +168,17 @@ public struct DebloatModule: MacSpaceModule {
     /// The switch is "Disable <feature>": switching it on applies the protection, switching it off restores the original.
     static func appliesProtection(switchValue: String?) -> Bool { switchValue == "true" }
 
+    /// One change at a time: the watch's re-apply and a switch the user flips both write the journal, and run together one
+    /// could save over the other's record.
+    static let changes = ChangeLine()
+
     static func change(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
                        progress: @escaping ProgressSink) async -> ActionResult {
+        await changes.run { await changeNow(action, ids, context: context, progress: progress) }
+    }
+
+    private static func changeNow(_ action: ChangeAction, _ ids: [String], context: ModuleContext,
+                                  progress: @escaping ProgressSink) async -> ActionResult {
         guard !ids.isEmpty else { return .failed(loc("No controls were selected.")) }
         progress(ActionProgress(message: action == .apply ? loc("Disabling") : loc("Enabling")))
         let engine = DebloatStore.liveEngine()
@@ -272,5 +281,17 @@ public struct DebloatModule: MacSpaceModule {
                                 details: ["Open System Settings > General > Device Management and approve the MacSpace profile there, once: it holds every policy switched off. Switching a policy back on later needs no approval."] + details, restartRequired: restart)
         }
         return ActionResult(outcome: .succeeded, message: action == .apply ? loc("Disabled") : loc("Enabled"), details: details, restartRequired: restart)
+    }
+}
+
+/// Runs the module's changes one after another, in the order asked.
+actor ChangeLine {
+    private var last: Task<ActionResult, Never>?
+
+    func run(_ body: @escaping @Sendable () async -> ActionResult) async -> ActionResult {
+        let previous = last
+        let task = Task { _ = await previous?.value; return await body() }
+        last = task
+        return await task.value
     }
 }

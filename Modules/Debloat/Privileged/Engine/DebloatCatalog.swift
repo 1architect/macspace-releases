@@ -18,7 +18,6 @@ public enum DebloatCatalog {
         framework: "/System/Library/PrivateFrameworks/AssistantServices.framework/AssistantServices",
         symbol: "kAFPreferencesDidChangeDarwinNotification")
     static let flagNote = "Feature-flag overrides are read at boot: the change applies after a reboot. Survival across OS updates is unmeasured."
-    static let bootClearedNote = "With SIP enabled on 26B5091g, launchd cleared this override at boot and again at login (\"Clearing enabled state\") and refused bootout (error 150); owner-enforced overrides such as Siri.agent survive."
 
     public static let controls: [DebloatControl] = [
         // On a release build the System Settings switch is honored, so it is what MacSpace changes: no profile to approve.

@@ -40,8 +40,10 @@ enum SiriScreenBuilder {
     /// The models are changing (downloading while on, being released or deleted): the app reads again every few seconds so the size
     /// follows what macOS does.
     static func refreshAfter(_ snapshot: SiriSnapshot) -> Double? {
+        // Not for `assetsRetrying`: those requests are minutes apart (`PurgeRetrier.delays`), and each 5-second reading of the page
+        // started several processes, for as long as an hour, while nothing could change.
         let changing = snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0
-            || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.assetsRetrying || snapshot.cleaningFeatures
+            || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.cleaningFeatures
         return changing ? 5 : nil
     }
 
@@ -138,9 +140,7 @@ enum SiriScreenBuilder {
         for feature in [ModelFeatureSettings.Feature.siri, .spatialPhotos] {
             if let status = snapshot.featureSettings[feature] {
                 var row = featureRow(feature, status: status)
-                if status.managedOff, snapshot.cleaningFeatures { row.badge = Badge(loc("Freeing space"), tone: .caution) }
-                else if status.managedOff, snapshot.status.state == .atRisk { row.badge = Badge(loc("Kept while Apple Intelligence is on")) }
-                else if status.managedOff, snapshot.featureCleanupWaiting.contains(feature) { row.badge = Badge(loc("Waiting for macOS"), tone: .caution) }
+                if status.managedOff, let badge = cleanupBadge(feature, snapshot) { row.badge = badge }
                 rows.append(row)
             }
         }
@@ -157,12 +157,18 @@ enum SiriScreenBuilder {
                 status.managedOff = false
             }
             var row = phoneFeatureRow(status)
-            if status.managedOff, snapshot.cleaningFeatures { row.badge = Badge(loc("Freeing space"), tone: .caution) }
-            else if status.managedOff, snapshot.status.state == .atRisk { row.badge = Badge(loc("Kept while Apple Intelligence is on")) }
-            else if status.managedOff, snapshot.featureCleanupWaiting.contains(.phone) { row.badge = Badge(loc("Waiting for macOS"), tone: .caution) }
+            if status.managedOff, let badge = cleanupBadge(.phone, snapshot) { row.badge = badge }
             rows.append(row)
         }
         return ToggleList(id: "switch", rows: rows)
+    }
+
+    /// Where a feature MacSpace switched off stands with its models.
+    static func cleanupBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Badge? {
+        if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), tone: .caution) }
+        if snapshot.status.state == .atRisk { return Badge(loc("Kept while Apple Intelligence is on")) }
+        if snapshot.featureCleanupWaiting.contains(feature) { return Badge(loc("Waiting for macOS"), tone: .caution) }
+        return nil
     }
 
     static func featureRow(_ feature: ModelFeatureSettings.Feature, status: ModelFeatureSettings.Status) -> ToggleRow {

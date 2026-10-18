@@ -54,6 +54,10 @@ final class AssetModelCleanupTests: XCTestCase {
         }
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),2)
         XCTAssertEqual(AssetModelCleanup.inventory(.siri,root:root.path),1)
+        XCTAssertEqual(AssetModelCleanup.inventory(.phone,withdrew:false,root:root.path),0,"other features' models in shared families do not keep Phone cleaning")
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri,withdrew:false,root:root.path),0,"Siri's voices are shared too")
+        try FileManager.default.createDirectory(at:root.appendingPathComponent("com_apple_MobileAsset_UAF_Siri_Understanding/u.asset"),withIntermediateDirectories:true)
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri,withdrew:false,root:root.path),1)
     }
     func testCommandRejectsArbitraryScopeAndModeBeforeAnyNativeCall() throws {
         for (scope,mode) in [("/tmp","release"),("siri","delete"),("spatialPhotos","release")] {
@@ -86,7 +90,34 @@ final class AssetModelCleanupTests: XCTestCase {
         XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]),"removing metadata alone does not justify purging unrelated files")
         empty.remainingAssets=nil
         XCTAssertTrue(AssetModelCleanup.needsReclaim([empty]),"unreadable targets are not empty")
+        empty.remainingAssets=0
+        empty.owners.releasedOwners=0
+        XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]),"a recheck that withdrew nothing does not purge or retry")
+        empty.owners.releasedOwners=1
         empty.owners.error="Owner still active"
         XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]))
+    }
+
+    /// Journals saved by the earlier Objective-C bridge (NSNumber values, absent optional keys) must keep their rollback records.
+    func testJournalsFromTheEarlierBridgeStillLoad() throws {
+        let saved: [String: Any] = ["version": 1, "scope": "phone", "uid": NSNumber(value: getuid()), "cycleRemoved": 2, "entries": [
+            ["kind": "uaf", "client": "com.apple.TelephonyUtilities", "name": "transcription.pt", "archive": Data([1]), "phase": "removed",
+             "user": "2A106008-EC1C-41AD-B02F-950839090C0A", "expiry": NSNumber(value: 0.0)],
+            ["kind": "tts", "client": "com.apple.TelephonyUtilities", "name": "voices", "archive": Data([2]), "phase": "submitted"]]]
+        let data = try PropertyListSerialization.data(fromPropertyList: saved, format: .binary, options: 0)
+        let entries = try AssetOwners.Journal.entries(data, scope: .phone)
+        XCTAssertEqual(entries.map(\.phase), [.removed, .submitted])
+        XCTAssertEqual(entries[0].expiry, 0)
+        XCTAssertNil(entries[1].user)
+        XCTAssertThrowsError(try AssetOwners.Journal.entries(data, scope: .siri), "a journal is never read for another scope")
+    }
+
+    /// A private object without the reviewed property refuses instead of raising inside the child.
+    func testUnreviewedOwnerPropertyRefuses() throws {
+        XCTAssertThrowsError(try AssetOwners.value(NSObject(), "assetSets"))
+        XCTAssertNil(try AssetOwners.value(nil, "name"))
+        XCTAssertEqual(try AssetOwners.value(["name": "a"] as NSDictionary, "name") as? String, "a")
+        XCTAssertTrue(AssetOwners.equal(NSNumber(value: 1), NSNumber(value: true)), "TelephonyUtilities can store a Boolean as 1")
+        XCTAssertFalse(AssetOwners.equal(nil, NSNumber(value: false)))
     }
 }

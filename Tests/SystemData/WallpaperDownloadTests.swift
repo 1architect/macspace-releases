@@ -123,8 +123,7 @@ final class WallpaperDownloadTests: XCTestCase {
                            paths: ["/private/var/folders/\(folder)/T/com.apple.idleassetsd"], bytes: bytes / 2, readable: true, owners: [], inUse: false,
                            cleanup: SystemDataCleanup(kind: .review, description: "d", command: nil), notes: [])
         }
-        return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: items, measuredBytes: 0, cleanableBytes: 0,
-                                                           manualCleanup: [], unreadable: [], warnings: []),
+        return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: items, measuredBytes: 0, unreadable: []),
                                   purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),
                                   takenAt: Date())
     }

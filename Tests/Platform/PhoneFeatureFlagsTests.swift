@@ -79,25 +79,6 @@ final class PhoneFeatureFlagsTests: XCTestCase {
         XCTAssertThrowsError(try unsupported.setOff(true))
     }
 
-    func testResearchTrialRestoresItsActualOriginalsInsteadOfCapturingTheTrialsFalseBaseline() throws {
-        let (base, values, directory) = try fixture()
-        let trial = directory.appendingPathComponent("trial.plist")
-        let written = Dictionary(uniqueKeysWithValues: PhoneFeatureFlags.features.map { ($0, ["Enabled": false]) })
-        let original = ["AudioCallTranslationMac": ["DevelopmentPhase": "FeatureComplete"]]
-        try plist(["version": 1, "build": "26B5112a", "before": original, "written": written]).write(to: trial)
-        try plist(written).write(to: base.overrideURL)
-        values.flags = values.flags.mapValues { _ in false }
-        let control = PhoneFeatureFlags(overrideURL: base.overrideURL, journalURL: base.journalURL, trialURL: trial,
-                                       effective: { values.flags[$0] }, bootSession: { values.boot })
-        XCTAssertFalse(control.status().managedOff, "A trial is not a standing production cleanup intent")
-        _ = try control.setOff(true)
-        XCTAssertTrue(control.status().managedOff)
-        XCTAssertEqual(try control.setOff(false).state, .restartRequired)
-        XCTAssertEqual(try PhoneFeatureFlags.dictionary(Data(contentsOf: control.overrideURL)) as NSDictionary, original as NSDictionary)
-        values.flags = values.flags.mapValues { _ in true }; values.boot = "second"
-        XCTAssertEqual(control.status().state, .on)
-    }
-
     func testInterruptedWriteCanResumeAndUnreviewedReleaseStillAllowsRestoration() throws {
         let (control, values, _) = try fixture()
         _ = try control.setOff(true)

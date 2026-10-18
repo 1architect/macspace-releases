@@ -49,93 +49,43 @@ struct SiriPlanFailure: Error, Sendable, Equatable {
 actor SiriStore {
     typealias Builder = @Sendable (LoadProgressRelay) -> SiriSnapshot
 
-    private var cached: SiriSnapshot?
-    private var inflight: Task<SiriSnapshot, Never>?
-    private var relay: LoadProgressRelay?
-    private let builder: Builder
-    /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
-    /// came back with the figures from before the action.
-    private var generation = 0
+    private let reading: SharedReading<SiriSnapshot>
 
     init(builder: @escaping Builder = SiriStore.liveSnapshot) {
-        self.builder = builder
+        reading = SharedReading { builder($0) }
     }
 
     func snapshot(maxAge: TimeInterval = 4, now: Date = Date(), progress: LoadProgressSink? = nil) async -> SiriSnapshot {
-        if let cached, now.timeIntervalSince(cached.takenAt) < maxAge { return cached }
-        // A caller that waited on a scan an `invalidate` made obsolete (an action finished meanwhile) asks again instead of taking
-        // the figures from before the action.
-        if let inflight {
-            if let progress { relay?.attach(progress) }
-            let waitedFor = generation
-            let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, progress: progress)
-        }
-        let builder = self.builder
-        let relay = LoadProgressRelay()
-        if let progress { relay.attach(progress) }
-        relay.report(0)
-        let task = Task.detached(priority: .utility) {
-            defer { relay.report(1) }
-            return builder(relay)
-        }
-        let started = generation
-        inflight = task
-        self.relay = relay
-        let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge, progress: progress) }
-        cached = fresh
-        inflight = nil
-        self.relay = nil
-        return fresh
+        await reading.value(maxAge: maxAge, now: now, progress: progress)
     }
 
-    /// A purge changes assets and model sizes, not language, account or switch state. Keep those measured fields.
+    /// The assets and models again, after a purge: the rest of the reading stays.
     func reconcileAssets() async -> SiriSnapshot? {
-        guard let cached else { return nil }
-        generation += 1
-        let started = generation
-        inflight = nil
-        relay = nil
-        let updated = await Task.detached(priority: .utility) {
+        await reading.reconcile { cached in
             var updated = cached
-            let raw: UInt64?
-            if let cli = ToolLocator.cli() { raw = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
-            else { raw = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+            let raw = PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
             updated.purgeableAssetsBytes = SystemAssetGuard.holdsAssets ? nil : raw.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
-            let models = Self.modelBytes()
+            let models = SiriStore.modelBytes()
             updated.recordedModelBytes = models.installed
             updated.installedModelBytes = models.installed
             updated.downloadingModelBytes = models.downloading
             updated.lockedModelBytes = models.locked
             updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
             return updated
-        }.value
-        guard started == generation else { return self.cached }
-        self.cached = updated
-        return updated
+        }
     }
 
-    /// Changing Phone's gates does not change the measured model sizes, language guard, or accounts. Update only this switch.
+    /// The feature switches again, after one changed: the rest of the reading stays.
     func reconcilePhoneFeatures(read: @escaping @Sendable () -> PhoneFeatureFlags.Status = { PhoneFeatureFlags().status() }) async -> SiriSnapshot? {
-        guard var updated = cached else { return nil }
-        generation += 1
-        let started = generation
-        inflight = nil
-        relay = nil
-        updated.phoneFeatures = await Task.detached(priority: .utility) { read() }.value
-        updated.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
-        guard started == generation else { return cached }
-        cached = updated
-        return updated
+        await reading.reconcile { cached in
+            var updated = cached
+            updated.phoneFeatures = read()
+            updated.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
+            return updated
+        }
     }
 
-    func invalidate() {
-        cached = nil
-        inflight = nil
-        relay = nil
-        generation += 1
-    }
+    func invalidate() async { await reading.invalidate() }
 
     static func liveSnapshot(progress: LoadProgressRelay) -> SiriSnapshot {
         var snapshot = liveSnapshotOnThisMac(progress: progress)
@@ -157,9 +107,7 @@ actor SiriStore {
         let accounts = AppleIntelligenceAccountsReport.live()
         progress.report(0.3)
         let cli = ToolLocator.cli()
-        var purgeable: UInt64?
-        if let cli { purgeable = CacheDeleteClient.purgeableInSubprocess(executable: cli) }
-        else { purgeable = CacheDeleteClient().purgeableByService()?[CacheDeleteService.mobileAsset] }
+        var purgeable = PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
         progress.report(0.65)
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`). Not offered at all while Apple Intelligence
         // is on: MacSpace leaves the system assets alone then (`SystemAssetGuard`).

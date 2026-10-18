@@ -71,9 +71,6 @@ final class DebloatParserTests: XCTestCase {
         XCTAssertEqual(LiveDebloatSystem.parseSIP("System Integrity Protection status: enabled."), .enabled)
         XCTAssertEqual(LiveDebloatSystem.parseSIP("System Integrity Protection status: unknown (Custom Configuration)."), .custom)
         XCTAssertEqual(LiveDebloatSystem.parseSIP(nil), .unknown)
-        let enrollment = "Enrolled via DEP: No\nMDM enrollment: Yes (User Approved)\n"
-        XCTAssertEqual(LiveDebloatSystem.parseEnrollment(enrollment, prefix: "MDM enrollment:"), true)
-        XCTAssertEqual(LiveDebloatSystem.parseEnrollment(enrollment, prefix: "Enrolled via DEP:"), false)
     }
 
     func testLiveCommandsForDisplay() {
@@ -148,8 +145,7 @@ final class DebloatCatalogTests: XCTestCase {
     }
 
     func testAnalyticsUseTheSettingOnReleaseBuildsAndTheProfileOnBetas() throws {
-        var environment = DebloatEnvironment(productVersion: "27.0", build: "26A434", isPrerelease: false, sip: .enabled, mdmEnrolled: false,
-                                             depEnrolled: false, architecture: "arm64", userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
+        var environment = DebloatEnvironment(build: "26A434", isPrerelease: false, sip: .enabled, userName: "u", uid: 501, runningAsRoot: false, fullDiskAccess: true)
         func offered() -> [String] { DebloatCatalog.controls.filter { $0.isOffered(in: environment) }.map(\.id).filter { $0.hasPrefix("telemetry.diagnostics") } }
         XCTAssertEqual(offered(), ["telemetry.diagnostics"], "a release build asks for no profile")
         XCTAssertEqual(try XCTUnwrap(DebloatCatalog.control("telemetry.diagnostics")).mechanism, .systemPreference)

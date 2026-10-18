@@ -506,13 +506,27 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// clean, does not take part, or is not ready.
     @discardableResult
     func autoClean() async -> CleanupReport? {
-        guard !preparingForUninstall, state == .ready, manifest.autoClean == true, let module, !performing else { return nil }
+        // In the same line as the user's actions: run beside one, both deleted the same caches, and the action's end cleared the
+        // `isCleaning` this cleanup still needed.
+        let previous = lastAction
+        let task = Task { @MainActor [weak self] () -> CleanupReport? in
+            _ = await previous?.value
+            return await self?.autoCleanNow()
+        }
+        lastAction = Task { _ = await task.value; return nil }
+        return await task.value
+    }
+
+    private func autoCleanNow() async -> CleanupReport? {
+        guard !preparingForUninstall, state == .ready, manifest.autoClean == true, let module else { return nil }
         isCleaning = true
-        defer { isCleaning = false }
+        performing = true
+        defer { isCleaning = false; performing = false; updateBusy() }
         let report = await module.autoClean(context: context())
         if let report {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: report.freedBytes, trigger: .automatic, summary: report.summary)
         }
+        performing = false
         if isWatched { await refresh(quiet: true) }
         return report
     }

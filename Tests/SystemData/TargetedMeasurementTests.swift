@@ -9,8 +9,8 @@ final class TargetedMeasurementTests: XCTestCase {
                        owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])
     }
     private func snapshot(_ items: [SystemDataItem]) -> SystemDataSnapshot {
-        var result = SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: .distantPast, volumes: [], items: items,
-                                                               measuredBytes: items.compactMap(\.bytes).reduce(0, +), cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
+        var result = SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: .distantPast, items: items,
+                                                               measuredBytes: items.compactMap(\.bytes).reduce(0, +), unreadable: []),
                                         purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: .distantPast)
         result.settings = SettingsStorage(capacity: 2000, used: 1000, macOS: 0, categories: [])
         return result

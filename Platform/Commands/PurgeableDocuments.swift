@@ -230,9 +230,9 @@ public enum PurgeableDocuments {
     /// The largest go first, so the space comes back early; `progress` gets the files done, their number, and the bytes removed.
     public static func removeDownloads(in root: URL, progress: @escaping @Sendable (Int, Int, UInt64) -> Void = { _, _, _ in }) -> Removal {
         guard isCloudFolder(root.path) else { return Removal() }
-        var candidates: [(path: String, bytes: UInt64)] = []
-        _ = walk(root.path, timeLimit: 120) { candidates.append(($0, $1)) }
-        candidates.sort { $0.bytes > $1.bytes }
+        var found: [(path: String, bytes: UInt64)] = []
+        _ = walk(root.path, timeLimit: 120) { found.append(($0, $1)) }
+        let candidates = found.sorted { $0.bytes > $1.bytes }
         let total = candidates.count
         let state = RemovalState()
         progress(0, total, 0)
@@ -397,11 +397,11 @@ public final class CloudDownloadRemovals: @unchecked Sendable {
         lock.unlock()
         DispatchQueue.global(qos: .utility).async {
             let before = DataVolume.freeBytes()
-            let removal = PurgeableDocuments.removeDownloads(in: root) { [weak self] done, total, bytes in
-                guard let self else { return }
-                self.lock.lock()
-                self.running[path] = Progress(done: done, total: total, bytes: bytes)
-                self.lock.unlock()
+            let removal = PurgeableDocuments.removeDownloads(in: root) { done, total, bytes in
+                // Workers report together; a count that arrives late must not move the flag back.
+                self.lock.withLock {
+                    if done >= self.running[path]?.done ?? 0 { self.running[path] = Progress(done: done, total: total, bytes: bytes) }
+                }
             }
             var freed: UInt64 = 0
             if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }

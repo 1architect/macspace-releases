@@ -49,8 +49,7 @@ final class StagedUpdateTests: XCTestCase {
         func snapshot(_ cleanup: SystemDataCleanup.Kind) -> SystemDataSnapshot {
             let item = SystemDataItem(id: "update:staged", title: "t", kind: .stagedUpdate, paths: [], bytes: 1_270_000_000, readable: true, owners: [], inUse: false,
                                       cleanup: SystemDataCleanup(kind: cleanup, description: "d", command: nil), notes: [])
-            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0,
-                                                               manualCleanup: [], unreadable: [], warnings: []),
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [item], measuredBytes: 0, unreadable: []),
                                       purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),
                                       takenAt: Date())
         }

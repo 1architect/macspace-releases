@@ -44,6 +44,21 @@ public enum RootMeasuredLocations {
         defer { free(resolved) }
         return String(cString: resolved) == path
     }
+
+    /// Inside another account's per-user folder (`/private/var/folders/xx/<account>/…`), sizes would say which apps that person
+    /// uses. Only the folder's own account and administrators (who can read it anyway) get them; System Data's totals measure the
+    /// folders as a whole, which stays open to everyone.
+    public static func isAllowed(_ path: String, caller: uid_t, isAdmin: (uid_t) -> Bool = AdminAccounts.contains,
+                                 owner: (String) -> uid_t? = { path in
+                                     var info = stat()
+                                     return lstat(path, &info) == 0 ? info.st_uid : nil
+                                 }) -> Bool {
+        var parts = path.split(separator: "/", omittingEmptySubsequences: true)
+        // The Data volume's own spelling of the same folders.
+        if parts.starts(with: ["System", "Volumes", "Data"]) { parts.removeFirst(3) }
+        guard parts.count > 5, parts.starts(with: ["private", "var", "folders"]) else { return true }
+        return isAdmin(caller) || owner("/" + parts.prefix(5).joined(separator: "/")) == caller
+    }
 }
 
 public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
@@ -77,8 +92,8 @@ public struct SystemDataPrivilegedOperations: PrivilegedOperationHandler {
         let sizer = FileTreeSizer(countsPurgeable: true, pool: ScanPool(free: 2), refusesLinks: true)
         var sizes: [String: UInt64] = [:]
         var purgeable: [String: UInt64] = [:]
-        for path in requested where RootMeasuredLocations.isAllowedOnDisk(path) {
-            guard FileManager.default.fileExists(atPath: path), (try? FileManager.default.contentsOfDirectory(atPath: path)) != nil,
+        for path in requested where RootMeasuredLocations.isAllowedOnDisk(path) && RootMeasuredLocations.isAllowed(path, caller: caller.uid) {
+            guard FileManager.default.fileExists(atPath: path), FileTreeSizer.canOpen(path),
                   let measured = sizer.size(at: URL(fileURLWithPath: path)) else { continue }
             sizes[path] = measured.allocatedBytesEstimate ?? measured.logicalBytes
             purgeable[path] = measured.purgeableBytes

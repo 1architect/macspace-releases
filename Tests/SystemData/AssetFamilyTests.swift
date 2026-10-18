@@ -44,7 +44,7 @@ final class AssetFamilyTests: XCTestCase {
 
     func testFeatureManagedDownloadsAreNotAlsoListedAsSystemDataFeatureControls() {
         var snap = SystemDataSnapshot(
-            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: 0, unreadable: []),
             purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         snap.assetFamilies = [AssetFamily(id: "siri-voices", title: "Siri voices", assets: [], bytes: 300_000_000, heldBy: "Siri", steps: ["Old instruction"], verified: false),
                               AssetFamily(id: "language-data", title: "Language data", assets: [], bytes: 400_000_000, heldBy: "Language services", steps: [], verified: true)]
@@ -69,7 +69,7 @@ final class AssetFamilyTests: XCTestCase {
         let family = AssetFamily(id: "siri-voices", title: "Siri voices", assets: ["a"], bytes: 300_000_000, heldBy: "Siri", steps: ["Do this"], verified: false)
         let none = AssetFamily(id: "photos-models", title: "Photos models", assets: ["b"], bytes: 800_000_000, heldBy: "Catalog", steps: [], verified: false)
         var snap = SystemDataSnapshot(
-            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: 0, unreadable: []),
             purgeableAssetsBytes: nil,
             reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),
             takenAt: Date())

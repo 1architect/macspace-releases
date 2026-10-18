@@ -76,16 +76,6 @@ enum SystemDataScreenBuilder {
         return min(purgeable, item.bytes ?? 0)
     }
 
-    /// What the measured items hold that macOS may delete by itself: not counted.
-    static func purgeableExcluded(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        measured(snapshot.report).map { purgeable($0, snapshot) }.reduce(0, +)
-    }
-
-    /// What the measured items hold that System Settings lists in another category (apps, developer files…): not counted.
-    static func appsExcluded(_ snapshot: SystemDataSnapshot) -> UInt64 {
-        measured(snapshot.report).compactMap(\.elsewhereBytes).reduce(0, +)
-    }
-
     /// System Data as System Settings counts it: what is left of the used space once macOS and every other category are taken off
     /// (`SettingsStorage`). Without that reading, what the items add up to.
     static func total(_ snapshot: SystemDataSnapshot) -> UInt64 {
@@ -153,20 +143,7 @@ enum SystemDataScreenBuilder {
             let bytes = items.filter { group.kinds.contains($0.kind) }.map { counted($0, snapshot) }.reduce(0, +)
             if bytes > 0 { segments.append(UsageSegment(id: group.id, label: group.title, bytes: bytes, tone: .series(index))) }
         }
-        let clones = snapshot.report.items.filter { $0.kind == .codeSignClone }.compactMap(\.bytes).reduce(0, +)
-        var footnote = "Measured on this Mac's Data volume."
-        let excluded = purgeableExcluded(snapshot)
-        if excluded >= worthARow { footnote += " \(ByteFormat.string(excluded)) that macOS deletes by itself when space runs low is not counted: System Settings counts it as free space." }
-        let apps = appsExcluded(snapshot)
-        if apps >= worthARow { footnote += " \(ByteFormat.string(apps)) of apps inside these folders are not counted: System Settings lists them under Applications." }
-        if clones > 0 { footnote += " \(ByteFormat.string(clones)) of code-signing copies share space with their apps and are not counted." }
-        let elsewhere = snapshot.report.items.filter { countedElsewhere.contains($0.kind) }.compactMap(\.bytes).reduce(0, +)
-        let otherCategory = snapshot.report.items.filter(countedByAnotherCategory).compactMap(\.bytes).reduce(0, +)
-        if otherCategory > 0 { footnote += " \(ByteFormat.string(otherCategory)) of cloud copies, downloads, virtual machines and apps' own data are not counted: System Settings lists them under Documents and Applications." }
-        if elsewhere > 0 { footnote += " \(ByteFormat.string(elsewhere)) of developer tools and swap are not counted: System Settings lists them under Developer and macOS." }
-        let skipped = quietlySkipped(snapshot)
-        if skipped > 0 { footnote += skipped == 1 ? " 1 place macOS keeps private was skipped." : " \(skipped) places macOS keeps private were skipped." }
-        return UsageBar(id: "usage", title: loc("What fills System Data"), segments: segments, footnote: footnote)
+        return UsageBar(id: "usage", title: loc("What fills System Data"), segments: segments)
     }
 
     /// Bytes the main Free button frees: the caches chosen on the caches page (`CachesPage.chosen`), old reports and unused system
@@ -338,8 +315,6 @@ enum SystemDataScreenBuilder {
         group.subtitle = count == 1 ? loc("1 item") : loc("\(count) items")
         return group
     }
-
-
 
     /// The page's main Free: what automatic cleaning frees (`cleanBytes`), and the system log, which only a Free the user confirms
     /// erases (it cannot be undone).
@@ -677,12 +652,6 @@ enum SystemDataScreenBuilder {
         let fda = snapshot.report.fullDiskAccess ? [] : other
         if snapshot.helperError != nil { return (fda, [], rootOnly) }
         return (fda, snapshot.helperTried ? [] : rootOnly, [])
-    }
-
-    /// How many unreadable places stay silent because nothing can be done about them.
-    static func quietlySkipped(_ snapshot: SystemDataSnapshot) -> Int {
-        let actionable = actionableUnreadable(snapshot)
-        return places(snapshot.report.unreadable).count - actionable.fullDiskAccess.count - actionable.helper.count - actionable.helperUnreachable.count
     }
 
     /// Unreadable paths as the user would name the places: the other accounts' folders in `/private/var/folders` (dozens of caches

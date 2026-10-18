@@ -92,7 +92,7 @@ final class VersionStoreTests: XCTestCase {
         let item = SystemDataItem(id: "versions:documents", title: "v", kind: .documentVersions, paths: [], bytes: 6_000_000_000, readable: true, owners: [],
                                   inUse: false, cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "d", command: nil), notes: [])
         var snap = SystemDataSnapshot(
-            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [item], measuredBytes: 0, unreadable: []),
             purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         guard case let .section(section) = try XCTUnwrap(SystemDataScreenBuilder.freeNow(snap)), case let .list(list) = section.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.map(\.id), ["versions"], "listed under Free now")
@@ -107,6 +107,6 @@ final class VersionStoreTests: XCTestCase {
         XCTAssertEqual(action.requires, [.privilegedHelper])
         snap.report.items = []
         XCTAssertNil(SystemDataScreenBuilder.versionsRow(snap))
-        XCTAssertNil(SystemDataScreenBuilder.otherSection(SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []), purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date())), "the other list does not repeat it")
+        XCTAssertNil(SystemDataScreenBuilder.otherSection(SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [item], measuredBytes: 0, unreadable: []), purgeableAssetsBytes: nil, reports: snap.reports, takenAt: Date())), "the other list does not repeat it")
     }
 }

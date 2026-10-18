@@ -34,14 +34,27 @@ enum TargetedSystemDataMeasurements {
         if entries.contains(where: { $0.source == .homebrew }) {
             ids.formUnion(["packages:homebrew", "appcache:Homebrew"])
         }
-        let paths = Set(snapshot.report.items.filter { ids.contains($0.id) }.flatMap(\.paths) + entries.flatMap(\.paths))
-        let reads = await Task.detached(priority: .utility) {
-            Dictionary(uniqueKeysWithValues: paths.compactMap { path -> (String, FileTreeSize)? in
-                if let size = FileTreeSizer(countsPurgeable: true, refusesLinks: true).size(at: URL(fileURLWithPath: path)), size.unreadableFolders == 0 { return (path, size) }
-                var info = stat()
-                if lstat(path, &info) != 0, errno == ENOENT { return (path, FileTreeSize(logicalBytes: 0, allocatedBytesEstimate: 0)) }
-                return nil // Unreadable is unknown, never an empty folder.
-            })
+        let paths = Array(Set(snapshot.report.items.filter { ids.contains($0.id) }.flatMap(\.paths) + entries.flatMap(\.paths)))
+        // What the system assets became is read beside the targets: one after the other, the assets folder was walked twice in a row.
+        let assetsChanged = ["purgeAssets", "releaseUnusedModels", "cleanAll"].contains(request.actionID)
+        async let families = assetsChanged ? Task.detached(priority: .utility) { AssetFamilyScanner().scan() }.value : nil
+        async let purgeable = assetsChanged ? Task.detached(priority: .utility) { SystemDataStore.livePurgeable() }.value : nil
+        let reads = await Task.detached(priority: .utility) { () -> [String: FileTreeSize] in
+            let found = LockedArray<FileTreeSize?>(repeating: nil, count: paths.count)
+            let next = JobCounter(count: paths.count)
+            DispatchQueue.concurrentPerform(iterations: min(3, max(paths.count, 1))) { _ in
+                while let index = next.next() {
+                    let path = paths[index]
+                    if let size = FileTreeSizer(countsPurgeable: true, refusesLinks: true).size(at: URL(fileURLWithPath: path)), size.unreadableFolders == 0 {
+                        found.set(index, size)
+                        continue
+                    }
+                    var info = stat()
+                    // Unreadable is unknown, never an empty folder.
+                    if lstat(path, &info) != 0, errno == ENOENT { found.set(index, FileTreeSize(logicalBytes: 0, allocatedBytesEstimate: 0)) }
+                }
+            }
+            return Dictionary(uniqueKeysWithValues: zip(paths, found.values).compactMap { path, size in size.map { (path, $0) } })
         }.value
         var sizes = reads
         let root = paths.filter { sizes[$0] == nil && RootMeasuredLocations.isAllowed($0) }
@@ -53,6 +66,7 @@ enum TargetedSystemDataMeasurements {
             }
         }
         let targetSizes = sizes
+        let assets = assetsChanged ? (families: await families, purgeable: await purgeable) : nil
         return await Task.detached(priority: .utility) {
             var updated = applying(targetSizes, itemIDs: ids, entries: entries, to: snapshot)
             if request.actionID == "cleanReports" || request.actionID == "cleanAll" {
@@ -60,9 +74,9 @@ enum TargetedSystemDataMeasurements {
                     .plan(olderThanDays: snapshot.reports.olderThanDays)
             }
             if entries.contains(where: { $0.source == .homebrew }) { updated.homebrew = HomebrewCleanup.plan() }
-            if ["purgeAssets", "releaseUnusedModels", "cleanAll"].contains(request.actionID) {
-                updated.purgeableAssetsBytes = SystemDataStore.livePurgeable()
-                updated.assetFamilies = AssetFamilyScanner().scan()
+            if let assets {
+                updated.purgeableAssetsBytes = assets.purgeable
+                updated.assetFamilies = assets.families ?? updated.assetFamilies
                 updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
                 updated.assetsHeld = SystemAssetGuard.holdsAssets
                 updated.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil

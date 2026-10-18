@@ -1,3 +1,4 @@
+import Darwin.membership
 import Foundation
 
 /// Read-only access to assetsubscriptiond's UAF subscription database (world-readable, opened `immutable=1`).
@@ -5,12 +6,9 @@ public enum UAFSubscriptionDatabase {
     public static let path = "/private/var/db/assetsubscriptiond/UAFAssetSubscriptions.db"
 
     public static func userGUID(uid: uid_t) -> String? {
-        // <membership.h> is not in the Darwin module map.
-        typealias UIDToUUID = @convention(c) (uid_t, UnsafeMutablePointer<UInt8>) -> Int32
-        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "mbr_uid_to_uuid") else { return nil }
-        var bytes = [UInt8](repeating: 0, count: 16)
-        guard unsafeBitCast(symbol, to: UIDToUUID.self)(uid, &bytes) == 0 else { return nil }
-        return NSUUID(uuidBytes: bytes).uuidString
+        var uuid = uuid_t(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        guard mbr_uid_to_uuid(uid, &uuid) == 0 else { return nil }
+        return UUID(uuid: uuid).uuidString
     }
 
     public static func query(_ path: String = path, _ sql: String) -> [[String: String]]? {

@@ -167,20 +167,12 @@ public final class LiveDebloatSystem: DebloatSystem {
 
     public func environment() -> DebloatEnvironment {
         if let cachedEnvironment { return cachedEnvironment }
-        let build = output("/usr/bin/sw_vers", ["-buildVersion"])?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let enrollment = output("/usr/bin/profiles", ["status", "-type", "enrollment"]) ?? ""
+        let build = MacOSRelease.current.build
         let seed = diagnosticHistory()?.seedAutoSubmit
-        var machine = utsname()
-        uname(&machine)
-        let architecture = withUnsafeBytes(of: &machine.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
         let environment = DebloatEnvironment(
-            productVersion: output("/usr/bin/sw_vers", ["-productVersion"])?.trimmingCharacters(in: .whitespacesAndNewlines),
             build: build,
             isPrerelease: Self.isPrerelease(build: build, seedAutoSubmit: seed),
-            sip: Self.parseSIP(output("/usr/bin/csrutil", ["status"])),
-            mdmEnrolled: Self.parseEnrollment(enrollment, prefix: "MDM enrollment:"),
-            depEnrolled: Self.parseEnrollment(enrollment, prefix: "Enrolled via DEP:"),
-            architecture: architecture.isEmpty ? nil : architecture,
+            sip: Self.sip(output("/usr/bin/csrutil", ["status"])),
             userName: targetUser?.name ?? NSUserName(),
             uid: targetUser?.uid ?? getuid(),
             runningAsRoot: isRoot,
@@ -230,6 +222,19 @@ public final class LiveDebloatSystem: DebloatSystem {
         return MacOSRelease(major: 0, build: build).isPrerelease
     }
 
+    /// SIP changes only in Recovery, so it is read once per run: `csrutil` ran on every reading of the page.
+    nonisolated(unsafe) private static var knownSIP: SIPState?
+    private static let sipLock = NSLock()
+
+    static func sip(_ read: @autoclosure () -> String?) -> SIPState {
+        sipLock.withLock {
+            if let knownSIP { return knownSIP }
+            let state = parseSIP(read())
+            if state != .unknown { knownSIP = state }
+            return state
+        }
+    }
+
     public static func parseSIP(_ text: String?) -> SIPState {
         guard let text = text?.lowercased() else { return .unknown }
         if text.contains("custom configuration") { return .custom }
@@ -238,16 +243,12 @@ public final class LiveDebloatSystem: DebloatSystem {
         return .unknown
     }
 
-    public static func parseEnrollment(_ text: String, prefix: String) -> Bool? {
-        guard let line = text.split(separator: "\n").first(where: { $0.hasPrefix(prefix) }) else { return nil }
-        return line.dropFirst(prefix.count).trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("yes")
-    }
 
     // MARK: Settings
 
     public func launchdJobs() -> LaunchdJobIndex {
         if let cachedJobs { return cachedJobs }
-        let jobs = LaunchdJobIndex.load(fileManager: fileManager)
+        let jobs = fileManager === FileManager.default ? LaunchdJobIndex.live() : LaunchdJobIndex.load(fileManager: fileManager)
         cachedJobs = jobs
         return jobs
     }
@@ -425,8 +426,6 @@ public final class LiveDebloatSystem: DebloatSystem {
         return nil
     }
 
-    public static let featureFlagDirectories = FeatureFlagOverrides.declarations
-
     /// A flag's override as MacSpace wrote it. A flag macOS no longer declares is unavailable, so it is never written; but one an
     /// earlier build wrote while macOS still declared it is read as it is, so switching the control back on removes it. Before,
     /// it read unavailable, the restore skipped it, and `GenerativeLearningPlatform/PlatformDaemons` stayed in the override file
@@ -589,7 +588,22 @@ public final class LiveDebloatSystem: DebloatSystem {
         fileManager.contents(atPath: DiagnosticSubmissionHistory.path).flatMap(DiagnosticSubmissionHistory.parse)
     }
 
+    /// The last answer, per start: `log show` reads the whole unified log (seconds to a minute of work), and SubmitDiagInfo decides
+    /// about once a day, so asking on every reading of the page, every minute, only cost CPU.
+    nonisolated(unsafe) private static var decisions: (since: Date, at: Date, found: [SubmissionDecision])?
+    private static let decisionsLock = NSLock()
+    static let decisionsLifetime: TimeInterval = 60 * 60
+
     public func submissionDecisions(since: Date) -> [SubmissionDecision]? {
+        let now = now()
+        if let cached = Self.decisionsLock.withLock({ Self.decisions }), cached.since == since,
+           now.timeIntervalSince(cached.at) < Self.decisionsLifetime { return cached.found }
+        guard let found = readSubmissionDecisions(since: since) else { return nil }
+        Self.decisionsLock.withLock { Self.decisions = (since, now, found) }
+        return found
+    }
+
+    private func readSubmissionDecisions(since: Date) -> [SubmissionDecision]? {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"

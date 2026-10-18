@@ -76,12 +76,24 @@ struct SFLetter: Shape {
     let letter: Character
     var weight: NSFont.Weight = .regular
 
-    func path(in rect: CGRect) -> Path {
+    /// The letter's outline, made once per letter and weight: every (i) of a page drew it again from the font at each layout.
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var outlines: [String: CGPath] = [:]
+
+    private var outline: CGPath? {
+        let key = "\(letter)\(weight.rawValue)"
+        if let cached = Self.lock.withLock({ Self.outlines[key] }) { return cached }
         let font = NSFont.systemFont(ofSize: 100, weight: weight) as CTFont
         var characters = Array(String(letter).utf16)
         var glyphs = [CGGlyph](repeating: 0, count: characters.count)
         guard CTFontGetGlyphsForCharacters(font, &characters, &glyphs, characters.count),
-              let outline = CTFontCreatePathForGlyph(font, glyphs[0], nil) else { return Path() }
+              let outline = CTFontCreatePathForGlyph(font, glyphs[0], nil) else { return nil }
+        Self.lock.withLock { Self.outlines[key] = outline }
+        return outline
+    }
+
+    func path(in rect: CGRect) -> Path {
+        guard let outline else { return Path() }
         let box = outline.boundingBoxOfPath
         guard box.height > 0 else { return Path() }
         let scale = rect.height / box.height

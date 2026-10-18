@@ -40,7 +40,6 @@ public struct PhoneFeatureFlags: Sendable {
 
     let overrideURL: URL
     let journalURL: URL
-    let trialURL: URL?
     let supported: Bool
     let effective: @Sendable (String) -> Bool?
     let declared: @Sendable (String) -> Bool
@@ -50,17 +49,16 @@ public struct PhoneFeatureFlags: Sendable {
     public init() {
         self.init(overrideURL: URL(fileURLWithPath: "\(FeatureFlagOverrides.directory)/\(Self.domain).plist"),
                   journalURL: URL(fileURLWithPath: "/Library/Application Support/MacSpace/phone-features.json"),
-                  trialURL: URL(fileURLWithPath: "/Library/Application Support/MacSpace/Research/phone-flag-trial.plist"),
                   supported: Self.supported.value,
                   effective: { FeatureFlagOverrides.effectiveValue(domain: Self.domain, feature: $0) },
                   declared: { FeatureFlagOverrides.isDeclared(domain: Self.domain, feature: $0) }, requiresRoot: true,
                   bootSession: Self.currentBoot)
     }
 
-    init(overrideURL: URL, journalURL: URL, trialURL: URL? = nil, supported: Bool = true,
+    init(overrideURL: URL, journalURL: URL, supported: Bool = true,
          effective: @escaping @Sendable (String) -> Bool?, declared: @escaping @Sendable (String) -> Bool = { _ in true },
          requiresRoot: Bool = false, bootSession: @escaping @Sendable () -> String? = PhoneFeatureFlags.currentBoot) {
-        self.overrideURL = overrideURL; self.journalURL = journalURL; self.trialURL = trialURL
+        self.overrideURL = overrideURL; self.journalURL = journalURL
         self.supported = supported; self.effective = effective; self.declared = declared; self.requiresRoot = requiresRoot
         self.bootSession = bootSession
     }
@@ -80,26 +78,22 @@ public struct PhoneFeatureFlags: Sendable {
                 values[feature] = value
             }
             if let journal {
-                if !journal.wantsOff, journal.writeCompleted == true {
-                    let originalsMatch = journal.originalEffective.map { $0 == values } ?? false
-                    let restarted = journal.changedDuringBoot.flatMap { before in bootSession().map { $0 != before } } ?? false
-                    return result(!originalsMatch && !restarted ? .restartRequired : (values.values.allSatisfy { !$0 } ? .off : .on),
-                                  values: values)
+                // After a completed restore, later external changes are no longer this control's to report.
+                if journal.wantsOff || journal.writeCompleted != true {
+                    let matches = try journal.entries.allSatisfy { entry in
+                        try Self.equal(current(entry.feature), journal.wantsOff ? entry.disabled : entry.before)
+                    }
+                    guard matches else { return result(.changedElsewhere, values: values) }
+                    if journal.wantsOff {
+                        let off = values.values.allSatisfy { !$0 }
+                        return result(off ? .off : .restartRequired, managedOff: off, values: values)
+                    }
                 }
-                let matches = try journal.entries.allSatisfy { entry in
-                    try Self.equal(current(entry.feature), journal.wantsOff ? entry.disabled : entry.before)
-                }
-                guard matches else { return result(.changedElsewhere, values: values) }
-                if journal.wantsOff {
-                    let off = values.values.allSatisfy { !$0 }
-                    return result(off ? .off : .restartRequired, managedOff: off, values: values)
-                }
-                // Restore the measured original state, which can intentionally include false. The research trial did not
-                // record effective originals; require a different boot before classifying that restoration as complete.
-                let originalsMatch = journal.originalEffective.map { $0 == values }
+                // Restore the measured original state, which can intentionally include false. A journal without effective
+                // originals requires a different boot before classifying that restoration as complete.
+                let originalsMatch = journal.originalEffective.map { $0 == values } ?? false
                 let restarted = journal.changedDuringBoot.flatMap { before in bootSession().map { $0 != before } } ?? false
-                let pending = originalsMatch != true && !restarted
-                return result(pending ? .restartRequired : (values.values.allSatisfy { !$0 } ? .off : .on), values: values)
+                if !originalsMatch && !restarted { return result(.restartRequired, values: values) }
             }
             return result(values.values.allSatisfy { !$0 } ? .off : .on, values: values)
         } catch { return Status(state: .unknown, managedOff: false, effective: [:], detail: error.localizedDescription) }
@@ -115,7 +109,7 @@ public struct PhoneFeatureFlags: Sendable {
         guard !requiresRoot || geteuid() == 0 else { throw failure("Changing the Phone gates requires the MacSpace helper.") }
         if off, !supported || !Self.features.allSatisfy(declared) { throw failure("The Phone gates have not been verified on this macOS build.") }
         return try withLock {
-            var journal = try load() ?? importTrial()
+            var journal = try load()
             var pendingOriginals: [String: Bool]?
             var usesPendingOriginals = false
             if let previous = journal, !previous.wantsOff, previous.writeCompleted == true {
@@ -207,23 +201,6 @@ public struct PhoneFeatureFlags: Sendable {
         try validate(value)
         return value
     }
-    /// The explicitly authorized research trial must not become the user's original baseline. Import only its fixed reviewed
-    /// scope, and only during an explicit helper action. Keep the original research backup for audit/recovery.
-    func importTrial() throws -> Journal? {
-        guard let trialURL, FileManager.default.fileExists(atPath: trialURL.path) else { return nil }
-        let root = try Self.dictionary(Data(contentsOf: trialURL))
-        guard root["version"] as? Int == 1, root["build"] as? String == "26B5112a",
-              let before = root["before"] as? [String: Any], let written = root["written"] as? [String: Any],
-              Set(before.keys).isSubset(of: Set(Self.features)), Set(written.keys) == Set(Self.features) else {
-            throw failure("The saved Phone trial could not be verified.")
-        }
-        let journal = Journal(wantsOff: true, entries: try Self.features.map { feature in
-            Entry(feature: feature, before: try before[feature].map { try PropertyListSerialization.data(fromPropertyList: $0, format: .binary, options: 0) },
-                  disabled: try PropertyListSerialization.data(fromPropertyList: written[feature]!, format: .binary, options: 0))
-        })
-        try validate(journal)
-        return journal
-    }
     func save(_ journal: Journal) throws {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
         try encoder.encode(journal).write(to: journalURL, options: .atomic)
@@ -240,7 +217,7 @@ public struct PhoneFeatureFlags: Sendable {
         let directory = journalURL.deletingLastPathComponent()
         // The public initializer is the root helper's fixed path. Refuse symlinks/writable parents and journals before touching
         // privileged state. Fixture instances use only their test directory.
-        if requiresRoot { try validateRootPaths([overrideURL, journalURL, trialURL].compactMap({ $0 })) }
+        if requiresRoot { try validateRootPaths([overrideURL, journalURL]) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o755])
         let descriptor = open(journalURL.path + ".lock", O_CREAT | O_RDWR | O_NOFOLLOW, 0o600)
         guard descriptor >= 0 else { throw failure("Could not lock the Phone feature journal.") }

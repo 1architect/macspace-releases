@@ -11,8 +11,7 @@ final class RootMeasurementTests: XCTestCase {
         let item = SystemDataItem(id: "index:spotlight", title: "Spotlight index", kind: .spotlightIndex, paths: [spotlight], bytes: itemBytes, readable: itemBytes != nil,
                                   owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .managedByMacOS, description: "d", command: nil), notes: [])
         return SystemDataSnapshot(
-            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [item], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [],
-                                     unreadable: unreadable, warnings: ["x"]),
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [item], measuredBytes: 0, unreadable: unreadable),
             purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
     }
 
@@ -81,10 +80,20 @@ final class RootMeasurementTests: XCTestCase {
 
         snap.helperTried = true
         XCTAssertNil(message(snap), "the helper ran and macOS still keeps the place closed: nothing the user can fix, so no warning")
-        XCTAssertEqual(SystemDataScreenBuilder.quietlySkipped(snap), 2)
 
         snap.helperError = "Couldn’t communicate with a helper application."
         let unreachable = try XCTUnwrap(message(snap))
         XCTAssertTrue(unreachable.contains("did not answer"))
+    }
+
+    func testStandardAccountsSizeOnlyTheirOwnPerUserFolders() {
+        let mine = "/private/var/folders/zz/abc123/C/com.example.app"
+        let owner: (String) -> uid_t? = { $0 == "/private/var/folders/zz/abc123" ? 501 : nil }
+        XCTAssertTrue(RootMeasuredLocations.isAllowed(mine, caller: 501, isAdmin: { _ in false }, owner: owner))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed(mine, caller: 502, isAdmin: { _ in false }, owner: owner), "another person's apps stay private")
+        XCTAssertTrue(RootMeasuredLocations.isAllowed(mine, caller: 502, isAdmin: { _ in true }, owner: owner))
+        XCTAssertFalse(RootMeasuredLocations.isAllowed("/System/Volumes/Data" + mine, caller: 502, isAdmin: { _ in false }, owner: owner))
+        XCTAssertTrue(RootMeasuredLocations.isAllowed("/private/var/folders", caller: 502, isAdmin: { _ in false }, owner: owner), "System Data's total stays")
+        XCTAssertTrue(RootMeasuredLocations.isAllowed("/private/var/db/diagnostics", caller: 502, isAdmin: { _ in false }, owner: owner))
     }
 }

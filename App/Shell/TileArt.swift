@@ -706,6 +706,7 @@ struct StateView: View {
     /// Whether `detail` fits in `width` at its size, in `detailLines` lines at most, its words unbroken.
     static func detailFits(_ detail: String, width: CGFloat) -> Bool {
         guard width > 0 else { return false }
+        let detailFont = detailFont
         let words = detail.split(separator: " ").map { ceil((String($0) as NSString).size(withAttributes: [.font: detailFont]).width) }
         guard words.allSatisfy({ $0 <= width }) else { return false }
         let bounds = (detail as NSString).boundingRect(with: NSSize(width: width, height: .greatestFiniteMagnitude),

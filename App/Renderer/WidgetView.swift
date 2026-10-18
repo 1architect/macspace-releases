@@ -33,15 +33,26 @@ struct WidgetForm<Top: View>: View {
         }
     }
 
-    private func item(_ id: String) -> PageItemReveal {
-        let ids = Self.itemIDs(widgets)
-        return PageItemReveal(index: cascadeOffset + (ids.firstIndex(of: id) ?? 0),
-                              count: max(cascadeCount, cascadeOffset + ids.count), visible: detailsVisible)
-    }
+    /// Each item's place in the cascade, worked out once per drawing: looked up item by item, a page of a hundred rows walked its
+    /// whole list for every row on every frame.
+    private struct Positions {
+        let index: [String: Int]
+        let offset: Int
+        let count: Int
+        let visible: Bool
 
-    private func transition(_ id: String) -> AnyTransition {
-        let position = item(id)
-        return PageCascade.transition(index: position.index, count: position.count, reduceMotion: reduceMotion)
+        init(_ ids: [String], offset: Int, cascadeCount: Int, visible: Bool) {
+            index = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+            self.offset = offset
+            count = max(cascadeCount, offset + ids.count)
+            self.visible = visible
+        }
+
+        func item(_ id: String) -> PageItemReveal { PageItemReveal(index: offset + (index[id] ?? 0), count: count, visible: visible) }
+
+        func transition(_ id: String, reduceMotion: Bool) -> AnyTransition {
+            PageCascade.transition(index: offset + (index[id] ?? 0), count: count, reduceMotion: reduceMotion)
+        }
     }
 
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
@@ -53,6 +64,7 @@ struct WidgetForm<Top: View>: View {
     var body: some View {
         let itemIDs = Self.itemIDs(widgets)
         let structure = PageCascade.Structure(ids: itemIDs, offset: cascadeOffset, count: cascadeCount)
+        let positions = Positions(itemIDs, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible)
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
@@ -66,7 +78,7 @@ struct WidgetForm<Top: View>: View {
                                 .accessibilityAddTraits(.isHeader)
                                 .padding(.horizontal, 10)
                                 .geometryGroup()
-                                .modifier(item(widget.id + ":header"))
+                                .modifier(positions.item(widget.id + ":header"))
                         }
                         VStack(spacing: 0) {
                             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
@@ -89,13 +101,13 @@ struct WidgetForm<Top: View>: View {
                                     // Resolve parent placement once for the whole cell, before the cascade. Text's own content
                                     // transactions must not animate/cancel its position separately from the shade and controls.
                                     .geometryGroup()
-                                    .modifier(item(row.id))
-                                    .transition(transition(row.id))
+                                    .modifier(positions.item(row.id))
+                                    .transition(positions.transition(row.id, reduceMotion: reduceMotion))
                             }
                         }
                     }
                     .geometryGroup()
-                    .transition(transition(widget.id + ":header"))
+                    .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
                 }
                 Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
@@ -320,7 +332,6 @@ struct BadgeView: View {
     let badge: Badge
     var wraps = false
     @Environment(\.design) private var design
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// What needs the user is drawn in the action color, with its deep form for the text.
     private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
@@ -424,9 +435,11 @@ struct RowView: View {
                     BadgeView(badge: badge).transition(PageCascade.transition(index: index, count: row.badges.count))
                 }
                     .animation(Theme.value, value: row.badges.count)
-                RowActionFlags(row: row, handler: handler)
                 InfoButton(text: row.detail, steps: row.steps)
                 if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+                // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the spacer
+                // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
+                RowActionFlags(row: row, handler: handler)
             }
             // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
             // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
@@ -442,12 +455,14 @@ struct RevealButton: View {
     let paths: [String]
     @State private var hovering = false
 
+    /// Read again when clicked. Drawing asks only whether one is left: a row can name hundreds of folders (other accounts'
+    /// temporary folders), and each of them was looked up on every redraw.
     private var existing: [URL] {
         paths.filter { FileManager.default.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
     }
 
     var body: some View {
-        let hasFiles = !existing.isEmpty
+        let hasFiles = paths.contains { FileManager.default.fileExists(atPath: $0) }
         Group {
             if hasFiles {
                 Button { RevealTarget.show(existing) } label: {

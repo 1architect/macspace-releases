@@ -25,7 +25,7 @@ final class SystemDataTests: XCTestCase {
     }
 
     private func inspector(running: [RunningApp] = [], fullDiskAccess: Bool = true, apps: [String] = [], processes: ProcessCheck = .none) -> SystemDataInspector {
-        var inspector = SystemDataInspector(locations: locations, runningApps: { running }, volumes: { [VolumeUsage(name: "Data", roles: ["Data"], usedBytes: 1)] },
+        var inspector = SystemDataInspector(locations: locations, runningApps: { running },
                                             claimedPlaces: { apps })
         inspector.hasFullDiskAccess = fullDiskAccess
         inspector.processCheck = processes
@@ -42,7 +42,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertTrue(fm.createFile(atPath: brew.path, contents: Data("#!/bin/sh\n".utf8), attributes: [.posixPermissions: 0o755]))
         let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil,
                                             systemPaths: ["homebrew": root.appendingPathComponent("opt/homebrew").path, "usrLocal": root.appendingPathComponent("usrlocal").path])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
         inspector.processCheck = .none
         let report = inspector.inspect()
         XCTAssertEqual(report.items.first { $0.id == "packages:homebrew" }?.paths, [root.appendingPathComponent("opt/homebrew").path])
@@ -99,9 +99,9 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(byID["appsupport:BigApp"]?.cleanup.kind, .review)
         XCTAssertEqual(byID["developer:commandLineTools"]?.cleanup.kind, .review, "small fixed items are still shown")
         XCTAssertTrue(report.unreadable.isEmpty, "single files are not unreadable folders")
-        XCTAssertEqual(report.volumes.first?.name, "Data")
-        XCTAssertGreaterThanOrEqual(report.cleanableBytes, 55_000_000, "the system cache, not the shared copy or app caches")
-        XCTAssertLessThan(report.cleanableBytes, 100_000_000)
+        let cleanable = report.items.filter { $0.cleanup.kind == .deleteWhenNotRunning }.compactMap(\.expectedReclaimBytes).reduce(0, +)
+        XCTAssertGreaterThanOrEqual(cleanable, 55_000_000, "the system cache, not the shared copy or app caches")
+        XCTAssertLessThan(cleanable, 100_000_000)
     }
 
     /// Electron and Chromium apps keep their web caches in Application Support. Found in any app's profile by name, cleaned while the
@@ -209,18 +209,16 @@ final class SystemDataTests: XCTestCase {
             let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil,
                                                 systemPaths: ["installData": root.appendingPathComponent("installdata").path,
                                                               "systemVersion": root.appendingPathComponent("system/SystemVersion.plist").path])
-            var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+            var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
             inspector.hasFullDiskAccess = true
             return try XCTUnwrap(inspector.inspect().items.first { $0.id == "update:staged" })
         }
         let old = Date(timeIntervalSinceNow: -90 * 86_400), recent = Date(timeIntervalSinceNow: -5 * 86_400)
         let leftover = try inspect(stagedModified: old, systemModified: recent)
         XCTAssertEqual(leftover.title, "Leftover macOS update files")
-        XCTAssertNil(leftover.guide, "there is no update to install")
         XCTAssertEqual(leftover.cleanup.kind, .managedByMacOS)
         let waiting = try inspect(stagedModified: recent, systemModified: old)
         XCTAssertEqual(waiting.title, "Staged macOS update")
-        XCTAssertEqual(waiting.guide?.app, "macOS update")
     }
 
     func testUnreadableChildrenAreNamedIndividually() throws {
@@ -250,22 +248,6 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(kinds["ipsw:UniversalMac_26.0_Restore.ipsw"], .restoreImage)
         XCTAssertEqual(kinds["vm:macOS 27.pvm"], .virtualMachine)
         XCTAssertNil(kinds["download:small.crdownload"], "below the threshold")
-        XCTAssertEqual(report.manualCleanup.first?.app, "Parallels Desktop", "the partial download and the VM share the Parallels guide")
-        XCTAssertEqual(report.manualCleanup.first?.itemIDs.count, 2)
-    }
-
-    func testManualGuidesAggregatePerApp() throws {
-        try file("home/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/media", mb: 150)
-        try file("home/Library/Containers/net.whatsapp.WhatsApp/Data/cache", mb: 110)
-        try file("home/Library/CloudStorage/OneDrive-Pessoal/big.pdf", mb: 120)
-        try file("home/Library/Caches/com.anthropic.claudefordesktop.ShipIt/update.zip", mb: 90)
-        let report = inspector().inspect()
-        let apps = report.manualCleanup.map(\.app)
-        XCTAssertEqual(apps.first, "WhatsApp", "largest first")
-        XCTAssertEqual(report.manualCleanup.first?.itemIDs.count, 2, "both WhatsApp containers in one line")
-        XCTAssertTrue(apps.contains("OneDrive"))
-        XCTAssertFalse(apps.contains("Claude"), "an updater cache is an app cache, not a manual step")
-        XCTAssertFalse(report.manualCleanup.first!.guide.steps.isEmpty)
     }
 
     func testCleanerRespectsRunningAppsAndAllowedRoots() throws {
@@ -355,7 +337,7 @@ final class SystemDataTests: XCTestCase {
         try file("varfolders/zz/spotlightdir/T/x", mb: 1)
         let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: root.appendingPathComponent("varfolders/58/mine"),
                                             systemPaths: ["varFolders": root.appendingPathComponent("varfolders").path])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
         inspector.processCheck = .none
         let report = inspector.inspect()
         let other = try XCTUnwrap(report.items.first { $0.id == "folders:other" })
@@ -377,7 +359,7 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(chmod(closed, 0), 0)
         defer { chmod(closed, 0o755) }
         let locations = SystemDataLocations(home: root.appendingPathComponent("home"), userSystemDirectory: nil, systemPaths: ["varFolders": real + "/varfolders"])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, volumes: { [] }, claimedPlaces: { [] })
+        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
         inspector.processCheck = .none
         let report = inspector.inspect()
         XCTAssertTrue(report.unreadable.contains(closed))
@@ -401,7 +383,7 @@ final class SystemDataTests: XCTestCase {
 
         func inspect(root canRead: Bool) -> SystemDataReport {
             var inspector = SystemDataInspector(locations: SystemDataLocations(home: home, userSystemDirectory: nil, systemPaths: ["users": root.path]),
-                                                runningApps: { [] }, volumes: { [] }, accountExists: { _ in false }, claimedPlaces: { [] })
+                                                runningApps: { [] }, accountExists: { _ in false }, claimedPlaces: { [] })
             inspector.canReadOtherHomes = canRead
             return inspector.inspect()
         }
@@ -410,7 +392,6 @@ final class SystemDataTests: XCTestCase {
         XCTAssertEqual(item.kind, .orphanedHome)
         XCTAssertNil(item.bytes, "another account's folder cannot be measured without root")
         XCTAssertTrue(asUser.unreadable.contains(tester.path))
-        XCTAssertEqual(item.guide?.app, "Deleted accounts' home folders")
         XCTAssertNotNil(asUser.items.first { $0.id == "orphanhome:deleted:old.dmg" })
         XCTAssertNil(asUser.items.first { $0.id == "orphanhome:Shared" })
         XCTAssertGreaterThan(try XCTUnwrap(inspect(root: true).items.first { $0.id == "orphanhome:tester" }?.bytes), 50_000)

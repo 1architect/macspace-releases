@@ -98,8 +98,6 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
     /// installer's helper app, a tool's own app, a runtime), apps' containers, developer files, iOS backups, or the whole item when it
     /// is in such a place or in the home folder outside `~/Library` (Documents). Not System Data.
     public var elsewhereBytes: UInt64? = nil
-    /// Steps the user takes in the owning app when MacSpace cannot clean it.
-    public var guide: ManualCleanupGuide? = nil
     /// For a container: what its caches folder holds (`Data/Library/Caches`, or `Library/Caches` in a group container), part of what
     /// macOS's purge counts as purgeable (`SystemDataReport.containerCachesBytes`).
     public var cachesBytes: UInt64? = nil
@@ -108,16 +106,10 @@ public struct SystemDataItem: Codable, Equatable, Sendable, Identifiable {
 public struct SystemDataReport: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let generatedAt: Date
-    public let volumes: [VolumeUsage]
     public var items: [SystemDataItem]
     public var measuredBytes: UInt64
-    /// Expected reclaim of the items MacSpace can clean (not their `du` size).
-    public let cleanableBytes: UInt64
-    /// Data only the owning app can clean, with steps, one entry per app.
-    public let manualCleanup: [ManualCleanupSummary]
     /// Locations that exist but this process cannot read (Full Disk Access or root needed).
     public var unreadable: [String]
-    public var warnings: [String]
     /// Whether Full Disk Access was granted during the scan; decides whether an unreadable place is something the user can fix.
     public var fullDiskAccess: Bool = true
     /// Places inside folders only root can list, so whether they exist is known only once the helper measures them; each becomes an
@@ -308,20 +300,17 @@ public struct SystemDataInspector {
     public let locations: SystemDataLocations
     private let fileManager: FileManager
     private let runningApps: () -> [RunningApp]
-    private let volumes: () -> [VolumeUsage]
     private let accountExists: (uid_t) -> Bool
     private let claimedPlaces: () -> [String]
 
 
     public init(locations: SystemDataLocations = .live(), fileManager: FileManager = .default,
                 runningApps: @escaping () -> [RunningApp] = SystemDataInspector.liveRunningApps,
-                volumes: @escaping () -> [VolumeUsage] = SystemDataInspector.liveVolumes,
                 accountExists: @escaping (uid_t) -> Bool = SystemDataInspector.liveAccountExists,
                 claimedPlaces: (() -> [String])? = nil) {
         self.locations = locations
         self.fileManager = fileManager
         self.runningApps = runningApps
-        self.volumes = volumes
         self.accountExists = accountExists
         let home = locations.home
         self.claimedPlaces = claimedPlaces ?? { SettingsStorageMeter.liveClaimedPlaces(home: home) }
@@ -364,8 +353,6 @@ public struct SystemDataInspector {
         #endif
     }
 
-    public static func liveVolumes() -> [VolumeUsage] { VolumeUsageReader.live() }
-
     // MARK: Inspect
 
     /// `progress` hears how many of the paths to measure are measured, 0...1, as the workers finish them.
@@ -391,7 +378,7 @@ public struct SystemDataInspector {
                 let bytes = (try? fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber)?.uint64Value
                 return SizeMeasurement(bytes: bytes, readable: bytes != nil, purgeable: FileTreeSizer.isPurgeable(path) ? bytes ?? 0 : 0)
             }
-            guard (try? fileManager.contentsOfDirectory(atPath: path)) != nil else {
+            guard FileTreeSizer.canOpen(path) else {
                 return SizeMeasurement(bytes: nil, unreadableEntry: path)
             }
             let measured = sizer.size(at: URL(fileURLWithPath: path))
@@ -484,7 +471,6 @@ public struct SystemDataInspector {
                 item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
                 item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
-                item.guide = entry.id == "update:staged" && entry.cleanup.kind == .managedByMacOS ? nil : ManualCleanupGuides.guide(for: item)
                 items.append(item)
             }
         }
@@ -857,20 +843,15 @@ public struct SystemDataInspector {
             if let index = items.firstIndex(where: { $0.id == SmallKey(kind: .appContainer, cleanup: .managedByMacOS).id }) { items[index].cachesBytes = smallAppleCaches }
         }
         items.sort { ($0.bytes ?? 0) > ($1.bytes ?? 0) }
-        let volumeUsage = volumes()
-        var warnings: [String] = []
-        if !unreadable.isEmpty { warnings.append("\(unreadable.count) location(s) need Full Disk Access or root to measure.") }
         let measured = items.compactMap(\.bytes).reduce(0, +)
-        let cleanable = items.filter { $0.cleanup.kind == .deleteWhenNotRunning }.compactMap(\.expectedReclaimBytes).reduce(0, +)
-        var report = SystemDataReport(schemaVersion: SystemDataSchema.version, generatedAt: now, volumes: volumeUsage, items: items,
-                                      measuredBytes: measured, cleanableBytes: cleanable, manualCleanup: ManualCleanupGuides.summaries(for: items),
-                                      unreadable: unreadable, warnings: warnings)
+        var report = SystemDataReport(schemaVersion: SystemDataSchema.version, generatedAt: now, items: items,
+                                      measuredBytes: measured, unreadable: unreadable)
         report.fullDiskAccess = hasFullDiskAccess
         report.containerCachesBytes = containerCaches
         // Third-party caches, every size (the items above list only the large ones), with their dates and owner, then the containers'
         // measured above. MacSpace's own are left out: they are in use whenever this runs. So is Homebrew's, which its own cleanup handles.
         let cachesFolder = (home as NSString).appendingPathComponent("Library/Caches")
-        report.appCaches = children(cachesFolder).compactMap { path -> AppCache? in
+        let candidates: [(name: String, path: String, bytes: UInt64)] = children(cachesFolder).compactMap { path in
             let name = (path as NSString).lastPathComponent
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue, !name.hasPrefix("."),
@@ -879,7 +860,18 @@ public struct SystemDataInspector {
                   !(name == "Homebrew" && HomebrewCleanup.brew() != nil),
                   // A developer tool's cache is listed with the developer caches (`DeveloperCaches`), not here too.
                   !DeveloperCaches.claimedLibraryCaches.contains(name),
-                  let bytes = measuredTotals["appcache:\(name)"], let dates = AppCaches.measure(path, now: now) else { return nil }
+                  let bytes = measuredTotals["appcache:\(name)"] else { return nil }
+            return (name, path, bytes)
+        }
+        // Their dates are read side by side, as the sizes were: one after the other, every cache folder was walked again alone.
+        let cacheDates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: candidates.count)
+        let nextCache = JobCounter(count: candidates.count)
+        DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(candidates.count, 1))) { _ in
+            while let index = nextCache.next() { cacheDates.set(index, AppCaches.measure(candidates[index].path, now: now)) }
+        }
+        report.appCaches = zip(candidates, cacheDates.values).compactMap { candidate, dates -> AppCache? in
+            guard let dates else { return nil }
+            let (name, path, bytes) = candidate
             let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
             var cache = AppCache(id: "appcache:\(name)", name: name, path: path, bytes: bytes, lastChange: dates.lastChange, recentBytes: dates.recentBytes,
                                  dataLikeBytes: dates.dataLikeBytes, owner: appCacheOwner(owner))

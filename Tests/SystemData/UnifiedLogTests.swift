@@ -76,8 +76,7 @@ final class UnifiedLogTests: XCTestCase {
     // MARK: Page
 
     private func snapshot(_ items: [SystemDataItem]) -> SystemDataSnapshot {
-        SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: items, measuredBytes: 0, cleanableBytes: 0,
-                                                    manualCleanup: [], unreadable: [], warnings: []),
+        SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: items, measuredBytes: 0, unreadable: []),
                            purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []),
                            takenAt: Date())
     }

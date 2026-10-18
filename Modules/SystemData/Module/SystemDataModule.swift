@@ -89,13 +89,13 @@ public struct SystemDataModule: MacSpaceModule {
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "deleteStagedUpdate":
             progress(ActionProgress(message: loc("Freeing space")))
-            return await Self.deleteStagedUpdate(context.privileged)
+            return await Self.viaHelper(SystemDataPrivilegedOperations.deleteStagedUpdate, context.privileged, as: StagedUpdateResult.self)
         case "deleteWallpaperDownloads":
             progress(ActionProgress(message: loc("Freeing space")))
-            return await Self.deleteWallpaperDownloads(context.privileged)
+            return await Self.viaHelper(SystemDataPrivilegedOperations.deleteWallpaperDownloads, context.privileged, as: WallpaperDownloadResult.self)
         case "deleteVersions":
             progress(ActionProgress(message: loc("Freeing space")))
-            return await Self.deleteVersions(context.privileged)
+            return await Self.viaHelper(SystemDataPrivilegedOperations.deleteVersions, context.privileged, as: VersionStoreResult.self)
         case "purgeAssets":
             progress(ActionProgress(message: loc("Freeing space")))
             if SystemDataScreenBuilder.hasUnusedLanguageModels(snapshot) {
@@ -117,7 +117,7 @@ public struct SystemDataModule: MacSpaceModule {
             return await Self.eraseUnifiedLog(context.privileged)
         case "deleteSymbolicationCache":
             progress(ActionProgress(message: loc("Freeing space")))
-            return await Self.deleteSymbolicationCache(context.privileged)
+            return await Self.viaHelper(SystemDataPrivilegedOperations.deleteSymbolicationCache, context.privileged, as: SymbolicationCacheResult.self)
         case "cleanAll":
             let log = SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil
             var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, progress: progress, span: log ? 0...0.8 : 0...1)
@@ -344,90 +344,28 @@ public struct SystemDataModule: MacSpaceModule {
         return .succeeded(freedMessage(result.freedBytes), details: details, freedBytes: result.freedBytes)
     }
 
-    /// Deletes the Versions store through the helper. The freed space is measured on the volume, as for every other cleanup.
-    static func deleteVersions(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
+    /// The helper's cleaners (`SystemDataPrivilegedOperations`): each finds its own files and takes no path. What the user got is
+    /// measured on the volume once it has settled; the cleaner's own before and after stand in when the volume cannot be read.
+    static func viaHelper<Result: HelperCleanup>(_ operation: String, _ channel: (any PrivilegedChannel)?, as _: Result.Type,
+                                                 done: (Result) -> Void = { _ in }) async -> ActionResult {
         guard let channel else { return .failed(loc("Install the helper in Settings")) }
         let before = DataVolume.freeBytes()
-        let result: VersionStoreResult
-        do { result = try await channel.perform(VersionStoreResult.self, operation: SystemDataPrivilegedOperations.deleteVersions) }
+        let result: Result
+        do { result = try await channel.perform(Result.self, operation: operation) }
         catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
         guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
-        let measured = measuredFreed(before, DataVolume.freeBytes())
-        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
-        var details = ["Removed \(result.removedEntries) item(s) from the store; it went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
-        if let error = result.error { details.append(error) }
-        let message = freedMessage(measured ?? stored)
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
+        done(result)
+        let measured = measuredFreed(before, DataVolume.settledFreeBytes())
+        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? result.reported),
+                            details: result.summary + (result.error.map { [$0] } ?? []), freedBytes: measured)
     }
 
-    /// Deletes the files of an update that is already installed, through the helper (which checks they are really a leftover).
-    static func deleteStagedUpdate(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed(loc("Install the helper in Settings")) }
-        let before = DataVolume.freeBytes()
-        let result: StagedUpdateResult
-        do { result = try await channel.perform(StagedUpdateResult.self, operation: SystemDataPrivilegedOperations.deleteStagedUpdate) }
-        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
-        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
-        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
-        let message = freedMessage(measuredFreed(before, DataVolume.freeBytes()) ?? stored)
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: result.error.map { [$0] } ?? [],
-                            freedBytes: measuredFreed(before, DataVolume.freeBytes()))
-    }
-
-    /// Deletes the wallpaper and screen saver downloads idleassetsd left unfinished, through the helper, which finds the folders and
-    /// picks the files itself (older than its retention window). Never part of Clean or automatic cleaning.
-    static func deleteWallpaperDownloads(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed(loc("Install the helper in Settings")) }
-        let before = DataVolume.freeBytes()
-        let result: WallpaperDownloadResult
-        do { result = try await channel.perform(WallpaperDownloadResult.self, operation: SystemDataPrivilegedOperations.deleteWallpaperDownloads) }
-        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
-        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
-        let measured = measuredFreed(before, result.removedFiles > 0 ? DataVolume.settledFreeBytes() : DataVolume.freeBytes())
-        var details = ["Removed \(result.removedFiles) unfinished download(s) from \(result.folders) folder(s), \(ByteFormat.string(result.removedBytes)) on disk."]
-        if result.keptRecentFiles > 0 {
-            details.append("Kept \(result.keptRecentFiles) download(s) newer than \(WallpaperDownloadCleaner.retentionDays) days.")
-        }
-        if result.refusedEntries > 0 { details.append("Refused \(result.refusedEntries) item(s) that are not regular files.") }
-        if let error = result.error { details.append(error) }
-        let message = freedMessage(measured ?? result.removedBytes)
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: message, details: details, freedBytes: measured)
-    }
-
-    /// Erases the unified log through the helper, with Apple's own `log erase` (`UnifiedLogCleaner`). Never part of Clean or automatic
-    /// cleaning: the history macOS keeps for troubleshooting goes for good.
+    /// The unified log, with Apple's own `log erase` (`UnifiedLogCleaner`). Never part of Clean or automatic cleaning: the history
+    /// macOS keeps for troubleshooting goes for good. What is left after it is no erase's to free (`SystemLogFloor`).
     static func eraseUnifiedLog(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed(loc("Install the helper in Settings")) }
-        let before = DataVolume.freeBytes()
-        let result: UnifiedLogResult
-        do { result = try await channel.perform(UnifiedLogResult.self, operation: SystemDataPrivilegedOperations.eraseUnifiedLog) }
-        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
-        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
-        let measured = measuredFreed(before, DataVolume.settledFreeBytes())
-        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
-        if let after = result.bytesAfter { SystemLogFloor.save(after) }
-        var details = ["log erase --all\(result.prunedFormatStrings ? " and --uuidtext" : ""): the log went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
-        if let error = result.error { details.append(error) }
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? stored), details: details,
-                            freedBytes: measured)
-    }
-
-    /// Empties the symbols cache coresymbolicationd keeps, through the helper (`SymbolicationCacheCleaner`), which stops the daemon
-    /// so its mapped archive is let go; macOS rebuilds the cache. Never part of Clean or automatic cleaning: only the helper can do it.
-    static func deleteSymbolicationCache(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
-        guard let channel else { return .failed(loc("Install the helper in Settings")) }
-        let before = DataVolume.freeBytes()
-        let result: SymbolicationCacheResult
-        do { result = try await channel.perform(SymbolicationCacheResult.self, operation: SystemDataPrivilegedOperations.deleteSymbolicationCache) }
-        catch { return .failed(loc("Couldn't free it"), details: [error.localizedDescription]) }
-        guard result.executed else { return .failed(loc("Couldn't free it"), details: result.error.map { [$0] } ?? []) }
-        let measured = measuredFreed(before, DataVolume.settledFreeBytes())
-        let stored = (result.bytesBefore ?? 0) > (result.bytesAfter ?? 0) ? (result.bytesBefore ?? 0) - (result.bytesAfter ?? 0) : 0
-        var details = ["Removed \(result.removedEntries) item(s); the cache went from \(ByteFormat.string(result.bytesBefore ?? 0)) to \(ByteFormat.string(result.bytesAfter ?? 0))."]
-        if result.daemonStopped { details.append("coresymbolicationd was stopped; macOS starts it again when it is needed.") }
-        if let error = result.error { details.append(error) }
-        return ActionResult(outcome: result.error == nil ? .succeeded : .needsAttention, message: freedMessage(measured ?? stored), details: details,
-                            freedBytes: measured)
+        await viaHelper(SystemDataPrivilegedOperations.eraseUnifiedLog, channel, as: UnifiedLogResult.self) { result in
+            if let after = result.bytesAfter { SystemLogFloor.save(after) }
+        }
     }
 
     /// Empties the Trash of the home folder, as the Finder's Empty Trash does: every item in it is deleted for good. Reading the Trash
@@ -485,4 +423,55 @@ public struct SystemDataModule: MacSpaceModule {
 
     /// What a cleanup tells the user: the space it freed, measured on the volume, and nothing else.
     static func freedMessage(_ freed: UInt64?) -> String { PurgeRun.freedMessage(freed ?? 0) }
+}
+
+/// What the helper's cleaners answer, for `SystemDataModule.viaHelper`.
+protocol HelperCleanup: Decodable {
+    var executed: Bool { get }
+    var error: String? { get }
+    /// What the cleaner measured it removed, when the volume cannot say.
+    var reported: UInt64 { get }
+    /// What it did, for the result's details.
+    var summary: [String] { get }
+}
+
+private func shrink(_ before: UInt64?, _ after: UInt64?) -> UInt64 {
+    (before ?? 0) > (after ?? 0) ? (before ?? 0) - (after ?? 0) : 0
+}
+
+extension VersionStoreResult: HelperCleanup {
+    var reported: UInt64 { shrink(bytesBefore, bytesAfter) }
+    var summary: [String] {
+        ["Removed \(removedEntries) item(s) from the store; it went from \(ByteFormat.string(bytesBefore ?? 0)) to \(ByteFormat.string(bytesAfter ?? 0))."]
+    }
+}
+
+extension StagedUpdateResult: HelperCleanup {
+    var reported: UInt64 { shrink(bytesBefore, bytesAfter) }
+    var summary: [String] { [] }
+}
+
+extension WallpaperDownloadResult: HelperCleanup {
+    var reported: UInt64 { removedBytes }
+    var summary: [String] {
+        var lines = ["Removed \(removedFiles) unfinished download(s) from \(folders) folder(s), \(ByteFormat.string(removedBytes)) on disk."]
+        if keptRecentFiles > 0 { lines.append("Kept \(keptRecentFiles) download(s) newer than \(WallpaperDownloadCleaner.retentionDays) days.") }
+        if refusedEntries > 0 { lines.append("Refused \(refusedEntries) item(s) that are not regular files.") }
+        return lines
+    }
+}
+
+extension UnifiedLogResult: HelperCleanup {
+    var reported: UInt64 { shrink(bytesBefore, bytesAfter) }
+    var summary: [String] {
+        ["log erase --all\(prunedFormatStrings ? " and --uuidtext" : ""): the log went from \(ByteFormat.string(bytesBefore ?? 0)) to \(ByteFormat.string(bytesAfter ?? 0))."]
+    }
+}
+
+extension SymbolicationCacheResult: HelperCleanup {
+    var reported: UInt64 { shrink(bytesBefore, bytesAfter) }
+    var summary: [String] {
+        ["Removed \(removedEntries) item(s); the cache went from \(ByteFormat.string(bytesBefore ?? 0)) to \(ByteFormat.string(bytesAfter ?? 0))."]
+            + (daemonStopped ? ["coresymbolicationd was stopped; macOS starts it again when it is needed."] : [])
+    }
 }

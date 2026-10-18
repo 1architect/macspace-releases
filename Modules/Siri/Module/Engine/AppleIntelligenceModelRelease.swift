@@ -50,7 +50,7 @@ public struct AppleIntelligenceModelRelease {
 
     public init(environment: any SiriLanguageEnvironment = LiveSiriLanguageEnvironment(),
                 accounts: @escaping () -> AppleIntelligenceAccountsReport? = { AppleIntelligenceAccountsReport.live() },
-                purge: @escaping () -> CacheDeletePurgeResult = { CacheDeleteClient().purge(services: [CacheDeleteService.mobileAsset]) },
+                purge: @escaping () -> CacheDeletePurgeResult = { PurgeRun.purgeOnce(service: CacheDeleteService.mobileAsset, urgency: 1) },
                 timing: ModelReleaseTiming = ModelReleaseTiming(), now: @escaping () -> Date = Date.init) {
         self.environment = environment
         self.accounts = accounts

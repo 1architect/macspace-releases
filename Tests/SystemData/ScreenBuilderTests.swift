@@ -13,13 +13,11 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         return item
     }
 
-    private func snapshot(items: [SystemDataItem], manual: [ManualCleanupSummary] = [], unreadable: [String] = [], purgeable: UInt64? = nil,
+    private func snapshot(items: [SystemDataItem], unreadable: [String] = [], purgeable: UInt64? = nil,
                           reports: UInt64 = 0) -> SystemDataSnapshot {
-        let cleanable = items.filter { $0.cleanup.kind == .deleteWhenNotRunning }.compactMap(\.expectedReclaimBytes).reduce(0, +)
         let candidates = reports > 0 ? [CleanupCandidate(path: "/r.ips", kind: "ips", bytes: reports, modifiedAt: .distantPast)] : []
         return SystemDataSnapshot(
-            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: items, measuredBytes: 0, cleanableBytes: cleanable,
-                                     manualCleanup: manual, unreadable: unreadable, warnings: []),
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: items, measuredBytes: 0, unreadable: unreadable),
             purgeableAssetsBytes: purgeable,
             reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: candidates, totalBytes: reports, unreadableDirectories: []),
             takenAt: Date())
@@ -33,8 +31,6 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         ], unreadable: ["/p"]))
         XCTAssertEqual(usage.segments.map(\.id), ["versions", "caches"])
         XCTAssertEqual(usage.segments.map(\.bytes), [6_000, 1_500])
-        XCTAssertTrue(usage.footnote?.contains("code-signing copies") == true)
-        XCTAssertTrue(usage.footnote?.contains("1 place macOS keeps private was skipped") == true)
     }
 
     func testEverythingElseListsWhatMacSpaceLeavesAloneOnce() throws {
@@ -89,7 +85,6 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(usage.segments.map(\.id), ["versions", "appdata", "cloud", "leftovers"], "downloads and virtual machines are Documents in Settings")
         XCTAssertEqual(usage.segments.first { $0.id == "cloud" }?.bytes, 2_000)
         XCTAssertEqual(usage.segments.last?.bytes, 300)
-        XCTAssertTrue(usage.footnote?.contains("not counted") == true)
     }
 
     func testFreeNowOffersOnlySafeItemsAndCleanIsThePagesMainAction() throws {
@@ -155,8 +150,6 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let snap = snapshot(items: [item("c", kind: .appCache, bytes: 900)], unreadable: ["/Users/x/Library/Group Containers/group.com.apple.Safari.SandboxBroker"])
         XCTAssertNil(SystemDataScreenBuilder.partialBanner(snap))
         XCTAssertNotEqual(SystemDataScreenBuilder.screen(snap).widgets.first?.id, "partial")
-        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("1 place macOS keeps private was skipped") == true)
-        XCTAssertFalse(SystemDataScreenBuilder.usage(snap).footnote?.contains("could not") == true)
 
         // Without Full Disk Access the same place is something the user can fix.
         var needsAccess = snap
@@ -186,7 +179,6 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         let snap = snapshot(items: [support, item("assets:system", kind: .systemAssets, bytes: 2_000_000_000, cleanup: .command)], purgeable: 500_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.total(snap), 600_000_000 + 1_500_000_000)
         XCTAssertEqual(SystemDataScreenBuilder.tile(snap).figure, ByteFormat.string(2_100_000_000), "the total is back on the tile")
-        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("not counted") == true, "the reading says what it leaves out")
     }
 
     /// While Apple Intelligence is on, the unused system assets are listed but not offered: no button, not in Clean or the tile's figure.
@@ -299,9 +291,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         support.purgeableBytes = 100_000_000
         let snap = snapshot(items: [support])
         XCTAssertEqual(SystemDataScreenBuilder.total(snap), 500_000_000)
-        XCTAssertEqual(SystemDataScreenBuilder.purgeableExcluded(snap), 100_000_000)
-        XCTAssertEqual(SystemDataScreenBuilder.appsExcluded(snap), 400_000_000)
-        XCTAssertTrue(SystemDataScreenBuilder.usage(snap).footnote?.contains("400 MB of apps inside these folders") == true)
+        XCTAssertEqual(SystemDataScreenBuilder.counted(support, snap), 500_000_000, "neither its apps nor what macOS purges by itself")
     }
 
     /// The helper measures what only root can read anywhere under the system's folders, on any Mac, and never a home folder.
@@ -337,8 +327,7 @@ final class SystemDataStoreTests: XCTestCase {
         let store = SystemDataStore(builder: {
             counter.bump()
             Thread.sleep(forTimeInterval: 0.2)
-            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0,
-                                                             manualCleanup: [], unreadable: [], warnings: []),
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: 0, unreadable: []),
                                     purgeableAssetsBytes: nil,
                                     reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         })
@@ -361,8 +350,7 @@ final class SystemDataStoreTests: XCTestCase {
             progress.report(0.3)
             Thread.sleep(forTimeInterval: 0.2)
             progress.report(0.6)
-            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0,
-                                                             manualCleanup: [], unreadable: [], warnings: []),
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: 0, unreadable: []),
                                     purgeableAssetsBytes: nil,
                                     reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         })
@@ -383,8 +371,7 @@ final class SystemDataStoreTests: XCTestCase {
         let store = SystemDataStore(builder: {
             let scan = counter.next()
             Thread.sleep(forTimeInterval: 0.3)
-            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: UInt64(scan), cleanableBytes: 0,
-                                                             manualCleanup: [], unreadable: [], warnings: []),
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: UInt64(scan), unreadable: []),
                                     purgeableAssetsBytes: nil,
                                     reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         })
@@ -413,8 +400,7 @@ final class SystemDataStoreTests: XCTestCase {
         let helper = Helper()
         let store = SystemDataStore(builder: {
             counter.scans += 1
-            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0,
-                                                             manualCleanup: [], unreadable: ["/private/var/db/diagnostics"], warnings: []),
+            return SystemDataSnapshot(report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), items: [], measuredBytes: 0, unreadable: ["/private/var/db/diagnostics"]),
                                     purgeableAssetsBytes: nil,
                                     reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
         })

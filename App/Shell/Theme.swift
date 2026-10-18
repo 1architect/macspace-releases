@@ -99,8 +99,21 @@ struct TintPalette {
 enum CaptionFont {
     private static let opticalSizeAxis = NSNumber(value: 0x6F70_737A) // 'opsz'
 
+    /// Made once per size, weight and typeface: the captions are measured at every step of a tile's zoom, and each measure built
+    /// its font again.
+    private static let fontsLock = NSLock()
+    nonisolated(unsafe) private static var fonts: [String: NSFont] = [:]
+
     static func font(size: CGFloat, weight: TypeWeight) -> NSFont {
         let type = TileType.current
+        let key = "\(size)|\(weight)|\(type.family ?? "")|\(type.opticalSize)"
+        if let font = fontsLock.withLock({ fonts[key] }) { return font }
+        let font = makeFont(size: size, weight: weight, type: type)
+        fontsLock.withLock { fonts[key] = font }
+        return font
+    }
+
+    private static func makeFont(size: CGFloat, weight: TypeWeight, type: TileType) -> NSFont {
         // SF Pro Display and Text are the system font's own cuts, at their optical sizes: installed only with Apple's fonts, they are
         // drawn from the system font on every Mac.
         let systemCuts = ["SF Pro Display": 28.0, "SF Pro Text": 17.0, "SF Pro": type.opticalSize]

@@ -1,10 +1,6 @@
-import CryptoKit
 import Foundation
 
 public struct AutoSetConfigurationObservation: Codable, Sendable, Equatable {
-    public let sourcePath: String
-    public let sha256: String?
-    public let byteCount: Int?
     public let selectorCount: Int?
     public let targetCount: Int?
     public let targetSelectors: [String]
@@ -15,7 +11,7 @@ public struct AutoSetConfigurationObservation: Codable, Sendable, Equatable {
 /// It follows only the known CP108 archive fields and never instantiates archived classes.
 public struct AutoSetConfigurationInspector {
     public static let defaultPath = "/System/Library/AssetsV2/persisted/AutoSetConfigurations/AutoSetConfigurations_Entry_com.apple.UnifiedAssetFramework_com.apple.modelcatalog.state"
-    public static let targetSpecifier = "com.apple.fm.language.instruct_3b.base.generic_sparse"
+    public static let targetSpecifier = AppleIntelligenceLanguageGuard.targetSpecifier
     private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) { self.fileManager = fileManager }
@@ -67,23 +63,14 @@ public struct AutoSetConfigurationInspector {
                 selectors.append(specifier)
             }
             let hits = selectors.filter { $0 == Self.targetSpecifier }
-            return AutoSetConfigurationObservation(
-                sourcePath: sourcePath, sha256: digest(data), byteCount: data.count,
-                selectorCount: selectors.count, targetCount: hits.count, targetSelectors: hits,
-                error: nil
-            )
+            return AutoSetConfigurationObservation(selectorCount: selectors.count, targetCount: hits.count, targetSelectors: hits, error: nil)
         } catch {
             return failure(sourcePath, "Property-list decoding failed: \(error.localizedDescription)", data: data)
         }
     }
 
     private func failure(_ path: String, _ message: String, data: Data? = nil) -> AutoSetConfigurationObservation {
-        AutoSetConfigurationObservation(sourcePath: path, sha256: data.map(digest), byteCount: data?.count,
-                                        selectorCount: nil, targetCount: nil, targetSelectors: [], error: message)
-    }
-
-    private func digest(_ data: Data) -> String {
-        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        AutoSetConfigurationObservation(selectorCount: nil, targetCount: nil, targetSelectors: [], error: message)
     }
 
     private func uidIndex(_ value: Any?) -> Int? {

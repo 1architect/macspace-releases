@@ -12,12 +12,7 @@ enum ScreenCommand {
             FileHandle.standardError.write(Data("usage: MacSpaceCli screen <module-id> [--dir <folder>] [--tile]\n".utf8))
             exit(64)
         }
-        let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }
-            ?? ModuleHost.defaultModulesDirectoryForCli()
-        guard let descriptor = ModuleScanner.scan(directory: directory).modules.first(where: { $0.id == id }) else {
-            FileHandle.standardError.write(Data("No module \(id) in \(directory.path)\n".utf8))
-            exit(1)
-        }
+        let descriptor = CliModules.descriptor(id, arguments)
         do {
             let module = try ModuleLoader.load(descriptor)
             let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker(),

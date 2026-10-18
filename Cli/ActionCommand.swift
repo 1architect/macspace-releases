@@ -19,12 +19,7 @@ enum ActionCommand {
             let parts = argument.split(separator: "=", maxSplits: 1).map(String.init)
             return (parts[0], parts.count > 1 ? parts[1] : "")
         }, uniquingKeysWith: { _, last in last })
-        let directory = arguments.firstIndex(of: "--dir").flatMap { arguments.indices.contains($0 + 1) ? URL(fileURLWithPath: arguments[$0 + 1]) : nil }
-            ?? ModuleHost.defaultModulesDirectoryForCli()
-        guard let descriptor = ModuleScanner.scan(directory: directory).modules.first(where: { $0.id == positional[0] }) else {
-            FileHandle.standardError.write(Data("No module \(positional[0]) in \(directory.path)\n".utf8))
-            exit(1)
-        }
+        let descriptor = CliModules.descriptor(positional[0], arguments)
         do {
             let module = try ModuleLoader.load(descriptor)
             let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker(),
