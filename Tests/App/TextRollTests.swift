@@ -21,15 +21,17 @@ final class TextRollTests: XCTestCase {
         }
     }
 
-    func testPercentageFieldKeepsTheCaptionWidthFixed() throws {
-        var widths: [CGFloat] = []
-        for progress in [1, 9, 10, 17, 22, 60, 64, 75, 100] {
-            let label = ChangingText(text: "carregando \(progress)%", alignment: .trailing)
-                .font(Font(CaptionFont.status(size: 22))).lineLimit(1)
-            let renderer = ImageRenderer(content: label)
-            renderer.render { size, _ in widths.append(size.width) }
+    func testPercentageDigitsDoNotShiftTheCaptionWithinEachDigitCount() throws {
+        for values in [[1, 9], [10, 11, 17, 22, 59, 60, 64, 75, 99], [100]] {
+            var widths: [CGFloat] = []
+            for progress in values {
+                let label = ChangingText(text: "carregando \(progress)%", alignment: .trailing)
+                    .font(Font(CaptionFont.status(size: 22))).lineLimit(1)
+                let renderer = ImageRenderer(content: label)
+                renderer.render { size, _ in widths.append(size.width) }
+            }
+            XCTAssertEqual(Set(widths).count, 1, "equal-length progress values must not move the unchanged loading word")
         }
-        XCTAssertEqual(Set(widths).count, 1, "a trailing caption must not move its unchanged word as progress changes")
     }
 
     func testLoadingPercentageHasNormalVisibleSpacing() throws {
@@ -48,9 +50,33 @@ final class TextRollTests: XCTestCase {
         for progress in [1, 9, 17, 22, 64, 75, 100] {
             let text = "carregando \(progress)%"
             let font = Font(CaptionFont.status(size: 22))
-            let natural = try inkWidth(Text(verbatim: text).font(font).lineLimit(1))
+            let natural = try inkWidth(Text(verbatim: text).font(font).monospacedDigit().lineLimit(1))
             let actual = try inkWidth(ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1).multilineTextAlignment(.trailing))
-            XCTAssertEqual(actual, natural, accuracy: 2, "reserved width cannot create a visible gap before the number or its sign")
+            XCTAssertEqual(actual, natural, accuracy: 2, "progress must retain the natural space before the number and beside its sign")
+        }
+    }
+
+    func testLoadingCaptionEndsAtTheNaturalRightInset() throws {
+        func trailingInset<V: View>(_ view: V) throws -> Int {
+            let renderer = ImageRenderer(content: view.foregroundStyle(.white).frame(width: 340, alignment: .trailing))
+            renderer.scale = 2
+            let image = try XCTUnwrap(renderer.cgImage)
+            let width = image.width, height = image.height
+            var pixels = [UInt8](repeating: 0, count: width * height * 4)
+            let context = try XCTUnwrap(CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let last = try XCTUnwrap((0..<width).last { x in (0..<height).contains { y in pixels[(y * width + x) * 4 + 3] > 16 } })
+            return width - 1 - last
+        }
+        for size in [16.0, 18.0, 22.0] {
+            for progress in [1, 9, 11, 59, 64, 99, 100] {
+                let text = "carregando \(progress)%"
+                let font = Font(CaptionFont.status(size: size))
+                let expected = try trailingInset(Text(verbatim: text).font(font).monospacedDigit().lineLimit(1))
+                let actual = try trailingInset(ChangingText(text: text, alignment: .trailing).font(font).lineLimit(1).multilineTextAlignment(.trailing))
+                XCTAssertEqual(actual, expected, accuracy: 1, "the visible percent sign must reach the caption's trailing edge at \(progress)%")
+            }
         }
     }
 

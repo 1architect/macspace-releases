@@ -63,14 +63,13 @@ The legend grid no longer animates its layout when measured segments change. Its
 
 `ChangingText` uses the original native `.numericText()` transition with `Theme.value` for both text and number changes.
 Captions, row flags, page buttons and All done share this implementation. Do not replace a whole phrase's view identity, add a
-whole-line move/roll, or substitute a fade (except with Reduce Motion). Single-line percentage/count labels keep decimal numbers together in
-stable fields; ordinary labels remain one native Text to preserve kerning. Loading labels ending in a percentage reserve the width of the actual maximum, 100%, so proportional glyph widths cannot push the unchanged loading word
-left/right. The number and percent sign form one leading-aligned drawing inside that reservation, leaving unused width after
-the sign rather than creating a gap after the loading word or before the sign. Percentages inside sentences, such as disk usage
-("47% of 245.11 GB"), retain a single native Text with its original spaces and kerning. All done reserves the widest numeric mask from its count sequence, including fractional intermediate values.
-Visible font and digit spacing are inherited; only explicit callers request tabular digits. Drawing stays in an anchored overlay
-outside parent layout animation. Each single-line field explicitly uses leading paragraph alignment; it must not inherit the tile's
-trailing paragraph alignment, which can draw a trailing space before the word instead of after it. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
+whole-line move/roll, or substitute a fade (except with Reduce Motion). Loading percentages measure their actual text, with no
+maximum-value reservation or trailing placeholder space. Only progress percentages use tabular digits, so 17% -> 59% stays steady
+while the visible percent sign reaches the caption's normal right inset. Digit-count changes (9% -> 10% -> 100%) take their natural
+width. Ordinary size/byte figures retain their original proportional spacing. A percentage inside a storage sentence retains its
+original spacing and kerning as one native Text. All done alone reserves numeric width from its explicit counting template.
+Drawing stays in an anchored overlay outside parent layout animation. Split count fields explicitly use leading paragraph alignment
+to preserve trailing spaces. Multiline descriptions retain native Text wrapping. Changed values retain the page cascade delay.
 
 Idle row flags fit their title. `ReservedPillLabel` reserves known numeric variants of the current phase; unrelated future phrases
 such as background cleanup do not widen “Freeing space.” `PillMorph` handles phase-boundary shell resizing with the existing page
@@ -150,3 +149,10 @@ pill geometry and alert pre-draw correction. Alert cases exercise all three nati
 confirmation, Japanese, About, startup and uninstall wording, including centered attributed paragraph styles after native relayout.
 All app-owned alert constructors were audited to use AppAlert; localization checks passed. Supplied video frames were decoded
 from the recording file; final visual verification remains with the user.
+
+`results/loading-right-edge-20261018/reproduce.txt` reproduces the extra visible right inset in the previous reserved-percentage
+layout. `tests.txt` verifies the corrected rendered edge at 1%, 9%, 11%, 59%, 64%, 99% and 100%, at caption sizes 16, 18 and 22,
+plus natural word/sign spacing, steady equal-length progress widths and preserved byte-figure metrics. This supersedes the earlier
+percentage reservation; explicit All done counting reservations remain in place.
+
+`results/loading-right-edge-20261018/all-tests.txt`: 497 tests, 493 passed and four optional skips.

@@ -35,39 +35,21 @@ struct TextFields {
         return fields
     }
 
-    /// Keep the sign beside the number; unused reservation belongs after the complete percentage, never between glyphs.
-    static func combiningPercentSigns(_ fields: [Field]) -> [Field] {
-        var result: [Field] = []
-        for field in fields {
-            if !field.numeric, let sign = field.text.first, "%٪".contains(sign),
-               let previous = result.last, previous.numeric {
-                result[result.count - 1] = Field(id: previous.id, text: previous.text + String(sign), numeric: true)
-                let remainder = String(field.text.dropFirst())
-                if !remainder.isEmpty { result.append(Field(id: field.id, text: remainder, numeric: false)) }
-            } else { result.append(field) }
-        }
-        return result
-    }
-
-    static func reservation(for field: Field, in text: String, maximumText: String?) -> String? {
-        guard field.numeric else { return nil }
-        if let maximumText,
-           let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) {
-            return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
-        }
-        if let sign = field.text.last, "%٪".contains(sign) { return "100" + String(sign) }
-        let following = split(text).first(where: { $0.id == field.id + 1 })?.text ?? ""
-        return following == "%" || following == "٪" ? "100" : nil
+    static func reservation(for field: Field, maximumText: String?) -> String? {
+        guard field.numeric, let maximumText,
+              let maximum = split(maximumText).first(where: { $0.id == field.id && $0.numeric }) else { return nil }
+        return maximum.text.map { $0.isNumber ? "8" : String($0) }.joined()
     }
 }
 
 /// The original native text/number transition, shared by captions, buttons and the All done counter.
-/// Parent layout animation cannot move the drawing. Percentage/counting fields reserve their numeric width only;
-/// their visible digits keep the inherited proportional font and unchanged words keep their position.
+/// Parent layout animation cannot move the drawing. Progress percentages use natural width with tabular digits;
+/// other labels inherit their font spacing. Explicit counting templates can reserve numeric width for All done.
 struct ChangingText: View {
     let text: String
     var alignment: Alignment = .leading
     var maximumText: String? = nil
+    @Environment(\.font) private var inheritedFont
     @Environment(\.lineLimit) private var lineLimit
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.textChangeDelay) private var cascadeDelay
@@ -78,9 +60,9 @@ struct ChangingText: View {
                 HStack(spacing: 0) {
                     ForEach(fields) { field in
                         let value = field.text.replacingOccurrences(of: " ", with: "\u{00A0}")
-                        if let reservation = TextFields.reservation(for: field, in: text, maximumText: maximumText) {
+                        if let reservation = TextFields.reservation(for: field, maximumText: maximumText) {
                             Text(verbatim: reservation).hidden()
-                                .overlay(alignment: field.text.last.map { "%٪".contains($0) } == true ? .leading : .trailing) { animated(value) }
+                                .overlay(alignment: .trailing) { animated(value) }
                         } else {
                             Text(verbatim: value).hidden()
                                 .overlay(alignment: alignment) { animated(value) }
@@ -96,6 +78,7 @@ struct ChangingText: View {
                     .overlay(alignment: alignment) { animated(text) }
             }
         }
+        .font(isProgressPercentage ? (inheritedFont ?? .body).monospacedDigit() : inheritedFont)
         .transaction { $0.animation = nil }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
@@ -104,10 +87,17 @@ struct ChangingText: View {
     private var fields: [TextFields.Field] {
         let split = TextFields.split(text)
         // Keep ordinary labels shaped as one Text, including kerning across word/number boundaries.
-        guard split.contains(where: { TextFields.reservation(for: $0, in: text, maximumText: maximumText) != nil }) else {
+        guard split.contains(where: { TextFields.reservation(for: $0, maximumText: maximumText) != nil }) else {
             return [TextFields.Field(id: 0, text: text, numeric: false)]
         }
-        return TextFields.combiningPercentSigns(split)
+        return split
+    }
+
+    private var isProgressPercentage: Bool {
+        guard maximumText == nil else { return false }
+        let fields = TextFields.split(text)
+        return fields.count >= 2 && fields[fields.count - 2].numeric
+            && (fields.last?.text == "%" || fields.last?.text == "٪")
     }
 
     private func animated(_ value: String) -> some View {

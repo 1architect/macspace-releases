@@ -17,12 +17,12 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
-- Loading captions preserve the space before their percentage under the tile's trailing alignment. Row Free flags animate neighbouring controls as their capsule changes phase.
+- Loading captions retain normal spacing and reach the tile’s right inset. Tabular progress digits keep equal-length updates steady without blank reserved space. Row Free flags animate neighbouring controls as their capsule changes phase.
 - All app dialogs enforce left alignment of the icon, heading and message at drawing time, including attributed paragraph styles in cache confirmations.
 
-- Loading percentages keep normal spacing after the loading word; unused reserved width follows the percent sign. Disk usage sentences retain their original spaces and kerning.
+- Disk usage sentences retain their original spaces and kerning.
 
-- Buttons, captions and All done share the original native text/number transition. Percentage and count fields keep unchanged words stationary without forcing monospaced visible digits; phase changes no longer replace the whole line with a vertical roll.
+- Buttons, captions and All done share the original native text/number transition. Count fields keep unchanged words stationary while size/byte figures retain their font spacing; phase changes no longer replace the whole line with a vertical roll.
 - Background cleanup continues in the original row flag without a duplicate completion. The bottom action fades in place before its footer space is released.
 
 - Refresh keeps module pages usable and pulses their graphs; home loading text and progress appear immediately for every scan.
