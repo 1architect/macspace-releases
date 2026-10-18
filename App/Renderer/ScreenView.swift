@@ -148,7 +148,8 @@ struct ScreenView: View {
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
         .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
-                                  leaving: reveal < 1, navigation: handle.groupPath) { [handle] in
+                                  leaving: reveal < 1 || !handle.isShowingCompletion, navigation: handle.groupPath) { [handle] in
+            handle.dismissCompletion()
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
@@ -178,7 +179,7 @@ struct ScreenView: View {
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            detailsVisible: !refreshing, cascadeOffset: legendCount) {
                     if let hero = content.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || refreshing)
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)

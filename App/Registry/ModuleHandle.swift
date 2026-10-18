@@ -25,10 +25,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
-    /// Actual scan work: the tile and loading pill report progress. Only `isReloading` hides the page's existing details.
+    /// Actual scan work: graphs pulse immediately; existing page details remain interactive.
     @Published public private(set) var isRefreshing = false
-    /// Initial/explicit loading hides page details. Automatic scans keep existing content interactive and report progress only.
+    /// Only the first page load hides details. Manual and automatic refreshes retain the current page.
     @Published public private(set) var isReloading = false
+    /// Home captions keep the last status during scans shorter than three seconds.
+    @Published public private(set) var showsLoadingCaption = false
+    static var loadingCaptionDelay: Duration = .seconds(3)
+    private var loadingCaptionTask: Task<Void, Never>?
     /// The module is being read, as the user sees it (`isRefreshing`): since when, and how long it took last time. The page's button
     /// fills over that time (`LoadFill`), as it fills while an action runs.
     @Published public private(set) var loading: LoadFill?
@@ -45,6 +49,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Bumped when an action the user started succeeded (`ActionResult`): the page shows "All done" in its middle, then a page that
     /// lets the user choose goes back to the one under it.
     @Published public private(set) var allDone = 0
+    @Published public private(set) var isShowingCompletion = false
+
+    public func dismissCompletion() { isShowingCompletion = false }
     /// What the action behind the latest `allDone` freed (`ActionResult.freedBytes`): the page counts up to it under "All done".
     public private(set) var allDoneFreed: UInt64?
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
@@ -221,13 +228,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let started = Date()
         let expected = settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess
         refreshRequests.insert(generation)
-        let blocking = !quiet || (screen == nil && screenIsVisible)
+        let blocking = screen == nil && screenIsVisible
         if !quiet || blocking { showRefresh(generation, started: started, expected: expected, blocking: blocking) }
         defer {
             refreshRequests.remove(generation)
             blockingRefreshes.remove(generation)
             if refreshes.remove(generation) != nil {
-                if refreshes.isEmpty { loading = nil; loadingGeneration = nil }
+                if refreshes.isEmpty { loading = nil; loadingGeneration = nil; clearLoadingCaption() }
                 updateBusy()
             }
         }
@@ -277,6 +284,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if loadingGeneration != generation {
             loading = LoadFill(started: started, expected: expected)
             loadingGeneration = generation
+            loadingCaptionTask?.cancel()
+            loadingCaptionTask = Task { [weak self] in
+                do { try await Task.sleep(for: Self.loadingCaptionDelay) } catch { return }
+                guard let self, self.loadingGeneration == generation, self.isRefreshing else { return }
+                self.showsLoadingCaption = true
+            }
         }
         updateBusy()
     }
@@ -291,7 +304,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     /// A newer read or action supersedes old reads immediately; their late completion must not keep the widget loading.
+    private func clearLoadingCaption() {
+        loadingCaptionTask?.cancel()
+        loadingCaptionTask = nil
+        showsLoadingCaption = false
+    }
+
     private func clearRefreshPresentation() {
+        clearLoadingCaption()
         refreshes.removeAll()
         blockingRefreshes.removeAll()
         if loading != nil { loading = nil }
@@ -439,6 +459,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !quiet {
             if celebrates {
                 allDoneFreed = result.freedBytes
+                isShowingCompletion = true
                 allDone += 1
             }
             if result.refresh { progress = ActionProgress(fraction: 1, message: progress?.message ?? "", finished: progress?.finished ?? []) }

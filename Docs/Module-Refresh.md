@@ -4,13 +4,14 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-17. Module contract versio
 
 ## Loading and updating
 
-- **First load and explicit Refresh:** use the existing loading pill, progress and page cascade. Explicit Refresh invalidates cached measurements first.
+- **First load:** use the existing loading pill, progress and page cascade. **Every subsequent read, including explicit Refresh and returning from All done:** preserve the current page, scroll position, groups and choices. Explicit Refresh still invalidates measurements first.
+- Graphs pulse with the existing loading wave during every scan. Apply completed measurements only where values changed; do not replay the whole-page cascade. Home captions retain their measured status for the first three seconds; only longer scans show loading text/progress. This delay does not delay graph animations.
 - **Automatic scan:** retain the current page, group stack, choices and scroll-view identity. Report real progress in the existing widget/pill; page details remain visible and interactive. Forced automatic invalidation (such as profile approval checks) follows this rule too.
 - **Status update:** refresh live operation counters from the last measurement without querying services or enumerating files. It produces no loading state.
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
 - Successful cleanup keeps its existing working/All done flow and verification behavior.
 
-`ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes initial/explicit loading that hides page details. `ScreenView` uses `isReloading` and actual cleanup activity for the existing details cascade.
+`ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes only the first load without an existing page. `ScreenView` uses `isReloading` and actual cleanup activity for the existing details cascade.
 
 ## What is followed
 

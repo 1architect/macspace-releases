@@ -453,6 +453,12 @@ public struct MainView: View {
     /// The page goes first, then the card shrinks back into its tile. Works mid-opening too: the card turns around where it is.
     private func close() {
         guard let open = layer, isOpen else { return }
+        // Back on All done returns to this module, without closing its tile or rescanning it.
+        if case let .module(id) = open.destination, let handle = host.handle(for: id), handle.isShowingCompletion {
+            handle.dismissCompletion()
+            handle.groupPath = []
+            return
+        }
         // A group's page goes back to the page under it: another group's, or its module's.
         if case let .module(id) = open.destination, let handle = host.handle(for: id), !handle.groupPath.isEmpty {
             handle.popGroup()
