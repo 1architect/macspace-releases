@@ -15,6 +15,7 @@ struct WidgetForm<Top: View>: View {
     @Environment(\.sectionChoice) private var sectionChoice
     @Environment(\.pageCascadeCount) private var cascadeCount
     @Environment(\.pageBottomRoom) private var bottomRoom
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flipped: Set<String> = []
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
@@ -35,6 +36,11 @@ struct WidgetForm<Top: View>: View {
         let ids = Self.itemIDs(widgets)
         return PageItemReveal(index: cascadeOffset + (ids.firstIndex(of: id) ?? 0),
                               count: max(cascadeCount, cascadeOffset + ids.count), visible: detailsVisible)
+    }
+
+    private func transition(_ id: String) -> AnyTransition {
+        let position = item(id)
+        return PageCascade.transition(index: position.index, count: position.count, reduceMotion: reduceMotion)
     }
 
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
@@ -77,12 +83,12 @@ struct WidgetForm<Top: View>: View {
                                         }
                                     }
                                     .modifier(item(row.id))
-                                    .transition(.opacity)
+                                    .transition(transition(row.id))
                             }
                         }
                         .animation(Theme.layout, value: rows.map(\.id))
                     }
-                    .transition(.opacity)
+                    .transition(transition(widget.id + ":header"))
                 }
                 Color.clear.frame(height: max(bottomRoom - 20, 0))
             }
@@ -167,6 +173,14 @@ struct WidgetForm<Top: View>: View {
 
 /// Shared ordering for the legend, headers and rows; departure runs from the bottom up.
 enum PageCascade {
+    /// Same vertical arrival/departure as PageItemReveal, applied only to inserted/removed identities.
+    static func transition(index: Int, count: Int, reduceMotion: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion) -> AnyTransition {
+        let motion = reduceMotion ? AnyTransition.opacity : .opacity.combined(with: .offset(y: -14))
+        return .asymmetric(
+            insertion: motion.animation(.smooth(duration: 0.22).delay(delay(index: index, count: count, visible: true))),
+            removal: motion.animation(.smooth(duration: 0.22).delay(delay(index: index, count: count, visible: false))))
+    }
+
     static func delay(index: Int, count: Int, visible: Bool) -> Double {
         let last = max(count - 1, 0)
         let position = min(max(index, 0), last)
@@ -183,6 +197,7 @@ struct PageItemReveal: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .environment(\.textChangeDelay, reduceMotion ? 0 : PageCascade.delay(index: index, count: count, visible: true))
             .opacity(visible ? 1 : 0)
             .offset(y: visible || reduceMotion ? 0 : -14)
             .allowsHitTesting(visible)
@@ -200,8 +215,8 @@ struct TitleLine: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(title).lineLimit(1).layoutPriority(1)
-            if let note { Text(note).foregroundStyle(.secondary).lineLimit(1) }
+            ChangingText(text: title).lineLimit(1).layoutPriority(1)
+            if let note { ChangingText(text: note).foregroundStyle(.secondary).lineLimit(1) }
         }
     }
 }
@@ -286,7 +301,7 @@ struct BadgeView: View {
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
             .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
-            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            .transition(PageCascade.transition(index: 0, count: 1))
     }
 }
 
@@ -336,7 +351,9 @@ struct RowView: View {
     private var groupRow: some View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
-            ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
+            ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
+                    BadgeView(badge: badge).transition(PageCascade.transition(index: index, count: row.badges.count))
+                }
                     .animation(Theme.value, value: row.badges.count)
             InfoButton(text: row.detail)
             Spacer(minLength: 8)
@@ -367,7 +384,9 @@ struct RowView: View {
             // A count after the title; the row's facts as pills right after it; then its (i) and where its files are, close together.
             TitleLine(title: row.title, note: row.subtitle)
             HStack(spacing: 6) {
-                ForEach(Array(row.badges.enumerated()), id: \.offset) { _, badge in BadgeView(badge: badge) }
+                ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
+                    BadgeView(badge: badge).transition(PageCascade.transition(index: index, count: row.badges.count))
+                }
                     .animation(Theme.value, value: row.badges.count)
                 RowActionFlags(row: row, handler: handler)
                 InfoButton(text: row.detail, steps: row.steps)
@@ -402,7 +421,7 @@ struct RevealButton: View {
                 .accessibilityLabel(String(localized: "Show in Finder"))
                 .onHover { hovering = $0 }
                 .animation(Theme.hover, value: hovering)
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(PageCascade.transition(index: 0, count: 1))
             }
         }
         .animation(Theme.value, value: hasFiles)
@@ -567,8 +586,8 @@ struct UsageBarView: View {
                 ForEach(usage.segments) { segment in
                     HStack(spacing: 6) {
                         Circle().fill(Palette.color(segment.tone, design)).frame(width: 8, height: 8)
-                        Text(segment.label).font(.caption)
-                        Text(ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary)
+                        ChangingText(text: segment.label).font(.caption)
+                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -591,7 +610,7 @@ struct BarChartView: View {
                             .frame(width: max(3, proxy.size.width * bar.value / maximum))
                     }
                     .frame(height: 8)
-                    Text(bar.valueLabel).font(.caption).foregroundStyle(.secondary).frame(width: 72, alignment: .trailing)
+                    ChangingText(text: bar.valueLabel, alignment: .trailing).font(.caption).foregroundStyle(.secondary).frame(width: 72, alignment: .trailing)
                 }
             }
         }

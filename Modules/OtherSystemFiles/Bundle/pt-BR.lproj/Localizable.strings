@@ -51,6 +51,7 @@
 "Purgeable app files" = "Arquivos removíveis de apps";
 "Purgeable documents" = "Documentos removíveis";
 "Quick Look thumbnails" = "Miniaturas do Visualização Rápida";
+"Removing %@" = "Removendo %@";
 "Removing %lld%%, %@" = "Removendo %lld%%, %@";
 "Removing downloads" = "Removendo downloads";
 "Spotlight index" = "Índice do Spotlight";

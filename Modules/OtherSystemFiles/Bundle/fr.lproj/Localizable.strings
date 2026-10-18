@@ -51,6 +51,7 @@
 "Purgeable app files" = "Fichiers d’apps purgeables";
 "Purgeable documents" = "Documents purgeables";
 "Quick Look thumbnails" = "Vignettes Coup d’œil";
+"Removing %@" = "Suppression de %@";
 "Removing %lld%%, %@" = "Suppression %lld %%, %@";
 "Removing downloads" = "Suppression des téléchargements";
 "Spotlight index" = "Index Spotlight";

@@ -1583,6 +1583,15 @@
   "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。",
   "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다."
  ],
+ "Removing %@": [
+  "Removendo %@",
+  "Suppression de %@",
+  "Eliminando %@",
+  "%@ werden entfernt",
+  "正在移除 %@",
+  "%@を削除中",
+  "%@ 제거 중"
+ ],
  "Removing downloads": [
   "Removendo downloads",
   "Suppression des téléchargements",

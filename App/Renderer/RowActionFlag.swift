@@ -19,10 +19,12 @@ struct RowActionFlags: View {
     let row: Row
     let handler: ActionHandler
     @Environment(\.rowActivity) private var activity
+    @State private var retainedActions: [Action] = []
 
     private var actions: [Action] {
         if !row.actions.isEmpty { return row.actions }
         if activity.rowID == row.id, let action = activity.action { return [action] }
+        if activity.resultID == row.id { return retainedActions }
         return []
     }
 
@@ -30,28 +32,29 @@ struct RowActionFlags: View {
         HStack(spacing: 6) {
             ForEach(actions, id: \.id) { action in
                 RowActionFlag(action: action,
-                              usesActivityText: row.activity != nil,
                               progress: row.activity ?? (activity.rowID == row.id ? activity.progress ?? ActionProgress(message: action.workingTitle ?? "") : nil),
                               result: activity.resultID == row.id ? activity.result : nil,
                               dismiss: activity.dismiss) {
                     guard ConfirmationAlert.ask(action) else { return }
                     _ = await handler(action, [:], false, row.id)
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(PageCascade.transition(index: actions.firstIndex(where: { $0.id == action.id }) ?? 0, count: actions.count))
             }
             if actions.isEmpty, activity.resultID == row.id, let result = activity.result, !result.message.isEmpty {
                 StatusFlag(text: result.message, tone: result.outcome == .succeeded ? .neutral : .caution)
                     .onTapGesture(perform: activity.dismiss)
-                    .transition(.opacity)
+                    .transition(PageCascade.transition(index: 0, count: 1))
             }
         }
         .animation(Theme.layout, value: actions.map(\.id))
+        .onChange(of: row.actions, initial: true) { _, actions in
+            if !actions.isEmpty { retainedActions = actions }
+        }
     }
 }
 
 private struct RowActionFlag: View {
     let action: Action
-    var usesActivityText = false
     let progress: ActionProgress?
     let result: ActionResult?
     let dismiss: () -> Void
@@ -62,10 +65,7 @@ private struct RowActionFlag: View {
     private var working: Bool { progress != nil }
     private var text: String {
         if let progress {
-            let title = progress.message.isEmpty ? action.workingTitle ?? String(localized: "Working") : progress.message
-            if usesActivityText { return title }
-            guard let fraction = progress.fraction, fraction.isFinite else { return title }
-            return title + " \(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
+            return progress.message.isEmpty ? action.workingTitle ?? String(localized: "Working") : progress.message
         }
         if let result, !result.message.isEmpty { return result.message }
         return action.title
@@ -75,19 +75,22 @@ private struct RowActionFlag: View {
         Button {
             if result != nil { dismiss() } else if !working { Task { await run() } }
         } label: {
-            ChangingText(text: text)
-                .font(.system(size: 11, weight: .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .frame(height: 18)
-                .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))
-                .background {
-                    Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
-                        .animation(Theme.value, value: working)
-                        .animation(Theme.hover, value: hovering)
-                    if working { ActionProgressFill(fraction: progress?.fraction).clipShape(Capsule()) }
-                }
-                .contentShape(Capsule())
+            PillMorph {
+                ChangingText(text: text)
+                    .font(.system(size: 11, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .frame(height: 18)
+            }
+            .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))
+            .background {
+                Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
+                    .animation(Theme.value, value: working)
+                    .animation(Theme.hover, value: hovering)
+                if working { ActionProgressFill(fraction: progress?.fraction).clipShape(Capsule()) }
+            }
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .pointerStyle(.link)

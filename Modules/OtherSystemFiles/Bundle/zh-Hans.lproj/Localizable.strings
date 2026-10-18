@@ -51,6 +51,7 @@
 "Purgeable app files" = "可清除的应用文件";
 "Purgeable documents" = "可清除文稿";
 "Quick Look thumbnails" = "快速查看缩略图";
+"Removing %@" = "正在移除 %@";
 "Removing %lld%%, %@" = "正在移除 %lld%%，%@";
 "Removing downloads" = "正在移除下载";
 "Spotlight index" = "Spotlight 索引";

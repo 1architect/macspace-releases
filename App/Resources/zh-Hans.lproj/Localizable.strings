@@ -125,6 +125,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "退出 MacSpace 并重新拷贝。授予此副本的权限会在下次更新时丢失。";
 "Recent cleanups" = "最近清理";
 "Refresh" = "刷新";
+"Removing %@" = "正在移除 %@";
 "Removing %lld%%, %@" = "正在移除 %lld%%，%@";
 "Removing downloads" = "正在移除下载";
 "Repair helper" = "修复辅助程序";

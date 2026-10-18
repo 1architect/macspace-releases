@@ -46,6 +46,34 @@ final class RowCleanupTests: XCTestCase {
         XCTAssertFalse(handle.isShowingCompletion)
     }
 
+    func testPageCleanupKeepsTheCurrentPresentationUntilVerifiedValuesArrive() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
+        let control = RowCleanupControl()
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
+                                  loader: { _ in RowCleanupModule(control: control) })
+        await handle.activate()
+        defer { handle.deactivate() }
+        let reads = await control.reads
+        let action = Task { await handle.perform(Action(id: "clean", title: "Free")) }
+        for _ in 0..<100 {
+            if await control.request != nil, handle.progress != nil { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertTrue(handle.isCleaning, "the graph and action fill still animate")
+        XCTAssertFalse(handle.isReloading, "cleanup cannot enter the initial-load details cascade")
+        XCTAssertEqual(handle.screen?.title, "Before")
+        XCTAssertEqual(handle.tile?.title, "Before")
+        await control.finish()
+        _ = await action.value
+        XCTAssertEqual(handle.screen?.title, "After")
+        XCTAssertEqual(handle.tile?.title, "After")
+        let after = await control.reads
+        XCTAssertEqual(after, reads)
+    }
+
     func testRowCleanupStaysInlineAndAppliesVerifiedPresentationWithoutAnotherScan() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

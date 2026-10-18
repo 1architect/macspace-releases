@@ -9,13 +9,13 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract versio
 - **Automatic scan:** retain the current page, group stack, choices and scroll-view identity. Report real progress in the existing widget/pill; page details remain visible and interactive. Forced automatic invalidation (such as profile approval checks) follows this rule too.
 - **Status update:** refresh live operation counters from the last measurement without querying services or enumerating files. It produces no loading state.
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
-- Page cleanup keeps its working/All done flow. Row actions use only the inline text flag and its progress fill, without hiding the page. `ActionRequest.rowID` identifies the target UI row.
+- Page cleanup uses the same live page as reload: keep existing details visible and interactive and pulse the graph while working; retain the All done completion. Row actions use only the inline text flag and its progress fill, without hiding the page. `ActionRequest.rowID` identifies the target UI row.
 - A verified `ActionResult.presentation` updates the tile and page atomically without another scan. Modules retain unrelated cached measurements. Background row actions publish `Row.activity` using the same flag.
 - Dock visibility alone controls the bottom fade reservation, so an expired notice or removed primary action leaves no extra bottom fade.
 - Back dismisses All done to the module page before considering group or home navigation.
 - Confirmations share a left-aligned icon, heading and message, including cache cleanup.
 
-`ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes only the first load without an existing page. `ScreenView` uses `isReloading` and actual cleanup activity for the existing details cascade.
+`ModuleHandle.isRefreshing` describes reported scan work. `isReloading` describes only the first load without an existing page. `ScreenView` uses only `isReloading` for the initial details cascade; page cleanup never hides existing details.
 
 ## What is followed
 
@@ -70,6 +70,14 @@ centered counter. Interrupted rolls cancel pending completion work before starti
 
 Dock and badge container animations track presence/count changes, rather than the entire action phase or badge contents. Working
 and hover color animations are scoped to the background so they cannot animate the text line's frame when a label changes.
+
+Row and page action pills share `PillMorph` for resizing: the shell interpolates its footprint using `Theme.layout`, while its label
+is placed at its destination size against the leading edge. Glyphs retain `ChangingText` vertical roll/blur independently of shell
+geometry. The same action identity survives idle, progress and result. Progress fills carry the fraction without duplicate percentage
+text; cloud flags retain the removed-byte count. Inserted/removed rows and flags use `PageCascade` vertical arrival/departure with
+staggered timing. Changed values reuse the same page order for their roll/blur delay; unchanged rows are never replayed. Action labels
+begin their roll immediately with the shell resize.
+
 `Tests/App/TextRollTests.swift` covers unchanged labels/units across digit growth, changed-word/digit matching, Unicode preservation,
 zero horizontal travel through spring overshoot, blur/vertical endpoints and Reduce Motion.
 `results/vertical-text-20261018/app-tests.txt`: 111 AppTests, 109 passed and two optional render snapshots skipped.
@@ -93,5 +101,9 @@ coverage includes live/manual refresh, immediate loading captions, retained choi
 excluded clones, repeated purges, shared cloud progress, JSON round trips, All done verification, inline permission failures,
 confirmation frames and window presence. Visual verification of transitions, OneDrive flags/fades, inactive day/night controls and
 the menu bar on close is performed by the user; no GUI automation is used.
+
+`results/pill-morph-20261018/final-tests.txt`: 261 App, Other System Files and System Data tests, 259 passed and two optional render
+snapshots skipped. Offscreen layout tests verify shell interpolation with a fixed leading label origin and natural label size;
+page cleanup retains its presentation until verified values arrive. `localize.txt` records compiler extraction in all eight languages.
 
 Main sources: `App/Registry/ModuleHandle.swift`, `App/Registry/ModuleHost.swift`, `App/Shell/MainView.swift`, `App/Renderer/ScreenView.swift`, `Sdk/Contract/Module.swift`, `Sdk/Interface/Tile.swift`, and each module's snapshot store/screen builder.

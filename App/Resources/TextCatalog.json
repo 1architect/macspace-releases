@@ -59,9 +59,9 @@
   {
     "id" : "App|%@ in total",
     "key" : "%@ in total",
-    "kind" : "Label",
+    "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:435"
+      "App\/Renderer\/ScreenView.swift:434"
     ],
     "table" : "App",
     "translations" : {
@@ -1513,7 +1513,7 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:193",
+      "App\/Renderer\/ScreenView.swift:192",
       "App\/Renderer\/ScreenView.swift:715"
     ],
     "table" : "App",
@@ -2394,6 +2394,25 @@
     }
   },
   {
+    "id" : "App|Removing %@",
+    "key" : "Removing %@",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "%@ werden entfernt",
+      "en" : "Removing %@",
+      "es" : "Eliminando %@",
+      "fr" : "Suppression de %@",
+      "ja" : "%@を削除中",
+      "ko" : "%@ 제거 중",
+      "pt-BR" : "Removendo %@",
+      "zh-Hans" : "正在移除 %@"
+    }
+  },
+  {
     "id" : "App|Removing %lld%%, %@",
     "key" : "Removing %lld%%, %@",
     "kind" : "Other",
@@ -2651,8 +2670,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:401",
-      "App\/Renderer\/WidgetView.swift:402"
+      "App\/Renderer\/WidgetView.swift:420",
+      "App\/Renderer\/WidgetView.swift:421"
     ],
     "table" : "App",
     "translations" : {
@@ -3130,7 +3149,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Renderer\/ScreenView.swift:714",
-      "App\/Renderer\/RowActionFlag.swift:65",
+      "App\/Renderer\/RowActionFlag.swift:68",
       "App\/Registry\/ModuleHandle.swift:479"
     ],
     "table" : "App",
@@ -6428,6 +6447,25 @@
       "ko" : "훑어보기 축소판",
       "pt-BR" : "Miniaturas do Visualização Rápida",
       "zh-Hans" : "快速查看缩略图"
+    }
+  },
+  {
+    "id" : "OtherSystemFiles|Removing %@",
+    "key" : "Removing %@",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "%@ werden entfernt",
+      "en" : "Removing %@",
+      "es" : "Eliminando %@",
+      "fr" : "Suppression de %@",
+      "ja" : "%@を削除中",
+      "ko" : "%@ 제거 중",
+      "pt-BR" : "Removendo %@",
+      "zh-Hans" : "正在移除 %@"
     }
   },
   {

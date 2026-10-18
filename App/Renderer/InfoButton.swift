@@ -44,7 +44,7 @@ struct InfoButton: View {
                         .environment(\.colorScheme, design.colorScheme)
                         .background(PopoverAppearance(isLight: design.isLight))
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(PageCascade.transition(index: 0, count: 1))
             }
         }
         .animation(Theme.value, value: hasContent)
@@ -155,7 +155,7 @@ struct InfoTitle: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Text(title)
+            ChangingText(text: title)
             InfoButton(text: info, steps: steps)
         }
     }

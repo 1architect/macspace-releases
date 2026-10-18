@@ -13,7 +13,7 @@ struct ScreenView: View {
 
     @StateObject private var details = PageDetailsVisibility()
     private var hidesDetails: Bool { !details.visible }
-    private var detailsAreBusy: Bool { handle.isReloading || (handle.isCleaning && handle.isBusy) }
+    private var detailsAreBusy: Bool { handle.isReloading }
 
     private var legendCount: Int { (content?.hero?.segments.count).map { $0 + 1 } ?? 0 }
     private var cascadeCount: Int { legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count }
@@ -153,7 +153,6 @@ struct ScreenView: View {
             // A page that let the user choose what to free has done its job: back to the page under it.
             if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
         } }
-        .disabled(handle.isCleaning && handle.isBusy && handle.progress != nil)
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
         .onAppear {
@@ -430,9 +429,9 @@ struct HeroBlocks: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(BlockColor.fill(hoveredSegment, shade: BlockLayout.shade(of: hoveredSegment, in: blocks) ?? 0, tint: tint, design: design))
                         .frame(width: 9, height: 9)
-                    Text("\(hoveredSegment.label) \(ByteFormat.string(hoveredSegment.bytes))")
+                    ChangingText(text: "\(hoveredSegment.label) \(ByteFormat.string(hoveredSegment.bytes))")
                 } else if !segments.isEmpty {
-                    Text("\(ByteFormat.string(usage.totalBytes ?? segments.reduce(0) { $0 + $1.bytes })) in total")
+                    ChangingText(text: String(localized: "\(ByteFormat.string(usage.totalBytes ?? segments.reduce(0) { $0 + $1.bytes })) in total"))
                     // How the total was reached, and what it leaves out.
                     InfoButton(text: usage.footnote)
                 }
@@ -455,10 +454,11 @@ struct HeroBlocks: View {
                             }
                         }
                         .frame(width: 9, height: 9)
-                        Text(segment.label).font(.caption).lineLimit(1)
+                        ChangingText(text: segment.label).font(.caption).lineLimit(1)
                         ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).foregroundStyle(design.palette(tint).soft)
                     }
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
+                    .transition(PageCascade.transition(index: index + 1, count: cascadeCount))
                 }
             }
             // Grid placement must settle without a horizontal layout animation. Each item retains its existing vertical cascade,
@@ -735,15 +735,17 @@ private struct ActionPill: View {
             // Words only, no symbol. On one line wherever the page has room for it: in a pill 360 points wide, a warning such as
             // "Inteligência Visual foi reativado pelo macOS" broke onto two lines. Never cut: a message too long for the page wraps
             // in a pill of that width, which grows to hold it.
-            ViewThatFits(in: .horizontal) {
-                ChangingText(text: text).lineLimit(1).fixedSize()
-                ChangingText(text: text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: Self.wrapWidth, alignment: .leading)
+            PillMorph {
+                ViewThatFits(in: .horizontal) {
+                    ChangingText(text: text).lineLimit(1).fixedSize()
+                    ChangingText(text: text).lineLimit(nil).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: Self.wrapWidth, alignment: .leading)
+                }
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(ink)
+                .padding(.horizontal, 15)
+                .padding(.vertical, 7)
             }
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(ink)
-            .padding(.horizontal, 15)
-            .padding(.vertical, 7)
             .background { background.animation(Theme.hover, value: hovering) }
             .contentShape(Self.shape)
         }

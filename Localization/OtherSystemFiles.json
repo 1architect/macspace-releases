@@ -251,6 +251,15 @@
   "クイックルックのサムネイル",
   "훑어보기 축소판"
  ],
+ "Removing %@": [
+  "Removendo %@",
+  "Suppression de %@",
+  "Eliminando %@",
+  "%@ werden entfernt",
+  "正在移除 %@",
+  "%@を削除中",
+  "%@ 제거 중"
+ ],
  "Removing downloads": [
   "Removendo downloads",
   "Suppression des téléchargements",

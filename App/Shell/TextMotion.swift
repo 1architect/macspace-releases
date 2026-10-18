@@ -128,12 +128,18 @@ private struct VerticalRollRenderer: TextRenderer {
     }
 }
 
+extension EnvironmentValues {
+    /// Reuse the page cascade for changed values, without replaying unchanged rows.
+    @Entry var textChangeDelay: Double = 0
+}
+
 /// The current Text alone determines layout. Changed runs roll/blur vertically in overlays; outgoing text never takes room,
 /// and no native content transition is allowed to interpolate glyph x positions or the width of the whole line.
 struct ChangingText: View {
     let text: String
     var alignment: Alignment = .leading
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.textChangeDelay) private var cascadeDelay
     @State private var previous: String?
     @State private var progress = 1.0
     @State private var completion: Task<Void, Never>?
@@ -165,7 +171,7 @@ struct ChangingText: View {
                 withTransaction(reset) { previous = old; progress = 0 }
                 completion = Task { @MainActor in
                     // Commit the old/new layers at their starting positions before starting the roll.
-                    do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
+                    do { try await Task.sleep(for: .seconds(0.016 + max(0, cascadeDelay))) } catch { return }
                     progress = 1
                     do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
                     previous = nil

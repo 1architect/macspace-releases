@@ -125,6 +125,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "Sal de MacSpace y vuelve a copiarlo. Los permisos concedidos a esta copia se perderían en la próxima actualización.";
 "Recent cleanups" = "Limpiezas recientes";
 "Refresh" = "Actualizar";
+"Removing %@" = "Eliminando %@";
 "Removing %lld%%, %@" = "Eliminando %lld %%, %@";
 "Removing downloads" = "Eliminando descargas";
 "Repair helper" = "Reparar asistente";

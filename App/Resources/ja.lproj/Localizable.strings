@@ -125,6 +125,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "MacSpaceを終了してコピーし直してください。このコピーに与えた権限は次の更新で失われます。";
 "Recent cleanups" = "最近のクリーンアップ";
 "Refresh" = "更新";
+"Removing %@" = "%@を削除中";
 "Removing %lld%%, %@" = "削除中 %lld%%、%@";
 "Removing downloads" = "ダウンロードを削除中";
 "Repair helper" = "ヘルパーを修復";

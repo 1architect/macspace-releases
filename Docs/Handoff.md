@@ -90,8 +90,8 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
 2. **Declarative UI.** A module returns a `Screen` of widgets (banner, usage bar, chart, list, toggles, button, steps, text,
    section) and a summary widget for the Home tile. The app draws them. All shipped modules implement `screen(context:progress:)`:
    real scan progress reaches both the page's Loading button and Home tile percentage, including when the page joins a scan the
-   tile already started. Cached reads stay quiet. Automatic scans keep existing page details visible; initial and explicit loading use the existing cascade. Concurrent work combines progress with `LoadProgressRelay.parallelParts`.
-   Module pages use grouped SwiftUI rows whose shades and separators belong to each row, so the legend, headings and rows can cascade together. Native Form group backgrounds stayed visible during row transitions. Loading and cleaning share one visibility controller; tile zooms hide the entire page until settled. Actions come back as `ActionRequest`s; the app checks the
+   tile already started. Cached reads stay quiet. All subsequent scans and cleanup keep existing page details visible; only initial loading uses the whole-page cascade. Concurrent work combines progress with `LoadProgressRelay.parallelParts`.
+   Module pages use grouped SwiftUI rows whose shades and separators belong to each row, so the legend, headings and rows can cascade together. Native Form group backgrounds stayed visible during row transitions. Only initial loading hides page details; cleanup retains the live page; tile zooms hide the entire page until settled. Actions come back as `ActionRequest`s; the app checks the
    action's `requires` permissions and shows its confirmation first. A row's subtitle is a count after its title, and its facts are pills
    (`Row.badges`) right after it; its detail and steps, a section's subtitle and a list's footnote open from a small (i) in a Liquid Glass popover (`InfoButton`).
    Give an item a description only when the title is not enough (something the user can do, or a risk), in one or two short

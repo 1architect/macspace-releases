@@ -51,6 +51,7 @@
 "Purgeable app files" = "消去可能なアプリファイル";
 "Purgeable documents" = "消去可能な書類";
 "Quick Look thumbnails" = "クイックルックのサムネイル";
+"Removing %@" = "%@を削除中";
 "Removing %lld%%, %@" = "削除中 %lld%%、%@";
 "Removing downloads" = "ダウンロードを削除中";
 "Spotlight index" = "Spotlightインデックス";

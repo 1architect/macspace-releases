@@ -240,7 +240,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(PurgeableDocuments.displayName("Dropbox"), "Dropbox")
     }
 
-    /// While a cloud service's downloads are being removed, in the background, its row says how far it is and has no button, and the
+    /// While a cloud service's downloads are being removed, its row retains its action as a progress flag, and the
     /// tile asks to be read again soon so both follow it; the rest of the page stays as it is.
     func testARemovalInTheBackgroundShowsOnItsRowAndTile() throws {
         var snap = snapshot([CacheDeleteService.fsPurgeableDocument: 20_000_000_000, CacheDeleteService.fsPurgeableData: 1_000_000_000])
@@ -248,7 +248,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         snap.documents = [PurgeableDocuments.Source(name: "OneDrive (Personal)", path: path, bytes: 20_000_000_000, files: 8_000, folders: [])]
         snap.removing = [path: CloudDownloadRemovals.Progress(done: 2_000, total: 8_000, bytes: 9_000_000_000)]
         let row = try XCTUnwrap(OtherSystemFilesScreenBuilder.cloudRows(snap).first)
-        XCTAssertEqual(row.activity?.message, "Removing 25%, 9 GB")
+        XCTAssertEqual(row.activity?.message, "Removing 9 GB")
         XCTAssertEqual(row.activity?.fraction, 0.25)
         XCTAssertEqual(row.actions.first?.id, "removeDownloads", "the same flag morphs into disabled progress")
         let tile = OtherSystemFilesScreenBuilder.tile(snap)

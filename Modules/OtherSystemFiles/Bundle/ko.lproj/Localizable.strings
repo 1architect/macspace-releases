@@ -51,6 +51,7 @@
 "Purgeable app files" = "제거 가능한 앱 파일";
 "Purgeable documents" = "제거 가능한 문서";
 "Quick Look thumbnails" = "훑어보기 축소판";
+"Removing %@" = "%@ 제거 중";
 "Removing %lld%%, %@" = "제거 중 %lld%%, %@";
 "Removing downloads" = "다운로드 제거 중";
 "Spotlight index" = "Spotlight 인덱스";

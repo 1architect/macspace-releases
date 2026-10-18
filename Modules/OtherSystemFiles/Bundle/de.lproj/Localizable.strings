@@ -51,6 +51,7 @@
 "Purgeable app files" = "Löschbare App-Dateien";
 "Purgeable documents" = "Löschbare Dokumente";
 "Quick Look thumbnails" = "Übersicht-Miniaturen";
+"Removing %@" = "%@ werden entfernt";
 "Removing %lld%%, %@" = "Wird entfernt %lld %%, %@";
 "Removing downloads" = "Downloads werden entfernt";
 "Spotlight index" = "Spotlight-Index";

@@ -22,7 +22,7 @@ public enum CloudFileRows {
                       detail: String(localized: "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.") + listing,
                       actions: [action(source)], paths: [source.path])
         if let removing {
-            row.activity = ActionProgress(fraction: removing.total > 0 ? removing.fraction : nil, message: removing.total == 0 ? String(localized: "Removing downloads") : String(localized: "Removing \(Int((removing.fraction * 100).rounded()))%, \(ByteFormat.string(removing.bytes))"))
+            row.activity = ActionProgress(fraction: removing.total > 0 ? removing.fraction : nil, message: removing.total == 0 ? String(localized: "Removing downloads") : String(localized: "Removing \(ByteFormat.string(removing.bytes))"))
         }
         return row
     }

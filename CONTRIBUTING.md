@@ -161,8 +161,10 @@ buttons are text flags with the folder flag's hover behavior; they morph into an
 A row action never hides the page or opens All done. Background work uses `Row.activity` on the same flag. Preserve its action while
 it runs. Animate flag insertion/removal and changing contents with the existing motion. Text and number changes retain the rolling
 glyph animation (fade only with Reduce Motion). Changed glyphs move vertically only; unchanged runs stay still. Keep changing
-text anchored; outgoing text must not participate in layout. Do not animate an entire pill or badge layout when its text or progress
-changes; scope animations to glyph drawing, progress fill and appearance/disappearance. No middle dots or ellipses in loading/cleaning labels.
+text anchored; outgoing text must not participate in layout. Row and page action pills share `PillMorph`: animate the shell size
+while laying out the label at its destination size from the leading edge. Do not interpolate the glyph layout with the shell.
+Inserted/removed rows and flags use the existing vertical cascade; unchanged identities stay in place. A measured progress fill
+replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
 with the updated tile and screen. Retain unrelated measurements. Do not deduct a volume free-space delta from an item's size:
@@ -172,7 +174,8 @@ concurrent writes and APFS sharing make those different quantities. A full scan 
 apps that quit. The app icon, heading and message must share a left-aligned leading edge, including cache confirmations.
 
 **Loading.** Only the first load has no rows and uses the existing cascade. Subsequent reads retain the current page, scroll and
-selection, including manual Refresh and returning from All done. Graphs use the current loading wave during every scan. Apply only
+selection, including manual Refresh, page-wide cleanup and returning from All done. Cleanup uses the same live page as reload;
+keep details visible and interactive while its progress runs. Graphs use the current loading wave during every scan. Apply only
 changed measurements when it finishes. Home captions show loading and reported progress immediately, regardless of scan duration.
 Graph animations also start immediately. Modules report real scan
 progress through `tile(context:progress:)` and `screen(context:progress:)`, sharing scans with `LoadProgressRelay`.

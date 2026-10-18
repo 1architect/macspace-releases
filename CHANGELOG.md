@@ -18,8 +18,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 ### Fixed
 
 - Refresh keeps module pages usable and pulses their graphs; home loading text and progress appear immediately for every scan.
+- Page-wide cleanup keeps details visible and interactive like reload. Animated progress pills omit redundant percentage text.
 - Individual cleanup uses an animated row flag and verifies affected targets without a full module scan. Cloud cleanup is shared by System Data and Other System Files.
-- Back from All done returns to the module; dock fades follow the action's actual visibility, and changing text rolls and blurs vertically, with unchanged runs kept still and no horizontal glyph or container-width animation.
+- Back from All done returns to the module; dock fades follow the action's actual visibility, and changing text rolls and blurs vertically, with unchanged runs kept still and no horizontal glyph travel. Row flags and page buttons share an anchored shell resize, and inserted/removed elements use the vertical cascade.
 - Confirmation icons and text align left. Inactive window controls fade to a day/night fallback, and closing the last window hands activation back before changing background presence.
 
 - Scans show reported progress in the action button and after “loading…” on Home, including helper retries.
