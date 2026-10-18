@@ -16,7 +16,7 @@ enum TargetedSystemDataMeasurements {
         case "emptyTrash": return Set(snapshot.report.items.filter { $0.kind == .trash }.map(\.id))
         case "eraseUnifiedLog": return [SystemDataScreenBuilder.unifiedLogID]
         case "deleteSymbolicationCache": return [SystemDataScreenBuilder.symbolsID]
-        case "purgeAssets": return ["assets:system"]
+        case "purgeAssets", "releaseUnusedModels": return ["assets:system"]
         case "cleanAll": return ["reports:diagnostic", "assets:system", SystemDataScreenBuilder.unifiedLogID]
         default: return []
         }
@@ -60,10 +60,12 @@ enum TargetedSystemDataMeasurements {
                     .plan(olderThanDays: snapshot.reports.olderThanDays)
             }
             if entries.contains(where: { $0.source == .homebrew }) { updated.homebrew = HomebrewCleanup.plan() }
-            if request.actionID == "purgeAssets" || request.actionID == "cleanAll" {
+            if ["purgeAssets", "releaseUnusedModels", "cleanAll"].contains(request.actionID) {
                 updated.purgeableAssetsBytes = SystemDataStore.livePurgeable()
                 updated.assetFamilies = AssetFamilyScanner().scan()
                 updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
+                updated.assetsHeld = SystemAssetGuard.holdsAssets
+                updated.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil
             }
             return updated
         }.value

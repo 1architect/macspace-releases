@@ -35,7 +35,7 @@ public enum AssetModelCleanup {
         return nil
     }
     public static func refusal(_ scope: Scope) -> String? {
-        refusal(scope, available: SystemAssetGuard.appleIntelligenceAvailable(), supported: PhoneFeatureFlags.supported.value,
+        refusal(scope, available: SystemAssetGuard.reviewedAvailability, supported: PhoneFeatureFlags.supported.value,
                 virtualMachine: Machine.isVirtualMachine,
                 settings: Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0,ModelFeatureSettings().status($0)) }),
                 phone: PhoneFeatureFlags().status())
@@ -61,6 +61,11 @@ public enum AssetModelCleanup {
     }
     public static func restoreOwners(_ scope: Scope) -> OwnerResult {
         guard hasSavedOwners(scope) else { return OwnerResult() }
+        guard PhoneFeatureFlags.supported.value else {
+            // Restore feature preferences even after an OS update. Never replay a private archived request against an unreviewed ABI;
+            // the enabled Apple features recreate their requests as needed.
+            return OwnerResult(details: ["Feature settings can be restored; macOS will recreate model requests on this macOS version."])
+        }
         return child(scope,mode:"restore")
     }
     /// The child repeats the control gates rather than trusting its caller. No private owner API runs in the UI process.
@@ -78,10 +83,37 @@ public enum AssetModelCleanup {
         var results = scopes.map { Result(scope: $0, owners: releaseOwners($0)) }
         for index in results.indices where results[index].error == nil {
             if let reason = refusal(results[index].scope) { results[index].owners.error = reason; results[index].owners.pending = true }
+            results[index].remainingAssets = inventory(results[index].scope)
         }
         guard let first = results.firstIndex(where: { $0.error == nil }) else { return results }
         // All features share one CacheDelete service. Withdraw their owners first, then reclaim once and count that gain once.
-        let purge = PurgeRun(service: CacheDeleteService.mobileAsset).run(freedLater: freedLater)
+        let permittedScopes = results.filter { $0.error == nil }.map(\.scope)
+        if !needsReclaim(results) { return results }
+        let fresh = PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
+        guard fresh.map({ $0 > 0 }) == true else {
+            for index in results.indices where results[index].error == nil {
+                results[index].owners.pending = results[index].remainingAssets != 0 || results[index].owners.releasedOwners > 0
+            }
+            if !PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset) {
+                PurgeRetrier.shared.schedule(service: CacheDeleteService.mobileAsset, urgency: 1, purge: {
+                    let reason = permittedScopes.compactMap { refusal($0) }.first
+                    let estimate = reason == nil ? PurgeRun(service: CacheDeleteService.mobileAsset).estimate() : nil
+                    guard reason == nil, estimate.map({ $0 > 0 }) == true else {
+                        return CacheDeletePurgeResult(services: [CacheDeleteService.mobileAsset], purgedBytes: nil,
+                                                      freeBytesBefore: nil, freeBytesAfter: nil, elapsedSeconds: nil,
+                                                      error: reason ?? "Waiting for a fresh positive model cleanup estimate.")
+                    }
+                    return PurgeRun.purgeOnce(service: CacheDeleteService.mobileAsset, urgency: 1)
+                }) { freed in
+                    if freed > 0 { PurgeHoldouts.shared.clear(CacheDeleteService.mobileAsset) }
+                    await freedLater(freed)
+                }
+            }
+            return results
+        }
+        let purge = PurgeRun(service: CacheDeleteService.mobileAsset, extraRefusal: {
+            permittedScopes.compactMap { refusal($0) }.first
+        }).run(freedLater: freedLater)
         results[first].freedBytes = purge.freed
         for index in results.indices where results[index].error == nil {
             results[index].owners.details += PurgeRun.details(purge)
@@ -91,12 +123,16 @@ public enum AssetModelCleanup {
         }
         return results
     }
+
+    static func needsReclaim(_ results: [Result]) -> Bool {
+        results.contains { $0.error == nil && $0.remainingAssets != 0 }
+    }
     /// Target presence, without walking protected payload contents or interpreting the service-wide purge count as target bytes.
     static func inventory(_ scope: Scope, root: String = "/System/Library/AssetsV2", fileManager: FileManager = .default) -> Int? {
         let tokens: [String]
         switch scope {
-        case .siri: tokens=["UAF_Siri_Understanding","UAF_Siri_UnderstandingASRHammer","UAF_Siri_TTS"]
-        case .phone: tokens=["UAF_Speech_ASR","UAF_Siri_TTS"]
+        case .siri: tokens=["UAF_Siri_Understanding","UAF_Siri_UnderstandingASRHammer","UAF_Siri_TextToSpeech"]
+        case .phone: tokens=["UAF_Speech_AutomaticSpeechRecognition","UAF_Siri_TextToSpeech"]
         case .spatialPhotos: tokens=["UAF_Photos_SpatialPhotosRelive"]
         case .released: tokens=["LinguisticData"]
         }
@@ -150,7 +186,7 @@ public actor ManagedModelCleanup {
     }
     private func record(_ result: AssetModelCleanup.Result) {
         guard let feature=ModelFeatureSettings.Feature(rawValue:result.scope.rawValue) else{return}
-        if result.error != nil {waiting.insert(feature)} else {waiting.remove(feature)}
+        if result.error != nil || result.owners.pending {waiting.insert(feature)} else {waiting.remove(feature)}
     }
     private func complete() {task=nil}
 }

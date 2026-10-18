@@ -312,7 +312,7 @@ enum SystemDataScreenBuilder {
         if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let groups = [
             group(assetsSection(snapshot), symbol: "square.stack.3d.down.right",
-                  total: snapshot.assetFamilies.filter { !$0.steps.isEmpty && $0.bytes >= 100_000_000 }.map(\.bytes).reduce(0, +)),
+                  total: shownAssetFamilies(snapshot).map(\.bytes).reduce(0, +)),
             group(appDataSection(snapshot), symbol: "app.badge", total: leftAlone(snapshot).filter { appDataKinds.contains($0.kind) }.map { listed($0, snapshot) }.reduce(0, +)),
             group(otherSection(snapshot), symbol: "gearshape.2", total: leftAlone(snapshot).filter { !appDataKinds.contains($0.kind) }.map { listed($0, snapshot) }.reduce(0, +)),
         ].compactMap { $0 }
@@ -371,17 +371,21 @@ enum SystemDataScreenBuilder {
                                 title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
                              paths: paths(of: "reports:diagnostic", snapshot)), snapshot.reports.totalBytes))
         }
-        if let assets = snapshot.purgeableAssetsBytes, assets >= assetsThreshold {
+        let assets = snapshot.purgeableAssetsBytes ?? 0
+        let releaseOwners = hasUnusedLanguageModels(snapshot)
+        if assets >= assetsThreshold || releaseOwners {
             // While macOS is being asked again in the background, the row says so instead of offering the button; while Apple
             // Intelligence is on, that the assets stay (its models download and update through them).
-            let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on"))
-                : snapshot.assetsRetrying ? Badge(loc("Freeing in the background"), tone: .caution) : nil
-            rows.append((Row(id: "assets", title: loc("Unused system assets"), trailing: ByteFormat.string(assets),
+            let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil
+            var row = Row(id: "assets", title: loc("Unused system assets"), trailing: assets >= assetsThreshold ? ByteFormat.string(assets) : nil,
                              badge: badge, symbol: "square.stack.3d.down.right",
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
-                             actions: snapshot.assetsRetrying || snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
-                             paths: paths(of: "assets:system", snapshot)), assets))
+                             actions: snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
+                                title: releaseOwners ? loc("Free unused system assets?") : loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"),
+                                labelSamples: [loc("Freeing space"), loc("Freeing in the background")])],
+                             paths: paths(of: "assets:system", snapshot))
+            if snapshot.assetsRetrying, !snapshot.assetsHeld { row.activity = ActionProgress(message: loc("Freeing in the background")) }
+            rows.append((row, assets))
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }
         if let versions = versionsRow(snapshot) { rows.append(versions) }
@@ -642,7 +646,7 @@ enum SystemDataScreenBuilder {
     /// System downloads the user can release by changing a setting. Families with no setting are not something to act on, so they
     /// are not listed.
     static func assetsSection(_ snapshot: SystemDataSnapshot) -> ScreenWidget? {
-        let families = snapshot.assetFamilies.filter { !$0.steps.isEmpty && $0.bytes >= 100_000_000 }
+        let families = shownAssetFamilies(snapshot)
         guard !families.isEmpty else { return nil }
         let rows = families.map { family -> Row in
             Row(id: "assets:\(family.id)", title: family.title, trailing: ByteFormat.string(family.bytes),
@@ -650,6 +654,17 @@ enum SystemDataScreenBuilder {
         }
         return .section(SectionWidget(id: "assets", title: loc("Downloads you can turn off"),
                                       widgets: [.list(ListWidget(id: "assets-list", rows: rows))]))
+    }
+
+    static func hasUnusedLanguageModels(_ snapshot: SystemDataSnapshot) -> Bool {
+        snapshot.ownerCleanupAvailable && snapshot.assetFamilies.contains { $0.id == "language-data" && $0.bytes >= assetsThreshold }
+    }
+
+    static func shownAssetFamilies(_ snapshot: SystemDataSnapshot) -> [AssetFamily] {
+        snapshot.assetFamilies.filter {
+            !$0.steps.isEmpty && $0.bytes >= 100_000_000
+                && !(snapshot.supportsModelFeatureControls && ["siri-speech", "siri-voices", "speech-recognition", "photos-models"].contains($0.id))
+        }
     }
 
     /// Unreadable places the user can do something about: all of them without Full Disk Access, and the root-only ones until the helper

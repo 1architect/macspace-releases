@@ -113,6 +113,24 @@ separat geprüft. Beim erneuten Aktivieren werden die ursprünglichen Einträge 
 beibehalten. Außerhalb von MacSpace geänderte Einträge werden nicht überschrieben. Diese Steuerung installiert kein Profil und
 ändert nicht die Siri-Sprache. Der Hilfsdienst akzeptiert nur Ein- oder Ausschalten, keine beliebigen Pfade, Domains oder Schlüssel.
 
+### Modelle der Funktionen
+
+Die separaten Schalter für Siri und räumliche Fotos sichern die ursprünglichen Einstellungen vor dem Ausschalten. Siris
+gesicherte Stimme wird entfernt, solange Siri aus ist; die Siri-Sprache bleibt erhalten. Telefon deaktiviert außerdem die lokalen
+Einstellungen für Aufnahme, Anruffilter und Untertitel. Die Originale liegen unter
+`~/Library/Application Support/MacSpace/feature-settings/`.
+
+Modellanforderungen werden über die zuständigen Apple-Dienste freigegeben. Wiederherstellungsdaten liegen unter
+`~/Library/Application Support/MacSpace/asset-owners/`. Diese Bereinigungen von Funktionen und Sprachmodellen bearbeiten die aktive Abonnementdatenbank nicht und löschen
+keine Modelle direkt. Die Bereinigung nutzt den geschützten macOS-Dienst. Sie wartet, wenn Apple Intelligence verfügbar oder
+sein Zustand nicht lesbar ist, erhält Anforderungen anderer Accounts und gemeinsame Sprachmodelle bei aktivem Diktat.
+
+Solange MacSpace geöffnet ist, prüft es ausdrücklich deaktivierte Funktionen alle fünf Minuten und bereinigt erneut angeforderte,
+ungenutzte Modelle. Einschalten einer Funktion oder MacSpaces Deinstallation stellt gesicherte Einstellungen und Anforderungen
+wieder her; macOS kann die Modelle erneut laden. Unterbrochene oder widersprüchliche Vorgänge werden vor einer Wiederholung
+geprüft. Diese Schalter sind nur für verifizierte macOS-Versionen verfügbar. Ungenutzte Sprachdaten unter Systemdaten werden
+einmalig bereinigt; Rechtschreibung und Wörterbücher bleiben aktiviert.
+
 ### Berechtigungen
 
 macOS übernimmt jede Abfrage, daher sieht MacSpace nie dein Passwort.

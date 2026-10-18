@@ -127,6 +127,33 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.unknown, match: true)).rows[0].isOn, true, "unknown falls back to the language match")
     }
 
+    func testFeatureSwitchesKeepTheirOwnStateAndReuseTheExistingToggleRows() {
+        var snap = snapshot(.protected)
+        snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true),
+                                .spatialPhotos: .init(state: .on), .phone: .init(state: .on)]
+        snap.phoneFeatures = .init(state: .off, managedOff: true, effective: [:], requestedOff: true)
+        let rows = SiriScreenBuilder.switchList(snap).rows
+        XCTAssertEqual(rows.map(\.id), ["ai", "siri", "spatialPhotos", "phone"])
+        XCTAssertFalse(rows[0].isOn)
+        XCTAssertFalse(rows[1].isOn)
+        XCTAssertTrue(rows[2].isOn)
+        XCTAssertTrue(rows[3].isOn, "disabled root flags alone must not pretend that native Phone controls are off")
+        XCTAssertEqual(rows[1].action.parameters["feature"], "siri")
+        XCTAssertNil(rows[1].action.confirmation)
+        XCTAssertNil(rows[2].action.confirmation)
+    }
+
+    func testFeatureCleanupUsesTheStandardBadgeAndFastStatusPolling() {
+        var snap = snapshot(.protected)
+        snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
+        snap.cleaningFeatures = true
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertEqual(SiriScreenBuilder.refreshAfter(snap), 5)
+        snap.cleaningFeatures = false
+        snap.featureCleanupWaiting = [.siri]
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS")
+    }
+
     func testSwitchNeverAsksAndNeedsFullDiskAccess() throws {
         let off = try XCTUnwrap(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows.first)
         XCTAssertNil(off.action.confirmation, "the switch moves at once; a failure moves it back")

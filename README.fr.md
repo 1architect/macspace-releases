@@ -60,8 +60,7 @@ Sensei, si elle est installée) peut libérer les caches à la place de MacSpace
   <img src="Docs/Screenshots/fr/SystemData.png" alt="La page Données système : un graphique de ce qui remplit Données système, la liste À libérer et le bouton Libérer avec sa taille" width="720">
 </p>
 
-**Siri et Apple Intelligence.** Un seul interrupteur, **Apple Intelligence**, sur la page et sur la
-tuile. Désactivé, MacSpace règle Siri sur une langue différente de celle de votre Mac. C’est ainsi
+**Siri et Apple Intelligence.** L’interrupteur **Apple Intelligence** se trouve sur la page et sur la tuile. Désactivé, MacSpace règle Siri sur une langue différente de celle de votre Mac. C’est ainsi
 que macOS décide qu’Apple Intelligence est indisponible. MacSpace supprime ensuite les modèles que
 macOS garde sur le disque, ce qui peut représenter environ 12 Go. Réactivez-le, et MacSpace
 rétablit la langue et la voix de Siri. Avec la synchronisation iCloud de Siri activée, le
@@ -71,6 +70,12 @@ Intelligence activé, car les modèles sont partagés par tous les comptes. Une 
 facultative, **Vérifier qu’Apple Intelligence reste désactivé** dans Réglages, vous avertit si
 macOS le réactive. Dans une machine virtuelle, macOS ne propose pas Apple Intelligence : la page
 se contente de l’indiquer.
+
+Des interrupteurs séparés **Siri**, **Photos spatiales** et **Fonctions Téléphone** désactivent ces fonctions et libèrent leurs
+modèles inutilisés. Les changements Téléphone nécessitent un redémarrage et concernent tous les comptes du Mac, sans profil.
+Lorsque MacSpace est ouvert, il vérifie toutes les cinq minutes les modèles redemandés pour les fonctions désactivées.
+Réactiver restaure les réglages enregistrés. Les modèles restent tant qu’Apple Intelligence est disponible.
+Les autres ressources linguistiques inutilisées ont une action **Libérer** dans **Données système**.
 
 <p align="center">
   <img src="Docs/Screenshots/fr/Siri.png" alt="La page Siri et Apple Intelligence : l’interrupteur Apple Intelligence, désactivé, et la ligne sur la synchronisation iCloud de Siri" width="720">

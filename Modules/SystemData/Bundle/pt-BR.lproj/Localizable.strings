@@ -96,6 +96,7 @@
 "Free the selected caches?" = "Liberar os caches selecionados?";
 "Free the symbols for crash reports?" = "Liberar os símbolos para relatórios de falhas?";
 "Free the system log?" = "Liberar o registro do sistema?";
+"Free unused system assets?" = "Liberar os arquivos do sistema não usados?";
 "Free up to %@ of unused system assets?" = "Liberar até %@ de recursos do sistema sem uso?";
 "Freeing in the background" = "Liberando em segundo plano";
 "Freeing space" = "Liberando espaço";

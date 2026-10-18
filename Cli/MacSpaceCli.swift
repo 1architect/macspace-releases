@@ -8,6 +8,12 @@ import MacSpaceSdk
 struct MacSpaceCli {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
+        if arguments.first == "asset-owners" {
+            guard arguments.count == 3 else { exit(64) }
+            let result = AssetModelCleanup.runInChild(scope: arguments[1], mode: arguments[2])
+            FileHandle.standardOutput.write(result)
+            exit(0)
+        }
         if arguments.first == "purge-assets" { PurgeCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "orphan-subscriptions" { OrphanCommand.run(Array(arguments.dropFirst())) }
         if arguments.first == "helper" {

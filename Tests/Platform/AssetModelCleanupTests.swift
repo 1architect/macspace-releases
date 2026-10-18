@@ -48,6 +48,12 @@ final class AssetModelCleanupTests: XCTestCase {
         XCTAssertEqual(AssetModelCleanup.inventory(.spatialPhotos,root:root.path),1)
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),0)
         XCTAssertNil(AssetModelCleanup.inventory(.siri,root:root.appendingPathComponent("missing").path))
+        for path in ["com_apple_MobileAsset_UAF_Speech_AutomaticSpeechRecognition/purpose_auto/asr.asset",
+                     "com_apple_MobileAsset_UAF_Siri_TextToSpeech/purpose_auto/voice.asset"] {
+            try FileManager.default.createDirectory(at:root.appendingPathComponent(path),withIntermediateDirectories:true)
+        }
+        XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),2)
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri,root:root.path),1)
     }
     func testCommandRejectsArbitraryScopeAndModeBeforeAnyNativeCall() throws {
         for (scope,mode) in [("/tmp","release"),("siri","delete"),("spatialPhotos","release")] {
@@ -55,5 +61,32 @@ final class AssetModelCleanupTests: XCTestCase {
             XCTAssertNotNil(result.error)
             XCTAssertEqual(result.releasedOwners,0)
         }
+    }
+
+    func testUnknownEligibilityAnswersDoNotBecomePermissionForOwnerCleanup() throws {
+        for answer in [0,1,2,3,4,5] {
+            let data = try PropertyListSerialization.data(fromPropertyList: ["OS_ELIGIBILITY_DOMAIN_SIRI_MODE": ["os_eligibility_answer_t":answer]], format:.binary,options:0)
+            XCTAssertEqual(SystemAssetGuard.reviewedAvailability(inEligibility:data),answer == 2 ? false : answer == 4 ? true : nil)
+        }
+    }
+
+    func testFeaturePolicyRefusesPurgeBeforeAnyEstimateOrMutation() {
+        let retrier = PurgeRetrier()
+        let result = PurgeRun(service: CacheDeleteService.mobileAsset, retrier: retrier, extraRefusal: { "Feature was enabled" }).run()
+        XCTAssertTrue(result.skipped)
+        XCTAssertTrue(result.held)
+        XCTAssertNil(result.estimate)
+        XCTAssertEqual(result.error,"Feature was enabled")
+        XCTAssertFalse(retrier.isRetrying(CacheDeleteService.mobileAsset))
+    }
+
+    func testEmptyTargetInventoryDoesNotStartAnotherPurgeButUnknownIsRechecked() {
+        var empty = AssetModelCleanup.Result(scope:.siri,owners:.init(releasedOwners:2))
+        empty.remainingAssets=0
+        XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]),"removing metadata alone does not justify purging unrelated files")
+        empty.remainingAssets=nil
+        XCTAssertTrue(AssetModelCleanup.needsReclaim([empty]),"unreadable targets are not empty")
+        empty.owners.error="Owner still active"
+        XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]))
     }
 }

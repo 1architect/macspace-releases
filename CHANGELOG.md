@@ -9,6 +9,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
+- Siri, Spatial Photos and Phone feature controls, with reversible settings and automatic cleanup of models requested again while the features stay off. Phone changes require a restart and use no configuration profile.
+- A one-shot cleanup for unused language assets in System Data, using macOS's model owners and cleanup service.
+
 - Japanese and Korean throughout the app and all four modules (#9).
 
 - Simplified Chinese throughout the app and all four modules (#8).

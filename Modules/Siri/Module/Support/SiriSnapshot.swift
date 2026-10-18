@@ -37,6 +37,9 @@ struct SiriSnapshot: Sendable {
     var cloudSyncEnabled: Bool?
     /// The system-wide Phone gates, distinct from Apple Intelligence's language switch.
     var phoneFeatures: PhoneFeatureFlags.Status?
+    var featureSettings: [ModelFeatureSettings.Feature: ModelFeatureSettings.Status] = [:]
+    var cleaningFeatures = false
+    var featureCleanupWaiting: Set<ModelFeatureSettings.Feature> = []
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
@@ -121,6 +124,7 @@ actor SiriStore {
         inflight = nil
         relay = nil
         updated.phoneFeatures = await Task.detached(priority: .utility) { read() }.value
+        updated.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
         guard started == generation else { return cached }
         cached = updated
         return updated
@@ -173,6 +177,7 @@ actor SiriStore {
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         snapshot.cloudSyncEnabled = SiriCloudSync.isEnabled()
         snapshot.phoneFeatures = PhoneFeatureFlags().status()
+        snapshot.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
         return snapshot
     }
 

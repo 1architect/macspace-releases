@@ -53,6 +53,15 @@
   "1個の機能",
   "기능 1개"
  ],
+ "A feature change is still running.": [
+  "Uma alteração de recurso ainda está em andamento.",
+  "Une modification de fonction est toujours en cours.",
+  "Todavía se está cambiando una función.",
+  "Eine Funktionsänderung läuft noch.",
+  "功能更改仍在进行中。",
+  "機能の変更がまだ進行中です。",
+  "기능 변경이 아직 진행 중입니다."
+ ],
  "AI is off": [
   "IA desativada",
   "IA désactivée",
@@ -224,6 +233,15 @@
   "MacSpace以外で変更されました",
   "MacSpace 외부에서 변경됨"
  ],
+ "Check disabled features": [
+  "Verificar recursos desativados",
+  "Vérifier les fonctions désactivées",
+  "Comprobar las funciones desactivadas",
+  "Deaktivierte Funktionen prüfen",
+  "检查已关闭的功能",
+  "オフにした機能を確認",
+  "꺼진 기능 확인"
+ ],
  "Check that Apple Intelligence stays off": [
   "Verificar se o Apple Intelligence continua desativado",
   "Vérifier qu’Apple Intelligence reste désactivé",
@@ -241,6 +259,15 @@
   "MacSpace 运行时每 15 分钟检查一次，关闭机制失效时通知你。",
   "MacSpaceの起動中は15分ごとに確認し、オフ設定が効かなくなったら通知します。",
   "MacSpace가 열려 있는 동안 15분마다 확인하고 끄기 기능이 작동하지 않으면 알립니다."
+ ],
+ "Checks every five minutes while MacSpace is open and frees models requested again for features you switched off.": [
+  "Verifica a cada cinco minutos enquanto o MacSpace estiver aberto e libera modelos solicitados novamente por recursos que você desativou.",
+  "Vérifie toutes les cinq minutes lorsque MacSpace est ouvert et libère les modèles redemandés pour les fonctions désactivées.",
+  "Comprueba cada cinco minutos mientras MacSpace esté abierto y libera los modelos solicitados de nuevo para funciones que desactivaste.",
+  "Prüft alle fünf Minuten, solange MacSpace geöffnet ist, und gibt erneut angeforderte Modelle für deaktivierte Funktionen frei.",
+  "MacSpace 打开期间每五分钟检查一次，释放已关闭功能重新请求的模型。",
+  "MacSpaceが開いている間は5分ごとに確認し、オフにした機能が再度要求したモデルを解放します。",
+  "MacSpace가 열려 있는 동안 5분마다 확인하고 꺼진 기능이 다시 요청한 모델을 비웁니다."
  ],
  "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.": [
   "Controla gravação e transcrição de chamadas, Correio de Voz ao Vivo e triagem de chamadas, legendas do FaceTime e tradução de chamadas para todas as contas deste Mac. As alterações exigem reinicialização.",
@@ -260,6 +287,15 @@
   "電話の機能の設定を変更できませんでした。",
   "전화 기능 설정을 변경하지 못했습니다."
  ],
+ "Couldn't change feature settings.": [
+  "Não foi possível alterar os ajustes do recurso.",
+  "Impossible de modifier les réglages de la fonction.",
+  "No se pudieron cambiar los ajustes de la función.",
+  "Funktionseinstellungen konnten nicht geändert werden.",
+  "无法更改功能设置。",
+  "機能の設定を変更できませんでした。",
+  "기능 설정을 변경할 수 없습니다."
+ ],
  "Couldn't check Apple Intelligence": [
   "Não foi possível verificar o Apple Intelligence",
   "Impossible de vérifier Apple Intelligence",
@@ -277,6 +313,24 @@
   "无法恢复电话功能设置。",
   "電話の機能の設定を復元できませんでした。",
   "전화 기능 설정을 복원하지 못했습니다."
+ ],
+ "Couldn't restore feature settings.": [
+  "Não foi possível restaurar os ajustes do recurso.",
+  "Impossible de restaurer les réglages de la fonction.",
+  "No se pudieron restaurar los ajustes de la función.",
+  "Funktionseinstellungen konnten nicht wiederhergestellt werden.",
+  "无法恢复功能设置。",
+  "機能の設定を復元できませんでした。",
+  "기능 설정을 복원할 수 없습니다."
+ ],
+ "Couldn't restore model requests.": [
+  "Não foi possível restaurar as solicitações de modelos.",
+  "Impossible de restaurer les demandes de modèles.",
+  "No se pudieron restaurar las solicitudes de modelos.",
+  "Modellanforderungen konnten nicht wiederhergestellt werden.",
+  "无法恢复模型请求。",
+  "モデルのリクエストを復元できませんでした。",
+  "모델 요청을 복원할 수 없습니다."
  ],
  "Couldn't verify the Phone feature change.": [
   "Não foi possível verificar a alteração dos recursos do Telefone.",
@@ -304,6 +358,15 @@
   "删除 Apple 智能模型和 macOS 不再需要的其他下载。",
   "Apple IntelligenceのモデルとmacOSが不要になったダウンロードを削除します。",
   "Apple Intelligence 모델과 macOS에 더 이상 필요하지 않은 다운로드를 삭제합니다."
+ ],
+ "Feature settings updated.": [
+  "Ajustes do recurso atualizados.",
+  "Réglages de la fonction mis à jour.",
+  "Ajustes de la función actualizados.",
+  "Funktionseinstellungen aktualisiert.",
+  "功能设置已更新。",
+  "機能の設定を更新しました。",
+  "기능 설정을 업데이트했습니다."
  ],
  "Free": [
   "Liberar",
@@ -367,6 +430,15 @@
   "保留模型",
   "モデルを保持",
   "모델 유지"
+ ],
+ "Kept while Apple Intelligence is on": [
+  "Mantido enquanto a Apple Intelligence estiver ativa",
+  "Conservé tant qu’Apple Intelligence est activé",
+  "Se conserva mientras Apple Intelligence esté activado",
+  "Bleibt, solange Apple Intelligence aktiv ist",
+  "Apple 智能开启时保留",
+  "Apple Intelligenceがオンの間は保持",
+  "Apple Intelligence가 켜져 있는 동안 유지"
  ],
  "Leftover Apple Intelligence models": [
   "Modelos restantes do Apple Intelligence",
@@ -448,6 +520,15 @@
   "虚拟机中不可用",
   "仮想マシンでは利用できません",
   "가상 머신에서는 사용할 수 없음"
+ ],
+ "Not verified on this macOS version": [
+  "Não verificado nesta versão do macOS",
+  "Non vérifié sur cette version de macOS",
+  "Sin verificar en esta versión de macOS",
+  "Auf dieser macOS-Version nicht geprüft",
+  "尚未在此 macOS 版本上验证",
+  "このmacOSバージョンでは未検証",
+  "이 macOS 버전에서 확인되지 않음"
  ],
  "Notify me if Apple Intelligence turns back on": [
   "Avisar se o Apple Intelligence for reativado",
@@ -602,6 +683,15 @@
   "macOSでApple Intelligenceが再び利用可能になると通知します。",
   "macOS가 Apple Intelligence를 다시 활성화하면 알림을 표시합니다."
  ],
+ "Siri": [
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri",
+  "Siri"
+ ],
  "Siri & Apple Intelligence": [
   "Siri e Apple Intelligence",
   "Siri et Apple Intelligence",
@@ -637,6 +727,15 @@
   "Siri 的 iCloud 同步目前已开启",
   "SiriのiCloud同期は現在オンです",
   "Siri iCloud 동기화가 현재 켜져 있음"
+ ],
+ "Spatial Photos": [
+  "Fotos Espaciais",
+  "Photos spatiales",
+  "Fotos espaciales",
+  "Räumliche Fotos",
+  "空间照片",
+  "空間写真",
+  "공간 사진"
  ],
  "State unknown": [
   "Estado desconhecido",
@@ -764,6 +863,24 @@
   "「このMacを同期」をオフにし、データをこのMacに残してください。",
   "이 Mac 동기화를 끄고 데이터를 이 Mac에 유지하세요."
  ],
+ "Turns Siri off and frees its unused models. MacSpace checks again while it stays off. Your Siri language is kept.": [
+  "Desativa a Siri e libera os modelos não usados. O MacSpace verifica novamente enquanto ela estiver desativada. O idioma da Siri é mantido.",
+  "Désactive Siri et libère ses modèles inutilisés. MacSpace vérifie à nouveau tant que Siri reste désactivé. La langue de Siri est conservée.",
+  "Desactiva Siri y libera sus modelos sin uso. MacSpace vuelve a comprobarlos mientras siga desactivado. Se conserva el idioma de Siri.",
+  "Schaltet Siri aus und gibt ungenutzte Modelle frei. MacSpace prüft erneut, solange Siri aus bleibt. Die Siri-Sprache bleibt erhalten.",
+  "关闭 Siri 并释放其未使用的模型。关闭期间，MacSpace 会再次检查。保留 Siri 语言。",
+  "Siriをオフにして未使用のモデルを解放します。オフの間はMacSpaceが再確認します。Siriの言語は維持されます。",
+  "Siri를 끄고 사용하지 않는 모델을 비웁니다. 꺼져 있는 동안 MacSpace가 다시 확인합니다. Siri 언어는 유지됩니다."
+ ],
+ "Turns off spatial photo effects and frees their downloaded models.": [
+  "Desativa os efeitos de fotos espaciais e libera os modelos baixados.",
+  "Désactive les effets des photos spatiales et libère leurs modèles téléchargés.",
+  "Desactiva los efectos de fotos espaciales y libera sus modelos descargados.",
+  "Schaltet räumliche Fotoeffekte aus und gibt heruntergeladene Modelle frei.",
+  "关闭空间照片效果并释放已下载的模型。",
+  "空間写真のエフェクトをオフにして、ダウンロード済みのモデルを解放します。",
+  "공간 사진 효과를 끄고 다운로드한 모델을 비웁니다."
+ ],
  "Under Saved to iCloud, click See All, then Siri.": [
   "Em Salvo no iCloud, clique em Ver Tudo e depois em Siri.",
   "Sous Enregistré dans iCloud, cliquez sur Tout afficher, puis sur Siri.",
@@ -782,6 +899,15 @@
   "不明な操作%@。",
   "알 수 없는 작업 %@."
  ],
+ "Unknown feature.": [
+  "Recurso desconhecido.",
+  "Fonction inconnue.",
+  "Función desconocida.",
+  "Unbekannte Funktion.",
+  "未知功能。",
+  "不明な機能です。",
+  "알 수 없는 기능입니다."
+ ],
  "Unused system assets": [
   "Recursos do sistema sem uso",
   "Ressources système inutilisées",
@@ -791,6 +917,15 @@
   "未使用のシステムアセット",
   "미사용 시스템 에셋"
  ],
+ "Unused system models": [
+  "Modelos do sistema não usados",
+  "Modèles système inutilisés",
+  "Modelos del sistema sin uso",
+  "Ungenutzte Systemmodelle",
+  "未使用的系统模型",
+  "未使用のシステムモデル",
+  "사용하지 않는 시스템 모델"
+ ],
  "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.": [
   "Normalmente leva alguns instantes. Se não acontecer, o MacSpace faz isso após %lld minutos.",
   "Cela prend généralement quelques instants. Sinon, MacSpace s’en charge au bout de %lld minutes.",
@@ -799,6 +934,15 @@
   "通常很快完成。如未完成，MacSpace 会在 %lld 分钟后处理。",
   "通常はすぐ終わります。終わらない場合は%lld分後にMacSpaceが処理します。",
   "보통 곧 완료됩니다. 그렇지 않으면 %lld분 후 MacSpace가 처리합니다."
+ ],
+ "Waiting for macOS": [
+  "Aguardando o macOS",
+  "En attente de macOS",
+  "Esperando a macOS",
+  "Warten auf macOS",
+  "正在等待 macOS",
+  "macOSを待機中",
+  "macOS 대기 중"
  ],
  "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.": [
   "Com a sincronização da Siri com o iCloud ativada, isso também muda a Siri no seu iPhone e iPad.",

@@ -42,6 +42,29 @@ final class AssetFamilyTests: XCTestCase {
         XCTAssertEqual(AssetFamilyScanner(root: "/nonexistent-\(UUID().uuidString)").scan(), [])
     }
 
+    func testFeatureManagedDownloadsAreNotAlsoListedAsSystemDataFeatureControls() {
+        var snap = SystemDataSnapshot(
+            report: SystemDataReport(schemaVersion: 1, generatedAt: Date(), volumes: [], items: [], measuredBytes: 0, cleanableBytes: 0, manualCleanup: [], unreadable: [], warnings: []),
+            purgeableAssetsBytes: nil, reports: CleanupPlan(olderThanDays: 7, cutoff: .distantPast, candidates: [], totalBytes: 0, unreadableDirectories: []), takenAt: Date())
+        snap.assetFamilies = [AssetFamily(id: "siri-voices", title: "Siri voices", assets: [], bytes: 300_000_000, heldBy: "Siri", steps: ["Old instruction"], verified: false),
+                              AssetFamily(id: "language-data", title: "Language data", assets: [], bytes: 400_000_000, heldBy: "Language services", steps: [], verified: true)]
+        snap.supportsModelFeatureControls = true
+        snap.ownerCleanupAvailable = true
+        XCTAssertTrue(SystemDataScreenBuilder.shownAssetFamilies(snap).isEmpty)
+        XCTAssertTrue(SystemDataScreenBuilder.hasUnusedLanguageModels(snap))
+        XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 0, "held models are not a fresh reclaimable-byte estimate")
+        snap.ownerCleanupAvailable = false
+        XCTAssertFalse(SystemDataScreenBuilder.hasUnusedLanguageModels(snap))
+        snap.purgeableAssetsBytes = 100_000_000
+        snap.assetsRetrying = true
+        guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap),
+              case let .list(list) = section.widgets[0], let row = list.rows.first(where: { $0.id == "assets" }) else { return XCTFail() }
+        XCTAssertEqual(row.actions.first?.id, "purgeAssets")
+        XCTAssertEqual(row.activity?.message, "Freeing in the background")
+        XCTAssertTrue(row.badges.isEmpty)
+        XCTAssertTrue(row.actions.first?.labelSamples?.contains("Freeing in the background") == true)
+    }
+
     func testScreenListsOnlyFamiliesWithASetting() throws {
         let family = AssetFamily(id: "siri-voices", title: "Siri voices", assets: ["a"], bytes: 300_000_000, heldBy: "Siri", steps: ["Do this"], verified: false)
         let none = AssetFamily(id: "photos-models", title: "Photos models", assets: ["b"], bytes: 800_000_000, heldBy: "Catalog", steps: [], verified: false)

@@ -41,7 +41,7 @@ enum SiriScreenBuilder {
     /// follows what macOS does.
     static func refreshAfter(_ snapshot: SiriSnapshot) -> Double? {
         let changing = snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0
-            || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.assetsRetrying
+            || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.assetsRetrying || snapshot.cleaningFeatures
         return changing ? 5 : nil
     }
 
@@ -63,7 +63,7 @@ enum SiriScreenBuilder {
         // Downloads count too: they take the space as they arrive and are freed the same way.
         let onDisk = (snapshot.installedModelBytes ?? 0) + snapshot.downloadingModelBytes
         let installed = on && onDisk >= purgeThreshold ? onDisk : nil
-        let detail: String
+        var detail: String
         if let purge { detail = snapshot.assetsRetrying ? loc("freeing \(ByteFormat.string(purge)) of models") : loc("free up to \(ByteFormat.string(purge)) of models") }
         else if on, snapshot.downloadingModelBytes >= purgeThreshold { detail = loc("downloading models: \(ByteFormat.string(onDisk)) so far") }
         else if let installed { detail = loc("\(ByteFormat.string(installed)) of models; switch it off to free them") }
@@ -82,6 +82,7 @@ enum SiriScreenBuilder {
         else if snapshot.status.state == .unknown { detail = loc("needs Full Disk Access to read") }
         else if snapshot.installedModelBytes == nil { detail = loc("models not measured") }
         else { detail = loc("no models left on disk") }
+        if snapshot.cleaningFeatures { detail = loc("Freeing space") }
         // No meter: what is left to purge is said in the detail line.
         let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)
         if let freeable = purge ?? installed {
@@ -133,8 +134,49 @@ enum SiriScreenBuilder {
         var rows = [ToggleRow(id: "ai", title: loc("Apple Intelligence"), isOn: available, isEnabled: enabled,
                               detail: detail,
                               action: switchAction)]
-        if let status = snapshot.phoneFeatures { rows.append(phoneFeatureRow(status)) }
+        // Keep the existing AI language control first, then the feature controls, with the restart-requiring Phone group last.
+        for feature in [ModelFeatureSettings.Feature.siri, .spatialPhotos] {
+            if let status = snapshot.featureSettings[feature] {
+                var row = featureRow(feature, status: status)
+                if status.managedOff, snapshot.cleaningFeatures { row.badge = Badge(loc("Freeing space"), tone: .caution) }
+                else if status.managedOff, snapshot.status.state == .atRisk { row.badge = Badge(loc("Kept while Apple Intelligence is on")) }
+                else if status.managedOff, snapshot.featureCleanupWaiting.contains(feature) { row.badge = Badge(loc("Waiting for macOS"), tone: .caution) }
+                rows.append(row)
+            }
+        }
+        if var status = snapshot.phoneFeatures {
+            if let native = snapshot.featureSettings[.phone] { status.managedOff = status.managedOff && native.managedOff }
+            if let native = snapshot.featureSettings[.phone], status.state == .off, native.state != .off {
+                status.state = native.state == .on ? .on : .unknown
+                status.managedOff = false
+            }
+            var row = phoneFeatureRow(status)
+            if status.managedOff, snapshot.cleaningFeatures { row.badge = Badge(loc("Freeing space"), tone: .caution) }
+            else if status.managedOff, snapshot.status.state == .atRisk { row.badge = Badge(loc("Kept while Apple Intelligence is on")) }
+            else if status.managedOff, snapshot.featureCleanupWaiting.contains(.phone) { row.badge = Badge(loc("Waiting for macOS"), tone: .caution) }
+            rows.append(row)
+        }
         return ToggleList(id: "switch", rows: rows)
+    }
+
+    static func featureRow(_ feature: ModelFeatureSettings.Feature, status: ModelFeatureSettings.Status) -> ToggleRow {
+        let siri = feature == .siri
+        let title = siri ? loc("Siri") : loc("Spatial Photos")
+        let detail = siri
+            ? loc("Turns Siri off and frees its unused models. MacSpace checks again while it stays off. Your Siri language is kept.")
+            : loc("Turns off spatial photo effects and frees their downloaded models.")
+        let badge: Badge?
+        switch status.state {
+        case .changedElsewhere: badge = Badge(loc("Changed outside MacSpace"), tone: .caution)
+        case .unknown: badge = Badge(loc("State unknown"), tone: .caution)
+        case .unsupported: badge = Badge(loc("Not verified on this macOS version"), tone: .caution)
+        case .on, .off: badge = nil
+        }
+        return ToggleRow(id: feature.rawValue, title: title,
+                         isOn: status.requestedOff.map { !$0 } ?? (status.state != .off),
+                         isEnabled: status.state == .on || status.state == .off || status.requestedOff == true,
+                         badge: badge, detail: detail,
+                         action: Action(id: "toggleModelFeature", title: title, parameters: ["feature": feature.rawValue]))
     }
 
     static func phoneFeatureRow(_ status: PhoneFeatureFlags.Status) -> ToggleRow {

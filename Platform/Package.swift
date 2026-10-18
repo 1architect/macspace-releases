@@ -10,7 +10,7 @@ let package = Package(
     targets: [
         .target(name: "AssetOwnerBridge", path: "AssetOwners/Native", publicHeadersPath: "include",
                 cSettings: [.unsafeFlags(["-fobjc-arc"])],
-                linkerSettings: [.linkedFramework("Foundation"), .linkedLibrary("sqlite3")]),
+                linkerSettings: [.linkedFramework("Foundation"), .linkedFramework("AppKit"), .linkedLibrary("sqlite3")]),
         .target(name: "MacSpacePlatform", dependencies: ["AssetOwnerBridge", .product(name: "MacSpaceSdk", package: "Sdk")], path: ".", exclude: ["Package.swift", "AssetOwners/Native"]),
     ]
 )

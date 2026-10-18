@@ -31,6 +31,17 @@ public enum SystemAssetGuard {
     /// The system assets are kept now: Apple Intelligence is available. When its answer cannot be read, they are not held, as before.
     public static var holdsAssets: Bool { appleIntelligenceAvailable() == true }
 
+    /// Owner withdrawal has a stricter gate than legacy purge-only callers: only the reviewed 2/4 answers are meaningful.
+    public static func reviewedAvailability(inEligibility data: Data) -> Bool? {
+        guard let root = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let domain = root[siriModeDomain] as? [String: Any], let answer = domain["os_eligibility_answer_t"] as? Int else { return nil }
+        switch answer { case 2: return false; case 4: return true; default: return nil }
+    }
+
+    public static var reviewedAvailability: Bool? {
+        (try? Data(contentsOf: URL(fileURLWithPath: eligibilityPath))).flatMap(reviewedAvailability(inEligibility:))
+    }
+
     /// Why a purge of `services` is not made now, or nil when it may go ahead.
     public static func refusal(_ services: [String]) -> String? {
         guard services.contains(CacheDeleteService.mobileAsset), holdsAssets else { return nil }

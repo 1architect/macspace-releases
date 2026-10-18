@@ -1,4 +1,13 @@
 {
+ "%@ %@ device files": [
+  "Arquivos de dispositivo %@ %@",
+  "Fichiers d’appareil %@ %@",
+  "Archivos de dispositivo %@ %@",
+  "Gerätedateien %@ %@",
+  "%@ %@ 设备文件",
+  "%@ %@のデバイスファイル",
+  "%@ %@ 기기 파일"
+ ],
  "%@ is outside the cleanable locations.": [
   "%@ está fora dos locais que podem ser limpos.",
   "%@ se trouve hors des emplacements nettoyables.",
@@ -34,6 +43,15 @@
   "%lld 项",
   "%lld項目",
   "%lld개 항목"
+ ],
+ "%lld more, including Apple Intelligence models, are under Protected by macOS.": [
+  "Mais %lld, incluindo modelos da Apple Intelligence, estão em Protegido pelo macOS.",
+  "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.",
+  "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.",
+  "%lld weitere, darunter Modelle von Apple Intelligence, stehen unter „Von macOS geschützt“.",
+  "另外 %lld 项（包括 Apple 智能模型）位于“受 macOS 保护”中。",
+  "Apple Intelligenceモデルを含むほか%lld件は「macOSが保護」にあります。",
+  "Apple Intelligence 모델 등 %lld개 항목이 macOS가 보호에 있습니다."
  ],
  "%lld places couldn't be measured.": [
   "%lld locais não puderam ser medidos.",
@@ -98,6 +116,15 @@
   "1件のレポート",
   "보고서 1개"
  ],
+ "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.": [
+  "Uma cópia do app que o macOS fez ao verificá-lo. Ela divide espaço com o app, então só é liberado o que uma versão anterior deixou.",
+  "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.",
+  "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.",
+  "Eine Kopie der App, die macOS beim Prüfen angelegt hat. Sie teilt sich den Speicher mit der App, daher wird nur frei, was eine ältere Version hinterlassen hat.",
+  "macOS 检查应用时创建的副本。它与应用共享空间，因此只释放旧版本留下的部分。",
+  "macOSがアプリの検証時に作ったコピーです。アプリと領域を共有するため、旧バージョンの残りだけが解放されます。",
+  "macOS가 앱을 검증할 때 만든 사본입니다. 앱과 공간을 공유하므로 이전 버전이 남긴 부분만 확보됩니다."
+ ],
  "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.": [
   "Uma imagem de restauração do macOS. Depois que o Mac, dispositivo ou máquina virtual para o qual foi baixada estiver configurado, ela pode ser apagada.",
   "Une image de restauration de macOS. Une fois le Mac, l’appareil ou la machine virtuelle configuré, elle peut être supprimée.",
@@ -115,6 +142,15 @@
   "虚拟机的磁盘和状态。请在虚拟化应用中删除不再使用的虚拟机。",
   "仮想マシンのディスクと状態です。不要なマシンは仮想化アプリで削除してください。",
   "가상 머신의 디스크와 상태입니다. 사용하지 않는 가상 머신은 가상화 앱에서 삭제하세요."
+ ],
+ "All users": [
+  "Todos os usuários",
+  "Tous les utilisateurs",
+  "Todos los usuarios",
+  "Alle Benutzer",
+  "所有用户",
+  "すべてのユーザ",
+  "모든 사용자"
  ],
  "Allow": [
   "Permitir",
@@ -152,6 +188,15 @@
   "macOSが検証後に保持するアプリのAPFSクローンです。アプリと領域を共有するため、削除しても空き容量はほぼ増えず、システム設定のシステムデータ表示だけが減ります。",
   "macOS가 검증 후 보관하는 앱의 APFS 클론입니다. 앱과 공간을 공유하므로 삭제해도 거의 확보되지 않으며 시스템 설정의 시스템 데이터 표시만 줄어듭니다."
  ],
+ "An app is using these files. Try again later.": [
+  "Um app está usando estes arquivos. Tente de novo mais tarde.",
+  "Une app utilise ces fichiers. Réessayez plus tard.",
+  "Una app está usando estos archivos. Inténtalo más tarde.",
+  "Eine App verwendet diese Dateien. Versuche es später erneut.",
+  "有应用正在使用这些文件，请稍后重试。",
+  "アプリが使用中です。後でもう一度お試しください。",
+  "앱이 이 파일을 사용 중입니다. 나중에 다시 시도하세요."
+ ],
  "An unfinished download by %@. If %@ is no longer downloading it, delete it.": [
   "Um download incompleto de %@. Se %@ não estiver mais baixando, apague-o.",
   "Un téléchargement inachevé de %@. Si %@ ne le télécharge plus, supprimez-le.",
@@ -160,6 +205,24 @@
   "%@ 未完成的下载。如果 %@ 已不再下载，可将其删除。",
   "%@の未完了のダウンロードです。%@がもうダウンロードしていなければ削除できます。",
   "%@의 미완료 다운로드입니다. %@에서 더 이상 다운로드하지 않으면 삭제하세요."
+ ],
+ "Android build cache": [
+  "Cache de compilação do Android",
+  "Cache de compilation Android",
+  "Caché de compilación de Android",
+  "Android-Build-Cache",
+  "Android 构建缓存",
+  "Androidビルドキャッシュ",
+  "Android 빌드 캐시"
+ ],
+ "App cache": [
+  "Cache de app",
+  "Cache d’app",
+  "Caché de app",
+  "App-Cache",
+  "应用缓存",
+  "アプリキャッシュ",
+  "앱 캐시"
  ],
  "App cache: %@": [
   "Cache de app: %@",
@@ -215,6 +278,15 @@
   "アプリグループのデータ：%@",
   "앱 그룹 데이터: %@"
  ],
+ "App not installed": [
+  "App não instalado",
+  "App non installée",
+  "App no instalada",
+  "App nicht installiert",
+  "未安装应用",
+  "アプリ未インストール",
+  "앱이 설치되지 않음"
+ ],
  "App support files": [
   "Arquivos de suporte de apps",
   "Fichiers de support d’apps",
@@ -250,6 +322,15 @@
   "后台服务使用的 Apple 系统缓存，由 macOS 管理。",
   "バックグラウンドサービス用のAppleシステムキャッシュです。macOSが管理します。",
   "백그라운드 서비스가 사용하는 Apple 시스템 캐시입니다. macOS가 관리합니다."
+ ],
+ "Apps and macOS rebuild these by themselves.": [
+  "Os apps e o macOS recriam estes sozinhos.",
+  "Les apps et macOS les recréent d’eux-mêmes.",
+  "Las apps y macOS los vuelven a crear solos.",
+  "Apps und macOS legen sie selbst neu an.",
+  "应用和 macOS 会自行重建。",
+  "アプリとmacOSが自動で再作成します。",
+  "앱과 macOS가 자동으로 다시 생성합니다."
  ],
  "Apps' support files for all users": [
   "Arquivos de suporte de apps para todos os usuários",
@@ -296,6 +377,15 @@
   "「システム設定 > バッテリー」で使うバッテリーと電力の履歴です。",
   "시스템 설정 > 배터리에서 사용하는 배터리 및 에너지 기록입니다."
  ],
+ "Cache cleaner": [
+  "Limpador de caches",
+  "Nettoyeur de caches",
+  "Limpiador de cachés",
+  "Cache-Reiniger",
+  "缓存清理工具",
+  "キャッシュクリーナー",
+  "캐시 정리 도구"
+ ],
  "Caches for all users": [
   "Caches para todos os usuários",
   "Caches pour tous les utilisateurs",
@@ -304,6 +394,15 @@
   "所有用户的缓存",
   "全ユーザのキャッシュ",
   "모든 사용자의 캐시"
+ ],
+ "Caches you can free": [
+  "Caches que podem ser liberados",
+  "Caches que vous pouvez libérer",
+  "Cachés que puedes liberar",
+  "Caches, die du freigeben kannst",
+  "可释放的缓存",
+  "解放できるキャッシュ",
+  "정리 가능한 캐시"
  ],
  "Caches, old reports and unused system assets": [
   "Caches, relatórios antigos e recursos do sistema sem uso",
@@ -322,6 +421,15 @@
   "可释放",
   "解放可能",
   "확보 가능"
+ ],
+ "Can't run": [
+  "Não abre mais",
+  "Ne démarre plus",
+  "Ya no se abre",
+  "Startet nicht mehr",
+  "无法运行",
+  "実行不可",
+  "실행할 수 없음"
  ],
  "Cannot be undone": [
   "Não pode ser desfeito",
@@ -350,6 +458,15 @@
   "このMac上のクラウドファイル",
   "이 Mac의 클라우드 파일"
  ],
+ "Cloud storage": [
+  "Armazenamento na nuvem",
+  "Stockage cloud",
+  "Almacenamiento en la nube",
+  "Cloud-Speicher",
+  "云存储",
+  "クラウドストレージ",
+  "클라우드 저장 공간"
+ ],
  "Cloud storage: %@": [
   "Armazenamento na nuvem: %@",
   "Stockage cloud : %@",
@@ -367,6 +484,24 @@
   "%@ 的代码签名副本",
   "%@のコード署名用コピー",
   "%@의 코드 서명 사본"
+ ],
+ "Come back with use": [
+  "Voltam com o uso",
+  "Reviennent à l’usage",
+  "Vuelven con el uso",
+  "Kommen bei Nutzung zurück",
+  "使用后会再次产生",
+  "使用すると再び増加",
+  "사용하면 다시 생성됨"
+ ],
+ "Console's history is deleted.": [
+  "O histórico do Console é apagado.",
+  "L’historique de Console est supprimé.",
+  "Se borra el historial de Consola.",
+  "Der Verlauf in der Konsole wird gelöscht.",
+  "控制台历史将被删除。",
+  "コンソールの履歴を削除します。",
+  "콘솔 기록이 삭제됩니다."
  ],
  "CoreSpotlight indexes for apps' searchable content.": [
   "Índices do CoreSpotlight para o conteúdo pesquisável dos apps.",
@@ -394,6 +529,15 @@
   "守护进程容器",
   "デーモンのコンテナ",
   "데몬 컨테이너"
+ ],
+ "Dart packages": [
+  "Pacotes do Dart",
+  "Paquets Dart",
+  "Paquetes de Dart",
+  "Dart-Pakete",
+  "Dart 软件包",
+  "Dartパッケージ",
+  "Dart 패키지"
  ],
  "Data of Apple background services.": [
   "Dados de serviços em segundo plano da Apple.",
@@ -430,6 +574,15 @@
   "已删除 %@。",
   "%@を削除しました。",
   "%@ 삭제됨."
+ ],
+ "Developer": [
+  "Desenvolvedor",
+  "Développeur",
+  "Desarrollador",
+  "Entwickler",
+  "开发者",
+  "開発者",
+  "개발자"
  ],
  "Diagnostic and crash reports": [
   "Relatórios de diagnóstico e de falhas",
@@ -476,6 +629,15 @@
   "Xcode用のダウンロードです。macOSが重要なファイルとして保持し、購読元はありません。",
   "Xcode용 다운로드입니다. macOS가 중요 파일로 표시하며 구독하는 항목은 없습니다."
  ],
+ "Downloads again when needed": [
+  "Baixa de novo quando precisar",
+  "Retéléchargé si besoin",
+  "Se vuelve a descargar si hace falta",
+  "Wird bei Bedarf neu geladen",
+  "需要时重新下载",
+  "必要時に再ダウンロード",
+  "필요하면 다시 다운로드"
+ ],
  "Downloads macOS no longer needs, like released Apple Intelligence models.": [
   "Downloads de que o macOS não precisa mais, como modelos do Apple Intelligence liberados.",
   "Téléchargements dont macOS n’a plus besoin, comme les modèles Apple Intelligence libérés.",
@@ -503,6 +665,15 @@
   "書類の以前のバージョン（ファイル > バージョンを戻す）です。最新のものだけ残します。",
   "문서의 이전 버전입니다(파일 > 다음으로 복귀). 최신 버전만 유지합니다."
  ],
+ "Empties after 30 days": [
+  "Esvazia após 30 dias",
+  "Se vide après 30 jours",
+  "Se vacía a los 30 días",
+  "Leert sich nach 30 Tagen",
+  "30 天后清空",
+  "30日後に削除",
+  "30일 후 비워짐"
+ ],
  "Empty the Trash in Finder.": [
   "Esvazie o Lixo no Finder.",
   "Videz la Corbeille dans le Finder.",
@@ -512,6 +683,15 @@
   "Finderでゴミ箱を空にしてください。",
   "Finder에서 휴지통을 비우세요."
  ],
+ "Erase Console records used for troubleshooting.": [
+  "Apaga os registros do Console usados para resolução de problemas.",
+  "Efface les enregistrements de Console utilisés pour le dépannage.",
+  "Borra los registros de Consola que se usan para solucionar problemas.",
+  "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen.",
+  "抹掉用于故障排查的控制台记录。",
+  "問題調査用のコンソール記録を消去します。",
+  "문제 해결용 콘솔 기록을 지웁니다."
+ ],
  "Everything else": [
   "Todo o resto",
   "Tout le reste",
@@ -520,6 +700,24 @@
   "其他所有内容",
   "その他すべて",
   "나머지 항목"
+ ],
+ "Everything in the Trash is deleted for good.": [
+  "Tudo o que está no Lixo é apagado de vez.",
+  "Tout ce qui est dans la Corbeille est supprimé définitivement.",
+  "Todo lo que hay en la Papelera se borra para siempre.",
+  "Alles im Papierkorb wird endgültig gelöscht.",
+  "废纸篓中的所有内容将永久删除。",
+  "ゴミ箱の内容をすべて完全に削除します。",
+  "휴지통의 모든 항목이 영구적으로 삭제됩니다."
+ ],
+ "File system metadata": [
+  "Metadados do sistema de arquivos",
+  "Métadonnées du système de fichiers",
+  "Metadatos del sistema de archivos",
+  "Metadaten des Dateisystems",
+  "文件系统元数据",
+  "ファイルシステムのメタデータ",
+  "파일 시스템 메타데이터"
  ],
  "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.": [
   "Arquivos de uma atualização anterior do macOS já instalada; nenhuma atualização está pendente. O macOS não os removeu e eles estão numa pasta protegida, então o MacSpace não mexe neles.",
@@ -548,6 +746,15 @@
   "%@を解放",
   "%@ 확보"
  ],
+ "Free %@ in the Trash?": [
+  "Liberar %@ do Lixo?",
+  "Libérer %@ dans la Corbeille ?",
+  "¿Liberar %@ de la Papelera?",
+  "%@ im Papierkorb freigeben?",
+  "释放废纸篓中的 %@？",
+  "ゴミ箱の%@を解放しますか？",
+  "휴지통의 %@ 정리할까요?"
+ ],
  "Free %@?": [
   "Liberar %@?",
   "Libérer %@ ?",
@@ -557,6 +764,24 @@
   "%@を解放しますか？",
   "%@ 확보할까요?"
  ],
+ "Free all version history?": [
+  "Liberar todo o histórico de versões?",
+  "Libérer tout l’historique des versions ?",
+  "¿Liberar todo el historial de versiones?",
+  "Den gesamten Versionsverlauf freigeben?",
+  "释放全部版本历史？",
+  "すべてのバージョン履歴を解放しますか？",
+  "모든 버전 기록을 정리할까요?"
+ ],
+ "Free caches": [
+  "Liberar caches",
+  "Libérer les caches",
+  "Liberar cachés",
+  "Caches freigeben",
+  "释放缓存",
+  "キャッシュを解放",
+  "캐시 정리"
+ ],
  "Free now": [
   "Liberar agora",
   "À libérer",
@@ -565,6 +790,87 @@
   "立即释放",
   "今すぐ解放",
   "지금 확보"
+ ],
+ "Free old reports?": [
+  "Liberar os relatórios antigos?",
+  "Libérer les anciens rapports ?",
+  "¿Liberar los informes antiguos?",
+  "Alte Berichte freigeben?",
+  "释放旧报告？",
+  "古いレポートを解放しますか？",
+  "오래된 보고서를 정리할까요?"
+ ],
+ "Free recommended": [
+  "Liberar recomendados",
+  "Libérer la recommandation",
+  "Liberar recomendados",
+  "Empfohlene freigeben",
+  "释放推荐内容",
+  "推奨項目を解放",
+  "권장 항목 정리"
+ ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar seleccionados",
+  "Auswahl freigeben",
+  "释放所选内容",
+  "選択項目を解放",
+  "선택 항목 정리"
+ ],
+ "Free stuck wallpaper downloads?": [
+  "Liberar os downloads de wallpapers travados?",
+  "Libérer les téléchargements de fonds d’écran bloqués ?",
+  "¿Liberar las descargas de fondos de pantalla atascadas?",
+  "Hängengebliebene Hintergrundbild-Downloads freigeben?",
+  "释放卡住的墙纸下载？",
+  "停止した壁紙のダウンロードを解放しますか？",
+  "멈춘 배경화면 다운로드를 정리할까요?"
+ ],
+ "Free the leftover update files?": [
+  "Liberar os arquivos restantes da atualização?",
+  "Libérer les fichiers restants de la mise à jour ?",
+  "¿Liberar los archivos restantes de la actualización?",
+  "Die übrigen Update-Dateien freigeben?",
+  "释放更新残留文件？",
+  "更新の残りのファイルを解放しますか？",
+  "잔여 업데이트 파일을 정리할까요?"
+ ],
+ "Free the selected caches?": [
+  "Liberar os caches selecionados?",
+  "Libérer les caches sélectionnés ?",
+  "¿Liberar las cachés seleccionadas?",
+  "Die ausgewählten Caches freigeben?",
+  "释放所选缓存？",
+  "選択したキャッシュを解放しますか？",
+  "선택한 캐시를 정리할까요?"
+ ],
+ "Free the symbols for crash reports?": [
+  "Liberar os símbolos para relatórios de falhas?",
+  "Libérer les symboles des rapports de plantage ?",
+  "¿Liberar los símbolos para informes de fallos?",
+  "Symbole für Absturzberichte freigeben?",
+  "释放崩溃报告符号？",
+  "クラッシュレポート用シンボルを解放しますか？",
+  "충돌 보고서용 기호를 정리할까요?"
+ ],
+ "Free the system log?": [
+  "Liberar o registro do sistema?",
+  "Libérer le journal système ?",
+  "¿Liberar el registro del sistema?",
+  "Systemprotokoll freigeben?",
+  "释放系统日志？",
+  "システムログを解放しますか？",
+  "시스템 로그를 정리할까요?"
+ ],
+ "Free unused system assets?": [
+  "Liberar os arquivos do sistema não usados?",
+  "Libérer les ressources système inutilisées ?",
+  "¿Liberar los recursos del sistema sin uso?",
+  "Ungenutzte Systemdateien freigeben?",
+  "释放未使用的系统资源？",
+  "未使用のシステムアセットを解放しますか？",
+  "사용하지 않는 시스템 리소스를 비울까요?"
  ],
  "Free up to %@ of unused system assets?": [
   "Liberar até %@ de recursos do sistema sem uso?",
@@ -593,6 +899,15 @@
   "空き容量を増やしています",
   "공간 확보 중"
  ],
+ "Frees about %@. Homebrew downloads them again when it needs them.": [
+  "Libera cerca de %@. O Homebrew os baixa de novo quando precisar.",
+  "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.",
+  "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.",
+  "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht.",
+  "释放约 %@，Homebrew 需要时会重新下载。",
+  "約%@を解放します。必要に応じてHomebrewが再ダウンロードします。",
+  "약 %@ 확보합니다. Homebrew가 필요할 때 다시 다운로드합니다."
+ ],
  "From a deleted account. Copy what you need, then delete it.": [
   "De uma conta apagada. Copie o que precisar e apague-a.",
   "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.",
@@ -610,6 +925,24 @@
   "来自已安装的更新。",
   "インストール済み更新のファイルです。",
   "이미 설치된 업데이트의 파일입니다."
+ ],
+ "Go builds": [
+  "Compilações do Go",
+  "Compilations Go",
+  "Compilaciones de Go",
+  "Go-Builds",
+  "Go 构建",
+  "Goビルド",
+  "Go 빌드"
+ ],
+ "Go modules": [
+  "Módulos do Go",
+  "Modules Go",
+  "Módulos de Go",
+  "Go-Module",
+  "Go 模块",
+  "Goモジュール",
+  "Go 모듈"
  ],
  "Home folder of a deleted account: %@": [
   "Pasta pessoal de uma conta apagada: %@",
@@ -637,6 +970,42 @@
   "Homebrew 与软件包",
   "Homebrewとパッケージ",
   "Homebrew 및 패키지"
+ ],
+ "Homebrew downloads": [
+  "Downloads do Homebrew",
+  "Téléchargements de Homebrew",
+  "Descargas de Homebrew",
+  "Homebrew-Downloads",
+  "Homebrew 下载",
+  "Homebrewのダウンロード",
+  "Homebrew 다운로드"
+ ],
+ "Homebrew is busy. Try again when it's done.": [
+  "O Homebrew está ocupado. Tente de novo quando terminar.",
+  "Homebrew est occupé. Réessayez quand il aura fini.",
+  "Homebrew está ocupado. Vuelve a intentarlo cuando termine.",
+  "Homebrew ist beschäftigt. Versuche es erneut, wenn es fertig ist.",
+  "Homebrew 正忙，请完成后重试。",
+  "Homebrewが処理中です。終了後に再度お試しください。",
+  "Homebrew가 사용 중입니다. 완료 후 다시 시도하세요."
+ ],
+ "Homebrew is not installed": [
+  "O Homebrew não está instalado",
+  "Homebrew n’est pas installé",
+  "Homebrew no está instalado",
+  "Homebrew ist nicht installiert",
+  "未安装 Homebrew",
+  "Homebrewがインストールされていません",
+  "Homebrew가 설치되지 않음"
+ ],
+ "Homebrew's cleanup failed": [
+  "A limpeza do Homebrew falhou",
+  "Le nettoyage de Homebrew a échoué",
+  "La limpieza de Homebrew falló",
+  "Die Bereinigung von Homebrew ist fehlgeschlagen",
+  "Homebrew 清理失败",
+  "Homebrewのクリーンアップに失敗",
+  "Homebrew 정리 실패"
  ],
  "In Dictionary > Settings, turn off dictionaries you don't use.": [
   "Em Dicionário > Ajustes, desative os dicionários que você não usa.",
@@ -683,6 +1052,15 @@
   "「Xcode > Settings > Components」でドキュメントを削除してください。",
   "Xcode > Settings > Components에서 문서를 제거하세요."
  ],
+ "In use": [
+  "Em uso",
+  "En cours d’utilisation",
+  "En uso",
+  "In Verwendung",
+  "使用中",
+  "使用中",
+  "사용 중"
+ ],
  "Install the helper in Settings": [
   "Instale o auxiliar nos Ajustes",
   "Installez l’assistant dans Réglages",
@@ -718,6 +1096,15 @@
   "由 revisiond 保留，用于“文件 > 复原到 > 浏览所有版本”。可以在此浏览器中删除文稿旧版本。删除存储会移除全部版本历史。",
   "「ファイル > バージョンを戻す > すべてのバージョンをブラウズ」用のrevisiondのデータです。そこで古い版を削除できます。この保存領域を削除すると全履歴が失われます。",
   "revisiond가 파일 > 다음으로 복귀 > 모든 버전 탐색을 위해 보관합니다. 해당 브라우저에서 이전 문서 버전을 삭제할 수 있습니다. 저장소를 삭제하면 모든 버전 기록이 제거됩니다."
+ ],
+ "Kept while Apple Intelligence is on": [
+  "Mantido enquanto a Apple Intelligence estiver ativa",
+  "Conservé tant qu’Apple Intelligence est activé",
+  "Se conserva mientras Apple Intelligence esté activado",
+  "Bleibt, solange Apple Intelligence aktiv ist",
+  "Apple 智能开启时保留",
+  "Apple Intelligenceがオンの間は保持",
+  "Apple Intelligence가 켜져 있는 동안 유지"
  ],
  "Language data (spelling, text analysis)": [
   "Dados de idioma (ortografia, análise de texto)",
@@ -755,6 +1142,24 @@
   "残りのファイル",
   "잔여 항목"
  ],
+ "Log files": [
+  "Arquivos de log",
+  "Fichiers journaux",
+  "Archivos de registro",
+  "Protokolldateien",
+  "日志文件",
+  "ログファイル",
+  "로그 파일"
+ ],
+ "Logs for all users": [
+  "Registros para todos os usuários",
+  "Journaux pour tous les utilisateurs",
+  "Registros para todos los usuarios",
+  "Protokolle für alle Benutzer",
+  "所有用户的日志",
+  "全ユーザのログ",
+  "모든 사용자의 로그"
+ ],
  "Managed by macOS": [
   "Gerenciado pelo macOS",
   "Géré par macOS",
@@ -772,6 +1177,15 @@
   "由内核管理，重新启动后会缩小。",
   "カーネルが管理し、再起動後に縮小します。",
   "커널이 관리하며 재시동 후 줄어듭니다."
+ ],
+ "Models and system assets": [
+  "Modelos e recursos do sistema",
+  "Modèles et ressources système",
+  "Modelos y recursos del sistema",
+  "Modelle und Systemressourcen",
+  "模型与系统资源",
+  "モデルとシステムアセット",
+  "모델 및 시스템 에셋"
  ],
  "Mostly media. Clean it up from inside the app.": [
   "Principalmente mídia. Faça a limpeza dentro do app.",
@@ -809,6 +1223,51 @@
   "未識別",
   "식별되지 않음"
  ],
+ "Not opened for %lld days": [
+  "Não aberto há %lld dias",
+  "Non ouvert depuis %lld jours",
+  "Sin abrir desde hace %lld días",
+  "Seit %lld Tagen nicht geöffnet",
+  "%lld 天未打开",
+  "%lld日間未起動",
+  "%lld일 동안 열지 않음"
+ ],
+ "Nothing was freed: MacSpace couldn't check which apps are open.": [
+  "Nada foi liberado: o MacSpace não conseguiu verificar quais apps estão abertos.",
+  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quelles apps sont ouvertes.",
+  "No se liberó nada: MacSpace no pudo comprobar qué apps están abiertas.",
+  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Apps geöffnet sind.",
+  "未释放任何内容：MacSpace 无法检查哪些应用正在运行。",
+  "何も解放していません。実行中のアプリを確認できませんでした。",
+  "정리된 항목 없음: 실행 중인 앱을 확인하지 못했습니다."
+ ],
+ "Nothing was freed: MacSpace couldn't check which files are in use.": [
+  "Nada foi liberado: o MacSpace não conseguiu verificar quais arquivos estão em uso.",
+  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quels fichiers sont utilisés.",
+  "No se liberó nada: MacSpace no pudo comprobar qué archivos están en uso.",
+  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Dateien verwendet werden.",
+  "未释放任何内容：MacSpace 无法检查哪些文件正在使用。",
+  "何も解放していません。使用中のファイルを確認できませんでした。",
+  "정리된 항목 없음: 사용 중인 파일을 확인하지 못했습니다."
+ ],
+ "Old Homebrew versions": [
+  "Versões antigas do Homebrew",
+  "Anciennes versions de Homebrew",
+  "Versiones antiguas de Homebrew",
+  "Alte Homebrew-Versionen",
+  "旧 Homebrew 版本",
+  "古いHomebrewのバージョン",
+  "이전 Homebrew 버전"
+ ],
+ "Old app copy": [
+  "Cópia antiga de app",
+  "Ancienne copie d’app",
+  "Copia antigua de app",
+  "Alte App-Kopie",
+  "旧应用副本",
+  "古いアプリのコピー",
+  "이전 앱 사본"
+ ],
  "Old diagnostic and crash reports": [
   "Relatórios antigos de diagnóstico e de falhas",
   "Anciens rapports de diagnostic et de plantage",
@@ -817,6 +1276,15 @@
   "旧诊断与崩溃报告",
   "古い診断・クラッシュレポート",
   "오래된 진단 및 충돌 보고서"
+ ],
+ "Old reports and unused system assets": [
+  "Relatórios antigos e recursos do sistema sem uso",
+  "Anciens rapports et ressources système inutilisées",
+  "Informes antiguos y recursos del sistema sin usar",
+  "Alte Berichte und ungenutzte Systemressourcen",
+  "旧报告和未使用的系统资源",
+  "古いレポートと未使用のシステムアセット",
+  "오래된 보고서 및 미사용 시스템 에셋"
  ],
  "Old reports are deleted from Free now.": [
   "Os relatórios antigos são apagados em Liberar agora.",
@@ -827,6 +1295,33 @@
   "古いレポートは「今すぐ解放」で削除できます。",
   "지금 확보에서 오래된 보고서를 삭제합니다."
  ],
+ "Older version": [
+  "Versão antiga",
+  "Ancienne version",
+  "Versión antigua",
+  "Ältere Version",
+  "旧版本",
+  "古いバージョン",
+  "이전 버전"
+ ],
+ "Open %@": [
+  "Abrir %@",
+  "Ouvrir %@",
+  "Abrir %@",
+  "%@ öffnen",
+  "打开 %@",
+  "%@を開く",
+  "%@ 열기"
+ ],
+ "Open now": [
+  "Aberto agora",
+  "Ouvert",
+  "Abierto ahora",
+  "Gerade geöffnet",
+  "正在运行",
+  "起動中",
+  "열려 있음"
+ ],
  "Other": [
   "Outros",
   "Autres",
@@ -835,6 +1330,24 @@
   "其他",
   "その他",
   "기타"
+ ],
+ "Other caches": [
+  "Outros caches",
+  "Autres caches",
+  "Otras cachés",
+  "Andere Caches",
+  "其他缓存",
+  "その他のキャッシュ",
+  "기타 캐시"
+ ],
+ "Other protected folders": [
+  "Outras pastas protegidas",
+  "Autres dossiers protégés",
+  "Otras carpetas protegidas",
+  "Weitere geschützte Ordner",
+  "其他受保护文件夹",
+  "その他の保護されたフォルダ",
+  "기타 보호된 폴더"
  ],
  "Other system downloads": [
   "Outros downloads do sistema",
@@ -872,6 +1385,33 @@
   "電力ログ",
   "전원 로그"
  ],
+ "Project deleted": [
+  "Projeto apagado",
+  "Projet supprimé",
+  "Proyecto eliminado",
+  "Projekt gelöscht",
+  "项目已删除",
+  "プロジェクト削除済み",
+  "프로젝트 삭제됨"
+ ],
+ "Protected by macOS": [
+  "Protegido pelo macOS",
+  "Protégé par macOS",
+  "Protegido por macOS",
+  "Von macOS geschützt",
+  "受 macOS 保护",
+  "macOSが保護",
+  "macOS가 보호"
+ ],
+ "Quits %@.": [
+  "Encerra %@.",
+  "Quitte %@.",
+  "Cierra %@.",
+  "Beendet %@.",
+  "将退出 %@。",
+  "%@を終了します。",
+  "%@ 종료합니다."
+ ],
  "Rebuilt by Spotlight; macOS manages it.": [
   "Reconstruído pelo Spotlight; o macOS o gerencia.",
   "Reconstruit par Spotlight ; macOS le gère.",
@@ -880,6 +1420,15 @@
   "由 Spotlight 重建，macOS 管理。",
   "Spotlightが再作成し、macOSが管理します。",
   "Spotlight가 다시 생성하고 macOS가 관리합니다."
+ ],
+ "Recommended": [
+  "Recomendados",
+  "Recommandés",
+  "Recomendados",
+  "Empfohlen",
+  "推荐",
+  "推奨",
+  "권장"
  ],
  "Remove it with the tool that made it.": [
   "Remova-o com a ferramenta que o criou.",
@@ -917,6 +1466,15 @@
   "logdがローテーションします。削除すると問題調査用のログが失われます。",
   "logd가 순환 관리합니다. 삭제하면 문제 해결에 필요한 로그가 제거됩니다."
  ],
+ "Rust packages": [
+  "Pacotes Rust",
+  "Paquets Rust",
+  "Paquetes de Rust",
+  "Rust-Pakete",
+  "Rust 软件包",
+  "Rustパッケージ",
+  "Rust 패키지"
+ ],
  "Safe to delete while %@ is closed. It's rebuilt when needed.": [
   "Pode ser apagado com segurança enquanto %@ estiver fechado. É recriado quando necessário.",
   "Supprimable sans risque quand %@ est fermé. Il est recréé au besoin.",
@@ -934,6 +1492,15 @@
   "已删除账户保存的个人文件夹：%@",
   "削除済みアカウントの保存されたホーム：%@",
   "삭제된 계정의 저장된 홈 폴더: %@"
+ ],
+ "See what fills System Data and free what is safe to remove.": [
+  "Veja o que ocupa Dados do Sistema e libere o que pode ser removido com segurança.",
+  "Voyez ce qui remplit Données système et libérez ce qui peut être supprimé sans risque.",
+  "Mira qué ocupa Datos del sistema y libera lo que se puede eliminar sin riesgo.",
+  "Sieh, was „Systemdaten“ füllt, und gib frei, was gefahrlos entfernt werden kann.",
+  "查看系统数据的内容并释放可安全移除的部分。",
+  "システムデータの内容を確認し、安全に削除できるものを解放します。",
+  "시스템 데이터의 구성을 확인하고 안전하게 제거할 수 있는 항목을 정리합니다."
  ],
  "Shared app files": [
   "Arquivos compartilhados de apps",
@@ -961,6 +1528,24 @@
   "共享临时文件",
   "共有一時ファイル",
   "공유 임시 파일"
+ ],
+ "Simulator caches": [
+  "Caches do Simulador",
+  "Caches du Simulateur",
+  "Cachés del Simulador",
+  "Simulator-Caches",
+  "模拟器缓存",
+  "シミュレータのキャッシュ",
+  "시뮬레이터 캐시"
+ ],
+ "Simulators that can't run": [
+  "Simuladores que não abrem mais",
+  "Simulateurs qui ne peuvent plus démarrer",
+  "Simuladores que ya no se pueden abrir",
+  "Simulatoren, die nicht mehr starten",
+  "无法运行的模拟器",
+  "実行できないシミュレータ",
+  "실행할 수 없는 시뮬레이터"
  ],
  "Siri speech models": [
   "Modelos de fala da Siri",
@@ -1034,6 +1619,33 @@
   "スワップとスリープのファイル",
   "스왑 및 잠자기 파일"
  ],
+ "Swift packages": [
+  "Pacotes Swift",
+  "Paquets Swift",
+  "Paquetes de Swift",
+  "Swift-Pakete",
+  "Swift 软件包",
+  "Swiftパッケージ",
+  "Swift 패키지"
+ ],
+ "Symbolication cache": [
+  "Cache de simbolização",
+  "Cache de symbolisation",
+  "Caché de simbolización",
+  "Symbolisierungs-Cache",
+  "符号化缓存",
+  "シンボル化キャッシュ",
+  "기호화 캐시"
+ ],
+ "Symbols for crash reports": [
+  "Símbolos para relatórios de falhas",
+  "Symboles des rapports de plantage",
+  "Símbolos para informes de fallos",
+  "Symbole für Absturzberichte",
+  "崩溃报告符号",
+  "クラッシュレポート用シンボル",
+  "충돌 보고서용 기호"
+ ],
  "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.": [
   "Símbolos para relatórios de falhas e depuração; recriados quando necessário. Pertence ao root.",
   "Symboles pour les rapports de plantage et le débogage ; recréés à la demande. Appartient à root.",
@@ -1051,6 +1663,24 @@
   "系统数据",
   "システムデータ",
   "시스템 데이터"
+ ],
+ "System assets": [
+  "Recursos do sistema",
+  "Ressources système",
+  "Recursos del sistema",
+  "Systemressourcen",
+  "系统资源",
+  "システムアセット",
+  "시스템 에셋"
+ ],
+ "System cache": [
+  "Cache do sistema",
+  "Cache système",
+  "Caché del sistema",
+  "System-Cache",
+  "系统缓存",
+  "システムキャッシュ",
+  "시스템 캐시"
  ],
  "System cache: %@": [
   "Cache do sistema: %@",
@@ -1079,6 +1709,15 @@
   "システム機能拡張",
   "시스템 확장 프로그램"
  ],
+ "System log": [
+  "Registro do sistema",
+  "Journal système",
+  "Registro del sistema",
+  "Systemprotokoll",
+  "系统日志",
+  "システムログ",
+  "시스템 로그"
+ ],
  "System logs": [
   "Registros do sistema",
   "Journaux système",
@@ -1097,6 +1736,24 @@
   "一時ファイル",
   "임시 파일"
  ],
+ "Temporary files of macOS and of other users on this Mac.": [
+  "Arquivos temporários do macOS e de outros usuários deste Mac.",
+  "Fichiers temporaires de macOS et des autres utilisateurs de ce Mac.",
+  "Archivos temporales de macOS y de otros usuarios de este Mac.",
+  "Temporäre Dateien von macOS und anderen Benutzern dieses Macs.",
+  "此 Mac 上 macOS 和其他用户的临时文件。",
+  "このMac上のmacOSとほかのユーザの一時ファイルです。",
+  "이 Mac의 macOS 및 다른 사용자 임시 파일입니다."
+ ],
+ "Temporary files of macOS and other users": [
+  "Arquivos temporários do macOS e de outros usuários",
+  "Fichiers temporaires de macOS et des autres utilisateurs",
+  "Archivos temporales de macOS y de otros usuarios",
+  "Temporäre Dateien von macOS und anderen Benutzern",
+  "macOS 和其他用户的临时文件",
+  "macOSとほかのユーザの一時ファイル",
+  "macOS 및 다른 사용자의 임시 파일"
+ ],
  "Temporary files; macOS clears them at restart.": [
   "Arquivos temporários; o macOS os apaga ao reiniciar.",
   "Fichiers temporaires ; macOS les efface au redémarrage.",
@@ -1114,6 +1771,15 @@
   "“词典”应用和“查询”功能。",
   "辞書アプリと「調べる」機能用です。",
   "사전 앱과 찾아보기 기능에 사용됩니다."
+ ],
+ "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.": [
+  "O Finder pode apagar os itens que estão nele há 30 dias: Finder > Ajustes > Avançado.",
+  "Le Finder peut supprimer les éléments qui s’y trouvent depuis 30 jours : Finder > Réglages > Avancés.",
+  "El Finder puede eliminar los ítems que llevan 30 días en ella: Finder > Ajustes > Avanzado.",
+  "Der Finder kann Objekte löschen, die seit 30 Tagen darin liegen: Finder > Einstellungen > Erweitert.",
+  "访达可以删除在废纸篓中超过 30 天的项目：访达 > 设置 > 高级。",
+  "Finderはゴミ箱に30日以上ある項目を削除できます：Finder > 設定 > 詳細。",
+  "Finder는 휴지통에 30일 이상 있는 항목을 삭제할 수 있습니다: Finder > 설정 > 고급."
  ],
  "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them.": [
   "O serviço de fala da Siri, o reconhecimento de fala e os recursos de ligação, para o idioma da Siri e o do sistema. Nenhum ajuste os remove.",
@@ -1151,6 +1817,15 @@
   "%@を完全に削除します。",
   "%@이(가) 영구적으로 삭제됩니다."
  ],
+ "Tool cache": [
+  "Cache de ferramenta",
+  "Cache d’outil",
+  "Caché de herramienta",
+  "Tool-Cache",
+  "工具缓存",
+  "ツールキャッシュ",
+  "도구 캐시"
+ ],
  "Tool cache: ~/.cache/%@": [
   "Cache de ferramenta: ~/.cache/%@",
   "Cache d’outil : ~/.cache/%@",
@@ -1159,6 +1834,24 @@
   "工具缓存：~/.cache/%@",
   "ツールキャッシュ：~/.cache/%@",
   "도구 캐시: ~/.cache/%@"
+ ],
+ "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.": [
+  "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.",
+  "Outils et fichiers d’apps installés en dehors de Homebrew, comme Node.js, Python et les outils Parallels. Supprimez chaque outil avec son installateur ou gestionnaire de paquets ; supprimer ce dossier entier peut les empêcher de fonctionner.",
+  "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.",
+  "Außerhalb von Homebrew installierte Werkzeuge und App-Dateien, etwa Node.js, Python und Parallels-Werkzeuge. Entferne einzelne Werkzeuge mit ihrem Installationsprogramm oder Paketmanager; das Löschen des ganzen Ordners kann ihre Funktion beeinträchtigen.",
+  "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。",
+  "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。",
+  "Node.js, Python, Parallels 도구 등 Homebrew 외부에서 설치된 도구와 앱 파일입니다. 각 도구의 설치 프로그램이나 패키지 관리자로 제거하세요. 이 폴더 전체를 삭제하면 도구가 작동하지 않을 수 있습니다."
+ ],
+ "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.": [
+  "Ferramentas e bibliotecas instaladas pelo Homebrew. Versões antigas e downloads que podem ser removidos estão em Caches que podem ser liberados. Os pacotes instalados são mantidos.",
+  "Outils et bibliothèques installés par Homebrew. Les anciennes versions et les téléchargements supprimables figurent dans les caches pouvant être libérés. Les paquets installés sont conservés.",
+  "Herramientas y bibliotecas instaladas por Homebrew. Las versiones antiguas y las descargas eliminables aparecen en Cachés que se pueden liberar. Los paquetes instalados se conservan.",
+  "Von Homebrew installierte Werkzeuge und Bibliotheken. Entfernbare alte Versionen und Downloads stehen unter den freigebbaren Caches. Installierte Pakete bleiben erhalten.",
+  "Homebrew 安装的工具和库。可移除的旧版本和下载文件列在可清理的缓存中，已安装的软件包会保留。",
+  "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。",
+  "Homebrew로 설치한 도구와 라이브러리입니다. 삭제 가능한 이전 버전과 다운로드는 공간을 확보할 수 있는 캐시에 표시됩니다. 설치된 패키지는 유지됩니다."
  ],
  "Trash": [
   "Lixo",
@@ -1177,6 +1870,15 @@
   "开启辅助程序以查看所有内容",
   "ヘルパーをオンにしてすべて表示",
   "모든 항목을 보려면 보조 프로그램 켜기"
+ ],
+ "Unchanged for %lld days": [
+  "Sem mudanças há %lld dias",
+  "Inchangé depuis %lld jours",
+  "Sin cambios desde hace %lld días",
+  "Seit %lld Tagen unverändert",
+  "%lld 天未更改",
+  "%lld日間変更なし",
+  "%lld일 동안 변경되지 않음"
  ],
  "Unfinished download: %@": [
   "Download incompleto: %@",
@@ -1223,6 +1925,15 @@
   "未使用のシステムアセット",
   "미사용 시스템 에셋"
  ],
+ "Virtual machine": [
+  "Máquina virtual",
+  "Machine virtuelle",
+  "Máquina virtual",
+  "Virtuelle Maschine",
+  "虚拟机",
+  "仮想マシン",
+  "가상 머신"
+ ],
  "Virtual machine: %@": [
   "Máquina virtual: %@",
   "Machine virtuelle : %@",
@@ -1240,6 +1951,24 @@
   "墙纸与屏幕保护程序下载",
   "壁紙とスクリーンセーバのダウンロード",
   "배경화면 및 화면 보호기 다운로드"
+ ],
+ "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.": [
+  "Fundos e protetores de tela que o macOS está baixando. Um tamanho grande indica downloads travados.",
+  "Fonds d’écran et économiseurs d’écran que macOS télécharge. Une grande taille indique des téléchargements bloqués.",
+  "Fondos y salvapantallas que macOS está descargando. Un tamaño grande indica descargas atascadas.",
+  "Hintergrundbilder und Bildschirmschoner, die macOS lädt. Eine große Größe bedeutet hängengebliebene Downloads.",
+  "macOS 正在下载的墙纸和屏幕保护程序。占用过大说明下载卡住。",
+  "macOSがダウンロード中の壁紙とスクリーンセーバです。容量が大きい場合は停止したダウンロードです。",
+  "macOS가 다운로드하는 배경화면과 화면 보호기입니다. 크기가 크면 다운로드가 멈춘 것입니다."
+ ],
+ "Web cache": [
+  "Cache da web",
+  "Cache web",
+  "Caché web",
+  "Web-Cache",
+  "网页缓存",
+  "Webキャッシュ",
+  "웹 캐시"
  ],
  "What fills System Data": [
   "O que ocupa Dados do Sistema",
@@ -1259,6 +1988,24 @@
   "内容",
   "포함된 항목"
  ],
+ "What macOS keeps to read crash reports. It's rebuilt when needed.": [
+  "O que o macOS guarda para ler relatórios de falhas. É recriado quando necessário.",
+  "Ce que macOS garde pour lire les rapports de plantage. Il est reconstruit au besoin.",
+  "Lo que macOS guarda para leer informes de fallos. Se vuelve a crear cuando hace falta.",
+  "Was macOS zum Lesen von Absturzberichten aufbewahrt. Es wird bei Bedarf neu aufgebaut.",
+  "macOS 为读取崩溃报告保留的内容，需要时会重建。",
+  "クラッシュレポートを読むためにmacOSが保持し、必要時に再作成します。",
+  "macOS가 충돌 보고서를 읽기 위해 보관합니다. 필요하면 다시 생성됩니다."
+ ],
+ "What the disk records about each file.": [
+  "O que o disco registra sobre cada arquivo.",
+  "Ce que le disque enregistre sur chaque fichier.",
+  "Lo que el disco registra de cada archivo.",
+  "Was der Datenträger über jede Datei speichert.",
+  "磁盘记录的每个文件的信息。",
+  "ディスクに記録された各ファイルの情報です。",
+  "디스크가 각 파일에 대해 기록하는 정보입니다."
+ ],
  "Xcode Command Line Tools": [
   "Ferramentas de Linha de Comando do Xcode",
   "Outils de ligne de commande Xcode",
@@ -1267,6 +2014,33 @@
   "Xcode 命令行工具",
   "Xcode Command Line Tools",
   "Xcode 명령어 라인 도구"
+ ],
+ "Xcode builds: %@": [
+  "Compilações do Xcode: %@",
+  "Compilations Xcode : %@",
+  "Compilaciones de Xcode: %@",
+  "Xcode-Builds: %@",
+  "Xcode 构建：%@",
+  "Xcodeビルド：%@",
+  "Xcode 빌드: %@"
+ ],
+ "Xcode cache": [
+  "Cache do Xcode",
+  "Cache de Xcode",
+  "Caché de Xcode",
+  "Xcode-Cache",
+  "Xcode 缓存",
+  "Xcodeキャッシュ",
+  "Xcode 캐시"
+ ],
+ "Xcode documentation cache": [
+  "Cache da documentação do Xcode",
+  "Cache de la documentation Xcode",
+  "Caché de la documentación de Xcode",
+  "Xcode-Dokumentationscache",
+  "Xcode 文档缓存",
+  "Xcodeドキュメントキャッシュ",
+  "Xcode 문서 캐시"
  ],
  "Xcode downloads it again when you open the docs.": [
   "O Xcode a baixa de novo quando você abre a documentação.",
@@ -1277,6 +2051,24 @@
   "ドキュメントを開くとXcodeが再ダウンロードします。",
   "문서를 열면 Xcode가 다시 다운로드합니다."
  ],
+ "Xcode module cache": [
+  "Cache de módulos do Xcode",
+  "Cache des modules Xcode",
+  "Caché de módulos de Xcode",
+  "Xcode-Modulcache",
+  "Xcode 模块缓存",
+  "Xcodeモジュールキャッシュ",
+  "Xcode 모듈 캐시"
+ ],
+ "Xcode test devices": [
+  "Dispositivos de teste do Xcode",
+  "Appareils de test Xcode",
+  "Dispositivos de prueba de Xcode",
+  "Xcode-Testgeräte",
+  "Xcode 测试设备",
+  "Xcodeテストデバイス",
+  "Xcode 테스트 기기"
+ ],
  "You won't be able to revert any document to an earlier version. Save and close your documents first.": [
   "Você não poderá reverter nenhum documento para uma versão anterior. Salve e feche seus documentos primeiro.",
   "Vous ne pourrez plus revenir à une version précédente d’un document. Enregistrez et fermez d’abord vos documents.",
@@ -1285,6 +2077,24 @@
   "将无法将任何文稿恢复为旧版本，请先保存并关闭文稿。",
   "書類を以前の版に戻せなくなります。先に書類を保存して閉じてください。",
   "문서를 이전 버전으로 되돌릴 수 없게 됩니다. 먼저 문서를 저장하고 닫으세요."
+ ],
+ "Your Library": [
+  "Sua Biblioteca",
+  "Votre bibliothèque",
+  "Tu Biblioteca",
+  "Deine Library",
+  "你的资源库",
+  "自分のライブラリ",
+  "사용자 라이브러리"
+ ],
+ "Your home folder": [
+  "Sua pasta pessoal",
+  "Votre dossier personnel",
+  "Tu carpeta de inicio",
+  "Dein Benutzerordner",
+  "你的个人文件夹",
+  "自分のホームフォルダ",
+  "사용자 홈 폴더"
  ],
  "and %lld more": [
   "e mais %lld",
@@ -1304,6 +2114,15 @@
   "%@を解放",
   "%@ 확보"
  ],
+ "macOS builds them again the next time it reads a crash report.": [
+  "O macOS os cria de novo na próxima vez que ler um relatório de falha.",
+  "macOS les reconstruit la prochaine fois qu’il lit un rapport de plantage.",
+  "macOS los vuelve a crear la próxima vez que lea un informe de fallos.",
+  "macOS baut sie wieder auf, wenn es das nächste Mal einen Absturzbericht liest.",
+  "macOS 下次读取崩溃报告时会重建。",
+  "次にクラッシュレポートを読むときにmacOSが再作成します。",
+  "다음에 충돌 보고서를 읽을 때 macOS가 다시 생성합니다."
+ ],
  "macOS downloads them again if they're needed.": [
   "O macOS os baixa de novo se forem necessários.",
   "macOS les retélécharge si besoin.",
@@ -1312,6 +2131,15 @@
   "需要时 macOS 会重新下载。",
   "必要に応じてmacOSが再ダウンロードします。",
   "필요하면 macOS가 다시 다운로드합니다."
+ ],
+ "macOS keeps these locked, even from MacSpace.": [
+  "O macOS mantém isto inacessível, até para o MacSpace.",
+  "macOS garde ces éléments verrouillés, même pour MacSpace.",
+  "macOS los mantiene bloqueados, incluso para MacSpace.",
+  "macOS hält diese gesperrt, auch für MacSpace.",
+  "macOS 锁定这些内容，MacSpace 也无法访问。",
+  "macOSがロックしており、MacSpaceもアクセスできません。",
+  "macOS가 잠근 항목으로 MacSpace도 접근할 수 없습니다."
  ],
  "macOS restore image: %@": [
   "Imagem de restauração do macOS: %@",
@@ -1366,824 +2194,5 @@
   "下载该内容的应用",
   "ダウンロード元のアプリ",
   "다운로드 중인 앱"
- ],
- "See what fills System Data and free what is safe to remove.": [
-  "Veja o que ocupa Dados do Sistema e libere o que pode ser removido com segurança.",
-  "Voyez ce qui remplit Données système et libérez ce qui peut être supprimé sans risque.",
-  "Mira qué ocupa Datos del sistema y libera lo que se puede eliminar sin riesgo.",
-  "Sieh, was „Systemdaten“ füllt, und gib frei, was gefahrlos entfernt werden kann.",
-  "查看系统数据的内容并释放可安全移除的部分。",
-  "システムデータの内容を確認し、安全に削除できるものを解放します。",
-  "시스템 데이터의 구성을 확인하고 안전하게 제거할 수 있는 항목을 정리합니다."
- ],
- "Kept while Apple Intelligence is on": [
-  "Mantido enquanto a Apple Intelligence estiver ativa",
-  "Conservé tant qu’Apple Intelligence est activé",
-  "Se conserva mientras Apple Intelligence esté activado",
-  "Bleibt, solange Apple Intelligence aktiv ist",
-  "Apple 智能开启时保留",
-  "Apple Intelligenceがオンの間は保持",
-  "Apple Intelligence가 켜져 있는 동안 유지"
- ],
- "Protected by macOS": [
-  "Protegido pelo macOS",
-  "Protégé par macOS",
-  "Protegido por macOS",
-  "Von macOS geschützt",
-  "受 macOS 保护",
-  "macOSが保護",
-  "macOS가 보호"
- ],
- "Models and system assets": [
-  "Modelos e recursos do sistema",
-  "Modèles et ressources système",
-  "Modelos y recursos del sistema",
-  "Modelle und Systemressourcen",
-  "模型与系统资源",
-  "モデルとシステムアセット",
-  "모델 및 시스템 에셋"
- ],
- "Other protected folders": [
-  "Outras pastas protegidas",
-  "Autres dossiers protégés",
-  "Otras carpetas protegidas",
-  "Weitere geschützte Ordner",
-  "其他受保护文件夹",
-  "その他の保護されたフォルダ",
-  "기타 보호된 폴더"
- ],
- "File system metadata": [
-  "Metadados do sistema de arquivos",
-  "Métadonnées du système de fichiers",
-  "Metadatos del sistema de archivos",
-  "Metadaten des Dateisystems",
-  "文件系统元数据",
-  "ファイルシステムのメタデータ",
-  "파일 시스템 메타데이터"
- ],
- "Logs for all users": [
-  "Registros para todos os usuários",
-  "Journaux pour tous les utilisateurs",
-  "Registros para todos los usuarios",
-  "Protokolle für alle Benutzer",
-  "所有用户的日志",
-  "全ユーザのログ",
-  "모든 사용자의 로그"
- ],
- "Frees about %@. Homebrew downloads them again when it needs them.": [
-  "Libera cerca de %@. O Homebrew os baixa de novo quando precisar.",
-  "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.",
-  "Libera unos %@. Homebrew las vuelve a descargar cuando las necesita.",
-  "Gibt etwa %@ frei. Homebrew lädt sie erneut, wenn es sie braucht.",
-  "释放约 %@，Homebrew 需要时会重新下载。",
-  "約%@を解放します。必要に応じてHomebrewが再ダウンロードします。",
-  "약 %@ 확보합니다. Homebrew가 필요할 때 다시 다운로드합니다."
- ],
- "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.": [
-  "O Finder pode apagar os itens que estão nele há 30 dias: Finder > Ajustes > Avançado.",
-  "Le Finder peut supprimer les éléments qui s’y trouvent depuis 30 jours : Finder > Réglages > Avancés.",
-  "El Finder puede eliminar los ítems que llevan 30 días en ella: Finder > Ajustes > Avanzado.",
-  "Der Finder kann Objekte löschen, die seit 30 Tagen darin liegen: Finder > Einstellungen > Erweitert.",
-  "访达可以删除在废纸篓中超过 30 天的项目：访达 > 设置 > 高级。",
-  "Finderはゴミ箱に30日以上ある項目を削除できます：Finder > 設定 > 詳細。",
-  "Finder는 휴지통에 30일 이상 있는 항목을 삭제할 수 있습니다: Finder > 설정 > 고급."
- ],
- "Unchanged for %lld days": [
-  "Sem mudanças há %lld dias",
-  "Inchangé depuis %lld jours",
-  "Sin cambios desde hace %lld días",
-  "Seit %lld Tagen unverändert",
-  "%lld 天未更改",
-  "%lld日間変更なし",
-  "%lld일 동안 변경되지 않음"
- ],
- "Not opened for %lld days": [
-  "Não aberto há %lld dias",
-  "Non ouvert depuis %lld jours",
-  "Sin abrir desde hace %lld días",
-  "Seit %lld Tagen nicht geöffnet",
-  "%lld 天未打开",
-  "%lld日間未起動",
-  "%lld일 동안 열지 않음"
- ],
- "App not installed": [
-  "App não instalado",
-  "App non installée",
-  "App no instalada",
-  "App nicht installiert",
-  "未安装应用",
-  "アプリ未インストール",
-  "앱이 설치되지 않음"
- ],
- "Homebrew is not installed": [
-  "O Homebrew não está instalado",
-  "Homebrew n’est pas installé",
-  "Homebrew no está instalado",
-  "Homebrew ist nicht installiert",
-  "未安装 Homebrew",
-  "Homebrewがインストールされていません",
-  "Homebrew가 설치되지 않음"
- ],
- "%lld more, including Apple Intelligence models, are under Protected by macOS.": [
-  "Mais %lld, incluindo modelos da Apple Intelligence, estão em Protegido pelo macOS.",
-  "%lld de plus, dont des modèles d’Apple Intelligence, sont dans Protégé par macOS.",
-  "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.",
-  "%lld weitere, darunter Modelle von Apple Intelligence, stehen unter „Von macOS geschützt“.",
-  "另外 %lld 项（包括 Apple 智能模型）位于“受 macOS 保护”中。",
-  "Apple Intelligenceモデルを含むほか%lld件は「macOSが保護」にあります。",
-  "Apple Intelligence 모델 등 %lld개 항목이 macOS가 보호에 있습니다."
- ],
- "All users": [
-  "Todos os usuários",
-  "Tous les utilisateurs",
-  "Todos los usuarios",
-  "Alle Benutzer",
-  "所有用户",
-  "すべてのユーザ",
-  "모든 사용자"
- ],
- "Apps and macOS rebuild these by themselves.": [
-  "Os apps e o macOS recriam estes sozinhos.",
-  "Les apps et macOS les recréent d’eux-mêmes.",
-  "Las apps y macOS los vuelven a crear solos.",
-  "Apps und macOS legen sie selbst neu an.",
-  "应用和 macOS 会自行重建。",
-  "アプリとmacOSが自動で再作成します。",
-  "앱과 macOS가 자동으로 다시 생성합니다."
- ],
- "Cloud storage": [
-  "Armazenamento na nuvem",
-  "Stockage cloud",
-  "Almacenamiento en la nube",
-  "Cloud-Speicher",
-  "云存储",
-  "クラウドストレージ",
-  "클라우드 저장 공간"
- ],
- "Empties after 30 days": [
-  "Esvazia após 30 dias",
-  "Se vide après 30 jours",
-  "Se vacía a los 30 días",
-  "Leert sich nach 30 Tagen",
-  "30 天后清空",
-  "30日後に削除",
-  "30일 후 비워짐"
- ],
- "Free all version history?": [
-  "Liberar todo o histórico de versões?",
-  "Libérer tout l’historique des versions ?",
-  "¿Liberar todo el historial de versiones?",
-  "Den gesamten Versionsverlauf freigeben?",
-  "释放全部版本历史？",
-  "すべてのバージョン履歴を解放しますか？",
-  "모든 버전 기록을 정리할까요?"
- ],
- "Free old reports?": [
-  "Liberar os relatórios antigos?",
-  "Libérer les anciens rapports ?",
-  "¿Liberar los informes antiguos?",
-  "Alte Berichte freigeben?",
-  "释放旧报告？",
-  "古いレポートを解放しますか？",
-  "오래된 보고서를 정리할까요?"
- ],
- "Free stuck wallpaper downloads?": [
-  "Liberar os downloads de wallpapers travados?",
-  "Libérer les téléchargements de fonds d’écran bloqués ?",
-  "¿Liberar las descargas de fondos de pantalla atascadas?",
-  "Hängengebliebene Hintergrundbild-Downloads freigeben?",
-  "释放卡住的墙纸下载？",
-  "停止した壁紙のダウンロードを解放しますか？",
-  "멈춘 배경화면 다운로드를 정리할까요?"
- ],
- "Free the leftover update files?": [
-  "Liberar os arquivos restantes da atualização?",
-  "Libérer les fichiers restants de la mise à jour ?",
-  "¿Liberar los archivos restantes de la actualización?",
-  "Die übrigen Update-Dateien freigeben?",
-  "释放更新残留文件？",
-  "更新の残りのファイルを解放しますか？",
-  "잔여 업데이트 파일을 정리할까요?"
- ],
- "Other caches": [
-  "Outros caches",
-  "Autres caches",
-  "Otras cachés",
-  "Andere Caches",
-  "其他缓存",
-  "その他のキャッシュ",
-  "기타 캐시"
- ],
- "Tool cache": [
-  "Cache de ferramenta",
-  "Cache d’outil",
-  "Caché de herramienta",
-  "Tool-Cache",
-  "工具缓存",
-  "ツールキャッシュ",
-  "도구 캐시"
- ],
- "Virtual machine": [
-  "Máquina virtual",
-  "Machine virtuelle",
-  "Máquina virtual",
-  "Virtuelle Maschine",
-  "虚拟机",
-  "仮想マシン",
-  "가상 머신"
- ],
- "Your Library": [
-  "Sua Biblioteca",
-  "Votre bibliothèque",
-  "Tu Biblioteca",
-  "Deine Library",
-  "你的资源库",
-  "自分のライブラリ",
-  "사용자 라이브러리"
- ],
- "Your home folder": [
-  "Sua pasta pessoal",
-  "Votre dossier personnel",
-  "Tu carpeta de inicio",
-  "Dein Benutzerordner",
-  "你的个人文件夹",
-  "自分のホームフォルダ",
-  "사용자 홈 폴더"
- ],
- "Swift packages": [
-  "Pacotes Swift",
-  "Paquets Swift",
-  "Paquetes de Swift",
-  "Swift-Pakete",
-  "Swift 软件包",
-  "Swiftパッケージ",
-  "Swift 패키지"
- ],
- "Rust packages": [
-  "Pacotes Rust",
-  "Paquets Rust",
-  "Paquetes de Rust",
-  "Rust-Pakete",
-  "Rust 软件包",
-  "Rustパッケージ",
-  "Rust 패키지"
- ],
- "Go builds": [
-  "Compilações do Go",
-  "Compilations Go",
-  "Compilaciones de Go",
-  "Go-Builds",
-  "Go 构建",
-  "Goビルド",
-  "Go 빌드"
- ],
- "Simulator caches": [
-  "Caches do Simulador",
-  "Caches du Simulateur",
-  "Cachés del Simulador",
-  "Simulator-Caches",
-  "模拟器缓存",
-  "シミュレータのキャッシュ",
-  "시뮬레이터 캐시"
- ],
- "Xcode module cache": [
-  "Cache de módulos do Xcode",
-  "Cache des modules Xcode",
-  "Caché de módulos de Xcode",
-  "Xcode-Modulcache",
-  "Xcode 模块缓存",
-  "Xcodeモジュールキャッシュ",
-  "Xcode 모듈 캐시"
- ],
- "Xcode builds: %@": [
-  "Compilações do Xcode: %@",
-  "Compilations Xcode : %@",
-  "Compilaciones de Xcode: %@",
-  "Xcode-Builds: %@",
-  "Xcode 构建：%@",
-  "Xcodeビルド：%@",
-  "Xcode 빌드: %@"
- ],
- "%@ %@ device files": [
-  "Arquivos de dispositivo %@ %@",
-  "Fichiers d’appareil %@ %@",
-  "Archivos de dispositivo %@ %@",
-  "Gerätedateien %@ %@",
-  "%@ %@ 设备文件",
-  "%@ %@のデバイスファイル",
-  "%@ %@ 기기 파일"
- ],
- "Go modules": [
-  "Módulos do Go",
-  "Modules Go",
-  "Módulos de Go",
-  "Go-Module",
-  "Go 模块",
-  "Goモジュール",
-  "Go 모듈"
- ],
- "Project deleted": [
-  "Projeto apagado",
-  "Projet supprimé",
-  "Proyecto eliminado",
-  "Projekt gelöscht",
-  "项目已删除",
-  "プロジェクト削除済み",
-  "프로젝트 삭제됨"
- ],
- "Older version": [
-  "Versão antiga",
-  "Ancienne version",
-  "Versión antigua",
-  "Ältere Version",
-  "旧版本",
-  "古いバージョン",
-  "이전 버전"
- ],
- "Simulators that can't run": [
-  "Simuladores que não abrem mais",
-  "Simulateurs qui ne peuvent plus démarrer",
-  "Simuladores que ya no se pueden abrir",
-  "Simulatoren, die nicht mehr starten",
-  "无法运行的模拟器",
-  "実行できないシミュレータ",
-  "실행할 수 없는 시뮬레이터"
- ],
- "Can't run": [
-  "Não abre mais",
-  "Ne démarre plus",
-  "Ya no se abre",
-  "Startet nicht mehr",
-  "无法运行",
-  "実行不可",
-  "실행할 수 없음"
- ],
- "App cache": [
-  "Cache de app",
-  "Cache d’app",
-  "Caché de app",
-  "App-Cache",
-  "应用缓存",
-  "アプリキャッシュ",
-  "앱 캐시"
- ],
- "Web cache": [
-  "Cache da web",
-  "Cache web",
-  "Caché web",
-  "Web-Cache",
-  "网页缓存",
-  "Webキャッシュ",
-  "웹 캐시"
- ],
- "System cache": [
-  "Cache do sistema",
-  "Cache système",
-  "Caché del sistema",
-  "System-Cache",
-  "系统缓存",
-  "システムキャッシュ",
-  "시스템 캐시"
- ],
- "Developer": [
-  "Desenvolvedor",
-  "Développeur",
-  "Desarrollador",
-  "Entwickler",
-  "开发者",
-  "開発者",
-  "개발자"
- ],
- "Old Homebrew versions": [
-  "Versões antigas do Homebrew",
-  "Anciennes versions de Homebrew",
-  "Versiones antiguas de Homebrew",
-  "Alte Homebrew-Versionen",
-  "旧 Homebrew 版本",
-  "古いHomebrewのバージョン",
-  "이전 Homebrew 버전"
- ],
- "Homebrew downloads": [
-  "Downloads do Homebrew",
-  "Téléchargements de Homebrew",
-  "Descargas de Homebrew",
-  "Homebrew-Downloads",
-  "Homebrew 下载",
-  "Homebrewのダウンロード",
-  "Homebrew 다운로드"
- ],
- "Downloads again when needed": [
-  "Baixa de novo quando precisar",
-  "Retéléchargé si besoin",
-  "Se vuelve a descargar si hace falta",
-  "Wird bei Bedarf neu geladen",
-  "需要时重新下载",
-  "必要時に再ダウンロード",
-  "필요하면 다시 다운로드"
- ],
- "Open now": [
-  "Aberto agora",
-  "Ouvert",
-  "Abierto ahora",
-  "Gerade geöffnet",
-  "正在运行",
-  "起動中",
-  "열려 있음"
- ],
- "In use": [
-  "Em uso",
-  "En cours d’utilisation",
-  "En uso",
-  "In Verwendung",
-  "使用中",
-  "使用中",
-  "사용 중"
- ],
- "Caches you can free": [
-  "Caches que podem ser liberados",
-  "Caches que vous pouvez libérer",
-  "Cachés que puedes liberar",
-  "Caches, die du freigeben kannst",
-  "可释放的缓存",
-  "解放できるキャッシュ",
-  "정리 가능한 캐시"
- ],
- "Free selected": [
-  "Liberar selecionados",
-  "Libérer la sélection",
-  "Liberar seleccionados",
-  "Auswahl freigeben",
-  "释放所选内容",
-  "選択項目を解放",
-  "선택 항목 정리"
- ],
- "Free the selected caches?": [
-  "Liberar os caches selecionados?",
-  "Libérer les caches sélectionnés ?",
-  "¿Liberar las cachés seleccionadas?",
-  "Die ausgewählten Caches freigeben?",
-  "释放所选缓存？",
-  "選択したキャッシュを解放しますか？",
-  "선택한 캐시를 정리할까요?"
- ],
- "Free recommended": [
-  "Liberar recomendados",
-  "Libérer la recommandation",
-  "Liberar recomendados",
-  "Empfohlene freigeben",
-  "释放推荐内容",
-  "推奨項目を解放",
-  "권장 항목 정리"
- ],
- "Recommended": [
-  "Recomendados",
-  "Recommandés",
-  "Recomendados",
-  "Empfohlen",
-  "推荐",
-  "推奨",
-  "권장"
- ],
- "Come back with use": [
-  "Voltam com o uso",
-  "Reviennent à l’usage",
-  "Vuelven con el uso",
-  "Kommen bei Nutzung zurück",
-  "使用后会再次产生",
-  "使用すると再び増加",
-  "사용하면 다시 생성됨"
- ],
- "Homebrew is busy. Try again when it's done.": [
-  "O Homebrew está ocupado. Tente de novo quando terminar.",
-  "Homebrew est occupé. Réessayez quand il aura fini.",
-  "Homebrew está ocupado. Vuelve a intentarlo cuando termine.",
-  "Homebrew ist beschäftigt. Versuche es erneut, wenn es fertig ist.",
-  "Homebrew 正忙，请完成后重试。",
-  "Homebrewが処理中です。終了後に再度お試しください。",
-  "Homebrew가 사용 중입니다. 완료 후 다시 시도하세요."
- ],
- "Homebrew's cleanup failed": [
-  "A limpeza do Homebrew falhou",
-  "Le nettoyage de Homebrew a échoué",
-  "La limpieza de Homebrew falló",
-  "Die Bereinigung von Homebrew ist fehlgeschlagen",
-  "Homebrew 清理失败",
-  "Homebrewのクリーンアップに失敗",
-  "Homebrew 정리 실패"
- ],
- "Nothing was freed: MacSpace couldn't check which apps are open.": [
-  "Nada foi liberado: o MacSpace não conseguiu verificar quais apps estão abertos.",
-  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quelles apps sont ouvertes.",
-  "No se liberó nada: MacSpace no pudo comprobar qué apps están abiertas.",
-  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Apps geöffnet sind.",
-  "未释放任何内容：MacSpace 无法检查哪些应用正在运行。",
-  "何も解放していません。実行中のアプリを確認できませんでした。",
-  "정리된 항목 없음: 실행 중인 앱을 확인하지 못했습니다."
- ],
- "Nothing was freed: MacSpace couldn't check which files are in use.": [
-  "Nada foi liberado: o MacSpace não conseguiu verificar quais arquivos estão em uso.",
-  "Rien n’a été libéré : MacSpace n’a pas pu vérifier quels fichiers sont utilisés.",
-  "No se liberó nada: MacSpace no pudo comprobar qué archivos están en uso.",
-  "Nichts wurde freigegeben: MacSpace konnte nicht prüfen, welche Dateien verwendet werden.",
-  "未释放任何内容：MacSpace 无法检查哪些文件正在使用。",
-  "何も解放していません。使用中のファイルを確認できませんでした。",
-  "정리된 항목 없음: 사용 중인 파일을 확인하지 못했습니다."
- ],
- "System assets": [
-  "Recursos do sistema",
-  "Ressources système",
-  "Recursos del sistema",
-  "Systemressourcen",
-  "系统资源",
-  "システムアセット",
-  "시스템 에셋"
- ],
- "Symbolication cache": [
-  "Cache de simbolização",
-  "Cache de symbolisation",
-  "Caché de simbolización",
-  "Symbolisierungs-Cache",
-  "符号化缓存",
-  "シンボル化キャッシュ",
-  "기호화 캐시"
- ],
- "Temporary files of macOS and other users": [
-  "Arquivos temporários do macOS e de outros usuários",
-  "Fichiers temporaires de macOS et des autres utilisateurs",
-  "Archivos temporales de macOS y de otros usuarios",
-  "Temporäre Dateien von macOS und anderen Benutzern",
-  "macOS 和其他用户的临时文件",
-  "macOSとほかのユーザの一時ファイル",
-  "macOS 및 다른 사용자의 임시 파일"
- ],
- "Temporary files of macOS and of other users on this Mac.": [
-  "Arquivos temporários do macOS e de outros usuários deste Mac.",
-  "Fichiers temporaires de macOS et des autres utilisateurs de ce Mac.",
-  "Archivos temporales de macOS y de otros usuarios de este Mac.",
-  "Temporäre Dateien von macOS und anderen Benutzern dieses Macs.",
-  "此 Mac 上 macOS 和其他用户的临时文件。",
-  "このMac上のmacOSとほかのユーザの一時ファイルです。",
-  "이 Mac의 macOS 및 다른 사용자 임시 파일입니다."
- ],
- "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.": [
-  "Fundos e protetores de tela que o macOS está baixando. Um tamanho grande indica downloads travados.",
-  "Fonds d’écran et économiseurs d’écran que macOS télécharge. Une grande taille indique des téléchargements bloqués.",
-  "Fondos y salvapantallas que macOS está descargando. Un tamaño grande indica descargas atascadas.",
-  "Hintergrundbilder und Bildschirmschoner, die macOS lädt. Eine große Größe bedeutet hängengebliebene Downloads.",
-  "macOS 正在下载的墙纸和屏幕保护程序。占用过大说明下载卡住。",
-  "macOSがダウンロード中の壁紙とスクリーンセーバです。容量が大きい場合は停止したダウンロードです。",
-  "macOS가 다운로드하는 배경화면과 화면 보호기입니다. 크기가 크면 다운로드가 멈춘 것입니다."
- ],
- "An app is using these files. Try again later.": [
-  "Um app está usando estes arquivos. Tente de novo mais tarde.",
-  "Une app utilise ces fichiers. Réessayez plus tard.",
-  "Una app está usando estos archivos. Inténtalo más tarde.",
-  "Eine App verwendet diese Dateien. Versuche es später erneut.",
-  "有应用正在使用这些文件，请稍后重试。",
-  "アプリが使用中です。後でもう一度お試しください。",
-  "앱이 이 파일을 사용 중입니다. 나중에 다시 시도하세요."
- ],
- "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.": [
-  "Uma cópia do app que o macOS fez ao verificá-lo. Ela divide espaço com o app, então só é liberado o que uma versão anterior deixou.",
-  "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.",
-  "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.",
-  "Eine Kopie der App, die macOS beim Prüfen angelegt hat. Sie teilt sich den Speicher mit der App, daher wird nur frei, was eine ältere Version hinterlassen hat.",
-  "macOS 检查应用时创建的副本。它与应用共享空间，因此只释放旧版本留下的部分。",
-  "macOSがアプリの検証時に作ったコピーです。アプリと領域を共有するため、旧バージョンの残りだけが解放されます。",
-  "macOS가 앱을 검증할 때 만든 사본입니다. 앱과 공간을 공유하므로 이전 버전이 남긴 부분만 확보됩니다."
- ],
- "Everything in the Trash is deleted for good.": [
-  "Tudo o que está no Lixo é apagado de vez.",
-  "Tout ce qui est dans la Corbeille est supprimé définitivement.",
-  "Todo lo que hay en la Papelera se borra para siempre.",
-  "Alles im Papierkorb wird endgültig gelöscht.",
-  "废纸篓中的所有内容将永久删除。",
-  "ゴミ箱の内容をすべて完全に削除します。",
-  "휴지통의 모든 항목이 영구적으로 삭제됩니다."
- ],
- "Free %@ in the Trash?": [
-  "Liberar %@ do Lixo?",
-  "Libérer %@ dans la Corbeille ?",
-  "¿Liberar %@ de la Papelera?",
-  "%@ im Papierkorb freigeben?",
-  "释放废纸篓中的 %@？",
-  "ゴミ箱の%@を解放しますか？",
-  "휴지통의 %@ 정리할까요?"
- ],
- "Free the system log?": [
-  "Liberar o registro do sistema?",
-  "Libérer le journal système ?",
-  "¿Liberar el registro del sistema?",
-  "Systemprotokoll freigeben?",
-  "释放系统日志？",
-  "システムログを解放しますか？",
-  "시스템 로그를 정리할까요?"
- ],
- "Log files": [
-  "Arquivos de log",
-  "Fichiers journaux",
-  "Archivos de registro",
-  "Protokolldateien",
-  "日志文件",
-  "ログファイル",
-  "로그 파일"
- ],
- "Old app copy": [
-  "Cópia antiga de app",
-  "Ancienne copie d’app",
-  "Copia antigua de app",
-  "Alte App-Kopie",
-  "旧应用副本",
-  "古いアプリのコピー",
-  "이전 앱 사본"
- ],
- "System log": [
-  "Registro do sistema",
-  "Journal système",
-  "Registro del sistema",
-  "Systemprotokoll",
-  "系统日志",
-  "システムログ",
-  "시스템 로그"
- ],
- "Erase Console records used for troubleshooting.": [
-  "Apaga os registros do Console usados para resolução de problemas.",
-  "Efface les enregistrements de Console utilisés pour le dépannage.",
-  "Borra los registros de Consola que se usan para solucionar problemas.",
-  "Löscht die Konsolenprotokolle, die zur Fehlersuche dienen.",
-  "抹掉用于故障排查的控制台记录。",
-  "問題調査用のコンソール記録を消去します。",
-  "문제 해결용 콘솔 기록을 지웁니다."
- ],
- "Symbols for crash reports": [
-  "Símbolos para relatórios de falhas",
-  "Symboles des rapports de plantage",
-  "Símbolos para informes de fallos",
-  "Symbole für Absturzberichte",
-  "崩溃报告符号",
-  "クラッシュレポート用シンボル",
-  "충돌 보고서용 기호"
- ],
- "What macOS keeps to read crash reports. It's rebuilt when needed.": [
-  "O que o macOS guarda para ler relatórios de falhas. É recriado quando necessário.",
-  "Ce que macOS garde pour lire les rapports de plantage. Il est reconstruit au besoin.",
-  "Lo que macOS guarda para leer informes de fallos. Se vuelve a crear cuando hace falta.",
-  "Was macOS zum Lesen von Absturzberichten aufbewahrt. Es wird bei Bedarf neu aufgebaut.",
-  "macOS 为读取崩溃报告保留的内容，需要时会重建。",
-  "クラッシュレポートを読むためにmacOSが保持し、必要時に再作成します。",
-  "macOS가 충돌 보고서를 읽기 위해 보관합니다. 필요하면 다시 생성됩니다."
- ],
- "Free the symbols for crash reports?": [
-  "Liberar os símbolos para relatórios de falhas?",
-  "Libérer les symboles des rapports de plantage ?",
-  "¿Liberar los símbolos para informes de fallos?",
-  "Symbole für Absturzberichte freigeben?",
-  "释放崩溃报告符号？",
-  "クラッシュレポート用シンボルを解放しますか？",
-  "충돌 보고서용 기호를 정리할까요?"
- ],
- "macOS builds them again the next time it reads a crash report.": [
-  "O macOS os cria de novo na próxima vez que ler um relatório de falha.",
-  "macOS les reconstruit la prochaine fois qu’il lit un rapport de plantage.",
-  "macOS los vuelve a crear la próxima vez que lea un informe de fallos.",
-  "macOS baut sie wieder auf, wenn es das nächste Mal einen Absturzbericht liest.",
-  "macOS 下次读取崩溃报告时会重建。",
-  "次にクラッシュレポートを読むときにmacOSが再作成します。",
-  "다음에 충돌 보고서를 읽을 때 macOS가 다시 생성합니다."
- ],
- "Free caches": [
-  "Liberar caches",
-  "Libérer les caches",
-  "Liberar cachés",
-  "Caches freigeben",
-  "释放缓存",
-  "キャッシュを解放",
-  "캐시 정리"
- ],
- "Cache cleaner": [
-  "Limpador de caches",
-  "Nettoyeur de caches",
-  "Limpiador de cachés",
-  "Cache-Reiniger",
-  "缓存清理工具",
-  "キャッシュクリーナー",
-  "캐시 정리 도구"
- ],
- "Open %@": [
-  "Abrir %@",
-  "Ouvrir %@",
-  "Abrir %@",
-  "%@ öffnen",
-  "打开 %@",
-  "%@を開く",
-  "%@ 열기"
- ],
- "Old reports and unused system assets": [
-  "Relatórios antigos e recursos do sistema sem uso",
-  "Anciens rapports et ressources système inutilisées",
-  "Informes antiguos y recursos del sistema sin usar",
-  "Alte Berichte und ungenutzte Systemressourcen",
-  "旧报告和未使用的系统资源",
-  "古いレポートと未使用のシステムアセット",
-  "오래된 보고서 및 미사용 시스템 에셋"
- ],
- "macOS keeps these locked, even from MacSpace.": [
-  "O macOS mantém isto inacessível, até para o MacSpace.",
-  "macOS garde ces éléments verrouillés, même pour MacSpace.",
-  "macOS los mantiene bloqueados, incluso para MacSpace.",
-  "macOS hält diese gesperrt, auch für MacSpace.",
-  "macOS 锁定这些内容，MacSpace 也无法访问。",
-  "macOSがロックしており、MacSpaceもアクセスできません。",
-  "macOS가 잠근 항목으로 MacSpace도 접근할 수 없습니다."
- ],
- "What the disk records about each file.": [
-  "O que o disco registra sobre cada arquivo.",
-  "Ce que le disque enregistre sur chaque fichier.",
-  "Lo que el disco registra de cada archivo.",
-  "Was der Datenträger über jede Datei speichert.",
-  "磁盘记录的每个文件的信息。",
-  "ディスクに記録された各ファイルの情報です。",
-  "디스크가 각 파일에 대해 기록하는 정보입니다."
- ],
- "Console's history is deleted.": [
-  "O histórico do Console é apagado.",
-  "L’historique de Console est supprimé.",
-  "Se borra el historial de Consola.",
-  "Der Verlauf in der Konsole wird gelöscht.",
-  "控制台历史将被删除。",
-  "コンソールの履歴を削除します。",
-  "콘솔 기록이 삭제됩니다."
- ],
- "Xcode cache": [
-  "Cache do Xcode",
-  "Cache de Xcode",
-  "Caché de Xcode",
-  "Xcode-Cache",
-  "Xcode 缓存",
-  "Xcodeキャッシュ",
-  "Xcode 캐시"
- ],
- "Xcode documentation cache": [
-  "Cache da documentação do Xcode",
-  "Cache de la documentation Xcode",
-  "Caché de la documentación de Xcode",
-  "Xcode-Dokumentationscache",
-  "Xcode 文档缓存",
-  "Xcodeドキュメントキャッシュ",
-  "Xcode 문서 캐시"
- ],
- "Xcode test devices": [
-  "Dispositivos de teste do Xcode",
-  "Appareils de test Xcode",
-  "Dispositivos de prueba de Xcode",
-  "Xcode-Testgeräte",
-  "Xcode 测试设备",
-  "Xcodeテストデバイス",
-  "Xcode 테스트 기기"
- ],
- "Dart packages": [
-  "Pacotes do Dart",
-  "Paquets Dart",
-  "Paquetes de Dart",
-  "Dart-Pakete",
-  "Dart 软件包",
-  "Dartパッケージ",
-  "Dart 패키지"
- ],
- "Android build cache": [
-  "Cache de compilação do Android",
-  "Cache de compilation Android",
-  "Caché de compilación de Android",
-  "Android-Build-Cache",
-  "Android 构建缓存",
-  "Androidビルドキャッシュ",
-  "Android 빌드 캐시"
- ],
- "Quits %@.": [
-  "Encerra %@.",
-  "Quitte %@.",
-  "Cierra %@.",
-  "Beendet %@.",
-  "将退出 %@。",
-  "%@を終了します。",
-  "%@ 종료합니다."
- ],
- "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.": [
-  "Ferramentas e bibliotecas instaladas pelo Homebrew. Versões antigas e downloads que podem ser removidos estão em Caches que podem ser liberados. Os pacotes instalados são mantidos.",
-  "Outils et bibliothèques installés par Homebrew. Les anciennes versions et les téléchargements supprimables figurent dans les caches pouvant être libérés. Les paquets installés sont conservés.",
-  "Herramientas y bibliotecas instaladas por Homebrew. Las versiones antiguas y las descargas eliminables aparecen en Cachés que se pueden liberar. Los paquetes instalados se conservan.",
-  "Von Homebrew installierte Werkzeuge und Bibliotheken. Entfernbare alte Versionen und Downloads stehen unter den freigebbaren Caches. Installierte Pakete bleiben erhalten.",
-  "Homebrew 安装的工具和库。可移除的旧版本和下载文件列在可清理的缓存中，已安装的软件包会保留。",
-  "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。",
-  "Homebrew로 설치한 도구와 라이브러리입니다. 삭제 가능한 이전 버전과 다운로드는 공간을 확보할 수 있는 캐시에 표시됩니다. 설치된 패키지는 유지됩니다."
- ],
- "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.": [
-  "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.",
-  "Outils et fichiers d’apps installés en dehors de Homebrew, comme Node.js, Python et les outils Parallels. Supprimez chaque outil avec son installateur ou gestionnaire de paquets ; supprimer ce dossier entier peut les empêcher de fonctionner.",
-  "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.",
-  "Außerhalb von Homebrew installierte Werkzeuge und App-Dateien, etwa Node.js, Python und Parallels-Werkzeuge. Entferne einzelne Werkzeuge mit ihrem Installationsprogramm oder Paketmanager; das Löschen des ganzen Ordners kann ihre Funktion beeinträchtigen.",
-  "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。",
-  "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。",
-  "Node.js, Python, Parallels 도구 등 Homebrew 외부에서 설치된 도구와 앱 파일입니다. 각 도구의 설치 프로그램이나 패키지 관리자로 제거하세요. 이 폴더 전체를 삭제하면 도구가 작동하지 않을 수 있습니다."
  ]
 }

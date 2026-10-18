@@ -59,7 +59,7 @@ Sensei, quando instalado) pode liberar os caches no lugar do MacSpace.
   <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
 </p>
 
-**Siri e Apple Intelligence.** Um interruptor, **Apple Intelligence**, na página e no bloco.
+**Siri e Apple Intelligence.** O interruptor **Apple Intelligence** fica na página e no bloco.
 Desativá-lo coloca a Siri num idioma diferente do seu Mac. É assim que o macOS decide que o Apple
 Intelligence não está disponível. Em seguida, o MacSpace apaga os modelos que o macOS mantém no
 disco, o que pode chegar a cerca de 12 GB. Ative-o de novo e o MacSpace devolve o idioma e a voz da
@@ -69,6 +69,12 @@ outras contas que mantêm o Apple Intelligence ativado, porque os modelos são c
 todas as contas. Uma verificação opcional, **Verificar se o Apple Intelligence continua
 desativado**, nos Ajustes, avisa se o macOS o reativar. Numa máquina virtual, o macOS não oferece o
 Apple Intelligence, então a página só informa isso.
+
+Os interruptores separados **Siri**, **Fotos Espaciais** e **Recursos do Telefone** desativam esses recursos e liberam seus
+modelos não usados. As mudanças do Telefone exigem reinicialização e afetam todas as contas deste Mac, sem instalar perfil.
+Enquanto estiver aberto, o MacSpace verifica a cada cinco minutos os modelos solicitados novamente por recursos desativados.
+Reativar restaura os ajustes salvos. Os modelos são mantidos enquanto o Apple Intelligence estiver disponível.
+Os demais modelos de idiomas não usados têm a ação **Liberar** em **Dados do Sistema**.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri com o iCloud" width="720">

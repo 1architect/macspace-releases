@@ -96,6 +96,7 @@
 "Free the selected caches?" = "選択したキャッシュを解放しますか？";
 "Free the symbols for crash reports?" = "クラッシュレポート用シンボルを解放しますか？";
 "Free the system log?" = "システムログを解放しますか？";
+"Free unused system assets?" = "未使用のシステムアセットを解放しますか？";
 "Free up to %@ of unused system assets?" = "未使用のシステムアセットを最大%@解放しますか？";
 "Freeing in the background" = "バックグラウンドで解放中";
 "Freeing space" = "空き容量を増やしています";

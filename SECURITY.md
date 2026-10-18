@@ -107,6 +107,23 @@ running gates are checked separately. Re-enabling restores those original entrie
 refuses an entry changed outside MacSpace instead of overwriting it. This control installs no configuration profile and does not
 change Siri's Session Language. Its helper operation accepts only an on/off intent, with no arbitrary path, domain or key.
 
+### Feature models
+
+The separate Siri and Spatial Photos switches save your original settings before disabling a feature. Siri's saved voice is
+cleared while Siri is off; its Session Language is preserved. Phone also disables the local recording, screening and caption
+settings. Originals are kept in `~/Library/Application Support/MacSpace/feature-settings/`.
+
+Model requests are released through their owning Apple frameworks, with rollback objects saved under
+`~/Library/Application Support/MacSpace/asset-owners/`. These feature and language-model cleanups never edit the live subscription database or delete model
+payloads directly. Physical cleanup uses the existing guarded macOS cleanup service. It waits while Apple Intelligence is
+available or its state is unreadable, keeps other accounts' requests, and keeps shared speech models while Dictation is active.
+
+While MacSpace is open, explicitly disabled features are checked every five minutes and their unused models are cleaned again
+if macOS requests them again. Re-enabling a feature or using MacSpace's uninstaller restores saved settings and model requests;
+macOS may download the models again. An interrupted or conflicting owner operation is checked before any repeat request.
+These controls are available only on verified macOS builds. Unused language assets in System Data use a one-shot cleanup;
+that action does not disable spelling or dictionaries.
+
 ### Permissions
 
 macOS handles each prompt, so MacSpace never sees your password.

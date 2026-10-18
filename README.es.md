@@ -60,8 +60,7 @@ lugar de MacSpace.
   <img src="Docs/Screenshots/es/SystemData.png" alt="La página Datos del sistema: un gráfico de lo que ocupa Datos del sistema, la lista Liberar ahora y el botón Liberar con su tamaño" width="720">
 </p>
 
-**Siri y Apple Intelligence.** Un solo interruptor, **Apple Intelligence**, en la página y en el
-mosaico. Al desactivarlo, MacSpace pone Siri en un idioma distinto al de tu Mac. Así es como
+**Siri y Apple Intelligence.** El interruptor **Apple Intelligence** está en la página y en el mosaico. Al desactivarlo, MacSpace pone Siri en un idioma distinto al de tu Mac. Así es como
 macOS decide que Apple Intelligence no está disponible. Después MacSpace elimina los modelos que
 macOS conserva en el disco, que pueden ocupar unos 12 GB. Si lo activas de nuevo, MacSpace
 restaura tu idioma y tu voz de Siri. Con la sincronización de Siri con iCloud activada, el
@@ -71,6 +70,12 @@ activado, porque los modelos los comparten todas las cuentas. Una comprobación 
 **Comprobar que Apple Intelligence siga desactivado** en Ajustes, te avisa si macOS lo vuelve a
 activar. En una máquina virtual macOS no ofrece Apple Intelligence, así que la página solo dice
 eso.
+
+Los interruptores separados **Siri**, **Fotos espaciales** y **Funciones de Teléfono** desactivan esas funciones y liberan sus
+modelos sin uso. Los cambios de Teléfono requieren reiniciar y afectan a todas las cuentas del Mac, sin instalar perfiles.
+Mientras está abierto, MacSpace comprueba cada cinco minutos los modelos solicitados de nuevo para funciones desactivadas.
+Reactivar restaura los ajustes guardados. Los modelos se conservan mientras Apple Intelligence está disponible.
+Los demás recursos lingüísticos sin uso tienen una acción **Liberar** en **Datos del sistema**.
 
 <p align="center">
   <img src="Docs/Screenshots/es/Siri.png" alt="La página Siri y Apple Intelligence: el interruptor de Apple Intelligence, desactivado, y la fila sobre la sincronización de Siri con iCloud" width="720">

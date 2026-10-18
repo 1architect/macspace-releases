@@ -16,6 +16,8 @@ struct SystemDataSnapshot: Sendable {
     var reports: CleanupPlan
     /// What fills the system assets, grouped by the setting that releases it.
     var assetFamilies: [AssetFamily] = []
+    var ownerCleanupAvailable = false
+    var supportsModelFeatureControls = false
     var takenAt: Date
     /// macOS kept the unused assets when asked; MacSpace is asking it again in the background (`PurgeRetrier`).
     var assetsRetrying = false
@@ -176,6 +178,11 @@ actor SystemDataStore {
         return updated
     }
 
+    func reconcileAssets() async {
+        guard let cached else { return }
+        _ = await reconcile(ActionRequest(actionID: "purgeAssets"), privileged: nil, choices: cached.choices, cleaner: cached.cleaner)
+    }
+
     func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil,
                   progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
         _ = liveCloudSnapshot()
@@ -264,6 +271,8 @@ actor SystemDataStore {
         snapshot.removing = CloudDownloadRemovals.shared.current()
         snapshot.purgeableServices = services
         snapshot.assetsHeld = SystemAssetGuard.holdsAssets
+        snapshot.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil
+        snapshot.supportsModelFeatureControls = PhoneFeatureFlags.supported.value
         settingsDone.wait()
         snapshot.settings = settings.storage
         snapshot.trashEmptiesItself = CFPreferencesCopyAppValue("FXRemoveOldTrashItems" as CFString, "com.apple.finder" as CFString) as? Bool ?? false

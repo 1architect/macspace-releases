@@ -98,6 +98,9 @@ public struct SystemDataModule: MacSpaceModule {
             return await Self.deleteVersions(context.privileged)
         case "purgeAssets":
             progress(ActionProgress(message: loc("Freeing space")))
+            if SystemDataScreenBuilder.hasUnusedLanguageModels(snapshot) {
+                return await Task.detached(priority: .userInitiated) { Self.releaseUnusedModels(store: store) }.value
+            }
             return Self.purgeAssets(store: store)
         case "freeCaches":
             // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
@@ -156,7 +159,9 @@ public struct SystemDataModule: MacSpaceModule {
         progress(ActionProgress(fraction: at(0.6), message: loc("Freeing space")))
         if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
         progress(ActionProgress(fraction: at(0.75), message: loc("Freeing space")))
-        if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying, !snapshot.assetsHeld { details += purgeAssets(store: store).details }
+        if quitApps, SystemDataScreenBuilder.hasUnusedLanguageModels(snapshot), !snapshot.assetsRetrying, !snapshot.assetsHeld {
+            details += await Task.detached(priority: .userInitiated) { releaseUnusedModels(store: store) }.value.details
+        } else if (snapshot.purgeableAssetsBytes ?? 0) > 0, !snapshot.assetsRetrying, !snapshot.assetsHeld { details += purgeAssets(store: store).details }
         var freed: UInt64 = 0
         if let before, let after = DataVolume.settledFreeBytes(), after > before { freed = after - before }
         return (freed, details)
@@ -458,6 +463,19 @@ public struct SystemDataModule: MacSpaceModule {
             await store.invalidate()
         }
         return PurgeRun.result(outcome, what: "unused system assets")
+    }
+
+    static func releaseUnusedModels(store: SystemDataStore) -> ActionResult {
+        let result = AssetModelCleanup.clean(.released) { freed in
+            CleanupHistory.shared.record(moduleID: Self.moduleID, moduleName: "System Data", freedBytes: freed,
+                                         trigger: .background, summary: loc("Unused system assets"))
+            await store.reconcileAssets()
+        }
+        if let error = result.error {
+            return ActionResult(outcome: .needsAttention, message: PurgeRun.failedMessage, details: [error] + result.owners.details)
+        }
+        return .succeeded(result.owners.pending ? PurgeRun.laterMessage : PurgeRun.freedMessage(result.freedBytes),
+                          details: result.owners.details, freedBytes: result.freedBytes)
     }
 
     static func measuredFreed(_ before: UInt64?, _ after: UInt64?) -> UInt64? {

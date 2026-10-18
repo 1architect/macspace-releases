@@ -114,6 +114,25 @@ leur état effectif est vérifié séparément. La réactivation restaure les en
 L’assistant refuse les entrées modifiées hors de MacSpace. Ce contrôle n’installe aucun profil et ne change pas la langue de Siri.
 L’opération accepte uniquement activer ou désactiver, sans chemin, domaine ou clé arbitraire.
 
+### Modèles des fonctions
+
+Les interrupteurs Siri et Photos spatiales enregistrent les réglages d’origine avant de désactiver une fonction. La voix
+sauvegardée de Siri est effacée tant que Siri est désactivé ; sa langue est conservée. Téléphone désactive aussi les réglages
+locaux d’enregistrement, de filtrage et de sous-titrage. Les originaux restent dans
+`~/Library/Application Support/MacSpace/feature-settings/`.
+
+Les demandes de modèles sont libérées par les services Apple qui les gèrent, avec les données de restauration dans
+`~/Library/Application Support/MacSpace/asset-owners/`. Ces nettoyages de fonctions et de modèles linguistiques ne modifient pas la base active des abonnements et ne suppriment pas
+directement les modèles. Il utilise le service de nettoyage protégé de macOS. Le nettoyage attend si Apple Intelligence est
+disponible ou illisible, conserve les demandes des autres comptes et les modèles vocaux partagés lorsque Dictée est active.
+
+Lorsque MacSpace est ouvert, les fonctions explicitement désactivées sont vérifiées toutes les cinq minutes et leurs modèles
+inutilisés sont de nouveau nettoyés si macOS les redemande. Réactiver une fonction ou utiliser le désinstalleur de MacSpace
+restaure les réglages et demandes enregistrés ; macOS peut retélécharger les modèles. Une opération interrompue ou en conflit
+est vérifiée avant toute nouvelle demande. Ces contrôles ne sont disponibles que sur les versions vérifiées de macOS.
+Les ressources linguistiques inutilisées dans Données système ont un nettoyage ponctuel, qui ne désactive ni l’orthographe
+ni les dictionnaires.
+
 ### Autorisations
 
 macOS gère chaque demande : MacSpace ne voit donc jamais votre mot de passe.

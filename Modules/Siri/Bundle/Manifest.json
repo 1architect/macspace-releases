@@ -30,6 +30,13 @@
       "detail": "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.",
       "defaultEnabled": false,
       "intervalSeconds": 900
+    },
+    {
+      "id": "featureModels",
+      "title": "Check disabled features",
+      "detail": "Checks every five minutes while MacSpace is open and frees models requested again for features you switched off.",
+      "defaultEnabled": true,
+      "intervalSeconds": 300
     }
   ],
   "tileTint": "graphite",

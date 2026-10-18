@@ -1,4 +1,6 @@
 #import "AssetOwnerBridge.h"
+#import <AppKit/NSWorkspace.h>
+#import <AppKit/NSAccessibility.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <dlfcn.h>
@@ -100,6 +102,7 @@ static NSMutableDictionary *record(NSMutableDictionary *journal, NSString *kind,
     NSMutableDictionary *entry = [@{@"kind": kind, @"client": client, @"name": name, @"archive": data, @"phase": @"prepared"} mutableCopy];
     [entry addEntriesFromDictionary:extra]; [journal[@"entries"] addObject:entry]; return entry;
 }
+static BOOL preferenceOff(NSString *name);
 static void safety(NSString *scope) {
     NSDictionary *eligibility=[NSDictionary dictionaryWithContentsOfFile:@"/private/var/db/os_eligibility/eligibility.plist"];
     require([eligibility[@"OS_ELIGIBILITY_DOMAIN_SIRI_MODE"][@"os_eligibility_answer_t"] isEqual:@2],@"Apple Intelligence availability changed or became unreadable");
@@ -108,7 +111,7 @@ static void safety(NSString *scope) {
         id enabled=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("Assistant Enabled"),CFSTR("com.apple.assistant.support")));
         CFPreferencesAppSynchronize(CFSTR("com.apple.assistant.backedup"));
         id voice=CFBridgingRelease(CFPreferencesCopyAppValue(CFSTR("Output Voice"),CFSTR("com.apple.assistant.backedup")));
-        require([enabled isEqual:@NO] && !voice,@"Siri settings changed; model cleanup stopped");
+        require([enabled isEqual:@NO] && !voice && preferenceOff(@"assistantIsEnabled"),@"Siri settings changed; model cleanup stopped");
     }
     if([scope isEqual:@"phone"]) {
         BOOL (*flag)(const char *,const char *)=dlsym(RTLD_DEFAULT,"_os_feature_enabled_impl");
@@ -127,7 +130,9 @@ static void safety(NSString *scope) {
     }
 }
 static void submitted(NSMutableDictionary *entry, NSMutableDictionary *journal, NSString *scope) { safety(scope);entry[@"phase"] = @"submitted"; save(journal, scope); }
-static void done(NSMutableDictionary *entry, NSMutableDictionary *journal, NSString *scope) { entry[@"phase"] = @"removed"; save(journal, scope); }
+static void done(NSMutableDictionary *entry, NSMutableDictionary *journal, NSString *scope) {
+    entry[@"phase"] = @"removed"; journal[@"cycleRemoved"]=@([journal[@"cycleRemoved"] unsignedIntegerValue]+1); save(journal, scope);
+}
 static NSString *userGUID(void) {
     uuid_t uuid; require(mbr_uid_to_uuid(getuid(), uuid) == 0, @"Cannot resolve the current account");
     return [[NSUUID alloc] initWithUUIDBytes:uuid].UUIDString;
@@ -200,16 +205,14 @@ static void reconcile(NSMutableDictionary *journal, NSString *scope, id<MSOwners
         done(entry,journal,scope);
     }
 }
-static BOOL speechOff(void) {
+static BOOL preferenceOff(NSString *name) {
     Class prefs = NSClassFromString(@"AFPreferences");
     method(prefs, @"sharedPreferences", @"@16@0:8", YES);
     id p = ((id(*)(id,SEL))objc_msgSend)(prefs,sel_registerName("sharedPreferences"));
-    for (NSString *name in @[@"assistantIsEnabled", @"dictationIsEnabled"]) {
-        method(prefs,name,@"B16@0:8",NO);
-        if (((BOOL(*)(id,SEL))objc_msgSend)(p,NSSelectorFromString(name))) return NO;
-    }
-    return YES;
+    method(prefs,name,@"B16@0:8",NO);
+    return !((BOOL(*)(id,SEL))objc_msgSend)(p,NSSelectorFromString(name));
 }
+static BOOL speechOff(void) { return preferenceOff(@"assistantIsEnabled") && preferenceOff(@"dictationIsEnabled"); }
 static void releaseSpeech(NSString *scope, NSMutableDictionary *journal, id<MSOwners> owner, NSString *user, NSMutableArray *details) {
     NSString *client = [scope isEqual:@"phone"] ? @"com.apple.TelephonyUtilities" : @"com.apple.siri.embeddedspeech";
     BOOL phone = [scope isEqual:@"phone"];
@@ -217,6 +220,7 @@ static void releaseSpeech(NSString *scope, NSMutableDictionary *journal, id<MSOw
     Class speech = NSClassFromString(@"SFSpeechAssetManager"), entitled = NSClassFromString(@"SFEntitledAssetManager"), configClass = NSClassFromString(@"SFEntitledAssetConfig");
     method(entitled,@"subscriptionNameForConfig:",@"@24@0:8@16",YES);
     method(entitled,@"assetSetUsageForConfig:",@"@24@0:8@16",YES);
+    method(entitled,@"_assetSetSubscriptionWithConfig:expiration:",@"@32@0:8@16@24",YES);
     method(configClass,@"initWithLanguage:assetType:",@"@32@0:8@16Q24",NO);
     NSString *selector = phone ? @"unsubscribeFromAssetsWithConfigs:clientIdentifier:completionHandler:" : @"unsubscribeFromAssetsWithConfigs:subscriberId:completionHandler:";
     Class target = phone ? speech : entitled;
@@ -234,6 +238,8 @@ static void releaseSpeech(NSString *scope, NSMutableDictionary *journal, id<MSOw
         require([[(Class<MSOwners>)entitled subscriptionNameForConfig:config] isEqual:r[@"name"]] &&
                 [[(Class<MSOwners>)entitled assetSetUsageForConfig:config] isEqual:@{@"asr.language":language}], @"Speech config does not match its owner");
         id original = decode(r[@"archive"]), api = apiSubscription(owner,client,r[@"name"]);
+        id expected = ((id(*)(id,SEL,id,id))objc_msgSend)(entitled,sel_registerName("_assetSetSubscriptionWithConfig:expiration:"),config,value(original,@"expiration"));
+        require(expected && [facts(expected) isEqual:facts(original)],@"Speech owner does not match the reviewed config shape");
         require(api && [facts(original) isEqual:facts(api)], @"Speech owner changed during preflight");
         NSMutableDictionary *entry = record(journal,@"uaf",client,r[@"name"],r[@"archive"],@{@"user":user,@"expiry":r[@"expiry"]});
         [entries addObject:entry]; [configs addObject:config];
@@ -293,6 +299,10 @@ static NSArray *releaseTTS(NSString *scope, NSMutableDictionary *journal, NSMuta
     NSString *client=[scope isEqual:@"phone"]?@"com.apple.TelephonyUtilities":@"com.apple.AssistantServices";
     NSXPCConnection *connection=ttsConnection();
     @try {
+        if(NSWorkspace.sharedWorkspace.voiceOverEnabled) {
+            [details addObject:@"VoiceOver is enabled; shared voice models were kept."];
+            return ttsRequests(connection);
+        }
         dispatch_semaphore_t idle=dispatch_semaphore_create(0); __block BOOL speaking=YES;
         id<MSOwners> proxy=[connection remoteObjectProxyWithErrorHandler:^(NSError *e){dispatch_semaphore_signal(idle);}];
         [proxy isSpeakingWithAccessoryId:nil reply:^(BOOL s){speaking=s;dispatch_semaphore_signal(idle);}];
@@ -320,6 +330,7 @@ static BOOL allowedAlias(NSDictionary *r, id object) {
     return [aliases isKindOfClass:NSDictionary.class] && aliases.count==1 && [aliases[alias] isKindOfClass:NSString.class] && [aliases[alias] length]>0 && value(object,@"assetSets")==nil;
 }
 static BOOL allowedTTS(NSDictionary *r,id object,NSArray *active) {
+    if(NSWorkspace.sharedWorkspace.voiceOverEnabled)return NO;
     NSString *client=r[@"client"], *name=r[@"name"];
     if(![client isEqual:@"siritts"] && !([client isEqual:name] && [name hasPrefix:@"com.apple.siri.tts."]))return NO;
     NSDictionary *sets=value(object,@"assetSets");
@@ -331,8 +342,9 @@ static BOOL allowedTTS(NSDictionary *r,id object,NSArray *active) {
     for(id request in active) {
         id v=value(request,@"voice"); NSString *activeLanguage=value(v,@"language");
         if(![activeLanguage isKindOfClass:NSString.class])return NO;
-        if([[activeLanguage stringByReplacingOccurrencesOfString:@"-" withString:@"_"] isEqual:[language stringByReplacingOccurrencesOfString:@"-" withString:@"_"]]
-           && (!voice || [value(v,@"name") isEqual:voice])) return NO;
+        NSString *activeName=value(v,@"name");
+        if([[activeLanguage stringByReplacingOccurrencesOfString:@"-" withString:@"_"] caseInsensitiveCompare:[language stringByReplacingOccurrencesOfString:@"-" withString:@"_"]]==NSOrderedSame
+           && (!voice || ![activeName isKindOfClass:NSString.class] || [activeName caseInsensitiveCompare:voice]==NSOrderedSame)) return NO;
     }
     // Only premium voice/resource owners measured in Issue 16, never custom/personal voices.
     return ([name hasPrefix:@"com.apple.siri.tts.voice."] && [tts[@"tts.quality"] isEqual:@"premium"]
@@ -490,12 +502,15 @@ NSData *MSAssetOwners(NSString *scope,NSString *mode) {
             method(entitled,@"unsubscribeFromAssetsWithConfigs:subscriberId:completionHandler:",@"v40@0:8@16@24@?32",YES);
             method(entitled,@"subscriptionNameForConfig:",@"@24@0:8@16",YES);
             method(entitled,@"assetSetUsageForConfig:",@"@24@0:8@16",YES);
+            method(entitled,@"_assetSetSubscriptionWithConfig:expiration:",@"@32@0:8@16@24",YES);
             method(NSClassFromString(@"SFEntitledAssetConfig"),@"initWithLanguage:assetType:",@"@32@0:8@16Q24",NO);
             method(NSClassFromString(@"DDSAssetCenter"),@"removeAssertionWithIdentifier:assetType:",@"v32@0:8@16@24",NO);
             method(NSClassFromString(@"DDSAssetCenter"),@"addAssertionsForAssetsWithQueries:policies:assertionIDs:clientID:",@"v48@0:8@16@24@32@40",NO);
             NSXPCConnection *connection=ttsConnection();
             @try { result[@"voiceOwners"]=@(ttsRequests(connection).count); } @finally {[connection invalidate];}
             result[@"languageDataOwners"]=@(ddsMap().count);
+            for(NSDictionary *item in ddsMap().allValues) require(sameDDS(item,decode(archive(item))),@"Language-data rollback preflight failed");
+            result[@"secureRollbackVerified"]=@YES;
         }
         else {
             NSError *error=nil;
@@ -503,7 +518,7 @@ NSData *MSAssetOwners(NSString *scope,NSString *mode) {
             struct stat st;require(lstat(directory().UTF8String,&st)==0 && S_ISDIR(st.st_mode) && st.st_uid==getuid() && !(st.st_mode&0022),@"Unsafe owner journal folder");
             lockFD=open([directory() stringByAppendingPathComponent:@"operation.lock"].UTF8String,O_CREAT|O_RDWR|O_NOFOLLOW,0600);
             require(lockFD>=0 && flock(lockFD,LOCK_EX|LOCK_NB)==0,@"Another model owner operation is running");
-            NSMutableDictionary *journal=load(scope); NSString *user=userGUID(); id<MSOwners> owner=manager();
+            NSMutableDictionary *journal=load(scope); journal[@"cycleRemoved"]=@0; NSString *user=userGUID(); id<MSOwners> owner=manager();
             if([mode isEqual:@"restore"]) restore(journal,scope,owner,user,details);
             else {
                 reconcile(journal,scope,owner,user);
@@ -514,8 +529,7 @@ NSData *MSAssetOwners(NSString *scope,NSString *mode) {
                     releaseUAF(scope,journal,owner,user,active,details);
                 }
             }
-            NSUInteger count=0; for(NSDictionary *entry in journal[@"entries"])if([entry[@"phase"] isEqual:@"removed"])count++;
-            result[@"releasedOwners"]=@(count);
+            result[@"releasedOwners"]=journal[@"cycleRemoved"];
         }
     } @catch(NSException *exception) { result[@"error"]=exception.reason ?: @"Model owner operation failed"; result[@"pending"]=@YES; }
     @finally { if(lockFD>=0){flock(lockFD,LOCK_UN);close(lockFD);} }

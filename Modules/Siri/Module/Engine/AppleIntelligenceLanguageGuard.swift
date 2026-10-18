@@ -451,7 +451,8 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
     public func write(siriLanguage: String, outputVoice: Data?) throws {
         let domain = AppleIntelligenceLanguageGuard.siriPreferencesDomain as CFString
         CFPreferencesSetAppValue(AppleIntelligenceLanguageGuard.siriLanguageKey as CFString, siriLanguage as CFString, domain)
-        if let outputVoice, let voice = try? PropertyListSerialization.propertyList(from: outputVoice, options: [], format: nil) {
+        if !ModelFeatureSettings().status(.siri).managedOff,
+           let outputVoice, let voice = try? PropertyListSerialization.propertyList(from: outputVoice, options: [], format: nil) {
             CFPreferencesSetAppValue(AppleIntelligenceLanguageGuard.outputVoiceKey as CFString, voice as CFPropertyList, domain)
         }
         guard CFPreferencesAppSynchronize(domain) else { throw AppleIntelligenceGuardError.preferenceWriteFailed }

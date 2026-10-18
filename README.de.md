@@ -61,8 +61,7 @@ Purge oder Sensei, wenn installiert) die Caches statt MacSpace freigeben.
   <img src="Docs/Screenshots/de/SystemData.png" alt="Die Seite „Systemdaten“: ein Diagramm dessen, was „Systemdaten“ füllt, die Liste „Jetzt freigeben“ und die Schaltfläche „Freigeben“ mit ihrer Größe" width="720">
 </p>
 
-**Siri & Apple Intelligence.** Ein Schalter, **Apple Intelligence**, auf der Seite und auf der
-Kachel. Ist er ausgeschaltet, stellt MacSpace Siri auf eine andere Sprache als die deines Macs.
+**Siri & Apple Intelligence.** Der Schalter **Apple Intelligence** liegt auf der Seite und auf der Kachel. Ist er ausgeschaltet, stellt MacSpace Siri auf eine andere Sprache als die deines Macs.
 So entscheidet macOS, dass Apple Intelligence nicht verfügbar ist. Danach löscht MacSpace die
 Modelle, die macOS auf dem Speicher behält; das können etwa 12 GB sein. Schaltest du ihn wieder
 ein, stellt MacSpace deine Siri-Sprache und deine Siri-Stimme wieder her. Bei aktiver
@@ -72,6 +71,12 @@ Accounts, bei denen Apple Intelligence an bleibt, weil alle Accounts die Modelle
 optionale Prüfung, **Prüfen, dass Apple Intelligence aus bleibt** in den Einstellungen, meldet
 dir, wenn macOS es wieder einschaltet. In einer virtuellen Maschine bietet macOS Apple
 Intelligence nicht an, daher sagt die Seite nur das.
+
+Separate Schalter für **Siri**, **Räumliche Fotos** und **Telefonfunktionen** schalten diese Funktionen aus und geben ungenutzte
+Modelle frei. Telefonänderungen erfordern einen Neustart und betreffen alle Accounts dieses Macs, ohne Profilinstallation.
+Solange MacSpace geöffnet ist, prüft es alle fünf Minuten erneut angeforderte Modelle deaktivierter Funktionen.
+Einschalten stellt gesicherte Einstellungen wieder her. Bei verfügbarem Apple Intelligence bleiben die Modelle erhalten.
+Andere ungenutzte Sprachdaten haben unter **Systemdaten** eine Aktion **Freigeben**.
 
 <p align="center">
   <img src="Docs/Screenshots/de/Siri.png" alt="Die Seite „Siri & Apple Intelligence“: der Schalter „Apple Intelligence“, ausgeschaltet, und die Zeile zur iCloud-Synchronisierung von Siri" width="720">

@@ -111,6 +111,23 @@ o estado dos controles em execução é verificado separadamente. Ao reativar, a
 outras substituições. O auxiliar recusa entradas alteradas fora do MacSpace. Este controle não instala perfil de configuração nem
 altera o idioma da Siri. A operação do auxiliar aceita apenas ativar ou desativar, sem caminho, domínio ou chave arbitrários.
 
+### Modelos dos recursos
+
+Os interruptores separados da Siri e das Fotos Espaciais salvam os ajustes originais antes de desativar o recurso. A voz salva
+da Siri é removida enquanto ela está desativada; seu idioma é mantido. Telefone também desativa os ajustes locais de gravação,
+filtragem e legendas. Os originais ficam em `~/Library/Application Support/MacSpace/feature-settings/`.
+
+As solicitações de modelos são liberadas pelas interfaces dos próprios serviços da Apple, com os dados de restauração em
+`~/Library/Application Support/MacSpace/asset-owners/`. Essas limpezas de recursos e de modelos de idiomas não editam o banco de assinaturas ativo nem apagam os modelos
+diretamente. A limpeza usa o serviço protegido do macOS. Ela aguarda enquanto o Apple Intelligence está disponível ou seu estado
+não pode ser lido, mantém as solicitações de outras contas e preserva modelos de fala compartilhados enquanto o Ditado está ativo.
+
+Enquanto estiver aberto, o MacSpace verifica os recursos explicitamente desativados a cada cinco minutos e limpa novamente os
+modelos não usados que o macOS solicitar. Reativar um recurso ou usar o desinstalador do MacSpace restaura os ajustes e as
+solicitações salvos; o macOS pode baixar os modelos novamente. Operações interrompidas ou conflitantes são verificadas antes de
+qualquer repetição. Os controles só estão disponíveis nas versões verificadas do macOS. Os modelos de idiomas não usados em
+Dados do Sistema têm uma limpeza pontual, que não desativa a correção ortográfica nem os dicionários.
+
 ### Permissões
 
 O macOS cuida de cada pedido, então o MacSpace nunca vê a sua senha.

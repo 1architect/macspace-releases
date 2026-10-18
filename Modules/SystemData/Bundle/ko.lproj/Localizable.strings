@@ -96,6 +96,7 @@
 "Free the selected caches?" = "선택한 캐시를 정리할까요?";
 "Free the symbols for crash reports?" = "충돌 보고서용 기호를 정리할까요?";
 "Free the system log?" = "시스템 로그를 정리할까요?";
+"Free unused system assets?" = "사용하지 않는 시스템 리소스를 비울까요?";
 "Free up to %@ of unused system assets?" = "미사용 시스템 에셋을 최대 %@ 확보할까요?";
 "Freeing in the background" = "백그라운드에서 확보 중";
 "Freeing space" = "공간 확보 중";

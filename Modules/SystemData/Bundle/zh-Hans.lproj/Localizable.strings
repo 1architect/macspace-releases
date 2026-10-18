@@ -96,6 +96,7 @@
 "Free the selected caches?" = "释放所选缓存？";
 "Free the symbols for crash reports?" = "释放崩溃报告符号？";
 "Free the system log?" = "释放系统日志？";
+"Free unused system assets?" = "释放未使用的系统资源？";
 "Free up to %@ of unused system assets?" = "释放最多 %@ 未使用的系统资源？";
 "Freeing in the background" = "正在后台释放";
 "Freeing space" = "正在释放空间";

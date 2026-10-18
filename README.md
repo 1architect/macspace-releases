@@ -51,6 +51,11 @@ that Apple Intelligence is unavailable. MacSpace then deletes the models macOS k
 which can be about 12 GB. Switch it on again and MacSpace puts your Siri language and voice
 back. 
 
+Separate **Siri**, **Spatial Photos** and **Phone features** switches disable those features and free their unused models.
+Phone changes require a restart and affect every account on this Mac; no profile is installed. While MacSpace is open, it checks
+every five minutes for models requested again for disabled features. Re-enabling restores saved settings. Models stay while
+Apple Intelligence is available. Other unused language assets have a **Free** action in **System Data**.
+
 <p align="center">
   <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
 </p>

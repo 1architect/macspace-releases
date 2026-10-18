@@ -16,8 +16,24 @@ public struct SiriModule: MacSpaceModule {
     public init() {}
 
     public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
+        guard await ManagedModelCleanup.shared.beginChange() else { return .failed(loc("A feature change is still running.")) }
+        let result = await restoreForUninstall(context: context)
+        await ManagedModelCleanup.shared.endChange()
+        return result
+    }
+
+    private func restoreForUninstall(context: ModuleContext) async -> ActionResult {
         await ModelAutoReleaser.shared.waitForCurrentRelease()
         await ModelPurger.shared.stopAndWait()
+        for scope in AssetModelCleanup.Scope.allCases where AssetModelCleanup.hasSavedOwners(scope) {
+            let restored = await Task.detached(priority: .userInitiated) { AssetModelCleanup.restoreOwners(scope) }.value
+            if let error = restored.error { return .failed(loc("Couldn't restore model requests."), details: [error]) }
+        }
+        let features = ModelFeatureSettings()
+        for feature in ModelFeatureSettings.Feature.allCases where features.hasSavedSettings(feature) {
+            do { try features.setOff(false, feature: feature) }
+            catch { return .failed(loc("Couldn't restore feature settings."), details: [error.localizedDescription]) }
+        }
         if PhoneFeatureFlags().hasSavedSettings {
             guard let channel = context.privileged else { return .failed(loc("MacSpace needs its helper to restore the Phone feature settings.")) }
             do { _ = try await channel.perform(operation: SiriPrivilegedOperations.setPhoneFeatures, arguments: ["off": "false"]) }
@@ -59,18 +75,31 @@ public struct SiriModule: MacSpaceModule {
     private func snapshot(waits: Bool = false, progress: LoadProgressSink? = nil) async -> SiriSnapshot {
         var snapshot = await store.snapshot(progress: progress)
         let store = self.store
-        let running = await ModelAutoReleaser.shared.check(snapshot, release: {
+        let cleaningFeatures = await ManagedModelCleanup.shared.isRunning
+        let running = cleaningFeatures ? nil : await ModelAutoReleaser.shared.check(snapshot, release: {
             Self.recordBackground(Self.release(progress: { _ in }).freedBytes ?? 0, summary: loc("Leftover Apple Intelligence models"))
         },
                                                            finished: { await store.invalidate() })
         if waits, let running { await running.value }
         snapshot.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
         // Apple Intelligence is off, the models are released, but still on disk: they are deleted without the user asking.
-        if Self.releasedModelsOnDisk(snapshot) {
+        if !cleaningFeatures, Self.releasedModelsOnDisk(snapshot) {
             await ModelPurger.shared.purge(after: 0, force: false) { await store.invalidate() }
         }
         snapshot.purgingModels = await ModelPurger.shared.isRunning
+        if !snapshot.releasingAutomatically, !snapshot.purgingModels { await checkFeatureModels() }
+        snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isRunning
+        snapshot.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
         return snapshot
+    }
+
+    private func checkFeatureModels(force: Bool = false) async {
+        let store = self.store
+        await ManagedModelCleanup.shared.check(force: force) { result in
+            if result.freedBytes > 0 { Self.recordBackground(result.freedBytes, summary: loc("Unused system models")) }
+            _ = await store.reconcileAssets()
+            _ = await store.reconcilePhoneFeatures()
+        }
     }
 
     static let moduleID = "com.macspace.siri"
@@ -105,9 +134,16 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        let changesFeature = ["toggle", "togglePhoneFeatures", "toggleModelFeature"].contains(request.actionID)
+        if changesFeature {
+            guard await ManagedModelCleanup.shared.beginChange() else { return .failed(loc("A feature change is still running.")) }
+            PurgeRetrier.shared.cancel(CacheDeleteService.mobileAsset)
+            await ModelAutoReleaser.shared.waitForCurrentRelease()
+            await ModelPurger.shared.stopAndWait()
+        }
         if request.actionID == "purgeAssets" { _ = await store.snapshot(maxAge: .infinity) }
         var result = await handle(request, context: context, progress: progress)
-        if result.refresh, request.actionID == "togglePhoneFeatures", var updated = await store.reconcilePhoneFeatures() {
+        if result.refresh, ["togglePhoneFeatures", "toggleModelFeature"].contains(request.actionID), var updated = await store.reconcilePhoneFeatures() {
             updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
             updated.purgingModels = await ModelPurger.shared.isRunning
             result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
@@ -116,19 +152,41 @@ public struct SiriModule: MacSpaceModule {
             updated.purgingModels = await ModelPurger.shared.isRunning
             result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
         } else if result.refresh { await store.invalidate() }
+        if changesFeature {
+            await ManagedModelCleanup.shared.endChange()
+            if request.parameters["value"] == "false", result.outcome == .succeeded { await checkFeatureModels(force: true) }
+        }
         return result
     }
 
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Machine.isVirtualMachine { return .failed(loc("Not available in a virtual machine")) }
         switch request.actionID {
+        case "toggleModelFeature":
+            guard let name = request.parameters["feature"], let feature = ModelFeatureSettings.Feature(rawValue: name), feature != .phone,
+                  let value = request.parameters["value"], ["true", "false"].contains(value) else { return .failed(loc("Unknown feature.")) }
+            do {
+                if value == "true", let scope = AssetModelCleanup.Scope(rawValue: feature.rawValue) {
+                    let restored = await Task.detached(priority: .userInitiated) { AssetModelCleanup.restoreOwners(scope) }.value
+                    if let error = restored.error { return .failed(loc("Couldn't restore model requests."), details: [error]) }
+                }
+                try ModelFeatureSettings().setOff(value == "false", feature: feature)
+                return .succeeded(loc("Feature settings updated."))
+            } catch {
+                return ActionResult(outcome: .failed, message: loc("Couldn't change feature settings."), details: [error.localizedDescription])
+            }
         case "togglePhoneFeatures":
             guard let value = request.parameters["value"], ["true", "false"].contains(value), let channel = context.privileged else {
                 return .failed(loc("MacSpace needs its helper to change the Phone features."))
             }
             do {
+                if value == "true" {
+                    let restored = await Task.detached(priority: .userInitiated) { AssetModelCleanup.restoreOwners(.phone) }.value
+                    if let error = restored.error { return .failed(loc("Couldn't restore model requests."), details: [error]) }
+                }
                 let data = try await channel.perform(operation: SiriPrivilegedOperations.setPhoneFeatures, arguments: ["off": String(value == "false")])
                 let state = try JSONDecoder().decode(PhoneFeatureFlags.Status.self, from: data)
+                try ModelFeatureSettings().setOff(value == "false", feature: .phone)
                 if state.state == .restartRequired || value == "true" && state.state == .unsupported {
                     return .succeeded(loc("Restart your Mac to apply this change."), restartRequired: true)
                 }
@@ -173,6 +231,12 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func runBackgroundTask(_ id: String, context: ModuleContext) async {
+        if id == "featureModels" {
+            guard !(await ModelAutoReleaser.shared.isRunning), !(await ModelPurger.shared.isRunning) else { return }
+            await checkFeatureModels(force: true)
+            await ManagedModelCleanup.shared.waitForCurrent()
+            return
+        }
         guard id == "watch" else { return }
         // Waited for: the background run may end with this call, and the release must get to restore the Siri language.
         _ = await snapshot(waits: true)

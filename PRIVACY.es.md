@@ -28,6 +28,9 @@ tu propio equipo. Nada de eso sale de tu Mac.
 | Vigilancia de Debloat: qué funciones volvió a activar macOS y cuándo (los últimos 20 eventos) | `~/Library/Application Support/MacSpace/debloat-watch.json` |
 | El perfil de Debloat, tal como se prepara para tu aprobación | `~/Library/Application Support/MacSpace/Profiles/MacSpace.mobileconfig` |
 | Tu idioma y tu voz de Siri, guardados mientras Apple Intelligence está desactivado para que MacSpace pueda restaurarlos | `~/Library/Application Support/MacSpace/ai-guard-saved-siri-settings.json` |
+| Ajustes originales de Siri, Fotos espaciales y Teléfono local, incluidos los valores ausentes | `~/Library/Application Support/MacSpace/feature-settings/` |
+| Solicitudes de modelos guardadas para restaurarlas, incluidas las preferencias de voz e idioma | `~/Library/Application Support/MacSpace/asset-owners/` |
+| Ajustes originales de las funciones de Teléfono para todo el Mac | `/Library/Application Support/MacSpace/phone-features.json` |
 | Vigilancia de Apple Intelligence (solo si la activas): el último estado que vio y un registro de cambios | `~/Library/Application Support/MacSpace/ai-watch-state.json` y `~/Library/Logs/MacSpace/ai-watch.jsonl` |
 | Una copia de seguridad de la base de datos de suscripciones de macOS, solo si eliminas suscripciones sobrantes de Apple Intelligence de cuentas eliminadas | `/Library/Application Support/MacSpace/backups/` |
 | Descargas de actualizaciones | La carpeta de caché de Sparkle, `~/Library/Caches/com.macspace.app/` |
