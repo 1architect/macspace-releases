@@ -11,7 +11,7 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract versio
 - Cached reads report no scan progress. A newer read or action supersedes older progress immediately, so a late result cannot restore old data or leave the widget loading.
 - Page cleanup uses the same live page as reload: keep existing details visible and interactive and pulse the graph while working; retain the All done completion. Row actions use only the inline text flag and its progress fill, without hiding the page. `ActionRequest.rowID` identifies the target UI row.
 - A verified `ActionResult.presentation` updates the tile and page atomically without another scan. Modules retain unrelated cached measurements. Background row actions publish `Row.activity` using the same flag.
-- Dock lifetime controls the bottom fade reservation: hold it until the outgoing button has finished fading in place, then release it. A new phase cancels a stale departure completion.
+- The dock renders the current phase directly in a stable container; it never mirrors a loading/action phase in view state. Dock lifetime controls only the bottom fade reservation: hold it until the outgoing button's removal transaction finishes, then release it. A new visibility generation cancels a stale departure completion.
 - Back dismisses All done to the module page before considering group or home navigation.
 - Confirmations share a left-aligned icon, heading and message, including cache cleanup.
 

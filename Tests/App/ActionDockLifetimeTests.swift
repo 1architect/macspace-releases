@@ -33,4 +33,24 @@ final class ActionDockLifetimeTests: XCTestCase {
         state.finishDeparture(old)
         XCTAssertTrue(state.reservesSpace)
     }
+
+    func testRenderTransactionAndVisibilityObserverShareDepartureToken() {
+        let state = ActionDockLifetime()
+        _ = state.update(shown: true)
+        let rendered = state.token(for: false)
+        XCTAssertEqual(state.update(shown: false), rendered)
+        XCTAssertEqual(state.token(for: false), rendered)
+        XCTAssertTrue(state.reservesSpace)
+        state.finishDeparture(rendered)
+        XCTAssertFalse(state.reservesSpace)
+    }
+
+    func testRepeatedAbsentPhasesDoNotInvalidateTheDepartureCompletion() {
+        let state = ActionDockLifetime()
+        _ = state.update(shown: true)
+        let token = state.update(shown: false)
+        XCTAssertEqual(state.update(shown: false), token)
+        state.finishDeparture(token)
+        XCTAssertFalse(state.reservesSpace)
+    }
 }

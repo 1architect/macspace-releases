@@ -6,9 +6,14 @@ import SwiftUI
 final class ActionDockLifetime: ObservableObject {
     @Published private(set) var reservesSpace = false
     private var generation = 0
+    private var shown: Bool?
+
+    /// The render transaction can precede onChange. Both must use the same departure generation.
+    func token(for shown: Bool) -> Int { self.shown == shown ? generation : generation + 1 }
 
     func update(shown: Bool) -> Int {
-        generation += 1
+        generation = token(for: shown)
+        self.shown = shown
         if shown { reservesSpace = true }
         return generation
     }
@@ -20,6 +25,7 @@ final class ActionDockLifetime: ObservableObject {
 
     func cancel() {
         generation += 1
+        shown = nil
         reservesSpace = false
     }
 }

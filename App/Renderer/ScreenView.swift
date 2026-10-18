@@ -617,7 +617,6 @@ private struct ActionDock: View {
     /// A notice with nothing to act on is shown for a few seconds when it appears, then the button is the page's action again.
     @State private var showsPassingNotice = false
     @State private var availableWidth: CGFloat?
-    @State private var displayedPhase: ActionPill.Phase?
     @StateObject private var lifetime = ActionDockLifetime()
 
     /// What the page has to say, from its banners: the first one.
@@ -677,8 +676,10 @@ private struct ActionDock: View {
     }
 
     var body: some View {
-        Group {
-            if let phase = displayedPhase {
+        // The live phase is authoritative. Mirroring it in State through an empty Group could leave an old Loading pill visible
+        // after the module finished. The stable container also keeps its visibility observer alive when there is no action.
+        ZStack(alignment: .bottomLeading) {
+            if let phase {
                 ActionPill(phase: phase, maximumWidth: availableWidth, dismiss: {
                     if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
                 }) { [handle] action in
@@ -692,7 +693,14 @@ private struct ActionDock: View {
         .frame(maxWidth: .infinity, minHeight: 31, maxHeight: 31, alignment: .bottomLeading)
         .padding(.trailing, PageInsets.side)
         .onGeometryChange(for: CGFloat.self) { max(0, $0.size.width - PageInsets.side) } action: { availableWidth = $0 }
-        .onChange(of: phase, initial: true) { _, next in show(next) }
+        .transaction(value: phase != nil) { transaction in
+            transaction.animation = Theme.layout
+            if phase == nil {
+                let token = lifetime.token(for: false)
+                transaction.addAnimationCompletion(criteria: .removed) { lifetime.finishDeparture(token) }
+            }
+        }
+        .onChange(of: phase != nil, initial: true) { _, shown in _ = lifetime.update(shown: shown) }
         .onChange(of: lifetime.reservesSpace, initial: true) { _, reserved in isVisible = reserved }
         .onDisappear { lifetime.cancel() }
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
@@ -703,18 +711,6 @@ private struct ActionDock: View {
         }
     }
 
-    private func show(_ next: ActionPill.Phase?) {
-        let token = lifetime.update(shown: next != nil)
-        if let next {
-            if displayedPhase == nil {
-                withAnimation(Theme.layout) { displayedPhase = next }
-            } else { displayedPhase = next }
-        } else if displayedPhase != nil {
-            withAnimation(Theme.layout, completionCriteria: .removed) { displayedPhase = nil } completion: {
-                lifetime.finishDeparture(token)
-            }
-        } else { lifetime.finishDeparture(token) }
-    }
 }
 
 /// The main action's pill. Its shape stays while its text changes, so it grows and shrinks from one state to the next; while an
