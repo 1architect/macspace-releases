@@ -287,11 +287,14 @@ Se preferir fazer isso manualmente, siga a ordem abaixo:
 6. **Remova o Acesso Total ao Disco:** em Ajustes do Sistema > Privacidade e Segurança > Acesso
    Total ao Disco, selecione o MacSpace e clique no botão de menos.
 
+Como o macOS se comporta, com medições, está em [Docs/Research.md](Docs/Research.md) (em inglês).
+
 ---
 
 ## Compilar a partir do código-fonte
 
-O código-fonte é este repositório. Você precisa do macOS 27 e do Xcode 27.
+O código-fonte é este repositório. O [Docs/Handoff.md](Docs/Handoff.md) (em inglês) explica como
+ele é organizado. Você precisa do macOS 27 e do Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

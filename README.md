@@ -227,6 +227,8 @@ MacSpace restores your Siri language and voice, and macOS may download the model
 caches rebuild. Deleted reports, version history, logs, items in the Trash, snapshots and backups
 do not come back.
 
+How macOS behaves, with measurements, is in [Docs/Research.md](Docs/Research.md).
+
 ---
 
 ## Privacy
@@ -276,7 +278,8 @@ If you prefer to do it manually please follow the order below:
 
 ## Build from source
 
-The source is this repository. You need macOS 27 and Xcode 27.
+The source is this repository. [Docs/Handoff.md](Docs/Handoff.md) explains how it is put
+together. You need macOS 27 and Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

@@ -293,11 +293,15 @@ Si vous préférez le faire à la main, suivez l’ordre ci-dessous :
 6. **Retirez l’accès complet au disque :** dans Réglages Système > Confidentialité et sécurité >
    Accès complet au disque, sélectionnez MacSpace et appuyez sur le bouton moins.
 
+Le comportement de macOS, mesures à l’appui, est décrit dans [Docs/Research.md](Docs/Research.md)
+(en anglais).
+
 ---
 
 ## Compiler depuis les sources
 
-Le code source est ce dépôt. Il vous faut macOS 27 et Xcode 27.
+Le code source est ce dépôt. [Docs/Handoff.md](Docs/Handoff.md) (en anglais) explique comment il
+est organisé. Il vous faut macOS 27 et Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

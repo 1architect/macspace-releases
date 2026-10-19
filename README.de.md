@@ -291,11 +291,15 @@ Wenn du es lieber von Hand machst, halte diese Reihenfolge ein:
 6. **Entferne den Festplattenvollzugriff:** Wähle in den Systemeinstellungen > Datenschutz &
    Sicherheit > Festplattenvollzugriff MacSpace aus und drücke die Minus-Taste.
 
+Wie sich macOS verhält, mit Messwerten, steht in [Docs/Research.md](Docs/Research.md) (auf
+Englisch).
+
 ---
 
 ## Aus dem Quellcode bauen
 
-Der Quellcode ist dieses Repository. Du brauchst macOS 27 und Xcode 27.
+Der Quellcode ist dieses Repository. [Docs/Handoff.md](Docs/Handoff.md) (auf Englisch) erklärt,
+wie es aufgebaut ist. Du brauchst macOS 27 und Xcode 27.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
