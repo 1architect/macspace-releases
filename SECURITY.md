@@ -1,4 +1,4 @@
-**English** · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md)
+**English** · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md) · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
 
 # Security Policy
 
@@ -81,7 +81,7 @@ the feature back on.
 | Share analytics with Apple (release builds of macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, keys `AutoSubmit` and `ThirdPartyDataSubmit` | The helper |
 | Siri AI, Visual Intelligence | Feature-flag overrides in `/Library/Preferences/FeatureFlags/Domain/` | The helper |
 | Hang tracing (tailspin) | `tailspin disable`, and `tailspin enable` to undo it | The helper |
-| The policies (six; seven on a beta of macOS) | One configuration profile, `com.macspace.policies` (see below) | You approve it in System Settings |
+| The policies (five; six on a beta of macOS) | One configuration profile, `com.macspace.policies` (see below) | You approve it in System Settings |
 
 These changes stay in place if you delete the app without switching them back on.
 
@@ -212,7 +212,8 @@ flag, `Notarization Ticket=stapled`, and `spctl` should say `accepted` with
 
 ## Uninstall completely
 
-There is no in-app uninstaller. The full steps are in the
+MacSpace has an uninstaller: in the menu bar, choose **MacSpace** > **About MacSpace**, then **Uninstall…**. It restores each
+module's settings, removes the helper and moves MacSpace to the Trash. To do it by hand, the full steps are in the
 [README](README.md#uninstall). In short:
 
 1. In **Debloat**, press **Enable all**. This removes the overrides and the profile it made.

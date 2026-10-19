@@ -1,4 +1,4 @@
-[English](LICENSE) · **Português** · [Español](LICENSE.es.md) · [Français](LICENSE.fr.md) · [Deutsch](LICENSE.de.md)
+[English](LICENSE) · **Português** · [Español](LICENSE.es.md) · [Français](LICENSE.fr.md) · [Deutsch](LICENSE.de.md) · [简体中文](LICENSE.zh-Hans.md) · [日本語](LICENSE.ja.md) · [한국어](LICENSE.ko.md)
 
 > Esta é uma tradução não oficial, feita apenas por conveniência. A única versão com validade
 > jurídica é o texto em inglês em [`LICENSE`](LICENSE), que prevalece em caso de qualquer

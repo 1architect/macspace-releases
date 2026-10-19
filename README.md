@@ -1,11 +1,12 @@
-**English** · [Português](README.pt-BR.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md)
+**English** · [Português](README.pt-BR.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [简体中文](README.zh-Hans.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
 # MacSpace
 
 **A System Data and Apple Intelligence cleaner for macOS.**
 
-<p align=>
+<p align="center">
 <a href="https://trendshift.io/repositories/288700?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-288700" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/288700/daily?language=Swift" alt="1architect%2Fmacspace-releases | Trendshift" width="250" height="55"/></a>
+</p>
 
 [![CI](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml/badge.svg)](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/1architect/macspace-releases)](https://github.com/1architect/macspace-releases/releases/latest)
@@ -43,7 +44,7 @@ reports, system assets, app data, document version history.
 
 The main button, **Free**, deletes what is safe. Items that need more care have their own buttons.
 For everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by
-hand. App caches can be chosen too: **Free** asks before it quits an open app. Or choose another 
+hand. App caches can be chosen too: **Free** asks before it quits an open app. Or choose another
 installed cleaner to handle app caches instead of MacSpace in the app settings.
 
 <p align="center">
@@ -64,7 +65,7 @@ Three more switches turn off the following features and delete the models left o
 **Other System Files.** Space outside System Data that macOS counts as purgeable. macOS frees it
 when the disk is nearly full. **Free up to** forces macOS to do the cleaning. Copies of cloud files kept on this Mac (OneDrive, iCloud
 Drive and other cloud folders) have a row and a button of their own, **Remove Downloads**. The
-files stay in the cloud and download again when you open them. 
+files stay in the cloud and download again when you open them.
 This module also cleans stale macOS updates and old Time Machine snapshots.
 
 <p align="center">
@@ -82,7 +83,7 @@ minutes and switches off again anything macOS turned back on.
 | Dictation and translation on Apple servers | Dictation and translation stay on this Mac. Languages without an on-device model stop working. | Reopening apps |
 | Personalized ads | Apple stops picking ads based on what you do. | Reopening apps |
 | Advertising identifier | Apps can't track you with the advertising identifier or ask to. | Reopening apps |
-| Siri AI | Turns off Siri AI. Spotlight goes back to classic search. | A restart |
+| Siri AI search | Stops the Siri AI search app. Spotlight goes back to classic search. Siri itself is on the Siri & Apple Intelligence page. | A restart |
 | Visual Intelligence | Turns off Visual Intelligence. Visual Look Up may stop working too. | A restart |
 | Spotlight internet results | Spotlight stops sending your searches to Apple. No more web results in Spotlight. | Reopening apps |
 | Hang tracing (tailspin) | Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory. | Toggle |
@@ -118,7 +119,7 @@ brew install --cask 1architect/macspace/macspace
 
 Download the latest `MacSpace-x.y.z.dmg` from
 [Releases](https://github.com/1architect/macspace-releases/releases/latest), open it, and drag
-**MacSpace** to your Applications folder. 
+**MacSpace** to your Applications folder.
 
 Each release also has `MacSpace-x.y.z.dmg.sha256`. To check your download, put both files in one
 folder and run:
@@ -139,7 +140,7 @@ macOS 27 or later, on Apple Silicon.
 MacSpace updates with [Sparkle](https://sparkle-project.org). Choose **Check for Updates…** in
 the MacSpace menu, or **Check Now** under **Settings > Updates**. **Check for updates
 automatically**, in the same place, lets MacSpace look about once a day while it runs. Every update is signed, and Sparkle checks the signature before installing
-anything. 
+anything.
 
 <p align="center">
   <img src="Docs/Screenshots/en/Settings.png" alt="The Settings page: theme, appearance, permissions, what closing the window does, open at login, updates and automatic cleanup" width="720">
@@ -163,21 +164,21 @@ Access**, **Approve the helper**, **Get notified**, then **You're all set**. Eac
 | Full Disk Access | System Settings > Privacy & Security > Full Disk Access | To measure everything on the disk, and to read the state of Apple Intelligence. | System Data, Siri & Apple Intelligence |
 | Privileged helper | System Settings > General > Login Items & Extensions, under **Allow in the Background** | A small program that does the few things that need an administrator (see below). | System Data, Siri & Apple Intelligence, Debloat |
 | Notifications | macOS asks the first time | To tell you when something finished or needs you. | All |
-| Configuration profile | System Settings > General > Device Management | Applies the Debloat policies you turn on. Needed only for the six policies. | Debloat |
+| Configuration profile | System Settings > General > Device Management | Applies the Debloat policies you turn on. Needed only for the policies (five; six on a macOS beta). | Debloat |
 
 Other System Files needs no permission of its own. macOS handles every authorization, so
 MacSpace never sees your password.
 
 The helper is a launch daemon, `com.macspace.helper`. It runs only named operations that are built
 into it, a caller cannot send it commands, and it accepts only clients signed by the same developer
-team as MacSpace. 
+team as MacSpace.
 See [Security](SECURITY.md) for more info.
 
 ---
 
 ## Safety
 
-**Items MacSpace deletes** 
+**Items MacSpace deletes**
 
 - Caches that apps rebuild: the caches in the per-user system cache folder (`/var/folders/…/C`)
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
@@ -211,7 +212,7 @@ See [Security](SECURITY.md) for more info.
 - Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
   formulae, updating or sending Homebrew's analytics.
 
-**Untouched items.** MacSpace only measures how much space your documents, Photos, Mail and Messages take. It lists large items such as unfinished downloads, macOS restore images and virtual machines and. It
+**Untouched items.** MacSpace only measures how much space your documents, Photos, Mail and Messages take. It lists large items such as unfinished downloads, macOS restore images and virtual machines. It
 leaves other apps' data alone and says how to clean it from inside the app. **It does not read or delete your personal files. It does not turn off System Integrity Protection and does not change the sealed system volume.**
 
 **Permissions during use.** Every button that deletes more than one app's caches asks for confirmation.
@@ -241,7 +242,7 @@ the [Privacy Policy](PRIVACY.md) and the [Security Policy](SECURITY.md).
 
 ## Uninstall
 
-To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpace** then **About MacSpace** then click **Uninstall**. The uninstaller automates the process below. 
+To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpace** then **About MacSpace** then click **Uninstall**. The uninstaller automates the process below.
 
 If you prefer to do it manually please follow the order below:
 

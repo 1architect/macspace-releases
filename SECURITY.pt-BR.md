@@ -1,4 +1,4 @@
-[English](SECURITY.md) · **Português** · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md)
+[English](SECURITY.md) · **Português** · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md) · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
 
 # Política de Segurança
 
@@ -84,7 +84,7 @@ ativando o recurso de novo.
 | Compartilhar análises com a Apple (versões finais do macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, chaves `AutoSubmit` e `ThirdPartyDataSubmit` | O auxiliar |
 | Siri AI, Inteligência Visual | Substituições de feature flags em `/Library/Preferences/FeatureFlags/Domain/` | O auxiliar |
 | Rastreamento de travamentos (tailspin) | `tailspin disable` e, para desfazer, `tailspin enable` | O auxiliar |
-| As políticas (seis; sete numa versão beta do macOS) | Um perfil de configuração, `com.macspace.policies` (veja abaixo) | Você o aprova nos Ajustes do Sistema |
+| As políticas (cinco; seis numa versão beta do macOS) | Um perfil de configuração, `com.macspace.policies` (veja abaixo) | Você o aprova nos Ajustes do Sistema |
 
 Essas alterações continuam no lugar se você apagar o app sem ativar os recursos de novo.
 
@@ -218,8 +218,9 @@ Você deve ver `Authority=Developer ID Application`, `TeamIdentifier=J45ZXS2ZF6`
 
 ## Desinstalar por completo
 
-Não há desinstalador no app. Os passos completos estão no
-[README](README.pt-BR.md#desinstalar). Em resumo:
+O MacSpace tem um desinstalador: na barra de menus, escolha **MacSpace** > **Sobre o MacSpace** e depois **Desinstalar…**. Ele
+restaura os ajustes de cada módulo, remove o auxiliar e move o MacSpace para o Lixo. Para fazer à mão, os passos completos
+estão no [README](README.pt-BR.md#desinstalar). Em resumo:
 
 1. Em **Debloat**, clique em **Ativar tudo**. Isso remove as substituições e o perfil que ele criou.
 2. Se o perfil **MacSpace: policies** ainda estiver em Ajustes do Sistema > Geral > Gerenciamento de

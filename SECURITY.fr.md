@@ -1,4 +1,4 @@
-[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · **Français** · [Deutsch](SECURITY.de.md)
+[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · **Français** · [Deutsch](SECURITY.de.md) · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
 
 # Politique de sécurité
 
@@ -87,7 +87,7 @@ Chaque modification est d’abord inscrite dans un journal, de sorte qu’elle p
 | Partager l’analyse avec Apple (versions finales de macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, clés `AutoSubmit` et `ThirdPartyDataSubmit` | L’assistant |
 | Siri AI, Intelligence visuelle | Surcharges d’indicateurs de fonctionnalité dans `/Library/Preferences/FeatureFlags/Domain/` | L’assistant |
 | Suivi des blocages (tailspin) | `tailspin disable`, et `tailspin enable` pour l’annuler | L’assistant |
-| Les règles (six ; sept sur une version bêta de macOS) | Un profil de configuration, `com.macspace.policies` (voir ci-dessous) | Vous l’approuvez dans Réglages Système |
+| Les règles (cinq ; six sur une version bêta de macOS) | Un profil de configuration, `com.macspace.policies` (voir ci-dessous) | Vous l’approuvez dans Réglages Système |
 
 Ces modifications restent en place si vous supprimez l’app sans les avoir réactivées.
 
@@ -223,8 +223,9 @@ Vous devriez voir `Authority=Developer ID Application`, `TeamIdentifier=J45ZXS2Z
 
 ## Désinstaller complètement
 
-Il n’y a pas de programme de désinstallation dans l’app. Les étapes complètes se trouvent dans le
-[README](README.fr.md#désinstallation). En bref :
+MacSpace a un désinstalleur : dans la barre des menus, choisissez **MacSpace** > **À propos de MacSpace**, puis
+**Désinstaller…**. Il rétablit les réglages de chaque module, supprime l’assistant et place MacSpace dans la corbeille. Pour
+le faire à la main, les étapes complètes se trouvent dans le [README](README.fr.md#désinstallation). En bref :
 
 1. Dans **Debloat**, appuyez sur **Tout activer**. Cela supprime les surcharges et le profil qu’il a
    créés.

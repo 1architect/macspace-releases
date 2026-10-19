@@ -1,8 +1,8 @@
-[English](PRIVACY.md) · [Português](PRIVACY.pt-BR.md) · [Español](PRIVACY.es.md) · **Français** · [Deutsch](PRIVACY.de.md)
+[English](PRIVACY.md) · [Português](PRIVACY.pt-BR.md) · [Español](PRIVACY.es.md) · **Français** · [Deutsch](PRIVACY.de.md) · [简体中文](PRIVACY.zh-Hans.md) · [日本語](PRIVACY.ja.md) · [한국어](PRIVACY.ko.md)
 
 # Politique de confidentialité — MacSpace
 
-**Dernière mise à jour : 6 octobre 2026 · S’applique à MacSpace 1.0.0 et aux versions ultérieures**
+**Dernière mise à jour : 19 octobre 2026 · S’applique à MacSpace 1.0.0 et aux versions ultérieures**
 
 MacSpace ne collecte, ne stocke et ne transmet aucune donnée d’usage. Il n’y a ni analyse d’usage,
 ni télémétrie, ni rapport de plantage, ni publicité. MacSpace n’a pas de système de comptes : vous

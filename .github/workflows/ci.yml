@@ -126,7 +126,7 @@ jobs:
             failed=1
           fi
 
-          for language in en pt-BR fr es de; do
+          for language in en pt-BR fr es de zh-Hans ja ko; do
             file="ReleaseNotes/$version/$language.md"
             if [ -s "$file" ]; then
               echo "$file exists."

@@ -1,4 +1,4 @@
-[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · **Español** · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md)
+[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · **Español** · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md) · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
 
 # Política de Seguridad
 
@@ -85,7 +85,7 @@ volviendo a activar la función.
 | Compartir análisis con Apple (versiones finales de macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, claves `AutoSubmit` y `ThirdPartyDataSubmit` | El asistente |
 | Siri AI, Inteligencia visual | Anulaciones de feature flags en `/Library/Preferences/FeatureFlags/Domain/` | El asistente |
 | Rastreo de bloqueos (tailspin) | `tailspin disable`, y `tailspin enable` para deshacerlo | El asistente |
-| Las políticas (seis; siete en una beta de macOS) | Un perfil de configuración, `com.macspace.policies` (ver abajo) | Tú lo apruebas en Ajustes del Sistema |
+| Las políticas (cinco; seis en una beta de macOS) | Un perfil de configuración, `com.macspace.policies` (ver abajo) | Tú lo apruebas en Ajustes del Sistema |
 
 Estos cambios se quedan donde están si eliminas la app sin volver a activar las funciones.
 
@@ -217,8 +217,9 @@ Deberías ver `Authority=Developer ID Application`, `TeamIdentifier=J45ZXS2ZF6`,
 
 ## Desinstalar por completo
 
-No hay un desinstalador dentro de la app. Los pasos completos están en el
-[README](README.es.md#desinstalar). En resumen:
+MacSpace tiene un desinstalador: en la barra de menús, elige **MacSpace** > **Acerca de MacSpace** y luego **Desinstalar…**.
+Restablece los ajustes de cada módulo, elimina el asistente y mueve MacSpace a la Papelera. Para hacerlo a mano, los pasos
+completos están en el [README](README.es.md#desinstalar). En resumen:
 
 1. En **Debloat**, pulsa **Activar todo**. Esto elimina las anulaciones y el perfil que creó.
 2. Si el perfil **MacSpace: policies** sigue en Ajustes del Sistema > General > Gestión de

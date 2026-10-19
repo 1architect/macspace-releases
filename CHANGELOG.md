@@ -7,6 +7,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-19
+
 ### Added
 
 - **Siri**, **Spatial Photos** and **Call transcription** switches in Siri & Apple Intelligence. Each turns its feature off,
@@ -19,7 +21,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - The Siri & Apple Intelligence page's main button works like Debloat's: it frees the models when there are some to free, else
   turns off every switch still on, else turns them all back on.
 - **Unused system assets** in System Data also releases unused language data.
-- Simplified Chinese (#8), Japanese and Korean (#9), throughout the app and all four modules.
+- Simplified Chinese (#8), Japanese and Korean (#9), throughout the app and all four modules, and the README, Privacy Policy, Security
+  Policy and License in the three languages.
 - **About MacSpace**, in the application and menu bar menus, with the version, GitHub and an uninstaller that restores each
   module's settings before it removes the helper and moves MacSpace to the Trash (#15).
 - Scans show their progress in the action button and on the Home tiles.
@@ -43,6 +46,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
+- The documentation matches the app: Debloat's **Siri AI search**, five policies (six on a macOS beta), the uninstaller in
+  **About MacSpace** (the Security Policy said there was none) and the Privacy Policy's date. The release pipeline lists all eight
+  languages for release notes.
 - No restart is asked for a feature switched back on: it keeps its models.
 - A row's pills stay quiet while its own Free flag works, so the two no longer pulse orange side by side.
 
@@ -302,7 +308,8 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/1architect/macspace-releases/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/1architect/macspace-releases/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/1architect/macspace-releases/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/1architect/macspace-releases/compare/v1.0.1...v1.0.2

@@ -1,8 +1,8 @@
-**English** · [Português](PRIVACY.pt-BR.md) · [Español](PRIVACY.es.md) · [Français](PRIVACY.fr.md) · [Deutsch](PRIVACY.de.md)
+**English** · [Português](PRIVACY.pt-BR.md) · [Español](PRIVACY.es.md) · [Français](PRIVACY.fr.md) · [Deutsch](PRIVACY.de.md) · [简体中文](PRIVACY.zh-Hans.md) · [日本語](PRIVACY.ja.md) · [한국어](PRIVACY.ko.md)
 
 # Privacy Policy — MacSpace
 
-**Last updated: 6 October 2026 · Applies to MacSpace 1.0.0 and later**
+**Last updated: 19 October 2026 · Applies to MacSpace 1.0.0 and later**
 
 MacSpace does not collect, store, or transmit any usage data. There is no analytics, no
 telemetry, no crash reporting, and no advertising. MacSpace has no account system, so you never

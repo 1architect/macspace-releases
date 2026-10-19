@@ -1,4 +1,4 @@
-[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · **Deutsch**
+[English](SECURITY.md) · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · **Deutsch** · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
 
 # Sicherheitsrichtlinie
 
@@ -85,7 +85,7 @@ durch Wiedereinschalten der Funktion rückgängig machen lässt.
 | Analysedaten mit Apple teilen (Release-Builds von macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, Schlüssel `AutoSubmit` und `ThirdPartyDataSubmit` | Das Hilfsprogramm |
 | Siri AI, Visuelle Intelligenz | Überschreibungen von Feature-Flags in `/Library/Preferences/FeatureFlags/Domain/` | Das Hilfsprogramm |
 | Hänger-Aufzeichnung (tailspin) | `tailspin disable` und `tailspin enable`, um es rückgängig zu machen | Das Hilfsprogramm |
-| Die Richtlinien (sechs; sieben in einer Betaversion von macOS) | Ein Konfigurationsprofil, `com.macspace.policies` (siehe unten) | Du genehmigst es in den Systemeinstellungen |
+| Die Richtlinien (fünf; sechs in einer Betaversion von macOS) | Ein Konfigurationsprofil, `com.macspace.policies` (siehe unten) | Du genehmigst es in den Systemeinstellungen |
 
 Diese Änderungen bleiben bestehen, wenn du die App löschst, ohne sie wieder einzuschalten.
 
@@ -221,7 +221,9 @@ Du solltest `Authority=Developer ID Application`, `TeamIdentifier=J45ZXS2ZF6`, d
 
 ## Vollständig deinstallieren
 
-Es gibt kein Deinstallationsprogramm in der App. Die vollständigen Schritte stehen in der
+MacSpace hat ein Deinstallationsprogramm: Wähle in der Menüleiste **MacSpace** > **Über MacSpace** und dann
+**Deinstallieren…**. Es stellt die Einstellungen jedes Moduls wieder her, entfernt das Hilfsprogramm und legt MacSpace in den
+Papierkorb. Wenn du es von Hand machen willst, stehen die vollständigen Schritte in der
 [README](README.de.md#deinstallation). Kurz gesagt:
 
 1. Klicke in **Debloat** auf **Alle aktivieren**. Das entfernt die Überschreibungen und das

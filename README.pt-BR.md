@@ -1,8 +1,12 @@
-[English](README.md) · **Português** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md)
+[English](README.md) · **Português** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [简体中文](README.zh-Hans.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
 # MacSpace
 
 **Um limpador de Dados do Sistema e do Apple Intelligence para o macOS.**
+
+<p align="center">
+<a href="https://trendshift.io/repositories/288700?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-288700" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/288700/daily?language=Swift" alt="1architect%2Fmacspace-releases | Trendshift" width="250" height="55"/></a>
+</p>
 
 [![CI](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml/badge.svg)](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml)
 [![Última versão](https://img.shields.io/github/v/release/1architect/macspace-releases)](https://github.com/1architect/macspace-releases/releases/latest)
@@ -31,114 +35,85 @@ nenhum dado sobre você**.
 
 ## O que o MacSpace faz
 
-O MacSpace tem quatro módulos. Cada um tem um bloco na página inicial e uma página própria. Clique
-em um bloco para abrir a página dele. **Voltar** sobe um nível. Você pode desativar qualquer módulo
-nos Ajustes.
+O MacSpace tem quatro módulos. Você pode ativá-los ou desativá-los nos Ajustes.
 
 **Dados do Sistema.** Dados do Sistema é a parte do disco que os Ajustes do Sistema não explicam.
 O MacSpace faz a conta do mesmo jeito que os Ajustes do Sistema (espaço usado, menos o macOS e
 todas as outras categorias), então o valor fica perto do que você vê lá. Depois ele detalha:
 caches, registros, relatórios, recursos do sistema, dados de apps, histórico de versões de
-documentos. O que ele não consegue nomear aparece como **Não identificado**. Nunca fica de fora.
+documentos.
 
-O botão principal, **Liberar** com um tamanho, apaga o que é seguro: caches de apps que estão
-fechados, relatórios de diagnóstico e de falhas com mais de 7 dias e recursos do sistema sem uso. Em
-**Liberar agora**, cada item tem o seu próprio botão. Dois itens ficam separados porque pedem mais
-cuidado: **Histórico de versões de documentos** (versões anteriores dos seus documentos; só a última
-versão permanece) e **Arquivos restantes de atualização do macOS** (arquivos de uma atualização que
-já está instalada). O **Registro do sistema** (o que o macOS registra para resolver problemas) e o
-**Lixo** também têm botões próprios, nunca o principal. Para tudo o que pertence ao macOS ou a
-outros apps, o MacSpace diz o que é e o que fazer manualmente. Um clique em um bloco do gráfico abre
-os itens de que ele é feito, e o botão de pasta numa linha mostra os arquivos dela no Finder. O que
-o macOS mantém inacessível a todos os apps aparece como **Protegido pelo macOS**. Em **Liberar
-agora**, os caches de apps abertos também podem ser marcados: **Liberar** encerra esses apps antes.
-Com o **Limpador de caches**, nos Ajustes, outro app (CleanMyMac, Mole, OnyX, Pearcleaner, Purge ou
-Sensei, quando instalado) pode liberar os caches no lugar do MacSpace.
+O botão principal, **Liberar**, apaga o que é seguro. Os itens que pedem mais cuidado têm botões
+próprios. Para tudo o que pertence ao macOS ou a outros apps, o MacSpace diz o que é e o que fazer
+à mão. Os caches de apps também podem ser escolhidos: **Liberar** pergunta antes de encerrar um app
+aberto. Ou, nos ajustes do app, escolha outro limpador instalado para cuidar dos caches de apps no
+lugar do MacSpace.
 
 <p align="center">
-  <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o seu tamanho" width="720">
+  <img src="Docs/Screenshots/pt-BR/SystemData.png" alt="A página Dados do Sistema: um gráfico do que ocupa Dados do Sistema, a lista Liberar agora e o botão Liberar com o tamanho" width="720">
 </p>
 
-**Siri e Apple Intelligence.** O interruptor **Apple Intelligence** fica na página e no bloco.
-Desativá-lo coloca a Siri num idioma diferente do seu Mac. É assim que o macOS decide que o Apple
-Intelligence não está disponível. Em seguida, o MacSpace apaga os modelos que o macOS mantém no
-disco, o que pode chegar a cerca de 12 GB. Ative-o de novo e o MacSpace devolve o idioma e a voz da
-Siri. Com a sincronização da Siri com o iCloud ativada, a mudança de idioma também chega ao seu
-iPhone e iPad. A página avisa isso e mostra como desativar a sincronização. Ela também indica
-outras contas que mantêm o Apple Intelligence ativado, porque os modelos são compartilhados por
-todas as contas. Uma verificação opcional, **Verificar se o Apple Intelligence continua
-desativado**, nos Ajustes, avisa se o macOS o reativar. Numa máquina virtual, o macOS não oferece o
-Apple Intelligence, então a página só informa isso.
+**Siri e Apple Intelligence.** Desativado, o MacSpace define a Siri para um idioma diferente do do
+seu Mac. É assim que o macOS decide que o Apple Intelligence não está disponível. Depois o MacSpace
+apaga os modelos que o macOS mantém no disco, o que pode chegar a cerca de 12 GB. Ative-o de novo e
+o MacSpace devolve o idioma e a voz da sua Siri.
 
-Outros três interruptores desativam estes recursos e apagam os modelos que ficam no disco: **Siri, Fotos Espaciais e Transcrição de chamadas**.
+Mais três interruptores desativam os recursos a seguir e apagam os modelos que ficam no disco:
+**Siri, Fotos Espaciais e Transcrição de chamadas**.
 
 <p align="center">
-  <img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri com o iCloud" width="720">
+  <img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri no iCloud" width="720">
 </p>
 
 **Outros Arquivos do Sistema.** Espaço fora de Dados do Sistema que o macOS conta como removível.
-O macOS o libera quando o disco está quase cheio. **Liberar até** pede que ele faça isso agora. O
-tamanho é uma estimativa do macOS, e é por isso que o botão diz "até". Cópias de arquivos da nuvem
-guardadas neste Mac (OneDrive, iCloud Drive e outras pastas da nuvem) têm uma linha e um botão
-próprios, **Remover Downloads**. Os arquivos continuam na nuvem e são baixados de novo quando você
-os abre. Uma atualização do macOS pronta para instalar aparece em **Aguardando instalação**. O
-MacSpace não a apaga. Os instantâneos locais do Time Machine (cópias do seu Mac que ele guarda por um
-dia) têm uma linha própria: **Liberar** apaga todos, menos o mais recente e o que o próximo backup
-usa como ponto de partida. Um disco de backup conectado lista os seus backups, e você pode escolher
-os antigos para liberar. O backup mais recente sempre fica.
+O macOS o libera quando o disco está quase cheio. **Liberar até** faz o macOS fazer essa limpeza
+agora. As cópias de arquivos da nuvem guardadas neste Mac (OneDrive, iCloud Drive e outras pastas
+da nuvem) têm uma linha e um botão próprios, **Remover Downloads**. Os arquivos continuam na nuvem
+e são baixados de novo quando você os abre. Este módulo também limpa atualizações antigas do macOS
+e instantâneos antigos do Time Machine.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/OtherSystemFiles.png" alt="A página Outros Arquivos do Sistema: um gráfico do que o macOS conta como removível, a lista Liberar agora e o botão Liberar até" width="720">
 </p>
 
-**Debloat.** Doze interruptores para análises, publicidade e coleta de dados em segundo plano
-que o macOS permite controlar. Cada interruptor se chama **Desativar …**: ligado significa que o
-MacSpace desativou aquele recurso. **Desativar tudo** desativa tudo o que ainda está ativado.
-**Ativar tudo** devolve o que o MacSpace alterou, usando os ajustes que ele salvou antes. Enquanto
-o MacSpace está aberto, ele verifica a cada 15 minutos e desativa de novo tudo o que o macOS
-reativou (exceto as políticas), e pode avisar você quando isso acontece.
+**Debloat.** Doze interruptores para análises, publicidade e coleta de dados em segundo plano. Se o
+interruptor está ativado, significa que o MacSpace desativou esse recurso. Enquanto o MacSpace está
+aberto, ele verifica a cada 15 minutos e desativa de novo tudo o que o macOS reativou.
 
 | Interruptor | O que faz | Vale depois de |
 |---|---|---|
 | Compartilhar análises com a Apple | Deixa de enviar dados de uso e de falhas para a Apple e os desenvolvedores. | Nada |
 | Melhorar Siri e Ditado | Deixa de compartilhar gravações da Siri e do Ditado com a Apple. | Nada |
-| Ditado e tradução nos servidores da Apple | O ditado e a tradução ficam neste Mac. Idiomas sem modelo no dispositivo deixam de funcionar. | Reabrir os apps |
+| Ditado e tradução nos servidores da Apple | Ditado e tradução ficam neste Mac. Idiomas sem modelo no aparelho deixam de funcionar. | Reabrir os apps |
 | Anúncios personalizados | A Apple deixa de escolher anúncios com base no que você faz. | Reabrir os apps |
-| Identificador de publicidade | Os apps não podem rastrear você com o identificador de publicidade nem pedir para isso. | Reabrir os apps |
-| Siri AI | Desativa a Siri AI. O Spotlight volta à busca clássica. | Reiniciar |
-| Inteligência Visual | Desativa a Inteligência Visual. A Pesquisa Visual também pode parar de funcionar. | Reiniciar |
-| Resultados da internet no Spotlight | O Spotlight deixa de enviar suas buscas para a Apple. Sem resultados da web no Spotlight. | Reabrir os apps |
-| Rastreamento de travamentos (tailspin) | Impede o macOS de gravar a atividade o tempo todo para relatórios de travamento. Libera cerca de 100 MB de memória. | Nada |
-| Aviso de relatório de falhas | Chega de avisos de "encerrou inesperadamente". | Reiniciar |
+| Identificador de publicidade | Os apps não podem rastrear você com o identificador de publicidade nem pedi-lo. | Reabrir os apps |
+| Busca da Siri AI | Encerra o app de busca da Siri AI. O Spotlight volta à busca clássica. A Siri em si fica na página Siri e Apple Intelligence. | Reiniciar |
+| Inteligência Visual | Desativa a Inteligência Visual. A Consulta Visual também pode deixar de funcionar. | Reiniciar |
+| Resultados da internet no Spotlight | O Spotlight deixa de enviar suas buscas à Apple. Sem resultados da web no Spotlight. | Reabrir os apps |
+| Rastreamento de travamentos (tailspin) | Impede que o macOS grave atividade o tempo todo para relatórios de travamento. Libera cerca de 100 MB de memória. | Nada |
+| Aviso de relatório de falhas | Chega de avisos de “encerrado inesperadamente”. | Reiniciar |
 | Game Center | Desativa o Game Center. | Encerrar a sessão |
 | Apple News | Oculta o Apple News e seus widgets. | Encerrar a sessão |
 
-Cinco deles são políticas. Desativar um deles pede que você aprove um perfil nos Ajustes do Sistema
-uma única vez (veja [Permissões](#primeira-abertura-e-permissões)). Numa versão beta do macOS, o
-interruptor de análises também é uma política, porque o macOS ignora o ajuste ali.
+Cinco deles são políticas. Desativar uma pede que você aprove um perfil nos Ajustes do Sistema uma
+vez (veja [Permissões](#primeira-abertura-e-permissões)). No macOS beta, o interruptor de análises
+também é uma política.
 
 <p align="center">
-  <img src="Docs/Screenshots/pt-BR/Debloat.png" alt="A página Debloat: interruptores Desativar agrupados por categoria, todos ligados, e o botão Ativar tudo" width="720">
+  <img src="Docs/Screenshots/pt-BR/Debloat.png" alt="A página Debloat: interruptores de desativação agrupados por categoria, todos ativados, e o botão Ativar tudo" width="720">
 </p>
 
-**Também no MacSpace.** **Limpar automaticamente** (nos Ajustes, desativado até você ativá-lo)
-libera, sem perguntar, o que os módulos podem liberar, todos os dias, a cada 3 dias ou toda semana,
-enquanto o MacSpace está aberto. O Debloat não participa, e o histórico de versões nunca é apagado.
-**Limpezas recentes** lista o que cada uma liberou. O MacSpace notifica você quando a limpeza
-automática libera pelo menos 100 MB, quando uma ação demorada termina com o MacSpace em segundo
-plano e quando o disco está quase cheio (no máximo uma vez por dia). Cada notificação pode ser
-desativada. **Ao fechar a janela**, o MacSpace pode encerrar, continuar na barra de menus (o padrão)
-ou continuar em segundo plano, sem nenhum ícone. Clique com o botão direito no ícone da barra de
-menus para abrir um menu com cada módulo, **Ajustes…**, **Abrir Painel** e **Encerrar o MacSpace**.
-O MacSpace está disponível em inglês, português (Brasil), francês, espanhol e alemão e acompanha o
-idioma do sistema. Quando uma limpeza termina, **Pronto** diz quanto foi liberado. A janela mantém o
-tamanho e a posição e, na página inicial, apontar para o ✕ mostra **Minimizar** e **Maximizar**.
+**Também no MacSpace.** **Limpar automaticamente** libera, sem perguntar, o que os módulos podem
+liberar, enquanto o MacSpace está aberto. **Limpezas recentes** mostra o histórico do que foi
+limpo. **Ao fechar a janela**, o MacSpace pode encerrar, continuar na barra de menus (o padrão) ou
+continuar em segundo plano sem aparecer. Clique com o botão direito no ícone da barra de menus para
+acessar facilmente cada módulo.
 
 ---
 
 ## Instalar
 
-### Homebrew (oficial)
+### Homebrew
 
 ```bash
 brew install --cask 1architect/macspace/macspace
@@ -148,34 +123,29 @@ brew install --cask 1architect/macspace/macspace
 
 Baixe o `MacSpace-x.y.z.dmg` mais recente em
 [Releases](https://github.com/1architect/macspace-releases/releases/latest), abra-o e arraste o
-**MacSpace** para a pasta Aplicativos. Abra o MacSpace de lá. Ele precisa rodar de uma pasta
-Aplicativos, porque o auxiliar só se registra a partir dela.
+**MacSpace** para a pasta Aplicativos.
 
-Cada versão também tem o arquivo `MacSpace-x.y.z.dmg.sha256`. Para conferir o seu download, coloque
-os dois arquivos na mesma pasta e execute:
+Cada versão também tem um `MacSpace-x.y.z.dmg.sha256`. Para conferir o seu download, coloque os dois
+arquivos na mesma pasta e execute:
 
 ```bash
 shasum -a 256 -c MacSpace-x.y.z.dmg.sha256
 ```
 
 Ele imprime `MacSpace-x.y.z.dmg: OK`. O MacSpace é assinado com um Developer ID e notarizado pela
-Apple. O documento [Segurança](SECURITY.pt-BR.md) mostra como conferir isso também.
+Apple. Veja [Segurança](SECURITY.pt-BR.md) para saber mais.
 
 ### Requisitos
 
-macOS 27 ou posterior, em Apple Silicon. O macOS 27 só roda em Apple Silicon, e o MacSpace é feito
-só para ele.
+macOS 27 ou posterior, em Apple Silicon.
 
 ### Atualizações e ajustes
 
 O MacSpace se atualiza com o [Sparkle](https://sparkle-project.org). Escolha **Buscar
 Atualizações…** no menu MacSpace ou **Verificar Agora** em **Ajustes > Atualizações**.
 **Buscar atualizações automaticamente**, no mesmo lugar, faz o MacSpace procurar cerca de uma vez
-por dia enquanto está aberto. Até você ativar essa opção, ou responder à pergunta que o Sparkle faz
-uma vez, a partir da segunda abertura, o MacSpace não busca nada sozinho. Toda atualização é
-assinada, e o Sparkle confere a assinatura antes de instalar qualquer coisa. Com o Homebrew, você
-também pode executar `brew upgrade --cask macspace` (acrescente `--greedy` se o Homebrew a ignorar,
-porque o MacSpace se atualiza sozinho).
+por dia enquanto está aberto. Toda atualização é assinada, e o Sparkle confere a assinatura antes
+de instalar qualquer coisa.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/Settings.png" alt="A página Ajustes: tema, aparência, permissões, o que acontece ao fechar a janela, abrir ao iniciar sessão, atualizações e limpeza automática" width="720">
@@ -199,26 +169,21 @@ pode esperar (**Mais tarde**), e as etapas que você já fez são puladas. Você
 | Acesso Total ao Disco | Ajustes do Sistema > Privacidade e Segurança > Acesso Total ao Disco | Para medir tudo no disco e ler o estado do Apple Intelligence. | Dados do Sistema, Siri e Apple Intelligence |
 | Auxiliar privilegiado | Ajustes do Sistema > Geral > Itens de Início e Extensões, em **Permitir em Segundo Plano** | Um pequeno programa que faz as poucas tarefas que exigem um administrador (veja abaixo). | Dados do Sistema, Siri e Apple Intelligence, Debloat |
 | Notificações | O macOS pergunta na primeira vez | Para avisar você quando algo terminou ou precisa de você. | Todos |
-| Perfil de configuração | Ajustes do Sistema > Geral > Gerenciamento de Dispositivo | Aplica as políticas do Debloat que você ativar. Necessário apenas para as seis políticas. | Debloat |
+| Perfil de configuração | Ajustes do Sistema > Geral > Gerenciamento de Dispositivo | Aplica as políticas do Debloat que você ativar. Necessário apenas para as políticas (cinco; seis no macOS beta). | Debloat |
 
 Outros Arquivos do Sistema não precisa de permissão própria. O macOS cuida de toda autorização,
-então o MacSpace nunca vê a sua senha. Sem uma permissão, um módulo faz menos e diz o que está
-faltando.
+então o MacSpace nunca vê a sua senha.
 
 O auxiliar é um daemon de inicialização (launch daemon), `com.macspace.helper`. Ele só executa
 operações nomeadas que estão embutidas nele, quem o chama não consegue enviar comandos a ele, e ele
-só aceita clientes assinados pela mesma equipe de desenvolvimento do MacSpace. Entre outras coisas,
-ele pode medir o tamanho de pastas do sistema (nunca de uma pasta pessoal), apagar o histórico de
-versões de documentos e os arquivos restantes de uma atualização do macOS já instalada, apagar o
-registro do sistema, apagar os símbolos para relatórios de falhas, apagar os backups antigos do Time
-Machine que você escolher, alterar os interruptores do Debloat que exigem um administrador e remover
-o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista completa.
+só aceita clientes assinados pela mesma equipe de desenvolvimento do MacSpace. Veja
+[Segurança](SECURITY.pt-BR.md) para saber mais.
 
 ---
 
 ## Uso seguro
 
-**O que ele apaga.** Só o que ele consegue nomear. Nada vai para o Lixo.
+**Itens que o MacSpace apaga**
 
 - Caches que os apps recriam: os caches da pasta de cache do sistema de cada usuário
   (`/var/folders/…/C`) e os caches da web (`Cache`, `Code Cache`, `GPUCache`) que os apps Chromium
@@ -239,9 +204,9 @@ o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista co
   que não mudam há 3 dias, então um download em andamento continua.
 - Somente quando você clica no botão próprio: o registro do sistema, com o `log erase` da própria
   Apple; os símbolos que o macOS guarda para ler relatórios de falhas, que ele recria; tudo o que
-  está no Lixo; os instantâneos locais do Time Machine, menos o mais recente e o
-  que o próximo backup usa como ponto de partida; e os backups que você escolher num disco de backup
-  conectado, nunca o mais recente. Instantâneos e backups nunca são apagados durante um backup.
+  está no Lixo; os instantâneos locais do Time Machine, menos o mais recente e o que o próximo
+  backup usa como ponto de partida; e os backups que você escolher num disco de backup conectado,
+  nunca o mais recente. Instantâneos e backups nunca são apagados durante um backup.
 - Somente os caches que você escolhe em **Caches de apps**: pastas de `~/Library/Caches` e, com
   Acesso Total ao Disco, o que está na pasta de caches do contêiner de cada app
   (`~/Library/Containers/<app>/Data/Library/Caches`), exceto o que o macOS guarda lá. Nunca os da
@@ -254,25 +219,23 @@ o perfil do MacSpace. O documento [Segurança](SECURITY.pt-BR.md) tem a lista co
 - Somente pela linha **Homebrew**: o `brew cleanup` do próprio Homebrew, rodado como você, sem
   desinstalar fórmulas, atualizar ou enviar as estatísticas do Homebrew.
 
-**O que ele nunca toca.** O MacSpace mede quanto espaço ocupam os seus documentos, o Fotos, o Mail e
-o Mensagens. Ele não lê o que há neles e nunca os apaga. Ele lista itens grandes, como downloads
-incompletos, imagens de restauração do macOS e máquinas virtuais, e deixa a decisão com você. Ele
-não mexe nos dados de outros apps e diz como limpá-los de dentro do próprio app. Ele não desativa a
-Proteção de Integridade do Sistema e não altera o volume do sistema selado.
+**Itens que ele não toca.** O MacSpace só mede quanto espaço ocupam os seus documentos, o Fotos, o
+Mail e o Mensagens. Ele lista itens grandes, como downloads incompletos, imagens de restauração do
+macOS e máquinas virtuais. Ele não mexe nos dados de outros apps e diz como limpá-los de dentro do
+próprio app. **Ele não lê nem apaga os seus arquivos pessoais. Ele não desativa a Proteção de
+Integridade do Sistema e não altera o volume do sistema selado.**
 
-**O que pede confirmação antes.** Todo botão que apaga os caches de mais de um app pede
-confirmação. **Liberar** no histórico de versões de documentos, no registro do sistema, no Lixo e
-nos instantâneos e backups do Time Machine traz o selo **Não pode ser desfeito**. O interruptor **Apple Intelligence** e cada interruptor do Debloat agem na hora e
-voltam sozinhos ao estado anterior se a alteração falhar.
+**Permissões durante o uso.** Todo botão que apaga os caches de mais de um app pede confirmação.
+**Liberar** no histórico de versões de documentos, no registro do sistema, no Lixo e nos
+instantâneos e backups do Time Machine traz o selo **Não pode ser desfeito**. O interruptor **Apple
+Intelligence** e cada interruptor do Debloat agem na hora e voltam sozinhos ao estado anterior se a
+alteração falhar.
 
-**O que você pode desfazer.** Debloat: ative o recurso de novo ou clique em **Ativar tudo**. O
-MacSpace restaura os ajustes que salvou antes de alterá-los. Apple Intelligence: ative-o de novo. O
-MacSpace restaura o idioma e a voz da sua Siri, e o macOS pode baixar os modelos de novo. Os caches
-apagados são recriados. Relatórios, histórico de versões, registros, itens do Lixo, instantâneos e
-backups apagados não voltam.
-
-**Máquinas virtuais.** Numa máquina virtual, **Siri e Apple Intelligence** não faz nada e diz por
-quê. O Debloat ainda lista ali interruptores que não podem ter efeito numa máquina virtual.
+**Ações reversíveis.** Debloat: ative o recurso de novo ou clique em **Ativar tudo**. O MacSpace
+restaura os ajustes que salvou antes de alterá-los. Apple Intelligence e as opções ligadas à Siri:
+ative-as de novo. O MacSpace restaura o idioma e a voz da sua Siri, e o macOS pode baixar os
+modelos de novo. Os caches apagados são recriados. Relatórios, histórico de versões, registros,
+itens do Lixo, instantâneos e backups apagados não voltam.
 
 ---
 
@@ -290,12 +253,17 @@ que ele lê, está na [Política de Privacidade](PRIVACY.pt-BR.md) e na
 
 ## Desinstalar
 
-Não há desinstalador. Para remover o MacSpace e tudo o que ele alterou:
+Para **desinstalar**, use o desinstalador do MacSpace. Na barra de menus, clique em **MacSpace**,
+depois em **Sobre o MacSpace** e então em **Desinstalar**. O desinstalador automatiza o processo
+abaixo.
+
+Se preferir fazer isso manualmente, siga a ordem abaixo:
 
 1. **Desfaça o que o MacSpace alterou.** Em **Debloat**, clique em **Ativar tudo**. Isso também
    remove as substituições que o Debloat gravou fora das pastas do próprio MacSpace, que continuam
    no lugar se você apenas apagar o app. Se for preciso reiniciar, a página avisa. Se você
-   desativou o Apple Intelligence e quer tê-lo de volta, ative-o em **Siri e Apple Intelligence**.
+   desativou o Apple Intelligence, a Siri, as Fotos Espaciais ou a Transcrição de chamadas e quer
+   tê-los de volta, ative-os em **Siri e Apple Intelligence**.
 2. **Remova o perfil**, se ainda houver um instalado: em Ajustes do Sistema > Geral > Gerenciamento
    de Dispositivo, selecione **MacSpace: policies** (identificador `com.macspace.policies`) e
    remova-o.
@@ -313,9 +281,9 @@ Não há desinstalador. Para remover o MacSpace e tudo o que ele alterou:
    defaults delete com.macspace.app
    sudo rm -rf /Library/Application\ Support/MacSpace
    ```
-   A última linha só é necessária se você usou o Debloat ou removeu assinaturas restantes do Apple
-   Intelligence. Execute-a depois da etapa 1: essa pasta guarda os originais que o MacSpace
-   restaura.
+   A última linha só é necessária se você usou o Debloat ou a Transcrição de chamadas, ou removeu
+   assinaturas restantes do Apple Intelligence. Execute-a depois da etapa 1: essa pasta guarda os
+   originais que o MacSpace restaura.
 6. **Remova o Acesso Total ao Disco:** em Ajustes do Sistema > Privacidade e Segurança > Acesso
    Total ao Disco, selecione o MacSpace e clique no botão de menos.
 
