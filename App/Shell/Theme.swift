@@ -17,9 +17,6 @@ enum Theme {
     static let spacing: CGFloat = 10
     /// The glass window's corners, set in the Design menu (`DesignSettings.windowRadius`).
     static var windowRadius: CGFloat { CornerRadii.window }
-    /// An invisible band around the glass that belongs to the window: the resize zone, where macOS puts it for other windows, just
-    /// outside the visible edge. Without it, a drag started there (or on a rounded corner) went to the app behind.
-    static let resizeMargin: CGFloat = 8
     /// The tiles' corners, set in the Design menu (`DesignSettings.tileRadius`).
     static var tileRadius: CGFloat { CornerRadii.tile }
     static let defaultSize = CGSize(width: 700, height: 490)
@@ -273,13 +270,6 @@ struct PillButtonStyle: ButtonStyle {
             .animation(Theme.press, value: configuration.isPressed)
             .animation(Theme.hover, value: hovering)
     }
-}
-
-extension ButtonStyle where Self == PillButtonStyle {
-    /// Every button in a row, in Settings and on every module's page: the quiet pill, smaller. System buttons there (Check Now,
-    /// Install helper, a module row's action) looked like another app's beside the pills (2026-10-19, issue 31). Settings sets it on
-    /// its pages and `ActionButton` on module rows, so a button only looks different when it says so itself.
-    static var rowPill: PillButtonStyle { PillButtonStyle(prominent: false, compact: true) }
 }
 
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a

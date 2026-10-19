@@ -190,11 +190,10 @@ public struct MainView: View {
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        .padding(Theme.resizeMargin)
         // The shadow comes in once the glass has grown in, and leaves before the glass shrinks away when the window closes.
         .background(GlassWindowConfigurator(shadow: designSettings.windowShadow && windowShown && !windowClosing, radius: designSettings.windowRadius))
         .ignoresSafeArea()
-        .frame(minWidth: Theme.minimumSize.width + 2 * Theme.resizeMargin, minHeight: Theme.minimumSize.height + 2 * Theme.resizeMargin)
+        .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
         .task { storage.follow(host); await storage.watch() }
         .modifier(WindowKindSwitch(id: MacSpaceWindow.glass))

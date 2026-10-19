@@ -85,44 +85,25 @@ struct WindowControls: View {
     /// Whether the window fills its screen's visible area (the screen less the menu bar and the Dock).
     static func isZoomed(_ window: NSWindow) -> Bool {
         guard let visible = window.screen?.visibleFrame else { return false }
-        let glass = window.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
-        return abs(glass.minX - visible.minX) < 2 && abs(glass.minY - visible.minY) < 2
-            && abs(glass.width - visible.width) < 2 && abs(glass.height - visible.height) < 2
-    }
-
-    /// Whether MacSpace itself is sizing the window (the ✕ pill's Maximize, the resize band): any other new size came from macOS.
-    @MainActor private(set) static var isPlacing = false
-
-    /// Gives the window a new frame as MacSpace, not as macOS (`isPlacing`).
-    static func place(_ window: NSWindow, _ frame: CGRect, animate: Bool = false) {
-        isPlacing = true
-        defer { isPlacing = false }
-        window.setFrame(frame, display: true, animate: animate)
-    }
-
-    /// Where the window goes after macOS gave it `frame` (Window > Fill, Move & Resize, a tile from dragging it to a screen edge), or
-    /// nil to leave it there. macOS places the window's frame, which includes the clear resize band, so the glass came out a band
-    /// short of the place macOS chose, with a gap to the screen's edges and to the window beside it (2026-10-19, issue 34). The band
-    /// goes outside that place instead, as the ✕ pill's Maximize does. A window macOS puts back at its size from before (`untiled`)
-    /// already has its band where it belongs.
-    static func frameAfterSystemPlacement(_ frame: CGRect, untiled: CGRect?) -> CGRect? {
-        if let untiled, abs(frame.width - untiled.width) < 2, abs(frame.height - untiled.height) < 2 { return nil }
-        return frame.insetBy(dx: -Theme.resizeMargin, dy: -Theme.resizeMargin)
+        let frame = window.frame
+        return abs(frame.minX - visible.minX) < 2 && abs(frame.minY - visible.minY) < 2
+            && abs(frame.width - visible.width) < 2 && abs(frame.height - visible.height) < 2
     }
 
     /// Fills the screen's visible area, or goes back to the size and place it had before. Returns whether it is now zoomed. AppKit's
-    /// own zoom does nothing for a window without a title bar.
+    /// own zoom does nothing for a window without a title bar. The glass is the window's frame, so it fills exactly what macOS's
+    /// Fill and tiles do.
     @discardableResult
     static func toggleZoom(_ window: NSWindow) -> Bool {
         guard let visible = window.screen?.visibleFrame else { return false }
         if isZoomed(window) {
             let restored = unzoomedFrames[window.windowNumber] ?? centered(in: visible, size: CGSize(width: visible.width * 0.6, height: visible.height * 0.7))
             unzoomedFrames[window.windowNumber] = nil
-            place(window, restored, animate: true)
+            window.setFrame(restored, display: true, animate: true)
             return false
         }
         unzoomedFrames[window.windowNumber] = window.frame
-        place(window, visible.insetBy(dx: -Theme.resizeMargin, dy: -Theme.resizeMargin), animate: true)
+        window.setFrame(visible, display: true, animate: true)
         return true
     }
 
