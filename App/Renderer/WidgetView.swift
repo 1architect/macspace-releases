@@ -73,8 +73,11 @@ struct WidgetForm<Top: View>: View {
                     let rows = entries(widget)
                     VStack(alignment: .leading, spacing: 8) {
                         if let text = title.text, !text.isEmpty {
+                            // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
+                            // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
                             header(text, help: title.help, part: Self.part(widget))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.primary)
                                 .accessibilityAddTraits(.isHeader)
                                 .padding(.horizontal, 10)
                                 .geometryGroup()
@@ -323,10 +326,13 @@ struct RowChoice {
 struct BadgeView: View {
     let badge: Badge
     var wraps = false
+    /// Drawn quiet whatever its tone: the row's own action flag is working or showing its result, in the action color, and two
+    /// orange pills side by side, one pulsing, fought for attention (2026-10-19).
+    var quiet = false
     @Environment(\.design) private var design
 
     /// What needs the user is drawn in the action color, with its deep form for the text.
-    private var attention: Bool { badge.tone == .caution || badge.tone == .critical }
+    private var attention: Bool { !quiet && (badge.tone == .caution || badge.tone == .critical) }
 
     /// Every other pill has the colors of the row's (i) and folder pills (`rowPill`), grey text on a faint capsule of their height, in
     /// the warning pill's font, so the facts read as one set.
@@ -379,6 +385,10 @@ struct BannerRow: View {
 /// the module's symbols (`Row.symbol`): text alone, as Settings lists things.
 struct RowView: View {
     let row: Row
+    @Environment(\.rowActivity) private var activity
+
+    /// The row's action flag is in the action color now (working, or showing its result): its pills step back (`BadgeView.quiet`).
+    private var flagIsActive: Bool { row.activity != nil || activity.rowID == row.id || activity.resultID == row.id }
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
@@ -426,7 +436,8 @@ struct RowView: View {
             TitleLine(title: row.title, note: row.subtitle)
             HStack(spacing: 6) {
                 ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
-                    BadgeView(badge: badge).transition(PageCascade.transition(index: index, count: row.badges.count))
+                    BadgeView(badge: badge, quiet: flagIsActive)
+                        .transition(PageCascade.transition(index: index, count: row.badges.count))
                 }
                     .animation(Theme.value, value: row.badges.count)
                 InfoButton(text: row.detail, steps: row.steps)

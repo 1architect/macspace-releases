@@ -47,8 +47,12 @@ public struct BackgroundTaskDefinition: Codable, Equatable, Sendable, Identifiab
     public var defaultEnabled: Bool
     /// How often the task runs while enabled.
     public var intervalSeconds: Int
+    /// The module's own decision, with no switch in Settings: the task runs as `defaultEnabled` says, whatever was stored before.
+    /// For work the user has no reason to choose (a check that keeps a feature working), not for anything they would want to stop.
+    public var hidden: Bool?
 
-    public init(id: String, title: String, detail: String? = nil, defaultEnabled: Bool = false, intervalSeconds: Int) {
+    public init(id: String, title: String, detail: String? = nil, defaultEnabled: Bool = false, intervalSeconds: Int, hidden: Bool? = nil) {
+        self.hidden = hidden
         self.id = id
         self.title = title
         self.detail = detail

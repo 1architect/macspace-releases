@@ -15,7 +15,9 @@ struct SettingsView: View {
     @State private var tick = 0
 
     private var activeHandles: [ModuleHandle] { host.handles.filter { $0.isEnabled && $0.state != .off } }
-    private var moduleOptions: [ModuleHandle] { activeHandles.filter { !$0.manifest.options.isEmpty || !$0.manifest.backgroundTasks.isEmpty } }
+    private var moduleOptions: [ModuleHandle] {
+        activeHandles.filter { !$0.manifest.options.isEmpty || $0.manifest.backgroundTasks.contains { $0.hidden != true } }
+    }
 
     var body: some View {
         let _ = tick
@@ -35,7 +37,8 @@ struct SettingsView: View {
                     ForEach(handle.manifest.options) { option in
                         optionRow(handle, option)
                     }
-                    ForEach(handle.manifest.backgroundTasks) { task in
+                    // A hidden task is the module's own decision (`BackgroundTaskDefinition.hidden`): no switch.
+                    ForEach(handle.manifest.backgroundTasks.filter { $0.hidden != true }) { task in
                         let options = host.settings.optionStore(for: handle.manifest)
                         Toggle(task.title, isOn: Binding(get: { options.isBackgroundTaskEnabled(task.id) },
                                                          set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 }))

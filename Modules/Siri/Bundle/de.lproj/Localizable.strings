@@ -9,6 +9,7 @@
 "%lld features" = "%lld Funktionen";
 "1 feature" = "1 Funktion";
 "A feature change is still running." = "Eine Funktionsänderung läuft noch.";
+"A notification when MacSpace finds that macOS made Apple Intelligence available again." = "Eine Mitteilung, wenn MacSpace feststellt, dass macOS Apple Intelligence wieder verfügbar gemacht hat.";
 "AI is off" = "KI ist aus";
 "AI is on" = "KI ist an";
 "Allow" = "Erlauben";
@@ -54,12 +55,12 @@
 "Enable all" = "Alle aktivieren";
 "Enable all %lld features again?" = "Alle %lld Funktionen wieder aktivieren?";
 "Feature settings updated." = "Funktionseinstellungen aktualisiert.";
-"Flag models on the Home page" = "Modelle auf der Startseite hervorheben";
 "Free" = "Freigeben";
-"Free switched-off features' models every 5 minutes" = "Modelle ausgeschalteter Funktionen alle 5 Minuten freigeben";
+"Free switched-off features' models automatically" = "Modelle ausgeschalteter Funktionen automatisch freigeben";
 "Free up to %@" = "Bis zu %@ freigeben";
 "Free up to %@?" = "Bis zu %@ freigeben?";
 "Freeing space" = "Speicher wird freigegeben";
+"Home page alerts" = "Hinweise auf der Startseite";
 "Its models are gone." = "Die Modelle sind entfernt.";
 "Keeps the models" = "Behält die Modelle";
 "Kept by macOS" = "Von macOS behalten";
@@ -73,6 +74,7 @@
 "MacSpace needs its helper to change Call transcription." = "MacSpace braucht seinen Helfer, um die Anruftranskription zu ändern.";
 "MacSpace needs its helper to restore Call transcription." = "MacSpace braucht seinen Helfer, um die Anruftranskription wiederherzustellen.";
 "Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "Markiert die Kachel und gibt ihr den großen Platz, solange das Ausschalten von etwas Modelle freigeben würde. Aus bleibt die Kachel ruhig; diese Seite zeigt sie weiterhin.";
+"Models" = "Modelle";
 "No supported Siri language with a base language different from %@ is available." = "Es gibt keine unterstützte Siri-Sprache mit einer anderen Grundsprache als %@.";
 "Not available in a virtual machine" = "In einer virtuellen Maschine nicht verfügbar";
 "Not verified on this macOS version" = "Auf dieser macOS-Version nicht geprüft";
@@ -93,7 +95,6 @@
 "Restart your Mac from the Apple menu." = "Starte deinen Mac über das Apple-Menü neu.";
 "Restart your Mac to apply this change." = "Starte deinen Mac neu, um diese Änderung anzuwenden.";
 "Restart. MacSpace then deletes the models." = "Starte neu. Danach löscht MacSpace die Modelle.";
-"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "Kommt von der 15-Minuten-Prüfung unten, wenn sie Apple Intelligence wieder verfügbar findet.";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "Siri & Apple Intelligence";
 "Siri's iCloud sync" = "iCloud-Synchronisierung von Siri";
@@ -105,6 +106,7 @@
 "Switch Apple Intelligence off and reclaim the space its models take." = "Schalte Apple Intelligence aus und hol dir den Speicher seiner Modelle zurück.";
 "Switch it off again in MacSpace." = "Schalte es in MacSpace wieder aus.";
 "Switching it off sets Siri to a different language than your Mac." = "Beim Ausschalten wird Siri auf eine andere Sprache als dein Mac gestellt.";
+"Sync to other devices" = "Mit anderen Geräten synchronisieren";
 "Takes about a minute." = "Dauert etwa eine Minute.";
 "The current Siri language could not be read." = "Die aktuelle Siri-Sprache konnte nicht gelesen werden.";
 "The system language could not be read." = "Die Systemsprache konnte nicht gelesen werden.";

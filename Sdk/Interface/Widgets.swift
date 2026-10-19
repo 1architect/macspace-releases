@@ -26,6 +26,10 @@ public struct Badge: Codable, Equatable, Sendable {
     }
 }
 
+/// Titles of lists and sections (`ListWidget.title`, `ToggleList.title`, `SectionWidget.title`, `UsageBar.title`): every page draws
+/// them as macOS's System Settings draws its grouped lists, semibold in the text's color, the same in Settings and in every module.
+/// A title names the group in a few words ("Models", "Free now"); it is not a sentence and carries no count or state.
+///
 /// The rule for every text the app shows behind an (i): `Row.detail`, `ToggleRow.detail`, `SectionWidget.subtitle`, `UsageBar.footnote`,
 /// `ToggleList.footnote` and `ButtonWidget.footnote`. It says what the item is and what acting on it does, the same whatever its state:
 /// no sizes, counts, dates, file lists or current state (those are the row's figure, subtitle and badges, and a badge's `help`). At most

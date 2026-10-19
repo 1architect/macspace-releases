@@ -201,6 +201,41 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(restart.confirmation, "macOS's own Restart dialog asks")
     }
 
+    func testNoRestartIsAskedForAFeatureThatIsOn() {
+        var snap = snapshot(.protected)
+        snap.featureSettings = [.siri: .init(state: .on)]
+        snap.featureModelBytes = [.siri: 72_600_000]
+        snap.featureCleanupWaiting = [.siri]
+        snap.featureLocked = [.siri]
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac", "on, it keeps its models")
+        XCTAssertNotEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
+    }
+
+    func testTheTileSwitchIsOnWhileAnySwitchIsAndSetsThemAll() throws {
+        var snap = snapshot(.protected)
+        snap.featureSettings = [.siri: .init(state: .on), .spatialPhotos: .init(state: .off)]
+        let tile = SiriScreenBuilder.tile(snap)
+        guard case let .state(on, _, _, _, _)? = tile.graphic else { return XCTFail() }
+        XCTAssertTrue(on, "Siri is on, though Apple Intelligence is off")
+        let action = try XCTUnwrap(tile.switchAction)
+        XCTAssertEqual(action.id, "setAll")
+        XCTAssertEqual(action.parameters["on"], "siri")
+        XCTAssertEqual(action.parameters["off"], "ai,spatialPhotos")
+        snap.featureSettings = [.siri: .init(state: .off), .spatialPhotos: .init(state: .off)]
+        guard case let .state(allOff, _, _, _, _)? = SiriScreenBuilder.tile(snap).graphic else { return XCTFail() }
+        XCTAssertFalse(allOff)
+    }
+
+    func testTheListsAreTitled() {
+        let screen = SiriScreenBuilder.screen(snapshot(.protected))
+        var titles: [String] = []
+        for widget in screen.widgets {
+            if case let .toggles(list) = widget { titles.append(list.title ?? "") }
+            if case let .list(list) = widget { titles.append(list.title ?? "") }
+        }
+        XCTAssertEqual(titles, ["Models", "Sync to other devices"])
+    }
+
     func testQuietTileNeitherFlagsNorGrowsForModelsASwitchWouldFree() {
         var snap = snapshot(.atRisk)
         snap.installedModelBytes = 12_000_000_000

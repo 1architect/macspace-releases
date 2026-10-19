@@ -236,6 +236,8 @@ public actor ManagedModelCleanup {
     public func check(force: Bool = false, finished: @escaping @Sendable (AssetModelCleanup.Result) async -> Void) {
         guard !changing, task == nil, force || Date().timeIntervalSince(lastAttempt) >= 300 else { return }
         let scopes = [AssetModelCleanup.Scope.siri, .phone, .spatialPhotos].filter { AssetModelCleanup.refusal($0) == nil }
+        // A feature switched back on is no longer waiting for its models to go: left in, it asked for a restart while on (2026-10-19).
+        waiting.formIntersection(scopes.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) })
         guard !scopes.isEmpty else { return }
         lastAttempt = Date()
         visible = force

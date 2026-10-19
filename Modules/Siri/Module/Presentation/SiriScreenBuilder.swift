@@ -50,8 +50,14 @@ enum SiriScreenBuilder {
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         var tile = baseTile(snapshot)
         tile.refreshAfter = refreshAfter(snapshot)
-        // The tile's switch flips what the page's does, whenever the page's can be flipped.
-        if !snapshot.isVirtualMachine, switchList(snapshot).rows.first?.isEnabled == true { tile.switchAction = switchAction }
+        // One switch for them all: on while any of the page's switches is on; flipped, it switches every one that can be flipped to
+        // its position (`tileSwitch`).
+        if !snapshot.isVirtualMachine, let action = tileSwitch(snapshot) {
+            tile.switchAction = action
+            if case let .state(_, alarming, detail, meter, actionable) = tile.graphic {
+                tile.graphic = .state(on: anySwitchOn(snapshot), alarming: alarming, detail: detail, meter: meter, meterIsActionable: actionable)
+            }
+        }
         return tile
     }
 
@@ -177,7 +183,7 @@ enum SiriScreenBuilder {
         var widgets: [ScreenWidget] = []
         if let banner = statusBanner(snapshot) { widgets.append(.banner(banner)) }
         widgets.append(.toggles(switchList(snapshot)))
-        widgets.append(.list(ListWidget(id: "icloud", rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
+        widgets.append(.list(ListWidget(id: "icloud", title: loc("Sync to other devices"), rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
         if let models = modelsSection(snapshot) { widgets.append(models) }
         return Screen(title: loc("Siri & Apple Intelligence"), primary: primary(snapshot), widgets: widgets)
@@ -193,6 +199,8 @@ enum SiriScreenBuilder {
     /// (`SiriSnapshot.featureLocked`), or a Call transcription change macOS reads at startup.
     static func needsRestart(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Bool {
         if feature == .phone, phoneStatus(snapshot)?.state == .restartRequired { return true }
+        // Only for a feature switched off: one that is on keeps its models, and a restart frees nothing.
+        guard featureIsOn(feature, snapshot) == false else { return false }
         return snapshot.featureLocked.contains(feature) && snapshot.featureCleanupWaiting.contains(feature) && modelsSize(feature, snapshot) != nil
     }
 
@@ -203,6 +211,17 @@ enum SiriScreenBuilder {
         let bytes = features.compactMap { snapshot.featureModelBytes[$0] }.filter { $0 >= purgeThreshold }.reduce(0, +)
         return Action(id: "restartMac", title: bytes > 0 ? loc("Restart to free \(ByteFormat.string(bytes))") : loc("Restart to finish"),
                       symbol: "arrow.clockwise", role: .prominent)
+    }
+
+    static func anySwitchOn(_ snapshot: SiriSnapshot) -> Bool { switchList(snapshot).rows.contains(where: \.isOn) }
+
+    /// The tile's switch: `value` false switches off every switch on, true switches on every one off. nil when none can be flipped.
+    static func tileSwitch(_ snapshot: SiriSnapshot) -> Action? {
+        let on = switchable(snapshot, on: true), off = switchable(snapshot, on: false)
+        guard !on.isEmpty || !off.isEmpty else { return nil }
+        return Action(id: "setAll", title: loc("Apple Intelligence"),
+                      parameters: ["on": on.map(\.id).joined(separator: ","), "off": off.map(\.id).joined(separator: ",")],
+                      requires: (on + off).flatMap(\.action.requires).reduce(into: []) { if !$0.contains($1) { $0.append($1) } })
     }
 
     /// The switch rows that can be flipped `on` (or off) now.
@@ -277,7 +296,7 @@ enum SiriScreenBuilder {
             row.trailing = modelsSize(.phone, snapshot)
             rows.append(row)
         }
-        return ToggleList(id: "switch", rows: rows)
+        return ToggleList(id: "switch", title: loc("Models"), rows: rows)
     }
 
     /// Where a feature MacSpace switched off stands with its models.

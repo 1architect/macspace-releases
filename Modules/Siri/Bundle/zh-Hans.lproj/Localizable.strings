@@ -9,6 +9,7 @@
 "%lld features" = "%lld 项功能";
 "1 feature" = "1 项功能";
 "A feature change is still running." = "功能更改仍在进行中。";
+"A notification when MacSpace finds that macOS made Apple Intelligence available again." = "当 MacSpace 发现 macOS 再次提供 Apple 智能时发出通知。";
 "AI is off" = "AI 已关闭";
 "AI is on" = "AI 已开启";
 "Allow" = "允许";
@@ -54,12 +55,12 @@
 "Enable all" = "全部启用";
 "Enable all %lld features again?" = "重新启用全部 %lld 项功能？";
 "Feature settings updated." = "功能设置已更新。";
-"Flag models on the Home page" = "在主页标记模型";
 "Free" = "释放";
-"Free switched-off features' models every 5 minutes" = "每 5 分钟释放已关闭功能的模型";
+"Free switched-off features' models automatically" = "自动释放已关闭功能的模型";
 "Free up to %@" = "最多释放 %@";
 "Free up to %@?" = "最多释放 %@？";
 "Freeing space" = "正在释放空间";
+"Home page alerts" = "主页提醒";
 "Its models are gone." = "模型已移除。";
 "Keeps the models" = "保留模型";
 "Kept by macOS" = "由 macOS 保留";
@@ -73,6 +74,7 @@
 "MacSpace needs its helper to change Call transcription." = "MacSpace 需要其辅助程序来更改通话转录。";
 "MacSpace needs its helper to restore Call transcription." = "MacSpace 需要其辅助程序来恢复通话转录。";
 "Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "当关闭某项功能可以释放模型时，标记该磁贴并让它占据大位置。关闭后磁贴保持安静；本页仍会显示它们。";
+"Models" = "模型";
 "No supported Siri language with a base language different from %@ is available." = "没有与 %@ 基础语言不同的受支持 Siri 语言。";
 "Not available in a virtual machine" = "虚拟机中不可用";
 "Not verified on this macOS version" = "尚未在此 macOS 版本上验证";
@@ -93,7 +95,6 @@
 "Restart your Mac from the Apple menu." = "请从苹果菜单重新启动 Mac。";
 "Restart your Mac to apply this change." = "重新启动 Mac 以应用此更改。";
 "Restart. MacSpace then deletes the models." = "请重新启动，MacSpace 随后会删除模型。";
-"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "由下方每 15 分钟的检查发送，当它发现 Apple 智能再次可用时。";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "Siri 与 Apple 智能";
 "Siri's iCloud sync" = "Siri 的 iCloud 同步";
@@ -105,6 +106,7 @@
 "Switch Apple Intelligence off and reclaim the space its models take." = "关闭 Apple 智能并回收模型占用的空间。";
 "Switch it off again in MacSpace." = "在 MacSpace 中再次关闭。";
 "Switching it off sets Siri to a different language than your Mac." = "关闭时会将 Siri 设置为与 Mac 不同的语言。";
+"Sync to other devices" = "同步到其他设备";
 "Takes about a minute." = "大约需要一分钟。";
 "The current Siri language could not be read." = "无法读取当前 Siri 语言。";
 "The system language could not be read." = "无法读取系统语言。";

@@ -141,7 +141,7 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let changesFeature = ["toggle", "togglePhoneFeatures", "toggleModelFeature", "disableAll", "enableAll"].contains(request.actionID)
+        let changesFeature = ["toggle", "togglePhoneFeatures", "toggleModelFeature", "disableAll", "enableAll", "setAll"].contains(request.actionID)
         if changesFeature {
             guard await ManagedModelCleanup.shared.beginChange() else { return .failed(loc("A feature change is still running.")) }
             PurgeRetrier.shared.cancel(CacheDeleteService.mobileAsset)
@@ -176,12 +176,15 @@ public struct SiriModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Machine.isVirtualMachine { return .failed(loc("Not available in a virtual machine")) }
         switch request.actionID {
-        case "disableAll", "enableAll":
-            // Each switch in turn, as if flipped on the page; the first that fails stops the rest and says why.
-            let value = String(request.actionID == "enableAll")
+        case "disableAll", "enableAll", "setAll":
+            // Each switch in turn, as if flipped on the page; the first that fails stops the rest and says why. The tile's switch
+            // (`setAll`) switches off those on, or on those off, as its `value` says.
+            let enabling = request.actionID == "setAll" ? request.parameters["value"] == "true" : request.actionID == "enableAll"
+            let value = String(enabling)
             var details: [String] = []
             var restart = false
-            let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
+            let list = request.actionID == "setAll" ? request.parameters[enabling ? "off" : "on"] : request.parameters["ids"]
+            let ids = (list ?? "").split(separator: ",").map(String.init).filter { !$0.isEmpty }
             for (index, id) in ids.enumerated() {
                 progress(ActionProgress(fraction: Double(index) / Double(max(ids.count, 1)), message: loc("Changing settings")))
                 let step: ActionRequest

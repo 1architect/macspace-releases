@@ -195,7 +195,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:380"
+      "Sdk\/Interface\/Widgets.swift:384"
     ],
     "table" : "App",
     "translations" : {
@@ -328,7 +328,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:380"
+      "Sdk\/Interface\/Widgets.swift:384"
     ],
     "table" : "App",
     "translations" : {
@@ -500,7 +500,7 @@
     "key" : "Approve in Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:235"
+      "App\/Settings\/SettingsView.swift:238"
     ],
     "table" : "App",
     "translations" : {
@@ -867,8 +867,8 @@
     "key" : "Could not install the helper: %@",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:221",
-      "App\/Settings\/SettingsView.swift:240"
+      "App\/Settings\/SettingsView.swift:224",
+      "App\/Settings\/SettingsView.swift:243"
     ],
     "table" : "App",
     "translations" : {
@@ -1305,7 +1305,7 @@
     "key" : "Granted",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:186"
+      "App\/Settings\/SettingsView.swift:189"
     ],
     "table" : "App",
     "translations" : {
@@ -1400,7 +1400,7 @@
     "key" : "Install helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:235"
+      "App\/Settings\/SettingsView.swift:238"
     ],
     "table" : "App",
     "translations" : {
@@ -1710,7 +1710,7 @@
     "key" : "Modules",
     "kind" : "Section header",
     "places" : [
-      "App\/Settings\/SettingsView.swift:27",
+      "App\/Settings\/SettingsView.swift:29",
       "App\/Shell\/StandardWindowView.swift:148"
     ],
     "table" : "App",
@@ -1730,7 +1730,7 @@
     "key" : "Modules that could not be used",
     "kind" : "Section header",
     "places" : [
-      "App\/Settings\/SettingsView.swift:46"
+      "App\/Settings\/SettingsView.swift:49"
     ],
     "table" : "App",
     "translations" : {
@@ -1825,7 +1825,7 @@
     "key" : "Needed",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:196"
+      "App\/Settings\/SettingsView.swift:199"
     ],
     "table" : "App",
     "translations" : {
@@ -1939,7 +1939,7 @@
     "key" : "No module needs a permission.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:127"
+      "App\/Settings\/SettingsView.swift:130"
     ],
     "table" : "App",
     "translations" : {
@@ -1977,7 +1977,7 @@
     "key" : "No modules were found.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:31"
+      "App\/Settings\/SettingsView.swift:33"
     ],
     "table" : "App",
     "translations" : {
@@ -1996,7 +1996,7 @@
     "key" : "Not found",
     "kind" : "Pill",
     "places" : [
-      "App\/Settings\/SettingsView.swift:202"
+      "App\/Settings\/SettingsView.swift:205"
     ],
     "table" : "App",
     "translations" : {
@@ -2034,7 +2034,7 @@
     "key" : "Not installed",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:194"
+      "App\/Settings\/SettingsView.swift:197"
     ],
     "table" : "App",
     "translations" : {
@@ -2053,7 +2053,7 @@
     "key" : "Not responding",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:181"
+      "App\/Settings\/SettingsView.swift:184"
     ],
     "table" : "App",
     "translations" : {
@@ -2206,7 +2206,7 @@
     "key" : "Open System Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:189",
+      "App\/Settings\/SettingsView.swift:192",
       "App\/Shell\/Onboarding.swift:245"
     ],
     "table" : "App",
@@ -2475,7 +2475,7 @@
     "key" : "Repair helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:216"
+      "App\/Settings\/SettingsView.swift:219"
     ],
     "table" : "App",
     "translations" : {
@@ -2494,7 +2494,7 @@
     "key" : "Repairing",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:216"
+      "App\/Settings\/SettingsView.swift:219"
     ],
     "table" : "App",
     "translations" : {
@@ -2690,8 +2690,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:467",
-      "App\/Renderer\/WidgetView.swift:468"
+      "App\/Renderer\/WidgetView.swift:478",
+      "App\/Renderer\/WidgetView.swift:479"
     ],
     "table" : "App",
     "translations" : {
@@ -2976,7 +2976,7 @@
     "key" : "Unknown",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:206"
+      "App\/Settings\/SettingsView.swift:209"
     ],
     "table" : "App",
     "translations" : {
@@ -7010,7 +7010,7 @@
     "key" : "%@ of models for %@; switch it off to free them",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:79"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:85"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7029,7 +7029,7 @@
     "key" : "%@ of models for Siri features; switch them off to free them",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:80"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:86"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7048,7 +7048,7 @@
     "key" : "%@ of models kept by macOS",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:95"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:101"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7067,7 +7067,7 @@
     "key" : "%@ of models on disk",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:87"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:93"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7086,7 +7086,7 @@
     "key" : "%@ of models; switch it off to free them",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:76"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7105,7 +7105,7 @@
     "key" : "%lld features",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:376"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:395"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7124,7 +7124,7 @@
     "key" : "1 feature",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:376"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:395"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7159,11 +7159,30 @@
     }
   },
   {
+    "id" : "Siri|A notification when MacSpace finds that macOS made Apple Intelligence available again.",
+    "key" : "A notification when MacSpace finds that macOS made Apple Intelligence available again.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Eine Mitteilung, wenn MacSpace feststellt, dass macOS Apple Intelligence wieder verfügbar gemacht hat.",
+      "en" : "A notification when MacSpace finds that macOS made Apple Intelligence available again.",
+      "es" : "Una notificación cuando MacSpace detecta que macOS volvió a hacer disponible Apple Intelligence.",
+      "fr" : "Une notification quand MacSpace constate que macOS a de nouveau rendu Apple Intelligence disponible.",
+      "ja" : "macOSがApple Intelligenceを再び利用可能にしたことをMacSpaceが見つけたときに通知します。",
+      "ko" : "macOS가 Apple Intelligence를 다시 사용 가능하게 한 것을 MacSpace가 발견하면 알립니다.",
+      "pt-BR" : "Uma notificação quando o MacSpace perceber que o macOS disponibilizou o Apple Intelligence de novo.",
+      "zh-Hans" : "当 MacSpace 发现 macOS 再次提供 Apple 智能时发出通知。"
+    }
+  },
+  {
     "id" : "Siri|AI is off",
     "key" : "AI is off",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:110"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:116"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7182,7 +7201,7 @@
     "key" : "AI is on",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:113"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:119"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7240,7 +7259,7 @@
     "key" : "Already off",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:298"
+      "Modules\/Siri\/Module\/SiriModule.swift:301"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7259,7 +7278,7 @@
     "key" : "Already on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:298"
+      "Modules\/Siri\/Module\/SiriModule.swift:301"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7278,7 +7297,7 @@
     "key" : "Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:332"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:351"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7295,10 +7314,11 @@
   {
     "id" : "Siri|Apple Intelligence",
     "key" : "Apple Intelligence",
-    "kind" : "Row title",
+    "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:254",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:349"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:222",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:273",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:368"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7356,7 +7376,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceWatcher.swift:82",
-      "Modules\/Siri\/Module\/SiriModule.swift:302"
+      "Modules\/Siri\/Module\/SiriModule.swift:305"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7375,7 +7395,7 @@
     "key" : "Apple Intelligence is on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:300"
+      "Modules\/Siri\/Module\/SiriModule.swift:303"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7470,7 +7490,7 @@
     "key" : "Before MacSpace can release them",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:395"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:414"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7489,9 +7509,9 @@
     "key" : "Call transcription",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:138",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:340",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:345"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:144",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:359",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:364"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7510,7 +7530,7 @@
     "key" : "Can't change now",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:255"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:274"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7529,7 +7549,7 @@
     "key" : "Can't free it yet",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:321"
+      "Modules\/Siri\/Module\/SiriModule.swift:324"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7548,8 +7568,8 @@
     "key" : "Changed outside MacSpace",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:306",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:331"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:325",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:350"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7568,7 +7588,7 @@
     "key" : "Changing settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:186"
+      "Modules\/Siri\/Module\/SiriModule.swift:189"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7606,7 +7626,7 @@
     "key" : "Couldn't change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:236"
+      "Modules\/Siri\/Module\/SiriModule.swift:239"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7625,7 +7645,7 @@
     "key" : "Couldn't change feature settings.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:211"
+      "Modules\/Siri\/Module\/SiriModule.swift:214"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7702,8 +7722,8 @@
     "kind" : "Result message",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:30",
-      "Modules\/Siri\/Module\/SiriModule.swift:206",
-      "Modules\/Siri\/Module\/SiriModule.swift:220"
+      "Modules\/Siri\/Module\/SiriModule.swift:209",
+      "Modules\/Siri\/Module\/SiriModule.swift:223"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7722,7 +7742,7 @@
     "key" : "Couldn't verify the Call transcription change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:229"
+      "Modules\/Siri\/Module\/SiriModule.swift:232"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7760,7 +7780,7 @@
     "key" : "Deletes Apple Intelligence models and other downloads macOS no longer needs.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:261"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7779,7 +7799,7 @@
     "key" : "Disable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:224"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:243"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7798,7 +7818,7 @@
     "key" : "Disable %@",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7817,7 +7837,7 @@
     "key" : "Disable %@?",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:218"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:237"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7836,7 +7856,7 @@
     "key" : "Disable %lld features?",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:218"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:237"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7855,7 +7875,7 @@
     "key" : "Disable all",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7874,8 +7894,8 @@
     "key" : "Downloading",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:266",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:276"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:285",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:295"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7894,7 +7914,7 @@
     "key" : "Each one can be enabled again. MacSpace frees their models.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:224"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:243"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7913,7 +7933,7 @@
     "key" : "Enable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7932,7 +7952,7 @@
     "key" : "Enable %@",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7951,7 +7971,7 @@
     "key" : "Enable %@ again?",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:217"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7970,7 +7990,7 @@
     "key" : "Enable all",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7989,7 +8009,7 @@
     "key" : "Enable all %lld features again?",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:217"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8008,9 +8028,9 @@
     "key" : "Feature settings updated.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:199",
-      "Modules\/Siri\/Module\/SiriModule.swift:209",
-      "Modules\/Siri\/Module\/SiriModule.swift:232"
+      "Modules\/Siri\/Module\/SiriModule.swift:202",
+      "Modules\/Siri\/Module\/SiriModule.swift:212",
+      "Modules\/Siri\/Module\/SiriModule.swift:235"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8025,30 +8045,11 @@
     }
   },
   {
-    "id" : "Siri|Flag models on the Home page",
-    "key" : "Flag models on the Home page",
-    "kind" : "Other",
-    "places" : [
-
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Modelle auf der Startseite hervorheben",
-      "en" : "Flag models on the Home page",
-      "es" : "Destacar modelos en la página de inicio",
-      "fr" : "Signaler les modèles sur l’accueil",
-      "ja" : "ホームでモデルを目立たせる",
-      "ko" : "홈에서 모델 표시",
-      "pt-BR" : "Destacar modelos na página inicial",
-      "zh-Hans" : "在主页标记模型"
-    }
-  },
-  {
     "id" : "Siri|Free",
     "key" : "Free",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:261"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8063,22 +8064,22 @@
     }
   },
   {
-    "id" : "Siri|Free switched-off features' models every 5 minutes",
-    "key" : "Free switched-off features' models every 5 minutes",
+    "id" : "Siri|Free switched-off features' models automatically",
+    "key" : "Free switched-off features' models automatically",
     "kind" : "Other",
     "places" : [
 
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Modelle ausgeschalteter Funktionen alle 5 Minuten freigeben",
-      "en" : "Free switched-off features' models every 5 minutes",
-      "es" : "Liberar cada 5 minutos los modelos de las funciones desactivadas",
-      "fr" : "Libérer toutes les 5 minutes les modèles des fonctions désactivées",
-      "ja" : "オフにした機能のモデルを5分ごとに解放",
-      "ko" : "끈 기능의 모델을 5분마다 정리",
-      "pt-BR" : "Liberar a cada 5 minutos os modelos dos recursos desativados",
-      "zh-Hans" : "每 5 分钟释放已关闭功能的模型"
+      "de" : "Modelle ausgeschalteter Funktionen automatisch freigeben",
+      "en" : "Free switched-off features' models automatically",
+      "es" : "Liberar automáticamente los modelos de las funciones desactivadas",
+      "fr" : "Libérer automatiquement les modèles des fonctions désactivées",
+      "ja" : "オフにした機能のモデルを自動で解放",
+      "ko" : "끈 기능의 모델 자동 정리",
+      "pt-BR" : "Liberar automaticamente modelos de recursos desativados",
+      "zh-Hans" : "自动释放已关闭功能的模型"
     }
   },
   {
@@ -8086,7 +8087,7 @@
     "key" : "Free up to %@",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:241"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:260"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8105,7 +8106,7 @@
     "key" : "Free up to %@?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:261"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8124,10 +8125,10 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:256",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:100",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:285",
+      "Modules\/Siri\/Module\/SiriModule.swift:259",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:106",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:261",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:304",
       "App\/Shell\/MainView.swift:237"
     ],
     "table" : "Siri",
@@ -8140,6 +8141,25 @@
       "ko" : "공간 확보 중",
       "pt-BR" : "Liberando espaço",
       "zh-Hans" : "正在释放空间"
+    }
+  },
+  {
+    "id" : "Siri|Home page alerts",
+    "key" : "Home page alerts",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Hinweise auf der Startseite",
+      "en" : "Home page alerts",
+      "es" : "Alertas en la página de inicio",
+      "fr" : "Alertes sur l’accueil",
+      "ja" : "ホームの通知",
+      "ko" : "홈 알림",
+      "pt-BR" : "Alertas na página inicial",
+      "zh-Hans" : "主页提醒"
     }
   },
   {
@@ -8166,7 +8186,7 @@
     "key" : "Keeps the models",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:377"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:396"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8185,7 +8205,7 @@
     "key" : "Kept by macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:153"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:159"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8242,7 +8262,7 @@
     "key" : "Leftover models",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:403"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:422"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8261,7 +8281,7 @@
     "key" : "Log in as %@ and turn Apple Intelligence off there.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:371"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:390"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8280,8 +8300,8 @@
     "key" : "MacSpace asks macOS again every five minutes.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:153",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:293"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:159",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:312"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8300,7 +8320,7 @@
     "key" : "MacSpace could not read every Call transcription setting.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:334"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:353"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8338,7 +8358,7 @@
     "key" : "MacSpace needs its helper to change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:215"
+      "Modules\/Siri\/Module\/SiriModule.swift:218"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8391,6 +8411,25 @@
     }
   },
   {
+    "id" : "Siri|Models",
+    "key" : "Models",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:299"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Modelle",
+      "en" : "Models",
+      "es" : "Modelos",
+      "fr" : "Modèles",
+      "ja" : "モデル",
+      "ko" : "모델",
+      "pt-BR" : "Modelos",
+      "zh-Hans" : "模型"
+    }
+  },
+  {
     "id" : "Siri|No supported Siri language with a base language different from %@ is available.",
     "key" : "No supported Siri language with a base language different from %@ is available.",
     "kind" : "Text",
@@ -8433,8 +8472,8 @@
     "key" : "Not verified on this macOS version",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:308",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:336"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:327",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:355"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8472,7 +8511,7 @@
     "key" : "One account with Apple Intelligence on keeps the models on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:380"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:399"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8491,7 +8530,7 @@
     "key" : "Open",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:364"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:383"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8567,7 +8606,7 @@
     "key" : "Or delete the account in System Settings > Users & Groups.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:372"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:391"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8586,7 +8625,7 @@
     "key" : "Other accounts",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:379"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:398"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8645,7 +8684,7 @@
     "key" : "Releasing the leftover models",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:391"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:410"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8664,8 +8703,8 @@
     "key" : "Restart required",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:289",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:329"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:308",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:348"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8684,7 +8723,7 @@
     "key" : "Restart to finish",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:212",
       "App\/Renderer\/ScreenView.swift:756"
     ],
     "table" : "Siri",
@@ -8704,7 +8743,7 @@
     "key" : "Restart to free %@",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:212"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8723,7 +8762,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:250"
+      "Modules\/Siri\/Module\/SiriModule.swift:253"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8742,9 +8781,9 @@
     "key" : "Restart your Mac to apply this change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:198",
-      "Modules\/Siri\/Module\/SiriModule.swift:226",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:329"
+      "Modules\/Siri\/Module\/SiriModule.swift:201",
+      "Modules\/Siri\/Module\/SiriModule.swift:229",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:348"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8763,7 +8802,7 @@
     "key" : "Restart. MacSpace then deletes the models.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:375"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:394"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8778,31 +8817,12 @@
     }
   },
   {
-    "id" : "Siri|Sent by the 15-minute check below, when it finds Apple Intelligence available again.",
-    "key" : "Sent by the 15-minute check below, when it finds Apple Intelligence available again.",
-    "kind" : "Other",
-    "places" : [
-
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Kommt von der 15-Minuten-Prüfung unten, wenn sie Apple Intelligence wieder verfügbar findet.",
-      "en" : "Sent by the 15-minute check below, when it finds Apple Intelligence available again.",
-      "es" : "Lo envía la comprobación de 15 minutos de abajo, cuando encuentra Apple Intelligence disponible de nuevo.",
-      "fr" : "Envoyé par la vérification toutes les 15 minutes ci-dessous, quand elle trouve Apple Intelligence de nouveau disponible.",
-      "ja" : "下の15分ごとの確認がApple Intelligenceが再び利用可能になったことを見つけたときに送られます。",
-      "ko" : "아래의 15분 확인이 Apple Intelligence가 다시 사용 가능해진 것을 발견하면 보냅니다.",
-      "pt-BR" : "Enviado pela verificação de 15 minutos abaixo, quando ela encontra o Apple Intelligence disponível de novo.",
-      "zh-Hans" : "由下方每 15 分钟的检查发送，当它发现 Apple 智能再次可用时。"
-    }
-  },
-  {
     "id" : "Siri|Siri",
     "key" : "Siri",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:136",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:300",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:142",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:319",
       "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
@@ -8823,8 +8843,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:116",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:175",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:183",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:181",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:189",
       "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
@@ -8844,7 +8864,7 @@
     "key" : "Siri's iCloud sync",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:358"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:377"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8863,7 +8883,7 @@
     "key" : "Siri's iCloud sync is currently off",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:357"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:376"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8882,7 +8902,7 @@
     "key" : "Siri's iCloud sync is currently on",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:356"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:375"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8901,8 +8921,8 @@
     "key" : "Spatial Photos",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:137",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:300"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:143",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:319"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8921,8 +8941,8 @@
     "key" : "State unknown",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:307",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:334"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:326",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:353"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8998,7 +9018,7 @@
     "key" : "Switching it off sets Siri to a different language than your Mac.",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:256"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:275"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9013,11 +9033,30 @@
     }
   },
   {
+    "id" : "Siri|Sync to other devices",
+    "key" : "Sync to other devices",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:186"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Mit anderen Geräten synchronisieren",
+      "en" : "Sync to other devices",
+      "es" : "Sincronizar con otros dispositivos",
+      "fr" : "Synchronisation avec d’autres appareils",
+      "ja" : "ほかのデバイスとの同期",
+      "ko" : "다른 기기와 동기화",
+      "pt-BR" : "Sincronizar com outros dispositivos",
+      "zh-Hans" : "同步到其他设备"
+    }
+  },
+  {
     "id" : "Siri|Takes about a minute.",
     "key" : "Takes about a minute.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:392"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:411"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9093,7 +9132,7 @@
     "key" : "This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:373"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:392"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9150,7 +9189,7 @@
     "key" : "Turns Siri off and frees its unused models. MacSpace checks again while it stays off. Your Siri language is kept.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:302"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:321"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9169,7 +9208,7 @@
     "key" : "Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:344"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:363"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9188,7 +9227,7 @@
     "key" : "Turns off spatial photo effects and frees their downloaded models.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:303"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:322"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9226,7 +9265,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:268"
+      "Modules\/Siri\/Module\/SiriModule.swift:271"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9245,7 +9284,7 @@
     "key" : "Unknown feature.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:202"
+      "Modules\/Siri\/Module\/SiriModule.swift:205"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9264,7 +9303,7 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:259"
+      "Modules\/Siri\/Module\/SiriModule.swift:262"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9302,7 +9341,7 @@
     "key" : "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:400"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:419"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9321,7 +9360,7 @@
     "key" : "Waiting for macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:293"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:312"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9378,7 +9417,7 @@
     "key" : "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:362"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:381"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9397,7 +9436,7 @@
     "key" : "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:257"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:276"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9436,7 +9475,7 @@
     "key" : "deleting %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:94"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:100"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9455,7 +9494,7 @@
     "key" : "downloading models: %@ so far",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:75"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:81"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9474,7 +9513,7 @@
     "key" : "free up to %@",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:106"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9493,7 +9532,7 @@
     "key" : "free up to %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:74"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:80"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9512,7 +9551,7 @@
     "key" : "freeing %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:74"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:80"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9550,7 +9589,7 @@
     "key" : "macOS downloads their models again.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9569,7 +9608,7 @@
     "key" : "macOS is removing the model",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:399"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:418"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9588,7 +9627,7 @@
     "key" : "macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:290"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:309"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9607,8 +9646,8 @@
     "key" : "models not measured",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:98"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:88",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:104"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9627,7 +9666,7 @@
     "key" : "needs Full Disk Access to read",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:97"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:103"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9646,7 +9685,7 @@
     "key" : "no model downloaded yet",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:88"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9665,7 +9704,7 @@
     "key" : "no models left on disk",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:99"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:105"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9684,7 +9723,7 @@
     "key" : "not available here",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:60"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:66"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9703,7 +9742,7 @@
     "key" : "not in a virtual machine",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:60"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:66"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9722,7 +9761,7 @@
     "key" : "on in another account",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:110"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:116"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9741,7 +9780,7 @@
     "key" : "removing the model",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:118"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9760,12 +9799,12 @@
     "key" : "siri & AI",
     "kind" : "Tile title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:60",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:106",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:110",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:66",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:113",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:114"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:116",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:118",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:119",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:120"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9784,7 +9823,7 @@
     "key" : "state unknown",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:114"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:120"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9864,7 +9903,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:380"
+      "Sdk\/Interface\/Widgets.swift:384"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10000,7 +10039,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:380"
+      "Sdk\/Interface\/Widgets.swift:384"
     ],
     "table" : "SystemData",
     "translations" : {

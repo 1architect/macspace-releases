@@ -9,6 +9,7 @@
 "%lld features" = "%lld個の機能";
 "1 feature" = "1個の機能";
 "A feature change is still running." = "機能の変更がまだ進行中です。";
+"A notification when MacSpace finds that macOS made Apple Intelligence available again." = "macOSがApple Intelligenceを再び利用可能にしたことをMacSpaceが見つけたときに通知します。";
 "AI is off" = "AIはオフ";
 "AI is on" = "AIはオン";
 "Allow" = "許可";
@@ -54,12 +55,12 @@
 "Enable all" = "すべて有効にする";
 "Enable all %lld features again?" = "%lld個すべての機能を再び有効にしますか？";
 "Feature settings updated." = "機能の設定を更新しました。";
-"Flag models on the Home page" = "ホームでモデルを目立たせる";
 "Free" = "解放";
-"Free switched-off features' models every 5 minutes" = "オフにした機能のモデルを5分ごとに解放";
+"Free switched-off features' models automatically" = "オフにした機能のモデルを自動で解放";
 "Free up to %@" = "最大%@を解放";
 "Free up to %@?" = "最大%@を解放しますか？";
 "Freeing space" = "空き容量を増やしています";
+"Home page alerts" = "ホームの通知";
 "Its models are gone." = "モデルは削除されました。";
 "Keeps the models" = "モデルを保持";
 "Kept by macOS" = "macOSが保持";
@@ -73,6 +74,7 @@
 "MacSpace needs its helper to change Call transcription." = "通話の文字起こしを変更するにはMacSpaceのヘルパーが必要です。";
 "MacSpace needs its helper to restore Call transcription." = "通話の文字起こしを元に戻すにはMacSpaceのヘルパーが必要です。";
 "Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "何かをオフにするとモデルを解放できる間、タイルに印を付けて大きな位置に表示します。オフにするとタイルは目立たず、このページには引き続き表示されます。";
+"Models" = "モデル";
 "No supported Siri language with a base language different from %@ is available." = "%@と基本言語が異なるSiriの対応言語がありません。";
 "Not available in a virtual machine" = "仮想マシンでは利用できません";
 "Not verified on this macOS version" = "このmacOSバージョンでは未検証";
@@ -93,7 +95,6 @@
 "Restart your Mac from the Apple menu." = "アップルメニューからMacを再起動してください。";
 "Restart your Mac to apply this change." = "この変更を適用するにはMacを再起動してください。";
 "Restart. MacSpace then deletes the models." = "再起動してください。その後MacSpaceがモデルを削除します。";
-"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "下の15分ごとの確認がApple Intelligenceが再び利用可能になったことを見つけたときに送られます。";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "SiriとApple Intelligence";
 "Siri's iCloud sync" = "SiriのiCloud同期";
@@ -105,6 +106,7 @@
 "Switch Apple Intelligence off and reclaim the space its models take." = "Apple Intelligenceをオフにし、モデルの容量を取り戻します。";
 "Switch it off again in MacSpace." = "MacSpaceでもう一度オフにしてください。";
 "Switching it off sets Siri to a different language than your Mac." = "オフにするとSiriの言語がMacとは異なる言語になります。";
+"Sync to other devices" = "ほかのデバイスとの同期";
 "Takes about a minute." = "約1分かかります。";
 "The current Siri language could not be read." = "現在のSiri言語を読み取れませんでした。";
 "The system language could not be read." = "システム言語を読み取れませんでした。";

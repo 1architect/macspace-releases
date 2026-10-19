@@ -100,6 +100,7 @@ public final class SettingsStore: @unchecked Sendable {
         }
 
         func isBackgroundTaskEnabled(_ id: String) -> Bool {
+            if let task = manifest.backgroundTasks.first(where: { $0.id == id }), task.hidden == true { return task.defaultEnabled }
             if let stored = defaults.value.object(forKey: SettingsStore.key(manifest.id, "task", id)) as? Bool { return stored }
             return manifest.backgroundTasks.first(where: { $0.id == id })?.defaultEnabled ?? false
         }
