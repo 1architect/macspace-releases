@@ -1330,5 +1330,14 @@
   "同步到其他设备",
   "ほかのデバイスとの同期",
   "다른 기기와 동기화"
+ ],
+ "restart to free %@ of models": [
+  "reiniciar para liberar %@ de modelos",
+  "redémarrer pour libérer %@ de modèles",
+  "reiniciar para liberar %@ de modelos",
+  "neu starten, um %@ an Modellen freizugeben",
+  "重新启动以释放 %@ 模型",
+  "再起動して%@のモデルを解放",
+  "재시동하여 모델 %@ 정리"
  ]
 }

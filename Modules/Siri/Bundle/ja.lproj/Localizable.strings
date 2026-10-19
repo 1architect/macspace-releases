@@ -130,7 +130,6 @@
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "SiriのiCloud同期がオンの場合、iPhoneやiPadのSiriも変更されます。";
 "Writing the Siri language preference failed." = "Siriの言語設定を書き込めませんでした。";
 "deleting %@ of models" = "%@のモデルを削除中";
-"restart to free %@ of models" = "再起動して%@のモデルを解放";
 "downloading models: %@ so far" = "モデルをダウンロード中：現在%@";
 "free up to %@" = "最大%@を解放";
 "free up to %@ of models" = "モデルを最大%@解放";
@@ -147,5 +146,6 @@
 "not in a virtual machine" = "仮想マシンでは利用できません";
 "on in another account" = "ほかのアカウントでオン";
 "removing the model" = "モデルを削除中";
+"restart to free %@ of models" = "再起動して%@のモデルを解放";
 "siri & AI" = "SiriとAI";
 "state unknown" = "状態不明";

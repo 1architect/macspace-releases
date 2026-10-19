@@ -130,7 +130,6 @@
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Siri iCloud 동기화가 켜져 있으면 iPhone과 iPad의 Siri도 변경됩니다.";
 "Writing the Siri language preference failed." = "Siri 언어 설정을 기록하지 못했습니다.";
 "deleting %@ of models" = "모델 %@ 삭제 중";
-"restart to free %@ of models" = "재시동하여 모델 %@ 정리";
 "downloading models: %@ so far" = "모델 다운로드 중: 현재 %@";
 "free up to %@" = "최대 %@ 확보";
 "free up to %@ of models" = "모델 최대 %@ 확보";
@@ -147,5 +146,6 @@
 "not in a virtual machine" = "가상 머신에서는 사용할 수 없음";
 "on in another account" = "다른 계정에서 켜짐";
 "removing the model" = "모델 제거 중";
+"restart to free %@ of models" = "재시동하여 모델 %@ 정리";
 "siri & AI" = "Siri 및 AI";
 "state unknown" = "상태 알 수 없음";

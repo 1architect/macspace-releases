@@ -130,7 +130,6 @@
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Con la sincronización de Siri con iCloud activada, esto también cambia Siri en tu iPhone y iPad.";
 "Writing the Siri language preference failed." = "No se ha podido guardar la preferencia de idioma de Siri.";
 "deleting %@ of models" = "eliminando %@ de modelos";
-"restart to free %@ of models" = "reiniciar para liberar %@ de modelos";
 "downloading models: %@ so far" = "descargando modelos: %@ por ahora";
 "free up to %@" = "liberar hasta %@";
 "free up to %@ of models" = "liberar hasta %@ de modelos";
@@ -147,5 +146,6 @@
 "not in a virtual machine" = "no en una máquina virtual";
 "on in another account" = "activado en otra cuenta";
 "removing the model" = "eliminando el modelo";
+"restart to free %@ of models" = "reiniciar para liberar %@ de modelos";
 "siri & AI" = "siri e IA";
 "state unknown" = "estado desconocido";

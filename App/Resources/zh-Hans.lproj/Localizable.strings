@@ -85,6 +85,7 @@
 "MacSpace can now see everything in System Data." = "MacSpace 现在可以查看所有系统数据。";
 "MacSpace freed %@" = "MacSpace 已释放 %@";
 "MacSpace has not been tested on this release yet." = "此 macOS 版本尚未经过 MacSpace 测试。";
+"MacSpace is up to date" = "MacSpace 已是最新版本";
 "MacSpace keeps an eye on your disk." = "MacSpace 会关注磁盘状态。";
 "MacSpace needs it to see everything in System Data." = "MacSpace 需要此权限才能查看所有系统数据。";
 "Maximize" = "最大化";
