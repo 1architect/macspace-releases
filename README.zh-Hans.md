@@ -4,7 +4,7 @@
 
 **适用于 macOS 的“系统数据”与 Apple 智能清理工具。**
 
-<p align="center">
+<p align="left">
 <a href="https://trendshift.io/repositories/288700?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-288700" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/288700/daily?language=Swift" alt="1architect%2Fmacspace-releases | Trendshift" width="250" height="55"/></a>
 </p>
 
