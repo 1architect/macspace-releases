@@ -293,6 +293,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var title: String
     /// A count the title needs ("12 items"). A fact about the row (its state, its kind, why it is checked) is a badge.
     public var subtitle: String?
+    /// The row's figure on the right edge (a size, a version). With one, the row's action flags stand right after its title, pills
+    /// and (i); without one, they take the right edge themselves. The app places them; a module only fills the two fields.
     public var trailing: String?
     /// Short facts about the row, drawn as pills right after its title, in this order.
     public var badges: [Badge]
@@ -309,6 +311,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// Background row work uses the same inline flag as a user-started row action. Keep its action metadata with stable id and
     /// parameters so the flag retains identity, and the host can recognize a foreground result handed to background work.
     public var activity: ActionProgress?
+    /// The row's buttons, drawn as its action flags: after the title when the row has a `trailing` figure, else on the right edge.
     public var actions: [Action]
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.

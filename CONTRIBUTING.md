@@ -153,8 +153,12 @@ fixed sequence) needs a comment saying why.
 **Facts are pills.** A short fact about a row (its state, why it is checked, what kind of item it is) is a pill (`Row.badge`),
 not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill.
 
-**Buttons are pills.** A button in a row, in Settings or on a module's page, is the small quiet pill (`.rowPill`, which
-Settings sets on its pages and `ActionButton` on module rows); the page's main action is the large one. No system bordered buttons.
+**Buttons in rows are flags.** Every button in a row, in Settings and on every module's page, is the row action flag: text on
+a faint capsule, the look of the (i) and folder pills, darker under the pointer (`RowFlagStyle`; a module row's Free is the same
+flag, with its progress and result). No system buttons and no other pill style in rows. Where it goes: when the row shows a figure on
+its right (a size, a version), the flag stands right after the title, its pills and its (i), and the figure keeps the right edge;
+when the row has no figure, the flag takes the right edge (`RowFlagPlacement`). Modules set `Row.trailing` and `Row.actions`; the
+app places them.
 
 **One title style.** Every list and section title (Settings and every module page) is drawn the way macOS's System Settings
 draws its grouped lists: semibold, in the text's color. A title names its group in a few words ("Models", "Free now"), never a

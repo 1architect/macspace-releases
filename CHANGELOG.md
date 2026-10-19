@@ -9,14 +9,15 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Fixed
 
-- The window's shadow no longer stops in a hard line near the menu bar. It fades out just below the menu bar instead.
-- While the window is dragged or resized, its shadow stays with it.
-- **Fill**, the halves and quarters in **Window › Move & Resize**, and dragging the window to a screen edge put the window's
-  edges where macOS places them, as the window's own Maximize does, with no gap left around it.
-- When macOS keeps a switched-off feature's models (Siri, Spatial Photos) after several tries, the switch and the tile ask for a
-  restart instead of saying **Waiting for macOS** without end.
-- Buttons in Settings and in module rows are pills like the rest of the app. **Granted** and the other Settings pills are the
-  same height as every other pill. **Recent cleanups** shows the total freed as its own row instead of in the list's title.
+- The window is placed like any other macOS window: **Fill**, **Window › Move & Resize** and dragging it to a screen edge put
+  its glass exactly where macOS places it, with no gap, and the window's own Maximize does the same.
+- The window's shadow is macOS's own: it moves with the window while it is dragged or resized, and the menu bar no longer shows
+  a dark line when the window is near it.
+- When macOS keeps a switched-off feature's models (Siri, Spatial Photos), MacSpace asks for a restart once. If they are still
+  there after the restart, the switch says **Kept by macOS** instead of **Waiting for macOS** without end.
+- Buttons in rows, in Settings and in modules, are the same flag as a module row's **Free**. With a figure on the right of the
+  row (a size, a version), the button stands after the row's title; without one, it is on the right. **Granted** and the other
+  Settings pills are the same height as every other pill. **Recent cleanups** shows the total freed as its own row.
 
 ### Changed
 

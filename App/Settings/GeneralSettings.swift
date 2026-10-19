@@ -106,11 +106,12 @@ struct UpdatesSettingsSection: View {
         Section("Updates") {
             if updates.isAvailable {
                 Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
-                LabeledContent("Version") {
-                    HStack(spacing: 12) {
-                        Text(version).textSelection(.enabled).monospacedDigit()
-                        Button("Check Now") { updates.checkForUpdates() }.disabled(!updates.canCheck)
-                    }
+                // The version is the row's figure on the right, so Check Now stands after the title (`RowFlagPlacement`).
+                HStack(spacing: 10) {
+                    Text("Version")
+                    Button("Check Now") { updates.checkForUpdates() }.buttonStyle(RowFlagStyle()).disabled(!updates.canCheck)
+                    Spacer(minLength: 8)
+                    Text(version).textSelection(.enabled).monospacedDigit().foregroundStyle(.secondary)
                 }
             } else {
                 LabeledContent("Version") { Text(version).textSelection(.enabled).monospacedDigit() }

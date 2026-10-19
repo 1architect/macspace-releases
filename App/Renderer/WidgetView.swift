@@ -433,6 +433,7 @@ struct BannerRow: View {
 /// the module's symbols (`Row.symbol`): text alone, as Settings lists things.
 struct RowView: View {
     let row: Row
+    private var placement: RowFlagPlacement { .for(hasTrailingFigure: row.trailing != nil) }
     @Environment(\.rowActivity) private var activity
 
     /// The row's action flag is in the action color now (working, or showing its result): its pills step back (`BadgeView.quiet`).
@@ -499,7 +500,7 @@ struct RowView: View {
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                     // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the room
                     // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
-                    RowActionFlags(row: row, handler: handler)
+                    if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
                 }
                 // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
                 // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
@@ -508,6 +509,8 @@ struct RowView: View {
             if let trailing = row.trailing {
                 ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
             }
+            // No figure on the right: the flag takes the right edge (`RowFlagPlacement`).
+            if placement == .trailing { RowActionFlags(row: row, handler: handler) }
         }
     }
 }

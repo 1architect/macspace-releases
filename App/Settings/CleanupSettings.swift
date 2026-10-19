@@ -85,7 +85,6 @@ struct CleanupHistoryPage: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .buttonStyle(.rowPill)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.

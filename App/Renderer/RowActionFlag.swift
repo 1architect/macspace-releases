@@ -143,6 +143,40 @@ private struct RowActionFlag: View {
     }
 }
 
+/// A row's button: the row action flag's own look at rest (`RowActionFlag`), text on a faint capsule that darkens under the pointer.
+/// Every button in a row uses it, in Settings and on module pages (`ButtonRow`, Check Now, the permission buttons), so a row has
+/// one kind of button. Where it goes in the row is `RowFlagPlacement`.
+struct RowFlagStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        let lit = hovering || configuration.isPressed
+        configuration.label
+            .font(.system(size: 11, weight: .semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .frame(height: 18)
+            .foregroundStyle(lit ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            .background(Color.primary.opacity(lit ? 0.1 : 0.05), in: Capsule())
+            .contentShape(Capsule())
+            .opacity(isEnabled ? 1 : 0.5)
+            .fixedSize()
+            .pointerStyle(.link)
+            .onHover { hovering = $0 && isEnabled }
+            .animation(Theme.hover, value: hovering)
+    }
+}
+
+/// Where a row's button goes (Interface rules, "Buttons"). With a figure on the right of the row (a size, a version) the button
+/// stands right after the row's title, its pills and its (i), as a module row's Free does, and the figure keeps the right edge.
+/// Without one, the button takes the right edge itself.
+enum RowFlagPlacement: Equatable {
+    case afterTitle, trailing
+
+    static func `for`(hasTrailingFigure: Bool) -> RowFlagPlacement { hasTrailingFigure ? .afterTitle : .trailing }
+}
+
 /// Shared by the page action and row flags, so both use the same wave and measured progress animation.
 struct ActionProgressFill: View {
     var fraction: Double?

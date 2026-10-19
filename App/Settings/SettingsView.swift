@@ -61,7 +61,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .buttonStyle(.rowPill)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.
@@ -137,7 +136,6 @@ struct PermissionsPage: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .buttonStyle(.rowPill)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.
@@ -192,6 +190,7 @@ private struct PermissionRow: View {
             case .missing:
                 if permission == .fullDiskAccess {
                     Button("Open System Settings") { NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL) }
+                        .buttonStyle(RowFlagStyle())
                 } else if permission == .privilegedHelper {
                     helperButton
                 } else if permission == .configurationProfile {
@@ -230,6 +229,7 @@ private struct PermissionRow: View {
                     helperStatus = PrivilegedHelperInstaller.permissionStatus()
                 }
             }
+            .buttonStyle(RowFlagStyle())
             .disabled(repairing)
         } else {
             installButton
@@ -248,5 +248,6 @@ private struct PermissionRow: View {
             if PrivilegedHelperInstaller.status == .requiresApproval { PrivilegedHelperInstaller.openLoginItemsSettings() }
             helperStatus = PrivilegedHelperInstaller.permissionStatus()
         }
+        .buttonStyle(RowFlagStyle())
     }
 }
