@@ -29,6 +29,12 @@ struct GlassWindowConfigurator: NSViewRepresentable {
         }
         private var shadowWindow: ShadowWindow?
         private var observers: [NSObjectProtocol] = []
+        /// The window's frame at the last notice, to tell a new size from a move.
+        private var lastFrame = CGRect.zero
+        /// The frame the window had before macOS last placed it, so its size coming back is known as macOS putting it back.
+        private var untiledFrame: CGRect?
+        /// Set while the band is moved outside the place macOS chose, so that resize is not taken for another placement.
+        private var fitting = false
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -50,7 +56,8 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             // Its size and place are kept between launches.
             window.setFrameAutosaveName(Self.frameName)
             window.setFrameUsingName(Self.frameName)
-            WindowControls.fitGlassAfterSystemFill(window)
+            lastFrame = window.frame
+            untiledFrame = nil
             // The edges are resized from a band across the glass's edge, not from the window's invisible outer edge (`ResizeBand`).
             if let frameView = window.contentView?.superview, !frameView.subviews.contains(where: { $0 is ResizeBand }) {
                 let band = ResizeBand(frame: frameView.bounds)
@@ -70,19 +77,41 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.addChildWindow(shadow, ordered: .below)
             shadowWindow = shadow
             showShadow(animated: false)
-            // A child window moves with its parent by itself; it has to be told about a new size. After a move it is put back where it
-            // belongs, should AppKit have placed it anywhere else.
+            // A child window moves with its parent by itself, in the same frame; it has to be told about a new size. Moving it as well
+            // on every step of a drag fought the move the window server was already making, and the shadow trailed the glass.
             for name in [NSWindow.didResizeNotification, NSWindow.didMoveNotification, NSWindow.didChangeScreenNotification,
                          NSWindow.didChangeBackingPropertiesNotification] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
                         guard let self, let window = self.window else { return }
-                        WindowControls.fitGlassAfterSystemFill(window)
+                        // The shadow window's new size and the main window's go to the screen together.
+                        window.disableScreenUpdatesUntilFlush()
+                        self.fitSystemPlacement(window)
                         self.shadowWindow?.follow(window)
                         self.showShadow(animated: false)
                     }
                 })
             }
+        }
+
+        /// Moves the resize band outside the place macOS chose for the window (`WindowControls.frameAfterSystemPlacement`). Sizes
+        /// MacSpace gives (Maximize, the resize band) and the user's drags of the window's outer edge are left as they are.
+        private func fitSystemPlacement(_ window: NSWindow) {
+            let frame = window.frame
+            defer { lastFrame = window.frame }
+            guard !fitting, frame.size != lastFrame.size else { return }
+            if WindowControls.isPlacing || window.inLiveResize {
+                untiledFrame = nil
+                return
+            }
+            guard let fitted = WindowControls.frameAfterSystemPlacement(frame, untiled: untiledFrame) else {
+                untiledFrame = nil
+                return
+            }
+            if untiledFrame == nil { untiledFrame = lastFrame }
+            fitting = true
+            defer { fitting = false }
+            window.setFrame(fitted, display: true)
         }
 
         private func showShadow(animated: Bool) {
@@ -122,6 +151,8 @@ final class ShadowWindow: NSWindow {
     private let container = CALayer()
     private let caster = CALayer()
     private let cutout = CAShapeLayer()
+    /// Fades the shadow out under the menu bar (`fade`).
+    private let fader = CAGradientLayer()
 
     init() {
         super.init(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
@@ -156,17 +187,19 @@ final class ShadowWindow: NSWindow {
     /// Takes the shape of the main window's glass, which sits inside its frame by the resize band.
     func follow(_ main: NSWindow) {
         let glass = main.frame.insetBy(dx: Theme.resizeMargin, dy: Theme.resizeMargin)
-        var frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
-        // Never under the menu bar: with the window against it (tiled to half the screen, or filling it) the shadow showed as a dark
-        // band between the two and darkened the menu bar. The shadow stops where the window could reach, and a window at the top
-        // casts none upward.
-        if let screen = main.screen ?? NSScreen.main {
-            let top = max(min(frame.maxY, screen.visibleFrame.maxY - Theme.resizeMargin), glass.maxY)
-            frame.size.height = top - frame.minY
-        }
+        // Always the glass and the same room around it: only a new size changes the frame. It was cut short under the menu bar,
+        // so its size changed with every step of a drag near the top, and its edge showed as a hard line level with the glass's
+        // top, across the shadow beside the corners (2026-10-19, issue 34). The menu bar is kept clear by `fade` instead.
+        let frame = glass.insetBy(dx: -Self.margin, dy: -Self.margin)
         let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != Theme.windowRadius
         drawnRadius = Theme.windowRadius
-        if frame != self.frame { setFrame(frame, display: false) }
+        if frame.size != self.frame.size {
+            setFrame(frame, display: false)
+        } else if frame.origin != self.frame.origin {
+            // Only when AppKit left it behind: a child window already moves with its parent.
+            setFrameOrigin(frame.origin)
+        }
+        fade(below: (main.screen ?? NSScreen.main)?.visibleFrame.maxY)
         // A move only places the window again; the shadow is drawn anew only for a new size.
         guard redraw else { return }
         let bounds = CGRect(origin: .zero, size: frame.size)
@@ -188,6 +221,33 @@ final class ShadowWindow: NSWindow {
         cutout.frame = bounds
         cutout.path = outside
         CATransaction.commit()
+    }
+
+    /// How far below the menu bar the shadow fades out, from full to none: about as far as it spreads.
+    static let fadeLength: CGFloat = 32
+
+    /// Keeps the shadow off the menu bar: with the window against it (filling the screen, tiled to half of it, or dragged up to it),
+    /// a shadow under it darkened the menu bar. It fades out over `fadeLength` just under the menu bar's edge (`top`, on screen)
+    /// instead of stopping in a line; elsewhere on screen it is left whole.
+    private func fade(below top: CGFloat?) {
+        let edge = top.map { $0 - frame.minY } ?? .infinity
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        guard edge < frame.height, let root = contentView?.layer else {
+            if contentView?.layer?.mask != nil { contentView?.layer?.mask = nil }
+            return
+        }
+        let height = max(frame.height, 1)
+        // The layer's y runs up from the window's bottom, as the screen's does.
+        fader.frame = CGRect(origin: .zero, size: frame.size)
+        fader.startPoint = CGPoint(x: 0.5, y: 0)
+        fader.endPoint = CGPoint(x: 0.5, y: 1)
+        fader.colors = [NSColor.black.cgColor, NSColor.black.cgColor, NSColor.clear.cgColor, NSColor.clear.cgColor]
+        let end = min(max(edge / height, 0), 1)
+        let start = min(max((edge - Self.fadeLength) / height, 0), end)
+        fader.locations = [0, NSNumber(value: Double(start)), NSNumber(value: Double(end)), 1]
+        if root.mask !== fader { root.mask = fader }
     }
 
     /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.
@@ -290,7 +350,7 @@ final class ResizeBand: NSView {
                 frame.size.height = max(start.height + dy, least.height)
             default: break
             }
-            window.setFrame(frame, display: true)
+            WindowControls.place(window, frame)
         }
     }
 }
