@@ -130,6 +130,7 @@
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "SiriのiCloud同期がオンの場合、iPhoneやiPadのSiriも変更されます。";
 "Writing the Siri language preference failed." = "Siriの言語設定を書き込めませんでした。";
 "deleting %@ of models" = "%@のモデルを削除中";
+"restart to free %@ of models" = "再起動して%@のモデルを解放";
 "downloading models: %@ so far" = "モデルをダウンロード中：現在%@";
 "free up to %@" = "最大%@を解放";
 "free up to %@ of models" = "モデルを最大%@解放";

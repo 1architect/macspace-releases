@@ -130,6 +130,7 @@
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "开启 Siri 的 iCloud 同步后，也会更改 iPhone 和 iPad 上的 Siri。";
 "Writing the Siri language preference failed." = "写入 Siri 语言偏好设置失败。";
 "deleting %@ of models" = "正在删除 %@ 模型";
+"restart to free %@ of models" = "重新启动以释放 %@ 模型";
 "downloading models: %@ so far" = "正在下载模型：已下载 %@";
 "free up to %@" = "最多释放 %@";
 "free up to %@ of models" = "最多释放 %@ 模型";

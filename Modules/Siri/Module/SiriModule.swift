@@ -97,6 +97,7 @@ public struct SiriModule: MacSpaceModule {
         if !snapshot.releasingAutomatically, !snapshot.purgingModels { await checkFeatureModels() }
         snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
         snapshot.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
+        snapshot.featureCleanupStalled = await ManagedModelCleanup.shared.stalled
         return snapshot
     }
 

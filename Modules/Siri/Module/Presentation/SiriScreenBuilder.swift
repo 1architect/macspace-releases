@@ -97,7 +97,10 @@ enum SiriScreenBuilder {
             let released = recorded > snapshot.lockedModelBytes ? recorded - snapshot.lockedModelBytes : 0
             let featuresDeleting = snapshot.cleaningFeatures || !snapshot.featureCleanupWaiting.isEmpty ? leftover : 0
             let deleting = (released >= purgeThreshold ? released : 0) + featuresDeleting
-            if deleting >= purgeThreshold { detail = loc("deleting \(ByteFormat.string(deleting)) of models") }
+            // Models only a restart frees are not said to be deleting: the page asks for the restart (`restart`).
+            let held = ModelFeatureSettings.Feature.allCases.filter { needsRestart($0, snapshot) }.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +)
+            if held >= purgeThreshold { detail = loc("restart to free \(ByteFormat.string(held)) of models") }
+            else if deleting >= purgeThreshold { detail = loc("deleting \(ByteFormat.string(deleting)) of models") }
             else { detail = loc("\(ByteFormat.string(onDisk + leftover)) of models kept by macOS") }
         }
         else if snapshot.status.state == .unknown { detail = loc("needs Full Disk Access to read") }
@@ -196,12 +199,14 @@ enum SiriScreenBuilder {
     }
 
     /// Features switched off whose models only a restart lets macOS delete: held open by services macOS keeps running
-    /// (`SiriSnapshot.featureLocked`), or a Call transcription change macOS reads at startup.
+    /// (`SiriSnapshot.featureLocked`), or held some other way, the cleanup waiting on and on with none of them going
+    /// (`SiriSnapshot.featureCleanupStalled`), or a Call transcription change macOS reads at startup.
     static func needsRestart(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Bool {
         if feature == .phone, phoneStatus(snapshot)?.state == .restartRequired { return true }
         // Only for a feature switched off: one that is on keeps its models, and a restart frees nothing.
         guard featureIsOn(feature, snapshot) == false else { return false }
-        return snapshot.featureLocked.contains(feature) && snapshot.featureCleanupWaiting.contains(feature) && modelsSize(feature, snapshot) != nil
+        let held = snapshot.featureLocked.contains(feature) || snapshot.featureCleanupStalled.contains(feature)
+        return held && snapshot.featureCleanupWaiting.contains(feature) && modelsSize(feature, snapshot) != nil
     }
 
     /// Restart to finish, through macOS's own Restart dialog (`SystemRestart`): what it frees, when that is known.

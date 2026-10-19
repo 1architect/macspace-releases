@@ -219,6 +219,14 @@ public actor ManagedModelCleanup {
     private var lastAttempt = Date.distantPast
     private var visible = false
     public private(set) var waiting: Set<ModelFeatureSettings.Feature> = []
+    /// Features whose cleanup kept waiting while none of their models went, `stallLimit` cleanups in a row: macOS holds them without
+    /// a lock MacSpace can see, and only a restart lets them go. Siri sat on Waiting for macOS with 498 MB left, recheck after
+    /// recheck, and never asked for the restart that freed it (2026-10-19, issue 32).
+    public private(set) var stalled: Set<ModelFeatureSettings.Feature> = []
+    /// Per waiting feature: the model assets it had left after the last cleanup, and how many cleanups in a row freed none of them.
+    private var stalls: [ModelFeatureSettings.Feature: (remaining: Int?, count: Int)] = [:]
+    /// About ten minutes of rechecks after the cleanup the switch started.
+    static let stallLimit = 3
     public var isRunning: Bool { task != nil }
     /// A cleanup the user started by switching a feature off. The five-minute rechecks run quietly: shown, they made the switches
     /// say Freeing space every few minutes while nothing was being freed.
@@ -237,7 +245,10 @@ public actor ManagedModelCleanup {
         guard !changing, task == nil, force || Date().timeIntervalSince(lastAttempt) >= 300 else { return }
         let scopes = [AssetModelCleanup.Scope.siri, .phone, .spatialPhotos].filter { AssetModelCleanup.refusal($0) == nil }
         // A feature switched back on is no longer waiting for its models to go: left in, it asked for a restart while on (2026-10-19).
-        waiting.formIntersection(scopes.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) })
+        let managed = Set(scopes.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) })
+        waiting.formIntersection(managed)
+        stalled.formIntersection(managed)
+        stalls = stalls.filter { managed.contains($0.key) }
         guard !scopes.isEmpty else { return }
         lastAttempt = Date()
         visible = force
@@ -257,6 +268,23 @@ public actor ManagedModelCleanup {
     private func record(_ result: AssetModelCleanup.Result) {
         guard let feature = ModelFeatureSettings.Feature(rawValue: result.scope.rawValue) else { return }
         if result.error != nil || result.owners.pending { waiting.insert(feature) } else { waiting.remove(feature) }
+        stall(feature, result)
+    }
+
+    /// Counts the cleanups in a row that left all of a feature's models in place (`stalled`). One held back on purpose (an error:
+    /// Apple Intelligence downloading, a gate closed) neither counts nor starts the count again: a restart would not change it.
+    private func stall(_ feature: ModelFeatureSettings.Feature, _ result: AssetModelCleanup.Result) {
+        guard result.owners.pending || result.error != nil else {
+            stalls[feature] = nil
+            stalled.remove(feature)
+            return
+        }
+        guard result.error == nil else { return }
+        let last = stalls[feature]
+        let fewer = last.flatMap { last in last.remaining.flatMap { before in result.remainingAssets.map { $0 < before } } } ?? false
+        let count = fewer ? 1 : (last?.count ?? 0) + 1
+        stalls[feature] = (result.remainingAssets, count)
+        if count >= Self.stallLimit { stalled.insert(feature) } else { stalled.remove(feature) }
     }
     private func complete() { task = nil }
 }

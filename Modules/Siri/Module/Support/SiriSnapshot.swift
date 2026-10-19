@@ -49,6 +49,8 @@ struct SiriSnapshot: Sendable {
     var flagsModels = true
     var cleaningFeatures = false
     var featureCleanupWaiting: Set<ModelFeatureSettings.Feature> = []
+    /// The features whose cleanup kept waiting with none of their models going (`ManagedModelCleanup.stalled`).
+    var featureCleanupStalled: Set<ModelFeatureSettings.Feature> = []
 }
 
 struct SiriPlanFailure: Error, Sendable, Equatable {
