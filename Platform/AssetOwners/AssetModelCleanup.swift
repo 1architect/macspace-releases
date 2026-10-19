@@ -227,6 +227,16 @@ public actor ManagedModelCleanup {
     private var stalls: [ModelFeatureSettings.Feature: (remaining: Int?, count: Int)] = [:]
     /// About ten minutes of rechecks after the cleanup the switch started.
     static let stallLimit = 3
+    /// When MacSpace first asked for a restart for a stalled feature: the Mac's boot time then, kept across the restart.
+    static func restartAskedKey(_ feature: ModelFeatureSettings.Feature) -> String { "MacSpace.modelCleanup.restartAsked." + feature.rawValue }
+
+    /// When the Mac last started, in seconds since 1970; 0 when it cannot be read.
+    static func bootTime() -> TimeInterval {
+        var time = timeval()
+        var size = MemoryLayout<timeval>.size
+        guard sysctlbyname("kern.boottime", &time, &size, nil, 0) == 0 else { return 0 }
+        return TimeInterval(time.tv_sec)
+    }
     public var isRunning: Bool { task != nil }
     /// A cleanup the user started by switching a feature off. The five-minute rechecks run quietly: shown, they made the switches
     /// say Freeing space every few minutes while nothing was being freed.
@@ -277,6 +287,7 @@ public actor ManagedModelCleanup {
         guard result.owners.pending || result.error != nil else {
             stalls[feature] = nil
             stalled.remove(feature)
+            UserDefaults.standard.removeObject(forKey: Self.restartAskedKey(feature))
             return
         }
         guard result.error == nil else { return }
@@ -284,7 +295,20 @@ public actor ManagedModelCleanup {
         let fewer = last.flatMap { last in last.remaining.flatMap { before in result.remainingAssets.map { $0 < before } } } ?? false
         let count = fewer ? 1 : (last?.count ?? 0) + 1
         stalls[feature] = (result.remainingAssets, count)
-        if count >= Self.stallLimit { stalled.insert(feature) } else { stalled.remove(feature) }
+        guard count >= Self.stallLimit else { stalled.remove(feature); return }
+        // A restart is asked for once. Models still there after it are kept by macOS for its own reasons, and asking again would
+        // only send the user round in circles: Siri's last speech model, which MobileAsset keeps until it has the next one, stayed
+        // through the restart MacSpace asked for (2026-10-19, issue 32). The switch then says so (Kept by macOS) instead of
+        // waiting, and the rechecks go on quietly.
+        let key = Self.restartAskedKey(feature), boot = Self.bootTime()
+        let asked = UserDefaults.standard.double(forKey: key)
+        if asked == 0 { UserDefaults.standard.set(boot, forKey: key) }
+        if asked > 0, boot > asked + 1 {
+            stalled.remove(feature)
+            waiting.remove(feature)
+        } else {
+            stalled.insert(feature)
+        }
     }
     private func complete() { task = nil }
 }
