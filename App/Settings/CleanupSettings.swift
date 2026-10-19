@@ -61,6 +61,12 @@ struct CleanupHistoryPage: View {
 
     var body: some View {
         Form {
+            // The page's title names the list; the total is a figure of its own, not part of a title (Interface rules).
+            if lifetime > 0 {
+                Section {
+                    LabeledContent("Freed in total") { Text(ByteFormat.string(lifetime)).monospacedDigit() }
+                }
+            }
             Section {
                 if entries.isEmpty {
                     Text("Nothing cleaned yet.").foregroundStyle(.secondary)
@@ -74,13 +80,12 @@ struct CleanupHistoryPage: View {
                         Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
                     }
                 }
-            } header: {
-                TitleLine(title: String(localized: "Recent cleanups"), note: String(localized: "\(ByteFormat.string(lifetime)) freed in total"))
             }
             PageBottomRoom()
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .buttonStyle(.rowPill)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.

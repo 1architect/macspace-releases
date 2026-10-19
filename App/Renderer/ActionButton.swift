@@ -46,14 +46,14 @@ public enum ConfirmationAlert {
 
 }
 
-/// Buttons in rows are the system's, as in Settings; the page's main action is the pill.
+/// Buttons in rows are small pills, as in Settings (`rowPill`); the page's main action is the large one.
 private struct ActionButtonLook: ViewModifier {
     let role: ActionRole
     let compact: Bool
 
     func body(content: Content) -> some View {
         if compact {
-            content.buttonStyle(.bordered).controlSize(.small)
+            content.buttonStyle(PillButtonStyle(prominent: role == .prominent, destructive: role == .destructive, compact: true))
         } else {
             content.buttonStyle(PillButtonStyle(prominent: role == .prominent, destructive: role == .destructive))
         }

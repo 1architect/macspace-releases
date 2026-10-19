@@ -275,6 +275,13 @@ struct PillButtonStyle: ButtonStyle {
     }
 }
 
+extension ButtonStyle where Self == PillButtonStyle {
+    /// Every button in a row, in Settings and on every module's page: the quiet pill, smaller. System buttons there (Check Now,
+    /// Install helper, a module row's action) looked like another app's beside the pills (2026-10-19, issue 31). Settings sets it on
+    /// its pages and `ActionButton` on module rows, so a button only looks different when it says so itself.
+    static var rowPill: PillButtonStyle { PillButtonStyle(prominent: false, compact: true) }
+}
+
 /// A round glass button, as MacBat's onboarding draws it (`BotaoRedondoDeVidro`): AppKit's clear glass in the dark appearance with a
 /// light dark tint, 36 points, a symbol in the text's color, loading dots while busy. Under the pointer it grows a little and
 /// lightens; pressed, it shrinks and the symbol dims. Used for close/back in the top-left corner and Refresh in the top-right one.

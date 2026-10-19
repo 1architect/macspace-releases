@@ -346,7 +346,10 @@ struct BadgeView: View {
                     .mask { SoftFitMask(hidden: max(0, natural - shown)) }
             }
         }
-        .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
+        // A pill that wraps (`StatusFlag`'s long errors) keeps the capsule's ends: on one line it is the same 18-point pill as every
+        // other, where its extra padding had made Settings' Granted and Needed taller, boxy pills (2026-10-19, issue 31).
+        .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         // What the state means now: the (i) beside it says only what the item is (`InfoText`). A pill short of room says its text.
         .help(badge.help ?? (natural - shown > 0.5 ? badge.text : ""))
         .transition(PageCascade.transition(index: 0, count: 1))
@@ -361,7 +364,7 @@ struct BadgeView: View {
             .lineLimit(wraps ? nil : 1)
             .fixedSize(horizontal: !wraps, vertical: true)
             .padding(.horizontal, 8)
-            .padding(.vertical, wraps ? 3 : 0)
+            .padding(.vertical, wraps ? 2 : 0)
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
     }
