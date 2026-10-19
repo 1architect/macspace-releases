@@ -49,6 +49,7 @@ enum AssetOwners {
                     try reconcile(journal, owner: owner, user: user)
                     if scope == .released { try releaseLanguageData(journal, details: &details) } else {
                         try releaseSpeech(journal, owner: owner, user: user, details: &details)
+                        if scope == .siri { try readoptLeftovers(owner: owner, user: user, details: &details) }
                         let active = try releaseVoices(journal, details: &details)
                         try releaseMappedOwners(journal, owner: owner, user: user, activeVoices: active, details: &details)
                     }
@@ -439,6 +440,82 @@ enum AssetOwners {
         }
         details.append("Released \(configs.count) speech owner requests.")
     }
+    /// Siri speech models left on disk with no owner at all: MobileAsset no longer tracks them, rates them `GCTypeNone` and keeps
+    /// them for 15 days from their install (a quarter of that at the strongest purge), so no purge frees them on the click. Siri's
+    /// Portuguese model stayed so, 475 MB, after Siri's language had changed (2026-10-19, issue 32). Each is adopted again for a
+    /// moment with Siri's own embedded-speech owner for its language, read from the model's own `AssetSpecifier`: MobileAsset takes
+    /// it back, holds it a moment and lets it go as unreferenced, which the purge that follows removes at once. Then the owner is
+    /// withdrawn. Measured on 26B5112a: lock seen at about 30 s, gone by 50 s, no download, 683 MB purged in 0.14 s, still gone at
+    /// five minutes. A language with any owner is left to the release above; nothing runs while Siri or Dictation is on.
+    static func readoptLeftovers(owner: UAFManager, user: String, details: inout [String]) throws {
+        guard try speechOff() else { return }
+        let client = "com.apple.siri.embeddedspeech"
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+        let all = try rows()
+        let languages = try leftoverSpeechLanguages().filter { language in
+            guard !language.isEmpty, language.count < 40, language.unicodeScalars.allSatisfy(allowed.contains) else { return false }
+            return try row(all, client: client, name: "assistant." + language, user: user) == nil
+                && row(all, client: client, name: "hammer." + language, user: user) == nil
+        }
+        guard !languages.isEmpty else { return }
+        let entitled: AnyClass = try objcClass("SFEntitledAssetManager"), configType: AnyClass = try objcClass("SFEntitledAssetConfig")
+        try check(entitled, "subscriptionNameForConfig:", "@24@0:8@16", classMethod: true)
+        try check(entitled, "assetSetUsageForConfig:", "@24@0:8@16", classMethod: true)
+        try check(entitled, "_assetSetSubscriptionWithConfig:expiration:", "@32@0:8@16@24", classMethod: true)
+        try check(entitled, "unsubscribeFromAssetsWithConfigs:subscriberId:completionHandler:", "v40@0:8@16@24@?32", classMethod: true)
+        try check(configType, "initWithLanguage:assetType:", "@32@0:8@16Q24")
+        let assets = messaging(entitled, as: EntitledAssets.self)
+        var configs: [AnyObject] = []
+        var names: [String] = []
+        for language in languages {
+            let config = try makeConfig(configType, language: language, assetType: 3)
+            let name = "assistant." + language
+            try require(equal(assets.subscriptionName(for: config), name)
+                        && equal(assets.assetSetUsage(for: config), ["asr.language": language] as NSDictionary), "Speech config does not match its model")
+            guard let subscription = assets.subscription(with: config, expiration: nil) else { continue }
+            let reply = Reply<Void>()
+            owner.subscribe(client, subscriptions: [subscription], user: user, userInitiated: true, queue: nil) { reply.send(()) }
+            try require(reply.wait(30), "Model adoption did not answer")
+            configs.append(config)
+            names.append(name)
+        }
+        guard !configs.isEmpty else { return }
+        // Withdrawn whatever happens next: an adopted owner is never left behind.
+        defer {
+            let reply = Reply<AnyObject?>()
+            assets.unsubscribe(configs: configs, subscriberId: client) { reply.send($0) }
+            _ = reply.wait(30)
+        }
+        // MobileAsset takes the models back and lets them go: wait for its hold on them to come and go, at most a minute. A download
+        // (a newer version in the catalog) ends the wait at once; the purge then finds nothing new to keep.
+        let prefix = "AutoAssetLocker_Entry_com.apple.MobileAsset.UAF.Siri.Understanding_"
+        var held = false
+        _ = retry(60, every: 1) {
+            let staged = (try? FileManager.default.contentsOfDirectory(atPath: SystemAssetGuard.stagingFolder)) ?? []
+            if staged.contains(where: { $0.contains("Siri_Understanding") }) { return true }
+            let locked = ((try? FileManager.default.contentsOfDirectory(atPath: ModelDescriptors.lockDirectory)) ?? []).contains { $0.hasPrefix(prefix) }
+            if locked { held = true }
+            return held && !locked
+        }
+        let gone = retry(5, every: 1) { (try? rows())?.contains { $0.client == client && names.contains($0.name) } == false }
+        details.append(gone ? "Released \(names.count) Siri speech models that had no owner." : "Siri speech models were adopted; their release is being checked.")
+    }
+
+    /// The languages of Siri speech models on disk (`com.apple.siri.asr.assistant.<language>`), read from each model's Info.plist.
+    static func leftoverSpeechLanguages(root: String = "/System/Library/AssetsV2", fileManager: FileManager = .default) -> [String] {
+        let folder = (root as NSString).appendingPathComponent("com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto")
+        let prefix = "com.apple.siri.asr.assistant."
+        var languages: [String] = []
+        for name in ((try? fileManager.contentsOfDirectory(atPath: folder)) ?? []).sorted() where name.hasSuffix(".asset") {
+            let info = ((folder as NSString).appendingPathComponent(name) as NSString).appendingPathComponent("Info.plist")
+            guard let plist = NSDictionary(contentsOfFile: info), let properties = plist["MobileAssetProperties"] as? NSDictionary,
+                  let specifier = properties["AssetSpecifier"] as? String, specifier.hasPrefix(prefix) else { continue }
+            let language = String(specifier.dropFirst(prefix.count))
+            if !languages.contains(language) { languages.append(language) }
+        }
+        return languages
+    }
+
     /// `[[SFEntitledAssetConfig alloc] initWithLanguage:assetType:]`, with Objective-C's ownership: init consumes the allocation.
     static func makeConfig(_ type: AnyClass, language: String, assetType: UInt) throws -> AnyObject {
         typealias Allocate = @convention(c) (AnyClass, Selector) -> Unmanaged<AnyObject>?

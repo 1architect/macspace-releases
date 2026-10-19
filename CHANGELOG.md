@@ -13,10 +13,12 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   its glass exactly where macOS places it, with no gap, and the window's own Maximize does the same.
 - The window's shadow moves with the window while it is dragged, and the menu bar no longer shows a dark line when the window is
   near it.
-- When macOS keeps a switched-off feature's models (Siri, Spatial Photos), MacSpace asks for a restart once. If they are still
-  there after the restart, the switch says **Kept by macOS** instead of **Waiting for macOS** without end.
-- Buttons in rows, in Settings and in modules, are the same flag as a module row's **Free**. With a figure on the right of the
-  row (a size, a version), the button stands after the row's title; without one, it is on the right. **Granted** and the other
+- Siri's speech models that nothing uses any more (left behind when Siri's language changed) are now freed when the cleanup runs,
+  instead of staying for days with **Waiting for macOS**. If macOS still keeps a switched-off feature's models, MacSpace asks
+  for a restart once, and after it says **Kept by macOS** instead of waiting without end.
+- Buttons in rows, in Settings and in modules, are the same flag as a module row's **Free**. With a figure or a switch on the
+  right of the row, the button stands after the row's title; without one, it is on the right. **Check Now** is on the
+  automatic updates row. **Granted** and the other
   Settings pills are the same height as every other pill. **Recent cleanups** shows the total freed as its own row.
 
 ### Changed

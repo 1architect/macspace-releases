@@ -169,4 +169,23 @@ final class AssetModelCleanupTests: XCTestCase {
         XCTAssertTrue(AssetOwners.equal(NSNumber(value: 1), NSNumber(value: true)), "TelephonyUtilities can store a Boolean as 1")
         XCTAssertFalse(AssetOwners.equal(nil, NSNumber(value: false)))
     }
+
+    /// Leftover Siri speech models are found by what their own Info.plist says they are, whatever their folder is named.
+    func testLeftoverSpeechLanguagesComeFromEachModelsAssetSpecifier() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let folder = root.appendingPathComponent("com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto")
+        func asset(_ name: String, _ specifier: String) throws {
+            let url = folder.appendingPathComponent(name + ".asset")
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            let plist: NSDictionary = ["MobileAssetProperties": ["AssetSpecifier": specifier]]
+            XCTAssertTrue(plist.write(to: url.appendingPathComponent("Info.plist"), atomically: true))
+        }
+        try asset("ba045713", "com.apple.siri.asr.assistant.pt_BR")
+        try asset("357470c1", "com.apple.siri.understanding.uaf.metadata")
+        try asset("234225db", "com.apple.siri.asr.assistant.en_US")
+        try asset("99999999", "com.apple.siri.asr.geolm.regionMapping.en_US")
+        XCTAssertEqual(Set(AssetOwners.leftoverSpeechLanguages(root: root.path)), ["pt_BR", "en_US"])
+        XCTAssertEqual(AssetOwners.leftoverSpeechLanguages(root: root.appendingPathComponent("missing").path), [])
+    }
 }

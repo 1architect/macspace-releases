@@ -405,6 +405,30 @@ database, deletes asset files, touches locks, or suppresses daemons. The impleme
 shares a payload, a build-specific suppression condition validated across a restart of the owner process, log out and in, a
 reboot, locale changes and ordinary use.
 
+### A model left with no owner
+
+**Measured** on 26B5112a on 19 October 2026, SIP on. After Siri's language had changed and every Siri owner had been
+withdrawn, one model stayed: Siri's Portuguese speech model, 475 MB. No subscription row asked for it, no lock held it, it was not
+mounted, and it survived a restart.
+
+- mobileassetd had forgotten it as an auto-asset (no descriptor) and rated it `GCTypeNone`. That verdict is a clock, not a hold:
+  "will not delete, recent client interest", 15 days from the model's install, a quarter of that at purge urgency 3 and a tenth at
+  urgency 4. No purge MacSpace can ask for frees it before then. Verified on every GC pass in the log.
+- Unlike an owner withdrawal, nothing marked it unreferenced, so the usual purge found 0 bytes. The per-asset catalog query
+  (`MAAssetQuery`) refuses Siri's model types to MacSpace, so asking for that one asset is not a route. Verified.
+- **What frees it on the click.** Adopting the model again for a moment, with Siri's own embedded-speech owner request for its
+  language (read from the model's `AssetSpecifier`), makes mobileassetd track it again: it locked the model, let it go about
+  20 seconds later, and rated it `GCTypeUnlockedUnreferenced`, which has no threshold. The owner was withdrawn and one purge of
+  mobileassetd's CacheDelete service freed 683 MB in 0.14 seconds (service-wide; the model's folder empty is the target-specific
+  evidence). Nothing was downloaded, and the folder was still empty at 30 seconds, 2 minutes and 5 minutes. Verified once.
+- **Inferred:** if Apple's catalog had a newer version of that model, the moment of adoption could start a download; the
+  purge that follows then removes what is unreferenced. Not tested for the other families (voices, speech recognition).
+
+**What this means for MacSpace.** The Siri cleanup adopts and releases such models itself (`AssetOwners.readoptLeftovers`):
+only while Siri and Dictation are off, only for a language with no owner, and it always withdraws what it adopted. It is a rule
+about a kind of model, not a list of files. The switch asks for a restart only if models stay after that, and only once; still
+there after the restart, it says macOS keeps them.
+
 ### Phone feature gates
 
 **Measured on 26B5112a (18 October 2026).** The question: can the Phone features (recording and transcription, Live Voicemail and
