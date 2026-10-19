@@ -1,23 +1,18 @@
 import AppKit
 import SwiftUI
 
-/// Finishes the window the plain window style gives: clear behind the glass, macOS's own shadow around the glass, and resizable
-/// from its edges. The glass fills the window: the window's frame is the glass's edge.
+/// Finishes the window the plain window style gives: clear behind the glass, a shadow around the glass, and resizable from its edges.
+/// The glass fills the window: the window's frame is the glass's edge, so macOS places it (Fill, Move & Resize, edge tiles) exactly
+/// where it shows. It used to be 8 points larger than the glass on every side, and those places left a gap (2026-10-19, issue 34).
 ///
-/// History (issue 34, 2026-10-19): the window used to be 8 points larger than the glass on every side (an invisible resize band),
-/// with its shadow drawn by a separate window behind it. macOS places a window by its frame, so Fill, Move & Resize and edge tiles
-/// left the glass 8 points short of where macOS put it; a frame reaching under the menu bar (the band, or the shadow window's
-/// room above the glass) made macOS draw the menu bar's background and its dark bottom line across the whole screen; and the
-/// shadow window, moved after its parent, trailed the glass by a frame while it was dragged. Now there is one window, placed as
-/// any other, with the window server's shadow, which moves with it in the same frame.
-///
-/// The shadow takes the glass's shape from the window's corner mask (`GlassShape`), not from what the window draws: worked out
-/// from a transparent window's content, it was computed again on every frame anything in the window changed (about 15 points of
-/// GPU while the mouse moved over the tiles or a page scrolled).
+/// The shadow is not the window's own. macOS works out the shadow of a transparent window from its content and did so again on every
+/// frame anything in the window changed: about 15 points of GPU while the mouse moved over the tiles or a page scrolled; and with it
+/// comes the rim macOS draws around every window, a thicker edge than the glass's own (tried in 1.1.3's first build). It is drawn
+/// instead by a separate click-through window behind this one (`ShadowWindow`), which only redraws when the window is resized.
 struct GlassWindowConfigurator: NSViewRepresentable {
     /// Whether the shadow shows: off while the window opens and closes, and with the temporary Window Shadow switch off.
     var shadow = true
-    /// The glass's corner radius: the window's shape and shadow follow a new one.
+    /// The glass's corner radius: the shadow is drawn again around a new one.
     var radius: CGFloat = Theme.windowRadius
 
     func makeNSView(context: Context) -> ConfiguringView { ConfiguringView() }
@@ -33,23 +28,28 @@ struct GlassWindowConfigurator: NSViewRepresentable {
         static let earlierBand: CGFloat = 8
 
         var wantsShadow = true {
-            didSet { if wantsShadow != oldValue { applyShadow() } }
+            didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
         }
         var radius: CGFloat = Theme.windowRadius {
-            didSet { if radius != oldValue, let window { GlassShape.changed(window) } }
+            didSet { if radius != oldValue, let window { shadowWindow?.follow(window) } }
         }
+        private var shadowWindow: ShadowWindow?
+        private var observers: [NSObjectProtocol] = []
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
+            tearDownShadow()
             guard let window else { return }
-            GlassShape.adopt(window)
+            KeyableWindow.adopt(window)
             window.styleMask.insert(.resizable)
             window.isOpaque = false
             window.backgroundColor = .clear
+            window.hasShadow = false
             window.isMovableByWindowBackground = true
-            // Set explicitly: left at its default, a transparent window lets clicks on its clear pixels through to the window behind.
+            // Set explicitly: left at its default, a transparent window lets clicks on its clear pixels through to the window behind,
+            // so the rounded corners selected the app behind instead of resizing.
             window.ignoresMouseEvents = false
-            applyShadow()
+            window.invalidateShadow()
             // Opened from the menu bar icon on another desktop, the window comes to that desktop instead of taking the user back to
             // the one it was left on.
             window.collectionBehavior.insert(.moveToActiveSpace)
@@ -71,41 +71,169 @@ struct GlassWindowConfigurator: NSViewRepresentable {
                 NSApp.activate()
                 window.makeKeyAndOrderFront(nil)
             }
+
+            let shadow = ShadowWindow()
+            shadow.follow(window)
+            window.addChildWindow(shadow, ordered: .below)
+            shadowWindow = shadow
+            showShadow(animated: false)
+            // A child window moves with its parent by itself, in the same frame: on a move it is left alone. Moved or re-framed as
+            // well on every step of a drag, it fought the move the window server was already making, and the shadow trailed and
+            // flickered behind the glass (issue 34). It is told only about a new size, scale or screen.
+            for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
+                observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        guard let self, let window = self.window else { return }
+                        self.shadowWindow?.follow(window)
+                        self.showShadow(animated: false)
+                    }
+                })
+            }
         }
 
-        private func applyShadow() {
-            guard let window, window.hasShadow != wantsShadow else { return }
-            window.hasShadow = wantsShadow
-            window.invalidateShadow()
+        private func showShadow(animated: Bool) {
+            guard let shadowWindow else { return }
+            // A filled window reaches the usable screen edges; its separate shadow must disappear there too.
+            let alpha: CGFloat = wantsShadow && window.map({ !WindowControls.isZoomed($0) }) == true ? 1 : 0
+            if animated {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = wantsShadow ? 0.3 : 0.15
+                    shadowWindow.animator().alphaValue = alpha
+                }
+            } else {
+                shadowWindow.alphaValue = alpha
+            }
+        }
+
+        private func tearDownShadow() {
+            for observer in observers { NotificationCenter.default.removeObserver(observer) }
+            observers = []
+            if let shadowWindow {
+                shadowWindow.parent?.removeChildWindow(shadowWindow)
+                shadowWindow.orderOut(nil)
+            }
+            shadowWindow = nil
         }
     }
 }
 
-/// The glass window's shape for the window server: its rounded, continuous corners as the window's corner mask, which gives the
-/// window's shadow and the clicks it takes the glass's outline. SwiftUI owns the window's class, so the window is moved to a subclass
-/// of it that answers with the mask and can also become key and main (AppKit never makes a borderless window key: Escape,
-/// Command-comma and typing would not reach it).
-enum GlassShape {
+/// A click-through window around the main window's left, right and bottom, drawing a soft shadow around the rounded glass and nothing
+/// under it (the glass would show a shadow behind it). Its layers only change when the main window is resized, so the shadow is drawn
+/// once instead of on every frame.
+///
+/// It reaches no higher than the glass's top. Any window reaching under the menu bar makes macOS draw the menu bar's background, with
+/// its dark bottom line across the whole screen: with room above the glass, that showed whenever the window was near the top
+/// (issue 34). Cut short at the top instead, the shadow beside the top corners stopped in a hard line, so it fades out over the top
+/// of the window (`fadeLength`). The shadow falls downward (`caster`), so little of it was above the glass anyway.
+final class ShadowWindow: NSWindow {
+    /// The corner radius the shadow was last drawn with: a new one in the Design menu draws it again.
+    private var drawnRadius: CGFloat = -1
+    /// Room beside and below the main window for the shadow to spread into.
+    static let margin: CGFloat = 60
+    /// How far down from the glass's top the shadow beside it fades in, from none to full: past the top corners' curve.
+    static var fadeLength: CGFloat { Theme.windowRadius * 1.6 + 8 }
+    private let container = CALayer()
+    private let caster = CALayer()
+    private let cutout = CAShapeLayer()
+    private let fader = CAGradientLayer()
+
+    init() {
+        super.init(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = false
+        ignoresMouseEvents = true
+        isReleasedWhenClosed = false
+        animationBehavior = .none
+        let view = NSView()
+        view.wantsLayer = true
+        contentView = view
+        caster.shadowColor = NSColor.black.cgColor
+        caster.shadowOpacity = 0.38
+        caster.shadowRadius = 22
+        caster.shadowOffset = CGSize(width: 0, height: -10)
+        cutout.fillRule = .evenOdd
+        container.mask = cutout
+        container.addSublayer(caster)
+        // The layer's y runs up from the window's bottom, as the screen's does: full below, none at the top edge.
+        fader.startPoint = CGPoint(x: 0.5, y: 0)
+        fader.endPoint = CGPoint(x: 0.5, y: 1)
+        fader.colors = [NSColor.black.cgColor, NSColor.black.cgColor, NSColor.clear.cgColor]
+        view.layer?.addSublayer(container)
+        view.layer?.mask = fader
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    /// Exactly where `follow` puts it, wherever the main window is.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+
+    /// The glass with room beside and below it, and none above.
+    static func frame(around glass: CGRect) -> CGRect {
+        CGRect(x: glass.minX - margin, y: glass.minY - margin, width: glass.width + 2 * margin, height: glass.height + margin)
+    }
+
+    /// Takes the shape of the main window's glass, which is the main window's frame. Called for a new size only: a move needs nothing.
+    func follow(_ main: NSWindow) {
+        let glass = main.frame
+        let frame = Self.frame(around: glass)
+        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != Theme.windowRadius
+        drawnRadius = Theme.windowRadius
+        if frame != self.frame { setFrame(frame, display: false) }
+        guard redraw else { return }
+        let bounds = CGRect(origin: .zero, size: frame.size)
+        let inner = CGRect(x: glass.minX - frame.minX, y: glass.minY - frame.minY, width: glass.width, height: glass.height)
+        // The glass's own continuous corners: a circular corner of the same radius reaches outside them where the curve meets the
+        // edge, and in that sliver there was neither glass nor shadow, a line of bare desktop between the shadow and the border. The
+        // hole is a pixel smaller than the glass, so the shadow runs under its edge and no seam opens where the two are antialiased.
+        let shape = Self.glassPath(inner)
+        let outside = CGMutablePath()
+        outside.addRect(bounds)
+        outside.addPath(Self.glassPath(inner.insetBy(dx: 1 / backingScaleFactor, dy: 1 / backingScaleFactor)))
+        let fadeStart = max(0, (bounds.height - Self.fadeLength) / max(bounds.height, 1))
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        container.frame = bounds
+        container.contentsScale = backingScaleFactor
+        caster.frame = bounds
+        caster.contentsScale = backingScaleFactor
+        caster.shadowPath = shape
+        cutout.frame = bounds
+        cutout.path = outside
+        fader.frame = bounds
+        fader.locations = [0, NSNumber(value: Double(fadeStart)), 1]
+        CATransaction.commit()
+    }
+
+    /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.
+    static func glassPath(_ rect: CGRect) -> CGPath {
+        RoundedRectangle(cornerRadius: min(Theme.windowRadius, rect.width / 2, rect.height / 2), style: .continuous).path(in: rect).cgPath
+    }
+}
+
+/// The plain window style makes a borderless window, and AppKit never makes a borderless window key: Escape, Command-comma and
+/// typing would not reach it. SwiftUI owns the window's class, so the window is moved to a subclass of it that can become key and main.
+enum KeyableWindow {
     private static let lock = NSLock()
     private nonisolated(unsafe) static var subclasses: [ObjectIdentifier: AnyClass] = [:]
-    private nonisolated(unsafe) static var masks: [CGFloat: NSImage] = [:]
-    static let prefix = "MacSpaceGlass_"
 
     static func adopt(_ window: NSWindow) {
+        guard !window.canBecomeKey else { return }
         let base: AnyClass = type(of: window)
-        guard !NSStringFromClass(base).hasPrefix(prefix) else { return }
         lock.lock()
         defer { lock.unlock() }
         var subclass = subclasses[ObjectIdentifier(base)]
         if subclass == nil {
-            let name = prefix + NSStringFromClass(base)
+            let name = "MacSpaceKeyable_" + NSStringFromClass(base)
             subclass = NSClassFromString(name) ?? {
                 guard let made = objc_allocateClassPair(base, name, 0) else { return nil }
                 let yes: @convention(block) (AnyObject) -> Bool = { _ in true }
-                class_addMethod(made, #selector(getter: NSWindow.canBecomeKey), imp_implementationWithBlock(yes), "c@:")
-                class_addMethod(made, #selector(getter: NSWindow.canBecomeMain), imp_implementationWithBlock(yes), "c@:")
-                let corners: @convention(block) (AnyObject) -> NSImage = { _ in mask(radius: Theme.windowRadius) }
-                class_addMethod(made, NSSelectorFromString("_cornerMask"), imp_implementationWithBlock(corners), "@@:")
+                let types = "c@:"
+                class_addMethod(made, #selector(getter: NSWindow.canBecomeKey), imp_implementationWithBlock(yes), types)
+                class_addMethod(made, #selector(getter: NSWindow.canBecomeMain), imp_implementationWithBlock(yes), types)
                 objc_registerClassPair(made)
                 return made
             }()
@@ -113,17 +241,15 @@ enum GlassShape {
         }
         if let subclass { object_setClass(window, subclass) }
     }
+}
 
-    /// Tells the window server the corners changed (a new radius in the Design menu).
-    static func changed(_ window: NSWindow) {
-        let selector = NSSelectorFromString("_cornerMaskChanged")
-        if window.responds(to: selector) { window.perform(selector) }
-        window.invalidateShadow()
-    }
+/// A rounded rectangle that stretches to any size, the way a visual effect view takes its shape (`WindowBlur`).
+enum GlassShape {
+    private static let lock = NSLock()
+    private nonisolated(unsafe) static var masks: [CGFloat: NSImage] = [:]
 
-    /// A rounded rectangle that stretches to any size, the way AppKit takes a window's corner mask and a visual effect view its
-    /// shape. Its corners are continuous, as the glass's are; a continuous corner bends over about 1.53 times its radius, so the
-    /// corner part of the image is that long. Made once per radius.
+    /// Its corners are continuous, as the glass's are; a continuous corner bends over about 1.53 times its radius, so the corner part
+    /// of the image is that long. Made once per radius.
     static func mask(radius: CGFloat) -> NSImage {
         lock.lock()
         defer { lock.unlock() }

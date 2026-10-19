@@ -11,8 +11,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 - The window is placed like any other macOS window: **Fill**, **Window › Move & Resize** and dragging it to a screen edge put
   its glass exactly where macOS places it, with no gap, and the window's own Maximize does the same.
-- The window's shadow is macOS's own: it moves with the window while it is dragged or resized, and the menu bar no longer shows
-  a dark line when the window is near it.
+- The window's shadow moves with the window while it is dragged, and the menu bar no longer shows a dark line when the window is
+  near it.
 - When macOS keeps a switched-off feature's models (Siri, Spatial Photos), MacSpace asks for a restart once. If they are still
   there after the restart, the switch says **Kept by macOS** instead of **Waiting for macOS** without end.
 - Buttons in rows, in Settings and in modules, are the same flag as a module row's **Free**. With a figure on the right of the

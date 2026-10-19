@@ -20,20 +20,25 @@ final class WindowZoomTests: XCTestCase {
         XCTAssertEqual(window.frame, original)
     }
 
-    func testGlassWindowCanBecomeKeyAndGivesTheWindowServerItsRoundedShape() throws {
+    func testGlassWindowCanBecomeKey() throws {
         _ = NSApplication.shared
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 700, height: 490), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         // Kept, as the app keeps its window: AppKit's observers of a window whose class was changed cannot be removed when it goes.
         Self.kept.append(window)
         XCTAssertFalse(window.canBecomeKey)
-        GlassShape.adopt(window)
-        GlassShape.adopt(window) // a second adoption keeps the same class
+        KeyableWindow.adopt(window)
         XCTAssertTrue(window.canBecomeKey)
         XCTAssertTrue(window.canBecomeMain)
-        XCTAssertTrue(NSStringFromClass(type(of: window)).hasPrefix(GlassShape.prefix))
-        let mask = try XCTUnwrap(window.perform(NSSelectorFromString("_cornerMask"))?.takeUnretainedValue() as? NSImage)
-        XCTAssertEqual(mask.resizingMode, .stretch)
-        XCTAssertGreaterThan(mask.capInsets.top, Theme.windowRadius)
+    }
+
+    /// Room beside and below the glass, none above: the shadow window never reaches under the menu bar when the glass is against it.
+    func testShadowWindowNeverReachesAboveTheGlass() {
+        let glass = CGRect(x: 100, y: 200, width: 700, height: 490)
+        let frame = ShadowWindow.frame(around: glass)
+        XCTAssertEqual(frame.maxY, glass.maxY)
+        XCTAssertEqual(frame.minY, glass.minY - ShadowWindow.margin)
+        XCTAssertEqual(frame.minX, glass.minX - ShadowWindow.margin)
+        XCTAssertEqual(frame.maxX, glass.maxX + ShadowWindow.margin)
     }
 }
