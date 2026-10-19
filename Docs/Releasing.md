@@ -41,9 +41,15 @@ Three channels deliver it, and all three move together:
    If the look changed, retake the README screenshots first (see "README screenshots" in [Handoff.md](Handoff.md)).
 3. **Tag.** Commit (`MacSpace X.Y.Z`), then:
    ```bash
-   git tag -a vX.Y.Z -m "MacSpace X.Y.Z"
+   git tag -s vX.Y.Z -m "MacSpace X.Y.Z"
+   git tag -v vX.Y.Z
    git push origin main vX.Y.Z
    ```
+   The tag is signed, so GitHub shows the release's source as Verified, as the app and its updates are. Signing needs a key
+   once per Mac: an SSH key added to the GitHub account as a *Signing key*, and
+   `git config --global gpg.format ssh`, `git config --global user.signingkey ~/.ssh/<key>.pub`,
+   `git config --global tag.gpgsign true`. For `git tag -v` to check it, list the key in the file `gpg.ssh.allowedSignersFile`
+   names (`<email> <public key>`).
    CI's `release-metadata` job checks that the tag is a valid version, that the changelog has a dated section for it and that
    the notes exist in all eight languages.
 4. **Build the draft** (private repository): `Release/Scripts/Release.sh --ref vX.Y.Z --publish draft`, or *Actions › Release*.

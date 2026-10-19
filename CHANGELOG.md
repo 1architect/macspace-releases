@@ -7,6 +7,21 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- The window's shadow no longer stops in a hard line near the menu bar. It fades out just below the menu bar instead.
+- While the window is dragged or resized, its shadow stays with it.
+- **Fill**, the halves and quarters in **Window › Move & Resize**, and dragging the window to a screen edge put the window's
+  edges where macOS places them, as the window's own Maximize does, with no gap left around it.
+- When macOS keeps a switched-off feature's models (Siri, Spatial Photos) after several tries, the switch and the tile ask for a
+  restart instead of saying **Waiting for macOS** without end.
+- Buttons in Settings and in module rows are pills like the rest of the app. **Granted** and the other Settings pills are the
+  same height as every other pill. **Recent cleanups** shows the total freed as its own row instead of in the list's title.
+
+### Changed
+
+- Release tags are signed (Docs/Releasing.md).
+
 ## [1.1.2] - 2026-10-19
 
 ### Fixed
