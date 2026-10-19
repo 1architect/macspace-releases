@@ -4,6 +4,9 @@
 
 **A System Data and Apple Intelligence cleaner for macOS.**
 
+<p align=>
+<a href="https://trendshift.io/repositories/288700?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-288700" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/288700/daily?language=Swift" alt="1architect%2Fmacspace-releases | Trendshift" width="250" height="55"/></a>
+
 [![CI](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml/badge.svg)](https://github.com/1architect/macspace-releases/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/1architect/macspace-releases)](https://github.com/1architect/macspace-releases/releases/latest)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,8 +17,6 @@ Intelligence off and deletes the models macOS keeps on disk afterwards. It frees
 apps marked purgeable, and it can turn off the analytics and background data collection that
 macOS lets you control. It is free and open source, and it **collects no data about you**.
 
-MacSpace is in English, Portuguese (Brazil), Spanish, French, German, Simplified Chinese, Japanese
-and Korean.
 
 [**Download MacSpace**](#install) ·
 [Privacy Policy](PRIVACY.md) ·
@@ -42,10 +43,8 @@ reports, system assets, app data, document version history.
 
 The main button, **Free**, deletes what is safe. Items that need more care have their own buttons.
 For everything that belongs to macOS or to other apps, MacSpace says what it is and what to do by
-hand. App caches can be chosen too: **Free** asks before it quits an open app. In Settings, you can
-choose another installed cleaner to handle app caches instead of MacSpace. **Unused system assets**
-has its own **Free**, which also releases unused language data (spelling and dictionary assets
-macOS may download again).
+hand. App caches can be chosen too: **Free** asks before it quits an open app. Or choose another 
+installed cleaner to handle app caches instead of MacSpace in the app settings.
 
 <p align="center">
   <img src="Docs/Screenshots/en/SystemData.png" alt="The System Data page: a chart of what fills System Data, the Free now list and the Free button with its size" width="720">
@@ -56,18 +55,7 @@ Mac's. That is how macOS decides that Apple Intelligence is unavailable. MacSpac
 models macOS keeps on disk, which can be about 12 GB. Switch it on again and MacSpace puts your
 Siri language and voice back.
 
-Three more switches turn off a feature and delete the models it leaves on disk:
-
-| Switch | What it turns off | Takes effect after |
-|---|---|---|
-| Siri | Siri and its voice. Shared speech models stay while Dictation is on. | Toggle |
-| Spatial Photos | Spatial photo effects. | Toggle |
-| Phone features | Call recording and transcription, Live Voicemail and Call Screening, FaceTime captions and call translation, for every account on this Mac. No profile is installed. | A restart |
-
-These switches work only while Apple Intelligence is off, and only on macOS versions MacSpace has
-checked. macOS can ask for some of these models again even with the feature off, so while
-MacSpace is open it checks every five minutes and deletes them again. Switch a feature on again
-and MacSpace restores the settings it saved; macOS may download its models again.
+Three more switches turn off the following features and delete the models left on disk: **Siri, Spatial Photos and Phone features**.
 
 <p align="center">
   <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
@@ -103,21 +91,18 @@ minutes and switches off again anything macOS turned back on.
 | Apple News | Hides Apple News and its widgets. | Logging out |
 
 Five of these are policies. Disabling one asks you to approve a profile in System Settings once
-(see [Permissions](#first-launch-and-permissions)). On a beta of macOS, the analytics switch is a
-policy too, because macOS ignores the setting there.
+(see [Permissions](#first-launch-and-permissions)). On macOS beta, the analytics switch is a policy too.
 
 <p align="center">
   <img src="Docs/Screenshots/en/Debloat.png" alt="The Debloat page: Disable switches grouped by category, all switched on, and the Enable all button" width="720">
 </p>
 
-**Also in MacSpace.** **Clean automatically** (Settings, off until you turn it on) frees what the
-modules can free without asking, every day, every 3 days or every week, while MacSpace is running.
-**Recent cleanups** lists what each one
-freed. MacSpace notifies you when automatic cleanup frees at least 100 MB, when an action that took
-a while ends while MacSpace is not in front, and when the disk is almost full (once a day at most).
-Each notification can be switched off. **When the window closes**, MacSpace can quit, keep running
+**Also in MacSpace.** **Clean automatically** frees what the
+modules can free without asking, while MacSpace is running.
+**Recent cleanups** offer a history of what was cleaned.
+**When the window closes**, MacSpace can quit, keep running
 in the menu bar (the default) or keep running unseen in the background. Right-click the menu bar
-icon for a menu with each module, **Settings…**, **Open Panel** and **Quit MacSpace**. 
+icon for easy access to each module.
 
 ---
 
@@ -133,8 +118,7 @@ brew install --cask 1architect/macspace/macspace
 
 Download the latest `MacSpace-x.y.z.dmg` from
 [Releases](https://github.com/1architect/macspace-releases/releases/latest), open it, and drag
-**MacSpace** to your Applications folder. Open MacSpace from there. It must run from an
-Applications folder, because the helper registers only from there.
+**MacSpace** to your Applications folder. 
 
 Each release also has `MacSpace-x.y.z.dmg.sha256`. To check your download, put both files in one
 folder and run:
@@ -144,22 +128,18 @@ shasum -a 256 -c MacSpace-x.y.z.dmg.sha256
 ```
 
 It prints `MacSpace-x.y.z.dmg: OK`. MacSpace is signed with a Developer ID and notarized by
-Apple. [Security](SECURITY.md) shows how to check that too.
+Apple. Check [Security](SECURITY.md) for more information.
 
 ### Requirements
 
-macOS 27 or later, on Apple Silicon. macOS 27 runs only on Apple Silicon, and MacSpace is built
-for it only.
+macOS 27 or later, on Apple Silicon.
 
 ### Updates and settings
 
 MacSpace updates with [Sparkle](https://sparkle-project.org). Choose **Check for Updates…** in
 the MacSpace menu, or **Check Now** under **Settings > Updates**. **Check for updates
-automatically**, in the same place, lets MacSpace look about once a day while it runs. Until you
-switch it on, or answer the question Sparkle asks once from the second launch, MacSpace does not
-check by itself. Every update is signed, and Sparkle checks the signature before it installs
-anything. With Homebrew, you can also run `brew upgrade --cask macspace` (add `--greedy` if
-Homebrew skips it, because MacSpace updates itself).
+automatically**, in the same place, lets MacSpace look about once a day while it runs. Every update is signed, and Sparkle checks the signature before installing
+anything. 
 
 <p align="center">
   <img src="Docs/Screenshots/en/Settings.png" alt="The Settings page: theme, appearance, permissions, what closing the window does, open at login, updates and automatic cleanup" width="720">
@@ -186,21 +166,18 @@ Access**, **Approve the helper**, **Get notified**, then **You're all set**. Eac
 | Configuration profile | System Settings > General > Device Management | Applies the Debloat policies you turn on. Needed only for the six policies. | Debloat |
 
 Other System Files needs no permission of its own. macOS handles every authorization, so
-MacSpace never sees your password. Without a permission, a module does less and says what is
-missing.
+MacSpace never sees your password.
 
 The helper is a launch daemon, `com.macspace.helper`. It runs only named operations that are built
 into it, a caller cannot send it commands, and it accepts only clients signed by the same developer
-team as MacSpace. Among other things, it can measure the size of system folders, delete the document version history and the leftover files of an installed macOS update,
-erase the system log, delete the symbols for crash reports, delete the old Time Machine backups you
-choose, change the Debloat switches that need an administrator, and remove the MacSpace profile. Please refer to
-[Security](SECURITY.md) for more info.
+team as MacSpace. 
+See [Security](SECURITY.md) for more info.
 
 ---
 
 ## Safety
 
-**What it deletes.** 
+**Items MacSpace deletes** 
 
 - Caches that apps rebuild: the caches in the per-user system cache folder (`/var/folders/…/C`)
   and the web caches (`Cache`, `Code Cache`, `GPUCache`) that Chromium and Electron apps keep in
@@ -234,23 +211,18 @@ choose, change the Debloat switches that need an administrator, and remove the M
 - Only from the **Homebrew** row: Homebrew's own `brew cleanup`, run as you, without uninstalling
   formulae, updating or sending Homebrew's analytics.
 
-**What it never touches.** MacSpace measures how much space your documents, Photos, Mail and
-Messages take. It does not read what is in them and never deletes them. It lists large items such
-as unfinished downloads, macOS restore images and virtual machines, and leaves them to you. It
-leaves other apps' data alone and says how to clean it from inside the app. It does not turn off
-System Integrity Protection and does not change the sealed system volume.
+**Untouched items.** MacSpace only measures how much space your documents, Photos, Mail and Messages take. It lists large items such as unfinished downloads, macOS restore images and virtual machines and. It
+leaves other apps' data alone and says how to clean it from inside the app. **It does not read or delete your personal files. It does not turn off System Integrity Protection and does not change the sealed system volume.**
 
-**What asks first.** Every button that deletes more than one app's caches asks for confirmation.
+**Permissions during use.** Every button that deletes more than one app's caches asks for confirmation.
 **Free** on the document version history, the system log, the Trash and Time Machine's snapshots
 and backups carries a **Cannot be undone** badge. The **Apple
 Intelligence** switch and the single Debloat switches act at once, and go back by themselves if
-the change fails. **Phone features** needs a restart, and the page says so until you restart.
+the change fails.
 
-**What you can undo.** Debloat: switch a feature back on, or press **Enable all**. MacSpace
-restores the settings it saved before it changed them. Apple Intelligence: switch it on again.
-MacSpace restores your Siri language and voice, and macOS may download the models again. Siri,
-Spatial Photos and Phone features: switch them on again. MacSpace restores their settings and what
-they had asked macOS to keep, and macOS may download their models again. Deleted
+**Reversible actions.** Debloat: switch a feature back on, or press **Enable all**. MacSpace
+restores the settings it saved before it changed them. Apple Intelligence and Siri related options: switch it on again.
+MacSpace restores your Siri language and voice, and macOS may download the models again. Deleted
 caches rebuild. Deleted reports, version history, logs, items in the Trash, snapshots and backups
 do not come back.
 
@@ -269,7 +241,9 @@ the [Privacy Policy](PRIVACY.md) and the [Security Policy](SECURITY.md).
 
 ## Uninstall
 
-To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpace** then **About MacSpace** then click **Uninstall**. The uninstaller automates the process below. If you prefer to do it manually please follow this order:
+To **uninstall** please use MacSpace uninstaller. In the menu bar press **MacSpace** then **About MacSpace** then click **Uninstall**. The uninstaller automates the process below. 
+
+If you prefer to do it manually please follow the order below:
 
 1. **Undo what MacSpace changed.** In **Debloat**, press **Enable all**. This also removes the
    overrides Debloat wrote outside MacSpace's own folders, which stay in place if you just delete
