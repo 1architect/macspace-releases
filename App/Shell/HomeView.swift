@@ -372,7 +372,7 @@ struct HomeView: View {
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
                     DashboardGround(destination: tile.destination, host: host, storage: storage, tint: tile.tint,
                                     lifted: pointerTile == tile.destination && design.lift, hovering: pointerTile == tile.destination)
-                        .modifier(placed(tile, index: index, count: tiles.count, frame: frame))
+                        .modifier(placed(tile, index: index, count: tiles.count, frame: frame, ground: true))
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
@@ -398,7 +398,11 @@ struct HomeView: View {
     /// The face (`face`) lifts and leans with its ground, but as a scale and an offset (`TilePlacement.liftsByTransform`), not laid
     /// out: laid out again on every frame, its caption stepped from pixel to pixel (or, between pixels, blurred), and the blocks
     /// re-flowed into another arrangement (2026-10-12).
-    private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect, face: Bool = false) -> TilePlacement {
+    ///
+    /// A flat tile's ground stays under the zoom card standing in for it: the card covers it, and its shadow comes and goes with the
+    /// dashboard's fade. Hidden too, the shadow appeared at once as a closing page landed on its tile (2026-10-19). A glass ground,
+    /// which casts none and would show through the card, hides.
+    private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect, face: Bool = false, ground: Bool = false) -> TilePlacement {
         let moves = pointerTile == tile.destination
         // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is drawn the expensive
         // way and in its dimmed look, so glass elements darkened under the pointer.
@@ -408,7 +412,7 @@ struct HomeView: View {
                              lean: moves && design.tilt && !reduceMotion ? lean : .center,
                              turns: turns, liftsByTransform: face, reduceMotion: reduceMotion,
                              liftAnimation: design.liftAnimation, leanAnimation: design.leanAnimation,
-                             hidden: hiddenTile == tile.destination)
+                             hidden: hiddenTile == tile.destination && (!ground || design.glass))
     }
 
     /// The pointer moved over a tile (`lean` in steps across it) or left it (nil).

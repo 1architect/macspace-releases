@@ -433,7 +433,10 @@ struct RowView: View {
                     .disabled(true)
             }
             // A count after the title; the row's facts as pills right after it; then its (i) and where its files are, close together.
-            TitleLine(title: row.title, note: row.subtitle)
+            // The title and the cluster are offered the row's width before the spacer. With the stack's even shares, the frame the
+            // Free flag turned into its progress gave the cluster less than it had, and the warning pill beside it truncated and
+            // sprang back, a flicker (2026-10-19).
+            TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
             HStack(spacing: 6) {
                 ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
                     BadgeView(badge: badge, quiet: flagIsActive)
@@ -446,6 +449,7 @@ struct RowView: View {
                 // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
                 RowActionFlags(row: row, handler: handler)
             }
+            .layoutPriority(1)
             // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
             // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             Spacer(minLength: 8)
