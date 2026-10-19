@@ -32,13 +32,20 @@ final class WindowZoomTests: XCTestCase {
         XCTAssertTrue(window.canBecomeMain)
     }
 
-    /// Room beside and below the glass, none above: the shadow window never reaches under the menu bar when the glass is against it.
-    func testShadowWindowNeverReachesAboveTheGlass() {
-        let glass = CGRect(x: 100, y: 200, width: 700, height: 490)
-        let frame = ShadowWindow.frame(around: glass)
-        XCTAssertEqual(frame.maxY, glass.maxY)
-        XCTAssertEqual(frame.minY, glass.minY - ShadowWindow.margin)
-        XCTAssertEqual(frame.minX, glass.minX - ShadowWindow.margin)
-        XCTAssertEqual(frame.maxX, glass.maxX + ShadowWindow.margin)
+    /// Room above the glass as the shadow needs it, never under the menu bar: less near it, none against it.
+    func testShadowWindowNeverReachesUnderTheMenuBar() {
+        let top: CGFloat = 803
+        let free = CGRect(x: 100, y: 200, width: 700, height: 490)
+        XCTAssertEqual(ShadowWindow.roomAbove(free, screenTop: top), ShadowWindow.above)
+        XCTAssertEqual(ShadowWindow.frame(around: free, room: ShadowWindow.above).maxY, free.maxY + ShadowWindow.above)
+        let near = CGRect(x: 100, y: top - 490 - 10, width: 700, height: 490)
+        XCTAssertEqual(ShadowWindow.roomAbove(near, screenTop: top), 10)
+        let against = CGRect(x: 0, y: 0, width: 1280, height: top)
+        XCTAssertEqual(ShadowWindow.roomAbove(against, screenTop: top), 0)
+        XCTAssertLessThanOrEqual(ShadowWindow.frame(around: against, room: 0).maxY, top)
+        let frame = ShadowWindow.frame(around: free, room: 0)
+        XCTAssertEqual(frame.minY, free.minY - ShadowWindow.margin)
+        XCTAssertEqual(frame.minX, free.minX - ShadowWindow.margin)
+        XCTAssertEqual(frame.maxX, free.maxX + ShadowWindow.margin)
     }
 }

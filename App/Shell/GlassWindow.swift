@@ -77,9 +77,10 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             window.addChildWindow(shadow, ordered: .below)
             shadowWindow = shadow
             showShadow(animated: false)
-            // A child window moves with its parent by itself, in the same frame: on a move it is left alone. Moved or re-framed as
-            // well on every step of a drag, it fought the move the window server was already making, and the shadow trailed and
-            // flickered behind the glass (issue 34). It is told only about a new size, scale or screen.
+            // A child window moves with its parent by itself, in the same frame. Moved or re-framed as well on every step of a drag,
+            // it fought the move the window server was already making, and the shadow trailed and flickered behind the glass
+            // (issue 34). So a move changes nothing unless the room above the glass has to change near the menu bar
+            // (`ShadowWindow.roomAbove`); a new size, scale or screen draws it again.
             for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
@@ -89,6 +90,12 @@ struct GlassWindowConfigurator: NSViewRepresentable {
                     }
                 })
             }
+            observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, let window = self.window, let shadowWindow = self.shadowWindow else { return }
+                    if shadowWindow.needsNewRoom(for: window) { shadowWindow.follow(window) }
+                }
+            })
         }
 
         private func showShadow(animated: Bool) {
@@ -117,21 +124,27 @@ struct GlassWindowConfigurator: NSViewRepresentable {
     }
 }
 
-/// A click-through window around the main window's left, right and bottom, drawing a soft shadow around the rounded glass and nothing
-/// under it (the glass would show a shadow behind it). Its layers only change when the main window is resized, so the shadow is drawn
-/// once instead of on every frame.
+/// A click-through window around the main window, drawing a soft shadow around the rounded glass and nothing under it (the glass
+/// would show a shadow behind it). Its layers only change when the main window is resized, so the shadow is drawn once instead of
+/// on every frame. Its layers and their look are 1.1.2's.
 ///
-/// It reaches no higher than the glass's top. Any window reaching under the menu bar makes macOS draw the menu bar's background, with
-/// its dark bottom line across the whole screen: with room above the glass, that showed whenever the window was near the top
-/// (issue 34). Cut short at the top instead, the shadow beside the top corners stopped in a hard line, so it fades out over the top
-/// of the window (`fadeLength`). The shadow falls downward (`caster`), so little of it was above the glass anyway.
+/// Above the glass it reaches only as far as the shadow does (`above`), and never under the menu bar: any window reaching under
+/// the menu bar makes macOS draw the menu bar's background, with its dark bottom line across the whole screen (issue 34). Near the
+/// menu bar the room above shrinks to what is left, and the top of the shadow fades out over its last points (`fade`) instead of
+/// stopping in a line beside the top corners. With no room above at all, the shadow went too, and looked shifted down (1.1.3's
+/// second build).
 final class ShadowWindow: NSWindow {
     /// The corner radius the shadow was last drawn with: a new one in the Design menu draws it again.
     private var drawnRadius: CGFloat = -1
     /// Room beside and below the main window for the shadow to spread into.
     static let margin: CGFloat = 60
-    /// How far down from the glass's top the shadow beside it fades in, from none to full: past the top corners' curve.
-    static var fadeLength: CGFloat { Theme.windowRadius * 1.6 + 8 }
+    /// Room above the glass: the shadow falls 10 points down with a 22-point blur, so about 30 points of it show above the glass.
+    static let above: CGFloat = 36
+    /// How far down from the window's top edge the shadow fades in, from none to full: the last points of a full room above, and past
+    /// the top corners' curve when there is no room.
+    static func fade(room: CGFloat) -> CGFloat { max(12, Theme.windowRadius * 1.6 + 8 - room) }
+    /// The room above the glass the window has now.
+    private(set) var room: CGFloat = -1
     private let container = CALayer()
     private let caster = CALayer()
     private let cutout = CAShapeLayer()
@@ -171,17 +184,30 @@ final class ShadowWindow: NSWindow {
     /// Exactly where `follow` puts it, wherever the main window is.
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
 
-    /// The glass with room beside and below it, and none above.
-    static func frame(around glass: CGRect) -> CGRect {
-        CGRect(x: glass.minX - margin, y: glass.minY - margin, width: glass.width + 2 * margin, height: glass.height + margin)
+    /// The room above `glass` on its screen: `above`, less whatever would reach under the menu bar.
+    static func roomAbove(_ glass: CGRect, screenTop: CGFloat?) -> CGFloat {
+        guard let screenTop else { return above }
+        return min(above, max(0, screenTop - glass.maxY))
     }
 
-    /// Takes the shape of the main window's glass, which is the main window's frame. Called for a new size only: a move needs nothing.
+    /// The glass with room beside and below it, and `room` above.
+    static func frame(around glass: CGRect, room: CGFloat) -> CGRect {
+        CGRect(x: glass.minX - margin, y: glass.minY - margin, width: glass.width + 2 * margin, height: glass.height + margin + room)
+    }
+
+    /// Whether a move took the glass near enough the menu bar, or away from it, to change the room above.
+    func needsNewRoom(for main: NSWindow) -> Bool {
+        Self.roomAbove(main.frame, screenTop: (main.screen ?? NSScreen.main)?.visibleFrame.maxY) != room
+    }
+
+    /// Takes the shape of the main window's glass, which is the main window's frame.
     func follow(_ main: NSWindow) {
         let glass = main.frame
-        let frame = Self.frame(around: glass)
+        let room = Self.roomAbove(glass, screenTop: (main.screen ?? NSScreen.main)?.visibleFrame.maxY)
+        let frame = Self.frame(around: glass, room: room)
         let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != Theme.windowRadius
         drawnRadius = Theme.windowRadius
+        self.room = room
         if frame != self.frame { setFrame(frame, display: false) }
         guard redraw else { return }
         let bounds = CGRect(origin: .zero, size: frame.size)
@@ -193,7 +219,7 @@ final class ShadowWindow: NSWindow {
         let outside = CGMutablePath()
         outside.addRect(bounds)
         outside.addPath(Self.glassPath(inner.insetBy(dx: 1 / backingScaleFactor, dy: 1 / backingScaleFactor)))
-        let fadeStart = max(0, (bounds.height - Self.fadeLength) / max(bounds.height, 1))
+        let fadeStart = max(0, (bounds.height - Self.fade(room: room)) / max(bounds.height, 1))
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         container.frame = bounds
