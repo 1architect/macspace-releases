@@ -4,15 +4,13 @@ import SwiftUI
 @MainActor
 final class AllDoneLifetime: ObservableObject {
     @Published private(set) var shown = false
-    /// The countdown back to the page under it has started: shown as a ring that empties, so the return is never a surprise.
-    @Published private(set) var countingDown = false
     var reloading = false
     private var task: Task<Void, Never>?
     private var generation = 0
 
-    /// `hold` lets the words and the count arrive; the module then finishes reading the Mac, and only then does `countdown` run.
+    /// `hold` lets the words and the count arrive; the module then finishes reading the Mac, and only then does the page `linger`.
     /// A slow reload no longer ends with an instant return the moment it is done.
-    func present(hold: Duration, countdown: Duration = .zero, finished: @escaping @MainActor () -> Void) {
+    func present(hold: Duration, linger: Duration = .zero, finished: @escaping @MainActor () -> Void) {
         dismiss()
         generation += 1
         let current = generation
@@ -23,8 +21,7 @@ final class AllDoneLifetime: ObservableObject {
                 do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
             }
             guard let self, !Task.isCancelled, self.generation == current else { return }
-            self.countingDown = countdown > .zero
-            do { try await Task.sleep(for: countdown) } catch { return }
+            do { try await Task.sleep(for: linger) } catch { return }
             guard self.generation == current else { return }
             finished()
             do { try await Task.sleep(for: .milliseconds(60)) } catch { return }
@@ -37,7 +34,6 @@ final class AllDoneLifetime: ObservableObject {
         generation += 1
         task?.cancel()
         task = nil
-        countingDown = false
         if animated { withAnimation(Theme.push) { shown = false }; return }
         var instant = Transaction()
         instant.disablesAnimations = true

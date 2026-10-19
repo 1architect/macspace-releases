@@ -97,9 +97,9 @@ about a minute, to make macOS release them. With Siri's iCloud sync on, these ch
 your other devices on the same Apple Account. MacSpace cannot turn that sync off. It tells you
 where to do it.
 
-### Phone features
+### Call transcription
 
-The Phone features switch in Siri & Apple Intelligence uses five fixed TelephonyUtilities overrides in
+The Call transcription switch in Siri & Apple Intelligence uses five fixed TelephonyUtilities overrides in
 `/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: call recording, Call Screening, FaceTime caption delivery,
 and the Mac audio/video translation gates. The authenticated helper saves original entries in
 `/Library/Application Support/MacSpace/phone-features.json` before writing changes. Changes take effect after a restart; the
@@ -110,19 +110,20 @@ change Siri's Session Language. Its helper operation accepts only an on/off inte
 ### Feature models
 
 The separate Siri and Spatial Photos switches save your original settings before disabling a feature. Siri's saved voice is
-cleared while Siri is off; its Session Language is preserved. Phone also disables the local recording, screening and caption
+cleared while Siri is off; its Session Language is preserved. Call transcription also disables the local recording, screening and caption
 settings. Originals are kept in `~/Library/Application Support/MacSpace/feature-settings/`.
 
 Model requests are released through their owning Apple frameworks, in a separate MacSpace process that runs as you, never in
 the app or the helper. That process checks each method against the one MacSpace reviewed before calling it and stops on any
 difference. Rollback objects are saved, readable only by you, under `~/Library/Application Support/MacSpace/asset-owners/`. These feature and language-model cleanups never edit the live subscription database or delete model
-payloads directly. Physical cleanup uses the existing guarded macOS cleanup service. It waits while Apple Intelligence is
-available or its state is unreadable, keeps other accounts' requests, and keeps shared speech models while Dictation is active.
+payloads directly. Physical cleanup uses the existing guarded macOS cleanup service. It waits while Apple Intelligence's state
+is unreadable and, while Apple Intelligence is on, while macOS is downloading any system asset; it keeps other accounts' requests
+and shared speech models while Dictation is active. Unused language data is released only while Apple Intelligence is off.
 
 While MacSpace is open, explicitly disabled features are checked every five minutes and their unused models are cleaned again
 if macOS requests them again. Re-enabling a feature or using MacSpace's uninstaller restores saved settings and model requests;
 macOS may download the models again. An interrupted or conflicting owner operation is checked before any repeat request.
-These controls are available only on verified macOS builds. Unused language assets in System Data use a one-shot cleanup;
+These controls work on every macOS 27 release; before each request the separate process checks the Apple methods it calls. Unused language assets in System Data use a one-shot cleanup;
 that action does not disable spelling or dictionaries.
 
 ### Permissions

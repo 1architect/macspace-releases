@@ -19,10 +19,10 @@
 "Cloud files on this Mac" = "Fichiers du cloud sur ce Mac";
 "Connect it to see its backups and free old ones." = "Connectez-le pour voir ses sauvegardes et libérer les anciennes.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.";
-"Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont part la prochaine sauvegarde.";
+"Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.";
 "Couldn't free it" = "Impossible de libérer";
 "Deleted by macOS when the disk is full" = "Supprimé par macOS quand le disque est plein";
-"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "Fichiers que les apps ont marqués comme pouvant être supprimés sans risque. Le système les libère lorsque le disque est presque plein. S’ils ne sont pas libérés, MacSpace fait de nouvelles tentatives en arrière-plan.";
+"Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Fichiers que macOS supprime de lui-même quand l’espace manque. Réglages Système compte cet espace comme disponible.";
 "Free" = "Libérer";
@@ -66,7 +66,6 @@
 "Waiting to install" = "En attente d’installation";
 "free up to %@" = "libérer jusqu’à %@";
 "freeing %@" = "libération de %@";
-"kept" = "conservé";
 "macOS's purge service did not answer" = "Le service de purge de macOS n’a pas répondu";
 "nothing to free" = "rien à libérer";
 "other system files" = "autres fichiers système";

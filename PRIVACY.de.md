@@ -28,9 +28,9 @@ Dateien auf deinen eigenen Mac. Nichts davon verlässt deinen Mac.
 | Debloat-Überwachung: welche Funktionen macOS wieder eingeschaltet hat und wann (die letzten 20 Ereignisse) | `~/Library/Application Support/MacSpace/debloat-watch.json` |
 | Das Debloat-Profil, so wie es zu deiner Genehmigung bereitliegt | `~/Library/Application Support/MacSpace/Profiles/MacSpace.mobileconfig` |
 | Deine Siri-Sprache und deine Siri-Stimme, gesichert, solange Apple Intelligence aus ist, damit MacSpace sie wiederherstellen kann | `~/Library/Application Support/MacSpace/ai-guard-saved-siri-settings.json` |
-| Ursprüngliche Einstellungen für Siri, räumliche Fotos und lokale Telefonfunktionen, auch fehlende Werte | `~/Library/Application Support/MacSpace/feature-settings/` |
+| Ursprüngliche Einstellungen für Siri, räumliche Fotos und lokale Anruftranskription, auch fehlende Werte | `~/Library/Application Support/MacSpace/feature-settings/` |
 | Gesicherte Modellanforderungen zur Wiederherstellung, einschließlich Stimme und Sprache | `~/Library/Application Support/MacSpace/asset-owners/` |
-| Ursprüngliche systemweite Einstellungen der Telefonfunktionen | `/Library/Application Support/MacSpace/phone-features.json` |
+| Ursprüngliche systemweite Einstellungen der Anruftranskription | `/Library/Application Support/MacSpace/phone-features.json` |
 | Apple Intelligence-Überwachung (nur wenn du sie einschaltest): der zuletzt gesehene Zustand und ein Protokoll der Änderungen | `~/Library/Application Support/MacSpace/ai-watch-state.json` und `~/Library/Logs/MacSpace/ai-watch.jsonl` |
 | Ein Backup der Abonnement-Datenbank von macOS, nur wenn du übrige Apple Intelligence-Abonnements gelöschter Accounts entfernst | `/Library/Application Support/MacSpace/backups/` |
 | Update-Downloads | Der Cache-Ordner von Sparkle, `~/Library/Caches/com.macspace.app/` |

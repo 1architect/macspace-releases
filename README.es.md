@@ -71,11 +71,7 @@ activado, porque los modelos los comparten todas las cuentas. Una comprobación 
 activar. En una máquina virtual macOS no ofrece Apple Intelligence, así que la página solo dice
 eso.
 
-Los interruptores separados **Siri**, **Fotos espaciales** y **Funciones de Teléfono** desactivan esas funciones y liberan sus
-modelos sin uso. Los cambios de Teléfono requieren reiniciar y afectan a todas las cuentas del Mac, sin instalar perfiles.
-Mientras está abierto, MacSpace comprueba cada cinco minutos los modelos solicitados de nuevo para funciones desactivadas.
-Reactivar restaura los ajustes guardados. Los modelos se conservan mientras Apple Intelligence está disponible.
-Los demás recursos lingüísticos sin uso tienen una acción **Liberar** en **Datos del sistema**.
+Otros tres interruptores desactivan estas funciones y eliminan los modelos que quedan en el disco: **Siri, Fotos espaciales y Transcripción de llamadas**.
 
 <p align="center">
   <img src="Docs/Screenshots/es/Siri.png" alt="La página Siri y Apple Intelligence: el interruptor de Apple Intelligence, desactivado, y la fila sobre la sincronización de Siri con iCloud" width="720">

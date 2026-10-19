@@ -188,10 +188,12 @@ public struct CacheDeleteClient {
     }
 
     /// Asks only `services` to purge up to `amount` bytes at `urgency`, waiting up to `timeout` seconds.
+    /// `featureCleanup` is a feature switch's cleanup (`SystemAssetGuard.refusal`).
     public func purge(services: [String], volume: String = dataVolume, urgency: Int = 1, amount: UInt64 = 100_000_000_000,
-                      timeout: TimeInterval = 600, freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
+                      timeout: TimeInterval = 600, featureCleanup: Bool = false,
+                      freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
-        if let refusal = refusal ?? SystemAssetGuard.refusal(services) {
+        if let refusal = refusal ?? SystemAssetGuard.refusal(services, featureCleanup: featureCleanup) {
             return CacheDeletePurgeResult(services: services, purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: before,
                                           elapsedSeconds: nil, error: refusal)
         }
@@ -237,12 +239,14 @@ public struct CacheDeleteClient {
 
     /// Runs the purge of one service (mobileassetd by default) in `executable`; a crash is reported as an error result.
     public static func purgeInSubprocess(executable: URL, service: String = CacheDeleteService.mobileAsset,
-                                         urgency: Int = 1, freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
+                                         urgency: Int = 1, featureCleanup: Bool = false,
+                                         freeSpace: () -> UInt64? = DataVolume.freeBytes) -> CacheDeletePurgeResult {
         let before = freeSpace()
-        if let held = SystemAssetGuard.refusal([service]) {
+        if let held = SystemAssetGuard.refusal([service], featureCleanup: featureCleanup) {
             return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: before, elapsedSeconds: nil, error: held)
         }
-        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service, "--urgency", "\(urgency)"])
+        let output = runSubprocess(executable, ["purge-assets", "--execute", "--json", "--service", service, "--urgency", "\(urgency)"]
+                                   + (featureCleanup ? ["--feature-cleanup"] : []))
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         if let result = decodeResult(output.data, decoder: decoder) { return result }

@@ -143,6 +143,64 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(rows[2].action.confirmation)
     }
 
+    func testFeatureModelsCountOnTheTileAndUnderTheirSwitchLikeTheAppleIntelligenceModels() {
+        var snap = snapshot(.protected)
+        snap.installedModelBytes = 0
+        snap.featureSettings = [.siri: .init(state: .on), .spatialPhotos: .init(state: .on)]
+        snap.featureModelBytes = [.siri: 2_400_000_000, .spatialPhotos: 800_000_000]
+        let tile = SiriScreenBuilder.tile(snap)
+        XCTAssertEqual(tile.reclaimableBytes, 3_200_000_000)
+        XCTAssertTrue(tile.needsAttention, "on with models on disk, as Apple Intelligence on")
+        guard case let .state(_, _, detail, _, _) = tile.graphic else { return XCTFail() }
+        XCTAssertTrue(detail.contains("Siri features"), detail)
+        let rows = SiriScreenBuilder.switchList(snap).rows
+        XCTAssertEqual(rows[1].trailing, ByteFormat.string(2_400_000_000))
+        snap.featureDownloading = [.spatialPhotos]
+        XCTAssertEqual(SiriScreenBuilder.refreshAfter(snap), 5, "a download is followed as it arrives")
+        snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true), .spatialPhotos: .init(state: .off, managedOff: true, requestedOff: true)]
+        XCTAssertNil(SiriScreenBuilder.tile(snap).reclaimableBytes, "switched off, the models are MacSpace's to delete, not the user's to free")
+        snap.featureDownloading = []
+        guard case let .state(_, _, kept, _, _) = SiriScreenBuilder.tile(snap).graphic else { return XCTFail() }
+        XCTAssertEqual(kept, "\(ByteFormat.string(3_200_000_000)) of models kept by macOS", "never said clean while they stay")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].trailing, ByteFormat.string(2_400_000_000))
+        snap.featureCleanupWaiting = [.siri]
+        guard case let .state(_, _, deleting, _, _) = SiriScreenBuilder.tile(snap).graphic else { return XCTFail() }
+        XCTAssertEqual(deleting, "deleting \(ByteFormat.string(3_200_000_000)) of models")
+    }
+
+    func testEveryInfoTextIsStaticAndShortInEveryState() {
+        var texts: Set<String>?
+        for state in [AppleIntelligenceGuardState.atRisk, .protected, .releasing, .unknown] {
+            for phone in [PhoneFeatureFlags.State.on, .off, .restartRequired, .changedElsewhere, .unknown, .unsupported] {
+                for cloud in [true, false, nil] as [Bool?] {
+                    var snap = snapshot(state)
+                    snap.cloudSyncEnabled = cloud
+                    snap.featureSettings = [.siri: .init(state: .on), .spatialPhotos: .init(state: .off, managedOff: true, requestedOff: true)]
+                    snap.phoneFeatures = .init(state: phone, managedOff: false, effective: [:])
+                    let screen = SiriScreenBuilder.screen(snap)
+                    XCTAssertEqual(InfoText.violations(in: screen), [])
+                    let switches = Set(SiriScreenBuilder.switchList(snap).rows.compactMap(\.detail) + [SiriScreenBuilder.cloudSyncRow(enabled: cloud).detail].compactMap { $0 })
+                    if let texts { XCTAssertEqual(switches, texts, "the (i) does not change with the state") } else { texts = switches }
+                }
+            }
+        }
+    }
+
+    func testMainButtonDisablesEverySwitchStillOnThenEnablesThemAgain() throws {
+        var snap = snapshot(.atRisk)
+        snap.featureSettings = [.siri: .init(state: .on), .spatialPhotos: .init(state: .off)]
+        let disable = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
+        XCTAssertEqual(disable.id, "disableAll")
+        XCTAssertEqual(disable.parameters["ids"], "ai,siri")
+        XCTAssertNotNil(disable.confirmation)
+        snap.status = status(.protected, languagesMatch: nil)
+        snap.featureSettings = [.siri: .init(state: .off), .spatialPhotos: .init(state: .off)]
+        let enable = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
+        XCTAssertEqual(enable.id, "enableAll")
+        XCTAssertEqual(enable.parameters["ids"], "ai,siri,spatialPhotos")
+        XCTAssertEqual(SiriScreenBuilder.screen(self.snapshot(.protected, purgeable: 12_000_000_000)).primary?.id, "purgeAssets", "freeing comes first")
+    }
+
     func testFeatureCleanupUsesTheStandardBadgeAndFastStatusPolling() {
         var snap = snapshot(.protected)
         snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
@@ -152,6 +210,9 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.cleaningFeatures = false
         snap.featureCleanupWaiting = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.help, "MacSpace asks macOS again every five minutes.")
+        snap.featureLocked = [.siri]
+        XCTAssertTrue(SiriScreenBuilder.switchList(snap).rows[1].badge?.help?.contains("restart") == true, "says what holds them and what frees them")
     }
 
     func testPhoneSwitchPreservesNativeWarningsInsteadOfReportingEveryMismatchAsUnknown() throws {
@@ -159,7 +220,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.phoneFeatures = .init(state: .off, managedOff: true, effective: [:], requestedOff: true)
         let cases: [(ModelFeatureSettings.State, String?)] = [
             (.off, nil), (.changedElsewhere, "Changed outside MacSpace"),
-            (.unknown, "State unknown"), (.unsupported, nil)
+            (.unknown, "State unknown"), (.unsupported, "Not verified on this macOS version")
         ]
         for (state, badge) in cases {
             snap.featureSettings = [.phone: .init(state: state, managedOff: state == .off, requestedOff: true)]
@@ -168,7 +229,8 @@ final class SiriScreenBuilderTests: XCTestCase {
             XCTAssertFalse(row.isOn)
             XCTAssertEqual(row.badge?.text, badge, "state: \(state)")
             if state == .off { XCTAssertTrue(row.isEnabled) }
-            if state == .unsupported { XCTAssertTrue(row.detail?.contains("not been verified") == true) }
+            XCTAssertEqual(row.detail, SiriScreenBuilder.phoneFeatureRow(.init(state: .on, managedOff: false, effective: [:])).detail,
+                           "the state is the badge, never the (i)")
         }
     }
 
@@ -192,7 +254,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
         let off = SiriScreenBuilder.cloudSyncRow(enabled: false)
-        XCTAssertTrue(off.detail?.contains("all your devices") == true, "off, its (i) says what turning it on would do")
+        XCTAssertEqual(off.detail, row.detail, "the (i) says what the sync does, on or off")
         XCTAssertTrue(off.steps.isEmpty)
     }
 
@@ -297,7 +359,7 @@ final class SiriScreenBuilderTests: XCTestCase {
 
         guard case let .steps(steps)? = widgets(snapshot(.releasing, blockers: ["Apple Intelligence is on in tester."])).first else { return XCTFail() }
         XCTAssertEqual(steps.steps, ["Apple Intelligence is on in tester."])
-        XCTAssertNil(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary, "a few KB is not worth a button")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary?.id, "purgeAssets", "a few KB is not worth a button")
         XCTAssertNil(SiriScreenBuilder.modelsSection(snapshot(.atRisk)), "nothing to release while Apple Intelligence is on")
     }
 

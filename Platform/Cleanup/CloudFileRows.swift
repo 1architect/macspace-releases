@@ -15,15 +15,11 @@ public enum CloudFileRows {
     }
 
     public static func row(_ source: PurgeableDocuments.Source, removing: CloudDownloadRemovals.Progress?, id: String? = nil) -> Row {
-        let folders = source.folders.filter { $0.bytes >= 50_000_000 }
-        let listing = folders.isEmpty ? "" : "\n\n" + folders.map {
-            let count = $0.files == 1 ? String(localized: "1 file") : String(localized: "\($0.files) files")
-            return "\($0.name): \(ByteFormat.string($0.bytes)), \(count)"
-        }.joined(separator: "\n")
+        // The (i) says what these are, never how many there are (`InfoText`): the count is the subtitle, the size the figure.
         var row = Row(id: id ?? "documents:\(source.path)", title: String(localized: "\(source.name) files on this Mac"),
                       subtitle: source.files == 1 ? String(localized: "1 file") : String(localized: "\(source.files) files"),
                       trailing: ByteFormat.string(source.bytes), symbol: "icloud.and.arrow.down",
-                      detail: String(localized: "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.") + listing,
+                      detail: String(localized: "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud."),
                       actions: [action(source)], paths: [source.path])
         if let removing {
             row.activity = ActionProgress(fraction: removing.total > 0 ? removing.fraction : nil, message: removing.total == 0 ? String(localized: "Removing downloads") : String(localized: "Removing \(ByteFormat.string(removing.bytes))"))

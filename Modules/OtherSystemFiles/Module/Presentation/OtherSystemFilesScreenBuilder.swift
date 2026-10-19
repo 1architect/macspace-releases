@@ -143,12 +143,8 @@ enum OtherSystemFilesScreenBuilder {
         var badges: [Badge] = []
         if !removable.isEmpty { badges.append(Badge(loc("Cannot be undone"), tone: .critical)) }
         if backingUp { badges.append(Badge(loc("Backing up now"), tone: .caution)) }
-        let dates = snapshots.all.reversed().map { snapshot in
-            let kept = snapshots.keptStamps.contains(snapshot.stamp)
-            return snapshot.date.formatted(date: .abbreviated, time: .shortened) + (kept ? " " + loc("kept") : "")
-        }
-        let detail = loc("Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.")
-            + "\n\n" + dates.joined(separator: "\n")
+        // What they are, not which ones there are now (`InfoText`): the count is the subtitle.
+        let detail = loc("Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.")
         let size = ByteFormat.string(bytes)
         let free = Action(id: "freeSnapshots", title: loc("Free"), role: .destructive,
                           confirmation: Confirmation(title: removable.count == 1 ? loc("Free 1 Time Machine snapshot?") : loc("Free \(removable.count) Time Machine snapshots?"),

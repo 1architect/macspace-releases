@@ -67,11 +67,9 @@
 "MacSpace restores the settings it saved before disabling them." = "無効にする前に保存した設定に戻します。";
 "No control was named." = "操作対象が指定されていません。";
 "No controls were selected." = "操作対象が選択されていません。";
-"No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed." = "変更後の診断送信の判断を読み取れませんでした。成功の記録は診断情報を含まないサーバへの接続の場合もあり、設定が機能していない証拠にはなりません。";
 "No longer works" = "現在は機能しません";
 "No more \"quit unexpectedly\" dialogs." = "「予期しない理由で終了しました」のダイアログを表示しません。";
 "Not on this macOS" = "このmacOSでは使用できません";
-"Not verified" = "未確認";
 "Not working" = "動作しません";
 "Nothing to approve" = "承認するものはありません";
 "Nothing to remove" = "削除するものはありません";
@@ -85,7 +83,7 @@
 "Share analytics with Apple" = "解析をAppleと共有";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "macOSが無効な機能を再びオンにし、MacSpaceが再度無効にすると通知します。";
 "Siri" = "Siri";
-"Siri AI" = "Siri AI";
+"Siri AI search" = "Siri AI 検索";
 "Some are not tested yet." = "未テストのものもあります。";
 "Spotlight internet results" = "Spotlightのインターネット検索結果";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlightが検索内容をAppleに送信しなくなり、Webの検索結果は表示されなくなります。";
@@ -93,13 +91,13 @@
 "Stops sending usage and crash data to Apple and app developers." = "使用状況とクラッシュデータのAppleやアプリ開発者への送信を停止します。";
 "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above." = "上の設定を無視するmacOSベータ版でも、Appleへの使用状況とクラッシュデータの送信を停止します。";
 "Stops sharing Siri and Dictation recordings with Apple." = "Siriと音声入力の録音をAppleと共有しません。";
+"Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page." = "Siri AI 検索アプリをオフにします。Spotlightは従来の検索に戻ります。Siri自体をオフにするには「SiriとApple Intelligence」ページを使います。";
 "Suggestions and search" = "提案と検索";
 "Switch it off, then restart your Mac." = "オフにしてからMacを再起動してください。";
 "Switch it off. To turn off Apple Intelligence, use the Siri page." = "オフにしてください。Apple IntelligenceをオフにするにはSiriページを使ってください。";
 "This beta version of macOS ignores the regular analytics setting. Use the profile option instead." = "このmacOSベータ版は通常の解析設定を無視します。プロファイルのオプションを使用してください。";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "macOSで制御可能な解析、広告、バックグラウンドのデータ収集をオフにします。";
 "Turns off Game Center." = "Game Centerをオフにします。";
-"Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on." = "Siri AIをオフにします。Spotlightは従来の検索に戻り、ほかのApple Intelligence機能はオンのままです。";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "ビジュアルインテリジェンスをオフにします。「画像を調べる」も使えなくなる場合があります。";
 "Undone by macOS" = "macOSが元に戻しました";
 "Unknown action %@." = "不明な操作%@。";

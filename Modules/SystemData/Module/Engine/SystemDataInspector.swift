@@ -551,7 +551,7 @@ public struct SystemDataInspector {
             cleanup: SystemDataCleanup(kind: .command, description: loc("Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept."), command: nil))
         if let path = system["usrLocal"], !brewPrefixes.contains(path) {
             add("usrlocal", path, .packageManager, paths: [path],
-                cleanup: SystemDataCleanup(kind: .review, description: loc("Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them."), command: nil), minimum: Self.minimumItemBytes)
+                cleanup: SystemDataCleanup(kind: .review, description: loc("Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them."), command: nil), minimum: Self.minimumItemBytes)
         }
         add("logs:unified", loc("Unified system log"), .logs, paths: [system["unifiedLog"], system["uuidtext"]].compactMap { $0 },
             cleanup: managed(loc("Rotated by logd; deleting it removes the logs needed for troubleshooting.")))

@@ -1,3 +1,4 @@
+import CoreText
 import Foundation
 
 /// How a colored element should read. The app maps tones to its palette, so modules never pick colors.
@@ -11,13 +12,66 @@ public enum Tone: Codable, Equatable, Sendable {
     case series(Int)
 }
 
+/// A fact about an item now, as a pill: its state, its kind. What the state means right now (why it is not verified, what is
+/// waiting) goes in `help`, the pill's hover tag, never in the item's (i), which holds only what the item is (`InfoText`).
 public struct Badge: Codable, Equatable, Sendable {
     public var text: String
     public var tone: Tone
+    public var help: String?
 
-    public init(_ text: String, tone: Tone = .neutral) {
+    public init(_ text: String, tone: Tone = .neutral, help: String? = nil) {
         self.text = text
         self.tone = tone
+        self.help = help
+    }
+}
+
+/// The rule for every text the app shows behind an (i): `Row.detail`, `ToggleRow.detail`, `SectionWidget.subtitle`, `UsageBar.footnote`,
+/// `ToggleList.footnote` and `ButtonWidget.footnote`. It says what the item is and what acting on it does, the same whatever its state:
+/// no sizes, counts, dates, file lists or current state (those are the row's figure, subtitle and badges, and a badge's `help`). At most
+/// `maximumLines` lines in the balloon, ideally `idealLines`; the app shows no more than `maximumLines`. `steps` are kept apart.
+public enum InfoText {
+    public static let maximumLines = 5
+    public static let idealLines = 3
+    /// The balloon's text width in points and the callout size it is set in, for measuring.
+    public static let balloonWidth: Double = 290
+    public static let fontSize: Double = 13
+
+    /// How many lines `text` takes in the balloon, measured with the system font as the app sets it.
+    public static func lineCount(_ text: String) -> Int {
+        let font = CTFontCreateUIFontForLanguage(.system, CGFloat(fontSize), nil)!
+        let string = NSAttributedString(string: text, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
+        let framesetter = CTFramesetterCreateWithAttributedString(string)
+        let path = CGPath(rect: CGRect(x: 0, y: 0, width: balloonWidth, height: 100_000), transform: nil)
+        let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
+        return (CTFrameGetLines(frame) as? [CTLine])?.count ?? 0
+    }
+
+    /// The info texts on a page longer than the rule allows; empty when the page keeps it. Modules check their pages with it.
+    public static func violations(in screen: Screen) -> [String] {
+        all(in: screen).filter { lineCount($0) > maximumLines }
+    }
+
+    /// Every info text on a page, for checking it against the rule.
+    public static func all(in screen: Screen) -> [String] {
+        var texts: [String] = []
+        func visit(_ widget: ScreenWidget) {
+            switch widget {
+            case let .list(list): list.rows.forEach(visitRow)
+            case let .toggles(list): texts += [list.footnote].compactMap { $0 } + list.rows.compactMap(\.detail)
+            case let .section(section): texts += [section.subtitle].compactMap { $0 }; section.widgets.forEach(visit)
+            case let .button(button): texts += [button.footnote].compactMap { $0 }
+            case let .usage(bar): texts += [bar.footnote].compactMap { $0 }; bar.segments.flatMap(\.items).forEach(visitRow)
+            default: break
+            }
+        }
+        func visitRow(_ row: Row) {
+            if let detail = row.detail { texts.append(detail) }
+            row.children.forEach(visitRow)
+        }
+        if let hero = screen.hero { visit(.usage(hero)) }
+        screen.widgets.forEach(visit)
+        return texts.filter { !$0.isEmpty }
     }
 }
 
@@ -244,7 +298,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         set { badges = newValue.map { [$0] } ?? [] }
     }
     public var symbol: String?
-    /// Longer text shown when the row is expanded.
+    /// What the row is, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
     /// Steps shown when the row is expanded (for example a manual cleanup guide).
     public var steps: [String]
@@ -430,16 +484,21 @@ public struct ListWidget: Codable, Equatable, Sendable {
 public struct ToggleRow: Codable, Equatable, Sendable, Identifiable {
     public var id: String
     public var title: String
+    /// Shown after the title, as a list row's subtitle.
     public var subtitle: String?
     public var isOn: Bool
     public var isEnabled: Bool
     public var badge: Badge?
+    /// What the switch does, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
+    /// Shown right before the switch, as a list row's `trailing`: what the switch acts on, e.g. the size of a feature's models.
+    public var trailing: String?
     /// Run when the user flips the switch. The app adds `value` = `true` or `false` to the parameters.
     public var action: Action
 
     public init(id: String, title: String, subtitle: String? = nil, isOn: Bool, isEnabled: Bool = true, badge: Badge? = nil,
-                detail: String? = nil, action: Action) {
+                detail: String? = nil, trailing: String? = nil, action: Action) {
+        self.trailing = trailing
         self.id = id
         self.title = title
         self.subtitle = subtitle

@@ -116,15 +116,6 @@
   "すでにオンです",
   "이미 켜짐"
  ],
- "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.": [
-  "Outra alteração afeta estes recursos. O MacSpace a preserva e não libera os modelos do Telefone automaticamente.",
-  "Une autre modification affecte ces fonctions. MacSpace la conserve et ne libère pas automatiquement les modèles de Téléphone.",
-  "Otro cambio afecta a estas funciones. MacSpace lo conserva y no libera automáticamente los modelos de Teléfono.",
-  "Eine andere Änderung wirkt sich auf diese Funktionen aus. MacSpace behält sie bei und gibt Telefonmodelle nicht automatisch frei.",
-  "其他更改影响了这些功能。MacSpace 会保留该更改，不会自动释放电话模型。",
-  "別の変更がこれらの機能に影響しています。MacSpaceはその変更を保持し、電話のモデルを自動的に解放しません。",
-  "다른 변경 사항이 이 기능에 영향을 줍니다. MacSpace는 해당 변경을 유지하고 전화 모델을 자동으로 해제하지 않습니다."
- ],
  "Apple Intelligence": [
   "Apple Intelligence",
   "Apple Intelligence",
@@ -269,24 +260,6 @@
   "MacSpaceが開いている間は5分ごとに確認し、オフにした機能が再度要求したモデルを解放します。",
   "MacSpace가 열려 있는 동안 5분마다 확인하고 꺼진 기능이 다시 요청한 모델을 비웁니다."
  ],
- "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.": [
-  "Controla gravação e transcrição de chamadas, Correio de Voz ao Vivo e triagem de chamadas, legendas do FaceTime e tradução de chamadas para todas as contas deste Mac. As alterações exigem reinicialização.",
-  "Contrôle l’enregistrement et la transcription des appels, la messagerie vocale en direct et le filtrage des appels, les sous-titres FaceTime et la traduction des appels pour tous les comptes de ce Mac. Les modifications nécessitent un redémarrage.",
-  "Controla la grabación y transcripción de llamadas, el buzón de voz en directo y el filtrado de llamadas, los subtítulos de FaceTime y la traducción de llamadas para todas las cuentas de este Mac. Los cambios requieren reiniciar.",
-  "Steuert Anrufaufzeichnung und Transkription, Live-Voicemail und Anruffilter, FaceTime-Untertitel und Anrufübersetzung für alle Accounts auf diesem Mac. Änderungen erfordern einen Neustart.",
-  "控制此 Mac 上所有账户的通话录音和转写、实时语音留言和来电筛选、FaceTime 字幕及通话翻译。更改后需要重新启动。",
-  "このMacのすべてのアカウントの通話録音と文字起こし、ライブ留守番電話と着信スクリーニング、FaceTimeの字幕、通話の翻訳を制御します。変更には再起動が必要です。",
-  "이 Mac의 모든 계정에서 통화 녹음 및 전사, 실시간 음성 메시지 및 통화 스크리닝, FaceTime 자막, 통화 번역을 제어합니다. 변경 후 재시동해야 합니다."
- ],
- "Couldn't change Phone feature settings.": [
-  "Não foi possível alterar os ajustes dos recursos do Telefone.",
-  "Impossible de modifier les réglages des fonctions de Téléphone.",
-  "No se pudieron cambiar los ajustes de las funciones de Teléfono.",
-  "Die Einstellungen der Telefonfunktionen konnten nicht geändert werden.",
-  "无法更改电话功能设置。",
-  "電話の機能の設定を変更できませんでした。",
-  "전화 기능 설정을 변경하지 못했습니다."
- ],
  "Couldn't change feature settings.": [
   "Não foi possível alterar os ajustes do recurso.",
   "Impossible de modifier les réglages de la fonction.",
@@ -305,15 +278,6 @@
   "Apple Intelligenceを確認できませんでした",
   "Apple Intelligence를 확인하지 못함"
  ],
- "Couldn't restore Phone feature settings.": [
-  "Não foi possível restaurar os ajustes dos recursos do Telefone.",
-  "Impossible de restaurer les réglages des fonctions de Téléphone.",
-  "No se pudieron restaurar los ajustes de las funciones de Teléfono.",
-  "Die Einstellungen der Telefonfunktionen konnten nicht wiederhergestellt werden.",
-  "无法恢复电话功能设置。",
-  "電話の機能の設定を復元できませんでした。",
-  "전화 기능 설정을 복원하지 못했습니다."
- ],
  "Couldn't restore feature settings.": [
   "Não foi possível restaurar os ajustes do recurso.",
   "Impossible de restaurer les réglages de la fonction.",
@@ -331,15 +295,6 @@
   "无法恢复模型请求。",
   "モデルのリクエストを復元できませんでした。",
   "모델 요청을 복원할 수 없습니다."
- ],
- "Couldn't verify the Phone feature change.": [
-  "Não foi possível verificar a alteração dos recursos do Telefone.",
-  "Impossible de vérifier la modification des fonctions de Téléphone.",
-  "No se pudo verificar el cambio de las funciones de Teléfono.",
-  "Die Änderung der Telefonfunktionen konnte nicht überprüft werden.",
-  "无法验证电话功能更改。",
-  "電話の機能の変更を確認できませんでした。",
-  "전화 기능 변경을 확인하지 못했습니다."
  ],
  "Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again.": [
   "Contas apagadas ainda usam os modelos. Remova os restos delas no MacSpace (Siri e Apple Intelligence), reinicie e tente de novo.",
@@ -404,15 +359,6 @@
   "空き容量を増やしています",
   "공간 확보 중"
  ],
- "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.": [
-  "Se ativa, o MacSpace atuará no Apple Intelligence em todos os seus dispositivos.\nPara alterar abra os Ajustes do Mac, selecione \"conta Apple\" no topo da barra lateral - salvos no iCloud - ver tudo - e desative a opção Siri.",
-  "Si vous l’activez, MacSpace agit sur Apple Intelligence sur tous vos appareils. Pour le modifier, ouvrez Réglages Système, sélectionnez Compte Apple en haut de la barre latérale, puis, sous Enregistré dans iCloud, cliquez sur Tout afficher et désactivez Siri.",
-  "Si lo activas, MacSpace actúa sobre Apple Intelligence en todos tus dispositivos. Para cambiarlo, abre Ajustes del Sistema, selecciona Cuenta de Apple en la parte superior de la barra lateral y, en Guardado en iCloud, haz clic en Ver todo y desactiva Siri.",
-  "Wenn du sie aktivierst, wirkt MacSpace auf allen deinen Geräten auf Apple Intelligence. Zum Ändern öffne die Systemeinstellungen, wähle oben in der Seitenleiste Apple Account, klicke unter „In iCloud gesichert“ auf „Alle anzeigen“ und deaktiviere dann Siri.",
-  "开启后，MacSpace 对 Apple 智能的操作会影响所有设备。如需更改，请打开“系统设置”，在边栏顶部选择 Apple 账户，然后在“已存储到 iCloud”下点按“查看全部”并关闭 Siri。",
-  "オンにすると、すべてのデバイスのApple Intelligenceに影響します。「システム設定」でサイドバー上部のApple Accountを選び、「iCloudに保存済み」の「すべて見る」からSiriをオフにしてください。",
-  "켜면 MacSpace의 Apple Intelligence 변경이 모든 기기에 적용됩니다. 시스템 설정의 사이드바 상단에서 Apple 계정을 선택하고 iCloud에 저장됨 아래의 모두 보기를 클릭한 후 Siri를 끄세요."
- ],
  "Its models are gone.": [
   "Os modelos foram removidos.",
   "Ses modèles ont été supprimés.",
@@ -467,15 +413,6 @@
   "%@でログインし、Apple Intelligenceをオフにしてください。",
   "%@ 계정으로 로그인하여 Apple Intelligence를 끄세요."
  ],
- "MacSpace could not read every Phone feature setting.": [
-  "O MacSpace não conseguiu ler todos os ajustes dos recursos do Telefone.",
-  "MacSpace n’a pas pu lire tous les réglages des fonctions de Téléphone.",
-  "MacSpace no pudo leer todos los ajustes de las funciones de Teléfono.",
-  "MacSpace konnte nicht alle Einstellungen der Telefonfunktionen lesen.",
-  "MacSpace 无法读取所有电话功能设置。",
-  "MacSpaceは電話の機能の設定をすべて読み取れませんでした。",
-  "MacSpace가 모든 전화 기능 설정을 읽지 못했습니다."
- ],
  "MacSpace needs it to read and verify the switch.": [
   "O MacSpace precisa para ler e verificar o botão.",
   "MacSpace en a besoin pour lire et vérifier l’interrupteur.",
@@ -484,24 +421,6 @@
   "MacSpace 需要此权限才能读取和验证开关状态。",
   "スイッチの状態を読み取り検証するために必要です。",
   "스위치 상태를 읽고 확인하려면 이 권한이 필요합니다."
- ],
- "MacSpace needs its helper to change the Phone features.": [
-  "O MacSpace precisa do auxiliar para alterar os recursos do Telefone.",
-  "MacSpace a besoin de son assistant pour modifier les fonctions de Téléphone.",
-  "MacSpace necesita su asistente para cambiar las funciones de Teléfono.",
-  "MacSpace benötigt seinen Hilfsdienst, um die Telefonfunktionen zu ändern.",
-  "MacSpace 需要辅助程序来更改电话功能。",
-  "電話の機能を変更するには、MacSpaceのヘルパーが必要です。",
-  "전화 기능을 변경하려면 MacSpace 보조 프로그램이 필요합니다."
- ],
- "MacSpace needs its helper to restore the Phone feature settings.": [
-  "O MacSpace precisa do auxiliar para restaurar os ajustes dos recursos do Telefone.",
-  "MacSpace a besoin de son assistant pour restaurer les réglages des fonctions de Téléphone.",
-  "MacSpace necesita su asistente para restaurar los ajustes de las funciones de Teléfono.",
-  "MacSpace benötigt seinen Hilfsdienst, um die Einstellungen der Telefonfunktionen wiederherzustellen.",
-  "MacSpace 需要辅助程序来恢复电话功能设置。",
-  "電話の機能の設定を復元するには、MacSpaceのヘルパーが必要です。",
-  "전화 기능 설정을 복원하려면 MacSpace 보조 프로그램이 필요합니다."
  ],
  "No supported Siri language with a base language different from %@ is available.": [
   "Não há nenhum idioma da Siri compatível com um idioma base diferente de %@.",
@@ -601,24 +520,6 @@
   "其他账户",
   "ほかのアカウント",
   "다른 계정"
- ],
- "Phone feature settings updated.": [
-  "Ajustes dos recursos do Telefone atualizados.",
-  "Réglages des fonctions de Téléphone mis à jour.",
-  "Ajustes de las funciones de Teléfono actualizados.",
-  "Einstellungen der Telefonfunktionen aktualisiert.",
-  "电话功能设置已更新。",
-  "電話の機能の設定を更新しました。",
-  "전화 기능 설정이 업데이트되었습니다."
- ],
- "Phone features": [
-  "Recursos do Telefone",
-  "Fonctions de Téléphone",
-  "Funciones de Teléfono",
-  "Telefonfunktionen",
-  "电话功能",
-  "電話の機能",
-  "전화 기능"
  ],
  "Released Apple Intelligence models": [
   "Modelos do Apple Intelligence liberados",
@@ -818,15 +719,6 @@
   "システムまたはSiriの言語を読み取れませんでした。",
   "시스템 또는 Siri 언어를 읽지 못했습니다."
  ],
- "These controls have not been verified on this macOS version.": [
-  "Estes controles não foram verificados nesta versão do macOS.",
-  "Ces commandes n’ont pas été vérifiées sur cette version de macOS.",
-  "Estos controles no se han verificado en esta versión de macOS.",
-  "Diese Steuerelemente wurden auf dieser macOS-Version noch nicht überprüft.",
-  "这些控制尚未在此 macOS 版本上验证。",
-  "このmacOSバージョンでは、これらの制御は検証されていません。",
-  "이 제어 기능은 현재 macOS 버전에서 검증되지 않았습니다."
- ],
  "This account was deleted, but macOS still keeps its models. In Terminal, run:": [
   "Esta conta foi apagada, mas o macOS ainda mantém os modelos dela. No Terminal, execute:",
   "Ce compte a été supprimé, mais macOS conserve encore ses modèles. Dans Terminal, exécutez :",
@@ -844,15 +736,6 @@
   "这是虚拟机",
   "これは仮想マシンです",
   "가상 머신입니다"
- ],
- "Turn it off to keep Siri's language change on this Mac.": [
-  "Desative-a para manter a mudança de idioma da Siri só neste Mac.",
-  "Désactivez-la pour garder le changement de langue de Siri sur ce Mac.",
-  "Desactívala para que el cambio de idioma de Siri se quede en este Mac.",
-  "Schalte sie aus, damit die Sprachänderung von Siri nur auf diesem Mac gilt.",
-  "关闭此选项，使 Siri 语言更改仅影响此 Mac。",
-  "オフにするとSiriの言語変更をこのMacだけに適用できます。",
-  "Siri 언어 변경이 이 Mac에만 적용되도록 끄세요."
  ],
  "Turn off Sync this Mac and keep the data on this Mac.": [
   "Desative Sincronizar este Mac e mantenha os dados neste Mac.",
@@ -1114,5 +997,275 @@
   "状态未知",
   "状態不明",
   "상태 알 수 없음"
+ ],
+ "Disable": [
+  "Desativar",
+  "Désactiver",
+  "Desactivar",
+  "Deaktivieren",
+  "停用",
+  "無効にする",
+  "끄기"
+ ],
+ "Enable": [
+  "Ativar",
+  "Activer",
+  "Activar",
+  "Aktivieren",
+  "启用",
+  "有効にする",
+  "켜기"
+ ],
+ "Disable all": [
+  "Desativar tudo",
+  "Tout désactiver",
+  "Desactivar todo",
+  "Alle deaktivieren",
+  "全部停用",
+  "すべて無効にする",
+  "모두 끄기"
+ ],
+ "Enable all": [
+  "Ativar tudo",
+  "Tout activer",
+  "Activar todo",
+  "Alle aktivieren",
+  "全部启用",
+  "すべて有効にする",
+  "모두 켜기"
+ ],
+ "Disable %lld features?": [
+  "Desativar %lld recursos?",
+  "Désactiver %lld fonctions ?",
+  "¿Desactivar %lld funciones?",
+  "%lld Funktionen deaktivieren?",
+  "停用 %lld 项功能？",
+  "%lld個の機能を無効にしますか？",
+  "기능 %lld개를 끌까요?"
+ ],
+ "Enable all %lld features again?": [
+  "Reativar todos os %lld recursos?",
+  "Réactiver les %lld fonctions ?",
+  "¿Volver a activar las %lld funciones?",
+  "Alle %lld Funktionen wieder aktivieren?",
+  "重新启用全部 %lld 项功能？",
+  "%lld個すべての機能を再び有効にしますか？",
+  "기능 %lld개를 모두 다시 켤까요?"
+ ],
+ "Changing settings": [
+  "Alterando ajustes",
+  "Modification des réglages",
+  "Cambiando los ajustes",
+  "Einstellungen werden geändert",
+  "正在更改设置",
+  "設定を変更中",
+  "설정 변경 중"
+ ],
+ "macOS downloads their models again.": [
+  "O macOS baixa os modelos de novo.",
+  "macOS télécharge de nouveau leurs modèles.",
+  "macOS vuelve a descargar sus modelos.",
+  "macOS lädt ihre Modelle erneut herunter.",
+  "macOS 会重新下载它们的模型。",
+  "macOSがモデルを再びダウンロードします。",
+  "macOS가 모델을 다시 다운로드합니다."
+ ],
+ "Each one can be enabled again. MacSpace frees their models.": [
+  "Cada um pode ser reativado. O MacSpace libera os modelos deles.",
+  "Chacune peut être réactivée. MacSpace libère leurs modèles.",
+  "Cada una se puede volver a activar. MacSpace libera sus modelos.",
+  "Jede lässt sich wieder aktivieren. MacSpace gibt ihre Modelle frei.",
+  "每项功能都可以重新启用。MacSpace 会释放它们的模型。",
+  "どの機能も再び有効にできます。MacSpaceがモデルを解放します。",
+  "각 기능은 다시 켤 수 있습니다. MacSpace가 모델을 정리합니다."
+ ],
+ "%@ of models for %@; switch it off to free them": [
+  "%@ de modelos para %@; desative para liberar",
+  "%@ de modèles pour %@ ; désactivez pour les libérer",
+  "%@ de modelos para %@; desactívalo para liberarlos",
+  "%@ an Modellen für %@; zum Freigeben ausschalten",
+  "%@ 的模型用于 %@；关闭即可释放",
+  "%@のモデル（%@）。オフにすると解放されます",
+  "%@ 모델(%@): 끄면 정리됩니다"
+ ],
+ "%@ of models for Siri features; switch them off to free them": [
+  "%@ de modelos para recursos da Siri; desative para liberar",
+  "%@ de modèles pour des fonctions de Siri ; désactivez-les pour les libérer",
+  "%@ de modelos para funciones de Siri; desactívalas para liberarlos",
+  "%@ an Modellen für Siri-Funktionen; zum Freigeben ausschalten",
+  "%@ 的模型用于 Siri 功能；关闭即可释放",
+  "%@のモデル（Siriの機能）。オフにすると解放されます",
+  "%@ 모델(Siri 기능): 끄면 정리됩니다"
+ ],
+ "Disable %@": [
+  "Desativar %@",
+  "Désactiver %@",
+  "Desactivar %@",
+  "%@ deaktivieren",
+  "停用 %@",
+  "%@を無効にする",
+  "%@ 끄기"
+ ],
+ "Enable %@": [
+  "Ativar %@",
+  "Activer %@",
+  "Activar %@",
+  "%@ aktivieren",
+  "启用 %@",
+  "%@を有効にする",
+  "%@ 켜기"
+ ],
+ "Disable %@?": [
+  "Desativar %@?",
+  "Désactiver %@ ?",
+  "¿Desactivar %@?",
+  "%@ deaktivieren?",
+  "停用 %@？",
+  "%@を無効にしますか？",
+  "%@을(를) 끌까요?"
+ ],
+ "Enable %@ again?": [
+  "Reativar %@?",
+  "Réactiver %@ ?",
+  "¿Volver a activar %@?",
+  "%@ wieder aktivieren?",
+  "重新启用 %@？",
+  "%@を再び有効にしますか？",
+  "%@을(를) 다시 켤까요?"
+ ],
+ "Kept by macOS": [
+  "Mantido pelo macOS",
+  "Conservé par macOS",
+  "Conservado por macOS",
+  "Von macOS behalten",
+  "由 macOS 保留",
+  "macOSが保持",
+  "macOS가 보관 중"
+ ],
+ "Downloading": [
+  "Baixando",
+  "Téléchargement",
+  "Descargando",
+  "Wird geladen",
+  "正在下载",
+  "ダウンロード中",
+  "다운로드 중"
+ ],
+ "Call transcription": [
+  "Transcrição de chamadas",
+  "Transcription des appels",
+  "Transcripción de llamadas",
+  "Anruftranskription",
+  "通话转录",
+  "通話の文字起こし",
+  "통화 전사"
+ ],
+ "Can't change now": [
+  "Não é possível alterar agora",
+  "Impossible de modifier pour l’instant",
+  "No se puede cambiar ahora",
+  "Gerade nicht änderbar",
+  "暂时无法更改",
+  "今は変更できません",
+  "지금은 변경할 수 없음"
+ ],
+ "Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.": [
+  "Outra alteração afeta estes ajustes. O MacSpace a preserva e não libera sozinho os modelos de transcrição de chamadas.",
+  "Une autre modification touche ces réglages. MacSpace la conserve et ne libère pas de lui-même les modèles de transcription des appels.",
+  "Otro cambio afecta a estos ajustes. MacSpace lo conserva y no libera por sí solo los modelos de transcripción de llamadas.",
+  "Eine andere Änderung betrifft diese Einstellungen. MacSpace behält sie bei und gibt die Modelle der Anruftranskription nicht selbst frei.",
+  "另一项更改影响了这些设置。MacSpace 会保留它，不会自行释放通话转录模型。",
+  "別の変更がこれらの設定に影響しています。MacSpaceはそれを維持し、通話の文字起こしのモデルを自動では解放しません。",
+  "다른 변경 사항이 이 설정에 영향을 줍니다. MacSpace는 이를 유지하며 통화 전사 모델을 직접 정리하지 않습니다."
+ ],
+ "MacSpace could not read every Call transcription setting.": [
+  "O MacSpace não conseguiu ler todos os ajustes da Transcrição de chamadas.",
+  "MacSpace n’a pas pu lire tous les réglages de Transcription des appels.",
+  "MacSpace no pudo leer todos los ajustes de Transcripción de llamadas.",
+  "MacSpace konnte nicht alle Einstellungen der Anruftranskription lesen.",
+  "MacSpace 无法读取通话转录的全部设置。",
+  "MacSpaceは通話の文字起こしの設定をすべて読み取れませんでした。",
+  "MacSpace가 통화 전사 설정을 모두 읽지 못했습니다."
+ ],
+ "MacSpace needs its helper to restore Call transcription.": [
+  "O MacSpace precisa do auxiliar para restaurar a Transcrição de chamadas.",
+  "MacSpace a besoin de son assistant pour rétablir Transcription des appels.",
+  "MacSpace necesita su asistente para restaurar Transcripción de llamadas.",
+  "MacSpace braucht seinen Helfer, um die Anruftranskription wiederherzustellen.",
+  "MacSpace 需要其辅助程序来恢复通话转录。",
+  "通話の文字起こしを元に戻すにはMacSpaceのヘルパーが必要です。",
+  "통화 전사를 복원하려면 MacSpace 도우미가 필요합니다."
+ ],
+ "Couldn't restore Call transcription.": [
+  "Não foi possível restaurar a Transcrição de chamadas.",
+  "Impossible de rétablir Transcription des appels.",
+  "No se pudo restaurar Transcripción de llamadas.",
+  "Die Anruftranskription konnte nicht wiederhergestellt werden.",
+  "无法恢复通话转录。",
+  "通話の文字起こしを元に戻せませんでした。",
+  "통화 전사를 복원할 수 없습니다."
+ ],
+ "MacSpace needs its helper to change Call transcription.": [
+  "O MacSpace precisa do auxiliar para alterar a Transcrição de chamadas.",
+  "MacSpace a besoin de son assistant pour modifier Transcription des appels.",
+  "MacSpace necesita su asistente para cambiar Transcripción de llamadas.",
+  "MacSpace braucht seinen Helfer, um die Anruftranskription zu ändern.",
+  "MacSpace 需要其辅助程序来更改通话转录。",
+  "通話の文字起こしを変更するにはMacSpaceのヘルパーが必要です。",
+  "통화 전사를 변경하려면 MacSpace 도우미가 필요합니다."
+ ],
+ "Couldn't verify the Call transcription change.": [
+  "Não foi possível verificar a alteração da Transcrição de chamadas.",
+  "Impossible de vérifier la modification de Transcription des appels.",
+  "No se pudo verificar el cambio de Transcripción de llamadas.",
+  "Die Änderung der Anruftranskription konnte nicht geprüft werden.",
+  "无法验证通话转录的更改。",
+  "通話の文字起こしの変更を確認できませんでした。",
+  "통화 전사 변경 사항을 확인할 수 없습니다."
+ ],
+ "Couldn't change Call transcription.": [
+  "Não foi possível alterar a Transcrição de chamadas.",
+  "Impossible de modifier Transcription des appels.",
+  "No se pudo cambiar Transcripción de llamadas.",
+  "Die Anruftranskription konnte nicht geändert werden.",
+  "无法更改通话转录。",
+  "通話の文字起こしを変更できませんでした。",
+  "통화 전사를 변경할 수 없습니다."
+ ],
+ "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.": [
+  "Enquanto ela estiver ativada, a mudança de idioma da Siri chega também ao seu iPhone e iPad. Desative-a para manter a mudança só neste Mac.",
+  "Tant qu’elle est activée, le changement de langue de Siri atteint aussi votre iPhone et votre iPad. Désactivez-la pour le garder sur ce Mac.",
+  "Mientras esté activada, el cambio de idioma de Siri llega también a tu iPhone y iPad. Desactívala para mantenerlo solo en este Mac.",
+  "Solange sie an ist, erreicht die Änderung der Siri-Sprache auch dein iPhone und iPad. Schalte sie aus, damit die Änderung nur auf diesem Mac gilt.",
+  "开启时，Siri 的语言更改也会同步到你的 iPhone 和 iPad。关闭它可让更改只保留在这台 Mac 上。",
+  "オンのあいだは、Siriの言語の変更がiPhoneとiPadにも届きます。このMacだけに留めるにはオフにしてください。",
+  "켜져 있는 동안 Siri 언어 변경이 iPhone과 iPad에도 적용됩니다. 이 Mac에만 적용하려면 끄세요."
+ ],
+ "Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.": [
+  "Desativa gravação, transcrição, legendas e tradução de chamadas, Correio de Voz ao Vivo e Triagem de Chamadas. Exige reinicialização.",
+  "Désactive l’enregistrement, la transcription, les sous-titres et la traduction des appels, la messagerie en direct et le filtrage. Redémarrage requis.",
+  "Desactiva grabación, transcripción, subtítulos y traducción de llamadas, buzón de voz en directo y filtrado. Requiere reiniciar.",
+  "Schaltet Aufzeichnung, Transkription, Untertitel und Übersetzung von Anrufen, Live-Voicemail und Anruffilter aus. Erfordert einen Neustart.",
+  "关闭通话录音、转录、字幕和翻译，以及实时语音信箱和来电筛选。需要重新启动。",
+  "通話の録音、文字起こし、字幕、翻訳と、ライブ留守番電話、着信スクリーニングをオフにします。再起動が必要です。",
+  "통화 녹음, 전사, 자막, 번역과 실시간 음성 사서함, 통화 스크리닝을 끕니다. 재시동이 필요합니다."
+ ],
+ "macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.": [
+  "Serviços do próprio macOS ainda estão com estes modelos abertos. Eles saem quando esses serviços param ou depois de reiniciar, e o MacSpace então os apaga.",
+  "Des services de macOS gardent encore ces modèles ouverts. Ils partent quand ces services s’arrêtent ou après un redémarrage, puis MacSpace les supprime.",
+  "Servicios del propio macOS aún tienen estos modelos abiertos. Se liberan cuando esos servicios se detienen o tras reiniciar, y MacSpace los elimina entonces.",
+  "Dienste von macOS haben diese Modelle noch geöffnet. Sie werden frei, wenn diese Dienste enden oder nach einem Neustart, dann löscht MacSpace sie.",
+  "macOS 自身的服务仍在使用这些模型。这些服务停止或重新启动后它们才会释放，随后 MacSpace 会删除它们。",
+  "macOS自身のサービスがまだこれらのモデルを開いています。サービスが停止するか再起動すると解放され、その後MacSpaceが削除します。",
+  "macOS 자체 서비스가 아직 이 모델을 열어 두고 있습니다. 해당 서비스가 멈추거나 재시동하면 해제되며, 그때 MacSpace가 삭제합니다."
+ ],
+ "MacSpace asks macOS again every five minutes.": [
+  "O MacSpace pede de novo ao macOS a cada cinco minutos.",
+  "MacSpace redemande à macOS toutes les cinq minutes.",
+  "MacSpace vuelve a pedírselo a macOS cada cinco minutos.",
+  "MacSpace fragt macOS alle fünf Minuten erneut.",
+  "MacSpace 每五分钟会再次请求 macOS。",
+  "MacSpaceは5分ごとにmacOSに再度依頼します。",
+  "MacSpace가 5분마다 macOS에 다시 요청합니다."
  ]
 }

@@ -101,9 +101,9 @@ Com a sincronização da Siri com o iCloud ativada, essas alterações também c
 dispositivos na mesma Conta Apple. O MacSpace não consegue desativar essa sincronização. Ele diz
 onde você pode fazer isso.
 
-### Recursos do Telefone
+### Transcrição de chamadas
 
-O controle dos recursos do Telefone em Siri e Apple Intelligence usa cinco substituições fixas de TelephonyUtilities em
+O controle de Transcrição de chamadas em Siri e Apple Intelligence usa cinco substituições fixas de TelephonyUtilities em
 `/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: gravação de chamadas, triagem de chamadas, envio de legendas
 do FaceTime e os controles de tradução de áudio e vídeo do Mac. O auxiliar autenticado salva as entradas originais em
 `/Library/Application Support/MacSpace/phone-features.json` antes de alterar qualquer valor. As alterações exigem reinicialização;
@@ -114,18 +114,20 @@ altera o idioma da Siri. A operação do auxiliar aceita apenas ativar ou desati
 ### Modelos dos recursos
 
 Os interruptores separados da Siri e das Fotos Espaciais salvam os ajustes originais antes de desativar o recurso. A voz salva
-da Siri é removida enquanto ela está desativada; seu idioma é mantido. Telefone também desativa os ajustes locais de gravação,
+da Siri é removida enquanto ela está desativada; seu idioma é mantido. A Transcrição de chamadas também desativa os ajustes locais de gravação,
 filtragem e legendas. Os originais ficam em `~/Library/Application Support/MacSpace/feature-settings/`.
 
 As solicitações de modelos são liberadas pelas interfaces dos próprios serviços da Apple, com os dados de restauração em
 `~/Library/Application Support/MacSpace/asset-owners/`. Essas limpezas de recursos e de modelos de idiomas não editam o banco de assinaturas ativo nem apagam os modelos
-diretamente. A limpeza usa o serviço protegido do macOS. Ela aguarda enquanto o Apple Intelligence está disponível ou seu estado
-não pode ser lido, mantém as solicitações de outras contas e preserva modelos de fala compartilhados enquanto o Ditado está ativo.
+diretamente. A limpeza usa o serviço protegido do macOS. Ela aguarda enquanto o estado do Apple Intelligence não pode ser lido e, com o
+Apple Intelligence ativado, enquanto o macOS baixa recursos do sistema; mantém as solicitações de outras contas e preserva modelos
+de fala compartilhados enquanto o Ditado está ativo. Os modelos de idiomas não usados só são liberados com o Apple Intelligence
+desativado.
 
 Enquanto estiver aberto, o MacSpace verifica os recursos explicitamente desativados a cada cinco minutos e limpa novamente os
 modelos não usados que o macOS solicitar. Reativar um recurso ou usar o desinstalador do MacSpace restaura os ajustes e as
 solicitações salvos; o macOS pode baixar os modelos novamente. Operações interrompidas ou conflitantes são verificadas antes de
-qualquer repetição. Os controles só estão disponíveis nas versões verificadas do macOS. Os modelos de idiomas não usados em
+qualquer repetição. Os controles funcionam em todas as versões do macOS 27; antes de cada solicitação, o processo separado verifica os métodos da Apple que chama. Os modelos de idiomas não usados em
 Dados do Sistema têm uma limpeza pontual, que não desativa a correção ortográfica nem os dicionários.
 
 ### Permissões

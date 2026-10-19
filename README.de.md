@@ -72,11 +72,7 @@ optionale Prüfung, **Prüfen, dass Apple Intelligence aus bleibt** in den Einst
 dir, wenn macOS es wieder einschaltet. In einer virtuellen Maschine bietet macOS Apple
 Intelligence nicht an, daher sagt die Seite nur das.
 
-Separate Schalter für **Siri**, **Räumliche Fotos** und **Telefonfunktionen** schalten diese Funktionen aus und geben ungenutzte
-Modelle frei. Telefonänderungen erfordern einen Neustart und betreffen alle Accounts dieses Macs, ohne Profilinstallation.
-Solange MacSpace geöffnet ist, prüft es alle fünf Minuten erneut angeforderte Modelle deaktivierter Funktionen.
-Einschalten stellt gesicherte Einstellungen wieder her. Bei verfügbarem Apple Intelligence bleiben die Modelle erhalten.
-Andere ungenutzte Sprachdaten haben unter **Systemdaten** eine Aktion **Freigeben**.
+Drei weitere Schalter schalten diese Funktionen aus und löschen die Modelle, die auf dem Volume bleiben: **Siri, Räumliche Fotos und Anruftranskription**.
 
 <p align="center">
   <img src="Docs/Screenshots/de/Siri.png" alt="Die Seite „Siri & Apple Intelligence“: der Schalter „Apple Intelligence“, ausgeschaltet, und die Zeile zur iCloud-Synchronisierung von Siri" width="720">

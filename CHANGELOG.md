@@ -9,9 +9,15 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
-- **Siri**, **Spatial Photos** and **Phone features** switches in Siri & Apple Intelligence. Each turns its feature off,
+- **Siri**, **Spatial Photos** and **Call transcription** switches in Siri & Apple Intelligence. Each turns its feature off,
   saves the original settings and deletes the models it leaves on disk. While MacSpace is open, it deletes them again if macOS
-  asks for them again. Phone features needs a restart and installs no profile. Switching a feature on restores what MacSpace saved.
+  asks for them again. Call transcription needs a restart and installs no profile. Switching a feature on restores what MacSpace saved.
+  They work on every macOS 27 release, with Apple Intelligence on or off. While Apple Intelligence is on, MacSpace deletes the
+  models only while macOS is downloading nothing.
+- The Siri & Apple Intelligence tile and each switch show the size of the feature models on disk, as for Apple Intelligence,
+  and keep showing it while they are switched off and macOS still has them. Switches can show a size beside them (`ToggleRow.trailing`).
+- The Siri & Apple Intelligence page's main button works like Debloat's: it frees the models when there are some to free, else
+  turns off every switch still on, else turns them all back on.
 - **Unused system assets** in System Data also releases unused language data.
 - Simplified Chinese (#8), Japanese and Korean (#9), throughout the app and all four modules.
 - **About MacSpace**, in the application and menu bar menus, with the version, GitHub and an uninstaller that restores each
@@ -22,12 +28,31 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 - Freeing a single row checks only what that row freed, without scanning the whole module again. Pages stay usable while they
   refresh, and cloud files use the same cleanup in System Data and Other System Files.
-- The **All done** page shows a short countdown before it goes back, and starts it only once the page has its new figures.
+- The **All done** page stays a few seconds, without a countdown, so the freed space can be read before it goes back. The wait
+  starts only once the page has its new figures.
+- Debloat's **Siri AI** is now **Siri AI search**, with a description that says it stops the search app and leaves Siri itself
+  to the Siri page.
 - Homebrew and `/usr/local` explain what they hold and what MacSpace frees there.
+
+- The design tools' text catalog loads only when its window opens, not for as long as MacSpace runs.
+- **Phone features** is now **Call transcription**, in every language and in the documentation.
+- Every (i) is a short, static description of the item: no sizes, counts, dates, file lists or live state, five lines at most.
+  What a state means now is on its pill, as a hover tag (`Badge.help`); `InfoText` in the SDK sets the rule and the app enforces it.
+  Debloat's verification notes, the Siri page's switch states, cloud folders with their file counts, Time Machine snapshot dates and
+  the old reports count moved out of their (i).
 
 ### Fixed
 
-- A row's **Free** flag no longer pushes the buttons beside it around while it cleans.
+- Debloat's analytics switches no longer say **Not verified** when macOS logged no decision to read: they keep the settings they
+  wrote and read back, and only a decision to send diagnostics shows a pill.
+
+- A row's **Free** flag no longer pushes the buttons beside it around while it cleans, and no longer narrows and widens with
+  every progress message.
+- System Data no longer shows an **Unused system assets** row with no size, whose Free freed nothing.
+- When macOS's own services keep a switched-off feature's models open, the **Waiting for macOS** pill says so on hover, and that
+  they go when those services stop or after a restart.
+- Switching Siri off frees its 2.4 GB of understanding models again: Siri's language hold now uses another of macOS's language
+  aliases, which MacSpace recognizes from macOS's own definition, and a feature counts as clean only once its models are gone.
 - Rows, legends and pages arrive and leave in one steady cascade, without jumps after a cleanup (#23).
 - Numbers and words in captions, buttons and **All done** change smoothly, without overlapping, cutting off or leaving the tile
   (#19, #22).

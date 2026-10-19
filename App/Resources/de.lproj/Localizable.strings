@@ -104,6 +104,7 @@
 "No module needs a permission." = "Kein Modul benötigt eine Berechtigung.";
 "No modules are on" = "Keine Module aktiviert";
 "No modules were found." = "Keine Module gefunden.";
+"Not found" = "Nicht gefunden";
 "Not in this build" = "Nicht in diesem Build";
 "Not installed" = "Nicht installiert";
 "Not responding" = "Antwortet nicht";

@@ -70,11 +70,7 @@ todas as contas. Uma verificação opcional, **Verificar se o Apple Intelligence
 desativado**, nos Ajustes, avisa se o macOS o reativar. Numa máquina virtual, o macOS não oferece o
 Apple Intelligence, então a página só informa isso.
 
-Os interruptores separados **Siri**, **Fotos Espaciais** e **Recursos do Telefone** desativam esses recursos e liberam seus
-modelos não usados. As mudanças do Telefone exigem reinicialização e afetam todas as contas deste Mac, sem instalar perfil.
-Enquanto estiver aberto, o MacSpace verifica a cada cinco minutos os modelos solicitados novamente por recursos desativados.
-Reativar restaura os ajustes salvos. Os modelos são mantidos enquanto o Apple Intelligence estiver disponível.
-Os demais modelos de idiomas não usados têm a ação **Liberar** em **Dados do Sistema**.
+Outros três interruptores desativam estes recursos e apagam os modelos que ficam no disco: **Siri, Fotos Espaciais e Transcrição de chamadas**.
 
 <p align="center">
   <img src="Docs/Screenshots/pt-BR/Siri.png" alt="A página Siri e Apple Intelligence: o interruptor Apple Intelligence, desativado, e a linha sobre a sincronização da Siri com o iCloud" width="720">

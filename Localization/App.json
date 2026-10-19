@@ -1618,5 +1618,14 @@
   "正在移除 %lld%%，%@",
   "削除中 %lld%%、%@",
   "제거 중 %lld%%, %@"
+ ],
+ "Not found": [
+  "Não encontrado",
+  "Introuvable",
+  "No encontrado",
+  "Nicht gefunden",
+  "未找到",
+  "見つかりません",
+  "찾을 수 없음"
  ]
 }

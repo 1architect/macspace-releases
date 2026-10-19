@@ -3,7 +3,6 @@
 "%@ %@ device files" = "Archivos de dispositivo %@ %@";
 "%@ is outside the cleanable locations." = "%@ está fuera de las ubicaciones que se pueden limpiar.";
 "%@ is running; quit it first." = "%@ está abierto; ciérralo primero.";
-"%@ older than %lld days." = "%@ con más de %lld días.";
 "%lld items" = "%lld elementos";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "%lld más, incluidos modelos de Apple Intelligence, están en Protegido por macOS.";
 "%lld places couldn't be measured." = "No se han podido medir %lld ubicaciones.";
@@ -160,6 +159,7 @@
 "Rebuilt by Spotlight; macOS manages it." = "Spotlight lo reconstruye; macOS lo gestiona.";
 "Recommended" = "Recomendados";
 "Remove it with the tool that made it." = "Elimínalo con la herramienta que lo creó.";
+"Reports older than %lld days. macOS writes new ones as needed." = "Informes de más de %lld días. macOS crea otros nuevos cuando hace falta.";
 "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g)." = "El sistema las solicita para cada idioma en el que ha visto texto y las actualiza a diario. No es una opción de Ajustes: aunque la ortografía use un solo idioma, la lista no cambia.";
 "Restart, then free them under Free now." = "Reinicia y libéralos en Liberar ahora.";
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "logd lo rota; eliminarlo borra los registros necesarios para resolver problemas.";
@@ -204,8 +204,8 @@
 "This permanently deletes %@." = "Esto elimina para siempre %@.";
 "Tool cache" = "Caché de herramienta";
 "Tool cache: ~/.cache/%@" = "Caché de herramienta: ~/.cache/%@";
-"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.";
 "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Herramientas y bibliotecas instaladas por Homebrew. Las versiones antiguas y las descargas eliminables aparecen en Cachés que se pueden liberar. Los paquetes instalados se conservan.";
+"Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them." = "Herramientas instaladas fuera de Homebrew, como Node.js y Python. Elimina cada una con su instalador: borrar la carpeta puede romperlas.";
 "Trash" = "Papelera";
 "Turn on the helper to see everything" = "Activa el asistente para verlo todo";
 "Unchanged for %lld days" = "Sin cambios desde hace %lld días";

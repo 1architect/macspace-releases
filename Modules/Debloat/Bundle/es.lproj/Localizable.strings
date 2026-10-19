@@ -67,11 +67,9 @@
 "MacSpace restores the settings it saved before disabling them." = "MacSpace restaura los ajustes que guardó antes de desactivarlas.";
 "No control was named." = "No se ha indicado ningún control.";
 "No controls were selected." = "No se ha seleccionado ningún control.";
-"No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed." = "No se pudo leer ninguna decisión sobre los diagnósticos tras el cambio. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos, por lo que no demuestra que el ajuste haya fallado.";
 "No longer works" = "Ya no funciona";
 "No more \"quit unexpectedly\" dialogs." = "Se acabaron los avisos de «se ha cerrado inesperadamente».";
 "Not on this macOS" = "No existe en este macOS";
-"Not verified" = "Sin verificar";
 "Not working" = "No funciona";
 "Nothing to approve" = "Nada que aprobar";
 "Nothing to remove" = "Nada que eliminar";
@@ -85,7 +83,7 @@
 "Share analytics with Apple" = "Compartir análisis con Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Muestra una notificación cuando macOS vuelve a activar una función desactivada y MacSpace la desactiva de nuevo.";
 "Siri" = "Siri";
-"Siri AI" = "Siri AI";
+"Siri AI search" = "Búsqueda de Siri AI";
 "Some are not tested yet." = "Algunas aún no se han probado.";
 "Spotlight internet results" = "Resultados de internet en Spotlight";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight deja de enviar tus búsquedas a Apple. Sin resultados web en Spotlight.";
@@ -93,13 +91,13 @@
 "Stops sending usage and crash data to Apple and app developers." = "Deja de enviar datos de uso y de fallos a Apple y a los desarrolladores.";
 "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above." = "Deja de enviar datos de uso y de fallos a Apple, también en las versiones beta de macOS, que ignoran el ajuste anterior.";
 "Stops sharing Siri and Dictation recordings with Apple." = "Deja de compartir las grabaciones de Siri y del dictado con Apple.";
+"Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page." = "Desactiva la app de búsqueda Siri AI; Spotlight vuelve a la búsqueda clásica. Para desactivar Siri, usa la página Siri y Apple Intelligence.";
 "Suggestions and search" = "Sugerencias y búsqueda";
 "Switch it off, then restart your Mac." = "Desactívalo y reinicia el Mac.";
 "Switch it off. To turn off Apple Intelligence, use the Siri page." = "Desactívalo. Para desactivar Apple Intelligence, usa la página Siri.";
 "This beta version of macOS ignores the regular analytics setting. Use the profile option instead." = "Esta versión beta de macOS ignora el ajuste habitual de análisis. Usa la opción con un perfil.";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "Desactiva los análisis, los anuncios y la recogida de datos en segundo plano que macOS te deja controlar.";
 "Turns off Game Center." = "Desactiva Game Center.";
-"Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on." = "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. Las demás funciones de Apple Intelligence siguen activadas.";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "Desactiva la inteligencia visual. Búsqueda visual también puede dejar de funcionar.";
 "Undone by macOS" = "Deshecho por macOS";
 "Unknown action %@." = "Acción desconocida %@.";

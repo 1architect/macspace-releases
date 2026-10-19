@@ -103,9 +103,9 @@ iCloud-Synchronisierung von Siri erreichen diese Änderungen auch deine anderen 
 demselben Apple Account. MacSpace kann diese Synchronisierung nicht ausschalten. Es sagt dir, wo
 du das tun kannst.
 
-### Telefonfunktionen
+### Anruftranskription
 
-Die Telefonsteuerung unter Siri und Apple Intelligence verwendet fünf feste TelephonyUtilities-Überschreibungen in
+Die Anruftranskription unter Siri und Apple Intelligence verwendet fünf feste TelephonyUtilities-Überschreibungen in
 `/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist`: Anrufaufzeichnung, Anruffilter, FaceTime-Untertitelübermittlung
 und Audio-/Videoübersetzung auf dem Mac. Der authentifizierte Hilfsdienst speichert die ursprünglichen Einträge vor Änderungen in
 `/Library/Application Support/MacSpace/phone-features.json`. Änderungen erfordern einen Neustart; der tatsächliche Zustand wird
@@ -116,19 +116,21 @@ beibehalten. Außerhalb von MacSpace geänderte Einträge werden nicht überschr
 ### Modelle der Funktionen
 
 Die separaten Schalter für Siri und räumliche Fotos sichern die ursprünglichen Einstellungen vor dem Ausschalten. Siris
-gesicherte Stimme wird entfernt, solange Siri aus ist; die Siri-Sprache bleibt erhalten. Telefon deaktiviert außerdem die lokalen
+gesicherte Stimme wird entfernt, solange Siri aus ist; die Siri-Sprache bleibt erhalten. Die Anruftranskription deaktiviert außerdem die lokalen
 Einstellungen für Aufnahme, Anruffilter und Untertitel. Die Originale liegen unter
 `~/Library/Application Support/MacSpace/feature-settings/`.
 
 Modellanforderungen werden über die zuständigen Apple-Dienste freigegeben. Wiederherstellungsdaten liegen unter
 `~/Library/Application Support/MacSpace/asset-owners/`. Diese Bereinigungen von Funktionen und Sprachmodellen bearbeiten die aktive Abonnementdatenbank nicht und löschen
-keine Modelle direkt. Die Bereinigung nutzt den geschützten macOS-Dienst. Sie wartet, wenn Apple Intelligence verfügbar oder
-sein Zustand nicht lesbar ist, erhält Anforderungen anderer Accounts und gemeinsame Sprachmodelle bei aktivem Diktat.
+keine Modelle direkt. Die Bereinigung nutzt den geschützten macOS-Dienst. Sie wartet, wenn der Zustand von Apple Intelligence nicht
+lesbar ist und, bei eingeschaltetem Apple Intelligence, solange macOS Systemressourcen lädt. Anforderungen anderer Accounts und
+gemeinsame Sprachmodelle bei aktivem Diktat bleiben erhalten. Ungenutzte Sprachdaten werden nur bei ausgeschaltetem Apple
+Intelligence freigegeben.
 
 Solange MacSpace geöffnet ist, prüft es ausdrücklich deaktivierte Funktionen alle fünf Minuten und bereinigt erneut angeforderte,
 ungenutzte Modelle. Einschalten einer Funktion oder MacSpaces Deinstallation stellt gesicherte Einstellungen und Anforderungen
 wieder her; macOS kann die Modelle erneut laden. Unterbrochene oder widersprüchliche Vorgänge werden vor einer Wiederholung
-geprüft. Diese Schalter sind nur für verifizierte macOS-Versionen verfügbar. Ungenutzte Sprachdaten unter Systemdaten werden
+geprüft. Diese Schalter funktionieren mit jeder Version von macOS 27; vor jeder Anforderung prüft der separate Prozess die aufgerufenen Apple-Methoden. Ungenutzte Sprachdaten unter Systemdaten werden
 einmalig bereinigt; Rechtschreibung und Wörterbücher bleiben aktiviert.
 
 ### Berechtigungen

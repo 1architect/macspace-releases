@@ -3,7 +3,6 @@
 "%@ %@ device files" = "%@ %@のデバイスファイル";
 "%@ is outside the cleanable locations." = "%@はクリーンアップ対象の場所ではありません。";
 "%@ is running; quit it first." = "%@が実行中です。先に終了してください。";
-"%@ older than %lld days." = "%@、%lld日より前。";
 "%lld items" = "%lld項目";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "Apple Intelligenceモデルを含むほか%lld件は「macOSが保護」にあります。";
 "%lld places couldn't be measured." = "%lldか所を測定できませんでした。";
@@ -160,6 +159,7 @@
 "Rebuilt by Spotlight; macOS manages it." = "Spotlightが再作成し、macOSが管理します。";
 "Recommended" = "推奨";
 "Remove it with the tool that made it." = "作成元のツールで削除してください。";
+"Reports older than %lld days. macOS writes new ones as needed." = "%lld日より古いレポート。macOSは必要に応じて新しく作成します。";
 "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g)." = "システムがテキストで見た言語ごとに要求し、毎日更新します。スペル言語を1つにしてもリストは変わりません（26B5091gで確認）。";
 "Restart, then free them under Free now." = "再起動後、「今すぐ解放」で解放してください。";
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "logdがローテーションします。削除すると問題調査用のログが失われます。";
@@ -204,8 +204,8 @@
 "This permanently deletes %@." = "%@を完全に削除します。";
 "Tool cache" = "ツールキャッシュ";
 "Tool cache: ~/.cache/%@" = "ツールキャッシュ：~/.cache/%@";
-"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。";
 "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。";
+"Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them." = "Homebrew以外でインストールしたツール（Node.jsやPythonなど）。それぞれのインストーラで削除してください。フォルダごと削除すると動かなくなることがあります。";
 "Trash" = "ゴミ箱";
 "Turn on the helper to see everything" = "ヘルパーをオンにしてすべて表示";
 "Unchanged for %lld days" = "%lld日間変更なし";

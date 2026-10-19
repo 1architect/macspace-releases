@@ -19,10 +19,10 @@
 "Cloud files on this Mac" = "Arquivos da nuvem neste Mac";
 "Connect it to see its backups and free old ones." = "Conecte-o para ver os backups e liberar os antigos.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.";
-"Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar deixa o mais recente e o que o próximo backup usa como ponto de partida.";
+"Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.";
 "Couldn't free it" = "Não foi possível liberar";
 "Deleted by macOS when the disk is full" = "Apagado pelo macOS quando o disco estiver cheio";
-"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "Arquivos que os apps marcaram como seguros para apagar. O sistema só os libera quando o disco está quase cheio. Se não forem liberados, o MacSpace faz novas tentativas em segundo plano.";
+"Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.";
 "Free" = "Liberar";
@@ -66,7 +66,6 @@
 "Waiting to install" = "Aguardando instalação";
 "free up to %@" = "liberar até %@";
 "freeing %@" = "liberando %@";
-"kept" = "mantido";
 "macOS's purge service did not answer" = "O serviço de limpeza do macOS não respondeu";
 "nothing to free" = "nada a liberar";
 "other system files" = "outros arquivos do sistema";

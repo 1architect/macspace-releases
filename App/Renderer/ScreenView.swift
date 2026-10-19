@@ -500,8 +500,9 @@ private struct AllDoneOverlay: View {
     /// The large tile's caption size, at its largest (`CaptionSize.tile`).
     static var textSize: CGFloat { CGFloat(TileType.current.largeTallSize) }
 
-    /// How long the page stays once the module has its new figures, counted down by its ring before it goes back.
-    static let countdown = 3.0
+    /// How long the page stays once the module has its new figures, so the freed space can be read before it goes back. Nothing
+    /// counts it down on the page: a ring that emptied read as a timer to watch.
+    static let linger = 3.0
 
     /// How long the count takes, in steps of `countStep`.
     static let countSteps = 36
@@ -530,9 +531,6 @@ private struct AllDoneOverlay: View {
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared || reduceMotion ? 0 : 8)
                         }
-                        // Its place is kept from the start, so the words do not move up when the countdown begins.
-                        CountdownRing(seconds: Self.countdown, running: lifetime.countingDown)
-                            .padding(.top, 16)
                     }
                 }
                 // The page covers the whole window for a couple of seconds: it moves the window, from its words too, as the dashboard does.
@@ -553,8 +551,8 @@ private struct AllDoneOverlay: View {
             progress = 0
             appeared = false
             lifetime.reloading = reloading
-            // The hold lets the words and the count arrive (the count takes about 1.2 s); the countdown starts after them.
-            lifetime.present(hold: counted == nil ? .seconds(0.6) : .seconds(1.4), countdown: .seconds(Self.countdown), finished: finished)
+            // The hold lets the words and the count arrive (the count takes about 1.2 s); the page lingers after them.
+            lifetime.present(hold: counted == nil ? .seconds(0.6) : .seconds(1.4), linger: .seconds(Self.linger), finished: finished)
             count = Task { @MainActor in await countUp() }
         }
         .onDisappear { dismiss() }
@@ -833,30 +831,5 @@ private struct PillGlass: ViewModifier {
 
     func body(content: Content) -> some View {
         if enabled { content.glassEffect(.regular.interactive(), in: ActionPill.shape) } else { content }
-    }
-}
-
-/// The All done page's countdown back to the page under it: a small ring that empties over `seconds` once `running`.
-private struct CountdownRing: View {
-    let seconds: Double
-    let running: Bool
-    @State private var remaining = 1.0
-    @Environment(\.design) private var design
-
-    var body: some View {
-        ZStack {
-            Circle().stroke(design.ink.opacity(0.12), lineWidth: 2.5)
-            Circle().trim(from: 0, to: remaining)
-                .stroke(design.ink.opacity(0.55), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: 18, height: 18)
-        .opacity(running ? 1 : 0)
-        .animation(Theme.value, value: running)
-        .onChange(of: running, initial: true) { _, running in
-            guard running else { remaining = 1; return }
-            withAnimation(.linear(duration: seconds)) { remaining = 0 }
-        }
-        .accessibilityHidden(true)
     }
 }

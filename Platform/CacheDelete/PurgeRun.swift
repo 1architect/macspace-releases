@@ -22,7 +22,7 @@ public final class PurgeRetrier: @unchecked Sendable {
 
     /// Asks again after each delay until macOS frees something; `freed` is told what the volume gained (the module drops its cache
     /// so the figures move). A new schedule for the same service replaces the old one.
-    public func schedule(service: String, urgency: Int, delays: [TimeInterval] = PurgeRetrier.delays,
+    public func schedule(service: String, urgency: Int, delays: [TimeInterval] = PurgeRetrier.delays, featureCleanup: Bool = false,
                          purge: (@Sendable () -> CacheDeletePurgeResult)? = nil, freed: @escaping @Sendable (UInt64) async -> Void) {
         let attempt = purge ?? { PurgeRun.purgeOnce(service: service, urgency: urgency) }
         let task = Task.detached(priority: .utility) { [weak self] in
@@ -31,7 +31,7 @@ public final class PurgeRetrier: @unchecked Sendable {
                 if Task.isCancelled { return }
                 // Apple Intelligence came on meanwhile: no more requests (`SystemAssetGuard`). Not a refusal by macOS, so nothing is
                 // recorded as kept.
-                if SystemAssetGuard.refusal([service]) != nil {
+                if SystemAssetGuard.refusal([service], featureCleanup: featureCleanup) != nil {
                     self?.finish(service)
                     return
                 }
@@ -162,9 +162,12 @@ public struct PurgeRun: Sendable {
     public let retrier: PurgeRetrier
     public let holdouts: PurgeHoldouts
     public let extraRefusal: (@Sendable () -> String?)?
+    /// A feature switch's cleanup, which may go ahead while Apple Intelligence is on (`SystemAssetGuard.refusal`).
+    public let featureCleanup: Bool
 
     public init(service: String, urgency: Int = 1, retrier: PurgeRetrier = .shared, holdouts: PurgeHoldouts = .shared,
-                extraRefusal: (@Sendable () -> String?)? = nil) {
+                extraRefusal: (@Sendable () -> String?)? = nil, featureCleanup: Bool = false) {
+        self.featureCleanup = featureCleanup
         self.service = service
         self.urgency = urgency
         self.retrier = retrier
@@ -173,9 +176,11 @@ public struct PurgeRun: Sendable {
     }
 
     /// One purge request, in the CLI child process when there is one.
-    public static func purgeOnce(service: String, urgency: Int) -> CacheDeletePurgeResult {
-        if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: urgency) }
-        return CacheDeleteClient().purge(services: [service], urgency: urgency)
+    public static func purgeOnce(service: String, urgency: Int, featureCleanup: Bool = false) -> CacheDeletePurgeResult {
+        if let cli = ToolLocator.cli() {
+            return CacheDeleteClient.purgeInSubprocess(executable: cli, service: service, urgency: urgency, featureCleanup: featureCleanup)
+        }
+        return CacheDeleteClient().purge(services: [service], urgency: urgency, featureCleanup: featureCleanup)
     }
 
     /// macOS's estimate for this service alone now, asked in the CLI child process. nil when it does not answer.
@@ -193,21 +198,21 @@ public struct PurgeRun: Sendable {
             retrier.cancel(service)
             return Outcome(estimate: nil, reported: 0, freed: 0, error: reason, skipped: true, held: true)
         }
-        if SystemAssetGuard.refusal([service]) != nil {
+        if SystemAssetGuard.refusal([service], featureCleanup: featureCleanup) != nil {
             retrier.cancel(service)
             return Outcome(estimate: nil, reported: 0, freed: 0, error: nil, skipped: true, held: true)
         }
         retrier.cancel(service)
-        let result = Self.purgeOnce(service: service, urgency: urgency)
+        let result = Self.purgeOnce(service: service, urgency: urgency, featureCleanup: featureCleanup)
         let outcome = Outcome(estimate: nil, reported: result.purgedBytes ?? 0, freed: result.freedBytes ?? 0, error: result.error, skipped: false)
         if outcome.removedNothing {
             let run = self
-            retrier.schedule(service: service, urgency: urgency, purge: {
+            retrier.schedule(service: service, urgency: urgency, featureCleanup: featureCleanup, purge: {
                 if let reason = run.extraRefusal?() {
                     return CacheDeletePurgeResult(services: [run.service], purgedBytes: nil, freeBytesBefore: nil,
                                                   freeBytesAfter: nil, elapsedSeconds: nil, error: reason)
                 }
-                return Self.purgeOnce(service: run.service, urgency: run.urgency)
+                return Self.purgeOnce(service: run.service, urgency: run.urgency, featureCleanup: run.featureCleanup)
             }) { freed in
                 // Every request freed nothing: what macOS still estimates is what it keeps, and is no longer offered.
                 if freed == 0 { run.holdouts.hold(run.service, bytes: run.estimate() ?? 0) } else { run.holdouts.clear(run.service) }

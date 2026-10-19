@@ -340,19 +340,22 @@ enum SystemDataScreenBuilder {
             rows.append((caches, CachesPage.entries(snapshot).map(\.bytes).reduce(0, +)))
         }
         if snapshot.reports.totalBytes >= worthARow {
-            rows.append((Row(id: "reports", title: loc("Old diagnostic and crash reports"), trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
-                             detail: loc("\(reportCount(snapshot)) older than \(snapshot.reports.olderThanDays) days."),
+            rows.append((Row(id: "reports", title: loc("Old diagnostic and crash reports"), subtitle: reportCount(snapshot),
+                             trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
+                             detail: loc("Reports older than \(snapshot.reports.olderThanDays) days. macOS writes new ones as needed."),
                              actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
                                 title: loc("Free old reports?"), message: loc("This permanently deletes \(reportCount(snapshot))."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
                              paths: paths(of: "reports:diagnostic", snapshot)), snapshot.reports.totalBytes))
         }
         let assets = snapshot.purgeableAssetsBytes ?? 0
         let releaseOwners = hasUnusedLanguageModels(snapshot)
-        if assets >= assetsThreshold || releaseOwners {
+        // Only with a size to free: the language data's owners alone (`releaseOwners`) left a row with no size, whose Free freed
+        // nothing (macOS asks for that data again every day).
+        if assets >= assetsThreshold {
             // While macOS is being asked again in the background, the row says so instead of offering the button; while Apple
             // Intelligence is on, that the assets stay (its models download and update through them).
             let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil
-            var row = Row(id: "assets", title: loc("Unused system assets"), trailing: assets >= assetsThreshold ? ByteFormat.string(assets) : nil,
+            var row = Row(id: "assets", title: loc("Unused system assets"), trailing: ByteFormat.string(assets),
                              badge: badge, symbol: "square.stack.3d.down.right",
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
                              actions: snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(

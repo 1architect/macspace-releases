@@ -120,6 +120,20 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertFalse(DebloatScreenBuilder.recommended(snap).contains { $0.id == control.id })
     }
 
+    func testEveryInfoTextIsStaticAndShortInEveryState() {
+        let states: [(ControlState, EffectStatus?)] = [(.stock, nil), (.debloated, nil), (.drifted, nil), (.partial, nil), (.unavailable, nil),
+                                                       (.debloated, EffectStatus(state: .ineffective, detail: "raw")),
+                                                       (.debloated, EffectStatus(state: .pending, detail: "raw")),
+                                                       (.debloated, EffectStatus(state: .notMeasured, detail: "raw"))]
+        let baseline = InfoText.all(in: DebloatScreenBuilder.screen(snapshot([])))
+        XCTAssertEqual(InfoText.violations(in: DebloatScreenBuilder.screen(snapshot([]))), [])
+        for (state, effect) in states {
+            let screen = DebloatScreenBuilder.screen(snapshot(offered.map { status($0.id, state, effect: effect) }))
+            XCTAssertEqual(InfoText.violations(in: screen), [])
+            XCTAssertEqual(Set(InfoText.all(in: screen)), Set(baseline), "the (i) does not change with the state: \(state)")
+        }
+    }
+
     func testEveryControlGetsOneToggleInItsCategory() {
         let screen = DebloatScreenBuilder.screen(snapshot([]))
         var ids: [String] = []
@@ -162,7 +176,7 @@ final class DebloatScreenBuilderTests: XCTestCase {
         XCTAssertEqual(badge(.awaitingApproval), "Waiting for approval")
         XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .ineffective, detail: "")), "Not working")
         XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .pending, detail: "")), "Verifying")
-        XCTAssertEqual(badge(.debloated, effect: EffectStatus(state: .notMeasured, detail: "")), "Not verified")
+        XCTAssertNil(badge(.debloated, effect: EffectStatus(state: .notMeasured, detail: "")), "no decision to read is not a failure")
         XCTAssertEqual(badge(.unavailable), "Not on this macOS")
         let waiting = DebloatScreenBuilder.row(verifiedControl, snapshot([status(verifiedControl.id, .awaitingApproval)]))
         XCTAssertTrue(waiting.isOn, "applied, waiting only for the user's approval")
@@ -171,10 +185,11 @@ final class DebloatScreenBuilderTests: XCTestCase {
     func testEffectProblemsUseLocalizedInterfaceTextRatherThanRawHelperDiagnostics() {
         for effectState in [EffectState.ineffective, .notMeasured, .pending, .notControllable] {
             let status = status(verifiedControl.id, .debloated, effect: EffectStatus(state: effectState, detail: "RAW_HELPER_DIAGNOSTIC 2026-10-17T14:27:29Z"))
-            let detail = DebloatScreenBuilder.detail(verifiedControl, status)
-            XCTAssertFalse(detail.contains("RAW_HELPER_DIAGNOSTIC"))
-            XCTAssertFalse(detail.contains("2026-10-17"))
-            XCTAssertNotEqual(detail, DebloatScreenBuilder.plain[verifiedControl.id])
+            let row = DebloatScreenBuilder.row(verifiedControl, snapshot([status]))
+            XCTAssertEqual(row.detail, DebloatScreenBuilder.detail(verifiedControl), "the (i) is the same whatever the state")
+            let help = row.badge?.help ?? ""
+            XCTAssertFalse(help.contains("RAW_HELPER_DIAGNOSTIC"))
+            XCTAssertFalse(help.contains("2026-10-17"))
         }
         let processControl = mainControl
         let pending = status(processControl.id, .debloated, effect: EffectStatus(state: .pending, detail: "until reboot"))

@@ -71,6 +71,9 @@ private struct RowActionFlag: View {
     let run: @MainActor () async -> Void
     @State private var hovering = false
     @State private var reservedLabels: [String]?
+    /// The messages this cleanup has shown so far: the flag never narrows while it works, so a shorter step does not pull the pill
+    /// in and the next one push it out again (it jumped at every progress message, 2026-10-18).
+    @State private var shownWhileWorking: [String] = []
     @Environment(\.design) private var design
 
     private var working: Bool { progress != nil }
@@ -86,12 +89,20 @@ private struct RowActionFlag: View {
         [action.title, action.workingTitle ?? String(localized: "Working")] + (action.labelSamples ?? [])
     }
 
+    /// While working: the widest of what it has shown so far, so it grows only for a longer message and never narrows until the
+    /// cleanup ends. Not the labels it might show: reserved up front, "Freeing in the background" left "Freeing space" in a pill with
+    /// an empty tail (2026-10-18). Idle and with its result, the flag fits its text.
+    private var reserved: [String] {
+        let phase = PillLabelSamples.matching(text, samples: reservedLabels ?? samples)
+        return working ? phase + shownWhileWorking : phase
+    }
+
     var body: some View {
         Button {
             if result != nil { dismiss() } else if !working { Task { await run() } }
         } label: {
             PillMorph {
-                ReservedPillLabel(samples: PillLabelSamples.matching(text, samples: reservedLabels ?? samples), reserveWidth: working || result != nil) {
+                ReservedPillLabel(samples: reserved, reserveWidth: working || result != nil) {
                     ChangingText(text: text)
                 }
             }
@@ -110,6 +121,8 @@ private struct RowActionFlag: View {
         .onHover { hovering = $0 }
         .help(([text] + (result?.details ?? [])).joined(separator: "\n"))
         .onAppear { if reservedLabels == nil { reservedLabels = samples } }
+        .onChange(of: text, initial: true) { _, now in if working, !shownWhileWorking.contains(now) { shownWhileWorking.append(now) } }
+        .onChange(of: working) { _, now in if !now { shownWhileWorking = [] } }
         .task(id: result) {
             guard result?.outcome == .succeeded else { return }
             do { try await Task.sleep(for: .seconds(4)) } catch { return }

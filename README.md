@@ -55,7 +55,7 @@ Mac's. That is how macOS decides that Apple Intelligence is unavailable. MacSpac
 models macOS keeps on disk, which can be about 12 GB. Switch it on again and MacSpace puts your
 Siri language and voice back.
 
-Three more switches turn off the following features and delete the models left on disk: **Siri, Spatial Photos and Phone features**.
+Three more switches turn off the following features and delete the models left on disk: **Siri, Spatial Photos and Call transcription**.
 
 <p align="center">
   <img src="Docs/Screenshots/en/Siri.png" alt="The Siri & Apple Intelligence page: the Apple Intelligence switch, switched off, and the row about Siri's iCloud sync" width="720">
@@ -248,7 +248,7 @@ If you prefer to do it manually please follow the order below:
 1. **Undo what MacSpace changed.** In **Debloat**, press **Enable all**. This also removes the
    overrides Debloat wrote outside MacSpace's own folders, which stay in place if you just delete
    the app. If a restart is needed, the page says so. If you switched Apple Intelligence, Siri,
-   Spatial Photos or Phone features off and want them back, switch them on in
+   Spatial Photos or Call transcription off and want them back, switch them on in
    **Siri & Apple Intelligence**.
 2. **Remove the profile**, if one is still installed: in System Settings > General > Device
    Management, select **MacSpace: policies** (identifier `com.macspace.policies`) and remove it.
@@ -266,7 +266,7 @@ If you prefer to do it manually please follow the order below:
    defaults delete com.macspace.app
    sudo rm -rf /Library/Application\ Support/MacSpace
    ```
-   The last line is needed only if you used Debloat or Phone features, or removed leftover Apple
+   The last line is needed only if you used Debloat or Call transcription, or removed leftover Apple
    Intelligence subscriptions. Run it after step 1: that folder holds the originals MacSpace restores.
 6. **Remove Full Disk Access:** in System Settings > Privacy & Security > Full Disk Access, select
    MacSpace and press the minus button.

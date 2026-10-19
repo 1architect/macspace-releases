@@ -71,11 +71,7 @@ facultative, **Vérifier qu’Apple Intelligence reste désactivé** dans Régla
 macOS le réactive. Dans une machine virtuelle, macOS ne propose pas Apple Intelligence : la page
 se contente de l’indiquer.
 
-Des interrupteurs séparés **Siri**, **Photos spatiales** et **Fonctions Téléphone** désactivent ces fonctions et libèrent leurs
-modèles inutilisés. Les changements Téléphone nécessitent un redémarrage et concernent tous les comptes du Mac, sans profil.
-Lorsque MacSpace est ouvert, il vérifie toutes les cinq minutes les modèles redemandés pour les fonctions désactivées.
-Réactiver restaure les réglages enregistrés. Les modèles restent tant qu’Apple Intelligence est disponible.
-Les autres ressources linguistiques inutilisées ont une action **Libérer** dans **Données système**.
+Trois autres interrupteurs désactivent ces fonctions et suppriment les modèles restés sur le disque : **Siri, Photos spatiales et Transcription des appels**.
 
 <p align="center">
   <img src="Docs/Screenshots/fr/Siri.png" alt="La page Siri et Apple Intelligence : l’interrupteur Apple Intelligence, désactivé, et la ligne sur la synchronisation iCloud de Siri" width="720">

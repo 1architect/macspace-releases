@@ -19,10 +19,10 @@
 "Cloud files on this Mac" = "Archivos de la nube en este Mac";
 "Connect it to see its backups and free old ones." = "Conéctalo para ver sus copias y liberar las antiguas.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.";
-"Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar deja la más reciente y la que usa como punto de partida la próxima copia.";
+"Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar conserva la más reciente y la que necesita la próxima copia.";
 "Couldn't free it" = "No se pudo liberar";
 "Deleted by macOS when the disk is full" = "Eliminado por macOS cuando el disco está lleno";
-"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "Archivos que las apps marcaron como seguros de eliminar. El sistema los libera cuando el disco está casi lleno. Si no se liberan, MacSpace vuelve a intentarlo en segundo plano.";
+"Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "Archivos que las apps marcaron como seguros de borrar. macOS los libera cuando el disco está casi lleno; MacSpace insiste si no lo hace.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Archivos que macOS elimina por su cuenta cuando falta espacio. Ajustes del Sistema cuenta este espacio como disponible.";
 "Free" = "Liberar";
@@ -66,7 +66,6 @@
 "Waiting to install" = "Pendiente de instalar";
 "free up to %@" = "liberar hasta %@";
 "freeing %@" = "liberando %@";
-"kept" = "se conserva";
 "macOS's purge service did not answer" = "El servicio de purga de macOS no ha respondido";
 "nothing to free" = "nada que liberar";
 "other system files" = "otros archivos del sistema";

@@ -29,18 +29,17 @@ final class AllDoneLifetimeTests: XCTestCase {
         state.dismiss()
     }
 
-    func testCountdownStartsOnlyAfterTheReloadAndThenReturns() async throws {
+    func testLingerStartsOnlyAfterTheReloadAndThenReturns() async throws {
         let state = AllDoneLifetime()
         var finished = 0
         state.reloading = true
-        state.present(hold: .milliseconds(1), countdown: .milliseconds(150)) { finished += 1 }
-        try await Task.sleep(for: .milliseconds(50))
-        XCTAssertFalse(state.countingDown, "the countdown waits for the module's new figures")
+        state.present(hold: .milliseconds(1), linger: .milliseconds(150)) { finished += 1 }
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(finished, 0, "the page waits for the module's new figures")
         state.reloading = false
-        try await Task.sleep(for: .milliseconds(150))
-        XCTAssertTrue(state.countingDown)
+        try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(finished, 0, "a finished reload no longer returns at once")
-        try await Task.sleep(for: .milliseconds(250))
+        try await Task.sleep(for: .milliseconds(300))
         XCTAssertEqual(finished, 1)
         XCTAssertFalse(state.shown)
     }

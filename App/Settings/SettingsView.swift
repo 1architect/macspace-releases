@@ -198,7 +198,8 @@ private struct PermissionRow: View {
             case .unknown:
                 if permission == .privilegedHelper {
                     HStack(spacing: 8) {
-                        InfoButton(text: PrivilegedHelperInstaller.notFoundReason())
+                        // Why it is not found depends on how MacSpace was installed: a state, on the pill's hover tag (`InfoText`).
+                        BadgeView(badge: Badge(String(localized: "Not found"), tone: .caution, help: PrivilegedHelperInstaller.notFoundReason()))
                         helperButton
                     }
                 } else {

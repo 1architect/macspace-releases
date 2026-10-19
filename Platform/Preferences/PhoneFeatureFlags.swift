@@ -7,7 +7,7 @@ public struct PhoneFeatureFlags: Sendable {
     public static let domain = "TelephonyUtilities"
     public static let features = ["CallRecording", "CallScreeningEnabled", "CaptionDeliveryForFaceTime",
                                   "AudioCallTranslationMac", "VideoCallTranslationMac"]
-    public static let supported = ReleaseSpecific(false, overrides: [(.build("26B5112a"), true)])
+    public static let supported = ReleaseSpecific(false, overrides: [(.major(27), true)])
 
     public enum State: String, Codable, Sendable { case on, off, restartRequired, changedElsewhere, unknown, unsupported }
     public struct Status: Codable, Sendable, Equatable {

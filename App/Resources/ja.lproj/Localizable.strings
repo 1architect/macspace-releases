@@ -104,6 +104,7 @@
 "No module needs a permission." = "権限が必要なモジュールはありません。";
 "No modules are on" = "有効なモジュールはありません";
 "No modules were found." = "モジュールが見つかりません。";
+"Not found" = "見つかりません";
 "Not in this build" = "このビルドにはありません";
 "Not installed" = "未インストール";
 "Not responding" = "応答なし";

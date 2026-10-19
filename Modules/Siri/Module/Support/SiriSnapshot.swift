@@ -38,6 +38,12 @@ struct SiriSnapshot: Sendable {
     /// The system-wide Phone gates, distinct from Apple Intelligence's language switch.
     var phoneFeatures: PhoneFeatureFlags.Status?
     var featureSettings: [ModelFeatureSettings.Feature: ModelFeatureSettings.Status] = [:]
+    /// What each feature's models take on disk now (`AssetModelCleanup.modelBytes`); a feature is missing when AssetsV2 cannot be read.
+    var featureModelBytes: [ModelFeatureSettings.Feature: UInt64] = [:]
+    /// The features MobileAsset is downloading models for right now.
+    var featureDownloading: Set<ModelFeatureSettings.Feature> = []
+    /// The features whose models on disk a running process still holds a lock on (`AssetModelCleanup.lockedAssets`).
+    var featureLocked: Set<ModelFeatureSettings.Feature> = []
     var cleaningFeatures = false
     var featureCleanupWaiting: Set<ModelFeatureSettings.Feature> = []
 }
@@ -71,6 +77,7 @@ actor SiriStore {
             updated.downloadingModelBytes = models.downloading
             updated.lockedModelBytes = models.locked
             updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
+            SiriStore.readFeatureModels(into: &updated)
             return updated
         }
     }
@@ -81,6 +88,7 @@ actor SiriStore {
             var updated = cached
             updated.phoneFeatures = read()
             updated.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
+            SiriStore.readFeatureModels(into: &updated)
             return updated
         }
     }
@@ -126,7 +134,21 @@ actor SiriStore {
         snapshot.cloudSyncEnabled = SiriCloudSync.isEnabled()
         snapshot.phoneFeatures = PhoneFeatureFlags().status()
         snapshot.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
+        readFeatureModels(into: &snapshot)
         return snapshot
+    }
+
+    /// The Siri, Spatial Photos and Phone models on disk, read on every reading of the page as the Apple Intelligence models are.
+    static func readFeatureModels(into snapshot: inout SiriSnapshot) {
+        snapshot.featureModelBytes = [:]
+        snapshot.featureDownloading = []
+        snapshot.featureLocked = []
+        for feature in ModelFeatureSettings.Feature.allCases {
+            let models = AssetModelCleanup.modelBytes(feature)
+            if let bytes = models.bytes { snapshot.featureModelBytes[feature] = bytes }
+            if models.downloading { snapshot.featureDownloading.insert(feature) }
+            if (models.bytes ?? 0) > 0, AssetModelCleanup.lockedAssets(feature) > 0 { snapshot.featureLocked.insert(feature) }
+        }
     }
 
     /// Where MobileAsset puts a download until it is complete (`<family>.<hash>.auto.<uuid>`, measured in the research: 5.8 GB there

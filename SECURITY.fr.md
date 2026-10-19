@@ -104,9 +104,9 @@ la précédente, ce qui prend environ une minute, pour que macOS les libère. Av
 iCloud de Siri activée, ces modifications atteignent aussi vos autres appareils utilisant le même
 compte Apple. MacSpace ne peut pas désactiver cette synchronisation. Il vous indique où le faire.
 
-### Fonctions de Téléphone
+### Transcription des appels
 
-Le contrôle des fonctions de Téléphone dans Siri et Apple Intelligence utilise cinq substitutions fixes de TelephonyUtilities dans
+Le contrôle Transcription des appels dans Siri et Apple Intelligence utilise cinq substitutions fixes de TelephonyUtilities dans
 `/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist` : enregistrement, filtrage des appels, transmission des sous-titres
 FaceTime et traduction audio/vidéo sur Mac. L’assistant authentifié enregistre les entrées originales dans
 `/Library/Application Support/MacSpace/phone-features.json` avant de les modifier. Les changements nécessitent un redémarrage ;
@@ -117,19 +117,21 @@ L’opération accepte uniquement activer ou désactiver, sans chemin, domaine o
 ### Modèles des fonctions
 
 Les interrupteurs Siri et Photos spatiales enregistrent les réglages d’origine avant de désactiver une fonction. La voix
-sauvegardée de Siri est effacée tant que Siri est désactivé ; sa langue est conservée. Téléphone désactive aussi les réglages
+sauvegardée de Siri est effacée tant que Siri est désactivé ; sa langue est conservée. Transcription des appels désactive aussi les réglages
 locaux d’enregistrement, de filtrage et de sous-titrage. Les originaux restent dans
 `~/Library/Application Support/MacSpace/feature-settings/`.
 
 Les demandes de modèles sont libérées par les services Apple qui les gèrent, avec les données de restauration dans
 `~/Library/Application Support/MacSpace/asset-owners/`. Ces nettoyages de fonctions et de modèles linguistiques ne modifient pas la base active des abonnements et ne suppriment pas
-directement les modèles. Il utilise le service de nettoyage protégé de macOS. Le nettoyage attend si Apple Intelligence est
-disponible ou illisible, conserve les demandes des autres comptes et les modèles vocaux partagés lorsque Dictée est active.
+directement les modèles. Il utilise le service de nettoyage protégé de macOS. Le nettoyage attend si l’état d’Apple Intelligence est
+illisible et, quand Apple Intelligence est activé, tant que macOS télécharge des ressources système ; il conserve les demandes des
+autres comptes et les modèles vocaux partagés lorsque Dictée est active. Les ressources linguistiques inutilisées ne sont libérées
+que lorsqu’Apple Intelligence est désactivé.
 
 Lorsque MacSpace est ouvert, les fonctions explicitement désactivées sont vérifiées toutes les cinq minutes et leurs modèles
 inutilisés sont de nouveau nettoyés si macOS les redemande. Réactiver une fonction ou utiliser le désinstalleur de MacSpace
 restaure les réglages et demandes enregistrés ; macOS peut retélécharger les modèles. Une opération interrompue ou en conflit
-est vérifiée avant toute nouvelle demande. Ces contrôles ne sont disponibles que sur les versions vérifiées de macOS.
+est vérifiée avant toute nouvelle demande. Ces contrôles fonctionnent sur toutes les versions de macOS 27 ; avant chaque demande, le processus séparé vérifie les méthodes Apple qu’il appelle.
 Les ressources linguistiques inutilisées dans Données système ont un nettoyage ponctuel, qui ne désactive ni l’orthographe
 ni les dictionnaires.
 

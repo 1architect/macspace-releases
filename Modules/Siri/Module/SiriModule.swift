@@ -35,9 +35,9 @@ public struct SiriModule: MacSpaceModule {
             catch { return .failed(loc("Couldn't restore feature settings."), details: [error.localizedDescription]) }
         }
         if PhoneFeatureFlags().hasSavedSettings {
-            guard let channel = context.privileged else { return .failed(loc("MacSpace needs its helper to restore the Phone feature settings.")) }
+            guard let channel = context.privileged else { return .failed(loc("MacSpace needs its helper to restore Call transcription.")) }
             do { _ = try await channel.perform(operation: SiriPrivilegedOperations.setPhoneFeatures, arguments: ["off": "false"]) }
-            catch { return .failed(loc("Couldn't restore Phone feature settings."), details: [error.localizedDescription]) }
+            catch { return .failed(loc("Couldn't restore Call transcription."), details: [error.localizedDescription]) }
         }
         let environment = LiveSiriLanguageEnvironment()
         guard let saved = environment.loadSavedSettings() else { return .succeeded("") }
@@ -134,7 +134,7 @@ public struct SiriModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        let changesFeature = ["toggle", "togglePhoneFeatures", "toggleModelFeature"].contains(request.actionID)
+        let changesFeature = ["toggle", "togglePhoneFeatures", "toggleModelFeature", "disableAll", "enableAll"].contains(request.actionID)
         if changesFeature {
             guard await ManagedModelCleanup.shared.beginChange() else { return .failed(loc("A feature change is still running.")) }
             PurgeRetrier.shared.cancel(CacheDeleteService.mobileAsset)
@@ -159,7 +159,8 @@ public struct SiriModule: MacSpaceModule {
         }
         if changesFeature {
             await ManagedModelCleanup.shared.endChange()
-            if request.parameters["value"] == "false", result.outcome == .succeeded { await checkFeatureModels(force: true) }
+            let off = request.parameters["value"] == "false" || request.actionID == "disableAll"
+            if off, result.outcome == .succeeded { await checkFeatureModels(force: true) }
         }
         return result
     }
@@ -167,6 +168,27 @@ public struct SiriModule: MacSpaceModule {
     private func handle(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         if Machine.isVirtualMachine { return .failed(loc("Not available in a virtual machine")) }
         switch request.actionID {
+        case "disableAll", "enableAll":
+            // Each switch in turn, as if flipped on the page; the first that fails stops the rest and says why.
+            let value = String(request.actionID == "enableAll")
+            var details: [String] = []
+            var restart = false
+            let ids = (request.parameters["ids"] ?? "").split(separator: ",").map(String.init)
+            for (index, id) in ids.enumerated() {
+                progress(ActionProgress(fraction: Double(index) / Double(max(ids.count, 1)), message: loc("Changing settings")))
+                let step: ActionRequest
+                switch id {
+                case "ai": step = ActionRequest(actionID: "toggle", parameters: ["id": "ai", "value": value])
+                case "phone": step = ActionRequest(actionID: "togglePhoneFeatures", parameters: ["value": value])
+                default: step = ActionRequest(actionID: "toggleModelFeature", parameters: ["feature": id, "value": value])
+                }
+                let result = await handle(step, context: context, progress: { _ in })
+                details += result.details
+                restart = restart || result.restartRequired
+                guard result.outcome == .succeeded else { return ActionResult(outcome: result.outcome, message: result.message, details: details) }
+            }
+            if restart { return .succeeded(loc("Restart your Mac to apply this change."), details: details, restartRequired: true) }
+            return .succeeded(loc("Feature settings updated."), details: details)
         case "toggleModelFeature":
             guard let name = request.parameters["feature"], let feature = ModelFeatureSettings.Feature(rawValue: name), feature != .phone,
                   let value = request.parameters["value"], ["true", "false"].contains(value) else { return .failed(loc("Unknown feature.")) }
@@ -182,7 +204,7 @@ public struct SiriModule: MacSpaceModule {
             }
         case "togglePhoneFeatures":
             guard let value = request.parameters["value"], ["true", "false"].contains(value), let channel = context.privileged else {
-                return .failed(loc("MacSpace needs its helper to change the Phone features."))
+                return .failed(loc("MacSpace needs its helper to change Call transcription."))
             }
             do {
                 if value == "true" {
@@ -196,14 +218,14 @@ public struct SiriModule: MacSpaceModule {
                     return .succeeded(loc("Restart your Mac to apply this change."), restartRequired: true)
                 }
                 guard state.state == .off || state.state == .on else {
-                    return ActionResult(outcome: .needsAttention, message: loc("Couldn't verify the Phone feature change."),
+                    return ActionResult(outcome: .needsAttention, message: loc("Couldn't verify the Call transcription change."),
                                         details: state.detail.map { [$0] } ?? [])
                 }
-                return .succeeded(loc("Phone feature settings updated."))
+                return .succeeded(loc("Feature settings updated."))
             } catch {
                 // A durable intent may have been saved before a later write failed. Read its actual state back into the existing
                 // page instead of leaving an optimistic switch showing the pre-action state.
-                return ActionResult(outcome: .failed, message: loc("Couldn't change Phone feature settings."), details: [error.localizedDescription])
+                return ActionResult(outcome: .failed, message: loc("Couldn't change Call transcription."), details: [error.localizedDescription])
             }
         case "toggle":
             let available = request.parameters["value"] == "true"

@@ -104,6 +104,7 @@
 "No module needs a permission." = "권한이 필요한 모듈이 없습니다.";
 "No modules are on" = "켜진 모듈 없음";
 "No modules were found." = "모듈을 찾을 수 없습니다.";
+"Not found" = "찾을 수 없음";
 "Not in this build" = "이 빌드에 없음";
 "Not installed" = "설치되지 않음";
 "Not responding" = "응답 없음";

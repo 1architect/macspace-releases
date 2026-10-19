@@ -121,7 +121,8 @@ final class TextEditorStore: ObservableObject {
 /// language, with a field to propose a better one and a note. The proposals are kept until cleared and exported as Markdown for
 /// applying them (Export Changes) or for a review of all the texts of a kind (Export All).
 public struct TextEditorView: View {
-    @ObservedObject private var store = TextEditorStore.shared
+    // Read when the window opens, not when SwiftUI builds the app's scenes at launch: the catalog took 3 MB for as long as MacSpace ran.
+    @StateObject private var store = TextEditorStore.shared
     @State private var kind: String? = TextEditorView.allKinds
     @State private var search = ""
     @State private var language = TextEditorView.appLanguage

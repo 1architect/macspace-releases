@@ -19,10 +19,10 @@
 "Cloud files on this Mac" = "이 Mac의 클라우드 파일";
 "Connect it to see its backups and free old ones." = "연결하면 백업을 확인하고 오래된 백업을 정리할 수 있습니다.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다.";
-"Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from." = "백업 디스크 없이도 파일을 복원하도록 Time Machine이 하루 동안 보관하는 Mac 사본입니다. 최신 스냅샷과 다음 백업의 시작점은 유지됩니다.";
+"Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다.";
 "Couldn't free it" = "정리하지 못함";
 "Deleted by macOS when the disk is full" = "디스크가 가득 차면 macOS가 삭제";
-"Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background." = "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. 디스크가 거의 차면 시스템이 공간을 확보합니다. 확보되지 않으면 MacSpace가 백그라운드에서 다시 시도합니다.";
+"Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "이 Mac에서 해당 시점의 파일을 복원할 수 없게 됩니다. 백업 디스크의 백업은 유지됩니다.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "디스크 공간이 부족하면 macOS가 자동으로 삭제하는 파일입니다. 시스템 설정에서는 사용 가능한 공간으로 계산합니다.";
 "Free" = "확보";
@@ -66,7 +66,6 @@
 "Waiting to install" = "설치 대기 중";
 "free up to %@" = "최대 %@ 확보";
 "freeing %@" = "%@ 확보 중";
-"kept" = "유지됨";
 "macOS's purge service did not answer" = "macOS 제거 서비스 응답 없음";
 "nothing to free" = "확보할 공간 없음";
 "other system files" = "기타 시스템 파일";

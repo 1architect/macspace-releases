@@ -104,6 +104,7 @@
 "No module needs a permission." = "没有模块需要权限。";
 "No modules are on" = "没有已开启的模块";
 "No modules were found." = "未找到模块。";
+"Not found" = "未找到";
 "Not in this build" = "此构建中不包含";
 "Not installed" = "未安装";
 "Not responding" = "无响应";

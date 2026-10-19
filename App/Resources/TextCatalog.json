@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:524",
-      "App\/Renderer\/ScreenView.swift:593"
+      "App\/Renderer\/ScreenView.swift:525",
+      "App\/Renderer\/ScreenView.swift:591"
     ],
     "table" : "App",
     "translations" : {
@@ -195,7 +195,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:326"
+      "Sdk\/Interface\/Widgets.swift:380"
     ],
     "table" : "App",
     "translations" : {
@@ -328,7 +328,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:326"
+      "Sdk\/Interface\/Widgets.swift:380"
     ],
     "table" : "App",
     "translations" : {
@@ -405,7 +405,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:517"
+      "App\/Renderer\/ScreenView.swift:518"
     ],
     "table" : "App",
     "translations" : {
@@ -500,7 +500,7 @@
     "key" : "Approve in Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:234"
+      "App\/Settings\/SettingsView.swift:235"
     ],
     "table" : "App",
     "translations" : {
@@ -867,8 +867,8 @@
     "key" : "Could not install the helper: %@",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:220",
-      "App\/Settings\/SettingsView.swift:239"
+      "App\/Settings\/SettingsView.swift:221",
+      "App\/Settings\/SettingsView.swift:240"
     ],
     "table" : "App",
     "translations" : {
@@ -1400,7 +1400,7 @@
     "key" : "Install helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:234"
+      "App\/Settings\/SettingsView.swift:235"
     ],
     "table" : "App",
     "translations" : {
@@ -1515,7 +1515,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:191",
-      "App\/Renderer\/ScreenView.swift:757"
+      "App\/Renderer\/ScreenView.swift:755"
     ],
     "table" : "App",
     "translations" : {
@@ -1749,7 +1749,7 @@
     "key" : "More about this",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/InfoButton.swift:41"
+      "App\/Renderer\/InfoButton.swift:42"
     ],
     "table" : "App",
     "translations" : {
@@ -1989,6 +1989,25 @@
       "ko" : "모듈을 찾을 수 없습니다.",
       "pt-BR" : "Nenhum módulo encontrado.",
       "zh-Hans" : "未找到模块。"
+    }
+  },
+  {
+    "id" : "App|Not found",
+    "key" : "Not found",
+    "kind" : "Pill",
+    "places" : [
+      "App\/Settings\/SettingsView.swift:202"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Nicht gefunden",
+      "en" : "Not found",
+      "es" : "No encontrado",
+      "fr" : "Introuvable",
+      "ja" : "見つかりません",
+      "ko" : "찾을 수 없음",
+      "pt-BR" : "Não encontrado",
+      "zh-Hans" : "未找到"
     }
   },
   {
@@ -2456,7 +2475,7 @@
     "key" : "Repair helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:215"
+      "App\/Settings\/SettingsView.swift:216"
     ],
     "table" : "App",
     "translations" : {
@@ -2475,7 +2494,7 @@
     "key" : "Repairing",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:215"
+      "App\/Settings\/SettingsView.swift:216"
     ],
     "table" : "App",
     "translations" : {
@@ -2494,7 +2513,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:758"
+      "App\/Renderer\/ScreenView.swift:756"
     ],
     "table" : "App",
     "translations" : {
@@ -2671,8 +2690,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:473",
-      "App\/Renderer\/WidgetView.swift:474"
+      "App\/Renderer\/WidgetView.swift:467",
+      "App\/Renderer\/WidgetView.swift:468"
     ],
     "table" : "App",
     "translations" : {
@@ -2957,7 +2976,7 @@
     "key" : "Unknown",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:205"
+      "App\/Settings\/SettingsView.swift:206"
     ],
     "table" : "App",
     "translations" : {
@@ -3149,9 +3168,9 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:756",
-      "App\/Renderer\/RowActionFlag.swift:79",
-      "App\/Renderer\/RowActionFlag.swift:86",
+      "App\/Renderer\/ScreenView.swift:754",
+      "App\/Renderer\/RowActionFlag.swift:82",
+      "App\/Renderer\/RowActionFlag.swift:89",
       "App\/Registry\/ModuleHandle.swift:480"
     ],
     "table" : "App",
@@ -3480,7 +3499,7 @@
     "key" : "%@ was turned back on by macOS",
     "kind" : "Notice",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:272"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:274"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3499,7 +3518,7 @@
     "key" : "%lld awaiting approval",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:178"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:180"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3537,7 +3556,7 @@
     "key" : "%lld features were turned back on by macOS",
     "kind" : "Notice",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:272"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:274"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3556,7 +3575,7 @@
     "key" : "%lld undone by macOS",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:177"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3575,7 +3594,7 @@
     "key" : "%lld\/%lld disabled",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:181"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3594,7 +3613,7 @@
     "key" : "A process covered by this setting is still running after the change.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:120"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:122"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3651,7 +3670,7 @@
     "key" : "After restart",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:44"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:46"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3765,7 +3784,7 @@
     "key" : "Apple stops picking ads based on what you do.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:79"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:83"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3784,7 +3803,7 @@
     "key" : "Approve in System Settings",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:213"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:215"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3841,7 +3860,7 @@
     "key" : "Apps can't track you with the advertising identifier or ask to.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:80"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:84"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3879,7 +3898,7 @@
     "key" : "Breaks Mail search",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:60"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:64"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3898,7 +3917,7 @@
     "key" : "Cannot read",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:53"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:57"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -3917,8 +3936,8 @@
     "key" : "Cannot take effect here",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:35",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:46"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:37",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:50"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4054,7 +4073,7 @@
     "key" : "Debloat",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:294",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:296",
       "App\/Settings\/ScreenshotToolView.swift:92",
       "App\/Settings\/ScreenshotToolView.swift:92"
     ],
@@ -4113,7 +4132,7 @@
     "key" : "Dictation and translation stay on this Mac. Languages without an on-device model stop working.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:78"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:82"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4132,7 +4151,7 @@
     "key" : "Disable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:254"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:256"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4151,7 +4170,7 @@
     "key" : "Disable %@",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:124"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:126"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4170,7 +4189,7 @@
     "key" : "Disable %@ again",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:206"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:208"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4189,7 +4208,7 @@
     "key" : "Disable %lld features again",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:206"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:208"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4208,7 +4227,7 @@
     "key" : "Disable %lld features?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:254"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:256"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4227,7 +4246,7 @@
     "key" : "Disable all",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:252"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:254"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4284,7 +4303,7 @@
     "key" : "Disabling one asks you to approve a profile in System Settings > General > Device Management.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:291"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:293"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4303,7 +4322,7 @@
     "key" : "Each one can be enabled again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:249"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:251"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4322,7 +4341,7 @@
     "key" : "Enable",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:240"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:242"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4341,7 +4360,7 @@
     "key" : "Enable all",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:236"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:238"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4360,7 +4379,7 @@
     "key" : "Enable all %lld features again?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:238"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:240"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4436,7 +4455,7 @@
     "key" : "Finish",
     "kind" : "Button",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:217"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:219"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4512,7 +4531,7 @@
     "key" : "Hides Apple News and its widgets.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:91"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:95"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4626,7 +4645,7 @@
     "key" : "Log out to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:68"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:72"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4645,7 +4664,7 @@
     "key" : "MacSpace disabled it again, most recently %@.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:275"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4664,7 +4683,7 @@
     "key" : "MacSpace disabled them again, most recently %@.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:273"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:275"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4683,7 +4702,7 @@
     "key" : "MacSpace restores the settings it saved before disabling them.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:239"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:241"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4736,31 +4755,12 @@
     }
   },
   {
-    "id" : "Debloat|No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
-    "key" : "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
-    "kind" : "Text",
-    "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:116"
-    ],
-    "table" : "Debloat",
-    "translations" : {
-      "de" : "Nach der Änderung konnte keine Diagnoseentscheidung gelesen werden. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein und beweist daher nicht, dass die Einstellung versagt hat.",
-      "en" : "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.",
-      "es" : "No se pudo leer ninguna decisión sobre los diagnósticos tras el cambio. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos, por lo que no demuestra que el ajuste haya fallado.",
-      "fr" : "Aucune décision concernant les diagnostics après la modification n’a pu être lue. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics, et ne prouve donc pas l’échec du réglage.",
-      "ja" : "変更後の診断送信の判断を読み取れませんでした。成功の記録は診断情報を含まないサーバへの接続の場合もあり、設定が機能していない証拠にはなりません。",
-      "ko" : "변경 후의 진단 정보 전송 결정을 읽을 수 없습니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있으므로 설정이 작동하지 않았다는 증거가 되지 않습니다.",
-      "pt-BR" : "Não foi possível ler uma decisão de envio de diagnósticos após a alteração. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos, e não prova que o ajuste falhou.",
-      "zh-Hans" : "无法读取此次更改后的诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络，因此不能证明此设置失效。"
-    }
-  },
-  {
     "id" : "Debloat|No longer works",
     "key" : "No longer works",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:37",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:61"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:39",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:65"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4779,7 +4779,7 @@
     "key" : "No more \"quit unexpectedly\" dialogs.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:89"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:93"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4798,7 +4798,7 @@
     "key" : "Not on this macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:52"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:56"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4813,30 +4813,11 @@
     }
   },
   {
-    "id" : "Debloat|Not verified",
-    "key" : "Not verified",
-    "kind" : "Pill",
-    "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:45"
-    ],
-    "table" : "Debloat",
-    "translations" : {
-      "de" : "Nicht verifiziert",
-      "en" : "Not verified",
-      "es" : "Sin verificar",
-      "fr" : "Non vérifié",
-      "ja" : "未確認",
-      "ko" : "확인되지 않음",
-      "pt-BR" : "Não verificado",
-      "zh-Hans" : "未经验证"
-    }
-  },
-  {
     "id" : "Debloat|Not working",
     "key" : "Not working",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:43"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:45"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4912,7 +4893,7 @@
     "key" : "Partly off",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:51"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:55"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4950,7 +4931,7 @@
     "key" : "Policies",
     "kind" : "Title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:290"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:292"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4969,7 +4950,7 @@
     "key" : "Reopen apps to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:67"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:71"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4988,7 +4969,7 @@
     "key" : "Restart to apply.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:69"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:73"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5007,7 +4988,7 @@
     "key" : "Set by another profile",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:39"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:41"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5080,22 +5061,22 @@
     }
   },
   {
-    "id" : "Debloat|Siri AI",
-    "key" : "Siri AI",
+    "id" : "Debloat|Siri AI search",
+    "key" : "Siri AI search",
     "kind" : "Other",
     "places" : [
 
     ],
     "table" : "Debloat",
     "translations" : {
-      "de" : "Siri AI",
-      "en" : "Siri AI",
-      "es" : "Siri AI",
-      "fr" : "Siri AI",
-      "ja" : "Siri AI",
-      "ko" : "Siri AI",
-      "pt-BR" : "Siri AI",
-      "zh-Hans" : "Siri AI"
+      "de" : "Siri AI-Suche",
+      "en" : "Siri AI search",
+      "es" : "Búsqueda de Siri AI",
+      "fr" : "Recherche Siri AI",
+      "ja" : "Siri AI 検索",
+      "ko" : "Siri AI 검색",
+      "pt-BR" : "Busca da Siri AI",
+      "zh-Hans" : "Siri AI 搜索"
     }
   },
   {
@@ -5103,7 +5084,7 @@
     "key" : "Some are not tested yet.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:251"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:253"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5141,7 +5122,7 @@
     "key" : "Spotlight stops sending your searches to Apple. No more web results in Spotlight.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:87"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:91"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5160,7 +5141,7 @@
     "key" : "Stops macOS from constantly recording activity for hang reports. Frees about 100 MB of memory.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:88"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:92"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5179,7 +5160,7 @@
     "key" : "Stops sending usage and crash data to Apple and app developers.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:75"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:79"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5198,7 +5179,7 @@
     "key" : "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:76"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:80"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5217,7 +5198,7 @@
     "key" : "Stops sharing Siri and Dictation recordings with Apple.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:77"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:81"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5229,6 +5210,25 @@
       "ko" : "Siri 및 받아쓰기 녹음을 Apple과 공유하지 않습니다.",
       "pt-BR" : "Deixa de compartilhar gravações da Siri e do Ditado com a Apple.",
       "zh-Hans" : "停止与 Apple 共享 Siri 和听写录音。"
+    }
+  },
+  {
+    "id" : "Debloat|Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page.",
+    "key" : "Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:85"
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Schaltet die Such-App Siri AI aus; Spotlight kehrt zur klassischen Suche zurück. Siri selbst schaltest du auf der Seite „Siri & Apple Intelligence“ aus.",
+      "en" : "Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page.",
+      "es" : "Desactiva la app de búsqueda Siri AI; Spotlight vuelve a la búsqueda clásica. Para desactivar Siri, usa la página Siri y Apple Intelligence.",
+      "fr" : "Désactive l’app de recherche Siri AI ; Spotlight revient à la recherche classique. Pour désactiver Siri elle-même, utilisez la page Siri et Apple Intelligence.",
+      "ja" : "Siri AI 検索アプリをオフにします。Spotlightは従来の検索に戻ります。Siri自体をオフにするには「SiriとApple Intelligence」ページを使います。",
+      "ko" : "Siri AI 검색 앱을 끕니다. Spotlight는 기존 검색으로 돌아갑니다. Siri 자체를 끄려면 Siri 및 Apple Intelligence 페이지를 사용하세요.",
+      "pt-BR" : "Desativa o app de busca Siri AI; o Spotlight volta à busca clássica. Para desativar a própria Siri, use a página Siri e Apple Intelligence.",
+      "zh-Hans" : "关闭 Siri AI 搜索应用；Spotlight 恢复为经典搜索。要关闭 Siri 本身，请使用“Siri 与 Apple 智能”页面。"
     }
   },
   {
@@ -5255,7 +5255,7 @@
     "key" : "Switch it off, then restart your Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:84"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:88"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5274,7 +5274,7 @@
     "key" : "Switch it off. To turn off Apple Intelligence, use the Siri page.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:86"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:90"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5293,7 +5293,7 @@
     "key" : "This beta version of macOS ignores the regular analytics setting. Use the profile option instead.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:107"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:110"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5331,7 +5331,7 @@
     "key" : "Turns off Game Center.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:90"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:94"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5346,30 +5346,11 @@
     }
   },
   {
-    "id" : "Debloat|Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.",
-    "key" : "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.",
-    "kind" : "Text",
-    "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:81"
-    ],
-    "table" : "Debloat",
-    "translations" : {
-      "de" : "Schaltet Siri AI aus. Spotlight kehrt zur klassischen Suche zurück. Die anderen Funktionen von Apple Intelligence bleiben aktiv.",
-      "en" : "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.",
-      "es" : "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. Las demás funciones de Apple Intelligence siguen activadas.",
-      "fr" : "Désactive Siri AI. Spotlight revient à la recherche classique. Les autres fonctions d’Apple Intelligence restent activées.",
-      "ja" : "Siri AIをオフにします。Spotlightは従来の検索に戻り、ほかのApple Intelligence機能はオンのままです。",
-      "ko" : "Siri AI를 끕니다. Spotlight는 기존 검색으로 돌아가고 다른 Apple Intelligence 기능은 켜진 상태로 유지됩니다.",
-      "pt-BR" : "Desativa a Siri AI. O Spotlight volta à busca clássica. Os outros recursos da Apple Intelligence continuam ativos.",
-      "zh-Hans" : "关闭 Siri AI。Spotlight 恢复传统搜索，其他 Apple 智能功能保持开启。"
-    }
-  },
-  {
     "id" : "Debloat|Turns off Visual Intelligence. Visual Look Up may stop working too.",
     "key" : "Turns off Visual Intelligence. Visual Look Up may stop working too.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:82"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:86"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5388,7 +5369,7 @@
     "key" : "Undone by macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:50"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:54"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5426,7 +5407,7 @@
     "key" : "Verifying",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:44"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:46"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5464,7 +5445,7 @@
     "key" : "Waiting for approval",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:49"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:53"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5483,7 +5464,7 @@
     "key" : "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:115"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:118"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5502,9 +5483,9 @@
     "key" : "debloat",
     "kind" : "Tile title",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:177",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:178",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:179",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:180",
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:181"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5523,7 +5504,7 @@
     "key" : "macOS asks you to approve the policy profile once.",
     "kind" : "Message",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:250"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:252"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5542,7 +5523,7 @@
     "key" : "macOS prevents this change from taking effect on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:109"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:112"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5561,7 +5542,7 @@
     "key" : "macOS still chose to send diagnostics after this change.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:114"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:117"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5637,7 +5618,7 @@
     "key" : "%@ files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:224"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:220"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5656,7 +5637,7 @@
     "key" : "%@ free",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:191"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5694,7 +5675,7 @@
     "key" : "%lld backups",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:190"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5751,7 +5732,7 @@
     "key" : "1 backup",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:194"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:190"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5867,7 +5848,7 @@
     "kind" : "Pill",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:145",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:195"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:191"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5886,7 +5867,7 @@
     "key" : "Backups not readable",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:186"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5924,7 +5905,7 @@
     "key" : "Cloud files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:224"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:220"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5943,7 +5924,7 @@
     "key" : "Connect it to see its backups and free old ones.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:182"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:178"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -5977,22 +5958,22 @@
     }
   },
   {
-    "id" : "OtherSystemFiles|Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.",
-    "key" : "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.",
+    "id" : "OtherSystemFiles|Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.",
+    "key" : "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:150"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:147"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
-      "de" : "Kopien dieses Mac, die Time Machine einen Tag lang behält, damit Dateien ohne Backup-Volume wiederhergestellt werden können. Freigeben lässt die neueste und die, von der das nächste Backup ausgeht.",
-      "en" : "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.",
-      "es" : "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar deja la más reciente y la que usa como punto de partida la próxima copia.",
-      "fr" : "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont part la prochaine sauvegarde.",
-      "ja" : "バックアップディスクなしでも復元できるよう、Time Machineが1日保持するMacのコピーです。最新のものと次のバックアップの起点は残します。",
-      "ko" : "백업 디스크 없이도 파일을 복원하도록 Time Machine이 하루 동안 보관하는 Mac 사본입니다. 최신 스냅샷과 다음 백업의 시작점은 유지됩니다.",
-      "pt-BR" : "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar deixa o mais recente e o que o próximo backup usa como ponto de partida.",
-      "zh-Hans" : "Time Machine 保留一天的此 Mac 副本，无需备份磁盘也能恢复文件。释放时保留最新快照和下次备份所需的快照。"
+      "de" : "Kopien dieses Macs, die Time Machine einen Tag behält, um Dateien ohne Backup-Volume wiederherzustellen. Freigeben behält die neueste und die für das nächste Backup.",
+      "en" : "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.",
+      "es" : "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar conserva la más reciente y la que necesita la próxima copia.",
+      "fr" : "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.",
+      "ja" : "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。",
+      "ko" : "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다.",
+      "pt-BR" : "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.",
+      "zh-Hans" : "Time Machine 保留一天的此 Mac 副本，用于在没有备份磁盘时恢复文件。释放会保留最新的一份和下次备份需要的一份。"
     }
   },
   {
@@ -6038,22 +6019,22 @@
     }
   },
   {
-    "id" : "OtherSystemFiles|Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
-    "key" : "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
+    "id" : "OtherSystemFiles|Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.",
+    "key" : "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.",
     "kind" : "Row detail",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Support\/PurgeableSnapshot.swift:84"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
-      "de" : "Dateien, die Apps als sicher löschbar markiert haben. Das System gibt sie frei, wenn der Speicher fast voll ist. Werden sie nicht freigegeben, versucht MacSpace es im Hintergrund erneut.",
-      "en" : "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.",
-      "es" : "Archivos que las apps marcaron como seguros de eliminar. El sistema los libera cuando el disco está casi lleno. Si no se liberan, MacSpace vuelve a intentarlo en segundo plano.",
-      "fr" : "Fichiers que les apps ont marqués comme pouvant être supprimés sans risque. Le système les libère lorsque le disque est presque plein. S’ils ne sont pas libérés, MacSpace fait de nouvelles tentatives en arrière-plan.",
-      "ja" : "アプリが安全に削除できると指定したファイルです。ディスクがほぼ満杯になると、システムが解放します。解放されなかった場合、MacSpaceがバックグラウンドで再試行します。",
-      "ko" : "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. 디스크가 거의 차면 시스템이 공간을 확보합니다. 확보되지 않으면 MacSpace가 백그라운드에서 다시 시도합니다.",
-      "pt-BR" : "Arquivos que os apps marcaram como seguros para apagar. O sistema só os libera quando o disco está quase cheio. Se não forem liberados, o MacSpace faz novas tentativas em segundo plano.",
-      "zh-Hans" : "应用标记为可安全删除的文件。磁盘空间即将用尽时，系统会释放这些文件。如果未能释放，MacSpace 会在后台继续尝试。"
+      "de" : "Dateien, die Apps als löschbar markiert haben. macOS gibt sie frei, wenn das Volume fast voll ist; sonst fragt MacSpace erneut.",
+      "en" : "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.",
+      "es" : "Archivos que las apps marcaron como seguros de borrar. macOS los libera cuando el disco está casi lleno; MacSpace insiste si no lo hace.",
+      "fr" : "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.",
+      "ja" : "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。",
+      "ko" : "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다.",
+      "pt-BR" : "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.",
+      "zh-Hans" : "应用标记为可安全删除的文件。磁盘快满时 macOS 会释放它们；若未释放，MacSpace 会继续请求。"
     }
   },
   {
@@ -6061,7 +6042,7 @@
     "key" : "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:155"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:151"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6101,9 +6082,9 @@
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:97",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:153",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:203"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:149",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:152",
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:199"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6141,7 +6122,7 @@
     "key" : "Free %lld Time Machine snapshots?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:150"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6160,7 +6141,7 @@
     "key" : "Free 1 Time Machine snapshot?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:150"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6198,7 +6179,7 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:200"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:196"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6236,7 +6217,7 @@
     "key" : "Free the selected backups?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:197"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6337,7 +6318,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:189",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:190",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:156"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:152"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6394,7 +6375,7 @@
     "key" : "Latest",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:191"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:187"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6413,7 +6394,7 @@
     "key" : "Left alone",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:265"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:261"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6451,7 +6432,7 @@
     "key" : "Not connected",
     "kind" : "Pill",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:181"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:177"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6512,7 +6493,7 @@
     "key" : "Other purgeable documents",
     "kind" : "Row title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:238"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:234"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6742,7 +6723,7 @@
     "key" : "They are deleted from %@ for good. Files that are only in them can't be restored.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:202"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:198"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6761,7 +6742,7 @@
     "key" : "Time Machine backup disks",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:174"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:170"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6887,27 +6868,6 @@
       "ko" : "%@ 확보 중",
       "pt-BR" : "liberando %@",
       "zh-Hans" : "正在释放 %@"
-    }
-  },
-  {
-    "id" : "OtherSystemFiles|kept",
-    "key" : "kept",
-    "kind" : "Text",
-    "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:84",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:148",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:265"
-    ],
-    "table" : "OtherSystemFiles",
-    "translations" : {
-      "de" : "bleibt",
-      "en" : "kept",
-      "es" : "se conserva",
-      "fr" : "conservé",
-      "ja" : "保持",
-      "ko" : "유지됨",
-      "pt-BR" : "mantido",
-      "zh-Hans" : "保留"
     }
   },
   {
@@ -7046,11 +7006,49 @@
     }
   },
   {
+    "id" : "Siri|%@ of models for %@; switch it off to free them",
+    "key" : "%@ of models for %@; switch it off to free them",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:79"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ an Modellen für %@; zum Freigeben ausschalten",
+      "en" : "%@ of models for %@; switch it off to free them",
+      "es" : "%@ de modelos para %@; desactívalo para liberarlos",
+      "fr" : "%@ de modèles pour %@ ; désactivez pour les libérer",
+      "ja" : "%@のモデル（%@）。オフにすると解放されます",
+      "ko" : "%@ 모델(%@): 끄면 정리됩니다",
+      "pt-BR" : "%@ de modelos para %@; desative para liberar",
+      "zh-Hans" : "%@ 的模型用于 %@；关闭即可释放"
+    }
+  },
+  {
+    "id" : "Siri|%@ of models for Siri features; switch them off to free them",
+    "key" : "%@ of models for Siri features; switch them off to free them",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:80"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ an Modellen für Siri-Funktionen; zum Freigeben ausschalten",
+      "en" : "%@ of models for Siri features; switch them off to free them",
+      "es" : "%@ de modelos para funciones de Siri; desactívalas para liberarlos",
+      "fr" : "%@ de modèles pour des fonctions de Siri ; désactivez-les pour les libérer",
+      "ja" : "%@のモデル（Siriの機能）。オフにすると解放されます",
+      "ko" : "%@ 모델(Siri 기능): 끄면 정리됩니다",
+      "pt-BR" : "%@ de modelos para recursos da Siri; desative para liberar",
+      "zh-Hans" : "%@ 的模型用于 Siri 功能；关闭即可释放"
+    }
+  },
+  {
     "id" : "Siri|%@ of models kept by macOS",
     "key" : "%@ of models kept by macOS",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:95"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7069,7 +7067,7 @@
     "key" : "%@ of models on disk",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:76"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:87"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7088,7 +7086,7 @@
     "key" : "%@ of models; switch it off to free them",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:71"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:76"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7107,7 +7105,7 @@
     "key" : "%lld features",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:254"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:350"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7126,7 +7124,7 @@
     "key" : "1 feature",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:254"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:350"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7165,7 +7163,7 @@
     "key" : "AI is off",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:95"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:109"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7184,7 +7182,7 @@
     "key" : "AI is on",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:97"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7242,7 +7240,7 @@
     "key" : "Already off",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:264"
+      "Modules\/Siri\/Module\/SiriModule.swift:286"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7261,7 +7259,7 @@
     "key" : "Already on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:264"
+      "Modules\/Siri\/Module\/SiriModule.swift:286"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7276,22 +7274,22 @@
     }
   },
   {
-    "id" : "Siri|Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
-    "key" : "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
-    "kind" : "Row detail",
+    "id" : "Siri|Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.",
+    "key" : "Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.",
+    "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:209"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:306"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Eine andere Änderung wirkt sich auf diese Funktionen aus. MacSpace behält sie bei und gibt Telefonmodelle nicht automatisch frei.",
-      "en" : "Another change affects these features. MacSpace keeps it and does not release Phone models automatically.",
-      "es" : "Otro cambio afecta a estas funciones. MacSpace lo conserva y no libera automáticamente los modelos de Teléfono.",
-      "fr" : "Une autre modification affecte ces fonctions. MacSpace la conserve et ne libère pas automatiquement les modèles de Téléphone.",
-      "ja" : "別の変更がこれらの機能に影響しています。MacSpaceはその変更を保持し、電話のモデルを自動的に解放しません。",
-      "ko" : "다른 변경 사항이 이 기능에 영향을 줍니다. MacSpace는 해당 변경을 유지하고 전화 모델을 자동으로 해제하지 않습니다.",
-      "pt-BR" : "Outra alteração afeta estes recursos. O MacSpace a preserva e não libera os modelos do Telefone automaticamente.",
-      "zh-Hans" : "其他更改影响了这些功能。MacSpace 会保留该更改，不会自动释放电话模型。"
+      "de" : "Eine andere Änderung betrifft diese Einstellungen. MacSpace behält sie bei und gibt die Modelle der Anruftranskription nicht selbst frei.",
+      "en" : "Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.",
+      "es" : "Otro cambio afecta a estos ajustes. MacSpace lo conserva y no libera por sí solo los modelos de transcripción de llamadas.",
+      "fr" : "Une autre modification touche ces réglages. MacSpace la conserve et ne libère pas de lui-même les modèles de transcription des appels.",
+      "ja" : "別の変更がこれらの設定に影響しています。MacSpaceはそれを維持し、通話の文字起こしのモデルを自動では解放しません。",
+      "ko" : "다른 변경 사항이 이 설정에 영향을 줍니다. MacSpace는 이를 유지하며 통화 전사 모델을 직접 정리하지 않습니다.",
+      "pt-BR" : "Outra alteração afeta estes ajustes. O MacSpace a preserva e não libera sozinho os modelos de transcrição de chamadas.",
+      "zh-Hans" : "另一项更改影响了这些设置。MacSpace 会保留它，不会自行释放通话转录模型。"
     }
   },
   {
@@ -7299,8 +7297,8 @@
     "key" : "Apple Intelligence",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:136",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:226"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:323"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7358,7 +7356,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceWatcher.swift:82",
-      "Modules\/Siri\/Module\/SiriModule.swift:268"
+      "Modules\/Siri\/Module\/SiriModule.swift:290"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7377,7 +7375,7 @@
     "key" : "Apple Intelligence is on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:266"
+      "Modules\/Siri\/Module\/SiriModule.swift:288"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7472,7 +7470,7 @@
     "key" : "Before MacSpace can release them",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:273"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:369"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7487,11 +7485,51 @@
     }
   },
   {
+    "id" : "Siri|Call transcription",
+    "key" : "Call transcription",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:136",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:314",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:319"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Anruftranskription",
+      "en" : "Call transcription",
+      "es" : "Transcripción de llamadas",
+      "fr" : "Transcription des appels",
+      "ja" : "通話の文字起こし",
+      "ko" : "통화 전사",
+      "pt-BR" : "Transcrição de chamadas",
+      "zh-Hans" : "通话转录"
+    }
+  },
+  {
+    "id" : "Siri|Can't change now",
+    "key" : "Can't change now",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Gerade nicht änderbar",
+      "en" : "Can't change now",
+      "es" : "No se puede cambiar ahora",
+      "fr" : "Impossible de modifier pour l’instant",
+      "ja" : "今は変更できません",
+      "ko" : "지금은 변경할 수 없음",
+      "pt-BR" : "Não é possível alterar agora",
+      "zh-Hans" : "暂时无法更改"
+    }
+  },
+  {
     "id" : "Siri|Can't free it yet",
     "key" : "Can't free it yet",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:287"
+      "Modules\/Siri\/Module\/SiriModule.swift:309"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7510,8 +7548,8 @@
     "key" : "Changed outside MacSpace",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:182",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:208"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:280",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:305"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7523,6 +7561,25 @@
       "ko" : "MacSpace 외부에서 변경됨",
       "pt-BR" : "Alterado fora do MacSpace",
       "zh-Hans" : "已在 MacSpace 外更改"
+    }
+  },
+  {
+    "id" : "Siri|Changing settings",
+    "key" : "Changing settings",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:178"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Einstellungen werden geändert",
+      "en" : "Changing settings",
+      "es" : "Cambiando los ajustes",
+      "fr" : "Modification des réglages",
+      "ja" : "設定を変更中",
+      "ko" : "설정 변경 중",
+      "pt-BR" : "Alterando ajustes",
+      "zh-Hans" : "正在更改设置"
     }
   },
   {
@@ -7602,41 +7659,22 @@
     }
   },
   {
-    "id" : "Siri|Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
-    "key" : "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:216"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Steuert Anrufaufzeichnung und Transkription, Live-Voicemail und Anruffilter, FaceTime-Untertitel und Anrufübersetzung für alle Accounts auf diesem Mac. Änderungen erfordern einen Neustart.",
-      "en" : "Controls call recording and transcription, Live Voicemail and Call Screening, FaceTime captions, and call translation for all accounts on this Mac. Changes require a restart.",
-      "es" : "Controla la grabación y transcripción de llamadas, el buzón de voz en directo y el filtrado de llamadas, los subtítulos de FaceTime y la traducción de llamadas para todas las cuentas de este Mac. Los cambios requieren reiniciar.",
-      "fr" : "Contrôle l’enregistrement et la transcription des appels, la messagerie vocale en direct et le filtrage des appels, les sous-titres FaceTime et la traduction des appels pour tous les comptes de ce Mac. Les modifications nécessitent un redémarrage.",
-      "ja" : "このMacのすべてのアカウントの通話録音と文字起こし、ライブ留守番電話と着信スクリーニング、FaceTimeの字幕、通話の翻訳を制御します。変更には再起動が必要です。",
-      "ko" : "이 Mac의 모든 계정에서 통화 녹음 및 전사, 실시간 음성 메시지 및 통화 스크리닝, FaceTime 자막, 통화 번역을 제어합니다. 변경 후 재시동해야 합니다.",
-      "pt-BR" : "Controla gravação e transcrição de chamadas, Correio de Voz ao Vivo e triagem de chamadas, legendas do FaceTime e tradução de chamadas para todas as contas deste Mac. As alterações exigem reinicialização.",
-      "zh-Hans" : "控制此 Mac 上所有账户的通话录音和转写、实时语音留言和来电筛选、FaceTime 字幕及通话翻译。更改后需要重新启动。"
-    }
-  },
-  {
-    "id" : "Siri|Couldn't change Phone feature settings.",
-    "key" : "Couldn't change Phone feature settings.",
+    "id" : "Siri|Couldn't change Call transcription.",
+    "key" : "Couldn't change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:206"
+      "Modules\/Siri\/Module\/SiriModule.swift:228"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Die Einstellungen der Telefonfunktionen konnten nicht geändert werden.",
-      "en" : "Couldn't change Phone feature settings.",
-      "es" : "No se pudieron cambiar los ajustes de las funciones de Teléfono.",
-      "fr" : "Impossible de modifier les réglages des fonctions de Téléphone.",
-      "ja" : "電話の機能の設定を変更できませんでした。",
-      "ko" : "전화 기능 설정을 변경하지 못했습니다.",
-      "pt-BR" : "Não foi possível alterar os ajustes dos recursos do Telefone.",
-      "zh-Hans" : "无法更改电话功能设置。"
+      "de" : "Die Anruftranskription konnte nicht geändert werden.",
+      "en" : "Couldn't change Call transcription.",
+      "es" : "No se pudo cambiar Transcripción de llamadas.",
+      "fr" : "Impossible de modifier Transcription des appels.",
+      "ja" : "通話の文字起こしを変更できませんでした。",
+      "ko" : "통화 전사를 변경할 수 없습니다.",
+      "pt-BR" : "Não foi possível alterar a Transcrição de chamadas.",
+      "zh-Hans" : "无法更改通话转录。"
     }
   },
   {
@@ -7644,7 +7682,7 @@
     "key" : "Couldn't change feature settings.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:181"
+      "Modules\/Siri\/Module\/SiriModule.swift:203"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7678,22 +7716,22 @@
     }
   },
   {
-    "id" : "Siri|Couldn't restore Phone feature settings.",
-    "key" : "Couldn't restore Phone feature settings.",
+    "id" : "Siri|Couldn't restore Call transcription.",
+    "key" : "Couldn't restore Call transcription.",
     "kind" : "Result message",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:40"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Die Einstellungen der Telefonfunktionen konnten nicht wiederhergestellt werden.",
-      "en" : "Couldn't restore Phone feature settings.",
-      "es" : "No se pudieron restaurar los ajustes de las funciones de Teléfono.",
-      "fr" : "Impossible de restaurer les réglages des fonctions de Téléphone.",
-      "ja" : "電話の機能の設定を復元できませんでした。",
-      "ko" : "전화 기능 설정을 복원하지 못했습니다.",
-      "pt-BR" : "Não foi possível restaurar os ajustes dos recursos do Telefone.",
-      "zh-Hans" : "无法恢复电话功能设置。"
+      "de" : "Die Anruftranskription konnte nicht wiederhergestellt werden.",
+      "en" : "Couldn't restore Call transcription.",
+      "es" : "No se pudo restaurar Transcripción de llamadas.",
+      "fr" : "Impossible de rétablir Transcription des appels.",
+      "ja" : "通話の文字起こしを元に戻せませんでした。",
+      "ko" : "통화 전사를 복원할 수 없습니다.",
+      "pt-BR" : "Não foi possível restaurar a Transcrição de chamadas.",
+      "zh-Hans" : "无法恢复通话转录。"
     }
   },
   {
@@ -7721,8 +7759,8 @@
     "kind" : "Result message",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:30",
-      "Modules\/Siri\/Module\/SiriModule.swift:176",
-      "Modules\/Siri\/Module\/SiriModule.swift:190"
+      "Modules\/Siri\/Module\/SiriModule.swift:198",
+      "Modules\/Siri\/Module\/SiriModule.swift:212"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7737,22 +7775,22 @@
     }
   },
   {
-    "id" : "Siri|Couldn't verify the Phone feature change.",
-    "key" : "Couldn't verify the Phone feature change.",
+    "id" : "Siri|Couldn't verify the Call transcription change.",
+    "key" : "Couldn't verify the Call transcription change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:199"
+      "Modules\/Siri\/Module\/SiriModule.swift:221"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Die Änderung der Telefonfunktionen konnte nicht überprüft werden.",
-      "en" : "Couldn't verify the Phone feature change.",
-      "es" : "No se pudo verificar el cambio de las funciones de Teléfono.",
-      "fr" : "Impossible de vérifier la modification des fonctions de Téléphone.",
-      "ja" : "電話の機能の変更を確認できませんでした。",
-      "ko" : "전화 기능 변경을 확인하지 못했습니다.",
-      "pt-BR" : "Não foi possível verificar a alteração dos recursos do Telefone.",
-      "zh-Hans" : "无法验证电话功能更改。"
+      "de" : "Die Änderung der Anruftranskription konnte nicht geprüft werden.",
+      "en" : "Couldn't verify the Call transcription change.",
+      "es" : "No se pudo verificar el cambio de Transcripción de llamadas.",
+      "fr" : "Impossible de vérifier la modification de Transcription des appels.",
+      "ja" : "通話の文字起こしの変更を確認できませんでした。",
+      "ko" : "통화 전사 변경 사항을 확인할 수 없습니다.",
+      "pt-BR" : "Não foi possível verificar a alteração da Transcrição de chamadas.",
+      "zh-Hans" : "无法验证通话转录的更改。"
     }
   },
   {
@@ -7779,7 +7817,7 @@
     "key" : "Deletes Apple Intelligence models and other downloads macOS no longer needs.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:121"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7794,11 +7832,242 @@
     }
   },
   {
+    "id" : "Siri|Disable",
+    "key" : "Disable",
+    "kind" : "Confirmation button",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:205"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Deaktivieren",
+      "en" : "Disable",
+      "es" : "Desactivar",
+      "fr" : "Désactiver",
+      "ja" : "無効にする",
+      "ko" : "끄기",
+      "pt-BR" : "Desativar",
+      "zh-Hans" : "停用"
+    }
+  },
+  {
+    "id" : "Siri|Disable %@",
+    "key" : "Disable %@",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:197"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ deaktivieren",
+      "en" : "Disable %@",
+      "es" : "Desactivar %@",
+      "fr" : "Désactiver %@",
+      "ja" : "%@を無効にする",
+      "ko" : "%@ 끄기",
+      "pt-BR" : "Desativar %@",
+      "zh-Hans" : "停用 %@"
+    }
+  },
+  {
+    "id" : "Siri|Disable %@?",
+    "key" : "Disable %@?",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:199"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ deaktivieren?",
+      "en" : "Disable %@?",
+      "es" : "¿Desactivar %@?",
+      "fr" : "Désactiver %@ ?",
+      "ja" : "%@を無効にしますか？",
+      "ko" : "%@을(를) 끌까요?",
+      "pt-BR" : "Desativar %@?",
+      "zh-Hans" : "停用 %@？"
+    }
+  },
+  {
+    "id" : "Siri|Disable %lld features?",
+    "key" : "Disable %lld features?",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:199"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%lld Funktionen deaktivieren?",
+      "en" : "Disable %lld features?",
+      "es" : "¿Desactivar %lld funciones?",
+      "fr" : "Désactiver %lld fonctions ?",
+      "ja" : "%lld個の機能を無効にしますか？",
+      "ko" : "기능 %lld개를 끌까요?",
+      "pt-BR" : "Desativar %lld recursos?",
+      "zh-Hans" : "停用 %lld 项功能？"
+    }
+  },
+  {
+    "id" : "Siri|Disable all",
+    "key" : "Disable all",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:197"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Alle deaktivieren",
+      "en" : "Disable all",
+      "es" : "Desactivar todo",
+      "fr" : "Tout désactiver",
+      "ja" : "すべて無効にする",
+      "ko" : "모두 끄기",
+      "pt-BR" : "Desativar tudo",
+      "zh-Hans" : "全部停用"
+    }
+  },
+  {
+    "id" : "Siri|Downloading",
+    "key" : "Downloading",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:245",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:253"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Wird geladen",
+      "en" : "Downloading",
+      "es" : "Descargando",
+      "fr" : "Téléchargement",
+      "ja" : "ダウンロード中",
+      "ko" : "다운로드 중",
+      "pt-BR" : "Baixando",
+      "zh-Hans" : "正在下载"
+    }
+  },
+  {
+    "id" : "Siri|Each one can be enabled again. MacSpace frees their models.",
+    "key" : "Each one can be enabled again. MacSpace frees their models.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:205"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Jede lässt sich wieder aktivieren. MacSpace gibt ihre Modelle frei.",
+      "en" : "Each one can be enabled again. MacSpace frees their models.",
+      "es" : "Cada una se puede volver a activar. MacSpace libera sus modelos.",
+      "fr" : "Chacune peut être réactivée. MacSpace libère leurs modèles.",
+      "ja" : "どの機能も再び有効にできます。MacSpaceがモデルを解放します。",
+      "ko" : "각 기능은 다시 켤 수 있습니다. MacSpace가 모델을 정리합니다.",
+      "pt-BR" : "Cada um pode ser reativado. O MacSpace libera os modelos deles.",
+      "zh-Hans" : "每项功能都可以重新启用。MacSpace 会释放它们的模型。"
+    }
+  },
+  {
+    "id" : "Siri|Enable",
+    "key" : "Enable",
+    "kind" : "Confirmation button",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Aktivieren",
+      "en" : "Enable",
+      "es" : "Activar",
+      "fr" : "Activer",
+      "ja" : "有効にする",
+      "ko" : "켜기",
+      "pt-BR" : "Ativar",
+      "zh-Hans" : "启用"
+    }
+  },
+  {
+    "id" : "Siri|Enable %@",
+    "key" : "Enable %@",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:197"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ aktivieren",
+      "en" : "Enable %@",
+      "es" : "Activar %@",
+      "fr" : "Activer %@",
+      "ja" : "%@を有効にする",
+      "ko" : "%@ 켜기",
+      "pt-BR" : "Ativar %@",
+      "zh-Hans" : "启用 %@"
+    }
+  },
+  {
+    "id" : "Siri|Enable %@ again?",
+    "key" : "Enable %@ again?",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:198"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "%@ wieder aktivieren?",
+      "en" : "Enable %@ again?",
+      "es" : "¿Volver a activar %@?",
+      "fr" : "Réactiver %@ ?",
+      "ja" : "%@を再び有効にしますか？",
+      "ko" : "%@을(를) 다시 켤까요?",
+      "pt-BR" : "Reativar %@?",
+      "zh-Hans" : "重新启用 %@？"
+    }
+  },
+  {
+    "id" : "Siri|Enable all",
+    "key" : "Enable all",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:197"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Alle aktivieren",
+      "en" : "Enable all",
+      "es" : "Activar todo",
+      "fr" : "Tout activer",
+      "ja" : "すべて有効にする",
+      "ko" : "모두 켜기",
+      "pt-BR" : "Ativar tudo",
+      "zh-Hans" : "全部启用"
+    }
+  },
+  {
+    "id" : "Siri|Enable all %lld features again?",
+    "key" : "Enable all %lld features again?",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:198"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Alle %lld Funktionen wieder aktivieren?",
+      "en" : "Enable all %lld features again?",
+      "es" : "¿Volver a activar las %lld funciones?",
+      "fr" : "Réactiver les %lld fonctions ?",
+      "ja" : "%lld個すべての機能を再び有効にしますか？",
+      "ko" : "기능 %lld개를 모두 다시 켤까요?",
+      "pt-BR" : "Reativar todos os %lld recursos?",
+      "zh-Hans" : "重新启用全部 %lld 项功能？"
+    }
+  },
+  {
     "id" : "Siri|Feature settings updated.",
     "key" : "Feature settings updated.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:179"
+      "Modules\/Siri\/Module\/SiriModule.swift:191",
+      "Modules\/Siri\/Module\/SiriModule.swift:201",
+      "Modules\/Siri\/Module\/SiriModule.swift:224"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7817,7 +8086,7 @@
     "key" : "Free",
     "kind" : "Confirmation button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:121"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7836,7 +8105,7 @@
     "key" : "Free up to %@",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:120"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:222"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7855,7 +8124,7 @@
     "key" : "Free up to %@?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:121"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7874,10 +8143,10 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:222",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:87",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:121",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:168",
+      "Modules\/Siri\/Module\/SiriModule.swift:244",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:100",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:223",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:262",
       "App\/Shell\/MainView.swift:237"
     ],
     "table" : "Siri",
@@ -7890,25 +8159,6 @@
       "ko" : "공간 확보 중",
       "pt-BR" : "Liberando espaço",
       "zh-Hans" : "正在释放空间"
-    }
-  },
-  {
-    "id" : "Siri|If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.",
-    "key" : "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:239"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Wenn du sie aktivierst, wirkt MacSpace auf allen deinen Geräten auf Apple Intelligence. Zum Ändern öffne die Systemeinstellungen, wähle oben in der Seitenleiste Apple Account, klicke unter „In iCloud gesichert“ auf „Alle anzeigen“ und deaktiviere dann Siri.",
-      "en" : "If you turn it on, MacSpace acts on Apple Intelligence on all your devices. To change it, open System Settings, select Apple Account at the top of the sidebar, then under Saved to iCloud, click See All and turn off Siri.",
-      "es" : "Si lo activas, MacSpace actúa sobre Apple Intelligence en todos tus dispositivos. Para cambiarlo, abre Ajustes del Sistema, selecciona Cuenta de Apple en la parte superior de la barra lateral y, en Guardado en iCloud, haz clic en Ver todo y desactiva Siri.",
-      "fr" : "Si vous l’activez, MacSpace agit sur Apple Intelligence sur tous vos appareils. Pour le modifier, ouvrez Réglages Système, sélectionnez Compte Apple en haut de la barre latérale, puis, sous Enregistré dans iCloud, cliquez sur Tout afficher et désactivez Siri.",
-      "ja" : "オンにすると、すべてのデバイスのApple Intelligenceに影響します。「システム設定」でサイドバー上部のApple Accountを選び、「iCloudに保存済み」の「すべて見る」からSiriをオフにしてください。",
-      "ko" : "켜면 MacSpace의 Apple Intelligence 변경이 모든 기기에 적용됩니다. 시스템 설정의 사이드바 상단에서 Apple 계정을 선택하고 iCloud에 저장됨 아래의 모두 보기를 클릭한 후 Siri를 끄세요.",
-      "pt-BR" : "Se ativa, o MacSpace atuará no Apple Intelligence em todos os seus dispositivos.\nPara alterar abra os Ajustes do Mac, selecione \"conta Apple\" no topo da barra lateral - salvos no iCloud - ver tudo - e desative a opção Siri.",
-      "zh-Hans" : "开启后，MacSpace 对 Apple 智能的操作会影响所有设备。如需更改，请打开“系统设置”，在边栏顶部选择 Apple 账户，然后在“已存储到 iCloud”下点按“查看全部”并关闭 Siri。"
     }
   },
   {
@@ -7935,7 +8185,7 @@
     "key" : "Keeps the models",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:255"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:351"
     ],
     "table" : "Siri",
     "translations" : {
@@ -7950,11 +8200,30 @@
     }
   },
   {
-    "id" : "Siri|Kept while Apple Intelligence is on",
-    "key" : "Kept while Apple Intelligence is on",
+    "id" : "Siri|Kept by macOS",
+    "key" : "Kept by macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:169"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:150"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Von macOS behalten",
+      "en" : "Kept by macOS",
+      "es" : "Conservado por macOS",
+      "fr" : "Conservé par macOS",
+      "ja" : "macOSが保持",
+      "ko" : "macOS가 보관 중",
+      "pt-BR" : "Mantido pelo macOS",
+      "zh-Hans" : "由 macOS 保留"
+    }
+  },
+  {
+    "id" : "Siri|Kept while Apple Intelligence is on",
+    "key" : "Kept while Apple Intelligence is on",
+    "kind" : "Other",
+    "places" : [
+
     ],
     "table" : "Siri",
     "translations" : {
@@ -7992,7 +8261,7 @@
     "key" : "Leftover models",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:281"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:377"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8011,7 +8280,7 @@
     "key" : "Log in as %@ and turn Apple Intelligence off there.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:249"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:345"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8026,22 +8295,41 @@
     }
   },
   {
-    "id" : "Siri|MacSpace could not read every Phone feature setting.",
-    "key" : "MacSpace could not read every Phone feature setting.",
-    "kind" : "Row detail",
+    "id" : "Siri|MacSpace asks macOS again every five minutes.",
+    "key" : "MacSpace asks macOS again every five minutes.",
+    "kind" : "Tooltip",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:212"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:266"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "MacSpace konnte nicht alle Einstellungen der Telefonfunktionen lesen.",
-      "en" : "MacSpace could not read every Phone feature setting.",
-      "es" : "MacSpace no pudo leer todos los ajustes de las funciones de Teléfono.",
-      "fr" : "MacSpace n’a pas pu lire tous les réglages des fonctions de Téléphone.",
-      "ja" : "MacSpaceは電話の機能の設定をすべて読み取れませんでした。",
-      "ko" : "MacSpace가 모든 전화 기능 설정을 읽지 못했습니다.",
-      "pt-BR" : "O MacSpace não conseguiu ler todos os ajustes dos recursos do Telefone.",
-      "zh-Hans" : "MacSpace 无法读取所有电话功能设置。"
+      "de" : "MacSpace fragt macOS alle fünf Minuten erneut.",
+      "en" : "MacSpace asks macOS again every five minutes.",
+      "es" : "MacSpace vuelve a pedírselo a macOS cada cinco minutos.",
+      "fr" : "MacSpace redemande à macOS toutes les cinq minutes.",
+      "ja" : "MacSpaceは5分ごとにmacOSに再度依頼します。",
+      "ko" : "MacSpace가 5분마다 macOS에 다시 요청합니다.",
+      "pt-BR" : "O MacSpace pede de novo ao macOS a cada cinco minutos.",
+      "zh-Hans" : "MacSpace 每五分钟会再次请求 macOS。"
+    }
+  },
+  {
+    "id" : "Siri|MacSpace could not read every Call transcription setting.",
+    "key" : "MacSpace could not read every Call transcription setting.",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:308"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "MacSpace konnte nicht alle Einstellungen der Anruftranskription lesen.",
+      "en" : "MacSpace could not read every Call transcription setting.",
+      "es" : "MacSpace no pudo leer todos los ajustes de Transcripción de llamadas.",
+      "fr" : "MacSpace n’a pas pu lire tous les réglages de Transcription des appels.",
+      "ja" : "MacSpaceは通話の文字起こしの設定をすべて読み取れませんでした。",
+      "ko" : "MacSpace가 통화 전사 설정을 모두 읽지 못했습니다.",
+      "pt-BR" : "O MacSpace não conseguiu ler todos os ajustes da Transcrição de chamadas.",
+      "zh-Hans" : "MacSpace 无法读取通话转录的全部设置。"
     }
   },
   {
@@ -8064,41 +8352,41 @@
     }
   },
   {
-    "id" : "Siri|MacSpace needs its helper to change the Phone features.",
-    "key" : "MacSpace needs its helper to change the Phone features.",
+    "id" : "Siri|MacSpace needs its helper to change Call transcription.",
+    "key" : "MacSpace needs its helper to change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:185"
+      "Modules\/Siri\/Module\/SiriModule.swift:207"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "MacSpace benötigt seinen Hilfsdienst, um die Telefonfunktionen zu ändern.",
-      "en" : "MacSpace needs its helper to change the Phone features.",
-      "es" : "MacSpace necesita su asistente para cambiar las funciones de Teléfono.",
-      "fr" : "MacSpace a besoin de son assistant pour modifier les fonctions de Téléphone.",
-      "ja" : "電話の機能を変更するには、MacSpaceのヘルパーが必要です。",
-      "ko" : "전화 기능을 변경하려면 MacSpace 보조 프로그램이 필요합니다.",
-      "pt-BR" : "O MacSpace precisa do auxiliar para alterar os recursos do Telefone.",
-      "zh-Hans" : "MacSpace 需要辅助程序来更改电话功能。"
+      "de" : "MacSpace braucht seinen Helfer, um die Anruftranskription zu ändern.",
+      "en" : "MacSpace needs its helper to change Call transcription.",
+      "es" : "MacSpace necesita su asistente para cambiar Transcripción de llamadas.",
+      "fr" : "MacSpace a besoin de son assistant pour modifier Transcription des appels.",
+      "ja" : "通話の文字起こしを変更するにはMacSpaceのヘルパーが必要です。",
+      "ko" : "통화 전사를 변경하려면 MacSpace 도우미가 필요합니다.",
+      "pt-BR" : "O MacSpace precisa do auxiliar para alterar a Transcrição de chamadas.",
+      "zh-Hans" : "MacSpace 需要其辅助程序来更改通话转录。"
     }
   },
   {
-    "id" : "Siri|MacSpace needs its helper to restore the Phone feature settings.",
-    "key" : "MacSpace needs its helper to restore the Phone feature settings.",
+    "id" : "Siri|MacSpace needs its helper to restore Call transcription.",
+    "key" : "MacSpace needs its helper to restore Call transcription.",
     "kind" : "Result message",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:38"
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "MacSpace benötigt seinen Hilfsdienst, um die Einstellungen der Telefonfunktionen wiederherzustellen.",
-      "en" : "MacSpace needs its helper to restore the Phone feature settings.",
-      "es" : "MacSpace necesita su asistente para restaurar los ajustes de las funciones de Teléfono.",
-      "fr" : "MacSpace a besoin de son assistant pour restaurer les réglages des fonctions de Téléphone.",
-      "ja" : "電話の機能の設定を復元するには、MacSpaceのヘルパーが必要です。",
-      "ko" : "전화 기능 설정을 복원하려면 MacSpace 보조 프로그램이 필요합니다.",
-      "pt-BR" : "O MacSpace precisa do auxiliar para restaurar os ajustes dos recursos do Telefone.",
-      "zh-Hans" : "MacSpace 需要辅助程序来恢复电话功能设置。"
+      "de" : "MacSpace braucht seinen Helfer, um die Anruftranskription wiederherzustellen.",
+      "en" : "MacSpace needs its helper to restore Call transcription.",
+      "es" : "MacSpace necesita su asistente para restaurar Transcripción de llamadas.",
+      "fr" : "MacSpace a besoin de son assistant pour rétablir Transcription des appels.",
+      "ja" : "通話の文字起こしを元に戻すにはMacSpaceのヘルパーが必要です。",
+      "ko" : "통화 전사를 복원하려면 MacSpace 도우미가 필요합니다.",
+      "pt-BR" : "O MacSpace precisa do auxiliar para restaurar a Transcrição de chamadas.",
+      "zh-Hans" : "MacSpace 需要其辅助程序来恢复通话转录。"
     }
   },
   {
@@ -8125,7 +8413,7 @@
     "key" : "Not available in a virtual machine",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:168"
+      "Modules\/Siri\/Module\/SiriModule.swift:169"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8144,7 +8432,8 @@
     "key" : "Not verified on this macOS version",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:184"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:282",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:310"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8182,7 +8471,7 @@
     "key" : "One account with Apple Intelligence on keeps the models on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:258"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:354"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8201,7 +8490,7 @@
     "key" : "Open",
     "kind" : "Button",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:242"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:338"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8277,7 +8566,7 @@
     "key" : "Or delete the account in System Settings > Users & Groups.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:250"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:346"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8296,7 +8585,7 @@
     "key" : "Other accounts",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:257"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:353"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8308,45 +8597,6 @@
       "ko" : "다른 계정",
       "pt-BR" : "Outras contas",
       "zh-Hans" : "其他账户"
-    }
-  },
-  {
-    "id" : "Siri|Phone feature settings updated.",
-    "key" : "Phone feature settings updated.",
-    "kind" : "Result message",
-    "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:202"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Einstellungen der Telefonfunktionen aktualisiert.",
-      "en" : "Phone feature settings updated.",
-      "es" : "Ajustes de las funciones de Teléfono actualizados.",
-      "fr" : "Réglages des fonctions de Téléphone mis à jour.",
-      "ja" : "電話の機能の設定を更新しました。",
-      "ko" : "전화 기능 설정이 업데이트되었습니다.",
-      "pt-BR" : "Ajustes dos recursos do Telefone atualizados.",
-      "zh-Hans" : "电话功能设置已更新。"
-    }
-  },
-  {
-    "id" : "Siri|Phone features",
-    "key" : "Phone features",
-    "kind" : "Row title",
-    "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:218",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:222"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Telefonfunktionen",
-      "en" : "Phone features",
-      "es" : "Funciones de Teléfono",
-      "fr" : "Fonctions de Téléphone",
-      "ja" : "電話の機能",
-      "ko" : "전화 기능",
-      "pt-BR" : "Recursos do Telefone",
-      "zh-Hans" : "电话功能"
     }
   },
   {
@@ -8394,7 +8644,7 @@
     "key" : "Releasing the leftover models",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:269"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:365"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8413,7 +8663,7 @@
     "key" : "Restart required",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:205"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:303"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8432,8 +8682,9 @@
     "key" : "Restart your Mac to apply this change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:196",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:206"
+      "Modules\/Siri\/Module\/SiriModule.swift:190",
+      "Modules\/Siri\/Module\/SiriModule.swift:218",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:303"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8452,7 +8703,7 @@
     "key" : "Restart. MacSpace then deletes the models.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:253"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:349"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8490,7 +8741,8 @@
     "key" : "Siri",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:176",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:134",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:274",
       "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
@@ -8511,8 +8763,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:109",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:106",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:114",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:172",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:180",
       "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
@@ -8532,7 +8784,7 @@
     "key" : "Siri's iCloud sync",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:235"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:332"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8551,7 +8803,7 @@
     "key" : "Siri's iCloud sync is currently off",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:234"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:331"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8570,7 +8822,7 @@
     "key" : "Siri's iCloud sync is currently on",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:233"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:330"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8589,7 +8841,8 @@
     "key" : "Spatial Photos",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:176"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:135",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:274"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8608,8 +8861,8 @@
     "key" : "State unknown",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:183",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:211"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:281",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:308"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8683,9 +8936,9 @@
   {
     "id" : "Siri|Switching it off sets Siri to a different language than your Mac.",
     "key" : "Switching it off sets Siri to a different language than your Mac.",
-    "kind" : "Title",
+    "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:126"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:237"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8704,7 +8957,7 @@
     "key" : "Takes about a minute.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:270"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:366"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8776,30 +9029,11 @@
     }
   },
   {
-    "id" : "Siri|These controls have not been verified on this macOS version.",
-    "key" : "These controls have not been verified on this macOS version.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:214"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Diese Steuerelemente wurden auf dieser macOS-Version noch nicht überprüft.",
-      "en" : "These controls have not been verified on this macOS version.",
-      "es" : "Estos controles no se han verificado en esta versión de macOS.",
-      "fr" : "Ces commandes n’ont pas été vérifiées sur cette version de macOS.",
-      "ja" : "このmacOSバージョンでは、これらの制御は検証されていません。",
-      "ko" : "이 제어 기능은 현재 macOS 버전에서 검증되지 않았습니다.",
-      "pt-BR" : "Estes controles não foram verificados nesta versão do macOS.",
-      "zh-Hans" : "这些控制尚未在此 macOS 版本上验证。"
-    }
-  },
-  {
     "id" : "Siri|This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "key" : "This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:251"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:347"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8833,25 +9067,6 @@
     }
   },
   {
-    "id" : "Siri|Turn it off to keep Siri's language change on this Mac.",
-    "key" : "Turn it off to keep Siri's language change on this Mac.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:240"
-    ],
-    "table" : "Siri",
-    "translations" : {
-      "de" : "Schalte sie aus, damit die Sprachänderung von Siri nur auf diesem Mac gilt.",
-      "en" : "Turn it off to keep Siri's language change on this Mac.",
-      "es" : "Desactívala para que el cambio de idioma de Siri se quede en este Mac.",
-      "fr" : "Désactivez-la pour garder le changement de langue de Siri sur ce Mac.",
-      "ja" : "オフにするとSiriの言語変更をこのMacだけに適用できます。",
-      "ko" : "Siri 언어 변경이 이 Mac에만 적용되도록 끄세요.",
-      "pt-BR" : "Desative-a para manter a mudança de idioma da Siri só neste Mac.",
-      "zh-Hans" : "关闭此选项，使 Siri 语言更改仅影响此 Mac。"
-    }
-  },
-  {
     "id" : "Siri|Turn off Sync this Mac and keep the data on this Mac.",
     "key" : "Turn off Sync this Mac and keep the data on this Mac.",
     "kind" : "Text",
@@ -8875,7 +9090,7 @@
     "key" : "Turns Siri off and frees its unused models. MacSpace checks again while it stays off. Your Siri language is kept.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:178"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:276"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8890,11 +9105,30 @@
     }
   },
   {
+    "id" : "Siri|Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.",
+    "key" : "Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:318"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Schaltet Aufzeichnung, Transkription, Untertitel und Übersetzung von Anrufen, Live-Voicemail und Anruffilter aus. Erfordert einen Neustart.",
+      "en" : "Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.",
+      "es" : "Desactiva grabación, transcripción, subtítulos y traducción de llamadas, buzón de voz en directo y filtrado. Requiere reiniciar.",
+      "fr" : "Désactive l’enregistrement, la transcription, les sous-titres et la traduction des appels, la messagerie en direct et le filtrage. Redémarrage requis.",
+      "ja" : "通話の録音、文字起こし、字幕、翻訳と、ライブ留守番電話、着信スクリーニングをオフにします。再起動が必要です。",
+      "ko" : "통화 녹음, 전사, 자막, 번역과 실시간 음성 사서함, 통화 스크리닝을 끕니다. 재시동이 필요합니다.",
+      "pt-BR" : "Desativa gravação, transcrição, legendas e tradução de chamadas, Correio de Voz ao Vivo e Triagem de Chamadas. Exige reinicialização.",
+      "zh-Hans" : "关闭通话录音、转录、字幕和翻译，以及实时语音信箱和来电筛选。需要重新启动。"
+    }
+  },
+  {
     "id" : "Siri|Turns off spatial photo effects and frees their downloaded models.",
     "key" : "Turns off spatial photo effects and frees their downloaded models.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:179"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:277"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8932,7 +9166,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:234"
+      "Modules\/Siri\/Module\/SiriModule.swift:256"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8951,7 +9185,7 @@
     "key" : "Unknown feature.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:172"
+      "Modules\/Siri\/Module\/SiriModule.swift:194"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8970,7 +9204,7 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:225"
+      "Modules\/Siri\/Module\/SiriModule.swift:247"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9008,7 +9242,7 @@
     "key" : "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:278"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:374"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9027,7 +9261,7 @@
     "key" : "Waiting for macOS",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:170"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:267"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9042,11 +9276,30 @@
     }
   },
   {
-    "id" : "Siri|With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.",
-    "key" : "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.",
+    "id" : "Siri|While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.",
+    "key" : "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:134"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:336"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Solange sie an ist, erreicht die Änderung der Siri-Sprache auch dein iPhone und iPad. Schalte sie aus, damit die Änderung nur auf diesem Mac gilt.",
+      "en" : "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.",
+      "es" : "Mientras esté activada, el cambio de idioma de Siri llega también a tu iPhone y iPad. Desactívala para mantenerlo solo en este Mac.",
+      "fr" : "Tant qu’elle est activée, le changement de langue de Siri atteint aussi votre iPhone et votre iPad. Désactivez-la pour le garder sur ce Mac.",
+      "ja" : "オンのあいだは、Siriの言語の変更がiPhoneとiPadにも届きます。このMacだけに留めるにはオフにしてください。",
+      "ko" : "켜져 있는 동안 Siri 언어 변경이 iPhone과 iPad에도 적용됩니다. 이 Mac에만 적용하려면 끄세요.",
+      "pt-BR" : "Enquanto ela estiver ativada, a mudança de idioma da Siri chega também ao seu iPhone e iPad. Desative-a para manter a mudança só neste Mac.",
+      "zh-Hans" : "开启时，Siri 的语言更改也会同步到你的 iPhone 和 iPad。关闭它可让更改只保留在这台 Mac 上。"
+    }
+  },
+  {
+    "id" : "Siri|With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.",
+    "key" : "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:238"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9085,7 +9338,7 @@
     "key" : "deleting %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:81"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:94"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9104,7 +9357,7 @@
     "key" : "downloading models: %@ so far",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:70"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:75"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9123,7 +9376,7 @@
     "key" : "free up to %@",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:91"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:105"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9142,7 +9395,7 @@
     "key" : "free up to %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:69"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:74"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9161,7 +9414,7 @@
     "key" : "freeing %@ of models",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:69"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:74"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9195,11 +9448,30 @@
     }
   },
   {
+    "id" : "Siri|macOS downloads their models again.",
+    "key" : "macOS downloads their models again.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "macOS lädt ihre Modelle erneut herunter.",
+      "en" : "macOS downloads their models again.",
+      "es" : "macOS vuelve a descargar sus modelos.",
+      "fr" : "macOS télécharge de nouveau leurs modèles.",
+      "ja" : "macOSがモデルを再びダウンロードします。",
+      "ko" : "macOS가 모델을 다시 다운로드합니다.",
+      "pt-BR" : "O macOS baixa os modelos de novo.",
+      "zh-Hans" : "macOS 会重新下载它们的模型。"
+    }
+  },
+  {
     "id" : "Siri|macOS is removing the model",
     "key" : "macOS is removing the model",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:277"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:373"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9214,12 +9486,31 @@
     }
   },
   {
+    "id" : "Siri|macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.",
+    "key" : "macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.",
+    "kind" : "Tooltip",
+    "places" : [
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:265"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Dienste von macOS haben diese Modelle noch geöffnet. Sie werden frei, wenn diese Dienste enden oder nach einem Neustart, dann löscht MacSpace sie.",
+      "en" : "macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.",
+      "es" : "Servicios del propio macOS aún tienen estos modelos abiertos. Se liberan cuando esos servicios se detienen o tras reiniciar, y MacSpace los elimina entonces.",
+      "fr" : "Des services de macOS gardent encore ces modèles ouverts. Ils partent quand ces services s’arrêtent ou après un redémarrage, puis MacSpace les supprime.",
+      "ja" : "macOS自身のサービスがまだこれらのモデルを開いています。サービスが停止するか再起動すると解放され、その後MacSpaceが削除します。",
+      "ko" : "macOS 자체 서비스가 아직 이 모델을 열어 두고 있습니다. 해당 서비스가 멈추거나 재시동하면 해제되며, 그때 MacSpace가 삭제합니다.",
+      "pt-BR" : "Serviços do próprio macOS ainda estão com estes modelos abertos. Eles saem quando esses serviços param ou depois de reiniciar, e o MacSpace então os apaga.",
+      "zh-Hans" : "macOS 自身的服务仍在使用这些模型。这些服务停止或重新启动后它们才会释放，随后 MacSpace 会删除它们。"
+    }
+  },
+  {
     "id" : "Siri|models not measured",
     "key" : "models not measured",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:72",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:85"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:98"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9238,7 +9529,7 @@
     "key" : "needs Full Disk Access to read",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:84"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:97"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9257,7 +9548,7 @@
     "key" : "no model downloaded yet",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:72"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:82"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9276,7 +9567,7 @@
     "key" : "no models left on disk",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:86"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:99"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9333,7 +9624,7 @@
     "key" : "on in another account",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:95"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:109"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9352,7 +9643,7 @@
     "key" : "removing the model",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:96"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:110"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9372,11 +9663,11 @@
     "kind" : "Tile title",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:60",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:91",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:95",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:96",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:97",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:98"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:105",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:109",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:110",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:111",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9395,7 +9686,7 @@
     "key" : "state unknown",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:98"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9468,25 +9759,6 @@
     }
   },
   {
-    "id" : "SystemData|%@ older than %lld days.",
-    "key" : "%@ older than %lld days.",
-    "kind" : "Row detail",
-    "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:344"
-    ],
-    "table" : "SystemData",
-    "translations" : {
-      "de" : "%@ älter als %lld Tage.",
-      "en" : "%@ older than %lld days.",
-      "es" : "%@ con más de %lld días.",
-      "fr" : "%@ de plus de %lld jours.",
-      "ja" : "%@、%lld日より前。",
-      "ko" : "%@, %lld일 이전.",
-      "pt-BR" : "%@ com mais de %lld dias.",
-      "zh-Hans" : "%@，早于 %lld 天。"
-    }
-  },
-  {
     "id" : "SystemData|%lld items",
     "key" : "%lld items",
     "kind" : "Text",
@@ -9494,7 +9766,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:326"
+      "Sdk\/Interface\/Widgets.swift:380"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9532,7 +9804,7 @@
     "key" : "%lld places couldn't be measured.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:669"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:672"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9551,7 +9823,7 @@
     "key" : "%lld places only the helper can measure: %@. Turn it on in Settings.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:674"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:677"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9570,7 +9842,7 @@
     "key" : "%lld places weren't measured. Reopen MacSpace.",
     "kind" : "Notice message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:678"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:681"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9589,7 +9861,7 @@
     "key" : "%lld reports",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:443"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:446"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9630,7 +9902,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:326"
+      "Sdk\/Interface\/Widgets.swift:380"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9649,7 +9921,7 @@
     "key" : "1 report",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:443"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:446"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9725,7 +9997,7 @@
     "key" : "All users",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:564"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:567"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9744,7 +10016,7 @@
     "key" : "Allow",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:670"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:673"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9763,7 +10035,7 @@
     "key" : "Allow Full Disk Access to see everything",
     "kind" : "Notice",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:668"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:671"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9881,7 +10153,7 @@
     "key" : "App cache",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:558",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:561",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:17"
     ],
     "table" : "SystemData",
@@ -9921,7 +10193,7 @@
     "key" : "App container",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:556"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:559"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9959,7 +10231,7 @@
     "key" : "App data",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:478"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:481"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9978,7 +10250,7 @@
     "key" : "App group data",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:556"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:559"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10111,7 +10383,7 @@
     "key" : "Apps and macOS rebuild these by themselves.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:520"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:523"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10340,9 +10612,9 @@
     "key" : "Cannot be undone",
     "kind" : "Pill",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:387",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:408",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:611"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:390",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:411",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:614"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10399,7 +10671,7 @@
     "key" : "Cloud storage",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:560"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:563"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10475,7 +10747,7 @@
     "key" : "Console's history is deleted.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:412"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:415"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10712,7 +10984,7 @@
     "kind" : "Item name",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:572",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:610"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:613"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10788,7 +11060,7 @@
     "key" : "Downloads macOS no longer needs, like released Apple Intelligence models.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:357"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:360"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10807,7 +11079,7 @@
     "key" : "Downloads you can turn off",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:630"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:633"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10826,7 +11098,7 @@
     "key" : "Earlier versions of your documents (File > Revert To). Only keeps the latest version.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:612"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:615"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10845,7 +11117,7 @@
     "key" : "Empties after 30 days",
     "kind" : "Pill",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:387"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:390"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10883,7 +11155,7 @@
     "key" : "Erase Console records used for troubleshooting.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:409"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:412"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10902,7 +11174,7 @@
     "key" : "Everything else",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:505"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:508"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10921,7 +11193,7 @@
     "key" : "Everything in the Trash is deleted for good.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:391"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:394"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10979,11 +11251,11 @@
     "kind" : "Confirmation button",
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:329",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:345",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:346",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:358",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:359",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:389"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:347",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:361",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:362",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:392"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11021,7 +11293,7 @@
     "key" : "Free %@ in the Trash?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:390"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:393"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11059,7 +11331,7 @@
     "key" : "Free all version history?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:614"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:617"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11097,7 +11369,7 @@
     "key" : "Free now",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:372"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:375"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11116,7 +11388,7 @@
     "key" : "Free old reports?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:346"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:347"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11174,7 +11446,7 @@
     "key" : "Free stuck wallpaper downloads?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:598"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:601"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11193,7 +11465,7 @@
     "key" : "Free the leftover update files?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:579"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:582"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11231,7 +11503,7 @@
     "key" : "Free the symbols for crash reports?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:431"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:434"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11250,7 +11522,7 @@
     "key" : "Free the system log?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:411"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:414"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11269,7 +11541,7 @@
     "key" : "Free unused system assets?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:359"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:362"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11288,7 +11560,7 @@
     "key" : "Free up to %@ of unused system assets?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:359"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:362"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11307,8 +11579,8 @@
     "key" : "Freeing in the background",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:360",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:362"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:363",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:365"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11389,7 +11661,7 @@
     "key" : "From an update that's already installed.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:577"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:580"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11772,7 +12044,7 @@
     "kind" : "Pill",
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:123",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:354"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:357"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11811,7 +12083,7 @@
     "kind" : "Item name",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:575"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:578"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11830,7 +12102,7 @@
     "key" : "Leftover update files",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:582"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:585"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12250,7 +12522,7 @@
     "key" : "Other",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:514"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:517"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12491,6 +12763,25 @@
       "ko" : "생성한 도구에서 제거하세요.",
       "pt-BR" : "Remova-o com a ferramenta que o criou.",
       "zh-Hans" : "使用创建它的工具移除。"
+    }
+  },
+  {
+    "id" : "SystemData|Reports older than %lld days. macOS writes new ones as needed.",
+    "key" : "Reports older than %lld days. macOS writes new ones as needed.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:345"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Berichte, die älter als %lld Tage sind. macOS schreibt bei Bedarf neue.",
+      "en" : "Reports older than %lld days. macOS writes new ones as needed.",
+      "es" : "Informes de más de %lld días. macOS crea otros nuevos cuando hace falta.",
+      "fr" : "Rapports de plus de %lld jours. macOS en crée de nouveaux au besoin.",
+      "ja" : "%lld日より古いレポート。macOSは必要に応じて新しく作成します。",
+      "ko" : "%lld일보다 오래된 보고서입니다. macOS는 필요할 때 새로 작성합니다.",
+      "pt-BR" : "Relatórios com mais de %lld dias. O macOS cria novos quando precisa.",
+      "zh-Hans" : "超过 %lld 天的报告。macOS 会在需要时写入新报告。"
     }
   },
   {
@@ -12919,7 +13210,7 @@
     "kind" : "Item name",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:428"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:431"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12999,7 +13290,7 @@
     "key" : "System cache",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:559",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:562",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:19"
     ],
     "table" : "SystemData",
@@ -13077,7 +13368,7 @@
     "key" : "System log",
     "kind" : "Row title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:408"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:411"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13210,7 +13501,7 @@
     "key" : "The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced.",
     "kind" : "Row title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:388"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:391"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13267,7 +13558,7 @@
     "key" : "The helper did not answer",
     "kind" : "Notice",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:677"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:680"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13286,7 +13577,7 @@
     "key" : "This permanently deletes %@.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:346"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:347"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13305,7 +13596,7 @@
     "key" : "Tool cache",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:559"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:562"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13339,25 +13630,6 @@
     }
   },
   {
-    "id" : "SystemData|Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
-    "key" : "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
-    "kind" : "Text",
-    "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:554"
-    ],
-    "table" : "SystemData",
-    "translations" : {
-      "de" : "Außerhalb von Homebrew installierte Werkzeuge und App-Dateien, etwa Node.js, Python und Parallels-Werkzeuge. Entferne einzelne Werkzeuge mit ihrem Installationsprogramm oder Paketmanager; das Löschen des ganzen Ordners kann ihre Funktion beeinträchtigen.",
-      "en" : "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.",
-      "es" : "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.",
-      "fr" : "Outils et fichiers d’apps installés en dehors de Homebrew, comme Node.js, Python et les outils Parallels. Supprimez chaque outil avec son installateur ou gestionnaire de paquets ; supprimer ce dossier entier peut les empêcher de fonctionner.",
-      "ja" : "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。",
-      "ko" : "Node.js, Python, Parallels 도구 등 Homebrew 외부에서 설치된 도구와 앱 파일입니다. 각 도구의 설치 프로그램이나 패키지 관리자로 제거하세요. 이 폴더 전체를 삭제하면 도구가 작동하지 않을 수 있습니다.",
-      "pt-BR" : "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.",
-      "zh-Hans" : "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。"
-    }
-  },
-  {
     "id" : "SystemData|Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
     "key" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
     "kind" : "Text",
@@ -13377,12 +13649,31 @@
     }
   },
   {
+    "id" : "SystemData|Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
+    "key" : "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:554"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Außerhalb von Homebrew installierte Tools wie Node.js und Python. Entferne jedes mit seinem eigenen Installer: den Ordner zu löschen, kann sie beschädigen.",
+      "en" : "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
+      "es" : "Herramientas instaladas fuera de Homebrew, como Node.js y Python. Elimina cada una con su instalador: borrar la carpeta puede romperlas.",
+      "fr" : "Outils installés hors de Homebrew, comme Node.js et Python. Supprimez-les avec leur propre programme d’installation : supprimer le dossier peut les casser.",
+      "ja" : "Homebrew以外でインストールしたツール（Node.jsやPythonなど）。それぞれのインストーラで削除してください。フォルダごと削除すると動かなくなることがあります。",
+      "ko" : "Homebrew 밖에서 설치한 Node.js, Python 같은 도구입니다. 각 설치 프로그램으로 제거하세요. 폴더를 지우면 도구가 망가질 수 있습니다.",
+      "pt-BR" : "Ferramentas instaladas fora do Homebrew, como Node.js e Python. Remova cada uma com o próprio instalador: apagar a pasta pode quebrá-las.",
+      "zh-Hans" : "在 Homebrew 之外安装的工具，例如 Node.js 和 Python。请用各自的安装程序移除：删除整个文件夹可能会损坏它们。"
+    }
+  },
+  {
     "id" : "SystemData|Trash",
     "key" : "Trash",
     "kind" : "Item name",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:674",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:386"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:389"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13401,7 +13692,7 @@
     "key" : "Turn on the helper to see everything",
     "kind" : "Notice",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:673"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:676"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13519,7 +13810,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:400",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:409",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:355"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:358"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13538,7 +13829,7 @@
     "key" : "Virtual machine",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:560"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:563"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13577,7 +13868,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:894",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:595"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:598"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13597,7 +13888,7 @@
     "kind" : "Text",
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:897",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:596"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:599"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13616,7 +13907,7 @@
     "key" : "Web cache",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:558",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:561",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:18"
     ],
     "table" : "SystemData",
@@ -13675,7 +13966,7 @@
     "key" : "What macOS keeps to read crash reports. It's rebuilt when needed.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:429"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:432"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13846,7 +14137,7 @@
     "key" : "You won't be able to revert any document to an earlier version. Save and close your documents first.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:615"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:618"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13865,7 +14156,7 @@
     "key" : "Your Library",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:561"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:564"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13884,7 +14175,7 @@
     "key" : "Your home folder",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:561"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:564"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13903,7 +14194,7 @@
     "key" : "and %lld more",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:687"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:690"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13941,7 +14232,7 @@
     "key" : "macOS builds them again the next time it reads a crash report.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:432"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:435"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13960,8 +14251,8 @@
     "key" : "macOS downloads them again if they're needed.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:359",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:599"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:362",
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:602"
     ],
     "table" : "SystemData",
     "translations" : {

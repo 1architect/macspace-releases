@@ -32,7 +32,9 @@ enum DebloatScreenBuilder {
     /// Only what is unusual gets a badge; a switch that is simply on or off says enough by itself.
     static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
         guard let status else { return nil }
-        if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical) }
+        // What the state means now is the pill's hover tag: the (i) says only what the switch does (`InfoText`).
+        let why = effectExplanation(control, status)
+        if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical, help: why) }
         // A retired switch says why it is still shown.
         if control.retired != nil { return Badge(retired[control.id] ?? loc("No longer works"), tone: .caution) }
         // Screen Time or an organization's profile enforces it, not MacSpace (`DebloatEngine.status`).
@@ -40,10 +42,12 @@ enum DebloatScreenBuilder {
         switch status.state {
         case .debloated:
             switch status.effect?.state {
-            case .ineffective?: return Badge(loc("Not working"), tone: .critical)
-            case .pending?: return Badge(control.effect?.kind == .diagnosticSubmission ? loc("Verifying") : loc("After restart"), tone: .caution)
-            case .notMeasured? where control.effect?.kind == .diagnosticSubmission: return Badge(loc("Not verified"), tone: .caution)
-            case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical)
+            case .ineffective?: return Badge(loc("Not working"), tone: .critical, help: why)
+            case .pending?: return Badge(control.effect?.kind == .diagnosticSubmission ? loc("Verifying") : loc("After restart"), tone: .caution, help: why)
+            // No badge when macOS logged no decision to read: SubmitDiagInfo can go more than a day without one, and its log entries
+            // expire, so "Not verified" stood on a switch whose settings were written and read back and which macOS then honored
+            // (optIn: OUT, 2026-10-18). Only a decision against it is worth a pill.
+            case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical, help: why)
             default: return nil
             }
         case .awaitingApproval, .awaitingRemoval: return Badge(loc("Waiting for approval"), tone: .caution)
@@ -78,7 +82,7 @@ enum DebloatScreenBuilder {
         "telemetry.on-device-speech-policy": loc("Dictation and translation stay on this Mac. Languages without an on-device model stop working."),
         "ads.personalized-ads": loc("Apple stops picking ads based on what you do."),
         "ads.advertising-identifier-policy": loc("Apps can't track you with the advertising identifier or ask to."),
-        "siri.siri-ai-flag": loc("Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on."),
+        "siri.siri-ai-flag": loc("Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page."),
         "ai.visual-intelligence": loc("Turns off Visual Intelligence. Visual Look Up may stop working too."),
         // Retired, and switched back on by MacSpace where it can (`DebloatModule.undoRetired`); shown only where that could not happen.
         "ai.generative-indexing": loc("Switch it off, then restart your Mac."),
@@ -91,11 +95,10 @@ enum DebloatScreenBuilder {
         "apps.news-policy": loc("Hides Apple News and its widgets."),
     ]
 
-    /// What the switch does, when to expect it, and why it is not working when it is not.
-    static func detail(_ control: DebloatControl, _ status: ControlStatus?) -> String {
+    /// What the switch does and when it applies, the same whatever its state (`InfoText`). Why it is not working is its badge's help.
+    static func detail(_ control: DebloatControl) -> String {
         var lines: [String] = [plain[control.id] ?? control.summary]
         if let restart = restartText(control.restart) { lines.append(restart) }
-        if let explanation = effectExplanation(control, status) { lines.append(explanation) }
         return lines.joined(separator: " ")
     }
 
@@ -113,7 +116,6 @@ enum DebloatScreenBuilder {
             switch effect.state {
             case .ineffective: return loc("macOS still chose to send diagnostics after this change.")
             case .pending: return loc("Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics.")
-            case .notMeasured: return loc("No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.")
             default: return nil
             }
         }
@@ -141,7 +143,7 @@ enum DebloatScreenBuilder {
         // The switch shows the protection, named as such: "Disable <feature>" on = MacSpace switched the feature off.
         return ToggleRow(id: control.id, title: title(control), isOn: on, isEnabled: !blocked,
                          badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
-                         detail: detail(control, status), action: action)
+                         detail: detail(control), action: action)
     }
 
     // MARK: Screens

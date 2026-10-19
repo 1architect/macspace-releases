@@ -245,11 +245,13 @@ enum AssetOwners {
         }
     }
 
-    /// The features must still be off, with Apple Intelligence still unavailable, at every owner request.
+    /// The features must still be off at every owner request, and Apple Intelligence's answer still readable: unavailable for the
+    /// language data, which Apple Intelligence reads; either answer for a feature's own owners (`AssetModelCleanup.refusal`).
     static func safety(_ scope: AssetModelCleanup.Scope) throws {
         let eligibility = NSDictionary(contentsOfFile: "/private/var/db/os_eligibility/eligibility.plist")
         let answer = (eligibility?["OS_ELIGIBILITY_DOMAIN_SIRI_MODE"] as? NSDictionary)?["os_eligibility_answer_t"]
-        try require(equal(answer, NSNumber(value: 2)), "Apple Intelligence availability changed or became unreadable")
+        let allowed = scope == .released ? [2] : [2, 4]
+        try require(allowed.contains { equal(answer, NSNumber(value: $0)) }, "Apple Intelligence availability changed or became unreadable")
         func preference(_ key: String, _ domain: String) -> Any? {
             CFPreferencesAppSynchronize(domain as CFString)
             return CFPreferencesCopyAppValue(key as CFString, domain as CFString)
@@ -541,16 +543,29 @@ enum AssetOwners {
 
     // MARK: Mapped Siri and voice owners
 
+    /// Siri's language hold, whichever of macOS's Siri language aliases it uses: `legacy` on 26B5112a in the research, `assistantengine`
+    /// once Siri asked again on the same build (2026-10-18), which the old fixed name left in place with 2.4 GB of Understanding models.
+    /// An alias qualifies by what macOS itself defines it to request (`UsageAliases`), never by a list of names.
     static func allowedAlias(_ row: OwnerRow, _ object: Any) throws -> Bool {
-        let alias: String
-        if ["com.apple.siri.assistant", "com.apple.siri.intelligenceengine"].contains(row.client), row.name == "language.hold" {
-            alias = "com.apple.siri.assistant.legacy.language"
-        } else if row.client == "com.apple.siri.nl", ["system.language", "system.language.hold"].contains(row.name) {
-            alias = "com.apple.siri.nl.system.language"
-        } else { return false }
         guard let aliases = try value(object, "usageAliases") as? NSDictionary, aliases.count == 1,
-              let target = aliases[alias] as? String, !target.isEmpty else { return false }
+              let alias = aliases.allKeys.first as? String, let target = aliases[alias] as? String, !target.isEmpty else { return false }
+        if ["com.apple.siri.assistant", "com.apple.siri.intelligenceengine"].contains(row.client), row.name == "language.hold" {
+            guard isSiriLanguageAlias(alias) else { return false }
+        } else if row.client == "com.apple.siri.nl", ["system.language", "system.language.hold"].contains(row.name) {
+            guard alias == "com.apple.siri.nl.system.language" else { return false }
+        } else { return false }
         return try value(object, "assetSets") == nil
+    }
+
+    static let usageAliasFolder = "/System/Library/UnifiedAssetFramework/UsageAliases"
+
+    /// One of Siri's language aliases (`com.apple.siri.assistant.<kind>.language`) whose macOS definition requests Siri's
+    /// understanding models for some language.
+    static func isSiriLanguageAlias(_ alias: String, folder: String = usageAliasFolder) -> Bool {
+        guard alias.hasPrefix("com.apple.siri.assistant."), alias.hasSuffix(".language"), !alias.contains("/"),
+              let config = NSDictionary(contentsOfFile: (folder as NSString).appendingPathComponent(alias + ".plist")),
+              config["UsageAliasName"] as? String == alias, let values = config["UsageAliasValues"] as? NSDictionary else { return false }
+        return values.allValues.contains { ($0 as? NSDictionary)?["com.apple.siri.understanding"] != nil }
     }
     /// Only the premium voice/resource owners measured in Issue 16, never custom or personal voices, and none an active voice uses.
     static func allowedVoice(_ row: OwnerRow, _ object: Any, active: [AnyObject]) throws -> Bool {

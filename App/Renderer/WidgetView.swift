@@ -318,14 +318,6 @@ struct RowChoice {
     let toggle: @MainActor (String) -> Void
 }
 
-/// Joins the parts of a description into one text, a paragraph each (`InfoButton`).
-enum Tooltip {
-    static func join(_ parts: String?...) -> String? {
-        let text = parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n\n")
-        return text.isEmpty ? nil : text
-    }
-}
-
 // MARK: Rows
 
 struct BadgeView: View {
@@ -348,6 +340,8 @@ struct BadgeView: View {
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
             .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
+            // What the state means now: the (i) beside it says only what the item is (`InfoText`).
+            .help(badge.help ?? "")
             .transition(PageCascade.transition(index: 0, count: 1))
     }
 }
@@ -531,10 +525,11 @@ struct ToggleRowView: View {
             return result.map { $0.outcome != .failed } ?? false
         }) { isOn in
             HStack(spacing: 8) {
-                Text(row.title)
-                InfoButton(text: Tooltip.join(row.subtitle, row.detail))
+                TitleLine(title: row.title, note: row.subtitle)
+                InfoButton(text: row.detail)
                 if let badge = row.badge { BadgeView(badge: badge) }
                 Spacer(minLength: 8)
+                if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
                 Toggle(row.title, isOn: isOn)
                     .labelsHidden()
                     .toggleStyle(.switch)

@@ -78,8 +78,8 @@ public enum DebloatCatalog {
         ),
         DebloatControl(
             id: "siri.siri-ai-flag",
-            title: "Siri AI",
-            summary: "Turn off the IntelligenceFlow/Campo feature flag so launchd never loads Siri AI.app; classic Spotlight takes its place.",
+            title: "Siri AI search",
+            summary: "Turn off the IntelligenceFlow/Campo feature flag so launchd never loads Siri AI.app, the search app; classic Spotlight takes its place. Siri itself is the Siri page's switch.",
             category: .siri, mechanism: .featureFlag, risk: .medium, restart: .reboot,
             settings: [.flag("IntelligenceFlow", "Campo")],
             effect: .processesAbsent(["/System/Applications/Siri AI.app/Contents/MacOS/Siri AI"]),

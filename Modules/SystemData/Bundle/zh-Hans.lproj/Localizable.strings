@@ -3,7 +3,6 @@
 "%@ %@ device files" = "%@ %@ 设备文件";
 "%@ is outside the cleanable locations." = "%@ 不在可清理位置中。";
 "%@ is running; quit it first." = "%@ 正在运行，请先退出。";
-"%@ older than %lld days." = "%@，早于 %lld 天。";
 "%lld items" = "%lld 项";
 "%lld more, including Apple Intelligence models, are under Protected by macOS." = "另外 %lld 项（包括 Apple 智能模型）位于“受 macOS 保护”中。";
 "%lld places couldn't be measured." = "无法测量 %lld 个位置。";
@@ -160,6 +159,7 @@
 "Rebuilt by Spotlight; macOS manages it." = "由 Spotlight 重建，macOS 管理。";
 "Recommended" = "推荐";
 "Remove it with the tool that made it." = "使用创建它的工具移除。";
+"Reports older than %lld days. macOS writes new ones as needed." = "超过 %lld 天的报告。macOS 会在需要时写入新报告。";
 "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g)." = "系统为遇到文本的每种语言请求此数据，每天更新。这不是设置选项：即使拼写语言设为单一语言，列表也不变（已在 26B5091g 验证）。";
 "Restart, then free them under Free now." = "重新启动后，在“立即释放”中释放。";
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "由 logd 轮换；删除会移除故障排查所需日志。";
@@ -204,8 +204,8 @@
 "This permanently deletes %@." = "将永久删除 %@。";
 "Tool cache" = "工具缓存";
 "Tool cache: ~/.cache/%@" = "工具缓存：~/.cache/%@";
-"Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them." = "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。";
 "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept." = "Homebrew 安装的工具和库。可移除的旧版本和下载文件列在可清理的缓存中，已安装的软件包会保留。";
+"Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them." = "在 Homebrew 之外安装的工具，例如 Node.js 和 Python。请用各自的安装程序移除：删除整个文件夹可能会损坏它们。";
 "Trash" = "废纸篓";
 "Turn on the helper to see everything" = "开启辅助程序以查看所有内容";
 "Unchanged for %lld days" = "%lld 天未更改";

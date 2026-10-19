@@ -9,11 +9,43 @@ final class AssetModelCleanupTests: XCTestCase {
     var phone: PhoneFeatureFlags.Status {
         .init(state:.off,managedOff:true,effective:Dictionary(uniqueKeysWithValues:PhoneFeatureFlags.features.map{($0,false)}),requestedOff:true)
     }
-    func testEveryOwnerScopeRequiresKnownUnavailableIntelligenceAndReviewedRuntime() {
+    func testLockedAssetsCountOnlyTheFeaturesOwnFamilies() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("locks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for name in ["AutoAssetLocker_Entry_com.apple.MobileAsset.UAF.Siri.Understanding_com.apple.siri.asr.assistant.en_US_1_0.state",
+                     "AutoAssetLocker_Entry_com.apple.MobileAsset.UAF.Siri.UnderstandingNLOverrides_com.apple.siri.nl.overrides.pt_BR_1_0.state",
+                     "AutoAssetLocker_Entry_com.apple.MobileAsset.UAF.Photos.SpatialPhotosRelive_main_1_0.state"] {
+            FileManager.default.createFile(atPath: folder.appendingPathComponent(name).path, contents: Data())
+        }
+        XCTAssertEqual(AssetModelCleanup.lockedAssets(.siri, lockDirectory: folder.path), 1, "the overrides family is not Siri's models")
+        XCTAssertEqual(AssetModelCleanup.lockedAssets(.spatialPhotos, lockDirectory: folder.path), 1)
+        XCTAssertEqual(AssetModelCleanup.lockedAssets(.phone, lockDirectory: folder.path), 0)
+    }
+
+    func testSiriLanguageAliasesQualifyByWhatMacOSDefinesThemToRequest() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("aliases-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        func write(_ name: String, _ usages: [String]) throws {
+            let values = ["pt-BR": Dictionary(uniqueKeysWithValues: usages.map { ($0, [String: String]()) })]
+            try PropertyListSerialization.data(fromPropertyList: ["UsageAliasName": name, "UsageAliasValues": values], format: .xml, options: 0)
+                .write(to: folder.appendingPathComponent(name + ".plist"))
+        }
+        try write("com.apple.siri.assistant.assistantengine.language", ["com.apple.if.planner", "com.apple.siri.understanding"])
+        try write("com.apple.siri.assistant.dialog.language", ["com.apple.siri.dialog"])
+        XCTAssertTrue(AssetOwners.isSiriLanguageAlias("com.apple.siri.assistant.assistantengine.language", folder: folder.path))
+        XCTAssertFalse(AssetOwners.isSiriLanguageAlias("com.apple.siri.assistant.dialog.language", folder: folder.path), "no understanding models")
+        XCTAssertFalse(AssetOwners.isSiriLanguageAlias("com.apple.siri.assistant.missing.language", folder: folder.path), "not defined by macOS")
+        XCTAssertFalse(AssetOwners.isSiriLanguageAlias("com.apple.siri.nl.system.language", folder: folder.path))
+    }
+
+    func testFeatureScopesRunWithIntelligenceOnOrOffAndLanguageDataOnlyWhileOff() {
         for scope in AssetModelCleanup.Scope.allCases {
-            for available in [true,nil] as [Bool?] {
-                XCTAssertNotNil(AssetModelCleanup.refusal(scope,available:available,supported:true,virtualMachine:false,settings:off,phone:phone))
-            }
+            XCTAssertNotNil(AssetModelCleanup.refusal(scope,available:nil,supported:true,virtualMachine:false,settings:off,phone:phone),
+                            "unknown eligibility never authorizes owner mutation")
+            let on = AssetModelCleanup.refusal(scope,available:true,supported:true,virtualMachine:false,settings:off,phone:phone)
+            if scope == .released { XCTAssertNotNil(on, "Apple Intelligence reads the language data") } else { XCTAssertNil(on) }
             XCTAssertNotNil(AssetModelCleanup.refusal(scope,available:false,supported:false,virtualMachine:false,settings:off,phone:phone))
             XCTAssertNotNil(AssetModelCleanup.refusal(scope,available:false,supported:true,virtualMachine:true,settings:off,phone:phone))
             XCTAssertNil(AssetModelCleanup.refusal(scope,available:false,supported:true,virtualMachine:false,settings:off,phone:phone))

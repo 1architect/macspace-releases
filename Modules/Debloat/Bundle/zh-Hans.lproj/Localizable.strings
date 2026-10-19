@@ -67,11 +67,9 @@
 "MacSpace restores the settings it saved before disabling them." = "MacSpace 会还原停用前保存的设置。";
 "No control was named." = "未指定控制项。";
 "No controls were selected." = "未选择控制项。";
-"No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed." = "无法读取此次更改后的诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络，因此不能证明此设置失效。";
 "No longer works" = "不再生效";
 "No more \"quit unexpectedly\" dialogs." = "不再显示“意外退出”对话框。";
 "Not on this macOS" = "不适用于此 macOS";
-"Not verified" = "未经验证";
 "Not working" = "未生效";
 "Nothing to approve" = "没有待批准的内容";
 "Nothing to remove" = "没有可移除的内容";
@@ -85,7 +83,7 @@
 "Share analytics with Apple" = "与 Apple 共享分析";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "macOS 重新开启已停用的功能，而 MacSpace 再次停用时显示通知。";
 "Siri" = "Siri";
-"Siri AI" = "Siri AI";
+"Siri AI search" = "Siri AI 搜索";
 "Some are not tested yet." = "部分功能尚未测试。";
 "Spotlight internet results" = "Spotlight 互联网结果";
 "Spotlight stops sending your searches to Apple. No more web results in Spotlight." = "Spotlight 不再向 Apple 发送搜索内容，也不再显示网页结果。";
@@ -93,13 +91,13 @@
 "Stops sending usage and crash data to Apple and app developers." = "停止向 Apple 和应用开发者发送使用情况及崩溃数据。";
 "Stops sending usage and crash data to Apple, also on beta versions of macOS, which ignore the setting above." = "停止向 Apple 发送使用情况及崩溃数据，包括忽略上述设置的 macOS 测试版。";
 "Stops sharing Siri and Dictation recordings with Apple." = "停止与 Apple 共享 Siri 和听写录音。";
+"Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page." = "关闭 Siri AI 搜索应用；Spotlight 恢复为经典搜索。要关闭 Siri 本身，请使用“Siri 与 Apple 智能”页面。";
 "Suggestions and search" = "建议与搜索";
 "Switch it off, then restart your Mac." = "将其关闭，然后重新启动 Mac。";
 "Switch it off. To turn off Apple Intelligence, use the Siri page." = "将其关闭。如需关闭 Apple 智能，请使用 Siri 页面。";
 "This beta version of macOS ignores the regular analytics setting. Use the profile option instead." = "此 macOS 测试版会忽略常规分析设置。请使用配置描述文件选项。";
 "Turn off analytics, ads and background data collection that macOS lets you control." = "关闭 macOS 允许你控制的分析、广告和后台数据收集。";
 "Turns off Game Center." = "关闭 Game Center。";
-"Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on." = "关闭 Siri AI。Spotlight 恢复传统搜索，其他 Apple 智能功能保持开启。";
 "Turns off Visual Intelligence. Visual Look Up may stop working too." = "关闭视觉智能。“实况查询”也可能停止工作。";
 "Undone by macOS" = "已被 macOS 还原";
 "Unknown action %@." = "未知操作 %@。";

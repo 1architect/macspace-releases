@@ -1,4 +1,5 @@
 import AppKit
+import MacSpaceSdk
 import SwiftUI
 
 /// A small (i) after a title. A click opens a balloon of Liquid Glass (a popover, which macOS draws in glass) that says what the item
@@ -131,8 +132,11 @@ private struct InfoBalloon: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
-                Text(paragraph)
+            // A description, never a report: no more than `InfoText.maximumLines` lines, whatever a module sends (`InfoText`).
+            if !paragraphs.isEmpty {
+                Text(paragraphs.joined(separator: "\n"))
+                    .lineLimit(InfoText.maximumLines)
+                    .truncationMode(.tail)
             }
             if !steps.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {

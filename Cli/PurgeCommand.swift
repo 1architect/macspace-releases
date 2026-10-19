@@ -2,6 +2,7 @@ import Foundation
 import MacSpacePlatform
 
 /// `MacSpaceCli purge-assets [--execute] [--self-test] [--json]`
+/// `MacSpaceCli purge-assets --execute --feature-cleanup` for a feature switch's cleanup (`SystemAssetGuard.refusal`)
 /// `MacSpaceCli purge-assets --all-services [--urgency 1-4] [--raw]`
 /// `MacSpaceCli purge-assets --service <id> --experiment [--urgency 1-4] [--execute]` for a service still being measured
 ///
@@ -67,7 +68,7 @@ enum PurgeCommand {
             print("Dry run; pass --execute to ask macOS (CacheDelete, this service only) to delete it now.")
             exit(0)
         }
-        let result = client.purge(services: [service], urgency: urgency)
+        let result = client.purge(services: [service], urgency: urgency, featureCleanup: arguments.contains("--feature-cleanup"))
         if json { emit(result, status: result.error == nil ? 0 : 1) }
         if let error = result.error { print("error: \(error)") }
         for (key, value) in (result.answer ?? [:]).sorted(by: { $0.key < $1.key }) { print("  \(key) = \(value)") }

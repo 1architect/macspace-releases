@@ -89,15 +89,6 @@
   "ディスクが満杯になるとmacOSが削除",
   "디스크가 가득 차면 macOS가 삭제"
  ],
- "Files apps marked as safe to delete. The system frees them when the disk is nearly full. If they aren't freed, MacSpace makes further attempts in the background.": [
-  "Arquivos que os apps marcaram como seguros para apagar. O sistema só os libera quando o disco está quase cheio. Se não forem liberados, o MacSpace faz novas tentativas em segundo plano.",
-  "Fichiers que les apps ont marqués comme pouvant être supprimés sans risque. Le système les libère lorsque le disque est presque plein. S’ils ne sont pas libérés, MacSpace fait de nouvelles tentatives en arrière-plan.",
-  "Archivos que las apps marcaron como seguros de eliminar. El sistema los libera cuando el disco está casi lleno. Si no se liberan, MacSpace vuelve a intentarlo en segundo plano.",
-  "Dateien, die Apps als sicher löschbar markiert haben. Das System gibt sie frei, wenn der Speicher fast voll ist. Werden sie nicht freigegeben, versucht MacSpace es im Hintergrund erneut.",
-  "应用标记为可安全删除的文件。磁盘空间即将用尽时，系统会释放这些文件。如果未能释放，MacSpace 会在后台继续尝试。",
-  "アプリが安全に削除できると指定したファイルです。ディスクがほぼ満杯になると、システムが解放します。解放されなかった場合、MacSpaceがバックグラウンドで再試行します。",
-  "앱이 안전하게 삭제할 수 있다고 표시한 파일입니다. 디스크가 거의 차면 시스템이 공간을 확보합니다. 확보되지 않으면 MacSpace가 백그라운드에서 다시 시도합니다."
- ],
  "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available.": [
   "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.",
   "Fichiers que macOS supprime de lui-même quand l’espace manque. Réglages Système compte cet espace comme disponible.",
@@ -512,15 +503,6 @@
   "接続するとバックアップを確認し、古いものを解放できます。",
   "연결하면 백업을 확인하고 오래된 백업을 정리할 수 있습니다."
  ],
- "Copies of this Mac that Time Machine keeps for a day, so files can be restored without the backup disk. Free leaves the newest and the one the next backup starts from.": [
-  "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar deixa o mais recente e o que o próximo backup usa como ponto de partida.",
-  "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont part la prochaine sauvegarde.",
-  "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar deja la más reciente y la que usa como punto de partida la próxima copia.",
-  "Kopien dieses Mac, die Time Machine einen Tag lang behält, damit Dateien ohne Backup-Volume wiederhergestellt werden können. Freigeben lässt die neueste und die, von der das nächste Backup ausgeht.",
-  "Time Machine 保留一天的此 Mac 副本，无需备份磁盘也能恢复文件。释放时保留最新快照和下次备份所需的快照。",
-  "バックアップディスクなしでも復元できるよう、Time Machineが1日保持するMacのコピーです。最新のものと次のバックアップの起点は残します。",
-  "백업 디스크 없이도 파일을 복원하도록 Time Machine이 하루 동안 보관하는 Mac 사본입니다. 최신 스냅샷과 다음 백업의 시작점은 유지됩니다."
- ],
  "Couldn't free it": [
   "Não foi possível liberar",
   "Impossible de libérer",
@@ -647,13 +629,22 @@
   "Time Machineのスナップショット",
   "Time Machine 스냅샷"
  ],
- "kept": [
-  "mantido",
-  "conservé",
-  "se conserva",
-  "bleibt",
-  "保留",
-  "保持",
-  "유지됨"
+ "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.": [
+  "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.",
+  "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.",
+  "Archivos que las apps marcaron como seguros de borrar. macOS los libera cuando el disco está casi lleno; MacSpace insiste si no lo hace.",
+  "Dateien, die Apps als löschbar markiert haben. macOS gibt sie frei, wenn das Volume fast voll ist; sonst fragt MacSpace erneut.",
+  "应用标记为可安全删除的文件。磁盘快满时 macOS 会释放它们；若未释放，MacSpace 会继续请求。",
+  "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。",
+  "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다."
+ ],
+ "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.": [
+  "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.",
+  "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.",
+  "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar conserva la más reciente y la que necesita la próxima copia.",
+  "Kopien dieses Macs, die Time Machine einen Tag behält, um Dateien ohne Backup-Volume wiederherzustellen. Freigeben behält die neueste und die für das nächste Backup.",
+  "Time Machine 保留一天的此 Mac 副本，用于在没有备份磁盘时恢复文件。释放会保留最新的一份和下次备份需要的一份。",
+  "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。",
+  "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다."
  ]
 }

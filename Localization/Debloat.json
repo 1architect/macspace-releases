@@ -800,15 +800,6 @@
   "広告識別子",
   "광고 식별자"
  ],
- "Siri AI": [
-  "Siri AI",
-  "Siri AI",
-  "Siri AI",
-  "Siri AI",
-  "Siri AI",
-  "Siri AI",
-  "Siri AI"
- ],
  "Visual Intelligence": [
   "Inteligência Visual",
   "Intelligence visuelle",
@@ -935,15 +926,6 @@
   "オフにしてください。Apple IntelligenceをオフにするにはSiriページを使ってください。",
   "기능을 끄세요. Apple Intelligence를 끄려면 Siri 페이지를 사용하세요."
  ],
- "Turns off Siri AI. Spotlight goes back to classic search. Other Apple Intelligence features stay on.": [
-  "Desativa a Siri AI. O Spotlight volta à busca clássica. Os outros recursos da Apple Intelligence continuam ativos.",
-  "Désactive Siri AI. Spotlight revient à la recherche classique. Les autres fonctions d’Apple Intelligence restent activées.",
-  "Desactiva Siri AI. Spotlight vuelve a la búsqueda clásica. Las demás funciones de Apple Intelligence siguen activadas.",
-  "Schaltet Siri AI aus. Spotlight kehrt zur klassischen Suche zurück. Die anderen Funktionen von Apple Intelligence bleiben aktiv.",
-  "关闭 Siri AI。Spotlight 恢复传统搜索，其他 Apple 智能功能保持开启。",
-  "Siri AIをオフにします。Spotlightは従来の検索に戻り、ほかのApple Intelligence機能はオンのままです。",
-  "Siri AI를 끕니다. Spotlight는 기존 검색으로 돌아가고 다른 Apple Intelligence 기능은 켜진 상태로 유지됩니다."
- ],
  "Verifying": [
   "Verificando",
   "Vérification",
@@ -952,15 +934,6 @@
   "正在验证",
   "確認中",
   "확인 중"
- ],
- "Not verified": [
-  "Não verificado",
-  "Non vérifié",
-  "Sin verificar",
-  "Nicht verifiziert",
-  "未经验证",
-  "未確認",
-  "확인되지 않음"
  ],
  "This beta version of macOS ignores the regular analytics setting. Use the profile option instead.": [
   "Esta versão beta do macOS ignora o ajuste comum de análise. Use a opção com perfil.",
@@ -998,15 +971,6 @@
   "macOSによる次の診断送信の判断を待っています。成功の記録は、診断情報を含まないサーバへの接続の場合もあります。",
   "macOS의 다음 진단 정보 전송 결정을 기다리는 중입니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있습니다."
  ],
- "No diagnostics decision after the change could be read. A recorded success can also be a check-in without diagnostics, so it does not prove this setting failed.": [
-  "Não foi possível ler uma decisão de envio de diagnósticos após a alteração. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos, e não prova que o ajuste falhou.",
-  "Aucune décision concernant les diagnostics après la modification n’a pu être lue. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics, et ne prouve donc pas l’échec du réglage.",
-  "No se pudo leer ninguna decisión sobre los diagnósticos tras el cambio. Un éxito registrado también puede ser un simple contacto con el servidor, sin diagnósticos, por lo que no demuestra que el ajuste haya fallado.",
-  "Nach der Änderung konnte keine Diagnoseentscheidung gelesen werden. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein und beweist daher nicht, dass die Einstellung versagt hat.",
-  "无法读取此次更改后的诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络，因此不能证明此设置失效。",
-  "変更後の診断送信の判断を読み取れませんでした。成功の記録は診断情報を含まないサーバへの接続の場合もあり、設定が機能していない証拠にはなりません。",
-  "변경 후의 진단 정보 전송 결정을 읽을 수 없습니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있으므로 설정이 작동하지 않았다는 증거가 되지 않습니다."
- ],
  "A process covered by this setting is still running after the change.": [
   "Um processo controlado por este ajuste ainda está em execução após a alteração.",
   "Un processus concerné par ce réglage est toujours en cours d’exécution après la modification.",
@@ -1015,5 +979,23 @@
   "此次更改后，受此设置控制的进程仍在运行。",
   "変更後もこの設定の対象プロセスが実行されています。",
   "변경 후에도 이 설정이 제어하는 프로세스가 계속 실행 중입니다."
+ ],
+ "Siri AI search": [
+  "Busca da Siri AI",
+  "Recherche Siri AI",
+  "Búsqueda de Siri AI",
+  "Siri AI-Suche",
+  "Siri AI 搜索",
+  "Siri AI 検索",
+  "Siri AI 검색"
+ ],
+ "Stops the Siri AI search app; Spotlight goes back to classic search. To turn off Siri itself, use the Siri & Apple Intelligence page.": [
+  "Desativa o app de busca Siri AI; o Spotlight volta à busca clássica. Para desativar a própria Siri, use a página Siri e Apple Intelligence.",
+  "Désactive l’app de recherche Siri AI ; Spotlight revient à la recherche classique. Pour désactiver Siri elle-même, utilisez la page Siri et Apple Intelligence.",
+  "Desactiva la app de búsqueda Siri AI; Spotlight vuelve a la búsqueda clásica. Para desactivar Siri, usa la página Siri y Apple Intelligence.",
+  "Schaltet die Such-App Siri AI aus; Spotlight kehrt zur klassischen Suche zurück. Siri selbst schaltest du auf der Seite „Siri & Apple Intelligence“ aus.",
+  "关闭 Siri AI 搜索应用；Spotlight 恢复为经典搜索。要关闭 Siri 本身，请使用“Siri 与 Apple 智能”页面。",
+  "Siri AI 検索アプリをオフにします。Spotlightは従来の検索に戻ります。Siri自体をオフにするには「SiriとApple Intelligence」ページを使います。",
+  "Siri AI 검색 앱을 끕니다. Spotlight는 기존 검색으로 돌아갑니다. Siri 자체를 끄려면 Siri 및 Apple Intelligence 페이지를 사용하세요."
  ]
 }

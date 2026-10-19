@@ -106,6 +106,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertNotNil(list.rows[2].actions[0].confirmation, "freeing reports asks first")
         XCTAssertEqual(list.rows[2].actions[0].title, "Free", "one verb")
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).primary?.id, "cleanAll")
+        XCTAssertEqual(InfoText.violations(in: SystemDataScreenBuilder.screen(snap)), [])
+        XCTAssertFalse(list.rows[2].detail?.contains(SystemDataScreenBuilder.reportCount(snap)) ?? false, "the count is the subtitle, not the (i)")
         XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_000_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
     }
 

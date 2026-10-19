@@ -113,13 +113,15 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         for services: [String: UInt64]? in [nil, [:], [CacheDeleteService.fsPurgeableDocument: 17_342_464]] {
             var snap = snapshot(services)
             let path = "/h/Library/CloudStorage/OneDrive-Pessoal"
-            snap.documents = [.init(name: "OneDrive (Pessoal)", path: path, bytes: 8_300_000_000, files: 4_000, folders: [])]
+            snap.documents = [.init(name: "OneDrive (Pessoal)", path: path, bytes: 8_300_000_000, files: 4_000,
+                                    folders: [.init(name: "Pictures", bytes: 111_000_000, files: 76)])]
             let row = try XCTUnwrap(OtherSystemFilesScreenBuilder.cloudRows(snap).first)
             XCTAssertEqual(row.trailing, ByteFormat.string(8_300_000_000))
             XCTAssertEqual(row.actions.first?.parameters["path"], path)
             XCTAssertEqual(OtherSystemFilesScreenBuilder.cloudShares(snap), [8_300_000_000])
             XCTAssertNotNil(OtherSystemFilesScreenBuilder.freeNow(snap))
             XCTAssertFalse(OtherSystemFilesScreenBuilder.screen(snap).widgets.isEmpty)
+            XCTAssertEqual(InfoText.violations(in: OtherSystemFilesScreenBuilder.screen(snap)), [])
             XCTAssertNotEqual(OtherSystemFilesScreenBuilder.tile(snap).status, "unavailable")
         }
     }
@@ -240,7 +242,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertNotNil(cloud.first?.actions.first?.confirmation)
         XCTAssertEqual(cloud.map(\.title), ["Dropbox files on this Mac", "GoogleDrive (me@example.com) files on this Mac"])
         XCTAssertTrue(cloud.allSatisfy { $0.children.isEmpty }, "no page inside a page")
-        XCTAssertTrue(cloud.first?.detail?.contains("GB") == true, "its folders are named in its description")
+        XCTAssertFalse(cloud.first?.detail?.contains("GB") == true, "no sizes or counts in its (i)")
         XCTAssertTrue(cloud.first?.steps.isEmpty == true, "folders are not steps to follow")
         XCTAssertTrue(rows.contains { $0.title == "Other purgeable documents" }, "5 GB no cloud folder holds")
         XCTAssertEqual(OtherSystemFilesScreenBuilder.title(CacheDeleteService.fsPurgeableDocument, snap), "Cloud files on this Mac")

@@ -42,10 +42,26 @@ public enum SystemAssetGuard {
         (try? Data(contentsOf: URL(fileURLWithPath: eligibilityPath))).flatMap(reviewedAvailability(inEligibility:))
     }
 
-    /// Why a purge of `services` is not made now, or nil when it may go ahead.
-    public static func refusal(_ services: [String]) -> String? {
+    /// Why a purge of `services` is not made now, or nil when it may go ahead. A `featureCleanup` (the Siri, Spatial Photos and Phone
+    /// switches, `AssetModelCleanup`) may go ahead while Apple Intelligence is on, as long as MobileAsset is downloading nothing
+    /// (`downloadsIdle`): what went on 2026-10-12 were pieces caught mid-download, which count as purgeable until installed.
+    public static func refusal(_ services: [String], featureCleanup: Bool = false) -> String? {
         guard services.contains(CacheDeleteService.mobileAsset), holdsAssets else { return nil }
+        if featureCleanup, downloadsIdle() { return nil }
         return heldMessage
+    }
+
+    /// Where MobileAsset puts every download until it is complete, one folder each (`<family>.<hash>.auto.<uuid>`); the `.xml` files
+    /// beside them are catalogs, not downloads.
+    public static let stagingFolder = "/System/Library/AssetsV2/staging"
+
+    /// MobileAsset is downloading nothing now: no folder in its staging folder, and no Apple Intelligence model record partly
+    /// downloaded. Unreadable counts as busy. Replaceable in tests.
+    nonisolated(unsafe) public static var downloadsIdle: @Sendable () -> Bool = {
+        guard let entries = try? FileManager.default.contentsOfDirectory(atPath: stagingFolder),
+              !entries.contains(where: { !$0.hasSuffix(".xml") && !$0.hasPrefix(".") }),
+              let usage = ModelDescriptors.usage() else { return false }
+        return usage.downloadingBytes == 0
     }
 
     /// Said where a purge was not made, in English (results' details and the CLI).

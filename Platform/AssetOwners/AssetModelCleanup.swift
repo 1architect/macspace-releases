@@ -20,11 +20,14 @@ public enum AssetModelCleanup {
         public var error: String? { owners.error }
     }
 
-    /// Unknown eligibility never authorizes owner mutation. Existing CacheDelete callers retain their established guard.
+    /// Unknown eligibility never authorizes owner mutation. A feature's owners go whether Apple Intelligence is on or off: they are the
+    /// feature's own, and Apple Intelligence keeps its models through its own owners. The language data (`released`) goes only while
+    /// it is off, since Apple Intelligence reads it. The purge that follows has its own gate (`SystemAssetGuard.refusal`).
     public static func refusal(_ scope: Scope, available: Bool?, supported: Bool, virtualMachine: Bool,
                                settings: [ModelFeatureSettings.Feature: ModelFeatureSettings.Status], phone: PhoneFeatureFlags.Status) -> String? {
         guard supported, !virtualMachine else { return "Model controls are not verified on this macOS build." }
-        guard available == false else { return SystemAssetGuard.heldMessage }
+        guard let available else { return "MacSpace could not read whether Apple Intelligence is on." }
+        if scope == .released, available { return SystemAssetGuard.heldMessage }
         switch scope {
         case .siri: guard settings[.siri]?.managedOff == true else { return "Siri is not managed off by MacSpace." }
         case .phone: guard settings[.phone]?.managedOff == true, phone.managedOff else { return "Phone changes have not been verified after restart." }
@@ -95,13 +98,13 @@ public enum AssetModelCleanup {
                 results[index].owners.pending = results[index].remainingAssets != 0 || results[index].owners.releasedOwners > 0
             }
             if !PurgeRetrier.shared.isRetrying(service) {
-                PurgeRetrier.shared.schedule(service: service, urgency: 1, purge: {
+                PurgeRetrier.shared.schedule(service: service, urgency: 1, featureCleanup: true, purge: {
                     let reason = refusal()
                     guard reason == nil, PurgeRun(service: service).estimate().map({ $0 > 0 }) == true else {
                         return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: nil, freeBytesAfter: nil,
                                                       elapsedSeconds: nil, error: reason ?? "Waiting for a fresh positive model cleanup estimate.")
                     }
-                    return PurgeRun.purgeOnce(service: service, urgency: 1)
+                    return PurgeRun.purgeOnce(service: service, urgency: 1, featureCleanup: true)
                 }) { freed in
                     if freed > 0 { PurgeHoldouts.shared.clear(service) }
                     await freedLater(freed)
@@ -109,13 +112,16 @@ public enum AssetModelCleanup {
             }
             return results
         }
-        let purge = PurgeRun(service: service, extraRefusal: refusal).run(freedLater: freedLater)
+        let purge = PurgeRun(service: service, extraRefusal: refusal, featureCleanup: true).run(freedLater: freedLater)
         results[first].freedBytes = purge.freed
         for index in results.indices where results[index].error == nil {
             results[index].owners.details += PurgeRun.details(purge)
-            results[index].owners.pending = purge.removedNothing
+            // Held: Apple Intelligence is on and MobileAsset is downloading; the next recheck tries again.
             if let error = purge.error { results[index].owners.error = error; results[index].owners.pending = true }
             results[index].remainingAssets = inventory(results[index].scope, withdrew: results[index].owners.releasedOwners > 0)
+            // The purge's gain is service-wide: the feature waits until its own models are gone, not until anything was freed.
+            results[index].owners.pending = results[index].owners.pending || purge.removedNothing || purge.held
+                || results[index].remainingAssets != 0
         }
         return results
     }
@@ -133,6 +139,40 @@ public enum AssetModelCleanup {
         case .spatialPhotos: return ["UAF_Photos_SpatialPhotosRelive"]
         case .released: return ["LinguisticData"]
         }
+    }
+
+    /// The folders in AssetsV2 a feature's models are in, as its switch shows them: Siri's understanding models and voices, the Photos
+    /// spatial models, and speech recognition for the Phone features. No folder is in two features, so their sizes add up.
+    static func shownFamilies(_ feature: ModelFeatureSettings.Feature) -> [String] {
+        switch feature {
+        case .siri: return ["UAF_Siri_Understanding", "UAF_Siri_TextToSpeech"]
+        case .spatialPhotos: return ["UAF_Photos_SpatialPhotosRelive"]
+        case .phone: return ["UAF_Speech_AutomaticSpeechRecognition"]
+        }
+    }
+
+    /// What a feature's models take on disk now, and whether MobileAsset is downloading one of them (a folder of that family in its
+    /// staging folder, `SystemAssetGuard.stagingFolder`). `bytes` is nil when AssetsV2 cannot be read (no Full Disk Access).
+    public static func modelBytes(_ feature: ModelFeatureSettings.Feature, root: String = "/System/Library/AssetsV2",
+                                  fileManager: FileManager = .default) -> (bytes: UInt64?, downloading: Bool) {
+        let tokens = shownFamilies(feature)
+        let staged = ((try? fileManager.contentsOfDirectory(atPath: (root as NSString).appendingPathComponent("staging"))) ?? [])
+            .contains { name in !name.hasSuffix(".xml") && tokens.contains(where: name.contains) }
+        guard let families = try? fileManager.contentsOfDirectory(atPath: root) else { return (nil, staged) }
+        let sizer = FileTreeSizer()
+        let bytes = families.filter { family in tokens.contains(where: family.contains) }
+            .compactMap { sizer.size(at: URL(fileURLWithPath: (root as NSString).appendingPathComponent($0))) }
+            .map { $0.allocatedBytesEstimate ?? $0.logicalBytes }.reduce(0, +)
+        return (bytes, staged)
+    }
+
+    /// How many of a feature's assets a process still holds a lock on (`ModelDescriptors.lockDirectory`). A purge leaves those, and the
+    /// lock goes only when its process stops or the Mac restarts: on 26B5112a (2026-10-19) every Siri owner was withdrawn and the set
+    /// asked for nothing, yet Siri's services, which macOS keeps running with Siri off, still held 1.4 GB of its English models.
+    public static func lockedAssets(_ feature: ModelFeatureSettings.Feature, lockDirectory: String = ModelDescriptors.lockDirectory,
+                                    fileManager: FileManager = .default) -> Int {
+        let prefixes = shownFamilies(feature).map { "AutoAssetLocker_Entry_com.apple.MobileAsset." + $0.replacingOccurrences(of: "_", with: ".") + "_" }
+        return ((try? fileManager.contentsOfDirectory(atPath: lockDirectory)) ?? []).filter { name in prefixes.contains(where: name.hasPrefix) }.count
     }
 
     /// Target presence, without walking protected payload contents or interpreting the service-wide purge count as target bytes.

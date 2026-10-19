@@ -26,15 +26,6 @@
   "%@が実行中です。先に終了してください。",
   "%@ 실행 중입니다. 먼저 종료하세요."
  ],
- "%@ older than %lld days.": [
-  "%@ com mais de %lld dias.",
-  "%@ de plus de %lld jours.",
-  "%@ con más de %lld días.",
-  "%@ älter als %lld Tage.",
-  "%@，早于 %lld 天。",
-  "%@、%lld日より前。",
-  "%@, %lld일 이전."
- ],
  "%lld items": [
   "%lld itens",
   "%lld éléments",
@@ -1835,15 +1826,6 @@
   "ツールキャッシュ：~/.cache/%@",
   "도구 캐시: ~/.cache/%@"
  ],
- "Tools and app files installed outside Homebrew, such as Node.js, Python and Parallels tools. Remove individual tools with their installer or package manager; deleting this whole folder can break them.": [
-  "Ferramentas e arquivos de apps instalados fora do Homebrew, como Node.js, Python e ferramentas do Parallels. Remova cada ferramenta com seu instalador ou gerenciador de pacotes; apagar esta pasta inteira pode fazer com que parem de funcionar.",
-  "Outils et fichiers d’apps installés en dehors de Homebrew, comme Node.js, Python et les outils Parallels. Supprimez chaque outil avec son installateur ou gestionnaire de paquets ; supprimer ce dossier entier peut les empêcher de fonctionner.",
-  "Herramientas y archivos de apps instalados fuera de Homebrew, como Node.js, Python y las herramientas de Parallels. Elimina cada herramienta con su instalador o gestor de paquetes; borrar toda esta carpeta puede hacer que dejen de funcionar.",
-  "Außerhalb von Homebrew installierte Werkzeuge und App-Dateien, etwa Node.js, Python und Parallels-Werkzeuge. Entferne einzelne Werkzeuge mit ihrem Installationsprogramm oder Paketmanager; das Löschen des ganzen Ordners kann ihre Funktion beeinträchtigen.",
-  "在 Homebrew 之外安装的工具和应用文件，如 Node.js、Python 和 Parallels 工具。请使用各自的安装程序或软件包管理器移除；删除整个文件夹可能导致这些工具无法运行。",
-  "Node.js、Python、Parallelsツールなど、Homebrew以外でインストールしたツールやアプリのファイルです。各ツールのインストーラまたはパッケージマネージャで削除してください。フォルダ全体を削除すると動作しなくなる場合があります。",
-  "Node.js, Python, Parallels 도구 등 Homebrew 외부에서 설치된 도구와 앱 파일입니다. 각 도구의 설치 프로그램이나 패키지 관리자로 제거하세요. 이 폴더 전체를 삭제하면 도구가 작동하지 않을 수 있습니다."
- ],
  "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.": [
   "Ferramentas e bibliotecas instaladas pelo Homebrew. Versões antigas e downloads que podem ser removidos estão em Caches que podem ser liberados. Os pacotes instalados são mantidos.",
   "Outils et bibliothèques installés par Homebrew. Les anciennes versions et les téléchargements supprimables figurent dans les caches pouvant être libérés. Les paquets installés sont conservés.",
@@ -2194,5 +2176,23 @@
   "下载该内容的应用",
   "ダウンロード元のアプリ",
   "다운로드 중인 앱"
+ ],
+ "Reports older than %lld days. macOS writes new ones as needed.": [
+  "Relatórios com mais de %lld dias. O macOS cria novos quando precisa.",
+  "Rapports de plus de %lld jours. macOS en crée de nouveaux au besoin.",
+  "Informes de más de %lld días. macOS crea otros nuevos cuando hace falta.",
+  "Berichte, die älter als %lld Tage sind. macOS schreibt bei Bedarf neue.",
+  "超过 %lld 天的报告。macOS 会在需要时写入新报告。",
+  "%lld日より古いレポート。macOSは必要に応じて新しく作成します。",
+  "%lld일보다 오래된 보고서입니다. macOS는 필요할 때 새로 작성합니다."
+ ],
+ "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.": [
+  "Ferramentas instaladas fora do Homebrew, como Node.js e Python. Remova cada uma com o próprio instalador: apagar a pasta pode quebrá-las.",
+  "Outils installés hors de Homebrew, comme Node.js et Python. Supprimez-les avec leur propre programme d’installation : supprimer le dossier peut les casser.",
+  "Herramientas instaladas fuera de Homebrew, como Node.js y Python. Elimina cada una con su instalador: borrar la carpeta puede romperlas.",
+  "Außerhalb von Homebrew installierte Tools wie Node.js und Python. Entferne jedes mit seinem eigenen Installer: den Ordner zu löschen, kann sie beschädigen.",
+  "在 Homebrew 之外安装的工具，例如 Node.js 和 Python。请用各自的安装程序移除：删除整个文件夹可能会损坏它们。",
+  "Homebrew以外でインストールしたツール（Node.jsやPythonなど）。それぞれのインストーラで削除してください。フォルダごと削除すると動かなくなることがあります。",
+  "Homebrew 밖에서 설치한 Node.js, Python 같은 도구입니다. 각 설치 프로그램으로 제거하세요. 폴더를 지우면 도구가 망가질 수 있습니다."
  ]
 }
