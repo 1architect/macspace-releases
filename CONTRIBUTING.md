@@ -155,8 +155,8 @@ not grey text after the title. The (i) is only for what a pill cannot say. Never
 
 **Buttons in rows are flags.** Every button in a row, in Settings and on every module's page, is the row action flag: text on
 a faint capsule, the look of the (i) and folder pills, darker under the pointer (`RowFlagStyle`; a module row's Free is the same
-flag, with its progress and result). No system buttons and no other pill style in rows. Where it goes: when the row shows a figure on
-its right (a size, a version), the flag stands right after the title, its pills and its (i), and the figure keeps the right edge;
+flag, with its progress and result). No system buttons and no other pill style in rows. Where it goes: when the row shows a figure or a
+switch on its right (a size, a version), the flag stands right after the title, its pills and its (i), and the figure keeps the right edge;
 when the row has no figure, the flag takes the right edge (`RowFlagPlacement`). Modules set `Row.trailing` and `Row.actions`; the
 app places them.
 

@@ -105,14 +105,15 @@ struct UpdatesSettingsSection: View {
     var body: some View {
         Section("Updates") {
             if updates.isAvailable {
-                Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 }))
-                // The version is the row's figure on the right, so Check Now stands after the title (`RowFlagPlacement`).
-                HStack(spacing: 10) {
-                    Text("Version")
-                    Button("Check Now") { updates.checkForUpdates() }.buttonStyle(RowFlagStyle()).disabled(!updates.canCheck)
-                    Spacer(minLength: 8)
-                    Text(version).textSelection(.enabled).monospacedDigit().foregroundStyle(.secondary)
+                // Check Now is on the automatic checks' row, after its title: the switch holds the row's right edge
+                // (`RowFlagPlacement`).
+                Toggle(isOn: Binding(get: { updates.automaticallyChecks }, set: { updates.automaticallyChecks = $0 })) {
+                    HStack(spacing: 10) {
+                        Text("Check for updates automatically")
+                        Button("Check Now") { updates.checkForUpdates() }.buttonStyle(RowFlagStyle()).disabled(!updates.canCheck)
+                    }
                 }
+                LabeledContent("Version") { Text(version).textSelection(.enabled).monospacedDigit() }
             } else {
                 LabeledContent("Version") { Text(version).textSelection(.enabled).monospacedDigit() }
                 LabeledContent("Updates") { StatusFlag(text: String(localized: "Not in this build"), tone: .neutral) }
