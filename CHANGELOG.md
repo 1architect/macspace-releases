@@ -7,6 +7,17 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-19
+
+### Fixed
+
+- A row's warning pill (**Cannot be undone**) no longer truncates and comes back over and over while the row's Free works, and
+  the size on the right no longer wraps onto two lines: the row hands out its width in a fixed order instead of even shares.
+- A pill short of room narrows smoothly over its text, its end fading, instead of losing a letter at a time, so the (i), the
+  folder and the Free flag beside it glide as the flag grows or shrinks.
+- A second Free clicked while another row's cleanup runs shows at once that it is working and runs next, and each row keeps its
+  own result: the first row's **Freed** no longer disappears when the next one starts.
+
 ## [1.1.1] - 2026-10-19
 
 ### Added
@@ -308,7 +319,8 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/1architect/macspace-releases/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/1architect/macspace-releases/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/1architect/macspace-releases/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/1architect/macspace-releases/compare/v1.0.2...v1.0.3
