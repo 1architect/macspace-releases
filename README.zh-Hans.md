@@ -202,6 +202,8 @@ Time Machine 快照和备份上的**释放**带有**无法撤销**标记。**App
 Apple 智能和与 Siri 相关的选项：重新开启即可。MacSpace 会恢复你的 Siri 语言和语音，macOS 可能会再次
 下载模型。删除的缓存会重新生成。删除的报告、版本历史、日志、废纸篓中的项目、快照和备份无法恢复。
 
+macOS 的行为及测量结果见 [Docs/Research.md](Docs/Research.md)（英文）。
+
 ---
 
 ## 隐私
@@ -246,7 +248,7 @@ Mac 上，位于 `~/Library/Application Support/MacSpace/`。网络只用于一�
 
 ## 从源代码构建
 
-源代码就是这个仓库。你需要 macOS 27 和 Xcode 27。
+源代码就是这个仓库。[Docs/Handoff.md](Docs/Handoff.md)（英文）说明了它的结构。你需要 macOS 27 和 Xcode 27。
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

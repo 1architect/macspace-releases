@@ -223,6 +223,8 @@ MacSpaceはSiriの言語と声を復元し、macOSはモデルを再びダウン
 キャッシュは再構築されます。削除したレポート、バージョン履歴、ログ、ゴミ箱の項目、スナップショット、
 バックアップは元に戻りません。
 
+macOSの動作と測定結果は [Docs/Research.md](Docs/Research.md)（英語）にあります。
+
 ---
 
 ## プライバシー
@@ -274,7 +276,7 @@ MacSpaceには、解析も、テレメトリも、クラッシュレポートも
 
 ## ソースからビルド
 
-ソースはこのリポジトリです。macOS 27とXcode 27が必要です。
+ソースはこのリポジトリです。構成は [Docs/Handoff.md](Docs/Handoff.md)（英語）で説明しています。macOS 27とXcode 27が必要です。
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer

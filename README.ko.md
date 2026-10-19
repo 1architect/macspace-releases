@@ -218,6 +218,8 @@ MacSpace는 [Sparkle](https://sparkle-project.org)로 업데이트합니다. Mac
 음성을 복원하며, macOS가 모델을 다시 다운로드할 수 있습니다. 삭제한 캐시는 다시 만들어집니다. 삭제한
 보고서, 버전 기록, 로그, 휴지통 항목, 스냅샷, 백업은 되돌릴 수 없습니다.
 
+macOS의 동작과 측정 결과는 [Docs/Research.md](Docs/Research.md)(영어)에 있습니다.
+
 ---
 
 ## 개인정보 보호
@@ -266,7 +268,7 @@ MacSpace에는 분석도, 원격 측정도, 충돌 보고도, 계정도 없습�
 
 ## 소스에서 빌드
 
-소스는 이 저장소입니다. macOS 27과 Xcode 27이 필요합니다.
+소스는 이 저장소입니다. 구성은 [Docs/Handoff.md](Docs/Handoff.md)(영어)에서 설명합니다. macOS 27과 Xcode 27이 필요합니다.
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
