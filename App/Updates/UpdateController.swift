@@ -48,22 +48,25 @@ public final class UpdateController: ObservableObject {
     }
 }
 
-/// Sparkle's own windows, except the one that says there is nothing new. Sparkle's says "MacSpace 1.1.2 is currently the newest
-/// version available" and, when the running build is newer than the feed, adds "(You are currently running version 1.1.3.)": a
-/// sentence its Portuguese and other translations lack, so it came up in English (2026-10-19). MacSpace says it in one line of
-/// its own, in its own alert and languages, with no version numbers. Errors (no connection, a feed it cannot read) keep Sparkle's.
+/// Sparkle's own windows, as MacBat shows them. One sentence is changed: with the running build newer than the newest release in the
+/// feed (a build made before its release is published), Sparkle adds "(You are currently running version 1.1.3.)", a sentence its
+/// Portuguese and most other translations lack, so the box came up in English (2026-10-19). It says Sparkle's own short sentence
+/// instead, from Sparkle's own translations, as it does for the newest version: "MacSpace 1.1.2 é a versão mais recente disponível."
 final class UpdateUserDriver: SPUStandardUserDriver {
     override func showUpdateNotFoundWithError(_ error: any Error, acknowledgement: @escaping () -> Void) {
-        // Only "nothing new": a Mac too old or too new for the latest version keeps Sparkle's explanation.
-        let reason = ((error as NSError).userInfo[SPUNoUpdateFoundReasonKey] as? NSNumber).flatMap { SPUNoUpdateFoundReason(rawValue: $0.int32Value) }
-        guard reason == .onLatestVersion || reason == .onNewerThanLatestVersion else {
+        let error = error as NSError
+        guard let reason = (error.userInfo[SPUNoUpdateFoundReasonKey] as? NSNumber).flatMap({ SPUNoUpdateFoundReason(rawValue: $0.int32Value) }),
+              reason == .onNewerThanLatestVersion,
+              let latest = error.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else {
             super.showUpdateNotFoundWithError(error, acknowledgement: acknowledgement)
             return
         }
-        let alert = AppAlert()
-        alert.messageText = String(localized: "MacSpace is up to date")
-        alert.addButton(withTitle: String(localized: "OK"))
-        alert.runModal()
-        acknowledgement()
+        let sparkle = Bundle(for: SPUUpdater.self)
+        let format = sparkle.localizedString(forKey: "%@ %@ is currently the newest version available.", value: nil, table: "Sparkle")
+        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "MacSpace"
+        var info = error.userInfo
+        info[NSLocalizedRecoverySuggestionErrorKey] = String(format: format, name, latest.displayVersionString)
+        super.showUpdateNotFoundWithError(NSError(domain: error.domain, code: error.code, userInfo: info), acknowledgement: acknowledgement)
     }
 }

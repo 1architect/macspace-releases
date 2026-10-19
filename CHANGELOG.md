@@ -21,8 +21,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   automatic updates row. **Granted** and the other
   Settings pills are the same height as every other pill. **Recent cleanups** shows the total freed as its own row.
 
-- **Check for Updates** with nothing new says "MacSpace is up to date" in the app's language, without version numbers. It
-  came up in English when the running version was newer than the latest release.
+- **Check for Updates** with nothing new is in the app's language again when the running version is newer than the latest
+  release, with the same short sentence as when it is the latest.
 
 ### Changed
 

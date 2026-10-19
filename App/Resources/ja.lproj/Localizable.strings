@@ -85,7 +85,6 @@
 "MacSpace can now see everything in System Data." = "すべてのシステムデータを確認できるようになりました。";
 "MacSpace freed %@" = "MacSpaceが%@を解放しました";
 "MacSpace has not been tested on this release yet." = "このmacOSではまだMacSpaceをテストしていません。";
-"MacSpace is up to date" = "MacSpaceは最新です";
 "MacSpace keeps an eye on your disk." = "MacSpaceがディスクの状態を見守ります。";
 "MacSpace needs it to see everything in System Data." = "すべてのシステムデータを確認するために必要です。";
 "Maximize" = "最大化";
