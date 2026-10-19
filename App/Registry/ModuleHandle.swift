@@ -40,8 +40,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The action the user started that is running, for its button's text (`Action.workingTitle`).
     @Published public private(set) var runningAction: Action?
     @Published public private(set) var runningRowID: String?
-    @Published public private(set) var rowResult: ActionResult?
+    /// Rows whose action waits for the one running: actions run one at a time, and a row clicked meanwhile shows it is taken.
+    @Published public private(set) var queuedRows: [String: Action] = [:]
+    /// Each row's result until it is dismissed: another row's action starting no longer clears it.
+    @Published public private(set) var rowResults: [String: ActionResult] = [:]
+    /// The row given a result last, and that result.
     @Published public private(set) var resultRowID: String?
+    public var rowResult: ActionResult? { resultRowID.flatMap { rowResults[$0] } }
     /// The rows the running action is done with (`ActionProgress.finished`): the page lets them go one after the other. Emptied once
     /// the page is read again after the action.
     @Published public private(set) var finishedRows: Set<String> = []
@@ -317,6 +322,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
         // both write the module's undo journal.
         let previous = lastAction
+        // Working at once, also while the action ahead (and the reading after it) finishes; its own turn takes it out.
+        if let rowID, !quiet { queuedRows[rowID] = action }
         let task = Task { @MainActor [weak self] () -> ActionResult? in
             _ = await previous?.value
             return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
@@ -391,6 +398,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?) async -> ActionResult? {
+        if let rowID, !quiet { queuedRows[rowID] = nil }
         guard !preparingForUninstall, state == .ready, let module else { return nil }
         let missing = action.requires.filter { permissions.status(of: $0) == .missing }
         if !missing.isEmpty {
@@ -398,7 +406,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
                                       message: String(localized: "Needs \(ListFormatter.localizedString(byJoining: missing.map(\.title)))"),
                                       refresh: false)
-            if let rowID, !quiet { resultRowID = rowID; rowResult = result } else { lastResult = result }
+            if let rowID, !quiet { setRowResult(result, for: rowID) } else { lastResult = result }
             return result
         }
         refreshGeneration += 1
@@ -410,8 +418,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             isCleaning = rowID == nil
             runningRowID = rowID
             runningAction = action
-            rowResult = nil
-            resultRowID = nil
+            if let rowID { setRowResult(nil, for: rowID) }
             finishedRows = []
             progress = nil
         }
@@ -439,8 +446,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let continuesInRow = result.outcome == .succeeded && !result.restartRequired && result.presentation?.screen.activeRow(for: request) != nil
         let celebrates = !quiet && rowID == nil && !continuesInRow && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
         if let rowID, !quiet {
-            resultRowID = result.message.isEmpty || continuesInRow ? nil : rowID
-            rowResult = result.message.isEmpty || continuesInRow ? nil : result
+            setRowResult(result.message.isEmpty || continuesInRow ? nil : result, for: rowID)
         } else if !continuesInRow && ((!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired) { lastResult = result }
         // A long action that ends while the user is in another app says so in Notification Center.
         if !quiet { AppNotifications.shared.actionFinished(module: self, message: result.message, took: Date().timeIntervalSince(started)) }
@@ -486,7 +492,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     public func dismissResult() { lastResult = nil }
-    public func dismissRowResult() { rowResult = nil; resultRowID = nil }
+    public func dismissRowResult(_ rowID: String) { setRowResult(nil, for: rowID) }
+
+    private func setRowResult(_ result: ActionResult?, for rowID: String) {
+        rowResults[rowID] = result
+        if result != nil { resultRowID = rowID } else if resultRowID == rowID { resultRowID = rowResults.keys.first }
+    }
 
     /// Shows a state of the page's action pill without running anything, for development captures (`DebugRemote`).
     func previewPill(cleaning: Bool, progress: ActionProgress?, result: ActionResult?) {

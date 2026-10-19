@@ -2,12 +2,15 @@ import MacSpaceSdk
 import SwiftUI
 
 struct RowActivity {
+    /// The row whose action is running, with its progress.
     var rowID: String?
     var action: Action?
     var progress: ActionProgress?
-    var resultID: String?
-    var result: ActionResult?
-    var dismiss: () -> Void = {}
+    /// Rows whose Free was clicked while another action ran: they wait their turn, already working (`ModuleHandle.queuedRows`).
+    var queued: [String: Action] = [:]
+    /// Each row's own result: a row starting its action no longer clears the one another row is still showing.
+    var results: [String: ActionResult] = [:]
+    var dismiss: (String) -> Void = { _ in }
 }
 
 extension EnvironmentValues {
@@ -24,12 +27,13 @@ struct RowActionFlags: View {
     private var actions: [Action] {
         if !row.actions.isEmpty { return row.actions }
         if activity.rowID == row.id, let action = activity.action { return [action] }
-        if row.activity != nil || activity.resultID == row.id { return retainedActions }
+        if let action = activity.queued[row.id] { return [action] }
+        if row.activity != nil || activity.results[row.id] != nil { return retainedActions }
         return []
     }
 
     private var result: ActionResult? {
-        guard activity.resultID == row.id, let result = activity.result else { return nil }
+        guard let result = activity.results[row.id] else { return nil }
         if row.activity != nil, result.outcome == .succeeded, !result.restartRequired { return nil }
         return result
     }
@@ -38,13 +42,21 @@ struct RowActionFlags: View {
         result.map { $0.outcome != .succeeded || $0.restartRequired } ?? false
     }
 
+    /// Running: its progress. Waiting behind another row's action: working already, without a figure, so a second Free shows at
+    /// once that it was taken. It said Free until its turn, and the finished row's result vanished when it started (2026-10-19).
+    private func progress(_ action: Action) -> ActionProgress? {
+        if activity.rowID == row.id { return activity.progress ?? ActionProgress(message: action.workingTitle ?? "") }
+        if activity.queued[row.id] != nil { return ActionProgress(message: action.workingTitle ?? "") }
+        return nil
+    }
+
     var body: some View {
         HStack(spacing: 6) {
             ForEach(actions, id: \.id) { action in
                 RowActionFlag(action: action,
-                              progress: needsAttention ? nil : row.activity ?? (activity.rowID == row.id ? activity.progress ?? ActionProgress(message: action.workingTitle ?? "") : nil),
+                              progress: needsAttention ? nil : row.activity ?? progress(action),
                               result: result,
-                              dismiss: activity.dismiss) {
+                              dismiss: { activity.dismiss(row.id) }) {
                     guard ConfirmationAlert.ask(action) else { return }
                     _ = await handler(action, [:], false, row.id)
                 }
@@ -52,7 +64,7 @@ struct RowActionFlags: View {
             }
             if actions.isEmpty, let result, !result.message.isEmpty {
                 StatusFlag(text: result.message, tone: result.outcome == .succeeded ? .neutral : .caution)
-                    .onTapGesture(perform: activity.dismiss)
+                    .onTapGesture { activity.dismiss(row.id) }
                     .transition(PageCascade.transition(index: 0, count: 1))
             }
         }

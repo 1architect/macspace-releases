@@ -337,18 +337,63 @@ struct BadgeView: View {
     /// Every other pill has the colors of the row's (i) and folder pills (`rowPill`), grey text on a faint capsule of their height, in
     /// the warning pill's font, so the facts read as one set.
     var body: some View {
+        Group {
+            if wraps {
+                label
+            } else {
+                SoftFitLayout { label.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { natural = $0 } }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { shown = $0 }
+                    .mask { SoftFitMask(hidden: max(0, natural - shown)) }
+            }
+        }
+        .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
+        // What the state means now: the (i) beside it says only what the item is (`InfoText`). A pill short of room says its text.
+        .help(badge.help ?? (natural - shown > 0.5 ? badge.text : ""))
+        .transition(PageCascade.transition(index: 0, count: 1))
+    }
+
+    @State private var natural: CGFloat = 0
+    @State private var shown: CGFloat = 0
+
+    private var label: some View {
         ChangingText(text: badge.text)
             .font(.system(size: 11, weight: .semibold))
             .lineLimit(wraps ? nil : 1)
-            .fixedSize(horizontal: false, vertical: true)
+            .fixedSize(horizontal: !wraps, vertical: true)
             .padding(.horizontal, 8)
             .padding(.vertical, wraps ? 3 : 0)
             .frame(minHeight: 18)
             .foregroundStyle(attention ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(.secondary))
-            .background(attention ? AnyShapeStyle(design.action) : AnyShapeStyle(.primary.opacity(0.05)), in: Capsule())
-            // What the state means now: the (i) beside it says only what the item is (`InfoText`).
-            .help(badge.help ?? "")
-            .transition(PageCascade.transition(index: 0, count: 1))
+    }
+}
+
+/// A one-line pill short of room: its text stays at its full size and the pill narrows over it by any fraction of a point, its end
+/// fading. Truncated instead, the text lost a whole letter at a time while the row's Free flag grew or shrank beside it, and the pill,
+/// the (i) and the folder after it moved in steps, rough, as if at a low frame rate (2026-10-19).
+private struct SoftFitLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let natural = subviews[0].sizeThatFits(.unspecified)
+        // Never less than its first letters, as a truncated pill kept.
+        let width = max(min(proposal.width ?? natural.width, natural.width), min(natural.width, 30))
+        return CGSize(width: width, height: natural.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews[0].place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(subviews[0].sizeThatFits(.unspecified)))
+    }
+}
+
+/// The end of a narrowed pill's text fades out, more the more of it is hidden: nothing at full width, so it never switches on.
+private struct SoftFitMask: View {
+    let hidden: CGFloat
+
+    var body: some View {
+        let strength = min(1, hidden / 12)
+        HStack(spacing: 0) {
+            Rectangle()
+            LinearGradient(colors: [.black, .black.opacity(1 - strength)], startPoint: .leading, endPoint: .trailing).frame(width: 18)
+            Rectangle().fill(.black.opacity(1 - strength)).frame(width: 4)
+        }
     }
 }
 
@@ -388,7 +433,9 @@ struct RowView: View {
     @Environment(\.rowActivity) private var activity
 
     /// The row's action flag is in the action color now (working, or showing its result): its pills step back (`BadgeView.quiet`).
-    private var flagIsActive: Bool { row.activity != nil || activity.rowID == row.id || activity.resultID == row.id }
+    private var flagIsActive: Bool {
+        row.activity != nil || activity.rowID == row.id || activity.queued[row.id] != nil || activity.results[row.id] != nil
+    }
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
@@ -433,27 +480,31 @@ struct RowView: View {
                     .disabled(true)
             }
             // A count after the title; the row's facts as pills right after it; then its (i) and where its files are, close together.
-            // The title and the cluster are offered the row's width before the spacer. With the stack's even shares, the frame the
-            // Free flag turned into its progress gave the cluster less than it had, and the warning pill beside it truncated and
-            // sprang back, a flicker (2026-10-19).
-            TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
-            HStack(spacing: 6) {
-                ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
-                    BadgeView(badge: badge, quiet: flagIsActive)
-                        .transition(PageCascade.transition(index: index, count: row.badges.count))
+            // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
+            // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
+            // half of what was left while room stood empty after it: its warning pill truncated to "Não…" and came back, and the size
+            // wrapped, every time a figure on the row changed during a cleanup (2026-10-19).
+            HStack(spacing: 10) {
+                TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
+                HStack(spacing: 6) {
+                    ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
+                        BadgeView(badge: badge, quiet: flagIsActive)
+                            .transition(PageCascade.transition(index: index, count: row.badges.count))
+                    }
+                        .animation(Theme.value, value: row.badges.count)
+                    InfoButton(text: row.detail, steps: row.steps)
+                    if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+                    // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the room
+                    // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
+                    RowActionFlags(row: row, handler: handler)
                 }
-                    .animation(Theme.value, value: row.badges.count)
-                InfoButton(text: row.detail, steps: row.steps)
-                if !row.paths.isEmpty { RevealButton(paths: row.paths) }
-                // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the spacer
-                // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
-                RowActionFlags(row: row, handler: handler)
+                // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
+                // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             }
-            .layoutPriority(1)
-            // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
-            // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
-            Spacer(minLength: 8)
-            if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let trailing = row.trailing {
+                ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
+            }
         }
     }
 }

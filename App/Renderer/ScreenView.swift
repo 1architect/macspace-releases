@@ -136,7 +136,7 @@ struct ScreenView: View {
             }
         }
         .animation(Theme.push, value: groups.map(\.id))
-        .environment(\.rowActivity, RowActivity(rowID: handle.runningRowID, action: handle.runningAction, progress: handle.progress, resultID: handle.resultRowID, result: handle.rowResult, dismiss: handle.dismissRowResult))
+        .environment(\.rowActivity, RowActivity(rowID: handle.runningRowID, action: handle.runningAction, progress: handle.progress, queued: handle.queuedRows, results: handle.rowResults, dismiss: handle.dismissRowResult))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
         .environment(\.pageCascadeCount, cascadeCount)
