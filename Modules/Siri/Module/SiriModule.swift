@@ -55,19 +55,26 @@ public struct SiriModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        SiriScreenBuilder.tile(await snapshot())
+        SiriScreenBuilder.tile(Self.presented(await snapshot(), context))
     }
 
     public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
-        SiriScreenBuilder.tile(await snapshot(progress: progress))
+        SiriScreenBuilder.tile(Self.presented(await snapshot(progress: progress), context))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SiriScreenBuilder.screen(await snapshot())
+        SiriScreenBuilder.screen(Self.presented(await snapshot(), context))
     }
 
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        SiriScreenBuilder.screen(await snapshot(progress: progress))
+        SiriScreenBuilder.screen(Self.presented(await snapshot(progress: progress), context))
+    }
+
+    /// The reading with the module's settings that change how it is shown.
+    static func presented(_ snapshot: SiriSnapshot, _ context: ModuleContext) -> SiriSnapshot {
+        var snapshot = snapshot
+        snapshot.flagsModels = context.options.bool("flagModels")
+        return snapshot
     }
 
     /// The state, after starting the release of leftover models if they are due one: MacSpace does it by itself. `waits` holds the
@@ -154,6 +161,7 @@ public struct SiriModule: MacSpaceModule {
             if var updated {
                 updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
                 updated.purgingModels = await ModelPurger.shared.isRunning
+                updated = Self.presented(updated, context)
                 result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
             } else { await store.invalidate() }
         }
@@ -237,6 +245,10 @@ public struct SiriModule: MacSpaceModule {
             await ModelPurger.shared.purge(after: ModelReleaseTiming().releaseWait, force: true) { await store.invalidate() }
             return ActionResult(outcome: .succeeded, message: result.message,
                                 details: result.details + ["MacSpace deletes the released models in the background."], refresh: true)
+        case "restartMac":
+            // macOS's own dialog asks; the Mac restarts only if the user confirms there.
+            guard SystemRestart.showDialog() else { return .failed(loc("Restart your Mac from the Apple menu.")) }
+            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "openICloudSettings":
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)

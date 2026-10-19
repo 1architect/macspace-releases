@@ -31,10 +31,7 @@
 "Can't free it yet" = "아직 정리할 수 없음";
 "Changed outside MacSpace" = "MacSpace 외부에서 변경됨";
 "Changing settings" = "설정 변경 중";
-"Check disabled features" = "꺼진 기능 확인";
-"Check that Apple Intelligence stays off" = "Apple Intelligence 꺼짐 유지 확인";
-"Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working." = "MacSpace가 열려 있는 동안 15분마다 확인하고 끄기 기능이 작동하지 않으면 알립니다.";
-"Checks every five minutes while MacSpace is open and frees models requested again for features you switched off." = "MacSpace가 열려 있는 동안 5분마다 확인하고 꺼진 기능이 다시 요청한 모델을 비웁니다.";
+"Check Apple Intelligence every 15 minutes" = "15분마다 Apple Intelligence 확인";
 "Couldn't change Call transcription." = "통화 전사를 변경할 수 없습니다.";
 "Couldn't change feature settings." = "기능 설정을 변경할 수 없습니다.";
 "Couldn't check Apple Intelligence" = "Apple Intelligence를 확인하지 못함";
@@ -57,7 +54,9 @@
 "Enable all" = "모두 켜기";
 "Enable all %lld features again?" = "기능 %lld개를 모두 다시 켤까요?";
 "Feature settings updated." = "기능 설정을 업데이트했습니다.";
+"Flag models on the Home page" = "홈에서 모델 표시";
 "Free" = "확보";
+"Free switched-off features' models every 5 minutes" = "끈 기능의 모델을 5분마다 정리";
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@?" = "최대 %@ 확보할까요?";
 "Freeing space" = "공간 확보 중";
@@ -73,10 +72,11 @@
 "MacSpace needs it to read and verify the switch." = "스위치 상태를 읽고 확인하려면 이 권한이 필요합니다.";
 "MacSpace needs its helper to change Call transcription." = "통화 전사를 변경하려면 MacSpace 도우미가 필요합니다.";
 "MacSpace needs its helper to restore Call transcription." = "통화 전사를 복원하려면 MacSpace 도우미가 필요합니다.";
+"Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "무언가를 끄면 모델을 정리할 수 있는 동안 타일에 표시하고 큰 자리에 둡니다. 끄면 타일은 조용히 있고, 이 페이지에는 계속 표시됩니다.";
 "No supported Siri language with a base language different from %@ is available." = "%@과(와) 기본 언어가 다른 지원되는 Siri 언어가 없습니다.";
 "Not available in a virtual machine" = "가상 머신에서는 사용할 수 없음";
 "Not verified on this macOS version" = "이 macOS 버전에서 확인되지 않음";
-"Notify me if Apple Intelligence turns back on" = "Apple Intelligence가 다시 켜지면 알림";
+"Notify me when Apple Intelligence turns back on" = "Apple Intelligence가 다시 켜지면 알림";
 "One account with Apple Intelligence on keeps the models on this Mac." = "한 계정이라도 Apple Intelligence가 켜져 있으면 모델이 이 Mac에 유지됩니다.";
 "Open" = "열기";
 "Open MacSpace to check." = "MacSpace를 열어 확인하세요.";
@@ -88,9 +88,12 @@
 "Released Apple Intelligence models and unused system assets" = "해제된 Apple Intelligence 모델 및 미사용 시스템 에셋";
 "Releasing the leftover models" = "잔여 모델 해제 중";
 "Restart required" = "재시동 필요";
+"Restart to finish" = "완료하려면 재시동";
+"Restart to free %@" = "재시동하여 %@ 정리";
+"Restart your Mac from the Apple menu." = "Apple 메뉴에서 Mac을 재시동하세요.";
 "Restart your Mac to apply this change." = "이 변경 사항을 적용하려면 Mac을 재시동하세요.";
 "Restart. MacSpace then deletes the models." = "재시동하세요. 이후 MacSpace가 모델을 삭제합니다.";
-"Shows a notification if macOS makes Apple Intelligence available again." = "macOS가 Apple Intelligence를 다시 활성화하면 알림을 표시합니다.";
+"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "아래의 15분 확인이 Apple Intelligence가 다시 사용 가능해진 것을 발견하면 보냅니다.";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "Siri 및 Apple Intelligence";
 "Siri's iCloud sync" = "Siri iCloud 동기화";
@@ -119,6 +122,8 @@
 "Unused system models" = "사용하지 않는 시스템 모델";
 "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "보통 곧 완료됩니다. 그렇지 않으면 %lld분 후 MacSpace가 처리합니다.";
 "Waiting for macOS" = "macOS 대기 중";
+"While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves." = "MacSpace가 열려 있는 동안: macOS가 Apple Intelligence를 다시 켰는지 확인하고 남은 모델을 정리합니다.";
+"While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off." = "MacSpace가 열려 있는 동안: Siri, 공간 사진, 통화 전사를 끈 뒤 macOS가 다시 요청하는 모델을 정리합니다.";
 "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac." = "켜져 있는 동안 Siri 언어 변경이 iPhone과 iPad에도 적용됩니다. 이 Mac에만 적용하려면 끄세요.";
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Siri iCloud 동기화가 켜져 있으면 iPhone과 iPad의 Siri도 변경됩니다.";
 "Writing the Siri language preference failed." = "Siri 언어 설정을 기록하지 못했습니다.";

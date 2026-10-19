@@ -14,8 +14,18 @@
   "options": [
     {
       "id": "notify",
-      "title": "Notify me if Apple Intelligence turns back on",
-      "detail": "Shows a notification if macOS makes Apple Intelligence available again.",
+      "title": "Notify me when Apple Intelligence turns back on",
+      "detail": "Sent by the 15-minute check below, when it finds Apple Intelligence available again.",
+      "kind": {
+        "toggle": {
+          "defaultValue": true
+        }
+      }
+    },
+    {
+      "id": "flagModels",
+      "title": "Flag models on the Home page",
+      "detail": "Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them.",
       "kind": {
         "toggle": {
           "defaultValue": true
@@ -26,15 +36,15 @@
   "backgroundTasks": [
     {
       "id": "watch",
-      "title": "Check that Apple Intelligence stays off",
-      "detail": "Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working.",
+      "title": "Check Apple Intelligence every 15 minutes",
+      "detail": "While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves.",
       "defaultEnabled": false,
       "intervalSeconds": 900
     },
     {
       "id": "featureModels",
-      "title": "Check disabled features",
-      "detail": "Checks every five minutes while MacSpace is open and frees models requested again for features you switched off.",
+      "title": "Free switched-off features' models every 5 minutes",
+      "detail": "While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off.",
       "defaultEnabled": true,
       "intervalSeconds": 300
     }

@@ -44,6 +44,9 @@ struct SiriSnapshot: Sendable {
     var featureDownloading: Set<ModelFeatureSettings.Feature> = []
     /// The features whose models on disk a running process still holds a lock on (`AssetModelCleanup.lockedAssets`).
     var featureLocked: Set<ModelFeatureSettings.Feature> = []
+    /// The tile flags models that switching something off would free, and counts them toward the Home page's large tile (the
+    /// module's "Flag models on the Home page" setting). Off, the tile stays quiet about them.
+    var flagsModels = true
     var cleaningFeatures = false
     var featureCleanupWaiting: Set<ModelFeatureSettings.Feature> = []
 }

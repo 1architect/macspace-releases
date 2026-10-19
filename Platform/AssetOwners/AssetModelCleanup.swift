@@ -175,14 +175,25 @@ public enum AssetModelCleanup {
         return ((try? fileManager.contentsOfDirectory(atPath: lockDirectory)) ?? []).filter { name in prefixes.contains(where: name.hasPrefix) }.count
     }
 
-    /// Target presence, without walking protected payload contents or interpreting the service-wide purge count as target bytes.
-    /// nil is unreadable, never zero.
+    /// Assets smaller than this are the set's own catalog records (`….uaf.metadata`, 8 KB), which macOS keeps with no owner: counted,
+    /// they kept Siri's cleanup waiting, and purging every five minutes, after its models were gone (2026-10-19).
+    static let modelAssetBytes: UInt64 = 1_000_000
+
+    /// Target presence, without reading protected payload contents or interpreting the service-wide purge count as target bytes: the
+    /// model assets (`modelAssetBytes`) left in the scope's families. nil is unreadable, never zero.
     static func inventory(_ scope: Scope, withdrew: Bool = true, root: String = "/System/Library/AssetsV2",
                           fileManager: FileManager = .default) -> Int? {
         let tokens = families(scope, withdrew: withdrew)
         guard !tokens.isEmpty else { return 0 }
+        let sizer = FileTreeSizer()
         func assets(_ folder: String) -> Int? {
-            (try? fileManager.contentsOfDirectory(atPath: folder)).map { $0.filter { $0.hasSuffix(".asset") }.count }
+            (try? fileManager.contentsOfDirectory(atPath: folder)).map { names in
+                names.filter { name in
+                    guard name.hasSuffix(".asset") else { return false }
+                    let size = sizer.size(at: URL(fileURLWithPath: (folder as NSString).appendingPathComponent(name)))
+                    return size.map { ($0.allocatedBytesEstimate ?? $0.logicalBytes) >= modelAssetBytes } ?? true
+                }.count
+            }
         }
         guard let families = try? fileManager.contentsOfDirectory(atPath: root) else { return nil }
         var count = 0

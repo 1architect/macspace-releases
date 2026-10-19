@@ -9,6 +9,18 @@ final class AssetModelCleanupTests: XCTestCase {
     var phone: PhoneFeatureFlags.Status {
         .init(state:.off,managedOff:true,effective:Dictionary(uniqueKeysWithValues:PhoneFeatureFlags.features.map{($0,false)}),requestedOff:true)
     }
+    func testCatalogRecordsLeftWithNoOwnerAreNotModels() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("assets-\(UUID().uuidString)")
+        let family = root.appendingPathComponent("com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto")
+        try FileManager.default.createDirectory(at: family.appendingPathComponent("metadata.asset"), withIntermediateDirectories: true)
+        try Data(count: 8_000).write(to: family.appendingPathComponent("metadata.asset/AssetData"))
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri, withdrew: false, root: root.path), 0, "an 8 KB catalog record is not a model")
+        try FileManager.default.createDirectory(at: family.appendingPathComponent("model.asset"), withIntermediateDirectories: true)
+        try Data(count: 2_000_000).write(to: family.appendingPathComponent("model.asset/AssetData"))
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri, withdrew: false, root: root.path), 1)
+    }
+
     func testLockedAssetsCountOnlyTheFeaturesOwnFamilies() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("locks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -74,21 +86,26 @@ final class AssetModelCleanupTests: XCTestCase {
     func testTargetInventoryExcludesUnrelatedFamiliesAndKeepsUnknownSeparateFromEmpty() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         addTeardownBlock {try? FileManager.default.removeItem(at:root)}
-        for path in ["com_apple_MobileAsset_UAF_Photos_SpatialPhotosRelive/purpose_auto/test.asset", "com_apple_MobileAsset_Unrelated/other.asset"] {
+        // A model's worth of data: smaller assets are catalog records (`AssetModelCleanup.modelAssetBytes`).
+        func model(_ path: String) throws {
             try FileManager.default.createDirectory(at:root.appendingPathComponent(path),withIntermediateDirectories:true)
+            try Data(count: 2_000_000).write(to: root.appendingPathComponent(path + "/AssetData"))
+        }
+        for path in ["com_apple_MobileAsset_UAF_Photos_SpatialPhotosRelive/purpose_auto/test.asset", "com_apple_MobileAsset_Unrelated/other.asset"] {
+            try model(path)
         }
         XCTAssertEqual(AssetModelCleanup.inventory(.spatialPhotos,root:root.path),1)
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),0)
         XCTAssertNil(AssetModelCleanup.inventory(.siri,root:root.appendingPathComponent("missing").path))
         for path in ["com_apple_MobileAsset_UAF_Speech_AutomaticSpeechRecognition/purpose_auto/asr.asset",
                      "com_apple_MobileAsset_UAF_Siri_TextToSpeech/purpose_auto/voice.asset"] {
-            try FileManager.default.createDirectory(at:root.appendingPathComponent(path),withIntermediateDirectories:true)
+            try model(path)
         }
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),2)
         XCTAssertEqual(AssetModelCleanup.inventory(.siri,root:root.path),1)
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,withdrew:false,root:root.path),0,"other features' models in shared families do not keep Phone cleaning")
         XCTAssertEqual(AssetModelCleanup.inventory(.siri,withdrew:false,root:root.path),0,"Siri's voices are shared too")
-        try FileManager.default.createDirectory(at:root.appendingPathComponent("com_apple_MobileAsset_UAF_Siri_Understanding/u.asset"),withIntermediateDirectories:true)
+        try model("com_apple_MobileAsset_UAF_Siri_Understanding/u.asset")
         XCTAssertEqual(AssetModelCleanup.inventory(.siri,withdrew:false,root:root.path),1)
     }
     func testCommandRejectsArbitraryScopeAndModeBeforeAnyNativeCall() throws {

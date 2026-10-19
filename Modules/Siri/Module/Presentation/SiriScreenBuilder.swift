@@ -100,15 +100,17 @@ enum SiriScreenBuilder {
         if snapshot.cleaningFeatures { detail = loc("Freeing space") }
         // No meter: what is left to purge is said in the detail line.
         let graphic = TileGraphic.state(on: on, alarming: false, detail: detail, meter: nil, meterIsActionable: false)
-        let switchable = (installed ?? 0) + featureBytes
-        if let freeable = purge.map({ $0 + featureBytes }) ?? (switchable > 0 ? switchable : nil) {
+        // With "Flag models on the Home page" off, models only a switch frees neither flag the tile nor make it the large one.
+        let switchable = snapshot.flagsModels ? (installed ?? 0) + featureBytes : 0
+        if let freeable = purge.map({ $0 + (snapshot.flagsModels ? featureBytes : 0) }) ?? (switchable > 0 ? switchable : nil) {
             return Tile(title: loc("siri & AI"), status: loc("free up to \(ByteFormat.string(freeable))"), needsAttention: switchable > 0, graphic: graphic,
                         reclaimableBytes: freeable, purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0])
         }
         switch snapshot.status.state {
-        case .protected: return Tile(title: loc("siri & AI"), status: elsewhere ? loc("on in another account") : loc("AI is off"), needsAttention: elsewhere, graphic: graphic)
+        case .protected: return Tile(title: loc("siri & AI"), status: elsewhere ? loc("on in another account") : loc("AI is off"),
+                                     needsAttention: elsewhere && snapshot.flagsModels, graphic: graphic)
         case .releasing: return Tile(title: loc("siri & AI"), status: loc("removing the model"), graphic: graphic)
-        case .atRisk: return Tile(title: loc("siri & AI"), status: loc("AI is on"), needsAttention: true, graphic: graphic)
+        case .atRisk: return Tile(title: loc("siri & AI"), status: loc("AI is on"), needsAttention: snapshot.flagsModels, graphic: graphic)
         case .unknown: return Tile(title: loc("siri & AI"), status: loc("state unknown"), graphic: graphic)
         }
     }
@@ -144,10 +146,11 @@ enum SiriScreenBuilder {
         return ByteFormat.string(bytes)
     }
 
-    /// Off with models still on disk, and MacSpace is not deleting them now: macOS keeps them.
-    static func keptBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot, isOn: Bool) -> Badge? {
+    /// Off with models still on disk, and MacSpace is not deleting them now: macOS keeps them. Switched off by MacSpace, it checks
+    /// again every five minutes; switched off elsewhere, the models are not MacSpace's to delete.
+    static func keptBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot, isOn: Bool, managedOff: Bool) -> Badge? {
         guard !isOn, modelsSize(feature, snapshot) != nil else { return nil }
-        return Badge(loc("Kept by macOS"), tone: .caution)
+        return Badge(loc("Kept by macOS"), tone: .caution, help: managedOff ? loc("MacSpace asks macOS again every five minutes.") : nil)
     }
 
     /// The Phone gates, with the native settings folded in.
@@ -183,7 +186,23 @@ enum SiriScreenBuilder {
     /// The page's main button, as Debloat's: free the models when there are some to free, else switch off every switch still on, else
     /// switch them all back on.
     static func primary(_ snapshot: SiriSnapshot) -> Action? {
-        purge(snapshot) ?? disableAll(snapshot) ?? enableAll(snapshot)
+        purge(snapshot) ?? restart(snapshot) ?? disableAll(snapshot) ?? enableAll(snapshot)
+    }
+
+    /// Features switched off whose models only a restart lets macOS delete: held open by services macOS keeps running
+    /// (`SiriSnapshot.featureLocked`), or a Call transcription change macOS reads at startup.
+    static func needsRestart(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Bool {
+        if feature == .phone, phoneStatus(snapshot)?.state == .restartRequired { return true }
+        return snapshot.featureLocked.contains(feature) && snapshot.featureCleanupWaiting.contains(feature) && modelsSize(feature, snapshot) != nil
+    }
+
+    /// Restart to finish, through macOS's own Restart dialog (`SystemRestart`): what it frees, when that is known.
+    static func restart(_ snapshot: SiriSnapshot) -> Action? {
+        let features = ModelFeatureSettings.Feature.allCases.filter { needsRestart($0, snapshot) }
+        guard !features.isEmpty else { return nil }
+        let bytes = features.compactMap { snapshot.featureModelBytes[$0] }.filter { $0 >= purgeThreshold }.reduce(0, +)
+        return Action(id: "restartMac", title: bytes > 0 ? loc("Restart to free \(ByteFormat.string(bytes))") : loc("Restart to finish"),
+                      symbol: "arrow.clockwise", role: .prominent)
     }
 
     /// The switch rows that can be flipped `on` (or off) now.
@@ -241,7 +260,9 @@ enum SiriScreenBuilder {
         for feature in [ModelFeatureSettings.Feature.siri, .spatialPhotos] {
             if let status = snapshot.featureSettings[feature] {
                 var row = featureRow(feature, status: status)
-                if row.badge == nil { row.badge = (status.managedOff ? cleanupBadge(feature, snapshot) : nil) ?? keptBadge(feature, snapshot, isOn: row.isOn) }
+                if row.badge == nil {
+                    row.badge = (status.managedOff ? cleanupBadge(feature, snapshot) : nil) ?? keptBadge(feature, snapshot, isOn: row.isOn, managedOff: status.managedOff)
+                }
                 if snapshot.featureDownloading.contains(feature) { row.badge = Badge(loc("Downloading")) }
                 row.trailing = modelsSize(feature, snapshot)
                 rows.append(row)
@@ -249,7 +270,9 @@ enum SiriScreenBuilder {
         }
         if let status = phoneStatus(snapshot) {
             var row = phoneFeatureRow(status)
-            if row.badge == nil { row.badge = (status.managedOff ? cleanupBadge(.phone, snapshot) : nil) ?? keptBadge(.phone, snapshot, isOn: row.isOn) }
+            if row.badge == nil {
+                row.badge = (status.managedOff ? cleanupBadge(.phone, snapshot) : nil) ?? keptBadge(.phone, snapshot, isOn: row.isOn, managedOff: status.managedOff)
+            }
             if snapshot.featureDownloading.contains(.phone) { row.badge = Badge(loc("Downloading")) }
             row.trailing = modelsSize(.phone, snapshot)
             rows.append(row)
@@ -260,11 +283,14 @@ enum SiriScreenBuilder {
     /// Where a feature MacSpace switched off stands with its models.
     static func cleanupBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Badge? {
         if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), tone: .caution) }
+        // Nothing worth a size is left (`modelsSize`): the switch says no more, whatever macOS keeps of its catalog.
+        guard modelsSize(feature, snapshot) != nil else { return nil }
+        if needsRestart(feature, snapshot) {
+            return Badge(loc("Restart required"), tone: .caution,
+                         help: loc("macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them."))
+        }
         if snapshot.featureCleanupWaiting.contains(feature) {
-            let help = snapshot.featureLocked.contains(feature)
-                ? loc("macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.")
-                : loc("MacSpace asks macOS again every five minutes.")
-            return Badge(loc("Waiting for macOS"), tone: .caution, help: help)
+            return Badge(loc("Waiting for macOS"), tone: .caution, help: loc("MacSpace asks macOS again every five minutes."))
         }
         return nil
     }

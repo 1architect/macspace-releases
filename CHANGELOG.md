@@ -49,6 +49,12 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - A row's **Free** flag no longer pushes the buttons beside it around while it cleans, and no longer narrows and widens with
   every progress message.
 - System Data no longer shows an **Unused system assets** row with no size, whose Free freed nothing.
+- A switched-off feature no longer says **Waiting for macOS** once its models are gone: the small catalog records macOS keeps
+  with no owner no longer count, and no purge is asked for them every five minutes.
+- Siri & Apple Intelligence asks for a restart when only one frees a feature's models (**Restart required**, and **Restart to
+  free** as the page's main button), through macOS's own Restart dialog (`SystemRestart`).
+- **Flag models on the Home page**, a new setting: off, the Siri & Apple Intelligence tile neither shows its mark nor takes the
+  large spot for models a switch would free. Its other settings say plainly what each check does and how often.
 - When macOS's own services keep a switched-off feature's models open, the **Waiting for macOS** pill says so on hover, and that
   they go when those services stop or after a restart.
 - Switching Siri off frees its 2.4 GB of understanding models again: Siri's language hold now uses another of macOS's language

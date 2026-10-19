@@ -31,10 +31,7 @@
 "Can't free it yet" = "Noch nicht freigebbar";
 "Changed outside MacSpace" = "Außerhalb von MacSpace geändert";
 "Changing settings" = "Einstellungen werden geändert";
-"Check disabled features" = "Deaktivierte Funktionen prüfen";
-"Check that Apple Intelligence stays off" = "Prüfen, dass Apple Intelligence aus bleibt";
-"Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working." = "Prüft alle 15 Minuten, solange MacSpace geöffnet ist, und meldet, wenn das Ausschalten nicht mehr wirkt.";
-"Checks every five minutes while MacSpace is open and frees models requested again for features you switched off." = "Prüft alle fünf Minuten, solange MacSpace geöffnet ist, und gibt erneut angeforderte Modelle für deaktivierte Funktionen frei.";
+"Check Apple Intelligence every 15 minutes" = "Apple Intelligence alle 15 Minuten prüfen";
 "Couldn't change Call transcription." = "Die Anruftranskription konnte nicht geändert werden.";
 "Couldn't change feature settings." = "Funktionseinstellungen konnten nicht geändert werden.";
 "Couldn't check Apple Intelligence" = "Apple Intelligence konnte nicht geprüft werden";
@@ -57,7 +54,9 @@
 "Enable all" = "Alle aktivieren";
 "Enable all %lld features again?" = "Alle %lld Funktionen wieder aktivieren?";
 "Feature settings updated." = "Funktionseinstellungen aktualisiert.";
+"Flag models on the Home page" = "Modelle auf der Startseite hervorheben";
 "Free" = "Freigeben";
+"Free switched-off features' models every 5 minutes" = "Modelle ausgeschalteter Funktionen alle 5 Minuten freigeben";
 "Free up to %@" = "Bis zu %@ freigeben";
 "Free up to %@?" = "Bis zu %@ freigeben?";
 "Freeing space" = "Speicher wird freigegeben";
@@ -73,10 +72,11 @@
 "MacSpace needs it to read and verify the switch." = "MacSpace braucht ihn, um den Schalter zu lesen und zu prüfen.";
 "MacSpace needs its helper to change Call transcription." = "MacSpace braucht seinen Helfer, um die Anruftranskription zu ändern.";
 "MacSpace needs its helper to restore Call transcription." = "MacSpace braucht seinen Helfer, um die Anruftranskription wiederherzustellen.";
+"Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "Markiert die Kachel und gibt ihr den großen Platz, solange das Ausschalten von etwas Modelle freigeben würde. Aus bleibt die Kachel ruhig; diese Seite zeigt sie weiterhin.";
 "No supported Siri language with a base language different from %@ is available." = "Es gibt keine unterstützte Siri-Sprache mit einer anderen Grundsprache als %@.";
 "Not available in a virtual machine" = "In einer virtuellen Maschine nicht verfügbar";
 "Not verified on this macOS version" = "Auf dieser macOS-Version nicht geprüft";
-"Notify me if Apple Intelligence turns back on" = "Mitteilen, wenn Apple Intelligence wieder angeht";
+"Notify me when Apple Intelligence turns back on" = "Benachrichtigen, wenn Apple Intelligence wieder aktiv wird";
 "One account with Apple Intelligence on keeps the models on this Mac." = "Ein Account mit aktiviertem Apple Intelligence hält die Modelle auf diesem Mac.";
 "Open" = "Öffnen";
 "Open MacSpace to check." = "Öffne MacSpace, um es zu prüfen.";
@@ -88,9 +88,12 @@
 "Released Apple Intelligence models and unused system assets" = "Freigegebene Apple Intelligence-Modelle und ungenutzte Systemressourcen";
 "Releasing the leftover models" = "Übrige Modelle werden freigegeben";
 "Restart required" = "Neustart erforderlich";
+"Restart to finish" = "Zum Abschließen neu starten";
+"Restart to free %@" = "Neu starten, um %@ freizugeben";
+"Restart your Mac from the Apple menu." = "Starte deinen Mac über das Apple-Menü neu.";
 "Restart your Mac to apply this change." = "Starte deinen Mac neu, um diese Änderung anzuwenden.";
 "Restart. MacSpace then deletes the models." = "Starte neu. Danach löscht MacSpace die Modelle.";
-"Shows a notification if macOS makes Apple Intelligence available again." = "Zeigt eine Mitteilung, wenn macOS Apple Intelligence wieder verfügbar macht.";
+"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "Kommt von der 15-Minuten-Prüfung unten, wenn sie Apple Intelligence wieder verfügbar findet.";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "Siri & Apple Intelligence";
 "Siri's iCloud sync" = "iCloud-Synchronisierung von Siri";
@@ -119,6 +122,8 @@
 "Unused system models" = "Ungenutzte Systemmodelle";
 "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "Dauert meist nur einen Moment. Falls nicht, erledigt MacSpace das nach %lld Minuten.";
 "Waiting for macOS" = "Warten auf macOS";
+"While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves." = "Solange MacSpace geöffnet ist: bemerkt, wenn macOS Apple Intelligence wieder einschaltet, und gibt die Modelle frei, die es hinterlässt.";
+"While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off." = "Solange MacSpace geöffnet ist: gibt die Modelle frei, die macOS für Siri, Räumliche Fotos und Anruftranskription erneut anfordert, nachdem du sie ausgeschaltet hast.";
 "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac." = "Solange sie an ist, erreicht die Änderung der Siri-Sprache auch dein iPhone und iPad. Schalte sie aus, damit die Änderung nur auf diesem Mac gilt.";
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "Bei aktiver iCloud-Synchronisierung von Siri ändert sich Siri auch auf deinem iPhone und iPad.";
 "Writing the Siri language preference failed." = "Die Siri-Spracheinstellung konnte nicht gespeichert werden.";

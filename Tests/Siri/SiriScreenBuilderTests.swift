@@ -186,6 +186,35 @@ final class SiriScreenBuilderTests: XCTestCase {
         }
     }
 
+    func testModelsOnlyARestartFreesAskForOneThroughMacOSsDialog() throws {
+        var snap = snapshot(.protected)
+        snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
+        snap.featureModelBytes = [.siri: 1_400_000_000]
+        snap.featureCleanupWaiting = [.siri]
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS", "not held: MacSpace asks again")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac")
+        snap.featureLocked = [.siri]
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
+        let restart = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
+        XCTAssertEqual(restart.id, "restartMac")
+        XCTAssertEqual(restart.title, "Restart to free \(ByteFormat.string(1_400_000_000))")
+        XCTAssertNil(restart.confirmation, "macOS's own Restart dialog asks")
+    }
+
+    func testQuietTileNeitherFlagsNorGrowsForModelsASwitchWouldFree() {
+        var snap = snapshot(.atRisk)
+        snap.installedModelBytes = 12_000_000_000
+        snap.featureSettings = [.siri: .init(state: .on)]
+        snap.featureModelBytes = [.siri: 2_400_000_000]
+        XCTAssertTrue(SiriScreenBuilder.tile(snap).needsAttention)
+        XCTAssertNotNil(SiriScreenBuilder.tile(snap).reclaimableBytes)
+        snap.flagsModels = false
+        XCTAssertFalse(SiriScreenBuilder.tile(snap).needsAttention, "no mark")
+        XCTAssertNil(SiriScreenBuilder.tile(snap).reclaimableBytes, "not the Home page's large tile")
+        snap.purgeableAssetsBytes = 3_000_000_000
+        XCTAssertEqual(SiriScreenBuilder.tile(snap).reclaimableBytes, 3_000_000_000, "what Free deletes still counts")
+    }
+
     func testMainButtonDisablesEverySwitchStillOnThenEnablesThemAgain() throws {
         var snap = snapshot(.atRisk)
         snap.featureSettings = [.siri: .init(state: .on), .spatialPhotos: .init(state: .off)]
@@ -205,6 +234,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         var snap = snapshot(.protected)
         snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
         snap.cleaningFeatures = true
+        snap.featureModelBytes = [.siri: 1_400_000_000]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
         XCTAssertEqual(SiriScreenBuilder.refreshAfter(snap), 5)
         snap.cleaningFeatures = false
@@ -213,6 +243,8 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.help, "MacSpace asks macOS again every five minutes.")
         snap.featureLocked = [.siri]
         XCTAssertTrue(SiriScreenBuilder.switchList(snap).rows[1].badge?.help?.contains("restart") == true, "says what holds them and what frees them")
+        snap.featureModelBytes = [.siri: 9_000_000]
+        XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge, "nothing worth a size is left: no pill")
     }
 
     func testPhoneSwitchPreservesNativeWarningsInsteadOfReportingEveryMismatchAsUnknown() throws {

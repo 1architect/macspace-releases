@@ -31,10 +31,7 @@
 "Can't free it yet" = "まだ解放できません";
 "Changed outside MacSpace" = "MacSpace以外で変更されました";
 "Changing settings" = "設定を変更中";
-"Check disabled features" = "オフにした機能を確認";
-"Check that Apple Intelligence stays off" = "Apple Intelligenceがオフのままか確認";
-"Checks every 15 minutes while MacSpace is open and tells you if the off-switch stops working." = "MacSpaceの起動中は15分ごとに確認し、オフ設定が効かなくなったら通知します。";
-"Checks every five minutes while MacSpace is open and frees models requested again for features you switched off." = "MacSpaceが開いている間は5分ごとに確認し、オフにした機能が再度要求したモデルを解放します。";
+"Check Apple Intelligence every 15 minutes" = "15分ごとにApple Intelligenceを確認";
 "Couldn't change Call transcription." = "通話の文字起こしを変更できませんでした。";
 "Couldn't change feature settings." = "機能の設定を変更できませんでした。";
 "Couldn't check Apple Intelligence" = "Apple Intelligenceを確認できませんでした";
@@ -57,7 +54,9 @@
 "Enable all" = "すべて有効にする";
 "Enable all %lld features again?" = "%lld個すべての機能を再び有効にしますか？";
 "Feature settings updated." = "機能の設定を更新しました。";
+"Flag models on the Home page" = "ホームでモデルを目立たせる";
 "Free" = "解放";
+"Free switched-off features' models every 5 minutes" = "オフにした機能のモデルを5分ごとに解放";
 "Free up to %@" = "最大%@を解放";
 "Free up to %@?" = "最大%@を解放しますか？";
 "Freeing space" = "空き容量を増やしています";
@@ -73,10 +72,11 @@
 "MacSpace needs it to read and verify the switch." = "スイッチの状態を読み取り検証するために必要です。";
 "MacSpace needs its helper to change Call transcription." = "通話の文字起こしを変更するにはMacSpaceのヘルパーが必要です。";
 "MacSpace needs its helper to restore Call transcription." = "通話の文字起こしを元に戻すにはMacSpaceのヘルパーが必要です。";
+"Marks the tile and lets it take the large spot while switching something off would free models. Off, the tile stays quiet; this page still shows them." = "何かをオフにするとモデルを解放できる間、タイルに印を付けて大きな位置に表示します。オフにするとタイルは目立たず、このページには引き続き表示されます。";
 "No supported Siri language with a base language different from %@ is available." = "%@と基本言語が異なるSiriの対応言語がありません。";
 "Not available in a virtual machine" = "仮想マシンでは利用できません";
 "Not verified on this macOS version" = "このmacOSバージョンでは未検証";
-"Notify me if Apple Intelligence turns back on" = "Apple Intelligenceが再びオンになったら通知";
+"Notify me when Apple Intelligence turns back on" = "Apple Intelligenceが再びオンになったら通知";
 "One account with Apple Intelligence on keeps the models on this Mac." = "1つでもApple IntelligenceがオンのアカウントがあるとモデルはこのMacに残ります。";
 "Open" = "開く";
 "Open MacSpace to check." = "MacSpaceを開いて確認してください。";
@@ -88,9 +88,12 @@
 "Released Apple Intelligence models and unused system assets" = "解放されたApple Intelligenceモデルと未使用のシステムアセット";
 "Releasing the leftover models" = "残っているモデルを解放中";
 "Restart required" = "再起動が必要です";
+"Restart to finish" = "再起動して完了";
+"Restart to free %@" = "再起動して%@を解放";
+"Restart your Mac from the Apple menu." = "アップルメニューからMacを再起動してください。";
 "Restart your Mac to apply this change." = "この変更を適用するにはMacを再起動してください。";
 "Restart. MacSpace then deletes the models." = "再起動してください。その後MacSpaceがモデルを削除します。";
-"Shows a notification if macOS makes Apple Intelligence available again." = "macOSでApple Intelligenceが再び利用可能になると通知します。";
+"Sent by the 15-minute check below, when it finds Apple Intelligence available again." = "下の15分ごとの確認がApple Intelligenceが再び利用可能になったことを見つけたときに送られます。";
 "Siri" = "Siri";
 "Siri & Apple Intelligence" = "SiriとApple Intelligence";
 "Siri's iCloud sync" = "SiriのiCloud同期";
@@ -119,6 +122,8 @@
 "Unused system models" = "未使用のシステムモデル";
 "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "通常はすぐ終わります。終わらない場合は%lld分後にMacSpaceが処理します。";
 "Waiting for macOS" = "macOSを待機中";
+"While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves." = "MacSpaceが開いている間：macOSがApple Intelligenceを再びオンにしたかを確認し、残ったモデルを解放します。";
+"While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off." = "MacSpaceが開いている間：Siri、空間写真、通話の文字起こしをオフにした後でmacOSが再び求めるモデルを解放します。";
 "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac." = "オンのあいだは、Siriの言語の変更がiPhoneとiPadにも届きます。このMacだけに留めるにはオフにしてください。";
 "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad." = "SiriのiCloud同期がオンの場合、iPhoneやiPadのSiriも変更されます。";
 "Writing the Siri language preference failed." = "Siriの言語設定を書き込めませんでした。";
