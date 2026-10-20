@@ -539,8 +539,9 @@ struct RowView: View {
     private var groupRow: some View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
-            RowBadges(badges: row.badges, gap: 10, arrives: appeared)
+            // The (i) first, then the pills (`itemRow`).
             InfoButton(text: row.detail)
+            RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             Spacer(minLength: 8)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
@@ -566,7 +567,10 @@ struct RowView: View {
                     .labelsHidden()
                     .disabled(true)
             }
-            // A count after the title; the row's facts as pills right after it; then its (i) and where its files are, close together.
+            // A count after the title; then always in this order its (i), where its files are, its facts as pills and its button, close
+            // together. The (i) and the folder stay put while pills come and go after them: a pill that came before them (Freeing in
+            // the background, in place of Free) pushed them along and stood at the start of the row instead of where Free had been
+            // (2026-10-20).
             // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
             // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
             // half of what was left while room stood empty after it: its warning pill truncated to "Não…" and came back, and the size
@@ -574,9 +578,9 @@ struct RowView: View {
             HStack(spacing: 10) {
                 TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
                 HStack(spacing: 6) {
-                    RowBadges(badges: row.badges, quiet: flagIsActive, gap: 6, arrives: appeared)
                     InfoButton(text: row.detail, steps: row.steps)
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+                    RowBadges(badges: row.badges, quiet: flagIsActive, gap: 6, arrives: appeared)
                     // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the room
                     // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
                     if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
@@ -813,9 +817,9 @@ struct ToggleRowView: View {
         }) { isOn in
             HStack(spacing: 8) {
                 TitleLine(title: row.title, note: row.subtitle)
-                // Pills before the (i), as in list rows.
-                RowBadges(badges: row.badge.map { [$0] } ?? [], gap: 8, arrives: appeared)
+                // The (i), then the pills, as in list rows.
                 InfoButton(text: row.detail)
+                RowBadges(badges: row.badge.map { [$0] } ?? [], gap: 8, arrives: appeared)
                 Spacer(minLength: 8)
                 // Never squeezed, as in list rows: without its own size it could be given no room beside a long pill and only showed
                 // when the pointer redrew the row (2026-10-19).

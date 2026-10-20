@@ -151,11 +151,12 @@ exception must be agreed with the maintainer and explained in a comment where th
 fixed sequence) needs a comment saying why.
 
 **Facts are pills.** A short fact about a row (its state, why it is checked, what kind of item it is) is a pill (`Row.badge`),
-not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill.
+not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill. After the
+title, always in this order: the (i), the folder, the pills, then the row's button; the app draws them so (`RowView`).
 Every pill says whether it asks something of the user (`Badge.Kind`): `.action` (restart, approve, switch it off elsewhere; its
 help says what) is drawn orange, `.info` (a state, a kind, a warning such as "Cannot be undone") is grey. Orange always means
 there is something to do: the same for banners (`warning` or a button to press), row flags (orange only for a result that asks
-something: a failure or a restart; their work, "Freeing in the background", is grey) and every other element. The page's main
+something: a failure or a restart; while they work and with any other result they keep their resting grey) and every other element. The page's main
 button is the one exception: it is the page's action.
 
 **Restart.** An item only a restart completes carries the app's one pill, `Badge.restartRequired(help:)`, never a pill in the
@@ -178,7 +179,7 @@ with the module's id, so a click opens the module's page. The module keeps the o
 **Buttons in rows are flags.** Every button in a row, in Settings and on every module's page, is the row action flag: text on
 a faint capsule, the look of the (i) and folder pills, darker under the pointer (`RowFlagStyle`; a module row's Free is the same
 flag, with its progress and result). No system buttons and no other pill style in rows. Where it goes: when the row shows a figure or a
-switch on its right (a size, a version), the flag stands right after the title, its pills and its (i), and the figure keeps the right edge;
+switch on its right (a size, a version), the flag stands right after the title, its (i), its folder and its pills, and the figure keeps the right edge;
 when the row has no figure, the flag takes the right edge (`RowFlagPlacement`). Modules set `Row.trailing` and `Row.actions`; the
 app places them.
 

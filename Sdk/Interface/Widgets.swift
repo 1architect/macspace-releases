@@ -65,8 +65,8 @@ extension Badge {
     /// The one pill of space MacSpace is freeing by itself while the row stays (asking macOS again, deleting models as soon as macOS
     /// lets go): "Freeing in the background", grey like every pill that asks nothing, with `help` saying what holds it up when
     /// something does. Every module uses this one, in a row's or a switch's pills, never a pill or a working flag of its own: Siri
-    /// said "Freeing space" in a grey pill before the (i) while System Data and Other System Files said "Freeing in the background"
-    /// in a darker working flag after it (2026-10-20). A row with it offers no button meanwhile (the app hides its flags), and a
+    /// said "Freeing space" in a grey pill while System Data and Other System Files said "Freeing in the background" in a darker
+    /// working flag (2026-10-20). A row with it offers no button meanwhile (the app hides its flags), and a
     /// Free that ends handing its work to it continues in the row rather than saying All done.
     public static func freeingInBackground(help: String? = nil) -> Badge {
         var badge = Badge(String(localized: "Freeing in the background"), .info, help: help)

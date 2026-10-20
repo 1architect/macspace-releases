@@ -38,6 +38,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - Every module now says "Freeing in the background" in the same grey pill while MacSpace frees space by itself: Siri & Apple
   Intelligence said "Freeing space", and System Data and Other System Files showed a darker flag in place of Free.
 - A row's Open button no longer flashes "Working" while it opens System Settings.
+- A row's Free keeps its grey look while it works and with its result; only a result that asks something is orange.
+- A row's (i) and folder always come first after its title, then its pills and its button, so a pill that comes in place of Free
+  appears where Free was.
 
 ## [1.1.3] - 2026-10-19
 

@@ -133,11 +133,13 @@ private struct RowActionFlag: View {
                 }
             }
             .environment(\.textChangeDelay, 0)
+            // Working and with its result, the flag keeps its resting look: only the pointer lights it, and only a result that asks
+            // something is orange. Darker while it worked, it stood out from every grey pill beside it (2026-10-20).
             .foregroundStyle(asksUser ? design.actionDeep : Color.primary)
-            .opacity(asksUser || working ? 1 : PillInk.opacity(lit: hovering))
+            .opacity(asksUser ? 1 : PillInk.opacity(lit: hovering))
             .animation(Theme.hover, value: hovering)
             .background {
-                Capsule().fill(asksUser ? design.action : Color.primary.opacity(hovering || working || result != nil ? 0.1 : 0.05))
+                Capsule().fill(asksUser ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
                     .animation(Theme.value, value: working)
                     .animation(Theme.value, value: asksUser)
                     .animation(Theme.hover, value: hovering)
@@ -194,7 +196,7 @@ struct RowFlagStyle: ButtonStyle {
 }
 
 /// Where a row's button goes (Interface rules, "Buttons"). With a figure on the right of the row (a size, a version) the button
-/// stands right after the row's title, its pills and its (i), as a module row's Free does, and the figure keeps the right edge.
+/// stands right after the row's title, its (i), its folder and its pills, as a module row's Free does, and the figure keeps the right edge.
 /// Without one, the button takes the right edge itself.
 enum RowFlagPlacement: Equatable {
     case afterTitle, trailing
