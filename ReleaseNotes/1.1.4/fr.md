@@ -1,8 +1,8 @@
 ## MacSpace 1.1.4
 
-- **Utilise beaucoup moins de mémoire,** au lancement et dans les longues listes : les pages ne créent que les lignes affichées.
-- **Les lignes des Réglages** arrivent et partent avec leurs interrupteurs et leurs menus.
-- **Nettoyages récents** garde les 100 derniers ; Libéré au total les compte toujours tous.
+* Utilisation de la mémoire réduite, jusqu’à 45 % de moins, et pics de mémoire atténués.
+* Améliorations de l’interface.
+* Corrections de bugs et nettoyage du code.
 
 ## MacSpace 1.1.3
 

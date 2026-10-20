@@ -1,8 +1,8 @@
 ## MacSpace 1.1.4
 
-- **Uses much less memory,** at launch and with long lists: pages make only the rows on screen.
-- **Settings rows** arrive and leave together with their switches and menus.
-- **Recent cleanups** keeps the last 100; Freed in total still counts them all.
+* Lower memory usage, up to 45% less and reduction in memory peaks.
+* UI refinements.
+* Bugfixes and code cleanup.
 
 ## MacSpace 1.1.3
 

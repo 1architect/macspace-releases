@@ -1,8 +1,8 @@
 ## MacSpace 1.1.4
 
-- **Braucht viel weniger Speicher,** beim Start und in langen Listen: Seiten erstellen nur die sichtbaren Zeilen.
-- **Zeilen in den Einstellungen** erscheinen und verschwinden zusammen mit ihren Schaltern und Menüs.
-- **Letzte Bereinigungen** behält die letzten 100; Insgesamt freigegeben zählt weiterhin alle.
+* Geringerer Speicherverbrauch, bis zu 45 % weniger und weniger Spitzen.
+* Verbesserungen an der Oberfläche.
+* Fehlerbehebungen und Code-Bereinigung.
 
 ## MacSpace 1.1.3
 

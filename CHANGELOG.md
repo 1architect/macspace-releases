@@ -28,6 +28,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   about 11 to 14 MB.
 - Recent cleanups keeps the last 100 cleanups one by one; older ones still count in Freed in total.
 - Debloat's background task is now called "Disable automatically if changed".
+- Pill text, on text pills, pill buttons and row flags alike, is now in medium weight, from one shared font.
 
 ### Fixed
 
