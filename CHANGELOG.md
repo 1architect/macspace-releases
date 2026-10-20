@@ -7,6 +7,14 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Changed
+
+- MacSpace uses less memory once its window is closed: a few seconds after the window has gone, and once the modules have
+  finished reading, it gives back to macOS the memory its scans freed. With the window open nothing changes, so pages open as
+  quickly as before.
+- Tile captions that change their words no longer make MacSpace jump by up to 80 MB for a moment: the words roll in and out as
+  before, drawn the ordinary way. The jumps were most of the 200 MB and more seen at launch.
+
 ## [1.1.3] - 2026-10-19
 
 ### Fixed

@@ -100,6 +100,17 @@ final class WordMotionTests: XCTestCase {
         }
     }
 
+    /// Mid-change, the words are drawn on their way (each a layer of its own since the motion left `TextRenderer`), not skipped.
+    func testIntermediateFramesDrawTheRollingWords() throws {
+        let change = WordChange(id: 1, outgoing: snapshot("carregando 60%"), incoming: snapshot("IA desativada"))
+        let final = try pixels(bitmap(scene(change, elapsed: 2)))
+        for time in [0.05, 0.1, 0.15, 0.25] {
+            let frame = try pixels(bitmap(scene(change, elapsed: time)))
+            XCTAssertTrue(stride(from: 3, to: frame.count, by: 4).contains { frame[$0] > 8 }, "no ink at \(time)s")
+            XCTAssertNotEqual(frame, final, "the words have not arrived yet at \(time)s")
+        }
+    }
+
     func testCompletedWordFrameMatchesTheNaturalTargetExactly() throws {
         let contexts: [(Font, Alignment)] = [(Font(CaptionFont.status(size: 22)), .trailing),
             (.system(size: 11, weight: .semibold), .leading), (.system(size: 13, weight: .semibold), .leading),

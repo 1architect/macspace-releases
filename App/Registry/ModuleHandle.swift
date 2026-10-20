@@ -301,6 +301,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         updateBusy()
     }
 
+    /// Reading the Mac or running an action, shown or not (quiet reads and switches included): its memory is still in use, so the host
+    /// waits for it before giving freed memory back (`MemoryRelief`).
+    var isWorking: Bool { performing || !refreshRequests.isEmpty }
+
     private func updateBusy() {
         let busy = performing || !blockingRefreshes.isEmpty
         if isBusy != busy { isBusy = busy }

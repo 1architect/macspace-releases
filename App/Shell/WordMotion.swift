@@ -127,67 +127,49 @@ struct WordMotionSample {
     }
 }
 
-private struct WordMotionAttribute: TextAttribute {
-    let ordinal: Int
-    let changed: Bool
-    var whitespace = false
+/// Each word moves by its share of a line: the first subview is a one-line probe in the phrase's font, measured for that height,
+/// and the others are the phrase's layers, laid over each other and moved by their `WordRollOffset`. Measured in the layout, the
+/// line is known on the first frame, also when a single frame is rendered.
+private struct WordRollLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        subviews.dropFirst().reduce(CGSize.zero) { size, layer in
+            let fit = layer.sizeThatFits(proposal)
+            return CGSize(width: max(size.width, fit.width), height: max(size.height, fit.height))
+        }
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let probe = subviews.first else { return }
+        probe.place(at: bounds.origin, proposal: .unspecified)
+        let line = probe.sizeThatFits(.unspecified).height
+        for layer in subviews.dropFirst() {
+            layer.place(at: CGPoint(x: bounds.minX, y: bounds.minY + layer[WordRollOffset.self] * line), proposal: ProposedViewSize(bounds.size))
+        }
+    }
 }
 
-/// Text remains one shaped paragraph. Attributes identify changed words without creating independently measured HStack cells.
-private struct WordMotionRenderer: TextRenderer {
+private struct WordRollOffset: LayoutValueKey {
+    static let defaultValue: Double = 0
+}
+
+/// A pure frame used by playback and by offscreen tests at arbitrary intermediate times.
+///
+/// Each moving word is the whole phrase with every other word clear, so it keeps its place in one shaped paragraph, and it fades,
+/// blurs and rolls with ordinary modifiers. A custom `TextRenderer` drew the same motion, but every caption it drew was painted by
+/// the app into layers of its own while it moved: 13 captions changing together held over 80 MB of graphics memory (Issue 11).
+/// At rest, the plain text is drawn, exactly as it is without the motion.
+struct WordChangeFrame: View, @preconcurrency Animatable {
+    let change: WordChange
     var elapsed: Double
-    let outgoing: Bool
-    let reduceMotion: Bool
-    let delay: Double
+    var alignment: Alignment = .leading
+    var singleLine = true
+    var reduceMotion = false
+    var delay: Double = 0
 
     var animatableData: Double {
         get { elapsed }
         set { elapsed = newValue }
     }
-
-    var displayPadding: EdgeInsets { EdgeInsets(top: 32, leading: 0, bottom: 32, trailing: 0) }
-
-    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        let right = layout.map { $0.typographicBounds.rect.maxX }.max() ?? 0
-        // Vertical roll/blur may draw outside the line; no glyph or blur can escape its own measured trailing edge.
-        context.clip(to: Path(CGRect(x: -10_000, y: -10_000, width: 10_000 + right, height: 20_000)))
-        for line in layout {
-            // Use the native line drawing at a fully static endpoint, including its ellipsis/hinting. While words move,
-            // individual runs retain their fixed horizontal positions and their own vertical/blur samples.
-            let staticLine = line.allSatisfy { run in
-                let word = run[WordMotionAttribute.self] ?? WordMotionAttribute(ordinal: 0, changed: true)
-                if word.whitespace { return true }
-                if !word.changed { return !outgoing }
-                let sample = WordMotionSample.at(elapsed, ordinal: word.ordinal, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay)
-                return sample.opacity == 1 && sample.y == 0 && sample.blur == 0
-            }
-            if staticLine { context.draw(line); continue }
-            for run in line {
-                let word = run[WordMotionAttribute.self] ?? WordMotionAttribute(ordinal: 0, changed: true)
-                if !word.changed {
-                    if !outgoing { context.draw(run) }
-                    continue
-                }
-                let sample = WordMotionSample.at(elapsed, ordinal: word.ordinal, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay)
-                guard sample.opacity > 0 else { continue }
-                var drawing = context
-                drawing.translateBy(x: 0, y: sample.y * run.typographicBounds.rect.height)
-                drawing.opacity *= sample.opacity
-                if sample.blur > 0 { drawing.addFilter(.blur(radius: sample.blur)) }
-                drawing.draw(run)
-            }
-        }
-    }
-}
-
-/// A pure frame used by playback and by offscreen tests at arbitrary intermediate times.
-struct WordChangeFrame: View {
-    let change: WordChange
-    let elapsed: Double
-    var alignment: Alignment = .leading
-    var singleLine = true
-    var reduceMotion = false
-    var delay: Double = 0
 
     var body: some View {
         let matched = change.unchanged(alignment: alignment.horizontal)
@@ -198,19 +180,52 @@ struct WordChangeFrame: View {
         .accessibilityHidden(true)
     }
 
+    private struct Word: Identifiable {
+        let id: Int
+        let sample: WordMotionSample
+    }
+
     private func layer(_ snapshot: TextMotionSnapshot, unchanged: Set<Int>, outgoing: Bool) -> some View {
-        let paragraph = WordChange.pieces(snapshot.text).reduce(Text(verbatim: "")) { text, piece in
-            let word = Text(verbatim: piece.text).customAttribute(WordMotionAttribute(ordinal: piece.ordinal, changed: !piece.whitespace && !unchanged.contains(piece.ordinal), whitespace: piece.whitespace))
+        let pieces = WordChange.pieces(snapshot.text)
+        let words = pieces.filter { !$0.whitespace && !unchanged.contains($0.ordinal) }.map { piece in
+            Word(id: piece.ordinal, sample: .at(elapsed, ordinal: piece.ordinal, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay))
+        }
+        // Unchanged words are drawn once, by the incoming phrase.
+        let atRest = (!outgoing || unchanged.isEmpty) && words.allSatisfy { $0.sample.opacity == 1 && $0.sample.y == 0 && $0.sample.blur == 0 }
+        return Group {
+            if atRest {
+                Text(verbatim: snapshot.text)
+            } else {
+                WordRollLayout {
+                    Text(verbatim: "Ag").lineLimit(1).fixedSize().hidden()
+                    if !outgoing, !unchanged.isEmpty { Self.paragraph(pieces, showing: unchanged) }
+                    ForEach(words.filter { $0.sample.opacity > 0 }) { word in
+                        Self.paragraph(pieces, showing: [word.id])
+                            .opacity(word.sample.opacity)
+                            .blur(radius: word.sample.blur)
+                            .layoutValue(key: WordRollOffset.self, value: word.sample.y)
+                    }
+                }
+                // Vertical roll/blur may draw outside the line; no glyph or blur can escape its own trailing edge.
+                .padding(EdgeInsets(top: 32, leading: 32, bottom: 32, trailing: 0))
+                .clipped()
+                .padding(EdgeInsets(top: -32, leading: -32, bottom: -32, trailing: 0))
+            }
+        }
+        .font(snapshot.font)
+        .frame(width: snapshot.size?.width, height: snapshot.size?.height, alignment: alignment)
+        .fixedSize(horizontal: singleLine, vertical: true)
+    }
+
+    /// The phrase with only `visible` words showing; the others keep their place, clear.
+    private static func paragraph(_ pieces: [WordChange.Piece], showing visible: Set<Int>) -> Text {
+        pieces.reduce(Text(verbatim: "")) { text, piece in
+            let word = Text(verbatim: piece.text)
             var interpolation = LocalizedStringKey.StringInterpolation(literalCapacity: 0, interpolationCount: 2)
             interpolation.appendInterpolation(text)
-            interpolation.appendInterpolation(word)
+            interpolation.appendInterpolation(!piece.whitespace && visible.contains(piece.ordinal) ? word : word.foregroundStyle(.clear))
             return Text(LocalizedStringKey(stringInterpolation: interpolation))
         }
-        return paragraph
-            .font(snapshot.font)
-            .textRenderer(WordMotionRenderer(elapsed: elapsed, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay))
-            .frame(width: snapshot.size?.width, height: snapshot.size?.height, alignment: alignment)
-            .fixedSize(horizontal: singleLine, vertical: true)
     }
 }
 

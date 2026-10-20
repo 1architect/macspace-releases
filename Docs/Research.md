@@ -2,7 +2,7 @@
 
 What was learned about macOS while building MacSpace, and how sure we are. This is the consolidated version: it replaces the
 dated notes this file used to be, and folds in the findings of the research that came before the app
-([section 7](#7-the-original-research) tells that story). Where a later measurement overturned an earlier reading, the
+([section 8](#8-the-original-research) tells that story). Where a later measurement overturned an earlier reading, the
 later one is here and the earlier one is listed under [Superseded readings](#superseded-readings).
 
 Every claim carries one of three labels:
@@ -32,7 +32,7 @@ gigabytes, as System Settings shows them.
    available to unavailable, and by subscriptions of deleted accounts. Both are handled, and the release frees about 12 GB
    ([section 3](#3-apple-intelligence)).
 6. **Deleting the models is not prevention.** What works for the Apple Intelligence models is the owner's own path: a Siri language
-   that differs from the system language. Everything cleverer failed ([section 7](#7-the-original-research)).
+   that differs from the system language. Everything cleverer failed ([section 8](#8-the-original-research)).
    The same holds for the Siri, speech, language-data and Phone models: they can be released now by withdrawing each owner's
    request, and macOS can recreate the requests later, so cleaning is repeatable, not permanent
    ([Asset owners](#asset-owners-and-why-clean-now-is-not-prevent-forever)).
@@ -43,7 +43,10 @@ gigabytes, as System Settings shows them.
 9. **Some controls are undone by macOS itself** (the advertising identifier is reconciled back about daily), which is why Debloat
    watches and re-applies.
 10. **Not yet verified before release**: a clean Mac with a notarized build, a Sparkle update through the helper, and several
-    Apple Intelligence and cloud-download paths ([section 6](#6-open-questions)).
+    Apple Intelligence and cloud-download paths ([section 7](#7-open-questions)).
+11. **MacSpace's own memory**: about 90 MB with the window open and idle. The launch peaks of 200 MB and more were caption
+    animations drawn through a custom text renderer, which held up to 80 MB of graphics memory for a moment; the captions now
+    move with ordinary views ([section 6](#6-macspaces-own-memory)).
 
 ---
 
@@ -783,7 +786,7 @@ mobileasset's records.
 
 ### Why the switch is the Siri language
 
-The reasons are the failed alternatives, all **measured** and told in [section 7](#7-the-original-research): deleting the
+The reasons are the failed alternatives, all **measured** and told in [section 8](#8-the-original-research): deleting the
 files, suppressing the requester rows, patching the AutoSet configuration, boot ordering, the constant opt-in getter, Screen Time
 restrictions, and a private API closed to third parties. One supported user action did hold across a cold boot, two hours online
 and an OS update: a Siri language different from the system language.
@@ -810,7 +813,7 @@ had to learn (all **measured** on a Mac and a VM):
      Services before registering the helper.
    - A quarantined (downloaded, not notarized) app runs from an App Translocation copy and cannot register the helper.
      `xattr -dr com.apple.quarantine` is the workaround; a notarized release avoids it (**inferred**; see
-     [Open questions](#6-open-questions)).
+     [Open questions](#7-open-questions)).
 2. **Requires approval (2)** is normal after registering. The register call reports an error while it waits; that is not a failure.
    The user allows MacSpace in System Settings → General → Login Items & Extensions.
 3. **Replacing the app leaves the helper stale.** The old process keeps running and does not know new operations. MacSpace used to
@@ -928,7 +931,36 @@ replaces one of the policies.
 
 ---
 
-## 6. Open questions
+## 6. MacSpace's own memory
+
+Issue 11 asked why MacSpace showed over 200 MB in Activity Monitor. Measured on the development Mac (macOS 27.2) on 2026-10-19 and
+2026-10-20 with `footprint`, `heap`, `malloc_history` and `sample`, on notarized builds:
+
+- **Which number.** Activity Monitor's Memory column is the footprint; its Real Memory column also counts the shared system
+  frameworks MacSpace maps, and overstates what MacSpace itself holds (351 MB real against 87 MB footprint, **measured**).
+- **At rest** the window open and idle holds about 90 MB: 38 to 58 MB of live heap, mostly SwiftUI's view graph and the Swift and
+  Objective-C runtimes; about 25 MB the allocator keeps after the scans freed it; about 20 MB of code, Core Animation and the rest.
+  The modules' readings are under 1 MB of it (**measured**).
+- **The module scans** peak at 6 to 35 MB each, and about 38 MB all four at once with no window (**measured**, the System Data
+  scan being the largest). They were not the launch peak.
+- **The launch peaks** (273 MB once, 170 to 210 MB usually) were graphics memory: 45 to 80 MB for about two seconds whenever tile
+  captions changed, at launch and after each module reading, released once the window was still (**measured**). None of the window's
+  design switches changed it (tilt, lift, window shadow, hover shade, clipped corners, border: **measured**, one launch each), and a
+  plain SwiftUI window of the same size and style with an animated, blurred label held none (**measured**).
+- **The cause** was the caption word animation drawn through a custom SwiftUI `TextRenderer`: a text it draws is painted by the app
+  into layers backed by graphics memory while it changes. Thirteen captions changing together rose by 86 MB with it, 66 MB with the
+  renderer kept but frozen, and 2 MB as a plain crossfade (**measured**); the blur and the renderer's clip made little difference.
+  The words now move as layers of ordinary text views (each the whole phrase with the other words clear), and the same thirteen
+  captions rise by 10 MB with no graphics memory held (**measured**).
+- **Given back after the window closes.** The memory the allocator keeps is returned to macOS once, a while after the last window
+  has closed and the modules have finished reading. Returning it after every scan made a module page lag as it opened, because the
+  walk holds the allocator's locks (**measured** in an earlier attempt, reverted).
+- **Not traced:** the number transition's heap grows by about 6 MB per round of changes in the same probe (**measured**), likely
+  glyph images that macOS trims later (**inferred**); and about 10 MB of color-conversion caches seen once after opening every page.
+
+---
+
+## 7. Open questions
 
 - Does a notarized, stapled build register the helper without any manual step on a **clean** Mac? A notarized build's signature,
   stapled ticket and Gatekeeper acceptance, and the helper installed and answering from it, were verified on the development Mac
@@ -956,7 +988,7 @@ replaces one of the policies.
   for good?
 - Do the five Phone feature overrides survive an OS update, and what do the Phone and FaceTime screens show with them off?
 
-## 7. The original research
+## 8. The original research
 
 MacSpace started on 20 September 2026 as a research project, not an app, and stayed one for ten days. This section is a short
 account of what that research set out to do, what it found, what failed, and which parts became the app. The research itself

@@ -1,7 +1,7 @@
 # Handoff
 
 Everything someone needs to pick this project up: what exists, how to build and test it, how it is put together, what is verified,
-and what is still open. Findings about macOS itself are in [Research.md](Research.md); the research that came before the app is summarized in its [section 7](Research.md#7-the-original-research).
+and what is still open. Findings about macOS itself are in [Research.md](Research.md); the research that came before the app is summarized in its [section 8](Research.md#8-the-original-research).
 
 ## What MacSpace is
 
