@@ -7,6 +7,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-20
+
 ### Changed
 
 - MacSpace uses less memory than in 1.1.3. By our estimate from tests on one Mac (macOS 27.2): its peak at launch is about 45%
@@ -368,7 +370,8 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/1architect/macspace-releases/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/1architect/macspace-releases/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/1architect/macspace-releases/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/1architect/macspace-releases/compare/v1.1.0...v1.1.1
