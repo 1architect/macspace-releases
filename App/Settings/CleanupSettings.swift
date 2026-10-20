@@ -57,17 +57,11 @@ struct SettingsLinkRow: View {
 /// Every cleanup, newest first: the module, when, how it started as a pill, and the space freed.
 struct CleanupHistoryPage: View {
     @State private var entries = CleanupHistory.shared.entries
-    @State private var lifetime = CleanupHistory.shared.lifetimeBytes
     @Environment(\.design) private var design
 
     var body: some View {
+        // Only the cleanups: Settings' Cleanup section, which opens this page, already says what has been freed in total.
         PageForm {
-            // The page's title names the list; the total is a figure of its own, not part of a title (Interface rules).
-            if lifetime > 0 {
-                PageSection {
-                    LabeledContent("Freed in total") { ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit() }
-                }
-            }
             PageSection {
                 if entries.isEmpty {
                     Text("Nothing cleaned yet.").foregroundStyle(.secondary).rowCascade()
@@ -89,10 +83,7 @@ struct CleanupHistoryPage: View {
         // Settings is drawn on the slate tile's color.
         .environment(\.pageGround, design.palette(.slate).base)
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
-            withAnimation(Theme.layout) {
-                entries = CleanupHistory.shared.entries
-                lifetime = CleanupHistory.shared.lifetimeBytes
-            }
+            withAnimation(Theme.layout) { entries = CleanupHistory.shared.entries }
         }
     }
 

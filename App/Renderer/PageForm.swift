@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Settings and its pages, drawn by the page itself as a module's page is (`WidgetForm`): sections of rows on their own shade
-/// (`PageRowCell`), in lazy stacks, so only the rows on screen are made.
+/// Settings and its pages, drawn by the page itself as a module's page is (`WidgetForm`): sections of rows on one shade per group
+/// (`PageRowCell`, `PageGroupShade`), in lazy stacks, so only the rows on screen are made.
 ///
 /// A system grouped `Form` built and kept every row of a page (Recent cleanups, 263 cleanups, took 168 MB), and it draws the AppKit
 /// parts of a row itself (the switch, the menu's bezel, the row's shade and separator): when a row came or went they faded on the
@@ -73,12 +73,13 @@ struct PageSection<Content: View>: View {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         row
-                            .modifier(PageRowCell(index: index, count: rows.count, fitsControls: true))
+                            .modifier(PageRowCell(index: index, fitsControls: true))
                             // Placed once for the whole cell before the cascade, as module rows are.
                             .geometryGroup()
                             .transition(row.containerValues.rowCascades ? PageCascade.transition(index: 0, count: 1) : .opacity)
                     }
                 }
+                .modifier(PageGroupShade())
             }
         }
     }

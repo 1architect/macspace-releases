@@ -69,9 +69,6 @@ public struct MainView: View {
     @State private var windowShown = false
     /// The window is closing: the tiles leave, then the glass, then the window goes.
     @State private var windowClosing = false
-    /// The glass has finished growing in: its shadow, a window of its own already at the glass's full size, shows only then. Shown as
-    /// the glass began to grow, it faded in around the full-size glass while the glass was still smaller inside it.
-    @State private var shadowShown = false
 
     /// `progress` is 0 on the dashboard and 1 with a page fully open; `reveal` brings in the page's content after the card has grown.
     /// The layer exists while a page is open or moving.
@@ -129,13 +126,13 @@ public struct MainView: View {
         // copied into the window's own shadow.
         .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
         .overlay { WindowBorder(cornerRadius: Theme.windowRadius, light: designSettings.design.isLight) }
-        .scaleEffect(windowShown || reduceMotion ? 1 : 0.94)
+        .scaleEffect(windowShown || reduceMotion ? 1 : Theme.windowOpeningScale)
         .opacity(windowShown ? 1 : 0)
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        // The shadow comes in once the glass has grown in, and leaves before the glass shrinks away when the window closes.
-        .background(GlassWindowConfigurator(shadow: shadowShown && !windowClosing, radius: designSettings.windowRadius))
+        // The shadow grows in with the glass (`ShadowWindow.growIn`), and leaves before the glass shrinks away when the window closes.
+        .background(GlassWindowConfigurator(shadow: windowShown && !windowClosing, radius: designSettings.windowRadius))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
@@ -144,9 +141,9 @@ public struct MainView: View {
             // A moment after the window appears, so the glass animates in instead of landing in the first frame.
             windowClosing = false
             try? await Task.sleep(for: .milliseconds(30))
-            withAnimation(Theme.windowIn) { windowShown = true } completion: { if windowShown && !windowClosing { shadowShown = true } }
+            withAnimation(Theme.windowIn) { windowShown = true }
         }
-        .onDisappear { windowShown = false; windowClosing = false; shadowShown = false }
+        .onDisappear { windowShown = false; windowClosing = false }
         .onChange(of: remote.command?.id) { _, _ in handleRemote() }
         .onAppear { AppRouter.shared.openWindow = { [openWindow] id in openWindow(id: id) } }
         // A page asked for from the menu bar; a window that has just opened waits for its tiles first.

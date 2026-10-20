@@ -10,7 +10,7 @@ import SwiftUI
 /// comes the rim macOS draws around every window, a thicker edge than the glass's own (tried in 1.1.3's first build). It is drawn
 /// instead by a separate click-through window behind this one (`ShadowWindow`), which only redraws when the window is resized.
 struct GlassWindowConfigurator: NSViewRepresentable {
-    /// Whether the shadow shows: off while the window opens and closes, and with the temporary Window Shadow switch off.
+    /// Whether the shadow shows: it grows in with the glass when the window opens, and is off while the window closes.
     var shadow = true
     /// The glass's corner radius: the shadow is drawn again around a new one.
     var radius: CGFloat = Theme.windowRadius
@@ -29,7 +29,7 @@ struct GlassWindowConfigurator: NSViewRepresentable {
 
         /// Off until the window says otherwise: set up before SwiftUI hands over the value, the shadow showed at once, before the glass.
         var wantsShadow = false {
-            didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
+            didSet { if wantsShadow != oldValue { showShadow(animated: true, growing: wantsShadow) } }
         }
         var radius: CGFloat = Theme.windowRadius {
             didSet { if radius != oldValue, let window { shadowWindow?.follow(window) } }
@@ -99,11 +99,17 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             })
         }
 
-        private func showShadow(animated: Bool) {
+        private func showShadow(animated: Bool, growing: Bool = false) {
             guard let shadowWindow else { return }
             // A filled window reaches the usable screen edges; its separate shadow must disappear there too.
             let alpha: CGFloat = wantsShadow && window.map({ !WindowControls.isZoomed($0) }) == true ? 1 : 0
-            if animated {
+            if growing && alpha == 1 {
+                // The glass is growing in: the shadow, already at the glass's full size, grows in with it on the same spring
+                // instead of fading in around it. Waiting for the glass to finish left the window without a shadow while it opened.
+                // The layer's growth first: shown before it, the window could draw one frame of the full shadow.
+                shadowWindow.growIn(reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+                shadowWindow.alphaValue = 1
+            } else if animated {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = wantsShadow ? 0.3 : 0.15
                     shadowWindow.animator().alphaValue = alpha
@@ -223,6 +229,8 @@ final class ShadowWindow: NSWindow {
         let fadeStart = max(0, (bounds.height - Self.fade(room: room)) / max(bounds.height, 1))
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        // Scaled about the glass's center, as SwiftUI scales the glass (`growIn`).
+        container.anchorPoint = CGPoint(x: inner.midX / max(bounds.width, 1), y: inner.midY / max(bounds.height, 1))
         container.frame = bounds
         container.contentsScale = backingScaleFactor
         caster.frame = bounds
@@ -233,6 +241,24 @@ final class ShadowWindow: NSWindow {
         fader.frame = bounds
         fader.locations = [0, NSNumber(value: Double(fadeStart)), 1]
         CATransaction.commit()
+    }
+
+    /// Grows in with the glass as it opens: from the glass's opening size and clear, on the glass's own spring (`Theme.windowIn`),
+    /// around its center. The shadow and the hole under the glass scale together, as one layer the render server animates: nothing
+    /// is drawn again. With reduced motion the glass only fades in, and so does the shadow.
+    func growIn(reduceMotion: Bool) {
+        let spring = { (keyPath: String, from: Any) -> CASpringAnimation in
+            let animation = CASpringAnimation(perceptualDuration: Theme.windowInSpring.duration, bounce: Theme.windowInSpring.bounce)
+            animation.keyPath = keyPath
+            animation.fromValue = from
+            animation.toValue = 1
+            animation.duration = animation.settlingDuration
+            return animation
+        }
+        container.removeAnimation(forKey: "growIn.scale")
+        container.removeAnimation(forKey: "growIn.opacity")
+        if !reduceMotion { container.add(spring("transform.scale", Theme.windowOpeningScale), forKey: "growIn.scale") }
+        container.add(spring("opacity", 0), forKey: "growIn.opacity")
     }
 
     /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.

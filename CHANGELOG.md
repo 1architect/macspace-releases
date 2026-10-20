@@ -33,7 +33,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 - In Settings, a row's switch and menu now arrive and leave with the rest of their row when the row cascades in or out, instead of
   fading in place on a timing of their own.
-- The window's shadow appears once the window has grown in, instead of showing at its full size while the window is still opening.
+- The window's shadow grows in with the window as it opens, instead of showing at its full size around the smaller window.
+- A list's rows no longer darken where they overlap while one slides in or out: the list's shade grows and shrinks as one shape.
 
 ## [1.1.3] - 2026-10-19
 

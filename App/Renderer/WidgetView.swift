@@ -3,8 +3,8 @@ import MacSpaceSdk
 import MacSpacePlatform
 import SwiftUI
 
-/// The module's grouped rows. Each row draws its own shade and separator, so both leave with
-/// its text during a cascade. A native Form draws those backgrounds outside the row's animation.
+/// The module's grouped rows. Each row draws its own separator, so it leaves with its text during a cascade; the group's shade is
+/// one shape that grows and shrinks with the list (`PageGroupShade`). A native Form draws those outside the row's animation.
 struct WidgetForm<Top: View>: View {
     let widgets: [ScreenWidget]
     let handler: ActionHandler
@@ -53,6 +53,14 @@ struct WidgetForm<Top: View>: View {
         func transition(_ id: String, reduceMotion: Bool) -> AnyTransition {
             PageCascade.transition(index: offset + (index[id] ?? 0), count: count, reduceMotion: reduceMotion)
         }
+
+        /// A group's shade during the details' cascade: it comes with the group's first row and grows down to its last as they
+        /// arrive, and closes back up as they leave from the bottom.
+        func shade(first: String, last: String) -> PageGroupShade {
+            let delays = [first, last].map { PageCascade.delay(index: offset + (index[$0] ?? 0), count: count, visible: visible) }
+            let start = delays.min() ?? 0
+            return PageGroupShade(open: visible, delay: start, span: (delays.max() ?? 0) - start + PageCascade.duration)
+        }
     }
 
     private func expansion(_ section: SectionWidget) -> Binding<Bool> {
@@ -88,12 +96,19 @@ struct WidgetForm<Top: View>: View {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                                 row.view
-                                    .modifier(PageRowCell(index: index, count: rows.count))
+                                    .modifier(PageRowCell(index: index))
                                     // Resolve parent placement once for the whole cell, before the cascade. Text's own content
                                     // transactions must not animate/cancel its position separately from the shade and controls.
                                     .geometryGroup()
                                     .modifier(positions.item(row.id))
                                     .transition(positions.transition(row.id, reduceMotion: reduceMotion))
+                            }
+                        }
+                        .background {
+                            if let first = rows.first, let last = rows.last {
+                                Color.clear
+                                    .modifier(positions.shade(first: first.id, last: last.id))
+                                    .modifier(positions.item(first.id))
                             }
                         }
                     }
@@ -184,11 +199,10 @@ struct WidgetForm<Top: View>: View {
     static var sectionPrefix: String { "group-section:" }
 }
 
-/// A row of a grouped list drawn by the page itself (`WidgetForm`, `PageForm`): its padding, its shade, rounded at the group's
-/// ends, and the separator above it, so all of them leave with the row's text during a cascade.
+/// A row of a grouped list drawn by the page itself (`WidgetForm`, `PageForm`): its padding and the separator above it, which
+/// leaves with the row's text during a cascade. The shade is the group's (`PageGroupShade`).
 struct PageRowCell: ViewModifier {
     let index: Int
-    let count: Int
     /// Settings' rows, which hold menus: 38 points tall, as a grouped form's rows, whether they hold text, a switch or a 24-point
     /// menu (**measured**). A module row keeps 10 points above and below what it holds.
     var fitsControls = false
@@ -198,18 +212,51 @@ struct PageRowCell: ViewModifier {
             .frame(maxWidth: .infinity, minHeight: fitsControls ? 26 : 18, alignment: .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, fitsControls ? 6 : 10)
-            .background {
-                UnevenRoundedRectangle(topLeadingRadius: index == 0 ? 10 : 0,
-                                       bottomLeadingRadius: index == count - 1 ? 10 : 0,
-                                       bottomTrailingRadius: index == count - 1 ? 10 : 0,
-                                       topTrailingRadius: index == 0 ? 10 : 0)
-                    .fill(.primary.opacity(0.045))
-            }
             .overlay(alignment: .top) {
                 if index > 0 {
                     Rectangle().fill(.primary.opacity(0.07)).frame(height: 0.5).padding(.horizontal, 10)
                 }
             }
+    }
+}
+
+/// The shade of a group of rows: one rounded shape behind them all, the size of the group, so a row coming or going makes the group
+/// grow or shrink with the list's layout. Each row had a shade of its own, and one sliding in or out lay over its neighbor's: the
+/// two shades added up to a darker band (2026-10-20). One shape is also one view to draw instead of one per row.
+struct PageGroupShade: ViewModifier {
+    /// Drawn at its full height; while it opens or closes (`WidgetForm`'s details cascade), it grows down or shrinks up over `span`
+    /// seconds after `delay`, with the rows.
+    var open = true
+    var delay: Double = 0
+    var span: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.background {
+            ShadeHeightLayout(fraction: open ? 1 : 0) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.primary.opacity(0.045))
+            }
+            .animation(reduceMotion || span <= 0 ? nil : .linear(duration: span).delay(delay), value: open)
+        }
+    }
+}
+
+/// The shade at `fraction` of the group's height from its top, never shorter than its two corners.
+private struct ShadeHeightLayout: Layout {
+    var fraction: Double
+
+    var animatableData: Double {
+        get { fraction }
+        set { fraction = newValue }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let height = max(min(bounds.height, 20), bounds.height * min(max(fraction, 0), 1))
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(width: bounds.width, height: height))
     }
 }
 
