@@ -36,7 +36,7 @@ Folders start with a capital letter. Everything here is public; signing material
 | `Scripts/` | `Assemble.sh` builds the `.app`; `Localize.swift` writes the translations; `TextCatalog.swift` and `SelfTest.sh` support them and the checks. |
 | `Packaging/` | The helper's launchd plist template. |
 | `Tests/` | One test target per area. |
-| `Docs/` | This folder; `Screenshots/<language>/` holds the README images. |
+| `Docs/` | This folder; `Screenshots/<language>/` holds the README images. `Translations/<language>/` holds the README, PRIVACY, SECURITY and LICENSE translations. |
 | `ReleaseNotes/` | `<version>/<language>.md`: the notes on each GitHub release and in the app's update window. |
 
 `Sdk` and `Platform` are separate packages on purpose: SwiftPM links a target's dependencies into every dynamic library that uses it,

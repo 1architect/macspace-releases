@@ -1,4 +1,4 @@
-**English** · [Português](PRIVACY.pt-BR.md) · [Español](PRIVACY.es.md) · [Français](PRIVACY.fr.md) · [Deutsch](PRIVACY.de.md) · [简体中文](PRIVACY.zh-Hans.md) · [日本語](PRIVACY.ja.md) · [한국어](PRIVACY.ko.md)
+**English** · [Português](Docs/Translations/pt-BR/PRIVACY.md) · [Español](Docs/Translations/es/PRIVACY.md) · [Français](Docs/Translations/fr/PRIVACY.md) · [Deutsch](Docs/Translations/de/PRIVACY.md) · [简体中文](Docs/Translations/zh-Hans/PRIVACY.md) · [日本語](Docs/Translations/ja/PRIVACY.md) · [한국어](Docs/Translations/ko/PRIVACY.md)
 
 # Privacy Policy — MacSpace
 

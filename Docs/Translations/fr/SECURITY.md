@@ -1,0 +1,243 @@
+[English](../../../SECURITY.md) · [Português](../pt-BR/SECURITY.md) · [Español](../es/SECURITY.md) · **Français** · [Deutsch](../de/SECURITY.md) · [简体中文](../zh-Hans/SECURITY.md) · [日本語](../ja/SECURITY.md) · [한국어](../ko/SECURITY.md)
+
+# Politique de sécurité
+
+MacSpace est un utilitaire gratuit et open source (MIT) pour macOS. Il s’exécute avec votre compte
+utilisateur habituel. Pour les quelques tâches qui demandent un administrateur, il utilise un
+assistant privilégié que vous approuvez une fois. Il ne collecte aucune donnée sur vous. Ce document
+explique précisément ce que MacSpace touche sur votre Mac et comment signaler un problème.
+
+## Signaler une vulnérabilité
+
+Utilisez le signalement privé de vulnérabilités de GitHub :
+[signaler une vulnérabilité](https://github.com/1architect/macspace-releases/security/advisories/new).
+Ou écrivez à **dev@giomantovani.com.br** avec les détails et les étapes pour reproduire le
+problème. Merci de ne pas ouvrir de ticket public pour un signalement de sécurité. Vous recevez un
+accusé de réception sous quelques jours.
+
+Ce qui compte comme vulnérabilité : tout ce qui permet à un autre programme de faire exécuter à l’assistant ce que vous
+n’avez pas demandé, permet à MacSpace de supprimer ou de modifier ce qu’il ne devrait pas, ou
+permet d’installer une mise à jour sans la signature de la version.
+
+## Versions prises en charge
+
+Les correctifs de sécurité ne sont publiés que dans la dernière version. Passez toujours à la
+version la plus récente, depuis
+[Releases](https://github.com/1architect/macspace-releases/releases/latest), avec **Rechercher des
+mises à jour…**, ou avec `brew upgrade --cask macspace` (ajoutez `--greedy` si Homebrew l’ignore,
+car MacSpace se met à jour lui-même).
+
+## Ce que fait MacSpace sur votre Mac
+
+### Réseau
+
+MacSpace établit des connexions réseau dans un seul but : les mises à jour. Quand vous choisissez
+**Rechercher des mises à jour…** (ou **Vérifier maintenant** dans Réglages) et, si vous avez activé
+**Rechercher les mises à jour automatiquement**, environ une fois par jour tant qu’il est ouvert,
+il lit le flux de mises à jour hébergé avec les versions sur GitHub (`appcast.xml`). Si vous
+acceptez une mise à jour, il télécharge la nouvelle version depuis GitHub Releases. Rien n’est
+envoyé à votre sujet, et le profil système facultatif de Sparkle n’est pas activé.
+
+Il n’y a ni analyse d’usage, ni télémétrie, ni rapport de plantage. Les détails se trouvent dans la
+[Politique de confidentialité](PRIVACY.md).
+
+### Où sont stockées vos données
+
+Tout reste sur votre Mac. Les fichiers de MacSpace se trouvent dans
+`~/Library/Application Support/MacSpace/`, `~/Library/Logs/MacSpace/`, le fichier de préférences
+`~/Library/Preferences/com.macspace.app.plist` et, pour ce que l’assistant écrit,
+`/Library/Application Support/MacSpace/`. La [Politique de confidentialité](PRIVACY.md) liste
+chaque fichier. Rien n’est envoyé nulle part.
+
+### Ce que MacSpace supprime
+
+| Quoi | Où | Effectué par |
+|---|---|---|
+| Caches des apps fermées | Le dossier de cache système de chaque utilisateur (`/var/folders/…/C`), sauf ceux d’Apple. Les dossiers `Cache`, `Code Cache`, `GPUCache`, `DawnCache`, `DawnGraphiteCache`, `DawnWebGPUCache`, `GrShaderCache`, `ShaderCache` et `CachedData` dans un profil Chromium ou Electron de `~/Library/Application Support`. | L’app, avec vos droits |
+| Rapports de diagnostic et de plantage de plus de 7 jours | `/Library/Logs/DiagnosticReports` et `~/Library/Logs/DiagnosticReports`. Un fichier que vous n’avez pas le droit de supprimer est ignoré. | L’app, avec vos droits |
+| Ressources système inutilisées, modèles Apple Intelligence libérés, fichiers que les apps ont marqués comme purgeables | Le service de purge propre à macOS (CacheDelete). MacSpace le sollicite dans un processus enfant de courte durée, si bien qu’une défaillance à ce niveau ne peut pas faire tomber l’app. | macOS |
+| Copies locales de fichiers du cloud | Un dossier cloud à la fois (`~/Library/CloudStorage/…` ou iCloud Drive). Seulement les fichiers déjà envoyés et sans conflit. Les fichiers restent dans le cloud. | L’app, avec vos droits |
+| Historique des versions des documents | `/System/Volumes/Data/.DocumentRevisions-V100` | L’assistant |
+| Fichiers restants de mise à jour de macOS | `/System/Volumes/Data/macOS Install Data`, seulement s’il est plus ancien que le système installé. Le dossier `Locked Files` reste en place. | L’assistant |
+| Téléchargements inachevés de fonds d’écran et d’économiseurs d’écran | Fichiers `CFNetworkDownload_*.tmp` directement dans `/private/var/folders/*/*/T/com.apple.idleassetsd`, inchangés depuis 3 jours. Fichiers ordinaires seulement : les liens et les sous-dossiers sont refusés. | L’assistant |
+| Copies d’une app que macOS a faites en la vérifiant | `/var/folders/…/X/<app>.code_sign_clone`, seulement quand elle occupe de l’espace à elle (celui d’une version précédente), app fermée et rien ne s’exécutant depuis elle. | L’app, avec vos droits |
+| Le journal système | `/private/var/db/diagnostics` et `/private/var/db/uuidtext`, avec `log erase --all` et `log erase --uuidtext` d’Apple. | L’assistant |
+| Les symboles des rapports de plantage | Tout ce qui est dans `/System/Library/Caches/com.apple.coresymbolicationd`, le dossier reste ; puis `coresymbolicationd` est arrêté pour que l’espace revienne. macOS reconstruit le cache. | L’assistant |
+| La Corbeille | Tout ce qui est dans `~/.Trash`. Un élément verrouillé ou appartenant à un autre compte reste. | L’app, avec vos droits |
+| Instantanés locaux de Time Machine | `tmutil deletelocalsnapshots <date>`, une date à la fois : tous sauf le plus récent et le plus récent issu d’une sauvegarde. Jamais pendant une sauvegarde. | L’app, avec vos droits |
+| Sauvegardes sur un disque de sauvegarde Time Machine | `tmutil delete`, celles que vous choisissez, jamais la plus récente, sur un disque connecté utilisé par Time Machine. Jamais pendant une sauvegarde. | L’assistant |
+
+Rien ne va dans la Corbeille. Les caches, les ressources système et les fichiers purgeables sont
+recréés ou retéléchargés au besoin, et les copies cloud sont retéléchargées quand vous ouvrez le
+fichier. Les rapports, l’historique des versions, les restes de mises à jour, le journal système, les éléments
+de la Corbeille, les instantanés et les sauvegardes ne reviennent pas.
+Chacune de ces actions demande d’abord confirmation, sauf le bouton **Libérer** des caches d’une
+seule app.
+
+### Ce que MacSpace modifie (Debloat)
+
+Chaque modification est d’abord inscrite dans un journal, de sorte qu’elle peut être annulée avec
+**Tout activer** ou en réactivant la fonction.
+
+| Interrupteur | Ce qui change | Effectué par |
+|---|---|---|
+| Publicités personnalisées | `com.apple.AdLib`, clé `allowApplePersonalizedAdvertising` | L’app, avec vos droits |
+| Améliorer Siri et Dictée | `com.apple.assistant.support`, clé `Siri Data Sharing Opt-In Status` | L’app, avec vos droits |
+| Fenêtre de rapport de plantage | Une surcharge launchd pour `com.apple.DiagnosticsReporter` et `com.apple.ReportGPURestart` | L’app, avec vos droits |
+| Partager l’analyse avec Apple (versions finales de macOS) | `/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist`, clés `AutoSubmit` et `ThirdPartyDataSubmit` | L’assistant |
+| Siri AI, Intelligence visuelle | Surcharges d’indicateurs de fonctionnalité dans `/Library/Preferences/FeatureFlags/Domain/` | L’assistant |
+| Suivi des blocages (tailspin) | `tailspin disable`, et `tailspin enable` pour l’annuler | L’assistant |
+| Les règles (cinq ; six sur une version bêta de macOS) | Un profil de configuration, `com.macspace.policies` (voir ci-dessous) | Vous l’approuvez dans Réglages Système |
+
+Ces modifications restent en place si vous supprimez l’app sans les avoir réactivées.
+
+### Apple Intelligence
+
+L’interrupteur **Apple Intelligence** modifie la clé `Session Language` de
+`com.apple.assistant.backedup`, qui correspond à la langue de Siri. Une fois désactivé, Siri reçoit
+une langue différente de celle du système, et votre voix de Siri (`Output Voice`) reste inchangée.
+MacSpace enregistre les deux dans
+`~/Library/Application Support/MacSpace/ai-guard-saved-siri-settings.json` et les rétablit quand
+vous réactivez Apple Intelligence, ou si la modification ne prend pas effet. Si macOS garde les
+modèles après la désactivation, MacSpace peut régler la langue sur celle du système, puis revenir à
+la précédente, ce qui prend environ une minute, pour que macOS les libère. Avec la synchronisation
+iCloud de Siri activée, ces modifications atteignent aussi vos autres appareils utilisant le même
+compte Apple. MacSpace ne peut pas désactiver cette synchronisation. Il vous indique où le faire.
+
+### Transcription des appels
+
+Le contrôle Transcription des appels dans Siri et Apple Intelligence utilise cinq substitutions fixes de TelephonyUtilities dans
+`/Library/Preferences/FeatureFlags/Domain/TelephonyUtilities.plist` : enregistrement, filtrage des appels, transmission des sous-titres
+FaceTime et traduction audio/vidéo sur Mac. L’assistant authentifié enregistre les entrées originales dans
+`/Library/Application Support/MacSpace/phone-features.json` avant de les modifier. Les changements nécessitent un redémarrage ;
+leur état effectif est vérifié séparément. La réactivation restaure les entrées originales et conserve les autres substitutions.
+L’assistant refuse les entrées modifiées hors de MacSpace. Ce contrôle n’installe aucun profil et ne change pas la langue de Siri.
+L’opération accepte uniquement activer ou désactiver, sans chemin, domaine ou clé arbitraire.
+
+### Modèles des fonctions
+
+Les interrupteurs Siri et Photos spatiales enregistrent les réglages d’origine avant de désactiver une fonction. La voix
+sauvegardée de Siri est effacée tant que Siri est désactivé ; sa langue est conservée. Transcription des appels désactive aussi les réglages
+locaux d’enregistrement, de filtrage et de sous-titrage. Les originaux restent dans
+`~/Library/Application Support/MacSpace/feature-settings/`.
+
+Les demandes de modèles sont libérées par les services Apple qui les gèrent, avec les données de restauration dans
+`~/Library/Application Support/MacSpace/asset-owners/`. Ces nettoyages de fonctions et de modèles linguistiques ne modifient pas la base active des abonnements et ne suppriment pas
+directement les modèles. Il utilise le service de nettoyage protégé de macOS. Le nettoyage attend si l’état d’Apple Intelligence est
+illisible et, quand Apple Intelligence est activé, tant que macOS télécharge des ressources système ; il conserve les demandes des
+autres comptes et les modèles vocaux partagés lorsque Dictée est active. Les ressources linguistiques inutilisées ne sont libérées
+que lorsqu’Apple Intelligence est désactivé.
+
+Lorsque MacSpace est ouvert, les fonctions explicitement désactivées sont vérifiées toutes les cinq minutes et leurs modèles
+inutilisés sont de nouveau nettoyés si macOS les redemande. Réactiver une fonction ou utiliser le désinstalleur de MacSpace
+restaure les réglages et demandes enregistrés ; macOS peut retélécharger les modèles. Une opération interrompue ou en conflit
+est vérifiée avant toute nouvelle demande. Ces contrôles fonctionnent sur toutes les versions de macOS 27 ; avant chaque demande, le processus séparé vérifie les méthodes Apple qu’il appelle.
+Les ressources linguistiques inutilisées dans Données système ont un nettoyage ponctuel, qui ne désactive ni l’orthographe
+ni les dictionnaires.
+
+### Autorisations
+
+macOS gère chaque demande : MacSpace ne voit donc jamais votre mot de passe.
+
+| Autorisation | Où | À quoi MacSpace l’utilise |
+|---|---|---|
+| Accès complet au disque | Réglages Système > Confidentialité et sécurité | Mesurer les dossiers que macOS protège et lire l’état d’Apple Intelligence |
+| Assistant privilégié | Réglages Système > Général > Ouverture et extensions | Les opérations ci-dessous |
+| Profil de configuration | Réglages Système > Général > Gestion de l’appareil | Seulement quand vous désactivez une règle Debloat |
+| Notifications | macOS le demande | Vous dire que quelque chose est terminé |
+
+### L’assistant privilégié
+
+L’assistant est un démon de lancement, `com.macspace.helper`, enregistré auprès de macOS depuis
+l’app. launchd le démarre quand MacSpace lui demande quelque chose. Il s’exécute en tant que root,
+et n’accepte une connexion que d’un programme qui satisfait à cette exigence de signature de code,
+que macOS vérifie :
+
+```
+anchor apple generic and (identifier "com.macspace.app" or identifier "com.macspace.cli")
+and certificate leaf[subject.OU] = "<the developer's team ID>"
+```
+
+Il refuse de démarrer sans exigence. Il n’exécute que des opérations nommées, intégrées à son code.
+Un appelant ne peut pas lui envoyer de commandes. Quand l’app est remplacée par une mise à jour,
+l’assistant s’en aperçoit et s’efface pour que le nouveau démarre.
+
+| Opération | Ce qu’elle fait | Limites |
+|---|---|---|
+| `systemdata.measure` | Tailles de dossiers | Lecture seule. Seulement sous `/private/var`, `/private/tmp`, `/Library`, `/System/Library`, la racine du volume Data et `/opt`, jamais un dossier de départ. Des tailles, jamais des contenus. |
+| `systemdata.versions.delete` | Supprime l’historique des versions des documents | Arrête d’abord `revisiond`, ou le met en pause si macOS refuse. Supprime le contenu du stockage, pas le dossier, puis redémarre `revisiond`. S’il ne peut pas l’arrêter, il ne supprime rien. |
+| `systemdata.staged-update.delete` | Supprime les fichiers de mise à jour restants | Seulement si le dossier est plus ancien que le système installé. Conserve `Locked Files`. |
+| `systemdata.wallpaper-downloads.delete` | Supprime les téléchargements inachevés de fonds d’écran et d’économiseurs d’écran | Ne reçoit aucun chemin : trouve lui-même `/private/var/folders/*/*/T/com.apple.idleassetsd`, sans suivre de lien. Ne supprime que les fichiers ordinaires nommés `CFNetworkDownload_*.tmp` directement dans le dossier, inchangés depuis 3 jours. |
+| `systemdata.unified-log.erase` | Efface le journal système | Ne reçoit aucun argument. N’exécute que `/usr/bin/log erase --all` d’Apple, puis `log erase --uuidtext`. |
+| `systemdata.symbolication-cache.delete` | Supprime les symboles des rapports de plantage | Ne reçoit aucun argument. Seulement `/System/Library/Caches/com.apple.coresymbolicationd`, ouvert sans suivre de lien ; supprime son contenu, jamais le dossier, puis arrête `coresymbolicationd` (`kill -TERM`, `-KILL` après 5 secondes). |
+| `timemachine.backups.delete` | Supprime des sauvegardes d’un disque de sauvegarde Time Machine | Seulement sur un disque que Time Machine indique comme connecté, seulement des dates qu’il y trouve lui-même, jamais la sauvegarde la plus récente, jamais pendant une sauvegarde ni quand on ne le sait pas. Exécute `/usr/bin/tmutil delete`. |
+| `debloat.status`, `.apply`, `.revert` | Lit, désactive et réactive des éléments Debloat | Seulement des identifiants de contrôle, issus du catalogue intégré. Rien d’autre. |
+| `debloat.removeProfile` | Supprime un profil MacSpace | Seulement les identifiants `com.macspace.policies` et `com.macspace.policies.…`. Tout autre profil est refusé. |
+| `siri.orphan-subscriptions.plan`, `.execute` | Trouve et supprime les abonnements Apple Intelligence de comptes qui n’existent plus | Sauvegarde d’abord la base de données dans `/Library/Application Support/MacSpace/backups/`, la modifie en une seule transaction, ne touche que les lignes qui ne correspondent à aucun compte local, et refuse si la liste des comptes semble erronée. L’app n’a pas encore de bouton pour cela. |
+| `helper.ping` | Répond, pour que l’app sache que l’assistant est actif | Aucune |
+
+L’outil en ligne de commande de l’app, `MacSpaceCli`, situé dans le paquet de l’app, peut aussi
+dialoguer avec l’assistant. Il est signé par la même équipe.
+
+### Le profil de configuration
+
+Les règles de Debloat sont des réglages que seul un profil de configuration peut imposer. MacSpace
+construit un seul profil, `com.macspace.policies` (affiché sous le nom **MacSpace: policies**,
+organisation « MacSpace »), avec chaque règle que vous avez désactivée. Il ouvre le profil, et vous
+l’approuvez dans Réglages Système > Général > Gestion de l’appareil. L’approuver remplace le
+précédent. Il n’est pas marqué comme impossible à supprimer. Réactiver la dernière règle le
+supprime, par l’intermédiaire de l’assistant, sans rien à approuver. Vous pouvez aussi le supprimer
+vous-même dans Réglages Système.
+
+### Signature du code et mises à jour
+
+MacSpace est signé avec un Apple Developer ID, avec l’environnement d’exécution renforcé, et
+notarisé par Apple. Le ticket de notarisation est agrafé à l’app, qui s’ouvre donc aussi hors
+ligne. Les composants propres à Sparkle sont signés avec la même identité.
+
+Les mises à jour sont aussi signées avec une clé EdDSA. Sa moitié publique est dans MacSpace
+(`SUPublicEDKey`), et Sparkle y confronte chaque téléchargement avant d’installer. La moitié privée
+de cette clé et l’identité de signature ne sont pas dans ce dépôt. Une copie de MacSpace compilée
+sans la clé publique ne recherche jamais de mises à jour.
+
+## Vérifier un téléchargement
+
+Placez `MacSpace-x.y.z.dmg` et `MacSpace-x.y.z.dmg.sha256` dans un même dossier :
+
+```bash
+shasum -a 256 -c MacSpace-x.y.z.dmg.sha256
+```
+
+Puis, après avoir glissé MacSpace dans Applications :
+
+```bash
+codesign -dv --verbose=4 /Applications/MacSpace.app
+codesign --verify --deep --strict --verbose=2 /Applications/MacSpace.app
+spctl -a -vv /Applications/MacSpace.app
+xcrun stapler validate /Applications/MacSpace.app
+```
+
+Vous devriez voir `Authority=Developer ID Application`, `TeamIdentifier=J45ZXS2ZF6`, l’indicateur
+`runtime`, `Notarization Ticket=stapled`, et `spctl` doit indiquer `accepted` avec
+`source=Notarized Developer ID`.
+
+## Désinstaller complètement
+
+MacSpace a un désinstalleur : dans la barre des menus, choisissez **MacSpace** > **À propos de MacSpace**, puis
+**Désinstaller…**. Il rétablit les réglages de chaque module, supprime l’assistant et place MacSpace dans la corbeille. Pour
+le faire à la main, les étapes complètes se trouvent dans le [README](README.md#désinstallation). En bref :
+
+1. Dans **Debloat**, appuyez sur **Tout activer**. Cela supprime les surcharges et le profil qu’il a
+   créés.
+2. Si le profil **MacSpace: policies** figure encore dans Réglages Système > Général > Gestion de
+   l’appareil, supprimez-le.
+3. Quittez MacSpace. Désactivez-le sous Réglages Système > Général > Ouverture et extensions, ou
+   exécutez `/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --unregister`.
+4. Supprimez l’app : `brew uninstall --cask macspace`, ou glissez **MacSpace** vers la Corbeille.
+5. Supprimez ses données et ses préférences :
+   ```bash
+   rm -rf ~/Library/Application\ Support/MacSpace ~/Library/Logs/MacSpace ~/Library/Caches/com.macspace.app
+   defaults delete com.macspace.app
+   sudo rm -rf /Library/Application\ Support/MacSpace
+   ```
+6. Retirez MacSpace de Réglages Système > Confidentialité et sécurité > Accès complet au disque.

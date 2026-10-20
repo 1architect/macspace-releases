@@ -262,8 +262,7 @@ The pull request template has the same list.
 
 ## Documentation in eight languages
 
-`README`, `PRIVACY` and `SECURITY` each exist in eight languages: the English file (`README.md`) and `.pt-BR.md`, `.fr.md`,
-`.es.md`, `.de.md`, `.zh-Hans.md`, `.ja.md` and `.ko.md` versions next to it. If you change one of them, update all eight. If you cannot, change the English file and
+`README`, `PRIVACY`, `SECURITY` and `LICENSE` each exist in eight languages: the English file (`README.md`) in the repository root, and the other seven in `Docs/Translations/<language>/` (`pt-BR`, `fr`, `es`, `de`, `zh-Hans`, `ja`, `ko`), with the same file name. If you change one of them, update all eight. If you cannot, change the English file and
 say in the pull request which translations are out of date, so a maintainer or another contributor can bring them up to date.
 
 `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `NOTICE` and the files in `Docs/` are in English only. Release notes are

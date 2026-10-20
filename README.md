@@ -1,4 +1,4 @@
-**English** · [Português](README.pt-BR.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [简体中文](README.zh-Hans.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
+**English** · [Português](Docs/Translations/pt-BR/README.md) · [Español](Docs/Translations/es/README.md) · [Français](Docs/Translations/fr/README.md) · [Deutsch](Docs/Translations/de/README.md) · [简体中文](Docs/Translations/zh-Hans/README.md) · [日本語](Docs/Translations/ja/README.md) · [한국어](Docs/Translations/ko/README.md)
 
 # MacSpace
 
@@ -309,7 +309,7 @@ Security problems: never a public issue, see [SECURITY.md](SECURITY.md). To cont
 
 MacSpace is free software under the MIT License. Copyright (c) 2026 1architect. See
 [LICENSE](LICENSE). The English text is the binding one. The translations in
-`LICENSE.<language>.md` are for convenience. Third-party notices are in [NOTICE](NOTICE).
+`Docs/Translations/<language>/LICENSE.md` are for convenience. Third-party notices are in [NOTICE](NOTICE).
 
 MacSpace is not affiliated with Apple. Apple Intelligence, Siri and macOS are trademarks of
 Apple Inc.

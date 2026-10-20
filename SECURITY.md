@@ -1,4 +1,4 @@
-**English** · [Português](SECURITY.pt-BR.md) · [Español](SECURITY.es.md) · [Français](SECURITY.fr.md) · [Deutsch](SECURITY.de.md) · [简体中文](SECURITY.zh-Hans.md) · [日本語](SECURITY.ja.md) · [한국어](SECURITY.ko.md)
+**English** · [Português](Docs/Translations/pt-BR/SECURITY.md) · [Español](Docs/Translations/es/SECURITY.md) · [Français](Docs/Translations/fr/SECURITY.md) · [Deutsch](Docs/Translations/de/SECURITY.md) · [简体中文](Docs/Translations/zh-Hans/SECURITY.md) · [日本語](Docs/Translations/ja/SECURITY.md) · [한국어](Docs/Translations/ko/SECURITY.md)
 
 # Security Policy
 
