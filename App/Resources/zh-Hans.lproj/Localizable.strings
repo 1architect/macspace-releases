@@ -131,7 +131,10 @@
 "Removing downloads" = "正在移除下载";
 "Repair helper" = "修复辅助程序";
 "Repairing" = "正在修复";
+"Restart required" = "需要重新启动";
 "Restart to finish" = "重新启动以完成";
+"Restart your Mac from the Apple menu." = "请从苹果菜单重新启动 Mac。";
+"Restart your Mac to apply this change." = "重新启动 Mac 以应用此更改。";
 "Restore" = "还原";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。";
 "Restoring settings" = "正在还原设置";

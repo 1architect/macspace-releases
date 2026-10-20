@@ -193,7 +193,8 @@ final class DebloatScreenBuilderTests: XCTestCase {
         }
         let processControl = mainControl
         let pending = status(processControl.id, .debloated, effect: EffectStatus(state: .pending, detail: "until reboot"))
-        XCTAssertEqual(DebloatScreenBuilder.badge(processControl, pending, cannotTakeEffect: false)?.text, "After restart")
+        XCTAssertEqual(DebloatScreenBuilder.badge(processControl, pending, cannotTakeEffect: false)?.text, processControl.restart == .reboot ? "Restart required" : "After restart")
+        XCTAssertEqual(DebloatScreenBuilder.badge(processControl, pending, cannotTakeEffect: false)?.kind, .action)
     }
 
     func testSwitchingDisableOnAppliesTheProtection() {
@@ -301,4 +302,16 @@ private final class SnapshotReads: @unchecked Sendable {
     func next() -> Int { lock.withLock { count += 1; return count } }
     var total: Int { lock.withLock { count } }
     func waitForRelease(_ release: DispatchSemaphore) { _ = release.wait(timeout: .now() + 5) }
+}
+
+/// The watch's notification is the module's words; the app posts it (`ModuleServices.notify`).
+final class DebloatWatchNoticeTests: XCTestCase {
+    func testNoticeNamesWhatWasTurnedBackOn() {
+        let one = DebloatWatchStore.notice(DebloatReapplied(at: Date(), titles: ["Siri"]))
+        XCTAssertTrue(one.title.contains("Siri"))
+        XCTAssertTrue(one.body.contains("Siri"))
+        let two = DebloatWatchStore.notice(DebloatReapplied(at: Date(), titles: ["Siri", "Spotlight"]))
+        XCTAssertTrue(two.title.contains("2"))
+        XCTAssertNotEqual(one.body, two.body)
+    }
 }

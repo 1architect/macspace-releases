@@ -1,5 +1,4 @@
 import Foundation
-@preconcurrency import UserNotifications
 
 /// A feature macOS switched back on and the background watch switched off again.
 struct DebloatReapplied: Codable, Equatable, Sendable {
@@ -49,24 +48,13 @@ struct DebloatWatchStore {
         try Self.encoder.encode(events).write(to: url, options: .atomic)
     }
 
-    /// Posts a notification from MacSpace itself; macOS asks the user once whether MacSpace may notify. Outside the app (the CLI
-    /// has no bundle) nothing is posted.
-    static func notify(_ event: DebloatReapplied) {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return }
-        let center = UNUserNotificationCenter.current()
+    /// What the notification says (`ModuleServices.notify`, which the app posts).
+    static func notice(_ event: DebloatReapplied) -> (title: String, body: String) {
         let names = event.titles.map(locKey)
         let title = names.count == 1 ? loc("\(names[0]) was turned back on") : loc("\(names.count) features were turned back on")
         let list = ListFormatter.localizedString(byJoining: names)
         let body = names.count == 1 ? loc("macOS switched \(list) back on. MacSpace disabled it again.")
             : loc("macOS switched \(list) back on. MacSpace disabled them again.")
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
-            // Opens Debloat's page when clicked (`AppNotifications`).
-            content.userInfo = ["module": "com.macspace.debloat"]
-            center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
-        }
+        return (title, body)
     }
 }

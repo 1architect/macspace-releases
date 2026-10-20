@@ -12,13 +12,14 @@ struct CleanupSection: View {
 
     var body: some View {
         Section("Cleanup") {
-            Toggle(isOn: $cleaner.isEnabled) {
+            Toggle(isOn: $cleaner.isEnabled.animation(Theme.layout)) {
                 InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete."))
             }
             if cleaner.isEnabled {
                 Picker("How often", selection: $cleaner.frequency) {
                     ForEach(AutoCleaner.Frequency.allCases) { Text($0.title).tag($0) }
                 }
+                .rowCascade()
             }
             LabeledContent("Freed in total") {
                 ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit()
@@ -69,7 +70,7 @@ struct CleanupHistoryPage: View {
             }
             Section {
                 if entries.isEmpty {
-                    Text("Nothing cleaned yet.").foregroundStyle(.secondary)
+                    Text("Nothing cleaned yet.").foregroundStyle(.secondary).rowCascade()
                 }
                 ForEach(entries) { entry in
                     HStack(spacing: 8) {
@@ -79,6 +80,7 @@ struct CleanupHistoryPage: View {
                         Spacer(minLength: 8)
                         ChangingText(text: ByteFormat.string(entry.freedBytes), alignment: .trailing).monospacedDigit().foregroundStyle(.secondary)
                     }
+                    .rowCascade()
                 }
             }
             PageBottomRoom()

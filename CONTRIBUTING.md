@@ -154,7 +154,21 @@ fixed sequence) needs a comment saying why.
 not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill.
 Every pill says whether it asks something of the user (`Badge.Kind`): `.action` (restart, approve, switch it off elsewhere; its
 help says what) is drawn orange, `.info` (a state, a kind, a warning such as "Cannot be undone") is grey. Orange always means
-there is something to do.
+there is something to do: the same for banners (`warning` or a button to press), row flags (orange only for a result that asks
+something: a failure or a restart; their work, "Freeing in the background", is grey) and every other element. The page's main
+button is the one exception: it is the page's action.
+
+**Restart.** An item only a restart completes carries the app's one pill, `Badge.restartRequired(help:)`, never a pill in the
+module's own words, and the page's main action is `Action.restart(title:)`, which the app runs (macOS's Restart dialog) without
+calling the module. An action whose result has `restartRequired` ends on the main button as "Restart to finish", which opens the
+same dialog.
+
+**System Settings and notifications are the app's.** A button that opens a pane of System Settings is
+`Action.openSettings(title:url:)` (Full Disk Access: `Action.allowFullDiskAccess(title:)`), which the app opens without calling the
+module, and only for `x-apple.systempreferences:` URLs. A pane the module opens by itself, with no button (a profile staged for
+approval), goes through `context.services.openSettings`. A notification is `context.services.notify(title:body:)`: the app posts it
+with the module's id, so a click opens the module's page. The module keeps the option switch that decides whether it notifies
+(`notify`). No module imports UserNotifications or opens System Settings with `NSWorkspace`.
 
 **Buttons in rows are flags.** Every button in a row, in Settings and on every module's page, is the row action flag: text on
 a faint capsule, the look of the (i) and folder pills, darker under the pointer (`RowFlagStyle`; a module row's Free is the same
@@ -171,6 +185,11 @@ sentence, a count or a state. Modules set `title` on the list or section; the ap
 counts, dates, file lists or current state. Those are the row's figure, its subtitle and its pills; what a state means right now
 goes in the pill's hover tag (`Badge.help`). Five lines at most in the balloon, three ideally (`InfoText` in the SDK, which the app
 enforces). Steps to follow stay in `steps`. Each module's tests check their pages with `InfoText.violations(in:)`.
+Never a list: no bullets, dashes or numbering, in the text or in `steps`; the app draws steps as sentences, not numbered.
+
+**Rows come and go the same everywhere.** A row or section added or removed, on a module's page or in Settings, arrives and
+leaves with the page's cascade (`PageCascade`, `rowCascade()` in Settings), in an animated change. Settings is not a module
+page, so a new Settings row needs it explicitly.
 
 **One verb.** Every action that frees space is titled Free, on buttons and in confirmations ("Free", "Free 120 MB", "Free
 selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be undone keeps the "Cannot be undone" pill.

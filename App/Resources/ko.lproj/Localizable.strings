@@ -131,7 +131,10 @@
 "Removing downloads" = "다운로드 제거 중";
 "Repair helper" = "보조 프로그램 복구";
 "Repairing" = "복구 중";
+"Restart required" = "재시동 필요";
 "Restart to finish" = "완료하려면 재시동";
+"Restart your Mac from the Apple menu." = "Apple 메뉴에서 Mac을 재시동하세요.";
+"Restart your Mac to apply this change." = "이 변경 사항을 적용하려면 Mac을 재시동하세요.";
 "Restore" = "복원";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpace가 변경한 설정을 복원하고 앱을 휴지통으로 옮깁니다. 기록은 유지됩니다. 삭제한 파일은 복원할 수 없습니다.";
 "Restoring settings" = "설정 복원 중";

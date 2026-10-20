@@ -130,7 +130,7 @@ struct MacOSReleaseSection: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
                     if !SupportedReleases.isSupported() {
-                        StatusFlag(text: String(localized: "MacSpace has not been tested on this release yet."))
+                        StatusFlag(text: String(localized: "MacSpace has not been tested on this release yet."), tone: .neutral)
                     }
                 }
             }

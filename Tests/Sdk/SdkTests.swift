@@ -124,4 +124,35 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(late.values, [0.2, 0.75])
         XCTAssertEqual(relay.fraction, 0.75)
     }
+
+    /// The (i) never holds a list, in its text or its steps (`InfoText.isList`).
+    func testInfoTextsAreNeverLists() {
+        XCTAssertTrue(InfoText.isList("• one"))
+        XCTAssertTrue(InfoText.isList("Intro\n- one"))
+        XCTAssertTrue(InfoText.isList("1. Open Dictionary"))
+        XCTAssertTrue(InfoText.isList("2) Turn it off"))
+        XCTAssertFalse(InfoText.isList("In Dictionary > Settings, turn off dictionaries you don't use."))
+        XCTAssertFalse(InfoText.isList("2026 models stay on disk."))
+        let screen = Screen(title: "T", widgets: [.list(ListWidget(id: "l", rows: [Row(id: "r", title: "R", steps: ["1. Do it"])]))])
+        XCTAssertEqual(InfoText.violations(in: screen), ["1. Do it"])
+    }
+
+    /// One restart pill and one restart action for every module.
+    func testRestartIsTheAppsOwn() {
+        XCTAssertEqual(Badge.restartRequired().kind, .action)
+        XCTAssertEqual(Badge.restartRequired(help: "why").help, "why")
+        XCTAssertEqual(Action.restart().id, Action.restartID)
+        XCTAssertEqual(Action.restart(title: "Restart to free 1 GB").title, "Restart to free 1 GB")
+    }
+
+    /// One System Settings action for every module, which opens System Settings panes and nothing else.
+    func testOpenSettingsOpensOnlySystemSettings() throws {
+        let pane = try XCTUnwrap(URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension"))
+        let action = Action.openSettings(title: "Open", url: pane)
+        XCTAssertEqual(action.id, Action.openSettingsID)
+        XCTAssertEqual(Action.settingsPane(action.parameters), pane)
+        XCTAssertNil(Action.settingsPane(["url": "https://example.com"]))
+        XCTAssertNil(Action.settingsPane(["url": "file:///Applications/Calculator.app"]))
+        XCTAssertNil(Action.settingsPane([:]))
+    }
 }

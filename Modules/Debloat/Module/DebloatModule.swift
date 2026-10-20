@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import MacSpaceDebloatPrivileged
 import MacSpacePlatform
@@ -131,14 +130,11 @@ public struct DebloatModule: MacSpaceModule {
             do {
                 let ids = try DebloatStore.liveEngine().stagePendingProfiles()
                 guard !ids.isEmpty else { return .succeeded(loc("Nothing to approve")) }
-                Self.openDeviceManagement()
+                context.services.openSettings(Self.deviceManagement)
                 return ActionResult(outcome: .succeeded, message: "", refresh: true)
             } catch {
                 return .failed(loc("Couldn't open the profile"), details: [error.localizedDescription])
             }
-        case "openProfiles":
-            Self.openDeviceManagement()
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         default:
             return .failed(loc("Unknown action \(request.actionID)."))
         }
@@ -162,7 +158,10 @@ public struct DebloatModule: MacSpaceModule {
         let event = DebloatReapplied(at: Date(), titles: fixed)
         try? DebloatWatchStore().record(event)
         await store.invalidate()
-        if context.options.bool("notify") { DebloatWatchStore.notify(event) }
+        if context.options.bool("notify") {
+            let notice = DebloatWatchStore.notice(event)
+            context.services.notify(title: notice.title, body: notice.body)
+        }
     }
 
     /// The switch is "Disable <feature>": switching it on applies the protection, switching it off restores the original.
@@ -203,7 +202,7 @@ public struct DebloatModule: MacSpaceModule {
             // The profile was staged for approval: System Settings opens on it, and the page's button stays "Approve in System
             // Settings" until it is approved. No message of its own, or the button showed it first and needed a click to go.
             if results.contains(where: { result in result.steps.contains { $0.outcome == .pendingApproval } }), summary.outcome != .failed {
-                openDeviceManagement()
+                context.services.openSettings(deviceManagement)
                 return ActionResult(outcome: .succeeded, message: "", details: summary.details, refresh: true)
             }
             return summary
@@ -212,10 +211,8 @@ public struct DebloatModule: MacSpaceModule {
         }
     }
 
-    /// System Settings > General > Device Management, where the profile is approved.
-    static func openDeviceManagement() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") { NSWorkspace.shared.open(url) }
-    }
+    /// System Settings > General > Device Management, where the profile is approved. The app opens it (`ModuleServices`).
+    static let deviceManagement = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension")!
 
     /// MacSpace profiles removed through the helper, which needs no approval.
     static func removeProfiles(_ identifiers: [String], context: ModuleContext) async -> ActionResult {

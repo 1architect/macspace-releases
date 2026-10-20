@@ -670,10 +670,10 @@ enum SystemDataScreenBuilder {
         if !actionable.fullDiskAccess.isEmpty {
             return .banner(Banner(id: "partial", severity: .info, title: loc("Allow Full Disk Access to see everything"),
                                   message: loc("\(actionable.fullDiskAccess.count) places couldn't be measured."),
-                                  action: Action(id: "openFullDiskAccess", title: loc("Allow"), role: .prominent)))
+                                  action: .allowFullDiskAccess(title: loc("Allow"))))
         }
         if !actionable.helper.isEmpty {
-            return .banner(Banner(id: "partial", severity: .info, title: loc("Turn on the helper to see everything"),
+            return .banner(Banner(id: "partial", severity: .warning, title: loc("Turn on the helper to see everything"),
                                   message: loc("\(actionable.helper.count) places only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings.")))
         }
         if !actionable.helperUnreachable.isEmpty {

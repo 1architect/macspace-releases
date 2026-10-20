@@ -1,4 +1,31 @@
 {
+ "Restart required": [
+  "Reinicialização necessária",
+  "Redémarrage nécessaire",
+  "Es necesario reiniciar",
+  "Neustart erforderlich",
+  "需要重新启动",
+  "再起動が必要です",
+  "재시동 필요"
+ ],
+ "Restart your Mac to apply this change.": [
+  "Reinicie o Mac para aplicar esta alteração.",
+  "Redémarrez votre Mac pour appliquer cette modification.",
+  "Reinicia el Mac para aplicar este cambio.",
+  "Starte deinen Mac neu, um diese Änderung anzuwenden.",
+  "重新启动 Mac 以应用此更改。",
+  "この変更を適用するにはMacを再起動してください。",
+  "이 변경 사항을 적용하려면 Mac을 재시동하세요."
+ ],
+ "Restart your Mac from the Apple menu.": [
+  "Reinicie o Mac pelo menu Apple.",
+  "Redémarrez votre Mac depuis le menu Pomme.",
+  "Reinicia el Mac desde el menú Apple.",
+  "Starte deinen Mac über das Apple-Menü neu.",
+  "请从苹果菜单重新启动 Mac。",
+  "アップルメニューからMacを再起動してください。",
+  "Apple 메뉴에서 Mac을 재시동하세요."
+ ],
  "%@ freed": [
   "%@ liberados",
   "%@ libérés",

@@ -5,7 +5,8 @@ import MacSpacePlatform
 
 /// MacSpace's own notifications in Notification Center, only for what happens while the user is not looking: automatic cleanup that
 /// freed something, an action that finished while MacSpace was in the background, and the disk running low. Clicking one opens
-/// MacSpace on the page it is about. The modules' own notifications (Debloat, Siri) carry their module's id and open its page too.
+/// MacSpace on the page it is about. The modules' own notifications (Debloat, Siri) are posted here too (`ModuleServices.notify`),
+/// with their module's id, and open its page.
 ///
 /// macOS asks once whether MacSpace may notify, the first time it has something to say.
 @MainActor
@@ -109,17 +110,36 @@ public final class AppNotifications: NSObject, UNUserNotificationCenterDelegate 
     }
 
     private func post(_ kind: Kind, title: String, body: String, destination: String) {
-        guard Self.canNotify else { return }
+        // One of each kind at a time: a newer one replaces the one before it.
+        Self.deliver(identifier: "com.macspace.\(kind.rawValue)",
+                     content: Self.content(title: title, body: body, thread: kind.rawValue, userInfo: ["destination": destination]))
+    }
+
+    /// A module's notification (`ModuleServices.notify`), from any thread: each one stays, grouped under its module, and opens the
+    /// module's page. Debloat and Siri each posted theirs with code of their own (2026-10-20).
+    nonisolated static func post(module: String, title: String, body: String) {
+        deliver(identifier: UUID().uuidString, content: moduleContent(module: module, title: title, body: body))
+    }
+
+    nonisolated static func moduleContent(module: String, title: String, body: String) -> UNMutableNotificationContent {
+        content(title: title, body: body, thread: module, userInfo: ["module": module])
+    }
+
+    private nonisolated static func content(title: String, body: String, thread: String, userInfo: [String: String]) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.threadIdentifier = thread
+        content.userInfo = userInfo
+        return content
+    }
+
+    private nonisolated static func deliver(identifier: String, content: UNMutableNotificationContent) {
+        guard canNotify else { return }
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
-            content.threadIdentifier = kind.rawValue
-            content.userInfo = ["destination": destination]
-            // One of each kind at a time: a newer one replaces the one before it.
-            center.add(UNNotificationRequest(identifier: "com.macspace.\(kind.rawValue)", content: content, trigger: nil))
+            center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
         }
     }
 

@@ -30,11 +30,13 @@ enum DebloatScreenBuilder {
     }
 
     /// Only what is unusual gets a badge; a switch that is simply on or off says enough by itself.
-    static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool) -> Badge? {
+    static func badge(_ control: DebloatControl, _ status: ControlStatus?, cannotTakeEffect: Bool, environment: DebloatEnvironment? = nil) -> Badge? {
         guard let status else { return nil }
         // What the state means now is the pill's hover tag: the (i) says only what the switch does (`InfoText`).
         let why = effectExplanation(control, status)
         if cannotTakeEffect { return Badge(loc("Cannot take effect here"), .info, help: why) }
+        // Changed since the Mac last started, and only a restart applies it: the app's one restart pill (`Badge.restartRequired`).
+        if let environment, restartPending(control, status, environment) { return .restartRequired() }
         // A retired switch says why it is still shown.
         if control.retired != nil { return Badge(retired[control.id] ?? loc("No longer works"), .info) }
         // Screen Time or an organization's profile enforces it, not MacSpace (`DebloatEngine.status`).
@@ -43,7 +45,9 @@ enum DebloatScreenBuilder {
         case .debloated:
             switch status.effect?.state {
             case .ineffective?: return Badge(loc("Not working"), .info, help: why)
-            case .pending?: return control.effect?.kind == .diagnosticSubmission ? Badge(loc("Verifying"), .info, help: why) : Badge(loc("After restart"), .action, help: why)
+            case .pending?:
+                if control.effect?.kind == .diagnosticSubmission { return Badge(loc("Verifying"), .info, help: why) }
+                return control.restart == .reboot ? .restartRequired(help: why) : Badge(loc("After restart"), .action, help: why)
             // No badge when macOS logged no decision to read: SubmitDiagInfo can go more than a day without one, and its log entries
             // expire, so "Not verified" stood on a switch whose settings were written and read back and which macOS then honored
             // (optIn: OUT, 2026-10-18). Only a decision against it is worth a pill.
@@ -57,6 +61,13 @@ enum DebloatScreenBuilder {
         case .unknown: return Badge(loc("Cannot read"), .info)
         case .stock: return nil
         }
+    }
+
+    /// A switch only a restart applies (`RestartRequirement.reboot`), switched off since the Mac last started.
+    static func restartPending(_ control: DebloatControl, _ status: ControlStatus, _ environment: DebloatEnvironment) -> Bool {
+        guard control.restart == .reboot, status.state == .debloated || status.state == .partial,
+              let applied = status.appliedAt, let booted = environment.lastRestart(for: .reboot) else { return false }
+        return applied > booted
     }
 
     /// The pill of a retired switch: why to switch it off.
@@ -142,7 +153,7 @@ enum DebloatScreenBuilder {
         if needsHelper(control) { action.requires = [.privilegedHelper] }
         // The switch shows the protection, named as such: "Disable <feature>" on = MacSpace switched the feature off.
         return ToggleRow(id: control.id, title: title(control), isOn: on, isEnabled: !blocked,
-                         badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id)),
+                         badge: badge(control, status, cannotTakeEffect: snapshot.cannotTakeEffect.contains(control.id), environment: snapshot.environment),
                          detail: detail(control), action: action)
     }
 
@@ -197,7 +208,15 @@ enum DebloatScreenBuilder {
     /// The page's main button, which does what the switches most need: while a feature still runs, it switches them all off;
     /// once they are all off, it turns back on everything MacSpace switched off. nil when neither applies.
     static func primary(_ snapshot: DebloatSnapshot) -> Action? {
-        fix(snapshot) ?? switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
+        fix(snapshot) ?? restart(snapshot) ?? switchOffRecommended(snapshot) ?? turnAllBackOn(snapshot)
+    }
+
+    /// A switch is waiting for a restart (its row says Restart required): the page's button is the app's restart.
+    static func restart(_ snapshot: DebloatSnapshot) -> Action? {
+        let pending = snapshot.controls.contains { control in
+            snapshot.status(control.id).map { restartPending(control, $0, snapshot.environment) } ?? false
+        }
+        return pending ? .restart() : nil
     }
 
     /// When something is not right, the main button becomes what fixes it, before anything else: features macOS enabled again,

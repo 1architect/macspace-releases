@@ -107,7 +107,7 @@ enum OtherSystemFilesScreenBuilder {
         let rows = snapshot.updates.sorted { $0.bytes > $1.bytes }.map { update in
             Row(id: "update:\(update.path)", title: loc("\(update.name), ready to install"), trailing: ByteFormat.string(update.bytes),
                 badge: Badge(loc("Installs at the next restart"), .info), symbol: "arrow.down.circle",
-                actions: [Action(id: "openSoftwareUpdate", title: loc("Open"))], paths: [update.path])
+                actions: [.openSettings(title: loc("Open"), url: PreparedUpdate.settingsURL)], paths: [update.path])
         }
         return .section(SectionWidget(id: "updates", title: loc("Waiting to install"), widgets: [.list(ListWidget(id: "updates-list", rows: rows))]))
     }

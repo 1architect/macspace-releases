@@ -91,10 +91,8 @@
 "Other accounts" = "다른 계정";
 "Released Apple Intelligence models" = "해제된 Apple Intelligence 모델";
 "Released Apple Intelligence models and unused system assets" = "해제된 Apple Intelligence 모델 및 미사용 시스템 에셋";
-"Restart required" = "재시동 필요";
 "Restart to finish" = "완료하려면 재시동";
 "Restart to free %@" = "재시동하여 %@ 정리";
-"Restart your Mac from the Apple menu." = "Apple 메뉴에서 Mac을 재시동하세요.";
 "Restart your Mac to apply this change." = "이 변경 사항을 적용하려면 Mac을 재시동하세요.";
 "Restart. MacSpace then deletes the models." = "재시동하세요. 이후 MacSpace가 모델을 삭제합니다.";
 "Siri" = "Siri";

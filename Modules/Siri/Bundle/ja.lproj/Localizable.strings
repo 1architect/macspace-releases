@@ -91,10 +91,8 @@
 "Other accounts" = "ほかのアカウント";
 "Released Apple Intelligence models" = "解放されたApple Intelligenceモデル";
 "Released Apple Intelligence models and unused system assets" = "解放されたApple Intelligenceモデルと未使用のシステムアセット";
-"Restart required" = "再起動が必要です";
 "Restart to finish" = "再起動して完了";
 "Restart to free %@" = "再起動して%@を解放";
-"Restart your Mac from the Apple menu." = "アップルメニューからMacを再起動してください。";
 "Restart your Mac to apply this change." = "この変更を適用するにはMacを再起動してください。";
 "Restart. MacSpace then deletes the models." = "再起動してください。その後MacSpaceがモデルを削除します。";
 "Siri" = "Siri";

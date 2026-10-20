@@ -91,10 +91,8 @@
 "Other accounts" = "其他账户";
 "Released Apple Intelligence models" = "已释放的 Apple 智能模型";
 "Released Apple Intelligence models and unused system assets" = "已释放的 Apple 智能模型与未使用的系统资源";
-"Restart required" = "需要重新启动";
 "Restart to finish" = "重新启动以完成";
 "Restart to free %@" = "重新启动以释放 %@";
-"Restart your Mac from the Apple menu." = "请从苹果菜单重新启动 Mac。";
 "Restart your Mac to apply this change." = "重新启动 Mac 以应用此更改。";
 "Restart. MacSpace then deletes the models." = "请重新启动，MacSpace 随后会删除模型。";
 "Siri" = "Siri";

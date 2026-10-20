@@ -44,6 +44,8 @@ struct SettingsView: View {
                                                          set: { host.setBackgroundTask($0, task.id, module: handle.id); tick += 1 }))
                     }
                 }
+                // A module switched on or off brings its section in or takes it away as a page's rows come and go.
+                .rowCascade()
             }
             if !host.problems.isEmpty {
                 Section("Modules that could not be used") {
@@ -59,6 +61,7 @@ struct SettingsView: View {
             MacOSReleaseSection()
             PageBottomRoom()
         }
+        .animation(Theme.layout, value: moduleOptions.map(\.id))
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
@@ -83,7 +86,7 @@ struct SettingsView: View {
         // An option that refines a toggle (`OptionDefinition.under`) is drawn only while that toggle is on; the manifest lists it
         // right after the toggle, so it is the row below it.
         if option.under.map(options.bool) ?? true {
-            optionControl(handle, option, options)
+            optionControl(handle, option, options).rowCascade()
         }
     }
 
@@ -91,8 +94,9 @@ struct SettingsView: View {
     private func optionControl(_ handle: ModuleHandle, _ option: OptionDefinition, _ options: any OptionStore) -> some View {
         switch option.kind {
         case .toggle:
+            // Animated: an option that refines this one comes and goes with it (`rowCascade`).
             Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
-                                               set: { host.setOption(.bool($0), option.id, module: handle.id); tick += 1 }))
+                                               set: { value in withAnimation(Theme.layout) { host.setOption(.bool(value), option.id, module: handle.id); tick += 1 } }))
         case let .choice(choices, _):
             Picker(option.title, selection: Binding(get: { options.string(option.id) },
                                                     set: { host.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
@@ -129,7 +133,7 @@ struct PermissionsPage: View {
             Section {
                 if permissions.isEmpty { Text("No module needs a permission.").foregroundStyle(.secondary) }
                 ForEach(permissions, id: \.permission) { entry in
-                    PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission))
+                    PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission)).rowCascade()
                 }
             }
             PageBottomRoom()
@@ -160,8 +164,9 @@ private struct ModuleToggleRow: View {
         Toggle(isOn: Binding(get: { handle.isEnabled }, set: { value in Task { await host.setEnabled(value, module: handle.id) } })) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(handle.manifest.name)
-                if let incompatible { StatusFlag(text: incompatible) }
-                if case let .failed(reason) = handle.state { StatusFlag(text: reason) }
+                // Facts the user can do nothing about here: grey (only what asks something of the user is orange).
+                if let incompatible { StatusFlag(text: incompatible, tone: .neutral) }
+                if case let .failed(reason) = handle.state { StatusFlag(text: reason, tone: .neutral) }
             }
         }
         .disabled(incompatible != nil)

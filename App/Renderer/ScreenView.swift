@@ -768,7 +768,10 @@ struct ActionPill: View {
             case let .idle(action): Task { @MainActor in await run(action) }
             case let .notice(banner):
                 if let action = banner.action { Task { @MainActor in await run(action) } } else { dismiss() }
-            case .done: dismiss()
+            // Restart to finish: macOS's Restart dialog, where the user confirms. It only went away before (2026-10-20, Debloat).
+            case let .done(result):
+                if result.restartRequired { SystemRestart.showDialog() }
+                dismiss()
             case .working, .loading: break
             }
         } label: {

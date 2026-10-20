@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import MacSpaceOtherSystemFilesPrivileged
 import MacSpacePlatform
@@ -63,9 +62,6 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         switch request.actionID {
         case "purgeFiles":
             return await purgeAndKeepAsking(progress: progress).result
-        case "openSoftwareUpdate":
-            NSWorkspace.shared.open(PreparedUpdate.settingsURL)
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "removeDownloads":
             await store.beginRemoval()
             let snapshot = await snapshot()

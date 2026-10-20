@@ -131,7 +131,10 @@
 "Removing downloads" = "Downloads werden entfernt";
 "Repair helper" = "Hilfsprogramm reparieren";
 "Repairing" = "Wird repariert";
+"Restart required" = "Neustart erforderlich";
 "Restart to finish" = "Zum Abschließen neu starten";
+"Restart your Mac from the Apple menu." = "Starte deinen Mac über das Apple-Menü neu.";
+"Restart your Mac to apply this change." = "Starte deinen Mac neu, um diese Änderung anzuwenden.";
 "Restore" = "Wiederherstellen";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.";
 "Restoring settings" = "Einstellungen wiederherstellen";

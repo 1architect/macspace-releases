@@ -282,7 +282,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         }.first)
         guard case let .list(list) = section.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.first?.title, "macOS 27.2 (26B5101f), ready to install")
-        XCTAssertEqual(list.rows.first?.actions.first?.id, "openSoftwareUpdate")
+        XCTAssertEqual(list.rows.first?.actions.first?.id, Action.openSettingsID, "the app opens Software Update")
+        XCTAssertEqual(list.rows.first?.actions.first.flatMap { Action.settingsPane($0.parameters) }, PreparedUpdate.settingsURL)
         XCTAssertEqual(screen.hero?.segments.first?.bytes, 10_700_000_000, "the largest block")
         XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).title, "other system files")
         XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(snap).figure, ByteFormat.string(11_700_000_000))
@@ -320,7 +321,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertEqual(cloud?.group?.id, "segment:\(CacheDeleteService.fsPurgeableDocument)")
         let waiting = blocks.first { $0.id == "update:\(update)" }
         XCTAssertEqual(waiting?.items.map(\.paths), [[update]])
-        XCTAssertEqual(waiting?.items.first?.actions.map(\.id), ["openSoftwareUpdate"])
+        XCTAssertEqual(waiting?.items.first?.actions.map(\.id), [Action.openSettingsID])
         XCTAssertNil(blocks.first { $0.id == CacheDeleteService.appContainerCaches }?.group, "nothing to add to the block")
         XCTAssertNil(blocks.first { $0.id == CacheDeleteService.quickLookThumbnails }?.group)
         XCTAssertEqual(blocks.map(\.id), OtherSystemFilesScreenBuilder.segments(snap).map(\.id))

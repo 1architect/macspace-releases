@@ -46,6 +46,16 @@ public struct Badge: Codable, Equatable, Sendable {
     }
 }
 
+extension Badge {
+    /// The one pill of an item that only a restart of the Mac completes (a setting macOS reads at startup, models a running service
+    /// holds): "Restart required", in the action color, with `help` saying why when there is more to say. Every module uses this
+    /// one, never a pill in its own words: Debloat said "After restart" and Siri "Restart required", in different colors
+    /// (2026-10-20). Pair it with `Action.restart` as the page's main action.
+    public static func restartRequired(help: String? = nil) -> Badge {
+        Badge(String(localized: "Restart required"), .action, help: help ?? String(localized: "Restart your Mac to apply this change."))
+    }
+}
+
 /// Titles of lists and sections (`ListWidget.title`, `ToggleList.title`, `SectionWidget.title`, `UsageBar.title`): every page draws
 /// them as macOS's System Settings draws its grouped lists, semibold in the text's color, the same in Settings and in every module.
 /// A title names the group in a few words ("Models", "Free now"); it is not a sentence and carries no count or state.
@@ -54,6 +64,8 @@ public struct Badge: Codable, Equatable, Sendable {
 /// `ToggleList.footnote` and `ButtonWidget.footnote`. It says what the item is and what acting on it does, the same whatever its state:
 /// no sizes, counts, dates, file lists or current state (those are the row's figure, subtitle and badges, and a badge's `help`). At most
 /// `maximumLines` lines in the balloon, ideally `idealLines`; the app shows no more than `maximumLines`. `steps` are kept apart.
+/// Never a list: no line, and no step, starts with a bullet, a dash or a number ("1.", "2)"). Sentences say it; the app numbers
+/// nothing either (2026-10-20).
 public enum InfoText {
     public static let maximumLines = 5
     public static let idealLines = 3
@@ -73,7 +85,35 @@ public enum InfoText {
 
     /// The info texts on a page longer than the rule allows; empty when the page keeps it. Modules check their pages with it.
     public static func violations(in screen: Screen) -> [String] {
-        all(in: screen).filter { lineCount($0) > maximumLines }
+        all(in: screen).filter { lineCount($0) > maximumLines } + (all(in: screen) + steps(in: screen)).filter(isList)
+    }
+
+    /// A text with a line that starts as a list item: a bullet, a dash, an asterisk, or a number followed by "." or ")".
+    public static func isList(_ text: String) -> Bool {
+        text.split(separator: "\n").contains { line in
+            let trimmed = line.drop { $0 == " " || $0 == "\t" }
+            if let first = trimmed.first, "•‣◦▪︎-–—*·".contains(first) { return true }
+            let digits = trimmed.prefix { $0.isNumber }
+            guard !digits.isEmpty, let mark = trimmed.dropFirst(digits.count).first else { return false }
+            return mark == "." || mark == ")"
+        }
+    }
+
+    /// Every row's steps on a page, which its (i) shows after the text.
+    static func steps(in screen: Screen) -> [String] {
+        var steps: [String] = []
+        func visitRow(_ row: Row) { steps += row.steps; row.children.forEach(visitRow) }
+        func visit(_ widget: ScreenWidget) {
+            switch widget {
+            case let .list(list): list.rows.forEach(visitRow)
+            case let .section(section): section.widgets.forEach(visit)
+            case let .usage(bar): bar.segments.flatMap(\.items).forEach(visitRow)
+            default: break
+            }
+        }
+        if let hero = screen.hero { visit(.usage(hero)) }
+        screen.widgets.forEach(visit)
+        return steps
     }
 
     /// Every info text on a page, for checking it against the rule.
@@ -153,6 +193,45 @@ public struct Action: Codable, Equatable, Sendable {
     }
 }
 
+extension Action {
+    /// The id of the app's own Full Disk Access action (`allowFullDiskAccess`).
+    public static let fullDiskAccessID = "macspace.allowFullDiskAccess"
+
+    /// Opens Privacy & Security > Full Disk Access in System Settings, where the user allows MacSpace: the app runs it, the module is
+    /// never called. System Data and Siri each opened it with an action of their own (2026-10-20).
+    public static func allowFullDiskAccess(title: String) -> Action {
+        Action(id: fullDiskAccessID, title: title, role: .prominent)
+    }
+
+    /// The id of the app's own restart action (`restart`).
+    public static let restartID = "macspace.restart"
+
+    /// Restarts the Mac through macOS's own Restart dialog, where the user confirms or cancels: the app runs it and the module is
+    /// never called. The main action of a page whose items need a restart (`Badge.restartRequired`); an action whose result has
+    /// `ActionResult.restartRequired` ends on the same button by itself.
+    public static func restart(title: String? = nil) -> Action {
+        Action(id: restartID, title: title ?? String(localized: "Restart to finish"), symbol: "arrow.clockwise", role: .prominent)
+    }
+
+    /// The id of the app's own System Settings action (`openSettings`).
+    public static let openSettingsID = "macspace.openSettings"
+
+    /// Opens a pane of System Settings (`x-apple.systempreferences:` and nothing else): the app opens it, the module is never called.
+    /// Debloat, System Data, Other System Files and Siri each opened their panes with an action of their own (2026-10-20).
+    public static func openSettings(title: String, url: URL) -> Action {
+        Action(id: openSettingsID, title: title, parameters: ["url": url.absoluteString])
+    }
+
+    /// The pane an `openSettings` action opens; nil for anything that is not a System Settings pane, which the app never opens.
+    public static func settingsPane(_ parameters: [String: String]) -> URL? {
+        guard let url = parameters["url"].flatMap(URL.init(string:)), isSettingsPane(url) else { return nil }
+        return url
+    }
+
+    /// Only System Settings: a module cannot have the app open a web page, a file or another app through these.
+    public static func isSettingsPane(_ url: URL) -> Bool { url.scheme?.lowercased() == "x-apple.systempreferences" }
+}
+
 /// A module's page. The app draws it on the module's tile, grown to fill the window: the tile's title and status stay in the corner,
 /// so the page needs no header.
 public struct Screen: Codable, Equatable, Sendable {
@@ -203,6 +282,8 @@ public enum ScreenWidget: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
+/// A notice at the top of a page. Like every element (`Badge.Kind`), it is in the action color only when it asks something of the
+/// user: `warning` or `critical` (something to do, said in its message), or an `action` to press; `info` and `success` are facts.
 public struct Banner: Codable, Equatable, Sendable {
     public enum Severity: String, Codable, Sendable { case info, success, warning, critical }
 
@@ -326,7 +407,9 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var symbol: String?
     /// What the row is, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
-    /// Steps shown when the row is expanded (for example a manual cleanup guide).
+    /// What the user can do about the row, shown after `detail` in its (i), each step a sentence of its own (for example a manual
+    /// cleanup guide). Plain sentences: the app draws them as paragraphs, never as a numbered or bulleted list, and a step must not
+    /// start with a number, a bullet or a dash (`InfoText.violations`).
     public var steps: [String]
     /// Background row work uses the same inline flag as a user-started row action. Keep its action metadata with stable id and
     /// parameters so the flag retains identity, and the host can recognize a foreground result handed to background work.

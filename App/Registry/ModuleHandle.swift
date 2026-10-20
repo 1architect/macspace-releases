@@ -160,14 +160,18 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private let permissions: any PermissionChecker
     private let privileged: (any PrivilegedChannel)?
     private let loader: Loader
+    /// Opens a System Settings pane; the tests keep System Settings closed.
+    private let openPane: @Sendable (URL) -> Void
 
     public init(descriptor: ModuleDescriptor, settings: SettingsStore, permissions: any PermissionChecker,
-                privileged: (any PrivilegedChannel)? = nil, loader: @escaping Loader = ModuleLoader.load) {
+                privileged: (any PrivilegedChannel)? = nil, loader: @escaping Loader = ModuleLoader.load,
+                openPane: @escaping @Sendable (URL) -> Void = SettingsPane.open) {
         self.descriptor = descriptor
         self.settings = settings
         self.permissions = permissions
         self.privileged = privileged
         self.loader = loader
+        self.openPane = openPane
         if case let .incompatible(reason) = descriptor.compatibility {
             state = .incompatible(reason)
         } else {
@@ -180,7 +184,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public var isEnabled: Bool { settings.isEnabled(module: id) }
 
     public func context() -> ModuleContext {
-        ModuleContext(manifest: manifest, options: settings.optionStore(for: manifest), permissions: permissions, privileged: privileged)
+        ModuleContext(manifest: manifest, options: settings.optionStore(for: manifest), permissions: permissions, privileged: privileged,
+                      services: AppModuleServices(module: id, openPane: openPane))
     }
 
     public func missingPermissions() -> [Permission] {
@@ -404,6 +409,25 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?) async -> ActionResult? {
         if let rowID, !quiet { queuedRows[rowID] = nil }
         guard !preparingForUninstall, state == .ready, let module else { return nil }
+        // The app's own actions (`Action.allowFullDiskAccess`, `openSettings`, `restart`): the module is not called.
+        if action.id == Action.fullDiskAccessID {
+            openPane(LivePermissionChecker.fullDiskAccessSettingsURL)
+            return nil
+        }
+        if action.id == Action.openSettingsID {
+            // Only a System Settings pane: whatever else a module puts there is not opened.
+            if let url = Action.settingsPane(action.parameters) { openPane(url) }
+            return nil
+        }
+        // macOS's Restart dialog, where the user confirms.
+        if action.id == Action.restartID {
+            guard SystemRestart.showDialog() else {
+                let result = ActionResult(outcome: .needsAttention, message: String(localized: "Restart your Mac from the Apple menu."), refresh: false)
+                lastResult = result
+                return result
+            }
+            return nil
+        }
         let missing = action.requires.filter { permissions.status(of: $0) == .missing }
         if !missing.isEmpty {
             // For a switch it counts as failed: nothing changed, so the switch goes back.

@@ -1,6 +1,5 @@
 import Foundation
 import MacSpacePlatform
-@preconcurrency import UserNotifications
 
 /// Notify-only watcher for the Apple Intelligence language guard. It never re-applies the
 /// workaround; it records state transitions and tells the user when protection is lost.
@@ -148,23 +147,6 @@ public struct AppleIntelligenceWatchStore {
             try handle.write(contentsOf: line)
         } else {
             try line.write(to: eventLogURL, options: .atomic)
-        }
-    }
-
-    /// Posts a notification from MacSpace itself, with its icon (not `osascript`, which showed Script Editor's). macOS asks the user
-    /// once whether MacSpace may notify. Outside the app (the CLI has no bundle) nothing is posted.
-    public static func notify(_ alert: AppleIntelligenceWatchAlert) {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return }
-        let center = UNUserNotificationCenter.current()
-        let title = alert.title, message = alert.message
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = message
-            // Opens the module's page when clicked (`AppNotifications`).
-            content.userInfo = ["module": "com.macspace.siri"]
-            center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
         }
     }
 }

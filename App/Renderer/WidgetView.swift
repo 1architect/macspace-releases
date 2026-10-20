@@ -197,6 +197,13 @@ struct WidgetForm<Top: View>: View {
 }
 
 /// Shared ordering for the legend, headers and rows; departure runs from the bottom up.
+extension View {
+    /// A row or section that comes and goes outside a module's list (Settings, its pages): the same arrival and departure as a
+    /// module page's rows (`PageCascade`). The change that adds or removes it must be animated (`Theme.layout`). Settings drew its
+    /// rows in and out at once while every module page cascaded them (2026-10-20).
+    func rowCascade() -> some View { transition(PageCascade.transition(index: 0, count: 1)) }
+}
+
 enum PageCascade {
     static let duration = 0.22
 
@@ -416,7 +423,9 @@ struct BannerRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity, design))
+            // Orange only when it asks something of the user: a warning, or a button to press (Allow) (`Banner.Severity`).
+            Image(systemName: Palette.symbol(banner.severity))
+                .foregroundStyle(banner.action != nil ? design.action : Palette.color(banner.severity, design))
             VStack(alignment: .leading, spacing: 2) {
                 ChangingText(text: banner.title).fontWeight(.semibold)
                 if let message = banner.message { ChangingText(text: message).font(.caption).foregroundStyle(.secondary) }
@@ -436,9 +445,10 @@ struct RowView: View {
     private var placement: RowFlagPlacement { .for(hasTrailingFigure: row.trailing != nil) }
     @Environment(\.rowActivity) private var activity
 
-    /// The row's action flag is in the action color now (working, or showing its result): its pills step back (`BadgeView.quiet`).
+    /// The row's action flag is in the action color now (a result that asks something of the user): its pills step back
+    /// (`BadgeView.quiet`), so two orange pills never stand side by side.
     private var flagIsActive: Bool {
-        row.activity != nil || activity.rowID == row.id || activity.queued[row.id] != nil || activity.results[row.id] != nil
+        activity.results[row.id].map { $0.outcome != .succeeded || $0.restartRequired } ?? false
     }
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup

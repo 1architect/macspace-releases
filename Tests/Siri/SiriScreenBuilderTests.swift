@@ -121,7 +121,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.protected)), "nothing to do, so no banner")
         XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.releasing)))
         XCTAssertNil(SiriScreenBuilder.statusBanner(snapshot(.atRisk)), "the switch itself says it is on")
-        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.unknown))?.action?.id, "openFullDiskAccess")
+        XCTAssertEqual(SiriScreenBuilder.statusBanner(snapshot(.unknown))?.action?.id, Action.fullDiskAccessID)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.atRisk)).rows[0].isOn, true)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.protected)).rows[0].isOn, false)
         XCTAssertEqual(SiriScreenBuilder.switchList(snapshot(.unknown, match: true)).rows[0].isOn, true, "unknown falls back to the language match")
@@ -192,18 +192,18 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureModelBytes = [.siri: 1_400_000_000]
         snap.featureCleanupWaiting = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "not held: MacSpace deletes them again")
-        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID)
         snap.featureLocked = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "a lock alone: macOS usually lets go within minutes")
-        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID)
         snap.featureCleanupStalled = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.kind, .action)
         snap.featureDownloading = [.siri]
-        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac", "macOS downloading again: a restart does not stop it")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID, "macOS downloading again: a restart does not stop it")
         snap.featureDownloading = []
         let restart = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
-        XCTAssertEqual(restart.id, "restartMac")
+        XCTAssertEqual(restart.id, Action.restartID)
         XCTAssertEqual(restart.title, "Restart to free \(ByteFormat.string(1_400_000_000))")
         XCTAssertNil(restart.confirmation, "macOS's own Restart dialog asks")
     }
@@ -251,7 +251,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureModelBytes = [.siri: 72_600_000]
         snap.featureCleanupWaiting = [.siri]
         snap.featureLocked = [.siri]
-        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac", "on, it keeps its models")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID, "on, it keeps its models")
         XCTAssertNotEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
     }
 
@@ -363,7 +363,8 @@ final class SiriScreenBuilderTests: XCTestCase {
         for case let .toggles(list) in screen.widgets { toggleIDs += list.rows.map(\.id) }
         XCTAssertFalse(toggleIDs.contains("icloud-sync"))
         let row = SiriScreenBuilder.cloudSyncRow(enabled: true)
-        XCTAssertEqual(row.actions.map(\.id), ["openICloudSettings"])
+        XCTAssertEqual(row.actions.map(\.id), [Action.openSettingsID], "the app opens System Settings")
+        XCTAssertEqual(row.actions.first.flatMap { Action.settingsPane($0.parameters) }, SiriCloudSync.settingsURL)
         XCTAssertTrue(row.steps.contains { $0.contains("Sync this Mac") })
         let off = SiriScreenBuilder.cloudSyncRow(enabled: false)
         XCTAssertEqual(off.detail, row.detail, "the (i) says what the sync does, on or off")
@@ -540,4 +541,14 @@ private final class SnapshotReads: @unchecked Sendable {
     func next() -> Int { lock.withLock { count += 1; return count } }
     var total: Int { lock.withLock { count } }
     func waitForRelease(_ release: DispatchSemaphore) { _ = release.wait(timeout: .now() + 5) }
+}
+
+/// The restart notification is the module's words; the app posts it (`ModuleServices.notify`).
+final class SiriRestartNoticeTests: XCTestCase {
+    func testNoticeSaysWhatARestartFrees() {
+        let big = SiriModule.restartNotice(SiriScreenBuilder.purgeThreshold)
+        XCTAssertTrue(big.title.contains(ByteFormat.string(SiriScreenBuilder.purgeThreshold)))
+        XCTAssertFalse(big.body.isEmpty)
+        XCTAssertFalse(SiriModule.restartNotice(0).title.contains(ByteFormat.string(0)), "no figure under the threshold")
+    }
 }

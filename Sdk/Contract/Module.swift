@@ -187,19 +187,42 @@ public protocol PrivilegedChannel: Sendable {
     func perform(operation: String, arguments: [String: String]) async throws -> Data
 }
 
+/// What the app does for a module, the same for every module: Debloat and Siri each posted their notifications with code of their
+/// own, and every module opened System Settings itself (2026-10-20). A module decides whether to ask (its own option switch, such as
+/// `notify`); the app does it.
+public protocol ModuleServices: Sendable {
+    /// Posts a notification from MacSpace, with its icon; clicking it opens the module's page. macOS asks the user once whether
+    /// MacSpace may notify. Outside the app (the CLI, the tests) nothing is posted.
+    func notify(title: String, body: String)
+
+    /// Opens a pane of System Settings, for what the module does without a button (a profile staged for approval). Only
+    /// `x-apple.systempreferences:` URLs open (`Action.isSettingsPane`). A button opens a pane with `Action.openSettings`.
+    func openSettings(_ url: URL)
+}
+
+/// Does nothing: the context of the CLI and of the tests, which have no app to notify from.
+public struct NoModuleServices: ModuleServices {
+    public init() {}
+    public func notify(title: String, body: String) {}
+    public func openSettings(_ url: URL) {}
+}
+
 public struct ModuleContext: Sendable {
     public var manifest: ModuleManifest
     public var options: any OptionStore
     public var permissions: any PermissionChecker
     /// nil when the helper is not installed or the user has not approved it.
     public var privileged: (any PrivilegedChannel)?
+    /// Notifications and System Settings, posted and opened by the app for this module.
+    public var services: any ModuleServices
 
     public init(manifest: ModuleManifest, options: any OptionStore, permissions: any PermissionChecker,
-                privileged: (any PrivilegedChannel)? = nil) {
+                privileged: (any PrivilegedChannel)? = nil, services: any ModuleServices = NoModuleServices()) {
         self.manifest = manifest
         self.options = options
         self.permissions = permissions
         self.privileged = privileged
+        self.services = services
     }
 }
 

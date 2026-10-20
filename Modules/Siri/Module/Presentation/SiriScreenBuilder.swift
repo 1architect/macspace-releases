@@ -23,7 +23,7 @@ enum SiriScreenBuilder {
         case .unknown:
             return Banner(id: "status", severity: .info, title: loc("Allow Full Disk Access"),
                           message: loc("MacSpace needs it to read and verify the switch."),
-                          action: Action(id: "openFullDiskAccess", title: loc("Allow"), role: .prominent))
+                          action: .allowFullDiskAccess(title: loc("Allow")))
         default:
             return nil
         }
@@ -254,8 +254,7 @@ enum SiriScreenBuilder {
         let features = ModelFeatureSettings.Feature.allCases.filter { needsRestart($0, snapshot) }
         guard !features.isEmpty else { return nil }
         let bytes = features.compactMap { snapshot.featureModelBytes[$0] }.filter { $0 >= purgeThreshold }.reduce(0, +)
-        return Action(id: "restartMac", title: bytes > 0 ? loc("Restart to free \(ByteFormat.string(bytes))") : loc("Restart to finish"),
-                      symbol: "arrow.clockwise", role: .prominent)
+        return .restart(title: bytes > 0 ? loc("Restart to free \(ByteFormat.string(bytes))") : nil)
     }
 
     static func anySwitchOn(_ snapshot: SiriSnapshot) -> Bool { switchList(snapshot).rows.contains(where: \.isOn) }
@@ -380,8 +379,7 @@ enum SiriScreenBuilder {
         guard modelsSize(feature, snapshot) != nil else { return nil }
         if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), .info) }
         if needsRestart(feature, snapshot) {
-            return Badge(loc("Restart required"), .action,
-                         help: loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))
+            return .restartRequired(help: loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))
         }
         // MacSpace is deleting them, again and again until they are gone (`ManagedModelCleanup`): the standard freeing pill. What
         // holds them up, when something does, is its hover tag.
@@ -425,7 +423,7 @@ enum SiriScreenBuilder {
         let badge: Badge?
         switch status.state {
         case .restartRequired:
-            badge = Badge(loc("Restart required"), .action, help: loc("Restart your Mac to apply this change."))
+            badge = .restartRequired()
         case .changedElsewhere:
             badge = Badge(loc("Changed outside MacSpace"), .info,
                           help: loc("Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself."))
@@ -460,7 +458,7 @@ enum SiriScreenBuilder {
                    symbol: enabled == false ? "checkmark.icloud" : "icloud",
                    detail: loc("While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac."),
                    steps: enabled == false ? [] : SiriCloudSync.steps,
-                   actions: [Action(id: "openICloudSettings", title: loc("Open"))])
+                   actions: [.openSettings(title: loc("Open"), url: SiriCloudSync.settingsURL)])
     }
 
     static func accountsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {

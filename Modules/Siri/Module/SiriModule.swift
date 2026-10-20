@@ -1,9 +1,7 @@
-import AppKit
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
 import MacSpaceSiriPrivileged
-@preconcurrency import UserNotifications
 
 @objc(MacSpaceSiriEntry)
 public final class SiriEntry: MacSpaceModuleEntry, @unchecked Sendable {
@@ -127,24 +125,16 @@ public struct SiriModule: MacSpaceModule {
 
     static func announceRestarts(_ snapshot: SiriSnapshot, context: ModuleContext) async {
         let asked = await ManagedModelCleanup.shared.takeRestartsAsked()
-        if !asked.isEmpty, context.options.bool("notifyRestart") { notifyRestart(asked.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +)) }
+        guard !asked.isEmpty, context.options.bool("notifyRestart") else { return }
+        let notice = restartNotice(asked.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +))
+        context.services.notify(title: notice.title, body: notice.body)
     }
 
-    /// Asks for the restart in Notification Center; clicking it opens the module's page, where the restart button is. Outside the
-    /// app (the CLI has no bundle) nothing is posted.
-    static func notifyRestart(_ bytes: UInt64) {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return }
+    /// The restart asked for in Notification Center (`ModuleServices.notify`, which the app posts); clicking it opens the module's
+    /// page, where the restart button is.
+    static func restartNotice(_ bytes: UInt64) -> (title: String, body: String) {
         let title = bytes >= SiriScreenBuilder.purgeThreshold ? loc("Restart to free \(ByteFormat.string(bytes))") : loc("Restart to finish")
-        let body = loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them.")
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
-            content.userInfo = ["module": moduleID]
-            center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
-        }
+        return (title, loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))
     }
 
     private func checkFeatureModels(force: Bool = false) async {
@@ -301,13 +291,6 @@ public struct SiriModule: MacSpaceModule {
             await ModelPurger.shared.purge(after: ModelReleaseTiming().releaseWait, force: true) { await store.invalidate() }
             return ActionResult(outcome: .succeeded, message: result.message,
                                 details: result.details + ["MacSpace deletes the released models in the background."], refresh: true)
-        case "restartMac":
-            // macOS's own dialog asks; the Mac restarts only if the user confirms there.
-            guard SystemRestart.showDialog() else { return .failed(loc("Restart your Mac from the Apple menu.")) }
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
-        case "openICloudSettings":
-            NSWorkspace.shared.open(SiriCloudSync.settingsURL)
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "freeFeatureModels":
             // The switched-off features' cleanup, now and in view: what was given up on is tried again (`ManagedModelCleanup`).
             progress(ActionProgress(message: loc("Freeing space")))
@@ -332,9 +315,6 @@ public struct SiriModule: MacSpaceModule {
                 Self.recordBackground(freed, summary: loc("Unused system assets"))
                 await store.invalidate()
             }
-        case "openFullDiskAccess":
-            NSWorkspace.shared.open(LivePermissionChecker.fullDiskAccessSettingsURL)
-            return ActionResult(outcome: .succeeded, message: "", refresh: false)
         case "releaseModels":
             return await Task.detached(priority: .userInitiated) { Self.release(progress: progress) }.value
         default:
@@ -358,7 +338,7 @@ public struct SiriModule: MacSpaceModule {
         let outcome = AppleIntelligenceWatcher().transition(previous: store.load(), status: status)
         try? store.save(outcome.record)
         if outcome.transitioned || outcome.alert != nil { try? store.append(outcome, status: status) }
-        if let alert = outcome.alert, context.options.bool("notify") { AppleIntelligenceWatchStore.notify(alert) }
+        if let alert = outcome.alert, context.options.bool("notify") { context.services.notify(title: alert.title, body: alert.message) }
     }
 
     // MARK: Actions

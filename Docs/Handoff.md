@@ -107,6 +107,7 @@ Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
    calls the module's `invalidate()` first.
    Current polling intervals, cache lifetimes and visible-loading behavior are documented in [Module refresh behavior](Module-Refresh.md).
 Contract version 5 adds targeted action presentations and inline row activity to tile scan progress and lightweight status updates; visible canvases determine which modules are followed. See [Module refresh behavior](Module-Refresh.md).
+Contract version 7 (2026-10-20) adds `ModuleContext.services`: the app posts a module's notifications (with its id, so a click opens its page) and opens System Settings panes for it, and `Action.openSettings(title:url:)` opens a pane from a button without calling the module. Debloat, Siri, System Data and Other System Files no longer post notifications or open System Settings themselves.
 
 About MacSpace is the app menu’s About command (also in the status menu), using MacBat’s native alert layout with version, author, GitHub and uninstall. It is not a Settings section. Module contract version 3 adds the uninstall hook. Modules implement `prepareForUninstall(context:)` to restore reversible changes before the helper is removed. The host calls disabled modules too; failures keep the app installed. Siri restores its saved language and voice, Debloat reverts journaled settings and removes its own profiles. Cleaners use the default no-op because freed files cannot be restored.
 

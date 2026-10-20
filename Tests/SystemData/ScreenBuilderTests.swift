@@ -157,7 +157,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         var needsAccess = snap
         needsAccess.report.fullDiskAccess = false
         guard case let .banner(banner) = SystemDataScreenBuilder.partialBanner(needsAccess) else { return XCTFail("expected a banner") }
-        XCTAssertEqual(banner.action?.id, "openFullDiskAccess")
+        XCTAssertEqual(banner.action?.id, Action.fullDiskAccessID)
         XCTAssertTrue(banner.title.contains("Full Disk Access"))
     }
 

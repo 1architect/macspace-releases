@@ -1,3 +1,4 @@
+import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
@@ -63,8 +64,11 @@ struct RowActionFlags: View {
                 .transition(PageCascade.transition(index: actions.firstIndex(where: { $0.id == action.id }) ?? 0, count: actions.count))
             }
             if actions.isEmpty, let result, !result.message.isEmpty {
-                StatusFlag(text: result.message, tone: result.outcome == .succeeded ? .neutral : .caution)
-                    .onTapGesture { activity.dismiss(row.id) }
+                StatusFlag(text: result.message, tone: result.outcome == .succeeded && !result.restartRequired ? .neutral : .caution)
+                    .onTapGesture {
+                        if result.restartRequired { SystemRestart.showDialog() }
+                        activity.dismiss(row.id)
+                    }
                     .transition(PageCascade.transition(index: 0, count: 1))
             }
         }
@@ -89,6 +93,10 @@ private struct RowActionFlag: View {
     @Environment(\.design) private var design
 
     private var working: Bool { progress != nil }
+    /// Only a result that asks something of the user is in the action color: a failure, or a change only a restart completes. Its
+    /// work and its other results are grey, as every element that asks nothing (`Badge.Kind`): "Freeing in the background" was
+    /// orange on System Data's rows (2026-10-20).
+    private var asksUser: Bool { result.map { $0.outcome != .succeeded || $0.restartRequired } ?? false }
     private var text: String {
         if let progress {
             return progress.message.isEmpty ? action.workingTitle ?? String(localized: "Working") : progress.message
@@ -111,7 +119,11 @@ private struct RowActionFlag: View {
 
     var body: some View {
         Button {
-            if result != nil { dismiss() } else if !working { Task { await run() } }
+            if let result {
+                // A row whose change needs a restart says so in the action color: clicked, macOS's Restart dialog asks.
+                if result.restartRequired { SystemRestart.showDialog() }
+                dismiss()
+            } else if !working { Task { await run() } }
         } label: {
             PillMorph {
                 ReservedPillLabel(samples: reserved, reserveWidth: working || result != nil) {
@@ -119,14 +131,15 @@ private struct RowActionFlag: View {
                 }
             }
             .environment(\.textChangeDelay, 0)
-            .foregroundStyle(working || result != nil ? design.actionDeep : Color.primary)
-            .opacity(working || result != nil ? 1 : PillInk.opacity(lit: hovering))
+            .foregroundStyle(asksUser ? design.actionDeep : Color.primary)
+            .opacity(asksUser || working ? 1 : PillInk.opacity(lit: hovering))
             .animation(Theme.hover, value: hovering)
             .background {
-                Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
+                Capsule().fill(asksUser ? design.action : Color.primary.opacity(hovering || working || result != nil ? 0.1 : 0.05))
                     .animation(Theme.value, value: working)
+                    .animation(Theme.value, value: asksUser)
                     .animation(Theme.hover, value: hovering)
-                if working { ActionProgressFill(fraction: progress?.fraction).clipShape(Capsule()) }
+                if working { ActionProgressFill(fraction: progress?.fraction, neutral: true).clipShape(Capsule()) }
             }
             .contentShape(Capsule())
         }
@@ -191,6 +204,9 @@ enum RowFlagPlacement: Equatable {
 struct ActionProgressFill: View {
     var fraction: Double?
     var load: LoadFill?
+    /// In a grey row flag: the fill in the text's color, faint, as the flag asks nothing of the user. The page's main button keeps
+    /// the action color's light form.
+    var neutral = false
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
@@ -202,12 +218,12 @@ struct ActionProgressFill: View {
             let value = raw.flatMap { $0.isFinite ? $0 : nil }
             GeometryReader { geometry in
                 if let value {
-                    Rectangle().fill(design.actionLight)
+                    Rectangle().fill(neutral ? AnyShapeStyle(Color.primary.opacity(0.12)) : AnyShapeStyle(design.actionLight))
                         .frame(width: geometry.size.width * max(0.08, min(1, value)))
                         .opacity(0.7 + 0.3 * wave)
                         .animation(reduceMotion ? nil : Theme.layout, value: value)
                 } else {
-                    Rectangle().fill(design.actionLight).opacity(0.25 + 0.6 * wave)
+                    Rectangle().fill(neutral ? AnyShapeStyle(Color.primary.opacity(0.12)) : AnyShapeStyle(design.actionLight)).opacity(0.25 + 0.6 * wave)
                 }
             }
         }

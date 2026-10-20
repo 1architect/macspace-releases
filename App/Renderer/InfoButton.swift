@@ -126,7 +126,7 @@ extension View {
     func rowPill(active: Bool) -> some View { modifier(RowPill(active: active)) }
 }
 
-/// What the balloon holds: the description, paragraph by paragraph, then numbered steps, then the note.
+/// What the balloon holds: the description, paragraph by paragraph, then the steps as sentences, then the note.
 private struct InfoBalloon: View {
     let paragraphs: [String]
     let steps: [String]
@@ -140,17 +140,11 @@ private struct InfoBalloon: View {
                     .lineLimit(InfoText.maximumLines)
                     .truncationMode(.tail)
             }
+            // What the user can do, sentence after sentence: never a numbered or bulleted list (`InfoText`). A single step read "1."
+            // in front of its one sentence (System Data's dictionaries, 2026-10-20).
             if !steps.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 12, alignment: .trailing)
-                            Text(step)
-                        }
-                    }
+                    ForEach(Array(steps.enumerated()), id: \.offset) { _, step in Text(step) }
                 }
             }
             if let note, !note.isEmpty {
