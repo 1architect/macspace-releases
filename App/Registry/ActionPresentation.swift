@@ -1,12 +1,12 @@
 import MacSpaceSdk
 
 extension Screen {
-    /// A foreground result can hand the same action to a row's background activity. Match its parameters as well as its id:
+    /// A foreground result can hand the same action to a row's background work (`Row.activity`, `Badge.freeingInBackground`). Match its parameters as well as its id:
     /// work on another cloud folder or another target must not suppress this action's result or completion.
     func activeRow(for request: ActionRequest) -> Row? {
         func find(_ rows: [Row]) -> Row? {
             for row in rows {
-                if row.activity != nil, row.actions.contains(where: { $0.id == request.actionID && $0.parameters == request.parameters }) { return row }
+                if row.activity != nil || row.isFreeingInBackground, row.actions.contains(where: { $0.id == request.actionID && $0.parameters == request.parameters }) { return row }
                 if let found = find(row.children) { return found }
             }
             return nil

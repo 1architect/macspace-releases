@@ -25,9 +25,15 @@ public struct Badge: Codable, Equatable, Sendable {
         case action
     }
 
+    /// The pills every module shares, which the app recognizes whatever their text (`freeingInBackground`).
+    public enum Role: String, Codable, Equatable, Sendable {
+        case freeingInBackground
+    }
+
     public var text: String
     public var kind: Kind
     public var help: String?
+    public var role: Role?
 
     /// `kind` has no default: each pill decides whether it asks something of the user.
     public init(_ text: String, _ kind: Kind, help: String? = nil) {
@@ -35,7 +41,7 @@ public struct Badge: Codable, Equatable, Sendable {
         self.kind = kind
         self.help = help
     }
-    private enum CodingKeys: String, CodingKey { case text, kind, help }
+    private enum CodingKeys: String, CodingKey { case text, kind, help, role }
 
     /// A pill saved before pills had a kind (with a `tone` instead) reads as a description.
     public init(from decoder: Decoder) throws {
@@ -43,6 +49,7 @@ public struct Badge: Codable, Equatable, Sendable {
         text = try container.decode(String.self, forKey: .text)
         kind = try container.decodeIfPresent(Kind.self, forKey: .kind) ?? .info
         help = try container.decodeIfPresent(String.self, forKey: .help)
+        role = try container.decodeIfPresent(Role.self, forKey: .role)
     }
 }
 
@@ -54,6 +61,23 @@ extension Badge {
     public static func restartRequired(help: String? = nil) -> Badge {
         Badge(String(localized: "Restart required"), .action, help: help ?? String(localized: "Restart your Mac to apply this change."))
     }
+
+    /// The one pill of space MacSpace is freeing by itself while the row stays (asking macOS again, deleting models as soon as macOS
+    /// lets go): "Freeing in the background", grey like every pill that asks nothing, with `help` saying what holds it up when
+    /// something does. Every module uses this one, in a row's or a switch's pills, never a pill or a working flag of its own: Siri
+    /// said "Freeing space" in a grey pill before the (i) while System Data and Other System Files said "Freeing in the background"
+    /// in a darker working flag after it (2026-10-20). A row with it offers no button meanwhile (the app hides its flags), and a
+    /// Free that ends handing its work to it continues in the row rather than saying All done.
+    public static func freeingInBackground(help: String? = nil) -> Badge {
+        var badge = Badge(String(localized: "Freeing in the background"), .info, help: help)
+        badge.role = .freeingInBackground
+        return badge
+    }
+}
+
+extension Row {
+    /// MacSpace is freeing the row's space by itself (`Badge.freeingInBackground`).
+    public var isFreeingInBackground: Bool { badges.contains { $0.role == .freeingInBackground } }
 }
 
 /// Titles of lists and sections (`ListWidget.title`, `ToggleList.title`, `SectionWidget.title`, `UsageBar.title`): every page draws
@@ -411,8 +435,10 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// cleanup guide). Plain sentences: the app draws them as paragraphs, never as a numbered or bulleted list, and a step must not
     /// start with a number, a bullet or a dash (`InfoText.violations`).
     public var steps: [String]
-    /// Background row work uses the same inline flag as a user-started row action. Keep its action metadata with stable id and
-    /// parameters so the flag retains identity, and the host can recognize a foreground result handed to background work.
+    /// Background row work with progress of its own ("Removing 9 GB") uses the same inline flag as a user-started row action. Keep
+    /// its action metadata with stable id and parameters so the flag retains identity, and the host can recognize a foreground result
+    /// handed to background work. Space MacSpace frees by itself with nothing to measure is the shared pill instead
+    /// (`Badge.freeingInBackground`).
     public var activity: ActionProgress?
     /// The row's buttons, drawn as its action flags: after the title when the row has a `trailing` figure, else on the right edge.
     public var actions: [Action]

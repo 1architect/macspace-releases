@@ -35,6 +35,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   fading in place on a timing of their own.
 - The window's shadow grows in with the window as it opens, instead of showing at its full size around the smaller window.
 - A list's rows no longer darken where they overlap while one slides in or out: the list's shade grows and shrinks as one shape.
+- Every module now says "Freeing in the background" in the same grey pill while MacSpace frees space by itself: Siri & Apple
+  Intelligence said "Freeing space", and System Data and Other System Files showed a darker flag in place of Free.
+- A row's Open button no longer flashes "Working" while it opens System Settings.
 
 ## [1.1.3] - 2026-10-19
 

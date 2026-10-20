@@ -26,6 +26,8 @@ struct RowActionFlags: View {
     @State private var retainedActions: [Action] = []
 
     private var actions: [Action] {
+        // Already freeing by itself: its pill says so (`Badge.freeingInBackground`), and no button would hurry it.
+        if row.isFreeingInBackground { return [] }
         if !row.actions.isEmpty { return row.actions }
         if activity.rowID == row.id, let action = activity.action { return [action] }
         if let action = activity.queued[row.id] { return [action] }
@@ -35,7 +37,7 @@ struct RowActionFlags: View {
 
     private var result: ActionResult? {
         guard let result = activity.results[row.id] else { return nil }
-        if row.activity != nil, result.outcome == .succeeded, !result.restartRequired { return nil }
+        if row.activity != nil || row.isFreeingInBackground, result.outcome == .succeeded, !result.restartRequired { return nil }
         return result
     }
 

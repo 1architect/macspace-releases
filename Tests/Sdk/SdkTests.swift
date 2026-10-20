@@ -155,4 +155,19 @@ final class SdkTests: XCTestCase {
         XCTAssertNil(Action.settingsPane(["url": "file:///Applications/Calculator.app"]))
         XCTAssertNil(Action.settingsPane([:]))
     }
+
+    /// The one freeing pill every module uses: grey, recognized by its role whatever its text, kept through encoding.
+    func testFreeingInBackgroundIsOneSharedPill() throws {
+        let pill = Badge.freeingInBackground(help: "Held by macOS")
+        XCTAssertEqual(pill.kind, .info)
+        XCTAssertEqual(pill.role, .freeingInBackground)
+        XCTAssertEqual(pill.text, Badge.freeingInBackground().text)
+        XCTAssertEqual(try JSONDecoder().decode(Badge.self, from: JSONEncoder().encode(pill)), pill)
+        var row = Row(id: "r", title: "Files")
+        XCTAssertFalse(row.isFreeingInBackground)
+        row.badges.append(Badge(pill.text, .info))
+        XCTAssertFalse(row.isFreeingInBackground, "its role, not its words, makes it the freeing pill")
+        row.badges.append(pill)
+        XCTAssertTrue(row.isFreeingInBackground)
+    }
 }

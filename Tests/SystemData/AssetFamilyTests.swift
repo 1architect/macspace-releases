@@ -60,9 +60,8 @@ final class AssetFamilyTests: XCTestCase {
         guard case let .section(section)? = SystemDataScreenBuilder.freeNow(snap),
               case let .list(list) = section.widgets[0], let row = list.rows.first(where: { $0.id == "assets" }) else { return XCTFail() }
         XCTAssertEqual(row.actions.first?.id, "purgeAssets")
-        XCTAssertEqual(row.activity?.message, "Freeing in the background")
-        XCTAssertTrue(row.badges.isEmpty)
-        XCTAssertTrue(row.actions.first?.labelSamples?.contains("Freeing in the background") == true)
+        XCTAssertEqual(row.badges, [.freeingInBackground()], "the shared freeing pill, as every module's")
+        XCTAssertNil(row.activity)
     }
 
     func testScreenListsOnlyFamiliesWithASetting() throws {

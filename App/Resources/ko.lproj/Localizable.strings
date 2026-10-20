@@ -61,6 +61,7 @@
 "Free %@ of %@ downloads?" = "%@의 %@ 다운로드를 정리할까요?";
 "Freed %@" = "%@ 확보됨";
 "Freed in total" = "총 확보 공간";
+"Freeing in the background" = "백그라운드에서 확보 중";
 "Freeing space" = "공간 확보 중";
 "Frees caches, old reports and other files that are safe to delete." = "캐시, 오래된 보고서 등 안전하게 삭제할 수 있는 파일을 정리합니다.";
 "Full Disk Access" = "전체 디스크 접근";

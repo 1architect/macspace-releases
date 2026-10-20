@@ -97,7 +97,6 @@
 "Free the system log?" = "시스템 로그를 정리할까요?";
 "Free unused system assets?" = "사용하지 않는 시스템 리소스를 비울까요?";
 "Free up to %@ of unused system assets?" = "미사용 시스템 에셋을 최대 %@ 확보할까요?";
-"Freeing in the background" = "백그라운드에서 확보 중";
 "Freeing space" = "공간 확보 중";
 "Frees about %@. Homebrew downloads them again when it needs them." = "약 %@ 확보합니다. Homebrew가 필요할 때 다시 다운로드합니다.";
 "From a deleted account. Copy what you need, then delete it." = "삭제된 계정의 파일입니다. 필요한 항목을 복사한 후 삭제하세요.";

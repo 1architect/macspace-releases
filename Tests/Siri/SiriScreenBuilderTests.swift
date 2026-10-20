@@ -191,10 +191,10 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
         snap.featureModelBytes = [.siri: 1_400_000_000]
         snap.featureCleanupWaiting = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "not held: MacSpace deletes them again")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.role, .freeingInBackground, "not held: MacSpace deletes them again")
         XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID)
         snap.featureLocked = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "a lock alone: macOS usually lets go within minutes")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.role, .freeingInBackground, "a lock alone: macOS usually lets go within minutes")
         XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, Action.restartID)
         snap.featureCleanupStalled = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
@@ -221,7 +221,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureCleanupWaiting = [.phone, .spatialPhotos]
         XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "freeFeatureModels", "being freed: no button can hurry macOS")
         XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets")
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows.last?.badge?.text, "Freeing space")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows.last?.badge?.role, .freeingInBackground)
         snap.featureCleanupWaiting = []
         snap.cleaningFeatures = true
         snap.featureSettings[.siri] = .init(state: .off, managedOff: true, requestedOff: true)
@@ -314,14 +314,14 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
         snap.cleaningFeatures = true
         snap.featureModelBytes = [.siri: 1_400_000_000]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.role, .freeingInBackground)
         XCTAssertEqual(SiriScreenBuilder.refreshAfter(snap), 5)
         snap.cleaningFeatures = false
         snap.featureCleanupWaiting = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.role, .freeingInBackground)
         XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge?.help, "nothing holds them up: no tag")
         snap.featureLocked = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.role, .freeingInBackground)
         XCTAssertTrue(SiriScreenBuilder.switchList(snap).rows[1].badge?.help?.contains("services") == true, "says what holds them")
         snap.featureModelBytes = [.siri: 9_000_000]
         XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge, "nothing worth a size is left: no pill")
@@ -475,7 +475,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         releasing.installedModelBytes = 9_000_000_000
         XCTAssertEqual(row(releasing).badge?.text, "macOS is freeing the model")
         releasing.releasingAutomatically = true
-        XCTAssertEqual(row(releasing).badge?.text, "Freeing space")
+        XCTAssertEqual(row(releasing).badge?.role, .freeingInBackground)
         var blocked = snapshot(.releasing, blockers: ["Apple Intelligence is on in tester."])
         blocked.installedModelBytes = 9_000_000_000
         XCTAssertEqual(row(blocked).badge?.text, "Kept by macOS")
@@ -483,7 +483,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         var purging = snapshot(.protected)
         purging.installedModelBytes = 9_000_000_000
         purging.purgingModels = true
-        XCTAssertEqual(row(purging).badge?.text, "Freeing space")
+        XCTAssertEqual(row(purging).badge?.role, .freeingInBackground)
 
         let clean = snapshot(.protected)
         XCTAssertNil(row(clean).trailing)

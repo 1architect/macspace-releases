@@ -36,7 +36,6 @@
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@ of purgeable app files?" = "제거 가능한 앱 파일을 최대 %@ 확보할까요?";
 "Freed %@ on %@" = "%@ 확보됨: %@";
-"Freeing in the background" = "백그라운드에서 확보 중";
 "Freeing space" = "공간 확보 중";
 "Install the helper in Settings" = "설정에서 보조 프로그램 설치";
 "Installs at the next restart" = "다음 재시동 시 설치";

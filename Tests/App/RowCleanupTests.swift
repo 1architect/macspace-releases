@@ -132,7 +132,8 @@ private struct ContinuingCleanupModule: MacSpaceModule {
         progress(ActionProgress(fraction: 0.5, message: "Freeing"))
         await control.wait(request)
         var row = Row(id: "item", title: "Files", actions: [action(backgroundPath)])
-        row.activity = ActionProgress(message: "Freeing in the background")
+        // How a module hands a Free to background work (`Badge.freeingInBackground`).
+        row.badges.append(.freeingInBackground())
         return ActionResult(outcome: outcome, message: "Freed 5 bytes", freedBytes: 5,
                             presentation: ModulePresentation(tile: Tile(title: "After", status: "freeing"),
                                                              screen: Screen(title: "After", widgets: [.list(ListWidget(id: "rows", rows: [row]))])))
@@ -192,5 +193,13 @@ final class CleanupHandoffTests: XCTestCase {
         defer { page.deactivate() }
         XCTAssertEqual(page.lastResult?.outcome, .failed)
         XCTAssertEqual(page.allDone, 0)
+    }
+
+    /// The app's own actions open something at once: their button never says Working (`ModuleHandle.opensAtOnce`).
+    func testTheAppsOwnActionsNeverShowWorking() {
+        XCTAssertTrue(ModuleHandle.opensAtOnce(.openSettings(title: "Open", url: URL(string: "x-apple.systempreferences:com.apple.Siri")!)))
+        XCTAssertTrue(ModuleHandle.opensAtOnce(.allowFullDiskAccess(title: "Allow")))
+        XCTAssertTrue(ModuleHandle.opensAtOnce(.restart()))
+        XCTAssertFalse(ModuleHandle.opensAtOnce(Action(id: "clean", title: "Free")))
     }
 }

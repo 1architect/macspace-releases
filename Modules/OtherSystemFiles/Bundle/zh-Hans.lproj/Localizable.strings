@@ -36,7 +36,6 @@
 "Free up to %@" = "最多释放 %@";
 "Free up to %@ of purgeable app files?" = "释放最多 %@ 可清除的应用文件？";
 "Freed %@ on %@" = "已释放 %@（%@）";
-"Freeing in the background" = "正在后台释放";
 "Freeing space" = "正在释放空间";
 "Install the helper in Settings" = "在设置中安装辅助程序";
 "Installs at the next restart" = "下次重新启动时安装";

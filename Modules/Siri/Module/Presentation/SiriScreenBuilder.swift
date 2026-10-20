@@ -212,7 +212,7 @@ enum SiriScreenBuilder {
         }
     }
 
-    /// A feature's models are being freed now (its switch says Freeing space): MacSpace deletes them as soon as macOS lets go, which
+    /// A feature's models are being freed now (its switch says Freeing in the background): MacSpace deletes them as soon as macOS lets go, which
     /// no button can hurry.
     static func freeingFeatures(_ snapshot: SiriSnapshot) -> Bool {
         ModelFeatureSettings.Feature.allCases.contains { feature in
@@ -360,7 +360,7 @@ enum SiriScreenBuilder {
     static func aiModelsBadge(_ snapshot: SiriSnapshot, isOn: Bool) -> Badge? {
         if isOn { return snapshot.downloadingModelBytes > 0 ? Badge(loc("Downloading"), .info) : nil }
         guard aiModelsSize(snapshot) != nil else { return nil }
-        if snapshot.releasingAutomatically || snapshot.purgingModels { return Badge(loc("Freeing space"), .info) }
+        if snapshot.releasingAutomatically || snapshot.purgingModels { return .freeingInBackground() }
         if snapshot.status.state == .releasing {
             if !snapshot.releaseBlockers.isEmpty {
                 return Badge(loc("Kept by macOS"), .action, help: snapshot.releaseBlockers.joined(separator: " "))
@@ -377,17 +377,17 @@ enum SiriScreenBuilder {
         // Nothing worth a size is left (`modelsSize`): the switch says no more, whatever macOS keeps of its catalog. Checked first:
         // the run in view said Freeing space on every switch it covered, models or not (2026-10-19).
         guard modelsSize(feature, snapshot) != nil else { return nil }
-        if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), .info) }
+        if snapshot.cleaningFeatures { return .freeingInBackground() }
         if needsRestart(feature, snapshot) {
             return .restartRequired(help: loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))
         }
-        // MacSpace is deleting them, again and again until they are gone (`ManagedModelCleanup`): the standard freeing pill. What
-        // holds them up, when something does, is its hover tag.
+        // MacSpace is deleting them, again and again until they are gone (`ManagedModelCleanup`): the shared freeing pill
+        // (`Badge.freeingInBackground`). What holds them up, when something does, is its hover tag.
         if snapshot.featureCleanupWaiting.contains(feature) {
             let help = snapshot.featureLocked.contains(feature)
                 ? loc("macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them.")
                 : nil
-            return Badge(loc("Freeing space"), .info, help: help)
+            return .freeingInBackground(help: help)
         }
         return nil
     }

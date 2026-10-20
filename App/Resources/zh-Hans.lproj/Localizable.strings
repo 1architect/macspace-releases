@@ -61,6 +61,7 @@
 "Free %@ of %@ downloads?" = "释放 %@ 的 %@ 下载？";
 "Freed %@" = "已释放 %@";
 "Freed in total" = "累计释放";
+"Freeing in the background" = "正在后台释放";
 "Freeing space" = "正在释放空间";
 "Frees caches, old reports and other files that are safe to delete." = "释放缓存、旧报告及其他可安全删除的文件。";
 "Full Disk Access" = "完全磁盘访问";

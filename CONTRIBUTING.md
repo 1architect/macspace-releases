@@ -163,9 +163,14 @@ module's own words, and the page's main action is `Action.restart(title:)`, whic
 calling the module. An action whose result has `restartRequired` ends on the main button as "Restart to finish", which opens the
 same dialog.
 
+**Freeing in the background.** Space MacSpace frees by itself while the row stays (macOS asked again, models deleted as soon as
+macOS lets go) carries the app's one pill, `Badge.freeingInBackground(help:)`, in a row's or a switch's pills: never a pill in the
+module's own words, and never `Row.activity`, which is for background work with a figure of its own. The app hides the row's button
+meanwhile, and a Free that hands its work to it continues in the row instead of saying All done.
+
 **System Settings and notifications are the app's.** A button that opens a pane of System Settings is
-`Action.openSettings(title:url:)` (Full Disk Access: `Action.allowFullDiskAccess(title:)`), which the app opens without calling the
-module, and only for `x-apple.systempreferences:` URLs. A pane the module opens by itself, with no button (a profile staged for
+`Action.openSettings(title:url:)` (Full Disk Access: `Action.allowFullDiskAccess(title:)`), which the app opens at once without
+calling the module (its button never says Working), and only for `x-apple.systempreferences:` URLs. A pane the module opens by itself, with no button (a profile staged for
 approval), goes through `context.services.openSettings`. A notification is `context.services.notify(title:body:)`: the app posts it
 with the module's id, so a click opens the module's page. The module keeps the option switch that decides whether it notifies
 (`notify`). No module imports UserNotifications or opens System Settings with `NSWorkspace`.

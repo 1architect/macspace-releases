@@ -97,7 +97,6 @@
 "Free the system log?" = "Libérer le journal système ?";
 "Free unused system assets?" = "Libérer les ressources système inutilisées ?";
 "Free up to %@ of unused system assets?" = "Libérer jusqu’à %@ de ressources système inutilisées ?";
-"Freeing in the background" = "Libération en arrière-plan";
 "Freeing space" = "Libération d’espace";
 "Frees about %@. Homebrew downloads them again when it needs them." = "Libère environ %@. Homebrew les télécharge de nouveau quand il en a besoin.";
 "From a deleted account. Copy what you need, then delete it." = "D’un compte supprimé. Copiez ce dont vous avez besoin, puis supprimez-le.";

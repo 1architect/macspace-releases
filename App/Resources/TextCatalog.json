@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:473",
-      "App\/Renderer\/ScreenView.swift:539"
+      "App\/Renderer\/ScreenView.swift:462",
+      "App\/Renderer\/ScreenView.swift:528"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:383"
+      "App\/Renderer\/ScreenView.swift:372"
     ],
     "table" : "App",
     "translations" : {
@@ -195,7 +195,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:490"
+      "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "App",
     "translations" : {
@@ -328,7 +328,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:490"
+      "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "App",
     "translations" : {
@@ -405,7 +405,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:466"
+      "App\/Renderer\/ScreenView.swift:455"
     ],
     "table" : "App",
     "translations" : {
@@ -460,7 +460,7 @@
   {
     "id" : "App|Appearance",
     "key" : "Appearance",
-    "kind" : "Menu",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:64"
     ],
@@ -500,7 +500,7 @@
     "key" : "Approve in Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:245"
+      "App\/Settings\/SettingsView.swift:238"
     ],
     "table" : "App",
     "translations" : {
@@ -538,7 +538,7 @@
     "key" : "Automatic",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:123"
+      "App\/Settings\/CleanupSettings.swift:93"
     ],
     "table" : "App",
     "translations" : {
@@ -595,8 +595,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:262",
-      "App\/Shell\/MainView.swift:287"
+      "App\/Shell\/MainView.swift:259",
+      "App\/Shell\/MainView.swift:284"
     ],
     "table" : "App",
     "translations" : {
@@ -615,7 +615,7 @@
     "key" : "By MacSpace",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:124"
+      "App\/Settings\/CleanupSettings.swift:94"
     ],
     "table" : "App",
     "translations" : {
@@ -634,7 +634,7 @@
     "key" : "By you",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:122"
+      "App\/Settings\/CleanupSettings.swift:92"
     ],
     "table" : "App",
     "translations" : {
@@ -747,7 +747,7 @@
   {
     "id" : "App|Cleanup",
     "key" : "Cleanup",
-    "kind" : "Section header",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/CleanupSettings.swift:14"
     ],
@@ -787,7 +787,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:289"
+      "App\/Shell\/MainView.swift:286"
     ],
     "table" : "App",
     "translations" : {
@@ -866,8 +866,8 @@
     "key" : "Could not install the helper: %@",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:230",
-      "App\/Settings\/SettingsView.swift:250"
+      "App\/Settings\/SettingsView.swift:223",
+      "App\/Settings\/SettingsView.swift:243"
     ],
     "table" : "App",
     "translations" : {
@@ -1057,7 +1057,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:181"
+      "App\/Shell\/MainView.swift:178"
     ],
     "table" : "App",
     "translations" : {
@@ -1152,8 +1152,7 @@
     "key" : "Freed in total",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:24",
-      "App\/Settings\/CleanupSettings.swift:75"
+      "App\/Settings\/CleanupSettings.swift:24"
     ],
     "table" : "App",
     "translations" : {
@@ -1168,11 +1167,30 @@
     }
   },
   {
+    "id" : "App|Freeing in the background",
+    "key" : "Freeing in the background",
+    "kind" : "Pill",
+    "places" : [
+      "Sdk\/Interface\/Widgets.swift:72"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Wird im Hintergrund freigegeben",
+      "en" : "Freeing in the background",
+      "es" : "Liberando en segundo plano",
+      "fr" : "Libération en arrière-plan",
+      "ja" : "バックグラウンドで解放中",
+      "ko" : "백그라운드에서 확보 중",
+      "pt-BR" : "Liberando em segundo plano",
+      "zh-Hans" : "正在后台释放"
+    }
+  },
+  {
     "id" : "App|Freeing space",
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:179"
+      "App\/Shell\/MainView.swift:176"
     ],
     "table" : "App",
     "translations" : {
@@ -1246,7 +1264,7 @@
   {
     "id" : "App|General",
     "key" : "General",
-    "kind" : "Section header",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:60"
     ],
@@ -1305,7 +1323,7 @@
     "key" : "Granted",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:194"
+      "App\/Settings\/SettingsView.swift:187"
     ],
     "table" : "App",
     "translations" : {
@@ -1341,7 +1359,7 @@
   {
     "id" : "App|How often",
     "key" : "How often",
-    "kind" : "Menu",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/CleanupSettings.swift:19"
     ],
@@ -1381,7 +1399,7 @@
     "key" : "Install helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:245"
+      "App\/Settings\/SettingsView.swift:238"
     ],
     "table" : "App",
     "translations" : {
@@ -1496,7 +1514,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:191",
-      "App\/Renderer\/ScreenView.swift:703"
+      "App\/Renderer\/ScreenView.swift:692"
     ],
     "table" : "App",
     "translations" : {
@@ -1688,9 +1706,9 @@
   {
     "id" : "App|Modules",
     "key" : "Modules",
-    "kind" : "Section header",
+    "kind" : "Text",
     "places" : [
-      "App\/Settings\/SettingsView.swift:29"
+      "App\/Settings\/SettingsView.swift:28"
     ],
     "table" : "App",
     "translations" : {
@@ -1707,9 +1725,9 @@
   {
     "id" : "App|Modules that could not be used",
     "key" : "Modules that could not be used",
-    "kind" : "Section header",
+    "kind" : "Text",
     "places" : [
-      "App\/Settings\/SettingsView.swift:51"
+      "App\/Settings\/SettingsView.swift:50"
     ],
     "table" : "App",
     "translations" : {
@@ -1804,7 +1822,7 @@
     "key" : "Needed",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:205"
+      "App\/Settings\/SettingsView.swift:198"
     ],
     "table" : "App",
     "translations" : {
@@ -1842,7 +1860,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:435"
+      "App\/Registry\/ModuleHandle.swift:443"
     ],
     "table" : "App",
     "translations" : {
@@ -1918,7 +1936,7 @@
     "key" : "No module needs a permission.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:134"
+      "App\/Settings\/SettingsView.swift:130"
     ],
     "table" : "App",
     "translations" : {
@@ -1956,7 +1974,7 @@
     "key" : "No modules were found.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/SettingsView.swift:33"
+      "App\/Settings\/SettingsView.swift:32"
     ],
     "table" : "App",
     "translations" : {
@@ -1975,7 +1993,7 @@
     "key" : "Not found",
     "kind" : "Pill",
     "places" : [
-      "App\/Settings\/SettingsView.swift:211"
+      "App\/Settings\/SettingsView.swift:204"
     ],
     "table" : "App",
     "translations" : {
@@ -2013,7 +2031,7 @@
     "key" : "Not installed",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:203"
+      "App\/Settings\/SettingsView.swift:196"
     ],
     "table" : "App",
     "translations" : {
@@ -2032,7 +2050,7 @@
     "key" : "Not responding",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:189"
+      "App\/Settings\/SettingsView.swift:182"
     ],
     "table" : "App",
     "translations" : {
@@ -2051,7 +2069,7 @@
     "key" : "Nothing cleaned yet.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:84"
+      "App\/Settings\/CleanupSettings.swift:67"
     ],
     "table" : "App",
     "translations" : {
@@ -2087,7 +2105,7 @@
   {
     "id" : "App|Notifications",
     "key" : "Notifications",
-    "kind" : "Section header",
+    "kind" : "Text",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:148"
     ],
@@ -2185,7 +2203,7 @@
     "key" : "Open System Settings",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:197",
+      "App\/Settings\/SettingsView.swift:190",
       "App\/Shell\/Onboarding.swift:245"
     ],
     "table" : "App",
@@ -2434,7 +2452,7 @@
     "key" : "Repair helper",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:225"
+      "App\/Settings\/SettingsView.swift:218"
     ],
     "table" : "App",
     "translations" : {
@@ -2453,7 +2471,7 @@
     "key" : "Repairing",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/SettingsView.swift:225"
+      "App\/Settings\/SettingsView.swift:218"
     ],
     "table" : "App",
     "translations" : {
@@ -2472,7 +2490,7 @@
     "key" : "Restart required",
     "kind" : "Pill",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:55"
+      "Sdk\/Interface\/Widgets.swift:62"
     ],
     "table" : "App",
     "translations" : {
@@ -2491,8 +2509,8 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:704",
-      "Sdk\/Interface\/Widgets.swift:213"
+      "App\/Renderer\/ScreenView.swift:693",
+      "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
     "translations" : {
@@ -2511,7 +2529,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:425"
+      "App\/Registry\/ModuleHandle.swift:433"
     ],
     "table" : "App",
     "translations" : {
@@ -2530,7 +2548,7 @@
     "key" : "Restart your Mac to apply this change.",
     "kind" : "Pill",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:55"
+      "Sdk\/Interface\/Widgets.swift:62"
     ],
     "table" : "App",
     "translations" : {
@@ -2608,8 +2626,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:247",
-      "App\/Shell\/MainView.swift:288"
+      "App\/Shell\/MainView.swift:244",
+      "App\/Shell\/MainView.swift:285"
     ],
     "table" : "App",
     "translations" : {
@@ -2628,7 +2646,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:246"
+      "App\/Shell\/MainView.swift:243"
     ],
     "table" : "App",
     "translations" : {
@@ -2647,7 +2665,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:245"
+      "App\/Shell\/MainView.swift:242"
     ],
     "table" : "App",
     "translations" : {
@@ -2705,8 +2723,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:560",
-      "App\/Renderer\/WidgetView.swift:561"
+      "App\/Renderer\/WidgetView.swift:618",
+      "App\/Renderer\/WidgetView.swift:619"
     ],
     "table" : "App",
     "translations" : {
@@ -2723,7 +2741,7 @@
   {
     "id" : "App|System",
     "key" : "System",
-    "kind" : "Section header",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:128"
     ],
@@ -2799,7 +2817,7 @@
   {
     "id" : "App|Theme",
     "key" : "Theme",
-    "kind" : "Menu",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:61"
     ],
@@ -2972,7 +2990,7 @@
     "key" : "Unknown",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Settings\/SettingsView.swift:215"
+      "App\/Settings\/SettingsView.swift:208"
     ],
     "table" : "App",
     "translations" : {
@@ -2989,7 +3007,7 @@
   {
     "id" : "App|Updates",
     "key" : "Updates",
-    "kind" : "Section header",
+    "kind" : "Message",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:106",
       "App\/Settings\/GeneralSettings.swift:119"
@@ -3164,10 +3182,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:702",
-      "App\/Renderer\/RowActionFlag.swift:102",
-      "App\/Renderer\/RowActionFlag.swift:109",
-      "App\/Registry\/ModuleHandle.swift:514"
+      "App\/Renderer\/ScreenView.swift:691",
+      "App\/Renderer\/RowActionFlag.swift:104",
+      "App\/Renderer\/RowActionFlag.swift:111",
+      "App\/Registry\/ModuleHandle.swift:522"
     ],
     "table" : "App",
     "translations" : {
@@ -3457,7 +3475,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:47",
-      "App\/Shell\/MainView.swift:179"
+      "App\/Shell\/MainView.swift:176"
     ],
     "table" : "App",
     "translations" : {
@@ -5981,7 +5999,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:158",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:163",
-      "App\/Shell\/MainView.swift:182"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -6282,26 +6300,6 @@
       "ko" : "%@ 확보됨: %@",
       "pt-BR" : "%@ liberados em %@",
       "zh-Hans" : "已释放 %@（%@）"
-    }
-  },
-  {
-    "id" : "OtherSystemFiles|Freeing in the background",
-    "key" : "Freeing in the background",
-    "kind" : "Button",
-    "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:101",
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:124"
-    ],
-    "table" : "OtherSystemFiles",
-    "translations" : {
-      "de" : "Wird im Hintergrund freigegeben",
-      "en" : "Freeing in the background",
-      "es" : "Liberando en segundo plano",
-      "fr" : "Libération en arrière-plan",
-      "ja" : "バックグラウンドで解放中",
-      "ko" : "백그라운드에서 확보 중",
-      "pt-BR" : "Liberando em segundo plano",
-      "zh-Hans" : "正在后台释放"
     }
   },
   {
@@ -8185,7 +8183,7 @@
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:305",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:363"
+      "App\/Shell\/MainView.swift:176"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8742,8 +8740,8 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:704",
-      "Sdk\/Interface\/Widgets.swift:213"
+      "App\/Renderer\/ScreenView.swift:693",
+      "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8784,7 +8782,7 @@
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:244",
       "Modules\/Siri\/Module\/SiriModule.swift:272",
-      "Sdk\/Interface\/Widgets.swift:55"
+      "Sdk\/Interface\/Widgets.swift:62"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9924,7 +9922,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:490"
+      "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10060,7 +10058,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:234",
-      "Sdk\/Interface\/Widgets.swift:490"
+      "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11730,26 +11728,6 @@
       "ko" : "미사용 시스템 에셋을 최대 %@ 확보할까요?",
       "pt-BR" : "Liberar até %@ de recursos do sistema sem uso?",
       "zh-Hans" : "释放最多 %@ 未使用的系统资源？"
-    }
-  },
-  {
-    "id" : "SystemData|Freeing in the background",
-    "key" : "Freeing in the background",
-    "kind" : "Button",
-    "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:363",
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:365"
-    ],
-    "table" : "SystemData",
-    "translations" : {
-      "de" : "Wird im Hintergrund freigegeben",
-      "en" : "Freeing in the background",
-      "es" : "Liberando en segundo plano",
-      "fr" : "Libération en arrière-plan",
-      "ja" : "バックグラウンドで解放中",
-      "ko" : "백그라운드에서 확보 중",
-      "pt-BR" : "Liberando em segundo plano",
-      "zh-Hans" : "正在后台释放"
     }
   },
   {

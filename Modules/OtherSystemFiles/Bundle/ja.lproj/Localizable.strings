@@ -36,7 +36,6 @@
 "Free up to %@" = "最大%@を解放";
 "Free up to %@ of purgeable app files?" = "消去可能なアプリファイルを最大%@解放しますか？";
 "Freed %@ on %@" = "%@を%@で解放しました";
-"Freeing in the background" = "バックグラウンドで解放中";
 "Freeing space" = "空き容量を増やしています";
 "Install the helper in Settings" = "設定でヘルパーをインストール";
 "Installs at the next restart" = "次回の再起動時にインストール";

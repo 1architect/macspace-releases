@@ -97,7 +97,6 @@
 "Free the system log?" = "释放系统日志？";
 "Free unused system assets?" = "释放未使用的系统资源？";
 "Free up to %@ of unused system assets?" = "释放最多 %@ 未使用的系统资源？";
-"Freeing in the background" = "正在后台释放";
 "Freeing space" = "正在释放空间";
 "Frees about %@. Homebrew downloads them again when it needs them." = "释放约 %@，Homebrew 需要时会重新下载。";
 "From a deleted account. Copy what you need, then delete it." = "来自已删除的账户。请先拷贝需要的内容再删除。";

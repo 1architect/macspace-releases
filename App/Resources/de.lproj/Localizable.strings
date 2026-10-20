@@ -61,6 +61,7 @@
 "Free %@ of %@ downloads?" = "%@ an Downloads von %@ freigeben?";
 "Freed %@" = "%@ freigegeben";
 "Freed in total" = "Insgesamt freigegeben";
+"Freeing in the background" = "Wird im Hintergrund freigegeben";
 "Freeing space" = "Speicher wird freigegeben";
 "Frees caches, old reports and other files that are safe to delete." = "Gibt Caches, alte Berichte und andere Dateien frei, die gefahrlos gelöscht werden können.";
 "Full Disk Access" = "Festplattenvollzugriff";

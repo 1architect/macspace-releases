@@ -330,8 +330,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
         // both write the module's undo journal.
         let previous = lastAction
-        // Working at once, also while the action ahead (and the reading after it) finishes; its own turn takes it out.
-        if let rowID, !quiet { queuedRows[rowID] = action }
+        // Working at once, also while the action ahead (and the reading after it) finishes; its own turn takes it out. Not the app's
+        // own actions, which open something at once and have nothing to say.
+        if let rowID, !quiet, !Self.opensAtOnce(action) { queuedRows[rowID] = action }
         let task = Task { @MainActor [weak self] () -> ActionResult? in
             _ = await previous?.value
             return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
@@ -341,6 +342,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private var lastAction: Task<ActionResult?, Never>?
+
+    /// The app's own actions (`performNow`): they open a System Settings pane or macOS's Restart dialog at once, so their button
+    /// never says Working. Marked working like a module's action, Open flashed "Working" over its pill as the pane opened, too
+    /// quickly for the pill to take the word's width (2026-10-20). A button says something only when it has something to say.
+    static func opensAtOnce(_ action: Action) -> Bool {
+        [Action.fullDiskAccessID, Action.openSettingsID, Action.restartID].contains(action.id)
+    }
 
     /// How often a module is read again by itself, so its tile and page follow the Mac without Refresh; a tile that is changing
     /// asks for sooner (`Tile.refreshAfter`).

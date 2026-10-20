@@ -360,9 +360,9 @@ enum SystemDataScreenBuilder {
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
                              actions: snapshot.assetsHeld ? [] : [Action(id: "purgeAssets", title: loc("Free"), confirmation: Confirmation(
                                 title: releaseOwners ? loc("Free unused system assets?") : loc("Free up to \(ByteFormat.string(assets)) of unused system assets?"), message: loc("macOS downloads them again if they're needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"),
-                                labelSamples: [loc("Freeing space"), loc("Freeing in the background")])],
+                                labelSamples: [loc("Freeing space")])],
                              paths: paths(of: "assets:system", snapshot))
-            if snapshot.assetsRetrying, !snapshot.assetsHeld { row.activity = ActionProgress(message: loc("Freeing in the background")) }
+            if snapshot.assetsRetrying, !snapshot.assetsHeld { row.badges.append(.freeingInBackground()) }
             rows.append((row, assets))
         }
         if let downloads = wallpaperDownloadsRow(snapshot) { rows.append(downloads) }

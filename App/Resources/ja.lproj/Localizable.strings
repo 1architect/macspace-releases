@@ -61,6 +61,7 @@
 "Free %@ of %@ downloads?" = "%@分の%@のダウンロードを解放しますか？";
 "Freed %@" = "%@を解放しました";
 "Freed in total" = "解放した合計";
+"Freeing in the background" = "バックグラウンドで解放中";
 "Freeing space" = "空き容量を増やしています";
 "Frees caches, old reports and other files that are safe to delete." = "キャッシュ、古いレポート、安全に削除できるファイルを解放します。";
 "Full Disk Access" = "フルディスクアクセス";

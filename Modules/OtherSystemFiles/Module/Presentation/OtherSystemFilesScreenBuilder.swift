@@ -89,7 +89,7 @@ enum OtherSystemFilesScreenBuilder {
     }
 
     /// "Up to": the size is macOS's estimate, which can count more than macOS then deletes. No button while MacSpace is already
-    /// asking macOS again in the background; the row retains its action identity for the inline activity flag.
+    /// asking macOS again in the background; the row keeps its action, which the app hides while it says so (`Badge.freeingInBackground`).
     static func freeAction(_ snapshot: PurgeableSnapshot, prominent: Bool) -> Action? {
         let bytes = snapshot.freeableBytes
         guard bytes >= threshold, !prominent || !snapshot.retrying else { return nil }
@@ -98,7 +98,7 @@ enum OtherSystemFilesScreenBuilder {
                       role: prominent ? .prominent : .normal,
                       confirmation: Confirmation(title: loc("Free up to \(size) of purgeable app files?"),
                                                  message: loc("Apps download them again if they need them."),
-                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space"), labelSamples: [loc("Freeing in the background")])
+                                                 confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     /// A macOS update downloaded and prepared, waiting for a restart: Software Update installs it, and macOS removes it then.
@@ -121,7 +121,7 @@ enum OtherSystemFilesScreenBuilder {
             let service = PurgeableService.describe(CacheDeleteService.fsPurgeableData)
             var row = Row(id: service.id, title: service.title, trailing: ByteFormat.string(snapshot.freeableBytes), symbol: service.symbol,
                           detail: service.detail, actions: freeAction(snapshot, prominent: false).map { [$0] } ?? [])
-            if snapshot.retrying { row.activity = ActionProgress(message: loc("Freeing in the background")) }
+            if snapshot.retrying { row.badges.append(.freeingInBackground()) }
             rows.append((row, snapshot.freeableBytes))
         }
         if let snapshots = snapshotsRow(snapshot), snapshots.freeable { rows.append((snapshots.row, snapshots.bytes)) }

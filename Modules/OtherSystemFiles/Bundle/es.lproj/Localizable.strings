@@ -36,7 +36,6 @@
 "Free up to %@" = "Liberar hasta %@";
 "Free up to %@ of purgeable app files?" = "¿Liberar hasta %@ de archivos purgables de apps?";
 "Freed %@ on %@" = "%@ liberados en %@";
-"Freeing in the background" = "Liberando en segundo plano";
 "Freeing space" = "Liberando espacio";
 "Install the helper in Settings" = "Instala el asistente en Ajustes";
 "Installs at the next restart" = "Se instala al reiniciar";
