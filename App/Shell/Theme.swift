@@ -101,14 +101,24 @@ enum CaptionFont {
     private static let fontsLock = NSLock()
     nonisolated(unsafe) private static var fonts: [String: NSFont] = [:]
 
+    /// The sizes in between that a caption passes through as its tile moves (`TileCaption` follows the tile frame by frame) are kept
+    /// only for a while: kept for good, the dashboard's first layout left over 800 fonts here (Issue 11). Past `limit` fonts, those
+    /// sizes go and the whole and half-point sizes captions rest at stay.
+    static let limit = 64
+
     static func font(size: CGFloat, weight: TypeWeight) -> NSFont {
         let type = TileType.current
         let key = "\(size)|\(weight)|\(type.family ?? "")|\(type.opticalSize)"
         if let font = fontsLock.withLock({ fonts[key] }) { return font }
         let font = makeFont(size: size, weight: weight, type: type)
-        fontsLock.withLock { fonts[key] = font }
+        fontsLock.withLock {
+            if fonts.count >= limit { fonts = fonts.filter { ($0.value.pointSize * 2).rounded() == $0.value.pointSize * 2 } }
+            fonts[key] = font
+        }
         return font
     }
+
+    static var cachedCount: Int { fontsLock.withLock { fonts.count } }
 
     private static func makeFont(size: CGFloat, weight: TypeWeight, type: TileType) -> NSFont {
         // SF Pro Display and Text are the system font's own cuts, at their optical sizes: installed only with Apple's fonts, they are

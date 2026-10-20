@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Modules load as soon as the app starts, not when the window first appears: the window can open behind other apps or not at all
     /// (menu bar only), and nothing should wait for a click.
     func applicationDidFinishLaunching(_ notification: Notification) {
+        GlyphCache.apply()
         // An app copied in by hand may be unknown to Launch Services, which makes the helper "not found" instead of "needs approval".
         if PrivilegedHelperInstaller.status == .notFound { PrivilegedHelperInstaller.registerAppWithLaunchServices() }
         // A copy with pieces missing (copied while it was being built) must not be given permissions: macOS would tie them to this
@@ -35,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         StatusItemController.shared.install(host: AppModel.host)
         AppNotifications.shared.install(host: AppModel.host)
         BackgroundPresence.shared.install()
+        ClosedWindowRelease.shared.install()
         // Onboarding needs the window. SwiftUI leaves it closed when MacSpace is opened with arguments (`--onboarding`) or as a login
         // item, so it is opened here if it has not appeared by itself.
         if Onboarding.shared.isShowing {
@@ -66,7 +68,7 @@ struct MacSpaceMain: App {
         // Only the window of the chosen kind opens at launch, and neither is restored: both opening, then one closing itself,
         // left an empty glass frame and its shadow on screen beside the standard window.
         Window("MacSpace", id: MacSpaceWindow.glass) {
-            MainView(host: host, updates: updates)
+            ReleasableContent { MainView(host: host, updates: updates) }
         }
         .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .suppressed : .presented)
         .restorationBehavior(.disabled)
@@ -89,7 +91,7 @@ struct MacSpaceMain: App {
 
         // The same app in a standard macOS window with a sidebar (Settings > Design > Standard window with sidebar).
         Window("MacSpace", id: MacSpaceWindow.standard) {
-            StandardWindowView(host: host, updates: updates)
+            ReleasableContent { StandardWindowView(host: host, updates: updates) }
         }
         // SwiftUI lists every window scene in the Window menu, open or not: "MacSpace" twice and the Shader Studio even with the
         // design tools off. The two other scenes leave out their item; the first keeps it, with the app's default menus (on all

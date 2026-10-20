@@ -44,9 +44,9 @@ gigabytes, as System Settings shows them.
    watches and re-applies.
 10. **Not yet verified before release**: a clean Mac with a notarized build, a Sparkle update through the helper, and several
     Apple Intelligence and cloud-download paths ([section 7](#7-open-questions)).
-11. **MacSpace's own memory**: about 90 MB with the window open and idle. The launch peaks of 200 MB and more were caption
-    animations drawn through a custom text renderer, which held up to 80 MB of graphics memory for a moment; the captions now
-    move with ordinary views ([section 6](#6-macspaces-own-memory)).
+11. **MacSpace's own memory**: the launch peaks of 200 MB and more were text animations. A custom text renderer held up to 80 MB of
+    graphics memory for a moment, and SwiftUI's number roll left 150 MB of glyph images in Core Graphics' font cache while the
+    modules read; captions now move with ordinary text views, and the font cache is capped ([section 6](#6-macspaces-own-memory)).
 
 ---
 
@@ -952,11 +952,36 @@ Issue 11 asked why MacSpace showed over 200 MB in Activity Monitor. Measured on 
   renderer kept but frozen, and 2 MB as a plain crossfade (**measured**); the blur and the renderer's clip made little difference.
   The words now move as layers of ordinary text views (each the whole phrase with the other words clear), and the same thirteen
   captions rise by 10 MB with no graphics memory held (**measured**).
-- **Given back after the window closes.** The memory the allocator keeps is returned to macOS once, a while after the last window
-  has closed and the modules have finished reading. Returning it after every scan made a module page lag as it opened, because the
-  walk holds the allocator's locks (**measured** in an earlier attempt, reverted).
-- **Not traced:** the number transition's heap grows by about 6 MB per round of changes in the same probe (**measured**), likely
-  glyph images that macOS trims later (**inferred**); and about 10 MB of color-conversion caches seen once after opening every page.
+- **Nothing to give back by hand.** On macOS 27 `free` returns a page to the system as soon as nothing on it is in use, and
+  `malloc_zone_pressure_relief` gives back nothing (0 bytes, with or without allocation logging; **measured** 2026-10-20). What the
+  allocator still holds are pages with a few blocks in use among freed ones, which no call can release: the only remedy is
+  allocating less in passing. An earlier reading credited the relief call with about 40 MB (see
+  [Superseded readings](#superseded-readings)).
+- **Numbers that roll their digits** (SwiftUI's numeric content transition) were the largest cost left. Each roll draws its digits,
+  blurred and scaled, into images of their own on every frame (RenderBox renders the layer for its effect), and Core Graphics keeps a
+  bitmap of every glyph it draws, at every size, place and scale, in its font cache. The loading captions change their numbers
+  several times a second while the modules read, so at launch the dashboard held 150 to 160 MB of glyph bitmaps in 150,000 blocks
+  (**measured**, allocation stacks). The cache has a limit of its own (16 MB, `CGFontCacheGetMaxSize`) that it does not keep to:
+  thirteen numbers rolling eight times left 65 MB. Capped with `CGFontCacheSetMaxSize` (Core Graphics' own, not public, looked up at
+  launch): 4 MB left 22 MB, 1 MB left 7 MB, 0 left 2 MB, all with the same CPU time (8.1 to 8.8 s for the run), since a roll never
+  draws a digit at the same scale twice (**measured**, two runs each). MacSpace caps it at 1 MB; the roll is SwiftUI's own, as
+  before, and looks the same, since an evicted glyph is drawn again identically. Replacing the roll instead (a fade, or a roll of
+  MacSpace's own without blur or scale) also kept the memory down but changed how numbers change, and was dropped.
+- **Caption sizes.** A tile caption's size follows the tile frame by frame as it moves between cells, and each fractional size was a
+  font of its own, kept for good by the caption font cache: over 800 font instances and 6,900 glyph paths after the dashboard's first
+  layout (**measured**). The cache now drops the sizes in between once it holds 64 fonts and keeps the resting ones; their glyphs
+  fall under the same 1 MB cap. Rounding the sizes to half points also worked but changed how a caption grows, and was dropped.
+- **Where it ends up.** The dashboard settles at 69 to 74 MB, against 230 to 290 MB before (**measured**, three runs).
+- **How measured.** `MemoryBenchmarkTests` (opt-in) runs the real dashboard with the real modules, read-only and without the helper,
+  in a release build, and reports footprint and heap. Its transient figures vary from run to run with the timing of the modules'
+  readings, so each change was measured three times; the shipped app's own launches are the final check.
+- **The closed window.** SwiftUI keeps a closed window's whole content. Dropping it frees 5 to 16 MB of the benchmark's 69 to 74 MB
+  (**measured**); MacSpace drops it ten minutes after the last window closed and builds it again when a window is next on screen.
+- **Tried and left out.** The lit tile light's texture made in the screen's color space: Core Animation then stops copying it, but
+  the saving is about 2 MB and a window on a screen with another color space would cost more than before (**measured**). Deleting
+  the design switches a release locks: their unused branches are never built, so the saving would be the type metadata only
+  (**inferred**).
+- **Not traced:** about 10 MB of ColorSync conversion tables (inverted tone curves), present with or without the tile light.
 
 ---
 
@@ -1174,6 +1199,7 @@ Earlier notes that later measurements corrected, so nobody rebuilds on them.
 | MacSpace shows more than Settings (51 against 44.5 GB) because Settings over-counts Apple Intelligence (**inferred**) | Partly true while the models are installed (19.89 against 11.35 GB), but the larger gaps were the prepared update counted as System Data, CloudStorage (12 GB), apps outside `/Applications` and clones. MacSpace now computes Settings' remainder. |
 | System Data total within 0.9 GB of Settings (42.83 against 41.95) | Replaced by the remainder rule; a "Not identified" block shows what the breakdown leaves out. |
 | Command Line Tools 1.31–1.41 GB against Settings' 1.42 | The same 1.42 GB on the same build. |
+| `malloc_zone_pressure_relief` gives back about 40 MB of a closed MacSpace's heap, and lags the interface while it walks it (Issue 11, measured with allocation logging on) | It gives back nothing on macOS 27: free pages already go back on `free`, and the rest are pages still partly in use (section 6, 2026-10-20). |
 | Deleting a clone or a code-signing copy frees its `du` size | It frees nothing when it shares blocks; clones are sized once. |
 | "No notarized build exists yet" | A notarized build was made and checked on 2026-10-03; only the clean-Mac check is open. |
 | Opening a folder like the Foundation Model folders to measure them | Not possible even with Full Disk Access (SIP `restricted`). |

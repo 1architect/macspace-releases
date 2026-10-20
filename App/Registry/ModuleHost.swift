@@ -191,16 +191,9 @@ public final class ModuleHost: ObservableObject {
 
     private func updateWatched(closing: NSWindow?) {
         let now = !NSApp.isHidden && BackgroundPresence.hasOpenWindow(besides: closing, includingMiniaturized: false)
-        if now != watched {
-            if now { memoryRelief.cancel() } else { memoryRelief.schedule { [weak self] in self?.handles.contains(where: \.isWorking) ?? false } }
-        }
         watched = now
         updateModuleVisibility()
     }
-
-    /// What the scans and the pages freed goes back to macOS once no window is on screen (`MemoryRelief`); also after a launch with
-    /// no window (a login item), once the first readings are done.
-    private let memoryRelief = MemoryRelief()
 
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {

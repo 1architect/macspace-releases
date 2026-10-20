@@ -386,7 +386,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/MenuBarContent.swift:151",
-      "App\/Main\/MacSpaceMain.swift:83"
+      "App\/Main\/MacSpaceMain.swift:85"
     ],
     "table" : "App",
     "translations" : {
@@ -692,7 +692,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:86"
+      "App\/Main\/MacSpaceMain.swift:88"
     ],
     "table" : "App",
     "translations" : {
@@ -829,7 +829,7 @@
       "App\/Shell\/Onboarding.swift:245",
       "App\/Shell\/Onboarding.swift:263",
       "App\/Shell\/Onboarding.swift:274",
-      "App\/Main\/MacSpaceMain.swift:27"
+      "App\/Main\/MacSpaceMain.swift:28"
     ],
     "table" : "App",
     "translations" : {
@@ -1540,7 +1540,7 @@
       "App\/Shell\/MenuBarContent.swift:101",
       "App\/Shell\/StandardWindowView.swift:220",
       "App\/Updates\/UpdateController.swift:67",
-      "App\/Main\/MacSpaceMain.swift:68"
+      "App\/Main\/MacSpaceMain.swift:70"
     ],
     "table" : "App",
     "translations" : {
@@ -1864,7 +1864,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:439"
+      "App\/Registry\/ModuleHandle.swift:435"
     ],
     "table" : "App",
     "translations" : {
@@ -2322,7 +2322,7 @@
     "key" : "Quit",
     "kind" : "Text",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:26"
+      "App\/Main\/MacSpaceMain.swift:27"
     ],
     "table" : "App",
     "translations" : {
@@ -2361,7 +2361,7 @@
     "key" : "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update.",
     "kind" : "Message",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:24"
+      "App\/Main\/MacSpaceMain.swift:25"
     ],
     "table" : "App",
     "translations" : {
@@ -2552,7 +2552,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:429"
+      "App\/Registry\/ModuleHandle.swift:425"
     ],
     "table" : "App",
     "translations" : {
@@ -2728,7 +2728,7 @@
     "key" : "Shader Studio",
     "kind" : "Text",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:108"
+      "App\/Main\/MacSpaceMain.swift:110"
     ],
     "table" : "App",
     "translations" : {
@@ -2901,7 +2901,7 @@
     "key" : "This copy of MacSpace is incomplete",
     "kind" : "Message",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:23"
+      "App\/Main\/MacSpaceMain.swift:24"
     ],
     "table" : "App",
     "translations" : {
@@ -3229,7 +3229,7 @@
       "App\/Renderer\/ScreenView.swift:754",
       "App\/Renderer\/RowActionFlag.swift:102",
       "App\/Renderer\/RowActionFlag.swift:109",
-      "App\/Registry\/ModuleHandle.swift:518"
+      "App\/Registry\/ModuleHandle.swift:514"
     ],
     "table" : "App",
     "translations" : {
