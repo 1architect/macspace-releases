@@ -197,15 +197,6 @@
   "変更後もApple Intelligenceが利用可能です（応答%@）。元のSiri設定に戻しました。",
   "변경 후에도 Apple Intelligence가 사용 가능합니다(응답 %@). 이전 Siri 설정을 복원했습니다."
  ],
- "Before MacSpace can release them": [
-  "Antes que o MacSpace possa liberá-los",
-  "Avant que MacSpace puisse les libérer",
-  "Antes de que MacSpace pueda liberarlos",
-  "Bevor MacSpace sie freigeben kann",
-  "释放之前需要完成",
-  "解放する前に",
-  "정리하기 전에"
- ],
  "Can't free it yet": [
   "Ainda não é possível liberar",
   "Impossible de libérer pour l’instant",
@@ -296,6 +287,33 @@
   "解放",
   "확보"
  ],
+ "Free %@": [
+  "Liberar %@",
+  "Libérer %@",
+  "Liberar %@",
+  "%@ freigeben",
+  "释放 %@",
+  "%@を解放",
+  "%@ 확보"
+ ],
+ "Free %@?": [
+  "Liberar %@?",
+  "Libérer %@ ?",
+  "¿Liberar %@?",
+  "%@ freigeben?",
+  "释放 %@？",
+  "%@を解放しますか？",
+  "%@ 확보할까요?"
+ ],
+ "Deletes the models of the features you switched off. They download again if you switch one back on.": [
+  "Apaga os modelos dos recursos que você desativou. Eles são baixados de novo se você reativar algum.",
+  "Supprime les modèles des fonctions que vous avez désactivées. Ils se téléchargent à nouveau si vous en réactivez une.",
+  "Elimina los modelos de las funciones que desactivaste. Se vuelven a descargar si activas alguna de nuevo.",
+  "Löscht die Modelle der Funktionen, die du ausgeschaltet hast. Sie werden erneut geladen, wenn du eine wieder einschaltest.",
+  "删除你已关闭的功能的模型。如果重新开启某项功能，模型会再次下载。",
+  "オフにした機能のモデルを削除します。機能をオンに戻すと再度ダウンロードされます。",
+  "끈 기능의 모델을 삭제합니다. 기능을 다시 켜면 모델이 다시 다운로드됩니다."
+ ],
  "Free up to %@": [
   "Liberar até %@",
   "Libérer jusqu’à %@",
@@ -358,15 +376,6 @@
   "残留的 Apple 智能模型",
   "残っているApple Intelligenceモデル",
   "잔여 Apple Intelligence 모델"
- ],
- "Leftover models": [
-  "Modelos restantes",
-  "Modèles restants",
-  "Modelos sobrantes",
-  "Übrige Modelle",
-  "残留模型",
-  "残っているモデル",
-  "잔여 모델"
  ],
  "Log in as %@ and turn Apple Intelligence off there.": [
   "Inicie sessão como %@ e desative o Apple Intelligence lá.",
@@ -494,15 +503,6 @@
   "解放されたApple Intelligenceモデルと未使用のシステムアセット",
   "해제된 Apple Intelligence 모델 및 미사용 시스템 에셋"
  ],
- "Releasing the leftover models": [
-  "Liberando os modelos restantes",
-  "Libération des modèles restants",
-  "Liberando los modelos sobrantes",
-  "Übrige Modelle werden freigegeben",
-  "正在释放残留模型",
-  "残っているモデルを解放中",
-  "잔여 모델 해제 중"
- ],
  "Restart required": [
   "Reinicialização necessária",
   "Redémarrage nécessaire",
@@ -628,15 +628,6 @@
   "关闭时会将 Siri 设置为与 Mac 不同的语言。",
   "オフにするとSiriの言語がMacとは異なる言語になります。",
   "끄면 Siri 언어가 Mac과 다른 언어로 설정됩니다."
- ],
- "Takes about a minute.": [
-  "Leva cerca de um minuto.",
-  "Cela prend environ une minute.",
-  "Tarda alrededor de un minuto.",
-  "Dauert etwa eine Minute.",
-  "大约需要一分钟。",
-  "約1分かかります。",
-  "약 1분 걸립니다."
  ],
  "The current Siri language could not be read.": [
   "Não foi possível ler o idioma atual da Siri.",
@@ -764,14 +755,23 @@
   "通常はすぐ終わります。終わらない場合は%lld分後にMacSpaceが処理します。",
   "보통 곧 완료됩니다. 그렇지 않으면 %lld분 후 MacSpace가 처리합니다."
  ],
- "Waiting for macOS": [
-  "Aguardando o macOS",
-  "En attente de macOS",
-  "Esperando a macOS",
-  "Warten auf macOS",
-  "正在等待 macOS",
-  "macOSを待機中",
-  "macOS 대기 중"
+ "macOS still keeps these models.": [
+  "O macOS ainda mantém esses modelos.",
+  "macOS conserve encore ces modèles.",
+  "macOS aún conserva estos modelos.",
+  "macOS behält diese Modelle noch.",
+  "macOS 仍保留着这些模型。",
+  "macOSはまだこれらのモデルを保持しています。",
+  "macOS가 아직 이 모델을 유지하고 있습니다."
+ ],
+ "macOS is freeing the model": [
+  "O macOS está liberando o modelo",
+  "macOS libère le modèle",
+  "macOS está liberando el modelo",
+  "macOS gibt das Modell frei",
+  "macOS 正在释放模型",
+  "macOSがモデルを解放中",
+  "macOS가 모델을 정리하는 중"
  ],
  "With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad.": [
   "Com a sincronização da Siri com o iCloud ativada, isso também muda a Siri no seu iPhone e iPad.",
@@ -844,15 +844,6 @@
   "macOS 不在虚拟机中提供 Apple 智能。请在实体 Mac 上使用 MacSpace。",
   "仮想マシンではApple Intelligenceを利用できません。実機のMacでMacSpaceを使ってください。",
   "macOS는 가상 머신에서 Apple Intelligence를 제공하지 않습니다. 실제 Mac에서 MacSpace를 사용하세요."
- ],
- "macOS is removing the model": [
-  "O macOS está removendo o modelo",
-  "macOS supprime le modèle",
-  "macOS está eliminando el modelo",
-  "macOS entfernt das Modell",
-  "macOS 正在移除模型",
-  "macOSがモデルを削除中",
-  "macOS가 모델 제거 중"
  ],
  "models not measured": [
   "modelos não medidos",
@@ -1196,14 +1187,23 @@
   "通話の録音、文字起こし、字幕、翻訳と、ライブ留守番電話、着信スクリーニングをオフにします。再起動が必要です。",
   "통화 녹음, 전사, 자막, 번역과 실시간 음성 사서함, 통화 스크리닝을 끕니다. 재시동이 필요합니다."
  ],
- "macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them.": [
-  "Serviços do próprio macOS ainda estão com estes modelos abertos. Eles saem quando esses serviços param ou depois de reiniciar, e o MacSpace então os apaga.",
-  "Des services de macOS gardent encore ces modèles ouverts. Ils partent quand ces services s’arrêtent ou après un redémarrage, puis MacSpace les supprime.",
-  "Servicios del propio macOS aún tienen estos modelos abiertos. Se liberan cuando esos servicios se detienen o tras reiniciar, y MacSpace los elimina entonces.",
-  "Dienste von macOS haben diese Modelle noch geöffnet. Sie werden frei, wenn diese Dienste enden oder nach einem Neustart, dann löscht MacSpace sie.",
-  "macOS 自身的服务仍在使用这些模型。这些服务停止或重新启动后它们才会释放，随后 MacSpace 会删除它们。",
-  "macOS自身のサービスがまだこれらのモデルを開いています。サービスが停止するか再起動すると解放され、その後MacSpaceが削除します。",
-  "macOS 자체 서비스가 아직 이 모델을 열어 두고 있습니다. 해당 서비스가 멈추거나 재시동하면 해제되며, 그때 MacSpace가 삭제합니다."
+ "macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them.": [
+  "Serviços do próprio macOS ainda estão usando esses modelos. Costumam liberá-los em poucos minutos, e o MacSpace então os apaga.",
+  "Des services de macOS utilisent encore ces modèles. Ils les libèrent en général en quelques minutes, puis MacSpace les supprime.",
+  "Servicios del propio macOS aún tienen abiertos estos modelos. Suelen liberarlos en pocos minutos y MacSpace los elimina entonces.",
+  "Dienste von macOS haben diese Modelle noch geöffnet. Sie geben sie meist innerhalb weniger Minuten frei, dann löscht MacSpace sie.",
+  "macOS 自身的服务仍在使用这些模型。它们通常会在几分钟内释放，随后 MacSpace 会将其删除。",
+  "macOS自身のサービスがまだこれらのモデルを開いています。通常は数分以内に解放され、その後MacSpaceが削除します。",
+  "macOS 자체 서비스가 아직 이 모델을 사용 중입니다. 보통 몇 분 안에 해제되며, 그러면 MacSpace가 삭제합니다."
+ ],
+ "macOS kept these models for ten minutes. After a restart, MacSpace deletes them.": [
+  "O macOS manteve esses modelos por dez minutos. Depois de reiniciar, o MacSpace os apaga.",
+  "macOS a conservé ces modèles pendant dix minutes. Après un redémarrage, MacSpace les supprime.",
+  "macOS ha conservado estos modelos durante diez minutos. Tras reiniciar, MacSpace los elimina.",
+  "macOS hat diese Modelle zehn Minuten lang behalten. Nach einem Neustart löscht MacSpace sie.",
+  "macOS 已将这些模型保留了十分钟。重新启动后，MacSpace 会将其删除。",
+  "macOSがこれらのモデルを10分間保持しています。再起動後にMacSpaceが削除します。",
+  "macOS가 이 모델을 10분 동안 유지했습니다. 재시동하면 MacSpace가 삭제합니다."
  ],
  "MacSpace asks macOS again every five minutes.": [
   "O MacSpace pede de novo ao macOS a cada cinco minutos.",
@@ -1213,6 +1213,24 @@
   "MacSpace 每五分钟会再次请求 macOS。",
   "MacSpaceは5分ごとにmacOSに再度依頼します。",
   "MacSpace가 5분마다 macOS에 다시 요청합니다."
+ ],
+ "Notify me when freeing models needs a restart": [
+  "Avisar quando liberar modelos exigir reiniciar o Mac",
+  "M’avertir quand la libération des modèles nécessite un redémarrage",
+  "Avisarme cuando liberar modelos requiera reiniciar",
+  "Mitteilen, wenn das Freigeben von Modellen einen Neustart erfordert",
+  "释放模型需要重新启动时通知我",
+  "モデルの解放に再起動が必要なときに通知",
+  "모델을 정리하려면 재시동이 필요할 때 알림"
+ ],
+ "A notification when macOS keeps the models of a feature you switched off for ten minutes, and only a restart frees them.": [
+  "Uma notificação quando o macOS mantém por dez minutos os modelos de um recurso que você desativou e só reiniciar os libera.",
+  "Une notification quand macOS conserve pendant dix minutes les modèles d’une fonction que vous avez désactivée et que seul un redémarrage les libère.",
+  "Una notificación cuando macOS conserva durante diez minutos los modelos de una función que desactivaste y solo un reinicio los libera.",
+  "Eine Mitteilung, wenn macOS die Modelle einer ausgeschalteten Funktion zehn Minuten lang behält und nur ein Neustart sie freigibt.",
+  "当 macOS 将你关闭的功能的模型保留十分钟、只有重新启动才能释放时发出通知。",
+  "オフにした機能のモデルをmacOSが10分間保持し、再起動でしか解放できないときに通知します。",
+  "끈 기능의 모델을 macOS가 10분 동안 유지하고 재시동해야만 정리될 때 알림을 보냅니다."
  ],
  "Notify me when Apple Intelligence turns back on": [
   "Avisar quando o Apple Intelligence for reativado",

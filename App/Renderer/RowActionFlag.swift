@@ -119,7 +119,9 @@ private struct RowActionFlag: View {
                 }
             }
             .environment(\.textChangeDelay, 0)
-            .foregroundStyle(working || result != nil ? AnyShapeStyle(design.actionDeep) : AnyShapeStyle(hovering ? .primary : .secondary))
+            .foregroundStyle(working || result != nil ? design.actionDeep : Color.primary)
+            .opacity(working || result != nil ? 1 : PillInk.opacity(lit: hovering))
+            .animation(Theme.hover, value: hovering)
             .background {
                 Capsule().fill(working || result != nil ? design.action : Color.primary.opacity(hovering ? 0.1 : 0.05))
                     .animation(Theme.value, value: working)
@@ -146,6 +148,13 @@ private struct RowActionFlag: View {
 /// A row's button: the row action flag's own look at rest (`RowActionFlag`), text on a faint capsule that darkens under the pointer.
 /// Every button in a row uses it, in Settings and on module pages (`ButtonRow`, Check Now, the permission buttons), so a row has
 /// one kind of button. Where it goes in the row is `RowFlagPlacement`.
+/// The text and glyphs of the grey pill buttons: one color whose strength follows the pointer, so they fade with the capsule. Switched
+/// between the `.primary` and `.secondary` styles, which do not blend, the text changed at once while the capsule faded (2026-10-19).
+/// An opacity outside the label also reaches text that turns its own animations off (`ChangingText`).
+enum PillInk {
+    static func opacity(lit: Bool) -> Double { lit ? 1 : 0.6 }
+}
+
 struct RowFlagStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @State private var hovering = false
@@ -157,7 +166,8 @@ struct RowFlagStyle: ButtonStyle {
             .lineLimit(1)
             .padding(.horizontal, 8)
             .frame(height: 18)
-            .foregroundStyle(lit ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            .foregroundStyle(Color.primary)
+            .opacity(PillInk.opacity(lit: lit))
             .background(Color.primary.opacity(lit ? 0.1 : 0.05), in: Capsule())
             .contentShape(Capsule())
             .opacity(isEnabled ? 1 : 0.5)

@@ -139,7 +139,7 @@ struct WidgetForm<Top: View>: View {
         case let .usage(usage): return [Entry(usage.id, UsageBarView(usage: usage))]
         case let .chart(chart): return [Entry(chart.id, BarChartView(chart: chart))]
         case let .list(list):
-            if list.rows.isEmpty, let empty = list.emptyMessage { return [Entry(list.id + ":empty", Text(empty).foregroundStyle(.secondary))] }
+            if list.rows.isEmpty, let empty = list.emptyMessage { return [Entry(list.id + ":empty", ChangingText(text: empty).foregroundStyle(.secondary))] }
             return list.rows.map { Entry($0.id, RowView(row: $0, handler: handler)) }
         case let .toggles(list): return list.rows.map { Entry($0.id, ToggleRowView(row: $0, handler: handler)) }
         case let .button(button): return [Entry(button.id, ButtonRow(button: button, handler: handler))]
@@ -148,7 +148,7 @@ struct WidgetForm<Top: View>: View {
             return steps.steps.enumerated().map { index, step in
                 Entry("\(steps.id):\(index)", HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
-                    Text(step)
+                    ChangingText(text: step)
                 })
             }
         case let .section(section):
@@ -331,8 +331,8 @@ struct BadgeView: View {
     var quiet = false
     @Environment(\.design) private var design
 
-    /// What needs the user is drawn in the action color, with its deep form for the text.
-    private var attention: Bool { !quiet && (badge.tone == .caution || badge.tone == .critical) }
+    /// Only a pill that asks something of the user (`Badge.Kind.action`) is drawn in the action color, with its deep form for the text.
+    private var attention: Bool { !quiet && badge.kind == .action }
 
     /// Every other pill has the colors of the row's (i) and folder pills (`rowPill`), grey text on a faint capsule of their height, in
     /// the warning pill's font, so the facts read as one set.
@@ -352,7 +352,6 @@ struct BadgeView: View {
                     in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         // What the state means now: the (i) beside it says only what the item is (`InfoText`). A pill short of room says its text.
         .help(badge.help ?? (natural - shown > 0.5 ? badge.text : ""))
-        .transition(PageCascade.transition(index: 0, count: 1))
     }
 
     @State private var natural: CGFloat = 0
@@ -400,12 +399,13 @@ private struct SoftFitMask: View {
     }
 }
 
-/// Status and error messages share the module badges' pill shape. Longer errors stay readable.
+/// Status and error messages share the module badges' pill shape. Longer errors stay readable. A caution or critical tone is
+/// something for the user to do, in the action color; any other is a plain fact.
 struct StatusFlag: View {
     let text: String
     var tone: Tone = .caution
 
-    var body: some View { BadgeView(badge: Badge(text, tone: tone), wraps: true) }
+    var body: some View { BadgeView(badge: Badge(text, tone == .caution || tone == .critical ? .action : .info), wraps: true) }
 }
 
 /// A notice: icon, title and action. Its message is what the notice says, so it stays visible.
@@ -418,8 +418,8 @@ struct BannerRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: Palette.symbol(banner.severity)).foregroundStyle(Palette.color(banner.severity, design))
             VStack(alignment: .leading, spacing: 2) {
-                Text(banner.title).fontWeight(.semibold)
-                if let message = banner.message { Text(message).font(.caption).foregroundStyle(.secondary) }
+                ChangingText(text: banner.title).fontWeight(.semibold)
+                if let message = banner.message { ChangingText(text: message).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer(minLength: 8)
             // The button keeps its title on one line; the text beside it wraps instead.
@@ -444,8 +444,14 @@ struct RowView: View {
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
 
+    /// Drawn on the page already: a pill that comes now arrives with its motion (`RowBadges.arrives`).
+    @State private var appeared = false
+
     var body: some View {
-        if !row.children.isEmpty { groupRow } else { itemRow }
+        Group {
+            if !row.children.isEmpty { groupRow } else { itemRow }
+        }
+        .modifier(RowAppeared(appeared: $appeared))
     }
 
     /// A group: its count after the title, its total on the right, and a chevron; a click anywhere but its (i) opens the page of its
@@ -453,10 +459,7 @@ struct RowView: View {
     private var groupRow: some View {
         HStack(spacing: 10) {
             TitleLine(title: row.title, note: row.subtitle)
-            ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
-                    BadgeView(badge: badge).transition(PageCascade.transition(index: index, count: row.badges.count))
-                }
-                    .animation(Theme.value, value: row.badges.count)
+            RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             InfoButton(text: row.detail)
             Spacer(minLength: 8)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -491,11 +494,7 @@ struct RowView: View {
             HStack(spacing: 10) {
                 TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
                 HStack(spacing: 6) {
-                    ForEach(Array(row.badges.enumerated()), id: \.offset) { index, badge in
-                        BadgeView(badge: badge, quiet: flagIsActive)
-                            .transition(PageCascade.transition(index: index, count: row.badges.count))
-                    }
-                        .animation(Theme.value, value: row.badges.count)
+                    RowBadges(badges: row.badges, quiet: flagIsActive, gap: 6, arrives: appeared)
                     InfoButton(text: row.detail, steps: row.steps)
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                     // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the room
@@ -585,11 +584,147 @@ enum RevealTarget: Equatable {
     }
 }
 
+/// A row's pills, the same in list, group and switch rows. A pill comes and goes as the row's Free flag changes (`PillMorph`):
+/// its capsule widens from nothing at its place while its words roll in (`ChangingText`), and narrows away while they roll out;
+/// what follows it in the row (the (i), the folder, the size) moves with its width, both ways. A slot stays in the row at no width
+/// once its pill has gone, so a pill is never inserted or removed while it moves.
+///
+/// Built as an insertion and removal before, it went wrong both ways (2026-10-19): the page's cascade dropped it in from above while
+/// the (i) jumped; then, as a transition, the (i) slid through empty room before the pill faded in, and on removal the (i) jumped to
+/// its end place under a pill cut off square, because a view being removed does not animate the row around it.
+struct RowBadges: View {
+    let badges: [Badge]
+    var quiet = false
+    /// The row's spacing after a pill, which opens and closes with it.
+    var gap: CGFloat
+    /// The row is on the page (`RowAppeared`): a slot added from now on is a pill arriving, not one drawn with the page. Told by the
+    /// row, which is always there: kept here, on a list of pills that can be empty, it never heard that it had appeared, and a row's
+    /// first pill came in still (2026-10-19).
+    let arrives: Bool
+    /// Slots ever needed in this row: one that empties keeps its place at no width.
+    @State private var slots = 0
+
+    var body: some View {
+        ForEach(0..<max(slots, badges.count), id: \.self) { index in
+            RowBadgeSlot(badge: index < badges.count ? badges[index] : nil, quiet: quiet, gap: gap, arrives: arrives)
+        }
+        .onChange(of: badges.count, initial: true) { _, count in if count > slots { slots = count } }
+    }
+}
+
+/// Whether a row has been drawn on its page yet, for its pills (`RowBadges.arrives`).
+private struct RowAppeared: ViewModifier {
+    @Binding var appeared: Bool
+
+    func body(content: Content) -> some View {
+        content.onAppear { appeared = true }
+    }
+}
+
+/// One pill's place in a row (`RowBadges`).
+private struct RowBadgeSlot: View {
+    let badge: Badge?
+    let quiet: Bool
+    let gap: CGFloat
+    /// Made after its row was drawn: its first pill arrives with the motion. The first pill of a row without one appeared still, at
+    /// once (2026-10-19).
+    let arrives: Bool
+    /// What is drawn: the pill leaving keeps its look, with no words, until it has narrowed away.
+    @State private var shown: Badge?
+    /// 0 no room ... 1 the pill's own width.
+    @State private var open: Double = 0
+    @State private var appeared = false
+    /// The pill arriving, opened once its empty capsule is in the row.
+    @State private var arriving: Badge?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var animation: Animation { reduceMotion ? .easeInOut(duration: 0.2) : Theme.layout }
+
+    var body: some View {
+        PillSlotLayout(open: open) {
+            if let shown {
+                BadgeView(badge: shown, quiet: quiet)
+                    .onAppear {
+                        // Its words have been read as none: now they roll in as the capsule opens.
+                        guard let badge = arriving else { return }
+                        arriving = nil
+                        withAnimation(animation) {
+                            self.shown = badge
+                            open = 1
+                        }
+                    }
+            }
+        }
+        .clipShape(Capsule())
+        .padding(.trailing, -gap * (1 - open))
+        .onAppear {
+            appeared = true
+            if arrives, let badge {
+                update(badge)
+            } else {
+                // Already there when the page is drawn: no motion, the page's own cascade shows it.
+                shown = badge
+                open = badge == nil ? 0 : 1
+            }
+        }
+        .onChange(of: badge) { _, badge in if appeared { update(badge) } }
+    }
+
+    private func update(_ badge: Badge?) {
+        if let badge {
+            guard shown == nil else {
+                // The same pill saying something else (or coming back while it left): its words change in place and its width
+                // follows.
+                withAnimation(animation) {
+                    shown = badge
+                    open = 1
+                }
+                return
+            }
+            // Arriving: an empty capsule at no width first, so the words have nothing to roll from, then both open together.
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            arriving = badge
+            withTransaction(instant) { shown = Badge("", badge.kind, help: badge.help) }
+        } else if let leaving = shown {
+            withAnimation(animation, completionCriteria: .logicallyComplete) {
+                shown = Badge("", leaving.kind, help: leaving.help)
+                open = 0
+            } completion: {
+                if self.badge == nil { shown = nil }
+            }
+        }
+    }
+}
+
+/// The pill at the width the row gives it (a pill short of room narrows, `SoftFitLayout`), taking `open` of that width.
+private struct PillSlotLayout: Layout {
+    var open: Double
+
+    var animatableData: Double {
+        get { open }
+        set { open = newValue }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let pill = subviews.first else { return .zero }
+        let size = pill.sizeThatFits(proposal)
+        return CGSize(width: max(0, size.width * open), height: size.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let pill = subviews.first else { return }
+        pill.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(pill.sizeThatFits(proposal)))
+    }
+}
+
 /// A switch row, as in Settings. It never asks and never waits: the switch moves as soon as it is flipped, then the module makes the
 /// change (`LiveSwitch`).
 struct ToggleRowView: View {
     let row: ToggleRow
     let handler: ActionHandler
+    /// Drawn on the page already: a pill that comes now arrives with its motion (`RowBadges.arrives`).
+    @State private var appeared = false
 
     var body: some View {
         LiveSwitch(isOn: row.isOn, apply: { value in
@@ -598,10 +733,15 @@ struct ToggleRowView: View {
         }) { isOn in
             HStack(spacing: 8) {
                 TitleLine(title: row.title, note: row.subtitle)
+                // Pills before the (i), as in list rows.
+                RowBadges(badges: row.badge.map { [$0] } ?? [], gap: 8, arrives: appeared)
                 InfoButton(text: row.detail)
-                if let badge = row.badge { BadgeView(badge: badge) }
                 Spacer(minLength: 8)
-                if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
+                // Never squeezed, as in list rows: without its own size it could be given no room beside a long pill and only showed
+                // when the pointer redrew the row (2026-10-19).
+                if let trailing = row.trailing {
+                    ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
+                }
                 Toggle(row.title, isOn: isOn)
                     .labelsHidden()
                     .toggleStyle(.switch)
@@ -609,6 +749,7 @@ struct ToggleRowView: View {
             }
         }
         .disabled(!row.isEnabled)
+        .modifier(RowAppeared(appeared: $appeared))
     }
 }
 
@@ -724,7 +865,7 @@ struct BarChartView: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(chart.bars) { bar in
                 HStack(spacing: 10) {
-                    Text(bar.label).font(.callout).frame(width: 150, alignment: .leading).lineLimit(1)
+                    ChangingText(text: bar.label).font(.callout).frame(width: 150, alignment: .leading).lineLimit(1)
                     GeometryReader { proxy in
                         Capsule().fill(Palette.color(bar.tone, design))
                             .frame(width: max(3, proxy.size.width * bar.value / maximum))
@@ -742,9 +883,9 @@ struct TextWidgetView: View {
 
     var body: some View {
         switch text.style {
-        case .title: Text(text.text).font(.title2.weight(.semibold))
-        case .body: Text(text.text)
-        case .caption: Text(text.text).font(.caption).foregroundStyle(.secondary)
+        case .title: ChangingText(text: text.text).font(.title2.weight(.semibold))
+        case .body: ChangingText(text: text.text)
+        case .caption: ChangingText(text: text.text).font(.caption).foregroundStyle(.secondary)
         }
     }
 }

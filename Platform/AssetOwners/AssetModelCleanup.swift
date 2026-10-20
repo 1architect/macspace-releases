@@ -17,6 +17,9 @@ public enum AssetModelCleanup {
         public var owners: OwnerResult
         public var freedBytes: UInt64 = 0
         public var remainingAssets: Int?
+        /// The purge was held back on purpose (MobileAsset downloading, `SystemAssetGuard.refusal`): nothing was tried, so this run says
+        /// nothing about whether macOS keeps the models.
+        public var held = false
         public var error: String? { owners.error }
     }
 
@@ -44,6 +47,24 @@ public enum AssetModelCleanup {
                        phone: PhoneFeatureFlags().status())
     }
     public static func hasSavedOwners(_ scope: Scope) -> Bool { FileManager.default.fileExists(atPath: journal(scope).path) }
+    /// MacSpace's withdrawal of the scope's owners is in effect: its journal has owners removed and not given back. The feature's
+    /// shared families (speech recognition, voices) count while it is, not only in the run that withdrew them (`families`): counted
+    /// only then, every recheck after the first found nothing to delete, said it was freeing, and never purged again (2026-10-19).
+    static func hasWithdrawnOwners(_ scope: Scope) -> Bool {
+        guard let data = try? Data(contentsOf: journal(scope)),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let entries = plist["entries"] as? [[String: Any]] else { return false }
+        return entries.contains { $0["phase"] as? String == "removed" }
+    }
+    /// A feature with less than this left on disk, as its switch measures it (`modelBytes`), is done: the switch shows no size, and
+    /// what is left (catalogs, the models Dictation keeps in the shared families) is not purged for again and again.
+    public static let doneBelow: UInt64 = 50_000_000
+
+    /// The model assets left for `scope` to delete; 0 once its feature is under `doneBelow`.
+    static func remaining(_ scope: Scope, releasedNow: Bool) -> Int? {
+        if let feature = ModelFeatureSettings.Feature(rawValue: scope.rawValue), let bytes = modelBytes(feature).bytes, bytes < doneBelow { return 0 }
+        return inventory(scope, withdrew: releasedNow || hasWithdrawnOwners(scope))
+    }
     static func journal(_ scope: Scope) -> URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/MacSpace/asset-owners/\(scope.rawValue).plist")
@@ -86,39 +107,24 @@ public enum AssetModelCleanup {
         var results = scopes.map { Result(scope: $0, owners: releaseOwners($0)) }
         for index in results.indices where results[index].error == nil {
             if let reason = refusal(results[index].scope) { results[index].owners.error = reason; results[index].owners.pending = true }
-            results[index].remainingAssets = inventory(results[index].scope, withdrew: results[index].owners.releasedOwners > 0)
+            results[index].remainingAssets = remaining(results[index].scope, releasedNow: results[index].owners.releasedOwners > 0)
         }
         guard let first = results.firstIndex(where: { $0.error == nil }), needsReclaim(results) else { return results }
         let permitted = results.filter { $0.error == nil }.map(\.scope)
         let service = CacheDeleteService.mobileAsset
         let refusal: @Sendable () -> String? = { permitted.compactMap { Self.refusal($0) }.first }
-        guard PurgeRun(service: service).estimate().map({ $0 > 0 }) == true else {
-            // A lagging estimate uses the existing bounded retries instead of claiming immediate savings.
-            for index in results.indices where results[index].error == nil {
-                results[index].owners.pending = results[index].remainingAssets != 0 || results[index].owners.releasedOwners > 0
-            }
-            if !PurgeRetrier.shared.isRetrying(service) {
-                PurgeRetrier.shared.schedule(service: service, urgency: 1, featureCleanup: true, purge: {
-                    let reason = refusal()
-                    guard reason == nil, PurgeRun(service: service).estimate().map({ $0 > 0 }) == true else {
-                        return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: nil, freeBytesAfter: nil,
-                                                      elapsedSeconds: nil, error: reason ?? "Waiting for a fresh positive model cleanup estimate.")
-                    }
-                    return PurgeRun.purgeOnce(service: service, urgency: 1, featureCleanup: true)
-                }) { freed in
-                    if freed > 0 { PurgeHoldouts.shared.clear(service) }
-                    await freedLater(freed)
-                }
-            }
-            return results
-        }
+        // No estimate is asked first, as for the page's Free (`PurgeRun.run`): it lags behind what macOS can delete. Gated on it,
+        // the switch's cleanup never purged while the estimate read 0, kept waiting, and asked for a restart, when the Free button's
+        // purge then removed all 371 MB of Call transcription's models with none (2026-10-19). If macOS keeps everything, `run`
+        // asks again in the background.
         let purge = PurgeRun(service: service, extraRefusal: refusal, featureCleanup: true).run(freedLater: freedLater)
         results[first].freedBytes = purge.freed
         for index in results.indices where results[index].error == nil {
             results[index].owners.details += PurgeRun.details(purge)
             // Held: Apple Intelligence is on and MobileAsset is downloading; the next recheck tries again.
             if let error = purge.error { results[index].owners.error = error; results[index].owners.pending = true }
-            results[index].remainingAssets = inventory(results[index].scope, withdrew: results[index].owners.releasedOwners > 0)
+            results[index].held = purge.held
+            results[index].remainingAssets = remaining(results[index].scope, releasedNow: results[index].owners.releasedOwners > 0)
             // The purge's gain is service-wide: the feature waits until its own models are gone, not until anything was freed.
             results[index].owners.pending = results[index].owners.pending || purge.removedNothing || purge.held
                 || results[index].remainingAssets != 0
@@ -219,14 +225,21 @@ public actor ManagedModelCleanup {
     private var lastAttempt = Date.distantPast
     private var visible = false
     public private(set) var waiting: Set<ModelFeatureSettings.Feature> = []
-    /// Features whose cleanup kept waiting while none of their models went, `stallLimit` cleanups in a row: macOS holds them without
-    /// a lock MacSpace can see, and only a restart lets them go. Siri sat on Waiting for macOS with 498 MB left, recheck after
-    /// recheck, and never asked for the restart that freed it (2026-10-19, issue 32).
+    /// Features whose cleanup kept waiting while none of their models went for `stallTime`: macOS holds them, and only a restart
+    /// lets them go. Siri sat on Waiting for macOS with 498 MB left, recheck after recheck, and never asked for the restart that freed
+    /// it (2026-10-19, issue 32). A lock alone never makes one: macOS's services usually let go within minutes.
     public private(set) var stalled: Set<ModelFeatureSettings.Feature> = []
-    /// Per waiting feature: the model assets it had left after the last cleanup, and how many cleanups in a row freed none of them.
-    private var stalls: [ModelFeatureSettings.Feature: (remaining: Int?, count: Int)] = [:]
-    /// About ten minutes of rechecks after the cleanup the switch started.
-    static let stallLimit = 3
+    /// Features whose models stayed through `stallTime` of real deletions with no lock held: macOS keeps them, a restart would not
+    /// change it, and MacSpace stops purging for them until the switch changes or the user asks again (`retryKept`). Purged on and
+    /// on, the shared speech models Dictation keeps had the Phone cleanup purging without end (2026-10-18).
+    public private(set) var kept: Set<ModelFeatureSettings.Feature> = []
+    /// Features that have just started asking for a restart, for the module to notify about once (`takeRestartsAsked`).
+    private var restartsAsked: Set<ModelFeatureSettings.Feature> = []
+    /// Per waiting feature: the model assets it had left after the last cleanup, and since when cleanups have freed none of them.
+    private var stalls: [ModelFeatureSettings.Feature: (remaining: Int?, since: Date)] = [:]
+    /// Ten minutes of rechecks with nothing going: the cleanup the switch started and the five-minute rechecks after it, with a
+    /// little room for a recheck that comes a few seconds early.
+    static let stallTime: TimeInterval = 10 * 60 - 30
     /// When MacSpace first asked for a restart for a stalled feature: the Mac's boot time then, kept across the restart.
     static func restartAskedKey(_ feature: ModelFeatureSettings.Feature) -> String { "MacSpace.modelCleanup.restartAsked." + feature.rawValue }
 
@@ -252,16 +265,22 @@ public actor ManagedModelCleanup {
     public func endChange() { changing = false; lastAttempt = .distantPast }
     public func waitForCurrent() async { if let task { await task.value } }
     public func check(force: Bool = false, finished: @escaping @Sendable (AssetModelCleanup.Result) async -> Void) {
-        guard !changing, task == nil, force || Date().timeIntervalSince(lastAttempt) >= 300 else { return }
-        let scopes = [AssetModelCleanup.Scope.siri, .phone, .spatialPhotos].filter { AssetModelCleanup.refusal($0) == nil }
+        let interval = heldBack || !waiting.isEmpty ? Self.heldRecheck : 300
+        guard !changing, task == nil, force || Date().timeIntervalSince(lastAttempt) >= interval else { return }
+        let permitted = [AssetModelCleanup.Scope.siri, .phone, .spatialPhotos].filter { AssetModelCleanup.refusal($0) == nil }
         // A feature switched back on is no longer waiting for its models to go: left in, it asked for a restart while on (2026-10-19).
-        let managed = Set(scopes.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) })
+        let managed = Set(permitted.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) })
         waiting.formIntersection(managed)
         stalled.formIntersection(managed)
+        kept.formIntersection(managed)
         stalls = stalls.filter { managed.contains($0.key) }
+        let scopes = permitted.filter { scope in ModelFeatureSettings.Feature(rawValue: scope.rawValue).map { !kept.contains($0) } ?? true }
         guard !scopes.isEmpty else { return }
         lastAttempt = Date()
         visible = force
+        // Switched off just now: waiting from this moment, so the switch says Freeing space and the page follows it at once, not
+        // after the first run's end (`record` clears the ones with nothing left).
+        if force { waiting.formUnion(scopes.compactMap { ModelFeatureSettings.Feature(rawValue: $0.rawValue) }) }
         task = Task.detached(priority: .utility) {
             let results = AssetModelCleanup.clean(scopes, freedLater: { freed in
                 var later = AssetModelCleanup.Result(scope: scopes[0], owners: AssetModelCleanup.OwnerResult())
@@ -275,13 +294,21 @@ public actor ManagedModelCleanup {
             await self.complete()
         }
     }
+    /// The last cleanup's purge was held back while macOS downloaded, or a feature is still waiting for its models to go: the next
+    /// one comes after 30 seconds, not five minutes. macOS lets go of a feature's models on its own time (Spatial Photos within
+    /// five minutes of its switch, Research.md), and each purge before that frees nothing: rechecked every five minutes, the
+    /// models stayed until the user pressed Free, which then freed nothing either (2026-10-19).
+    private var heldBack = false
+    static let heldRecheck: TimeInterval = 30
+
     private func record(_ result: AssetModelCleanup.Result) {
+        heldBack = result.held
         guard let feature = ModelFeatureSettings.Feature(rawValue: result.scope.rawValue) else { return }
         if result.error != nil || result.owners.pending { waiting.insert(feature) } else { waiting.remove(feature) }
         stall(feature, result)
     }
 
-    /// Counts the cleanups in a row that left all of a feature's models in place (`stalled`). One held back on purpose (an error:
+    /// Times how long cleanups have left all of a feature's models in place (`stalled`). One held back on purpose (an error:
     /// Apple Intelligence downloading, a gate closed) neither counts nor starts the count again: a restart would not change it.
     private func stall(_ feature: ModelFeatureSettings.Feature, _ result: AssetModelCleanup.Result) {
         guard result.owners.pending || result.error != nil else {
@@ -291,18 +318,32 @@ public actor ManagedModelCleanup {
             return
         }
         guard result.error == nil else { return }
+        // Held back while macOS downloads: a restart would not change that, so the stall starts again once the download is over.
+        // Counted, ten minutes of downloading asked for a restart (2026-10-19).
+        guard !result.held else { stalls[feature] = nil; stalled.remove(feature); return }
+        let now = Date()
         let last = stalls[feature]
         let fewer = last.flatMap { last in last.remaining.flatMap { before in result.remainingAssets.map { $0 < before } } } ?? false
-        let count = fewer ? 1 : (last?.count ?? 0) + 1
-        stalls[feature] = (result.remainingAssets, count)
-        guard count >= Self.stallLimit else { stalled.remove(feature); return }
+        let since = fewer ? now : last?.since ?? now
+        stalls[feature] = (result.remainingAssets, since)
+        guard now.timeIntervalSince(since) >= Self.stallTime else { stalled.remove(feature); return }
+        // No lock held: deletion after deletion freed nothing, and a restart would not change that. The switch says Kept by macOS
+        // and MacSpace stops asking. Asked for regardless, the restart ran while macOS was simply slow or kept the models for
+        // Dictation, and the user restarted for nothing (2026-10-19).
+        guard AssetModelCleanup.lockedAssets(feature) > 0 else {
+            stalls[feature] = nil
+            stalled.remove(feature)
+            waiting.remove(feature)
+            kept.insert(feature)
+            return
+        }
         // A restart is asked for once. Models still there after it are kept by macOS for its own reasons, and asking again would
         // only send the user round in circles: Siri's last speech model, which MobileAsset keeps until it has the next one, stayed
         // through the restart MacSpace asked for (2026-10-19, issue 32). The switch then says so (Kept by macOS) instead of
         // waiting, and the rechecks go on quietly.
         let key = Self.restartAskedKey(feature), boot = Self.bootTime()
         let asked = UserDefaults.standard.double(forKey: key)
-        if asked == 0 { UserDefaults.standard.set(boot, forKey: key) }
+        if asked == 0 { UserDefaults.standard.set(boot, forKey: key); restartsAsked.insert(feature) }
         if asked > 0, boot > asked + 1 {
             stalled.remove(feature)
             waiting.remove(feature)
@@ -311,4 +352,17 @@ public actor ManagedModelCleanup {
         }
     }
     private func complete() { task = nil }
+
+    /// The user asked to free the models now (the page's Free): features given up on are tried again, at once.
+    public func retryKept() {
+        kept = []
+        stalls = [:]
+        lastAttempt = .distantPast
+    }
+
+    /// The features that started asking for a restart since the last call, each once: the module notifies the user about them.
+    public func takeRestartsAsked() -> Set<ModelFeatureSettings.Feature> {
+        defer { restartsAsked = [] }
+        return restartsAsked
+    }
 }

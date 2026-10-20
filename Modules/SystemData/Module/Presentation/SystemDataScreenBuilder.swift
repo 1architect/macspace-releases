@@ -120,7 +120,7 @@ enum SystemDataScreenBuilder {
         if !assets.isEmpty {
             // While Apple Intelligence is on, its models stay (`SystemAssetGuard`), which is why they are on disk at all.
             rows.append(Row(id: "protected:assets", title: loc("Models and system assets"), subtitle: count(assets),
-                            badge: snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil,
+                            badge: snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on"), .info) : nil,
                             detail: loc("macOS keeps these locked, even from MacSpace.")))
         }
         if !databases.isEmpty {
@@ -354,7 +354,7 @@ enum SystemDataScreenBuilder {
         if assets >= assetsThreshold {
             // While macOS is being asked again in the background, the row says so instead of offering the button; while Apple
             // Intelligence is on, that the assets stay (its models download and update through them).
-            let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on")) : nil
+            let badge: Badge? = snapshot.assetsHeld ? Badge(loc("Kept while Apple Intelligence is on"), .info) : nil
             var row = Row(id: "assets", title: loc("Unused system assets"), trailing: ByteFormat.string(assets),
                              badge: badge, symbol: "square.stack.3d.down.right",
                              detail: loc("Downloads macOS no longer needs, like released Apple Intelligence models."),
@@ -387,7 +387,7 @@ enum SystemDataScreenBuilder {
         let empties = snapshot.trashEmptiesItself == true
         let size = ByteFormat.string(bytes)
         return (Row(id: "trash", title: loc("Trash"), trailing: size,
-                    badges: [Badge(loc("Cannot be undone"), tone: .critical)] + (empties ? [Badge(loc("Empties after 30 days"))] : []),
+                    badges: [Badge(loc("Cannot be undone"), .info)] + (empties ? [Badge(loc("Empties after 30 days"), .info)] : []),
                     detail: empties ? nil : loc("The Finder can delete items that have been in it for 30 days: Finder > Settings > Advanced."),
                     actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free \(size) in the Trash?"),
@@ -408,7 +408,7 @@ enum SystemDataScreenBuilder {
         let bytes = total > (snapshot.logFloor ?? 0) ? total - (snapshot.logFloor ?? 0) : 0
         guard bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
-        return (Row(id: "system-log", title: loc("System log"), trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "list.bullet.rectangle",
+        return (Row(id: "system-log", title: loc("System log"), trailing: size, badge: Badge(loc("Cannot be undone"), .info), symbol: "list.bullet.rectangle",
                     detail: loc("Erase Console records used for troubleshooting."),
                     actions: [Action(id: "eraseUnifiedLog", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Free the system log?"),
@@ -548,7 +548,7 @@ enum SystemDataScreenBuilder {
         let (title, kind) = presentation(item)
         // What macOS manages needs no explanation: only what the user can do something about has one.
         let detail = item.cleanup.kind == .managedByMacOS || item.cleanup.description.isEmpty ? nil : item.cleanup.description
-        return Row(id: item.id, title: title, trailing: ByteFormat.string(bytes), badge: kind.map { Badge($0) }, detail: detail, paths: item.paths)
+        return Row(id: item.id, title: title, trailing: ByteFormat.string(bytes), badge: kind.map { Badge($0, .info) }, detail: detail, paths: item.paths)
     }
 
     /// An item's name and its kind, read from its id and folder, not from its title, which is in the user's language: the kind is
@@ -611,7 +611,7 @@ enum SystemDataScreenBuilder {
         guard let item = snapshot.report.items.first(where: { $0.id == "versions:documents" }), let bytes = item.bytes, bytes >= manualThreshold else { return nil }
         let size = ByteFormat.string(bytes)
         return (Row(id: "versions", title: loc("Document version history"),
-                      trailing: size, badge: Badge(loc("Cannot be undone"), tone: .critical), symbol: "clock.arrow.circlepath",
+                      trailing: size, badge: Badge(loc("Cannot be undone"), .info), symbol: "clock.arrow.circlepath",
                       detail: loc("Earlier versions of your documents (File > Revert To). Only keeps the latest version."),
                       actions: [Action(id: "deleteVersions", title: loc("Free"), role: .destructive,
                                        confirmation: Confirmation(title: loc("Free all version history?"),

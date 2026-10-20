@@ -3,6 +3,7 @@ import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
 import MacSpaceSiriPrivileged
+@preconcurrency import UserNotifications
 
 @objc(MacSpaceSiriEntry)
 public final class SiriEntry: MacSpaceModuleEntry, @unchecked Sendable {
@@ -55,19 +56,39 @@ public struct SiriModule: MacSpaceModule {
     public func invalidate() async { await store.invalidate() }
 
     public func tile(context: ModuleContext) async -> Tile {
-        SiriScreenBuilder.tile(Self.presented(await snapshot(), context))
+        SiriScreenBuilder.tile(Self.presented(await snapshot(context: context), context))
     }
 
     public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
-        SiriScreenBuilder.tile(Self.presented(await snapshot(progress: progress), context))
+        SiriScreenBuilder.tile(Self.presented(await snapshot(context: context, progress: progress), context))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SiriScreenBuilder.screen(Self.presented(await snapshot(), context))
+        SiriScreenBuilder.screen(Self.presented(await snapshot(context: context), context))
     }
 
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        SiriScreenBuilder.screen(Self.presented(await snapshot(progress: progress), context))
+        SiriScreenBuilder.screen(Self.presented(await snapshot(context: context, progress: progress), context))
+    }
+
+    /// While models are downloading or being freed, the page is followed every few seconds (`SiriScreenBuilder.refreshAfter`). Those
+    /// readings only measure the models again and keep the cleanup going; the rest of the page (the switch's state, accounts, the
+    /// purge estimate, which starts processes) waits for the usual minute. nil, a full reading, when nothing of the models is moving
+    /// or when Apple Intelligence's own release is under way, which the full reading follows.
+    public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
+        let cleanup = ManagedModelCleanup.shared
+        guard !(await ModelAutoReleaser.shared.isRunning), !(await ModelPurger.shared.isRunning) else { return nil }
+        let cleaning = await cleanup.isFreeingVisibly, waiting = await cleanup.waiting, stalled = await cleanup.stalled
+        await checkFeatureModels()
+        guard var snapshot = await store.reconcileModels(), snapshot.status.state != .releasing else { return nil }
+        let moving = cleaning || !waiting.subtracting(stalled).isEmpty || !snapshot.featureDownloading.isEmpty || snapshot.downloadingModelBytes > 0
+        guard moving else { return nil }
+        snapshot.cleaningFeatures = await cleanup.isFreeingVisibly
+        snapshot.featureCleanupWaiting = await cleanup.waiting
+        snapshot.featureCleanupStalled = await cleanup.stalled
+        await Self.announceRestarts(snapshot, context: context)
+        let presented = Self.presented(snapshot, context)
+        return (SiriScreenBuilder.tile(presented), SiriScreenBuilder.screen(presented))
     }
 
     /// The reading with the module's settings that change how it is shown.
@@ -79,7 +100,7 @@ public struct SiriModule: MacSpaceModule {
 
     /// The state, after starting the release of leftover models if they are due one: MacSpace does it by itself. `waits` holds the
     /// caller until the release is over.
-    private func snapshot(waits: Bool = false, progress: LoadProgressSink? = nil) async -> SiriSnapshot {
+    private func snapshot(context: ModuleContext, waits: Bool = false, progress: LoadProgressSink? = nil) async -> SiriSnapshot {
         var snapshot = await store.snapshot(progress: progress)
         let store = self.store
         let cleaningFeatures = await ManagedModelCleanup.shared.isRunning
@@ -98,7 +119,32 @@ public struct SiriModule: MacSpaceModule {
         snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
         snapshot.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
         snapshot.featureCleanupStalled = await ManagedModelCleanup.shared.stalled
+        // Once per feature and restart: the restart is only worth asking for once macOS has kept the models for ten minutes, and the
+        // user may not be looking at the page then.
+        await Self.announceRestarts(snapshot, context: context)
         return snapshot
+    }
+
+    static func announceRestarts(_ snapshot: SiriSnapshot, context: ModuleContext) async {
+        let asked = await ManagedModelCleanup.shared.takeRestartsAsked()
+        if !asked.isEmpty, context.options.bool("notifyRestart") { notifyRestart(asked.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +)) }
+    }
+
+    /// Asks for the restart in Notification Center; clicking it opens the module's page, where the restart button is. Outside the
+    /// app (the CLI has no bundle) nothing is posted.
+    static func notifyRestart(_ bytes: UInt64) {
+        guard Bundle.main.bundleURL.pathExtension == "app" else { return }
+        let title = bytes >= SiriScreenBuilder.purgeThreshold ? loc("Restart to free \(ByteFormat.string(bytes))") : loc("Restart to finish")
+        let body = loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them.")
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.userInfo = ["module": moduleID]
+            center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+        }
     }
 
     private func checkFeatureModels(force: Bool = false) async {
@@ -151,25 +197,31 @@ public struct SiriModule: MacSpaceModule {
         }
         if request.actionID == "purgeAssets" { _ = await store.snapshot(maxAge: .infinity) }
         var result = await handle(request, context: context, progress: progress)
+        // A switch turned off: its cleanup starts now, before the page is drawn again, so the page shows it at once (its pill, and
+        // the quick readings that follow the size down). Started after, the page came back without it until the next minute's
+        // reading or a Refresh (2026-10-19).
+        if changesFeature {
+            await ManagedModelCleanup.shared.endChange()
+            let off = request.parameters["value"] == "false" || request.actionID == "disableAll"
+            if off, result.outcome == .succeeded { await checkFeatureModels(force: true) }
+        }
         if result.refresh {
             // Feature actions reconcile only feature state and a purge only the assets, keeping the page's other measurements.
             var updated: SiriSnapshot?
             switch request.actionID {
             case "togglePhoneFeatures", "toggleModelFeature": updated = await store.reconcilePhoneFeatures()
-            case "purgeAssets": updated = await store.reconcileAssets()
+            case "purgeAssets", "freeFeatureModels": updated = await store.reconcileAssets()
             default: break
             }
             if var updated {
                 updated.releasingAutomatically = await ModelAutoReleaser.shared.isRunning
                 updated.purgingModels = await ModelPurger.shared.isRunning
+                updated.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
+                updated.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
+                updated.featureCleanupStalled = await ManagedModelCleanup.shared.stalled
                 updated = Self.presented(updated, context)
                 result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
             } else { await store.invalidate() }
-        }
-        if changesFeature {
-            await ManagedModelCleanup.shared.endChange()
-            let off = request.parameters["value"] == "false" || request.actionID == "disableAll"
-            if off, result.outcome == .succeeded { await checkFeatureModels(force: true) }
         }
         return result
     }
@@ -256,6 +308,23 @@ public struct SiriModule: MacSpaceModule {
         case "openICloudSettings":
             NSWorkspace.shared.open(SiriCloudSync.settingsURL)
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
+        case "freeFeatureModels":
+            // The switched-off features' cleanup, now and in view: what was given up on is tried again (`ManagedModelCleanup`).
+            progress(ActionProgress(message: loc("Freeing space")))
+            let freed = FreedTotal()
+            await ManagedModelCleanup.shared.waitForCurrent()
+            await ManagedModelCleanup.shared.retryKept()
+            let store = self.store
+            await ManagedModelCleanup.shared.check(force: true) { result in
+                // Recorded in the history by the app, as this button's result.
+                await freed.add(result.freedBytes)
+                _ = await store.reconcileAssets()
+            }
+            await ManagedModelCleanup.shared.waitForCurrent()
+            let bytes = await freed.total
+            // Nothing went: macOS still keeps them. Said so, never All done.
+            if bytes < PurgeRun.noise { return ActionResult(outcome: .needsAttention, message: loc("macOS still keeps these models."), refresh: true) }
+            return .succeeded(PurgeRun.freedMessage(bytes), freedBytes: bytes)
         case "purgeAssets":
             progress(ActionProgress(message: loc("Freeing space")))
             let store = self.store
@@ -278,11 +347,12 @@ public struct SiriModule: MacSpaceModule {
             guard !(await ModelAutoReleaser.shared.isRunning), !(await ModelPurger.shared.isRunning) else { return }
             await checkFeatureModels(force: true)
             await ManagedModelCleanup.shared.waitForCurrent()
+            await Self.announceRestarts(await store.snapshot(), context: context)
             return
         }
         guard id == "watch" else { return }
         // Waited for: the background run may end with this call, and the release must get to restore the Siri language.
-        _ = await snapshot(waits: true)
+        _ = await snapshot(context: context, waits: true)
         let store = AppleIntelligenceWatchStore()
         let status = AppleIntelligenceLanguageGuard().status()
         let outcome = AppleIntelligenceWatcher().transition(previous: store.load(), status: status)
@@ -328,4 +398,10 @@ public struct SiriModule: MacSpaceModule {
                           details: result.steps.map { "\($0.name): \($0.detail)" } + ["Siri language is back to \(result.siriLanguageAfter ?? "?")."],
                           freedBytes: result.purge?.freedBytes)
     }
+}
+
+/// What a cleanup's results freed, added up as they come in.
+actor FreedTotal {
+    private(set) var total: UInt64 = 0
+    func add(_ bytes: UInt64) { total += bytes }
 }

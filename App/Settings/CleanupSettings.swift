@@ -64,7 +64,7 @@ struct CleanupHistoryPage: View {
             // The page's title names the list; the total is a figure of its own, not part of a title (Interface rules).
             if lifetime > 0 {
                 Section {
-                    LabeledContent("Freed in total") { Text(ByteFormat.string(lifetime)).monospacedDigit() }
+                    LabeledContent("Freed in total") { ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit() }
                 }
             }
             Section {
@@ -75,9 +75,9 @@ struct CleanupHistoryPage: View {
                     HStack(spacing: 8) {
                         TitleLine(title: entry.moduleName, note: entry.date.formatted(date: .abbreviated, time: .shortened))
                         // How it started is a fact about the row: a pill.
-                        BadgeView(badge: Badge(Self.trigger(entry.trigger)))
+                        BadgeView(badge: Badge(Self.trigger(entry.trigger), .info))
                         Spacer(minLength: 8)
-                        Text(ByteFormat.string(entry.freedBytes)).monospacedDigit().foregroundStyle(.secondary)
+                        ChangingText(text: ByteFormat.string(entry.freedBytes), alignment: .trailing).monospacedDigit().foregroundStyle(.secondary)
                     }
                 }
             }

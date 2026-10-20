@@ -14,15 +14,35 @@ public enum Tone: Codable, Equatable, Sendable {
 
 /// A fact about an item now, as a pill: its state, its kind. What the state means right now (why it is not verified, what is
 /// waiting) goes in `help`, the pill's hover tag, never in the item's (i), which holds only what the item is (`InfoText`).
+///
+/// Every pill says whether it asks something of the user (`Kind`): the app draws only those in the action color, so orange always
+/// means "you have something to do". "Kept by macOS" and "Cannot be undone" were orange and said nothing to do (2026-10-19).
 public struct Badge: Codable, Equatable, Sendable {
+    public enum Kind: String, Codable, Equatable, Sendable {
+        /// Describes the item; nothing for the user to do. Grey.
+        case info
+        /// The user has something to do (restart, approve, switch it off elsewhere); `help` says what. In the action color.
+        case action
+    }
+
     public var text: String
-    public var tone: Tone
+    public var kind: Kind
     public var help: String?
 
-    public init(_ text: String, tone: Tone = .neutral, help: String? = nil) {
+    /// `kind` has no default: each pill decides whether it asks something of the user.
+    public init(_ text: String, _ kind: Kind, help: String? = nil) {
         self.text = text
-        self.tone = tone
+        self.kind = kind
         self.help = help
+    }
+    private enum CodingKeys: String, CodingKey { case text, kind, help }
+
+    /// A pill saved before pills had a kind (with a `tone` instead) reads as a description.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        text = try container.decode(String.self, forKey: .text)
+        kind = try container.decodeIfPresent(Kind.self, forKey: .kind) ?? .info
+        help = try container.decodeIfPresent(String.self, forKey: .help)
     }
 }
 

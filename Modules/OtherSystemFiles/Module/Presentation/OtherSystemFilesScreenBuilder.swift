@@ -106,7 +106,7 @@ enum OtherSystemFilesScreenBuilder {
         guard !snapshot.updates.isEmpty else { return nil }
         let rows = snapshot.updates.sorted { $0.bytes > $1.bytes }.map { update in
             Row(id: "update:\(update.path)", title: loc("\(update.name), ready to install"), trailing: ByteFormat.string(update.bytes),
-                badge: Badge(loc("Installs at the next restart")), symbol: "arrow.down.circle",
+                badge: Badge(loc("Installs at the next restart"), .info), symbol: "arrow.down.circle",
                 actions: [Action(id: "openSoftwareUpdate", title: loc("Open"))], paths: [update.path])
         }
         return .section(SectionWidget(id: "updates", title: loc("Waiting to install"), widgets: [.list(ListWidget(id: "updates-list", rows: rows))]))
@@ -141,8 +141,8 @@ enum OtherSystemFilesScreenBuilder {
         let backingUp = snapshot.timeMachine.backingUp == true
         let count = snapshots.all.count == 1 ? loc("1 snapshot") : loc("\(snapshots.all.count) snapshots")
         var badges: [Badge] = []
-        if !removable.isEmpty { badges.append(Badge(loc("Cannot be undone"), tone: .critical)) }
-        if backingUp { badges.append(Badge(loc("Backing up now"), tone: .caution)) }
+        if !removable.isEmpty { badges.append(Badge(loc("Cannot be undone"), .info)) }
+        if backingUp { badges.append(Badge(loc("Backing up now"), .info)) }
         // What they are, not which ones there are now (`InfoText`): the count is the subtitle.
         let detail = loc("Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.")
         let size = ByteFormat.string(bytes)
@@ -174,21 +174,21 @@ enum OtherSystemFilesScreenBuilder {
         let destination = disk.destination
         let symbol = "externaldrive.badge.timemachine"
         guard let mount = destination.mountPoint else {
-            return Row(id: "backupdisk:\(destination.id)", title: destination.name, badge: Badge(loc("Not connected")), symbol: symbol,
+            return Row(id: "backupdisk:\(destination.id)", title: destination.name, badge: Badge(loc("Not connected"), .info), symbol: symbol,
                        detail: loc("Connect it to see its backups and free old ones."))
         }
         guard let backups = disk.backups, let newest = backups.last else {
             return Row(id: "backupdisk:\(destination.id)", title: destination.name, trailing: disk.usedBytes.map(ByteFormat.string),
-                       badge: Badge(loc("Backups not readable")), symbol: symbol, paths: [mount])
+                       badge: Badge(loc("Backups not readable"), .info), symbol: symbol, paths: [mount])
         }
         // Newest first, by date: a backup has no size of its own (its blocks are shared with the others), so there is no size to sort by.
         let rows = backups.reversed().map { backup in
             Row(id: "backup:\(backup.stamp)", title: backup.date.formatted(date: .abbreviated, time: .shortened),
-                badge: backup.stamp == newest.stamp ? Badge(loc("Latest")) : nil)
+                badge: backup.stamp == newest.stamp ? Badge(loc("Latest"), .info) : nil)
         }
         var group = Row.group(id: "backupdisk:\(destination.id)", title: destination.name, symbol: symbol, totalBytes: disk.usedBytes ?? 0, rows: rows)
         group.subtitle = backups.count == 1 ? loc("1 backup") : loc("\(backups.count) backups")
-        group.badges = (disk.freeBytes.map { [Badge(loc("\(ByteFormat.string($0)) free"))] } ?? []) + (backingUp ? [Badge(loc("Backing up now"), tone: .caution)] : [])
+        group.badges = (disk.freeBytes.map { [Badge(loc("\(ByteFormat.string($0)) free"), .info)] } ?? []) + (backingUp ? [Badge(loc("Backing up now"), .info)] : [])
         group.paths = [mount]
         let removable = backups.filter { $0.stamp != newest.stamp }
         if !removable.isEmpty, !backingUp {

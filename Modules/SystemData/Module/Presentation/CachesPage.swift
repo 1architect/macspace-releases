@@ -265,7 +265,7 @@ enum CachesPage {
     /// the pills say it.
     static func row(_ entry: CacheEntry, part: CacheEntry.Part) -> Row {
         let badges = part == .recommended ? [entry.source.title] + [entry.reason].compactMap { $0 } : entry.facts
-        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0) }, paths: entry.paths)
+        return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0, .info) }, paths: entry.paths)
     }
 
     /// The confirmation's line when some of these caches belong to open apps, which Free quits first: "Quits Enscape and WhatsApp.".

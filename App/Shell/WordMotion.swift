@@ -79,25 +79,25 @@ struct WordChange: Identifiable {
         return pieces
     }
 
-    /// Match unchanged words in order, rather than animating an unchanged unit/prefix again.
-    var unchanged: (outgoing: Set<Int>, incoming: Set<Int>) {
-        let old = Self.pieces(outgoing.text).filter { !$0.whitespace }
-        let new = Self.pieces(incoming.text).filter { !$0.whitespace }
-        var lengths = Array(repeating: Array(repeating: 0, count: new.count + 1), count: old.count + 1)
-        for i in old.indices.reversed() {
-            for j in new.indices.reversed() {
-                lengths[i][j] = old[i].text == new[j].text ? 1 + lengths[i + 1][j + 1] : max(lengths[i + 1][j], lengths[i][j + 1])
-            }
+    /// The words that stay where they are, drawn still while the others roll: the start both phrases share when the text is drawn
+    /// from the leading edge, the end they share when drawn from the trailing edge, nothing when centered. A word shared further
+    /// in moves sideways as the words before it change width: matched as unchanged, it jumped to its new place while the rest rolled
+    /// ("MB" in a chart legend as the pointer went from block to block).
+    func unchanged(alignment: HorizontalAlignment = .leading) -> (outgoing: Set<Int>, incoming: Set<Int>) {
+        let old = Self.pieces(outgoing.text), new = Self.pieces(incoming.text)
+        var shared = 0
+        let fromEnd = alignment == .trailing
+        guard fromEnd || alignment == .leading else { return ([], []) }
+        while shared < min(old.count, new.count) {
+            let a = old[fromEnd ? old.count - 1 - shared : shared], b = new[fromEnd ? new.count - 1 - shared : shared]
+            guard a.text == b.text else { break }
+            shared += 1
         }
-        var matchedOld: Set<Int> = [], matchedNew: Set<Int> = []
-        var i = 0, j = 0
-        while i < old.count && j < new.count {
-            if old[i].text == new[j].text {
-                matchedOld.insert(old[i].ordinal); matchedNew.insert(new[j].ordinal)
-                i += 1; j += 1
-            } else if lengths[i + 1][j] >= lengths[i][j + 1] { i += 1 } else { j += 1 }
+        func words(_ pieces: [Piece]) -> Set<Int> {
+            let kept = fromEnd ? pieces.suffix(shared) : pieces.prefix(shared)
+            return Set(kept.filter { !$0.whitespace }.map(\.ordinal))
         }
-        return (matchedOld, matchedNew)
+        return (words(old), words(new))
     }
 
     var wordCount: Int {
@@ -190,7 +190,7 @@ struct WordChangeFrame: View {
     var delay: Double = 0
 
     var body: some View {
-        let matched = change.unchanged
+        let matched = change.unchanged(alignment: alignment.horizontal)
         ZStack(alignment: alignment) {
             layer(change.outgoing, unchanged: matched.outgoing, outgoing: true)
             layer(change.incoming, unchanged: matched.incoming, outgoing: false)

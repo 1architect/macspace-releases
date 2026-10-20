@@ -113,10 +113,12 @@ private struct RowPill: ViewModifier {
     func body(content: Content) -> some View {
         content
             .font(.system(size: 12, weight: .regular))
-            .foregroundStyle(active ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            .foregroundStyle(Color.primary)
+            .opacity(PillInk.opacity(lit: active))
             .frame(width: 28, height: 18)
             .background(.primary.opacity(active ? 0.1 : 0.05), in: Capsule())
             .contentShape(Capsule())
+            .animation(Theme.hover, value: active)
     }
 }
 

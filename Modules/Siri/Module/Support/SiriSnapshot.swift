@@ -98,6 +98,21 @@ actor SiriStore {
         }
     }
 
+    /// The models on disk again, Apple Intelligence's and each feature's, with nothing else: what the page follows every few seconds
+    /// while they change (`SiriModule.status`). nil before the first reading.
+    func reconcileModels() async -> SiriSnapshot? {
+        await reading.reconcile { cached in
+            var updated = cached
+            let models = SiriStore.modelBytes()
+            updated.recordedModelBytes = models.installed
+            updated.installedModelBytes = models.installed
+            updated.downloadingModelBytes = models.downloading
+            updated.lockedModelBytes = models.locked
+            SiriStore.readFeatureModels(into: &updated)
+            return updated
+        }
+    }
+
     func invalidate() async { await reading.invalidate() }
 
     static func liveSnapshot(progress: LoadProgressRelay) -> SiriSnapshot {
@@ -144,14 +159,14 @@ actor SiriStore {
     }
 
     /// The Siri, Spatial Photos and Phone models on disk, read on every reading of the page as the Apple Intelligence models are.
-    static func readFeatureModels(into snapshot: inout SiriSnapshot) {
+    static func readFeatureModels(into snapshot: inout SiriSnapshot, now: Date = Date()) {
         snapshot.featureModelBytes = [:]
         snapshot.featureDownloading = []
         snapshot.featureLocked = []
         for feature in ModelFeatureSettings.Feature.allCases {
             let models = AssetModelCleanup.modelBytes(feature)
             if let bytes = models.bytes { snapshot.featureModelBytes[feature] = bytes }
-            if models.downloading { snapshot.featureDownloading.insert(feature) }
+            if DownloadSightings.shared.downloading(feature, seenNow: models.downloading, now: now) { snapshot.featureDownloading.insert(feature) }
             if (models.bytes ?? 0) > 0, AssetModelCleanup.lockedAssets(feature) > 0 { snapshot.featureLocked.insert(feature) }
         }
     }
@@ -168,5 +183,24 @@ actor SiriStore {
             .filter { name in ModelDescriptors.families.contains { name.hasPrefix($0.replacingOccurrences(of: ".", with: "_") + ".") } }
             .compactMap { FileTreeSizer().size(at: URL(fileURLWithPath: "\(stagingFolder)/\($0)"))?.bytes }.reduce(0, +)
         return (usage?.installedBytes, max(usage?.downloadingBytes ?? 0, staged), usage?.lockedBytes ?? 0)
+    }
+}
+
+/// A feature counts as downloading for `linger` after its download was last seen in MobileAsset's staging folder. A download comes in
+/// pieces, one staging folder after another, and between two of them the folder is briefly gone: read as it was, the switch's
+/// Downloading pill went and came back all through a download (2026-10-19).
+final class DownloadSightings: @unchecked Sendable {
+    static let shared = DownloadSightings()
+    static let linger: TimeInterval = 30
+    private let lock = NSLock()
+    private var lastSeen: [ModelFeatureSettings.Feature: Date] = [:]
+
+    func downloading(_ feature: ModelFeatureSettings.Feature, seenNow: Bool, now: Date) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        if seenNow { lastSeen[feature] = now; return true }
+        guard let last = lastSeen[feature] else { return false }
+        if now.timeIntervalSince(last) < Self.linger { return true }
+        lastSeen[feature] = nil
+        return false
     }
 }

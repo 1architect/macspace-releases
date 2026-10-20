@@ -56,7 +56,9 @@ final class DeveloperCacheTests: XCTestCase {
         let json = #"{"id":"r","title":"T","badge":{"text":"Old","tone":{"neutral":{}}},"steps":[],"actions":[]}"#
         let row = try JSONDecoder().decode(Row.self, from: Data(json.utf8))
         XCTAssertEqual(row.badges.map(\.text), ["Old"])
-        let again = try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(Row(id: "r", title: "T", badges: [Badge("A"), Badge("B")])))
+        let again = try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(Row(id: "r", title: "T", badges: [Badge("A", .info), Badge("B", .action)])))
         XCTAssertEqual(again.badges.map(\.text), ["A", "B"])
+        XCTAssertEqual(row.badges.map(\.kind), [.info], "a pill saved with a tone reads as a description")
+        XCTAssertEqual(again.badges.map(\.kind), [.info, .action])
     }
 }

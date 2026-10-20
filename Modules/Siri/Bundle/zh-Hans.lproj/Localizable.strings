@@ -10,6 +10,7 @@
 "1 feature" = "1 项功能";
 "A feature change is still running." = "功能更改仍在进行中。";
 "A notification when MacSpace finds that macOS made Apple Intelligence available again." = "当 MacSpace 发现 macOS 再次提供 Apple 智能时发出通知。";
+"A notification when macOS keeps the models of a feature you switched off for ten minutes, and only a restart frees them." = "当 macOS 将你关闭的功能的模型保留十分钟、只有重新启动才能释放时发出通知。";
 "AI is off" = "AI 已关闭";
 "AI is on" = "AI 已开启";
 "Allow" = "允许";
@@ -26,7 +27,6 @@
 "Apple Intelligence is on in %@; those accounts keep the models. Switch it off there or delete the accounts." = "%@ 中的 Apple 智能已开启，这些账户保留了模型。请在相应账户中关闭或删除账户。";
 "Apple Intelligence models still on disk" = "Apple 智能模型仍在磁盘上";
 "Apple Intelligence stayed eligible (answer %@) after the change; the previous Siri settings were restored." = "更改后 Apple 智能仍可用（结果 %@）；已还原之前的 Siri 设置。";
-"Before MacSpace can release them" = "释放之前需要完成";
 "Call transcription" = "通话转录";
 "Can't change now" = "暂时无法更改";
 "Can't free it yet" = "暂时无法释放";
@@ -42,6 +42,7 @@
 "Couldn't verify the Call transcription change." = "无法验证通话转录的更改。";
 "Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again." = "已删除账户仍订阅模型。请在 MacSpace（Siri 与 Apple 智能）中移除残留，重新启动后重试。";
 "Deletes Apple Intelligence models and other downloads macOS no longer needs." = "删除 Apple 智能模型和 macOS 不再需要的其他下载。";
+"Deletes the models of the features you switched off. They download again if you switch one back on." = "删除你已关闭的功能的模型。如果重新开启某项功能，模型会再次下载。";
 "Disable" = "停用";
 "Disable %@" = "停用 %@";
 "Disable %@?" = "停用 %@？";
@@ -56,6 +57,8 @@
 "Enable all %lld features again?" = "重新启用全部 %lld 项功能？";
 "Feature settings updated." = "功能设置已更新。";
 "Free" = "释放";
+"Free %@" = "释放 %@";
+"Free %@?" = "释放 %@？";
 "Free switched-off features' models automatically" = "自动释放已关闭功能的模型";
 "Free up to %@" = "最多释放 %@";
 "Free up to %@?" = "最多释放 %@？";
@@ -66,7 +69,6 @@
 "Kept by macOS" = "由 macOS 保留";
 "Kept while Apple Intelligence is on" = "Apple 智能开启时保留";
 "Leftover Apple Intelligence models" = "残留的 Apple 智能模型";
-"Leftover models" = "残留模型";
 "Log in as %@ and turn Apple Intelligence off there." = "以 %@ 登录并关闭 Apple 智能。";
 "MacSpace asks macOS again every five minutes." = "MacSpace 每五分钟会再次请求 macOS。";
 "MacSpace could not read every Call transcription setting." = "MacSpace 无法读取通话转录的全部设置。";
@@ -79,6 +81,7 @@
 "Not available in a virtual machine" = "虚拟机中不可用";
 "Not verified on this macOS version" = "尚未在此 macOS 版本上验证";
 "Notify me when Apple Intelligence turns back on" = "Apple 智能重新开启时通知我";
+"Notify me when freeing models needs a restart" = "释放模型需要重新启动时通知我";
 "One account with Apple Intelligence on keeps the models on this Mac." = "只要有一个账户开启 Apple 智能，模型就会保留在此 Mac 上。";
 "Open" = "打开";
 "Open MacSpace to check." = "打开 MacSpace 进行检查。";
@@ -88,7 +91,6 @@
 "Other accounts" = "其他账户";
 "Released Apple Intelligence models" = "已释放的 Apple 智能模型";
 "Released Apple Intelligence models and unused system assets" = "已释放的 Apple 智能模型与未使用的系统资源";
-"Releasing the leftover models" = "正在释放残留模型";
 "Restart required" = "需要重新启动";
 "Restart to finish" = "重新启动以完成";
 "Restart to free %@" = "重新启动以释放 %@";
@@ -107,7 +109,6 @@
 "Switch it off again in MacSpace." = "在 MacSpace 中再次关闭。";
 "Switching it off sets Siri to a different language than your Mac." = "关闭时会将 Siri 设置为与 Mac 不同的语言。";
 "Sync to other devices" = "同步到其他设备";
-"Takes about a minute." = "大约需要一分钟。";
 "The current Siri language could not be read." = "无法读取当前 Siri 语言。";
 "The system language could not be read." = "无法读取系统语言。";
 "The system or Siri language could not be read." = "无法读取系统或 Siri 语言。";
@@ -123,7 +124,6 @@
 "Unused system assets" = "未使用的系统资源";
 "Unused system models" = "未使用的系统模型";
 "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "通常很快完成。如未完成，MacSpace 会在 %lld 分钟后处理。";
-"Waiting for macOS" = "正在等待 macOS";
 "While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves." = "MacSpace 打开期间：发现 macOS 是否重新开启了 Apple 智能，并释放它留下的模型。";
 "While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off." = "MacSpace 打开期间：在你关闭 Siri、空间照片和通话转录后，释放 macOS 再次请求的模型。";
 "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac." = "开启时，Siri 的语言更改也会同步到你的 iPhone 和 iPad。关闭它可让更改只保留在这台 Mac 上。";
@@ -136,8 +136,10 @@
 "freeing %@ of models" = "正在释放 %@ 模型";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS 不在虚拟机中提供 Apple 智能。请在实体 Mac 上使用 MacSpace。";
 "macOS downloads their models again." = "macOS 会重新下载它们的模型。";
-"macOS is removing the model" = "macOS 正在移除模型";
-"macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them." = "macOS 自身的服务仍在使用这些模型。这些服务停止或重新启动后它们才会释放，随后 MacSpace 会删除它们。";
+"macOS is freeing the model" = "macOS 正在释放模型";
+"macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOS 已将这些模型保留了十分钟。重新启动后，MacSpace 会将其删除。";
+"macOS still keeps these models." = "macOS 仍保留着这些模型。";
+"macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them." = "macOS 自身的服务仍在使用这些模型。它们通常会在几分钟内释放，随后 MacSpace 会将其删除。";
 "models not measured" = "未测量模型";
 "needs Full Disk Access to read" = "需要完全磁盘访问才能读取";
 "no model downloaded yet" = "尚未下载模型";

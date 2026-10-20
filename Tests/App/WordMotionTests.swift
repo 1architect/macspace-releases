@@ -41,10 +41,20 @@ final class WordMotionTests: XCTestCase {
         XCTAssertEqual(motion.current?.text, "carregando 60%")
     }
 
+    /// A unit shared by two legend lines moves sideways as the name before it changes width: it rolls with the rest, never jumps.
+    func testAWordThatMovesSidewaysIsNotKeptStill() {
+        let change = WordChange(id: 1, outgoing: snapshot("Apps 120 MB"), incoming: snapshot("Documents 340 MB"))
+        XCTAssertEqual(change.unchanged().outgoing, [])
+        XCTAssertEqual(change.unchanged().incoming, [])
+    }
+
     func testUnchangedWordsAreDrawnOnceAndUnicodeWhitespaceIsPreserved() {
-        let change = WordChange(id: 1, outgoing: snapshot("Free 20 MB"), incoming: snapshot("Keep 20 MB"))
-        XCTAssertEqual(change.unchanged.outgoing, [1, 2])
-        XCTAssertEqual(change.unchanged.incoming, [1, 2])
+        let change = WordChange(id: 1, outgoing: snapshot("Free 20 MB"), incoming: snapshot("Free 20 GB"))
+        XCTAssertEqual(change.unchanged().outgoing, [0, 1])
+        XCTAssertEqual(change.unchanged().incoming, [0, 1])
+        let trailing = WordChange(id: 2, outgoing: snapshot("Free 20 MB"), incoming: snapshot("Keep 20 MB"))
+        XCTAssertEqual(trailing.unchanged(alignment: .trailing).incoming, [1, 2], "drawn from the trailing edge, the shared end stays put")
+        XCTAssertEqual(trailing.unchanged(alignment: .center).incoming, [])
         for text in ["liberar 2,21 GB", "Free\u{00A0}20 MB", "IA\ndesativada", "正在加载 ٤٢٪", "選択した項目を解放"] {
             XCTAssertEqual(WordChange.pieces(text).map(\.text).joined(), text)
         }

@@ -34,27 +34,27 @@ enum DebloatScreenBuilder {
         guard let status else { return nil }
         // What the state means now is the pill's hover tag: the (i) says only what the switch does (`InfoText`).
         let why = effectExplanation(control, status)
-        if cannotTakeEffect { return Badge(loc("Cannot take effect here"), tone: .critical, help: why) }
+        if cannotTakeEffect { return Badge(loc("Cannot take effect here"), .info, help: why) }
         // A retired switch says why it is still shown.
-        if control.retired != nil { return Badge(retired[control.id] ?? loc("No longer works"), tone: .caution) }
+        if control.retired != nil { return Badge(retired[control.id] ?? loc("No longer works"), .info) }
         // Screen Time or an organization's profile enforces it, not MacSpace (`DebloatEngine.status`).
-        if status.managedElsewhere == true, status.state != .debloated { return Badge(loc("Set by another profile")) }
+        if status.managedElsewhere == true, status.state != .debloated { return Badge(loc("Set by another profile"), .info) }
         switch status.state {
         case .debloated:
             switch status.effect?.state {
-            case .ineffective?: return Badge(loc("Not working"), tone: .critical, help: why)
-            case .pending?: return Badge(control.effect?.kind == .diagnosticSubmission ? loc("Verifying") : loc("After restart"), tone: .caution, help: why)
+            case .ineffective?: return Badge(loc("Not working"), .info, help: why)
+            case .pending?: return control.effect?.kind == .diagnosticSubmission ? Badge(loc("Verifying"), .info, help: why) : Badge(loc("After restart"), .action, help: why)
             // No badge when macOS logged no decision to read: SubmitDiagInfo can go more than a day without one, and its log entries
             // expire, so "Not verified" stood on a switch whose settings were written and read back and which macOS then honored
             // (optIn: OUT, 2026-10-18). Only a decision against it is worth a pill.
-            case .notControllable?: return Badge(loc("Cannot take effect here"), tone: .critical, help: why)
+            case .notControllable?: return Badge(loc("Cannot take effect here"), .info, help: why)
             default: return nil
             }
-        case .awaitingApproval, .awaitingRemoval: return Badge(loc("Waiting for approval"), tone: .caution)
-        case .drifted: return Badge(loc("Undone by macOS"), tone: .critical)
-        case .partial: return Badge(loc("Partly off"), tone: .caution)
-        case .unavailable: return Badge(loc("Not on this macOS"))
-        case .unknown: return Badge(loc("Cannot read"))
+        case .awaitingApproval, .awaitingRemoval: return Badge(loc("Waiting for approval"), .action)
+        case .drifted: return Badge(loc("Undone by macOS"), .action)
+        case .partial: return Badge(loc("Partly off"), .info)
+        case .unavailable: return Badge(loc("Not on this macOS"), .info)
+        case .unknown: return Badge(loc("Cannot read"), .info)
         case .stock: return nil
         }
     }

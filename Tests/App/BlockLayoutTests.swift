@@ -142,7 +142,7 @@ final class DitheredLightTests: XCTestCase {
     /// small fraction of one level; pixel to pixel it varies, which is what hides the steps.
     func testDitheredLightAveragesToTheGradient() throws {
         let peak = 0.07
-        let image = DitheredLight.make(peak: peak)
+        let image = try XCTUnwrap(DitheredLight.make(width: 512, height: 512, center: CGPoint(x: 256, y: 256), radius: 256, peak: peak))
         let data = try XCTUnwrap(image.dataProvider?.data as Data?)
         let side = image.width, center = Double(side) / 2
         var sums = [Double](repeating: 0, count: 10), expected = [Double](repeating: 0, count: 10), counts = [Double](repeating: 0, count: 10)

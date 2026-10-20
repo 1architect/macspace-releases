@@ -220,7 +220,7 @@ struct TileFace: View {
             // What the pointer is on, and nothing otherwise: its name and size, in the tile's small text, just under the blocks and as
             // wide as them, on every tile. Beside the caption, it had no room on a small tile and named nothing there.
             Group {
-                if let hovered { Text("\(hovered.label) \(ByteFormat.string(hovered.bytes))") }
+                if let hovered { ChangingText(text: "\(hovered.label) \(ByteFormat.string(hovered.bytes))") }
             }
             .font(TileType.current.smallText)
             .foregroundStyle(palette.soft)

@@ -220,7 +220,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
     /// `quiet` preserves existing content during automatic work. Status/cache reads stay silent; real scans report progress.
-    public func refresh(reload: Bool = false, quiet: Bool = false) async {
+    /// `following`: a read that follows a changing tile (`Tile.refreshAfter`), every few seconds. It never shows loading, even when the
+    /// module has no `status` and reads the Mac in full: each one filled the page's button and pulsed its background, every five
+    /// seconds while Siri's models were being freed (2026-10-19).
+    public func refresh(reload: Bool = false, quiet: Bool = false, following: Bool = false) async {
         guard !preparingForUninstall, state == .ready, let module else { return }
         guard !quiet || !performing else { return }
         // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
@@ -250,7 +253,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 guard let self, fraction.isFinite, generation == self.refreshGeneration,
                       self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
                 if !self.refreshes.contains(generation) {
-                    guard self.isWatched else { return }
+                    guard self.isWatched, !following else { return }
                     self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
                 }
                 let fraction = min(max(fraction, 0), 1)
@@ -385,15 +388,16 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         autoRefresh?.cancel()
         guard state == .ready, isWatched else { return }
         let interval = Self.isAppActive() ? Self.autoRefreshInterval : Self.backgroundRefreshInterval
-        // A tile that is changing (`Tile.refreshAfter`) is followed at its own pace, in front or not.
+        // A tile that is changing (`Tile.refreshAfter`) is followed at its own pace, in front or not, without showing loading.
         let delay = max(min(tile?.refreshAfter ?? interval, interval), Self.fastestAutoRefresh)
+        let following = delay < interval
         autoRefresh = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, self.state == .ready, self.isWatched else { return }
             // This timer has fired. The read may cancel a pending timer, without canceling its own task.
             self.autoRefresh = nil
             // Not while an action runs: it reads the module again itself when it ends.
-            if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true) }
+            if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true, following: following) }
         }
     }
 

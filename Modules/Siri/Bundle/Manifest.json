@@ -3,7 +3,7 @@
   "name": "Siri & Apple Intelligence",
   "summary": "Switch Apple Intelligence off and reclaim the space its models take.",
   "version": "0.1.0",
-  "sdkVersion": 5,
+  "sdkVersion": 6,
   "symbol": "sparkles",
   "minimumMacOS": "27.0",
   "order": 20,
@@ -26,6 +26,16 @@
       "id": "notify",
       "title": "Notify me when Apple Intelligence turns back on",
       "detail": "A notification when MacSpace finds that macOS made Apple Intelligence available again.",
+      "kind": {
+        "toggle": {
+          "defaultValue": true
+        }
+      }
+    },
+    {
+      "id": "notifyRestart",
+      "title": "Notify me when freeing models needs a restart",
+      "detail": "A notification when macOS keeps the models of a feature you switched off for ten minutes, and only a restart frees them.",
       "kind": {
         "toggle": {
           "defaultValue": true

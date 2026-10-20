@@ -30,7 +30,9 @@ public struct Tile: Codable, Equatable, Sendable {
     public var purgeableByService: [String: UInt64]
     /// What the tile shows is changing (a download, a removal): the app asks `status` after this many seconds instead of its usual
     /// minute. A nil status falls back to a normal read; `status` can keep counters current without scanning. The host follows only
-    /// visible tiles/pages and clamps this interval to at least two seconds. nil for the usual pace.
+    /// visible tiles/pages and clamps this interval to at least two seconds. These reads never show loading (the page's button and
+    /// pulsing figures), whether `status` answers or the module reads in full; a module that changes for long should still answer
+    /// `status`, so a few seconds' pace costs little. nil for the usual pace.
     public var refreshAfter: Double?
     /// What the switch of a `state` chart runs when it is flipped on the dashboard, with `value` "true" or "false", as a switch row on
     /// the page. nil leaves the switch shown but not flippable.

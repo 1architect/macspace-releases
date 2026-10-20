@@ -191,14 +191,58 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureSettings = [.siri: .init(state: .off, managedOff: true, requestedOff: true)]
         snap.featureModelBytes = [.siri: 1_400_000_000]
         snap.featureCleanupWaiting = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS", "not held: MacSpace asks again")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "not held: MacSpace deletes them again")
         XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac")
         snap.featureLocked = [.siri]
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space", "a lock alone: macOS usually lets go within minutes")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac")
+        snap.featureCleanupStalled = [.siri]
         XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Restart required")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.kind, .action)
+        snap.featureDownloading = [.siri]
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "restartMac", "macOS downloading again: a restart does not stop it")
+        snap.featureDownloading = []
         let restart = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
         XCTAssertEqual(restart.id, "restartMac")
         XCTAssertEqual(restart.title, "Restart to free \(ByteFormat.string(1_400_000_000))")
         XCTAssertNil(restart.confirmation, "macOS's own Restart dialog asks")
+    }
+
+    /// While a switched-off feature's models are on disk, the page's Free is theirs, with the figure their rows show, before the purge
+    /// of every unused system asset (whose estimate is another figure).
+    func testThePagesFreeIsTheSwitchedOffFeaturesModels() throws {
+        var snap = snapshot(.protected, purgeable: 182_800_000)
+        snap.featureSettings = [.spatialPhotos: .init(state: .off, managedOff: true, requestedOff: true)]
+        snap.phoneFeatures = .init(state: .off, managedOff: true, effective: [:], requestedOff: true)
+        snap.featureModelBytes = [.phone: 371_400_000, .spatialPhotos: 100_000_000]
+        let free = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
+        XCTAssertEqual(free.id, "freeFeatureModels")
+        XCTAssertEqual(free.title, "Free \(ByteFormat.string(471_400_000))")
+        snap.featureCleanupWaiting = [.phone, .spatialPhotos]
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "freeFeatureModels", "being freed: no button can hurry macOS")
+        XCTAssertNotEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows.last?.badge?.text, "Freeing space")
+        snap.featureCleanupWaiting = []
+        snap.cleaningFeatures = true
+        snap.featureSettings[.siri] = .init(state: .off, managedOff: true, requestedOff: true)
+        XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge, "no models on disk: no Freeing pill")
+        snap.cleaningFeatures = false
+        snap.featureSettings[.siri] = nil
+        snap.featureDownloading = [.phone, .spatialPhotos]
+        XCTAssertEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets", "being downloaded again: nothing to delete yet")
+        snap.featureDownloading = []
+        snap.featureModelBytes = [.phone: 16_000_000]
+        XCTAssertEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets", "freed: the purge of unused assets comes back")
+    }
+
+    /// A download comes in pieces: the switch keeps saying Downloading between them.
+    func testDownloadingLingersBetweenPieces() {
+        let sightings = DownloadSightings()
+        let now = Date()
+        XCTAssertFalse(sightings.downloading(.phone, seenNow: false, now: now))
+        XCTAssertTrue(sightings.downloading(.phone, seenNow: true, now: now))
+        XCTAssertTrue(sightings.downloading(.phone, seenNow: false, now: now.addingTimeInterval(10)))
+        XCTAssertFalse(sightings.downloading(.phone, seenNow: false, now: now.addingTimeInterval(31)))
     }
 
     func testNoRestartIsAskedForAFeatureThatIsOn() {
@@ -274,10 +318,11 @@ final class SiriScreenBuilderTests: XCTestCase {
         XCTAssertEqual(SiriScreenBuilder.refreshAfter(snap), 5)
         snap.cleaningFeatures = false
         snap.featureCleanupWaiting = [.siri]
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Waiting for macOS")
-        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.help, "MacSpace asks macOS again every five minutes.")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge?.help, "nothing holds them up: no tag")
         snap.featureLocked = [.siri]
-        XCTAssertTrue(SiriScreenBuilder.switchList(snap).rows[1].badge?.help?.contains("restart") == true, "says what holds them and what frees them")
+        XCTAssertEqual(SiriScreenBuilder.switchList(snap).rows[1].badge?.text, "Freeing space")
+        XCTAssertTrue(SiriScreenBuilder.switchList(snap).rows[1].badge?.help?.contains("services") == true, "says what holds them")
         snap.featureModelBytes = [.siri: 9_000_000]
         XCTAssertNil(SiriScreenBuilder.switchList(snap).rows[1].badge, "nothing worth a size is left: no pill")
     }
@@ -407,27 +452,44 @@ final class SiriScreenBuilderTests: XCTestCase {
     }
 
     func testPurgeIsTheMainActionAndModelsReleaseThemselves() throws {
-        func widgets(_ snap: SiriSnapshot) -> [ScreenWidget] {
-            guard case let .section(section)? = SiriScreenBuilder.modelsSection(snap) else { return [] }
-            return section.widgets
-        }
         let ready = snapshot(.protected, purgeable: 12_000_000_000)
         let purge = try XCTUnwrap(SiriScreenBuilder.screen(ready).primary)
         XCTAssertEqual(purge.id, "purgeAssets")
         XCTAssertNotNil(purge.confirmation)
-        XCTAssertNil(SiriScreenBuilder.modelsSection(ready), "nothing left over once macOS has let go of the model")
-
-        guard case let .list(waiting)? = widgets(snapshot(.releasing)).first else { return XCTFail() }
-        XCTAssertTrue(waiting.rows[0].actions.isEmpty, "no button: MacSpace releases them by itself")
-        var running = snapshot(.protected)
-        running.releasingAutomatically = true
-        guard case let .list(releasing)? = widgets(running).first else { return XCTFail() }
-        XCTAssertEqual(releasing.rows[0].title, "Releasing the leftover models")
-
-        guard case let .steps(steps)? = widgets(snapshot(.releasing, blockers: ["Apple Intelligence is on in tester."])).first else { return XCTFail() }
-        XCTAssertEqual(steps.steps, ["Apple Intelligence is on in tester."])
         XCTAssertNotEqual(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary?.id, "purgeAssets", "a few KB is not worth a button")
-        XCTAssertNil(SiriScreenBuilder.modelsSection(snapshot(.atRisk)), "nothing to release while Apple Intelligence is on")
+    }
+
+    /// The Apple Intelligence row shows its models and where their cleanup stands as the feature rows do, with no section of its own.
+    func testTheAppleIntelligenceRowShowsItsModelsLikeTheFeatureRows() {
+        func row(_ snap: SiriSnapshot) -> ToggleRow { SiriScreenBuilder.switchList(snap).rows[0] }
+        var on = snapshot(.atRisk)
+        on.installedModelBytes = 9_000_000_000
+        XCTAssertEqual(row(on).trailing, ByteFormat.string(9_000_000_000))
+        XCTAssertNil(row(on).badge)
+        on.downloadingModelBytes = 1_000_000_000
+        XCTAssertEqual(row(on).trailing, ByteFormat.string(10_000_000_000), "downloads count as they arrive")
+        XCTAssertEqual(row(on).badge?.text, "Downloading")
+
+        var releasing = snapshot(.releasing)
+        releasing.installedModelBytes = 9_000_000_000
+        XCTAssertEqual(row(releasing).badge?.text, "macOS is freeing the model")
+        releasing.releasingAutomatically = true
+        XCTAssertEqual(row(releasing).badge?.text, "Freeing space")
+        var blocked = snapshot(.releasing, blockers: ["Apple Intelligence is on in tester."])
+        blocked.installedModelBytes = 9_000_000_000
+        XCTAssertEqual(row(blocked).badge?.text, "Kept by macOS")
+        XCTAssertEqual(row(blocked).badge?.help, "Apple Intelligence is on in tester.")
+        var purging = snapshot(.protected)
+        purging.installedModelBytes = 9_000_000_000
+        purging.purgingModels = true
+        XCTAssertEqual(row(purging).badge?.text, "Freeing space")
+
+        let clean = snapshot(.protected)
+        XCTAssertNil(row(clean).trailing)
+        XCTAssertNil(row(clean).badge, "nothing worth a size is left: no pill")
+        XCTAssertFalse(SiriScreenBuilder.screen(releasing).widgets.map(\.id).contains("models"), "no Leftover models section")
+        XCTAssertEqual(row(purging).badge?.kind, .info, "a state is grey")
+        XCTAssertEqual(row(blocked).badge?.kind, .action, "another account keeps them: something for the user to do")
     }
 
     func testAutoReleaseWaitsForMacOSAndDoesNotRepeat() {
@@ -453,7 +515,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         var snap = snapshot(.protected, accounts: [other("tester")], purgeable: 1_000_000_000)
         snap.releasingAutomatically = true
         let screen = SiriScreenBuilder.screen(snap)
-        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts", "models"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts"])
     }
 }
 

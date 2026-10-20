@@ -44,6 +44,9 @@ enum SiriScreenBuilder {
         // started several processes, for as long as an hour, while nothing could change.
         let changing = snapshot.status.state == .releasing || snapshot.downloadingModelBytes > 0 || !snapshot.featureDownloading.isEmpty
             || snapshot.purgingModels || snapshot.releasingAutomatically || snapshot.cleaningFeatures
+        // macOS deleting a switched-off feature's models: their size follows it down. Not once the cleanup has stalled (only a
+        // restart changes anything then): the size waited for the usual minute while macOS freed hundreds of MB (2026-10-19).
+            || !snapshot.featureCleanupWaiting.subtracting(snapshot.featureCleanupStalled).isEmpty
         return changing ? 5 : nil
     }
 
@@ -159,7 +162,7 @@ enum SiriScreenBuilder {
     /// again every five minutes; switched off elsewhere, the models are not MacSpace's to delete.
     static func keptBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot, isOn: Bool, managedOff: Bool) -> Badge? {
         guard !isOn, modelsSize(feature, snapshot) != nil else { return nil }
-        return Badge(loc("Kept by macOS"), tone: .caution, help: managedOff ? loc("MacSpace asks macOS again every five minutes.") : nil)
+        return Badge(loc("Kept by macOS"), .info, help: managedOff ? loc("MacSpace asks macOS again every five minutes.") : nil)
     }
 
     /// The Phone gates, with the native settings folded in.
@@ -188,25 +191,62 @@ enum SiriScreenBuilder {
         widgets.append(.toggles(switchList(snapshot)))
         widgets.append(.list(ListWidget(id: "icloud", title: loc("Sync to other devices"), rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
-        if let models = modelsSection(snapshot) { widgets.append(models) }
         return Screen(title: loc("Siri & Apple Intelligence"), primary: primary(snapshot), widgets: widgets)
     }
 
-    /// The page's main button, as Debloat's: free the models when there are some to free, else switch off every switch still on, else
-    /// switch them all back on.
+    /// The page's main button, as Debloat's: free the models of the features switched off when they are still on disk, else the
+    /// assets macOS no longer needs, else switch off every switch still on, else switch them all back on.
     static func primary(_ snapshot: SiriSnapshot) -> Action? {
-        purge(snapshot) ?? restart(snapshot) ?? disableAll(snapshot) ?? enableAll(snapshot)
+        if freeingFeatures(snapshot) { return restart(snapshot) ?? disableAll(snapshot) ?? enableAll(snapshot) }
+        return freeFeatures(snapshot) ?? purge(snapshot) ?? restart(snapshot) ?? disableAll(snapshot) ?? enableAll(snapshot)
     }
 
-    /// Features switched off whose models only a restart lets macOS delete: held open by services macOS keeps running
-    /// (`SiriSnapshot.featureLocked`), or held some other way, the cleanup waiting on and on with none of them going
-    /// (`SiriSnapshot.featureCleanupStalled`), or a Call transcription change macOS reads at startup.
+    /// The features MacSpace switched off whose models are still on disk and whose cleanup has stopped with them there (Kept by
+    /// macOS): not one still being freed, not one waiting on a restart or being downloaded again.
+    static func featuresToFree(_ snapshot: SiriSnapshot) -> [ModelFeatureSettings.Feature] {
+        ModelFeatureSettings.Feature.allCases.filter { feature in
+            let managedOff = feature == .phone ? phoneStatus(snapshot)?.managedOff == true : snapshot.featureSettings[feature]?.managedOff == true
+            return managedOff && featureIsOn(feature, snapshot) == false && modelsSize(feature, snapshot) != nil
+                && !needsRestart(feature, snapshot) && !snapshot.featureDownloading.contains(feature)
+                && !snapshot.featureCleanupWaiting.contains(feature)
+        }
+    }
+
+    /// A feature's models are being freed now (its switch says Freeing space): MacSpace deletes them as soon as macOS lets go, which
+    /// no button can hurry.
+    static func freeingFeatures(_ snapshot: SiriSnapshot) -> Bool {
+        ModelFeatureSettings.Feature.allCases.contains { feature in
+            modelsSize(feature, snapshot) != nil && (snapshot.cleaningFeatures || snapshot.featureCleanupWaiting.contains(feature))
+                && !needsRestart(feature, snapshot)
+        }
+    }
+
+    /// Frees the models of the features whose cleanup stopped with them on disk, tried again now, with the figure their rows show.
+    /// While a feature is still being freed there is no Free at all: the purge of every unused asset showed macOS's estimate for
+    /// all of them (182.8 MB beside a 371.4 MB row), and pressed before macOS had let go of Spatial Photos' models it freed nothing
+    /// and said All done, while the models went by themselves minutes later (2026-10-19).
+    static func freeFeatures(_ snapshot: SiriSnapshot) -> Action? {
+        let features = featuresToFree(snapshot)
+        guard !features.isEmpty else { return nil }
+        let size = ByteFormat.string(features.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +))
+        return Action(id: "freeFeatureModels", title: loc("Free \(size)"), symbol: "sparkles", role: .prominent,
+                      confirmation: Confirmation(title: loc("Free \(size)?"),
+                                                 message: loc("Deletes the models of the features you switched off. They download again if you switch one back on."),
+                                                 confirmTitle: loc("Free")),
+                      workingTitle: loc("Freeing space"))
+    }
+
+    /// Features switched off whose models only a restart lets macOS delete: the cleanup waited about ten minutes with none of them
+    /// going (`SiriSnapshot.featureCleanupStalled`), or a Call transcription change macOS reads at startup. A lock alone is not one:
+    /// macOS's services usually let go within minutes, and asking for a restart then sent users to restart for nothing.
     static func needsRestart(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Bool {
         if feature == .phone, phoneStatus(snapshot)?.state == .restartRequired { return true }
         // Only for a feature switched off: one that is on keeps its models, and a restart frees nothing.
         guard featureIsOn(feature, snapshot) == false else { return false }
-        let held = snapshot.featureLocked.contains(feature) || snapshot.featureCleanupStalled.contains(feature)
-        return held && snapshot.featureCleanupWaiting.contains(feature) && modelsSize(feature, snapshot) != nil
+        // macOS is downloading its models again: a restart does not stop that, and the cleanup waits for the download to end.
+        guard !snapshot.featureDownloading.contains(feature) else { return false }
+        return snapshot.featureCleanupStalled.contains(feature) && snapshot.featureCleanupWaiting.contains(feature)
+            && modelsSize(feature, snapshot) != nil
     }
 
     /// Restart to finish, through macOS's own Restart dialog (`SystemRestart`): what it frees, when that is known.
@@ -275,11 +315,15 @@ enum SiriScreenBuilder {
             blocked = failure
         }
         // No confirmation: the switch moves at once and the change follows; if it fails, the switch goes back and says why.
-        var rows = [ToggleRow(id: "ai", title: loc("Apple Intelligence"), isOn: available, isEnabled: blocked == nil,
-                              badge: blocked.map { Badge(loc("Can't change now"), tone: .caution, help: $0.message) },
-                              detail: loc("Switching it off sets Siri to a different language than your Mac.") + " "
-                                + loc("With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad."),
-                              action: switchAction)]
+        var ai = ToggleRow(id: "ai", title: loc("Apple Intelligence"), isOn: available, isEnabled: blocked == nil,
+                           badge: blocked.map { Badge(loc("Can't change now"), .info, help: $0.message) },
+                           detail: loc("Switching it off sets Siri to a different language than your Mac.") + " "
+                             + loc("With Siri's iCloud sync on, this also changes Siri on your iPhone and iPad."),
+                           action: switchAction)
+        // Its models beside the switch and where their cleanup stands, as the feature rows below have theirs.
+        if ai.badge == nil { ai.badge = aiModelsBadge(snapshot, isOn: available) }
+        ai.trailing = aiModelsSize(snapshot)
+        var rows = [ai]
         // Keep the existing AI language control first, then the feature controls, with the restart-requiring Phone group last.
         for feature in [ModelFeatureSettings.Feature.siri, .spatialPhotos] {
             if let status = snapshot.featureSettings[feature] {
@@ -287,7 +331,7 @@ enum SiriScreenBuilder {
                 if row.badge == nil {
                     row.badge = (status.managedOff ? cleanupBadge(feature, snapshot) : nil) ?? keptBadge(feature, snapshot, isOn: row.isOn, managedOff: status.managedOff)
                 }
-                if snapshot.featureDownloading.contains(feature) { row.badge = Badge(loc("Downloading")) }
+                if snapshot.featureDownloading.contains(feature) { row.badge = Badge(loc("Downloading"), .info) }
                 row.trailing = modelsSize(feature, snapshot)
                 rows.append(row)
             }
@@ -297,24 +341,55 @@ enum SiriScreenBuilder {
             if row.badge == nil {
                 row.badge = (status.managedOff ? cleanupBadge(.phone, snapshot) : nil) ?? keptBadge(.phone, snapshot, isOn: row.isOn, managedOff: status.managedOff)
             }
-            if snapshot.featureDownloading.contains(.phone) { row.badge = Badge(loc("Downloading")) }
+            if snapshot.featureDownloading.contains(.phone) { row.badge = Badge(loc("Downloading"), .info) }
             row.trailing = modelsSize(.phone, snapshot)
             rows.append(row)
         }
         return ToggleList(id: "switch", title: loc("Models"), rows: rows)
     }
 
+    /// The Apple Intelligence models on disk, downloads included, as a list row's size: while on, what switching it off frees; while
+    /// off, what is still there.
+    static func aiModelsSize(_ snapshot: SiriSnapshot) -> String? {
+        let bytes = (snapshot.installedModelBytes ?? 0) + snapshot.downloadingModelBytes
+        return bytes >= purgeThreshold ? ByteFormat.string(bytes) : nil
+    }
+
+    /// Where the Apple Intelligence models stand, in the feature rows' pills: downloading while on; once off, being freed (macOS
+    /// removing them, MacSpace releasing or deleting them), waiting for macOS to let them go, or kept. What the user must do first
+    /// (another account keeps them) is the pill's hover tag.
+    static func aiModelsBadge(_ snapshot: SiriSnapshot, isOn: Bool) -> Badge? {
+        if isOn { return snapshot.downloadingModelBytes > 0 ? Badge(loc("Downloading"), .info) : nil }
+        guard aiModelsSize(snapshot) != nil else { return nil }
+        if snapshot.releasingAutomatically || snapshot.purgingModels { return Badge(loc("Freeing space"), .info) }
+        if snapshot.status.state == .releasing {
+            if !snapshot.releaseBlockers.isEmpty {
+                return Badge(loc("Kept by macOS"), .action, help: snapshot.releaseBlockers.joined(separator: " "))
+            }
+            let minutes = Int(ModelAutoRelease.settleTime / 60)
+            return Badge(loc("macOS is freeing the model"), .info,
+                         help: loc("Usually takes a few instants. If it doesn't, MacSpace does it after \(minutes) minutes."))
+        }
+        return Badge(loc("Kept by macOS"), .info)
+    }
+
     /// Where a feature MacSpace switched off stands with its models.
     static func cleanupBadge(_ feature: ModelFeatureSettings.Feature, _ snapshot: SiriSnapshot) -> Badge? {
-        if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), tone: .caution) }
-        // Nothing worth a size is left (`modelsSize`): the switch says no more, whatever macOS keeps of its catalog.
+        // Nothing worth a size is left (`modelsSize`): the switch says no more, whatever macOS keeps of its catalog. Checked first:
+        // the run in view said Freeing space on every switch it covered, models or not (2026-10-19).
         guard modelsSize(feature, snapshot) != nil else { return nil }
+        if snapshot.cleaningFeatures { return Badge(loc("Freeing space"), .info) }
         if needsRestart(feature, snapshot) {
-            return Badge(loc("Restart required"), tone: .caution,
-                         help: loc("macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them."))
+            return Badge(loc("Restart required"), .action,
+                         help: loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))
         }
+        // MacSpace is deleting them, again and again until they are gone (`ManagedModelCleanup`): the standard freeing pill. What
+        // holds them up, when something does, is its hover tag.
         if snapshot.featureCleanupWaiting.contains(feature) {
-            return Badge(loc("Waiting for macOS"), tone: .caution, help: loc("MacSpace asks macOS again every five minutes."))
+            let help = snapshot.featureLocked.contains(feature)
+                ? loc("macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them.")
+                : nil
+            return Badge(loc("Freeing space"), .info, help: help)
         }
         return nil
     }
@@ -327,9 +402,9 @@ enum SiriScreenBuilder {
             : loc("Turns off spatial photo effects and frees their downloaded models.")
         let badge: Badge?
         switch status.state {
-        case .changedElsewhere: badge = Badge(loc("Changed outside MacSpace"), tone: .caution)
-        case .unknown: badge = Badge(loc("State unknown"), tone: .caution)
-        case .unsupported: badge = Badge(loc("Not verified on this macOS version"), tone: .caution)
+        case .changedElsewhere: badge = Badge(loc("Changed outside MacSpace"), .info)
+        case .unknown: badge = Badge(loc("State unknown"), .info)
+        case .unsupported: badge = Badge(loc("Not verified on this macOS version"), .info)
         case .on, .off: badge = nil
         }
         return ToggleRow(id: feature.rawValue, title: title,
@@ -350,14 +425,14 @@ enum SiriScreenBuilder {
         let badge: Badge?
         switch status.state {
         case .restartRequired:
-            badge = Badge(loc("Restart required"), tone: .caution, help: loc("Restart your Mac to apply this change."))
+            badge = Badge(loc("Restart required"), .action, help: loc("Restart your Mac to apply this change."))
         case .changedElsewhere:
-            badge = Badge(loc("Changed outside MacSpace"), tone: .caution,
+            badge = Badge(loc("Changed outside MacSpace"), .info,
                           help: loc("Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself."))
         case .unknown:
-            badge = Badge(loc("State unknown"), tone: .caution, help: loc("MacSpace could not read every Call transcription setting."))
+            badge = Badge(loc("State unknown"), .info, help: loc("MacSpace could not read every Call transcription setting."))
         case .unsupported:
-            badge = Badge(loc("Not verified on this macOS version"), tone: .caution)
+            badge = Badge(loc("Not verified on this macOS version"), .info)
         case .on, .off:
             badge = nil
         }
@@ -398,32 +473,10 @@ enum SiriScreenBuilder {
                   "sudo \"\(snapshot.cliPath)\" orphan-subscriptions --execute",
                   loc("Restart. MacSpace then deletes the models.")]
             return Row(id: "account:\(account.guid)", title: account.label, subtitle: account.useCases.count == 1 ? loc("1 feature") : loc("\(account.useCases.count) features"),
-                       badge: Badge(loc("Keeps the models"), tone: .caution), symbol: "person.crop.circle.badge.exclamationmark", steps: steps)
+                       badge: Badge(loc("Keeps the models"), .action), symbol: "person.crop.circle.badge.exclamationmark", steps: steps)
         }
         return .section(SectionWidget(id: "accounts", title: loc("Other accounts"),
                                       subtitle: loc("One account with Apple Intelligence on keeps the models on this Mac."),
                                       widgets: [.list(ListWidget(id: "accounts-list", rows: rows))]))
-    }
-
-    /// While macOS is still removing the model after the switch went off. MacSpace releases models that stay by itself
-    /// (`ModelAutoRelease`); this only says so, or what keeps it from doing it.
-    static func modelsSection(_ snapshot: SiriSnapshot) -> ScreenWidget? {
-        guard snapshot.status.state == .releasing || snapshot.releasingAutomatically else { return nil }
-        let widget: ScreenWidget
-        if snapshot.releasingAutomatically {
-            widget = .list(ListWidget(id: "models-list", rows: [
-                Row(id: "releasing", title: loc("Releasing the leftover models"), symbol: "arrow.triangle.2.circlepath",
-                    detail: loc("Takes about a minute.")),
-            ]))
-        } else if !snapshot.releaseBlockers.isEmpty {
-            widget = .steps(StepsWidget(id: "blockers", title: loc("Before MacSpace can release them"), steps: snapshot.releaseBlockers))
-        } else {
-            let minutes = Int(ModelAutoRelease.settleTime / 60)
-            widget = .list(ListWidget(id: "models-list", rows: [
-                Row(id: "releasing", title: loc("macOS is removing the model"), symbol: "arrow.triangle.2.circlepath",
-                    detail: loc("Usually takes a few instants. If it doesn't, MacSpace does it after \(minutes) minutes.")),
-            ]))
-        }
-        return .section(SectionWidget(id: "models", title: loc("Leftover models"), widgets: [widget]))
     }
 }

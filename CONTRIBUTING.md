@@ -152,6 +152,9 @@ fixed sequence) needs a comment saying why.
 
 **Facts are pills.** A short fact about a row (its state, why it is checked, what kind of item it is) is a pill (`Row.badge`),
 not grey text after the title. The (i) is only for what a pill cannot say. Never draw an (i) that repeats the pill.
+Every pill says whether it asks something of the user (`Badge.Kind`): `.action` (restart, approve, switch it off elsewhere; its
+help says what) is drawn orange, `.info` (a state, a kind, a warning such as "Cannot be undone") is grey. Orange always means
+there is something to do.
 
 **Buttons in rows are flags.** Every button in a row, in Settings and on every module's page, is the row action flag: text on
 a faint capsule, the look of the (i) and folder pills, darker under the pointer (`RowFlagStyle`; a module row's Free is the same

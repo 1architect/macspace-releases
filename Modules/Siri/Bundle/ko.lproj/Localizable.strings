@@ -10,6 +10,7 @@
 "1 feature" = "기능 1개";
 "A feature change is still running." = "기능 변경이 아직 진행 중입니다.";
 "A notification when MacSpace finds that macOS made Apple Intelligence available again." = "macOS가 Apple Intelligence를 다시 사용 가능하게 한 것을 MacSpace가 발견하면 알립니다.";
+"A notification when macOS keeps the models of a feature you switched off for ten minutes, and only a restart frees them." = "끈 기능의 모델을 macOS가 10분 동안 유지하고 재시동해야만 정리될 때 알림을 보냅니다.";
 "AI is off" = "AI 꺼짐";
 "AI is on" = "AI 켜짐";
 "Allow" = "허용";
@@ -26,7 +27,6 @@
 "Apple Intelligence is on in %@; those accounts keep the models. Switch it off there or delete the accounts." = "%@에서 Apple Intelligence가 켜져 있어 모델이 유지됩니다. 해당 계정에서 끄거나 계정을 삭제하세요.";
 "Apple Intelligence models still on disk" = "Apple Intelligence 모델이 아직 디스크에 있음";
 "Apple Intelligence stayed eligible (answer %@) after the change; the previous Siri settings were restored." = "변경 후에도 Apple Intelligence가 사용 가능합니다(응답 %@). 이전 Siri 설정을 복원했습니다.";
-"Before MacSpace can release them" = "정리하기 전에";
 "Call transcription" = "통화 전사";
 "Can't change now" = "지금은 변경할 수 없음";
 "Can't free it yet" = "아직 정리할 수 없음";
@@ -42,6 +42,7 @@
 "Couldn't verify the Call transcription change." = "통화 전사 변경 사항을 확인할 수 없습니다.";
 "Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again." = "삭제된 계정이 여전히 모델을 구독합니다. MacSpace의 Siri 및 Apple Intelligence에서 잔여 항목을 제거하고 재시동한 후 다시 시도하세요.";
 "Deletes Apple Intelligence models and other downloads macOS no longer needs." = "Apple Intelligence 모델과 macOS에 더 이상 필요하지 않은 다운로드를 삭제합니다.";
+"Deletes the models of the features you switched off. They download again if you switch one back on." = "끈 기능의 모델을 삭제합니다. 기능을 다시 켜면 모델이 다시 다운로드됩니다.";
 "Disable" = "끄기";
 "Disable %@" = "%@ 끄기";
 "Disable %@?" = "%@을(를) 끌까요?";
@@ -56,6 +57,8 @@
 "Enable all %lld features again?" = "기능 %lld개를 모두 다시 켤까요?";
 "Feature settings updated." = "기능 설정을 업데이트했습니다.";
 "Free" = "확보";
+"Free %@" = "%@ 확보";
+"Free %@?" = "%@ 확보할까요?";
 "Free switched-off features' models automatically" = "끈 기능의 모델 자동 정리";
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@?" = "최대 %@ 확보할까요?";
@@ -66,7 +69,6 @@
 "Kept by macOS" = "macOS가 보관 중";
 "Kept while Apple Intelligence is on" = "Apple Intelligence가 켜져 있는 동안 유지";
 "Leftover Apple Intelligence models" = "잔여 Apple Intelligence 모델";
-"Leftover models" = "잔여 모델";
 "Log in as %@ and turn Apple Intelligence off there." = "%@ 계정으로 로그인하여 Apple Intelligence를 끄세요.";
 "MacSpace asks macOS again every five minutes." = "MacSpace가 5분마다 macOS에 다시 요청합니다.";
 "MacSpace could not read every Call transcription setting." = "MacSpace가 통화 전사 설정을 모두 읽지 못했습니다.";
@@ -79,6 +81,7 @@
 "Not available in a virtual machine" = "가상 머신에서는 사용할 수 없음";
 "Not verified on this macOS version" = "이 macOS 버전에서 확인되지 않음";
 "Notify me when Apple Intelligence turns back on" = "Apple Intelligence가 다시 켜지면 알림";
+"Notify me when freeing models needs a restart" = "모델을 정리하려면 재시동이 필요할 때 알림";
 "One account with Apple Intelligence on keeps the models on this Mac." = "한 계정이라도 Apple Intelligence가 켜져 있으면 모델이 이 Mac에 유지됩니다.";
 "Open" = "열기";
 "Open MacSpace to check." = "MacSpace를 열어 확인하세요.";
@@ -88,7 +91,6 @@
 "Other accounts" = "다른 계정";
 "Released Apple Intelligence models" = "해제된 Apple Intelligence 모델";
 "Released Apple Intelligence models and unused system assets" = "해제된 Apple Intelligence 모델 및 미사용 시스템 에셋";
-"Releasing the leftover models" = "잔여 모델 해제 중";
 "Restart required" = "재시동 필요";
 "Restart to finish" = "완료하려면 재시동";
 "Restart to free %@" = "재시동하여 %@ 정리";
@@ -107,7 +109,6 @@
 "Switch it off again in MacSpace." = "MacSpace에서 다시 끄세요.";
 "Switching it off sets Siri to a different language than your Mac." = "끄면 Siri 언어가 Mac과 다른 언어로 설정됩니다.";
 "Sync to other devices" = "다른 기기와 동기화";
-"Takes about a minute." = "약 1분 걸립니다.";
 "The current Siri language could not be read." = "현재 Siri 언어를 읽지 못했습니다.";
 "The system language could not be read." = "시스템 언어를 읽지 못했습니다.";
 "The system or Siri language could not be read." = "시스템 또는 Siri 언어를 읽지 못했습니다.";
@@ -123,7 +124,6 @@
 "Unused system assets" = "미사용 시스템 에셋";
 "Unused system models" = "사용하지 않는 시스템 모델";
 "Usually takes a few instants. If it doesn't, MacSpace does it after %lld minutes." = "보통 곧 완료됩니다. 그렇지 않으면 %lld분 후 MacSpace가 처리합니다.";
-"Waiting for macOS" = "macOS 대기 중";
 "While MacSpace is open: finds out if macOS turns Apple Intelligence back on, and frees the models it leaves." = "MacSpace가 열려 있는 동안: macOS가 Apple Intelligence를 다시 켰는지 확인하고 남은 모델을 정리합니다.";
 "While MacSpace is open: frees the models macOS asks for again for Siri, Spatial Photos and Call transcription after you switched them off." = "MacSpace가 열려 있는 동안: Siri, 공간 사진, 통화 전사를 끈 뒤 macOS가 다시 요청하는 모델을 정리합니다.";
 "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac." = "켜져 있는 동안 Siri 언어 변경이 iPhone과 iPad에도 적용됩니다. 이 Mac에만 적용하려면 끄세요.";
@@ -136,8 +136,10 @@
 "freeing %@ of models" = "모델 %@ 정리 중";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS는 가상 머신에서 Apple Intelligence를 제공하지 않습니다. 실제 Mac에서 MacSpace를 사용하세요.";
 "macOS downloads their models again." = "macOS가 모델을 다시 다운로드합니다.";
-"macOS is removing the model" = "macOS가 모델 제거 중";
-"macOS's own services still have these models open. They go when those services stop or after a restart, and MacSpace then deletes them." = "macOS 자체 서비스가 아직 이 모델을 열어 두고 있습니다. 해당 서비스가 멈추거나 재시동하면 해제되며, 그때 MacSpace가 삭제합니다.";
+"macOS is freeing the model" = "macOS가 모델을 정리하는 중";
+"macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOS가 이 모델을 10분 동안 유지했습니다. 재시동하면 MacSpace가 삭제합니다.";
+"macOS still keeps these models." = "macOS가 아직 이 모델을 유지하고 있습니다.";
+"macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them." = "macOS 자체 서비스가 아직 이 모델을 사용 중입니다. 보통 몇 분 안에 해제되며, 그러면 MacSpace가 삭제합니다.";
 "models not measured" = "모델 측정되지 않음";
 "needs Full Disk Access to read" = "읽으려면 전체 디스크 접근 필요";
 "no model downloaded yet" = "아직 다운로드한 모델 없음";

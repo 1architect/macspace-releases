@@ -231,14 +231,10 @@ private struct ShadingLight: View {
         case .flat:
             EmptyView()
         case .lit:
-            // The same radial light as a gradient from white at `brightness` to clear, drawn from a dithered texture
+            // The same radial light as a gradient from white at `brightness` to clear, dithered at the screen's own pixels
             // (`DitheredLight`): a gradient this faint has a dozen or so levels across a tile and showed as rings.
-            let radius = long * 1.6 * shading.size + 1
-            Image(decorative: DitheredLight.image(peak: shading.brightness), scale: 1)
-                .resizable()
-                .interpolation(.medium)
-                .frame(width: radius * 2, height: radius * 2)
-                .position(x: w * shading.x, y: h * shading.y)
+            DitheredLightView(size: size, center: CGPoint(x: w * shading.x, y: h * shading.y),
+                              radius: long * 1.6 * shading.size + 1, peak: shading.brightness)
         case .glow:
             // Breathes and sways a little when animated.
             let sway = sin(time) * 0.08
@@ -293,26 +289,14 @@ private struct ShadingLight: View {
 
 /// A round light, white at `peak` in the middle and clear at the edge, falling off evenly: what `RadialGradient` drew for the lit
 /// style, without its bands. Each pixel's level is rounded up or down at random (triangular noise of one level), so the levels in
-/// between show as their average instead of as steps. One texture per strength, stretched to the light's size; a stretched texel
-/// keeps its noise, so the light stays smooth on a page as large as the window.
+/// between show as their average instead of as steps. Drawn for the surface it lights, one texel to one pixel of the screen: a single
+/// 1024-pixel texture stretched to the light's size made each texel a block of several pixels, and the dither showed as coarse,
+/// pixelated noise across the window (2026-10-19).
 enum DitheredLight {
-    private static let side = 1024
-    @MainActor private static var cache: [Int: CGImage] = [:]
-
-    @MainActor static func image(peak: Double) -> CGImage {
-        let key = Int((min(max(peak, 0), 1) * 1000).rounded())
-        if let image = cache[key] { return image }
-        // Each texture is 2 MB: dragging the brightness in the Shader Studio kept one for every step it passed.
-        if cache.count >= 8 { cache.removeAll() }
-        let image = make(peak: Double(key) / 1000)
-        cache[key] = image
-        return image
-    }
-
-    /// White, premultiplied: gray and alpha are the same level.
-    static func make(peak: Double) -> CGImage {
-        let center = Double(side) / 2
-        var pixels = [UInt8](repeating: 0, count: side * side * 2)
+    /// White, premultiplied: gray and alpha are the same level. Sizes are in pixels.
+    static func make(width: Int, height: Int, center: CGPoint, radius: Double, peak: Double) -> CGImage? {
+        guard width > 0, height > 0, radius > 0 else { return nil }
+        var pixels = [UInt8](repeating: 0, count: width * height * 2)
         // xorshift: the system generator made a texture take a tenth of a second.
         var state: UInt64 = 0x9E37_79B9_7F4A_7C15
         func random() -> Double {
@@ -321,23 +305,76 @@ enum DitheredLight {
             state ^= state << 17
             return Double(state >> 11) / Double(1 << 53)
         }
-        for y in 0..<side {
-            for x in 0..<side {
-                let dx = Double(x) + 0.5 - center, dy = Double(y) + 0.5 - center
-                let t = (dx * dx + dy * dy).squareRoot() / center
+        let scale = peak * 255
+        // Only the rows and columns the light reaches.
+        let top = max(0, Int(center.y - radius)), bottom = min(height, Int((center.y + radius).rounded(.up)))
+        let left = max(0, Int(center.x - radius)), right = min(width, Int((center.x + radius).rounded(.up)))
+        guard top < bottom, left < right else { return image(pixels, width: width, height: height) }
+        for y in top..<bottom {
+            let dy = Double(y) + 0.5 - center.y
+            for x in left..<right {
+                let dx = Double(x) + 0.5 - center.x
+                let t = (dx * dx + dy * dy).squareRoot() / radius
                 guard t < 1 else { continue }
-                let level = peak * (1 - t) * 255 + random() + random() - 1
+                let level = scale * (1 - t) + random() + random() - 1
                 let value = UInt8(min(max(level.rounded(), 0), 255))
-                let index = (y * side + x) * 2
+                let index = (y * width + x) * 2
                 pixels[index] = value
                 pixels[index + 1] = value
             }
         }
-        let provider = CGDataProvider(data: Data(pixels) as CFData)!
-        return CGImage(width: side, height: side, bitsPerComponent: 8, bitsPerPixel: 16, bytesPerRow: side * 2,
+        return image(pixels, width: width, height: height)
+    }
+
+    private static func image(_ pixels: [UInt8], width: Int, height: Int) -> CGImage? {
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
+        return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 16, bytesPerRow: width * 2,
                        space: CGColorSpace(name: CGColorSpace.genericGrayGamma2_2)!,
                        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue), provider: provider,
-                       decode: nil, shouldInterpolate: true, intent: .defaultIntent)!
+                       decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    }
+}
+
+/// The lit style's light over a surface, made off the main thread for its size in pixels. While the surface is being resized the last
+/// light is stretched to it, and a new one is made once the size has held for a moment: a window-sized light takes tens of
+/// milliseconds to make, too long for every frame of a resize. Before the first one, the plain gradient stands in.
+private struct DitheredLightView: View {
+    let size: CGSize
+    let center: CGPoint
+    let radius: Double
+    let peak: Double
+    @Environment(\.displayScale) private var displayScale
+    @State private var light: CGImage?
+
+    private struct Key: Hashable { let width: Int, height: Int, x: Double, y: Double, radius: Double, peak: Double }
+
+    private var key: Key {
+        Key(width: Int((size.width * displayScale).rounded()), height: Int((size.height * displayScale).rounded()),
+            x: center.x * displayScale, y: center.y * displayScale, radius: radius * displayScale, peak: peak)
+    }
+
+    var body: some View {
+        Group {
+            if let light {
+                Image(decorative: light, scale: displayScale).resizable().interpolation(.none)
+            } else {
+                RadialGradient(colors: [.white.opacity(peak), .white.opacity(0)], center: UnitPoint(x: center.x / max(size.width, 1), y: center.y / max(size.height, 1)),
+                               startRadius: 0, endRadius: radius)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .task(id: key) {
+            let key = self.key
+            // At once the first time; after a pause while the size keeps changing.
+            if light != nil {
+                do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            }
+            let made = await Task.detached(priority: .userInitiated) {
+                DitheredLight.make(width: key.width, height: key.height, center: CGPoint(x: key.x, y: key.y), radius: key.radius, peak: key.peak)
+            }.value
+            guard !Task.isCancelled else { return }
+            light = made
+        }
     }
 }
 

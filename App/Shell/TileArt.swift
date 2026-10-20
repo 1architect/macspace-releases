@@ -555,7 +555,7 @@ struct BlocksView: View {
             if labels, rect.width > 46, rect.height > 34 {
                 VStack(alignment: .leading, spacing: 1) {
                     // As many lines as the block has room for under the size, up to three, rather than a name cut short.
-                    Text(segment.label).font(.system(size: 11, weight: .medium)).lineLimit(max(1, min(3, Int((rect.height - 26) / 14))))
+                    ChangingText(text: segment.label).font(.system(size: 11, weight: .medium)).lineLimit(max(1, min(3, Int((rect.height - 26) / 14))))
                         .minimumScaleFactor(0.8)
                     ChangingText(text: ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).lineLimit(1).minimumScaleFactor(0.75)
                 }
@@ -566,9 +566,9 @@ struct BlocksView: View {
             } else if labels, rect.width > 34, rect.height > 20 {
                 // The size alone: on one line, or the number over its unit in a narrow block; never cut.
                 ViewThatFits(in: .horizontal) {
-                    Text(ByteFormat.string(segment.bytes)).font(.system(size: 10)).lineLimit(1).fixedSize()
+                    ChangingText(text: ByteFormat.string(segment.bytes)).font(.system(size: 10)).lineLimit(1).fixedSize()
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Self.sizeParts(segment.bytes), id: \.self) { Text($0).font(.system(size: 10)).lineLimit(1).fixedSize() }
+                        ForEach(Array(Self.sizeParts(segment.bytes).enumerated()), id: \.offset) { ChangingText(text: $0.element).font(.system(size: 10)).lineLimit(1).fixedSize() }
                     }
                     Color.clear.frame(width: 0, height: 0)
                 }
