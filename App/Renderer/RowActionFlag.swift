@@ -179,7 +179,7 @@ struct RowFlagStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let lit = hovering || configuration.isPressed
         configuration.label
-            .font(.system(size: 11, weight: .semibold))
+            .font(Theme.pillFont)
             .lineLimit(1)
             .padding(.horizontal, 8)
             .frame(height: 18)

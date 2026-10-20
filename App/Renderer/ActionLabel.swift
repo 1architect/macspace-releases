@@ -24,7 +24,7 @@ struct ReservedPillLabel<Label: View>: View {
                 Text(verbatim: sample).hidden().accessibilityHidden(true)
             }
         }
-        .font(.system(size: 11, weight: .semibold))
+        .font(Theme.pillFont)
         .lineLimit(1)
         .padding(.horizontal, 8)
         .frame(height: 18)

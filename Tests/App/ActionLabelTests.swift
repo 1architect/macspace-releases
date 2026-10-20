@@ -22,7 +22,7 @@ final class ActionLabelTests: XCTestCase {
             }
         }
         let short = try size(label("Liberando espaço"))
-        let expected = try size(Text(verbatim: "Liberando espaço").font(.system(size: 11, weight: .semibold)))
+        let expected = try size(Text(verbatim: "Liberando espaço").font(Theme.pillFont))
         XCTAssertEqual(short.width, expected.width + 16, accuracy: 0.5)
         XCTAssertLessThan(short.width, try size(label("Liberando em segundo plano")).width)
         XCTAssertEqual(try size(label("Removendo 111,1 MB")), try size(label("Removendo 888,8 MB")))
@@ -34,7 +34,7 @@ final class ActionLabelTests: XCTestCase {
             let samples = [title, working]
             let idle = try size(ReservedPillLabel(samples: samples, reserveWidth: false) { ChangingText(text: title) })
             let active = try size(ReservedPillLabel(samples: samples, reserveWidth: true) { ChangingText(text: working) })
-            let titleSize = try size(Text(verbatim: title).font(.system(size: 11, weight: .semibold)))
+            let titleSize = try size(Text(verbatim: title).font(Theme.pillFont))
             XCTAssertEqual(idle.width, titleSize.width + 16, accuracy: 0.5, "idle capsule fits its title and normal padding")
             XCTAssertLessThan(idle.width, active.width)
             XCTAssertEqual(idle.height, 18)

@@ -436,7 +436,7 @@ struct BadgeView: View {
 
     private var label: some View {
         ChangingText(text: badge.text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(Theme.pillFont)
             .lineLimit(wraps ? nil : 1)
             .fixedSize(horizontal: !wraps, vertical: true)
             .padding(.horizontal, 8)

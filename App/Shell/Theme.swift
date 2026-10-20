@@ -29,6 +29,9 @@ enum Theme {
     static let hover = Animation.spring(duration: 0.35, bounce: 0.3)
     /// A color answering the pointer: quick and without bounce, so it lets go as soon as the pointer leaves.
     static let highlight = Animation.easeOut(duration: 0.12)
+    /// The text of every pill: text pills (`BadgeView`), pill buttons (`RowFlagStyle`) and a module row's Free (`ReservedPillLabel`),
+    /// so they never differ.
+    static let pillFont = Font.system(size: 11, weight: .medium)
     static let press = Animation.spring(duration: 0.22, bounce: 0.2)
     static let layout = Animation.spring(duration: 0.55, bounce: 0.18)
     /// The window opening: the glass grows in, then the tiles come in one after another (`layout`, `populateStagger` apart).
