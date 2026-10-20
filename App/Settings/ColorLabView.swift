@@ -33,7 +33,6 @@ public struct ColorLabView: View {
                     Button("Copy JSON") { copyJSON() }
                     Button("Reset this palette", role: .destructive) { settings.lab = LabOverrides() }.disabled(settings.lab.isEmpty)
                     Spacer()
-                    Toggle("Liquid Glass tiles", isOn: $settings.glass).toggleStyle(.checkbox)
                 }
             } footer: {
                 Text(settings.studioPicking ? "Click a tile, the main button or the window's background to edit it."
@@ -205,7 +204,7 @@ private struct StudioPreview: View {
                 .frame(maxWidth: .infinity, minHeight: 80)
         case .window:
             ShadedFill(shape: RoundedRectangle(cornerRadius: 14, style: .continuous), color: design.systemWindowColor, accent: design.action,
-                       fill: design.fill(.window), shading: design.shading(.window), light: design.backgroundIsLight)
+                       fill: design.fill(.window), shading: design.shading(.window), light: design.isLight)
                 .frame(height: 120)
         }
     }
@@ -218,7 +217,7 @@ private struct StudioPreview: View {
             .overlay(alignment: .topLeading) {
                 HStack(spacing: large ? 6 : 3) {
                     ForEach([5, 3, 1], id: \.self) { step in
-                        Surface(shape: RoundedRectangle(cornerRadius: large ? 5 : 3, style: .continuous), color: palette.step(step), glass: false)
+                        Surface(shape: RoundedRectangle(cornerRadius: large ? 5 : 3, style: .continuous), color: palette.step(step))
                             .frame(width: large ? 46 : 14, height: large ? 46 : 14)
                     }
                 }

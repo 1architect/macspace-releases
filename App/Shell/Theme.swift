@@ -27,14 +27,8 @@ enum Theme {
     /// No bounce: the card has to land exactly on its tile, which then takes its place.
     static let close = Animation.spring(duration: 0.5, bounce: 0)
     static let hover = Animation.spring(duration: 0.35, bounce: 0.3)
-    /// The lift and lean with the temporary Quick Lift switch on: shorter and with less bounce, so a hover draws fewer frames.
-    static let quickHover = Animation.spring(duration: 0.22, bounce: 0.12)
-    static let quickLean = Animation.interactiveSpring(duration: 0.16)
     /// A color answering the pointer: quick and without bounce, so it lets go as soon as the pointer leaves.
     static let highlight = Animation.easeOut(duration: 0.12)
-    /// How dark the shade over glass under the pointer is: a chart element, and a whole tile.
-    static let highlightDarkening = 0.18
-    static let tileHoverShade = 0.1
     static let press = Animation.spring(duration: 0.22, bounce: 0.2)
     static let layout = Animation.spring(duration: 0.55, bounce: 0.18)
     /// The window opening: the glass grows in, then the tiles come in one after another (`layout`, `populateStagger` apart).
@@ -244,8 +238,7 @@ struct TileCaption: View, @preconcurrency Animatable {
 
 }
 
-/// The page's main action is the amber pill, the action color; `.normal` actions get a quiet translucent one. With Liquid Glass on,
-/// both are glass, the main one tinted with the action color.
+/// The page's main action is the amber pill, the action color; `.normal` actions get a quiet translucent one.
 struct PillButtonStyle: ButtonStyle {
     var prominent = true
     var destructive = false
@@ -261,17 +254,8 @@ struct PillButtonStyle: ButtonStyle {
             .padding(.horizontal, compact ? 10 : 15)
             .padding(.vertical, compact ? 4 : 7)
             .background {
-                if design.glass && prominent {
-                    // The action color is drawn inside the glass, not given as its tint: macOS greys a glass's tint out while the window
-                    // is not the active one, and the main action lost its color whenever another app was in front.
-                    Capsule().fill(hovering ? design.actionLight : design.action)
-                        .glassEffect(.regular.interactive(), in: .capsule)
-                } else if design.glass {
-                    Color.clear.glassEffect(.regular.interactive(), in: .capsule)
-                } else {
-                    Capsule().fill(prominent ? AnyShapeStyle(hovering ? design.actionLight : design.action) : AnyShapeStyle(Color.primary.opacity(hovering ? 0.16 : 0.09)))
-                    Capsule().strokeBorder(Color.primary.opacity(prominent ? 0 : 0.12), lineWidth: 1)
-                }
+                Capsule().fill(prominent ? AnyShapeStyle(hovering ? design.actionLight : design.action) : AnyShapeStyle(Color.primary.opacity(hovering ? 0.16 : 0.09)))
+                Capsule().strokeBorder(Color.primary.opacity(prominent ? 0 : 0.12), lineWidth: 1)
             }
             .scaleEffect(configuration.isPressed ? 0.94 : (hovering ? 1.03 : 1))
             .opacity(isEnabled ? 1 : 0.5)

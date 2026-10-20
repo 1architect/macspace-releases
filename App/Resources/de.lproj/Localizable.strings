@@ -70,7 +70,6 @@
 "GitHub" = "GitHub";
 "Granted" = "Erteilt";
 "Helper approved" = "Hilfsprogramm genehmigt";
-"Hide the sidebar" = "Seitenleiste ausblenden";
 "How often" = "Wie oft";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "Im Hintergrund hat MacSpace kein Symbol in der Menüleiste oder im Dock. Öffne es erneut über „Programme“.";
 "Install helper" = "Hilfsprogramm installieren";
@@ -117,7 +116,6 @@
 "Open Panel" = "Panel öffnen";
 "Open System Settings" = "Systemeinstellungen öffnen";
 "Open at login" = "Beim Anmelden öffnen";
-"Overview" = "Übersicht";
 "Permissions" = "Berechtigungen";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "Klicke auf „Hilfsprogramm installieren“. Erkennt macOS es weiterhin nicht, führe im Terminal /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register aus und sende die ausgegebene Meldung.";
 "Privileged helper" = "Privilegiertes Hilfsprogramm";
@@ -144,7 +142,6 @@
 "Settings…" = "Einstellungen …";
 "Shader Studio" = "Shader Studio";
 "Show in Finder" = "Im Finder zeigen";
-"Show the sidebar" = "Seitenleiste einblenden";
 "System" = "System";
 "That cloud folder is no longer on this Mac" = "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac";
 "The files stay in %@ and download again when you open them." = "Die Dateien bleiben in %@ und werden beim Öffnen erneut geladen.";

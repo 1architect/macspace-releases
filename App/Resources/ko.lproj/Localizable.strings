@@ -70,7 +70,6 @@
 "GitHub" = "GitHub";
 "Granted" = "허용됨";
 "Helper approved" = "보조 프로그램 승인됨";
-"Hide the sidebar" = "사이드바 가리기";
 "How often" = "주기";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "백그라운드에서는 메뉴 막대나 Dock 아이콘이 표시되지 않습니다. 응용 프로그램에서 다시 여세요.";
 "Install helper" = "보조 프로그램 설치";
@@ -117,7 +116,6 @@
 "Open Panel" = "패널 열기";
 "Open System Settings" = "시스템 설정 열기";
 "Open at login" = "로그인 시 열기";
-"Overview" = "개요";
 "Permissions" = "권한";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "보조 프로그램 설치를 누르세요. macOS가 인식하지 못하면 터미널에서 /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register 를 실행하고 출력 메시지를 보내주세요.";
 "Privileged helper" = "권한 보조 프로그램";
@@ -144,7 +142,6 @@
 "Settings…" = "설정…";
 "Shader Studio" = "셰이더 스튜디오";
 "Show in Finder" = "Finder에서 보기";
-"Show the sidebar" = "사이드바 보기";
 "System" = "시스템";
 "That cloud folder is no longer on this Mac" = "이 클라우드 폴더가 더 이상 이 Mac에 없음";
 "The files stay in %@ and download again when you open them." = "파일은 %@에 유지되며 열 때 다시 다운로드됩니다.";

@@ -85,4 +85,24 @@ final class MemoryBenchmarkTests: XCTestCase {
         host.scheduler.stopAll()
         _ = shown // Left open: closing a window outside a scene trips MacSpace's window customization (KVO), and the process ends anyway.
     }
+
+    /// The Recent cleanups page alone, with this Mac's own history (`CleanupHistory.shared`): what opening it adds.
+    func testCleanupHistoryMemory() async throws {
+        guard ProcessInfo.processInfo.environment["MACSPACE_MEMORY_BENCHMARK"] != nil else { throw XCTSkip("Opt-in: MACSPACE_MEMORY_BENCHMARK") }
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.regular)
+        GlyphCache.apply()
+        let canvas = NSWindow(contentRect: NSRect(x: 200, y: 150, width: 716, height: 540), styleMask: [.borderless], backing: .buffered, defer: false)
+        canvas.contentView = NSHostingView(rootView: Color.clear)
+        canvas.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+        try await Task.sleep(for: .seconds(3))
+        Self.report("empty window")
+        canvas.contentView = NSHostingView(rootView: CleanupHistoryPage())
+        for second in [2, 10] {
+            try await Task.sleep(for: .seconds(second == 2 ? 2 : 8))
+            Self.report("\(CleanupHistory.shared.entries.count) cleanups at \(second) s")
+        }
+        _ = canvas
+    }
 }

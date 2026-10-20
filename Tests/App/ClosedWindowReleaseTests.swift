@@ -3,35 +3,22 @@ import XCTest
 
 @MainActor
 final class ClosedWindowReleaseTests: XCTestCase {
-    func testThePagesGoAfterTheDelayWithNoWindowOpen() async throws {
-        let release = ClosedWindowRelease(delay: .milliseconds(50), keepsRunning: { true }, hasOpenWindow: { _ in false })
-        release.windowClosed(nil)
-        XCTAssertFalse(release.isReleased)
-        try await Task.sleep(for: .milliseconds(250))
-        XCTAssertTrue(release.isReleased)
-        release.restore()
-        XCTAssertFalse(release.isReleased, "built again once a window is on screen")
+    func testThePagesGoWhenTheLastWindowClosesAndComeBackWithAWindow() {
+        var open = true
+        let release = ClosedWindowRelease(keepsRunning: { true }, hasOpenWindow: { _ in open })
+        release.windowsChanged(closing: nil)
+        XCTAssertFalse(release.isReleased, "a window is open")
+        open = false
+        release.windowsChanged(closing: nil)
+        XCTAssertTrue(release.isReleased, "no window open: dropped at once")
+        open = true
+        release.windowsChanged(closing: nil)
+        XCTAssertFalse(release.isReleased, "a window on screen again: built again")
     }
 
-    func testAWindowBackInTimeKeepsThePages() async throws {
-        let release = ClosedWindowRelease(delay: .milliseconds(100), keepsRunning: { true }, hasOpenWindow: { _ in false })
-        release.windowClosed(nil)
-        try await Task.sleep(for: .milliseconds(20))
-        release.restore()
-        try await Task.sleep(for: .milliseconds(250))
+    func testNothingGoesWhenMacSpaceQuitsWithItsLastWindow() {
+        let release = ClosedWindowRelease(keepsRunning: { false }, hasOpenWindow: { _ in false })
+        release.windowsChanged(closing: nil)
         XCTAssertFalse(release.isReleased)
-        XCTAssertFalse(release.isPending)
-    }
-
-    func testNothingGoesWhileAnotherWindowIsOpenOrWhenMacSpaceQuits() async throws {
-        let open = ClosedWindowRelease(delay: .milliseconds(20), keepsRunning: { true }, hasOpenWindow: { _ in true })
-        open.windowClosed(nil)
-        XCTAssertFalse(open.isPending)
-        let quits = ClosedWindowRelease(delay: .milliseconds(20), keepsRunning: { false }, hasOpenWindow: { _ in false })
-        quits.windowClosed(nil)
-        XCTAssertFalse(quits.isPending)
-        try await Task.sleep(for: .milliseconds(100))
-        XCTAssertFalse(open.isReleased)
-        XCTAssertFalse(quits.isReleased)
     }
 }

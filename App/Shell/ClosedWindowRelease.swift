@@ -1,85 +1,64 @@
 import AppKit
 import SwiftUI
 
-/// Lets go of the closed window's pages after a while. SwiftUI keeps a closed window and everything in it, so that it can show it again
-/// at once: the dashboard's whole view tree, about 40 MB, stayed while MacSpace ran on in the menu bar or in the background (Issue 11).
-/// Ten minutes after the last window closed, the window's content is dropped (`ReleasableContent`), and it is built again when the
-/// window is next on screen: it then opens as it does at launch, the glass growing in and the tiles coming in one after another.
+/// Lets go of the window's pages as soon as it is closed. SwiftUI keeps a closed window and everything in it, so that it can show it
+/// again at once: the dashboard's whole view tree stayed while MacSpace ran on in the menu bar or in the background (Issue 11). Once no
+/// window of MacSpace is open, the window's content is dropped (`ReleasableContent`), and it is built again when a window is next on
+/// screen, which then opens as it does at launch: the glass growing in and the tiles coming in one after another.
 ///
 /// Built again only once the window is visible, never while it is still hidden: built hidden, the window's opening animations had
-/// already played when it appeared (an earlier attempt, which also dropped the pages at once and rebuilt them on every reopen).
+/// already played when it appeared (an earlier attempt).
 @MainActor
 public final class ClosedWindowRelease: ObservableObject {
     public static let shared = ClosedWindowRelease()
 
     @Published private(set) var isReleased = false
     private var observers: [NSObjectProtocol] = []
-    private var pending: Task<Void, Never>?
-    private let delay: Duration
     private let keepsRunning: () -> Bool
     private let hasOpenWindow: (NSWindow?) -> Bool
 
-    init(delay: Duration = ClosedWindowRelease.defaultDelay, keepsRunning: @escaping () -> Bool = { GeneralSettings.keepsRunning() },
+    init(keepsRunning: @escaping () -> Bool = { GeneralSettings.keepsRunning() },
          hasOpenWindow: @escaping (NSWindow?) -> Bool = { BackgroundPresence.hasOpenWindow(besides: $0) }) {
-        self.delay = delay
         self.keepsRunning = keepsRunning
         self.hasOpenWindow = hasOpenWindow
-    }
-
-    /// Ten minutes: a window closed and opened again soon after keeps its pages and opens at once. A development build can shorten
-    /// it, in seconds, for measuring (`memory.releaseClosedWindowAfter`).
-    static var defaultDelay: Duration {
-        #if MACSPACE_DEV
-        let seconds = UserDefaults.standard.double(forKey: "memory.releaseClosedWindowAfter")
-        if seconds > 0 { return .seconds(seconds) }
-        #endif
-        return .seconds(600)
     }
 
     public func install() {
         guard observers.isEmpty else { return }
         let center = NotificationCenter.default
-        observers.append(center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { notification in
-            let closing = notification.object as? NSWindow
-            // After the window is gone, so it no longer counts as open.
-            DispatchQueue.main.async { MainActor.assumeIsolated { ClosedWindowRelease.shared.windowClosed(closing) } }
-        })
-        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didChangeOcclusionStateNotification] {
+        // SwiftUI hides a window scene's window when it is closed, so that it can show it again, rather than closing it: the close
+        // alone posts nothing to count on. Every change that can hide or show a window is a moment to look again.
+        let windowChanges: [Notification.Name] = [NSWindow.willCloseNotification, NSWindow.didChangeOcclusionStateNotification,
+                                                  NSWindow.didBecomeKeyNotification, NSWindow.didMiniaturizeNotification,
+                                                  NSWindow.didDeminiaturizeNotification]
+        for name in windowChanges {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { notification in
-                guard let window = notification.object as? NSWindow else { return }
-                MainActor.assumeIsolated {
-                    if window.isVisible, BackgroundPresence.isAppWindow(window) { ClosedWindowRelease.shared.restore() }
-                }
+                let closing = name == NSWindow.willCloseNotification ? notification.object as? NSWindow : nil
+                // After the change has settled: a window just closing or ordered out still counts as visible.
+                DispatchQueue.main.async { MainActor.assumeIsolated { ClosedWindowRelease.shared.windowsChanged(closing: closing) } }
+            })
+        }
+        for name in [NSApplication.didHideNotification, NSApplication.didResignActiveNotification] {
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                DispatchQueue.main.async { MainActor.assumeIsolated { ClosedWindowRelease.shared.windowsChanged(closing: nil) } }
             })
         }
     }
 
-    /// A window closed: once no other is open, the pages go after `delay`, unless one opens first. Quitting with the last window, there
-    /// is nothing to keep.
-    func windowClosed(_ closing: NSWindow?) {
-        guard keepsRunning(), !hasOpenWindow(closing) else { return }
-        pending?.cancel()
-        pending = Task { [weak self, delay] in
-            do { try await Task.sleep(for: delay) } catch { return }
-            guard let self, !self.hasOpenWindow(nil) else { return }
-            self.release()
+    /// A window of MacSpace shown, hidden or closed: with one open (on screen or in the Dock) the content stays or is built again;
+    /// with none, it goes. Quitting with the last window, there is nothing to keep.
+    func windowsChanged(closing: NSWindow?) {
+        if hasOpenWindow(closing) {
+            if isReleased { isReleased = false }
+        } else if keepsRunning(), !isReleased {
+            release()
         }
     }
 
     /// Drops the window's content now.
     func release() {
-        pending = nil
         isReleased = true
     }
-
-    /// A window of MacSpace is on screen: its content is built again if it was dropped.
-    func restore() {
-        pending?.cancel()
-        pending = nil
-        if isReleased { isReleased = false }
-    }
-
-    var isPending: Bool { pending != nil }
 }
 
 /// A window's content, dropped while `ClosedWindowRelease` has let it go.

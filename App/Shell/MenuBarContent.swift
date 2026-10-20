@@ -30,7 +30,7 @@ public final class AppRouter: ObservableObject {
             window.orderFrontRegardless()
             window.makeKeyAndOrderFront(nil)
         } else if let openWindow {
-            openWindow(MacSpaceWindow.current)
+            openWindow(MacSpaceWindow.glass)
             // SwiftUI opens the window a moment later, behind the app in front if MacSpace was not let forward.
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(300))
@@ -38,8 +38,8 @@ public final class AppRouter: ObservableObject {
             }
         } else {
             // No window has been open since launch (MacSpace started in the menu bar), so none could hand over `openWindow`. The
-            // window scenes claim `macspace://<window id>` (`handlesExternalEvents`); opening it with this very app opens the window.
-            if let url = URL(string: "macspace://\(MacSpaceWindow.current)") {
+            // window's scene claims `macspace://<window id>` (`handlesExternalEvents`); opening it with this very app opens the window.
+            if let url = URL(string: "macspace://\(MacSpaceWindow.glass)") {
                 NSWorkspace.shared.open([url], withApplicationAt: Bundle.main.bundleURL, configuration: NSWorkspace.OpenConfiguration())
             }
         }
@@ -63,9 +63,9 @@ public final class AppRouter: ObservableObject {
         return pending
     }
 
-    /// The window of the kind in use, if it is open.
+    /// The window, if it is open.
     public static var mainWindow: NSWindow? {
-        NSApp.windows.first { $0.identifier?.rawValue.hasPrefix(MacSpaceWindow.current) == true && ($0.isVisible || $0.isMiniaturized) }
+        NSApp.windows.first { $0.identifier?.rawValue.hasPrefix(MacSpaceWindow.glass) == true && ($0.isVisible || $0.isMiniaturized) }
     }
 }
 
@@ -230,7 +230,7 @@ public final class BackgroundPresence {
     static func isAppWindow(_ window: NSWindow) -> Bool {
         // A native auxiliary panel has a title bar; our canvas has its stable scene identifier.
         let id = window.identifier?.rawValue ?? ""
-        return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass) || id.hasPrefix(MacSpaceWindow.standard)
+        return window.styleMask.contains(.titled) || id.hasPrefix(MacSpaceWindow.glass)
     }
 
     /// A window of MacSpace's own is on screen or in the Dock (menus, popovers and the status item's window do not count).

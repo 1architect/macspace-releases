@@ -236,11 +236,10 @@ struct ScreenView: View {
 }
 
 extension EnvironmentValues {
-    /// Where a page's scroll area starts: under the glass window's corner buttons and title, or right under a standard window's
-    /// toolbar (`StandardWindowView`).
+    /// Where a page's scroll area starts: under the window's corner buttons and title.
     @Entry var pageCascadeCount: Int = 0
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
-    /// The page's own color, which the glass along its edges is tinted with so it does not lighten it (`EdgeGlass`).
+    /// The page's own color.
     @Entry var pageGround: Color?
 }
 
@@ -274,63 +273,35 @@ enum PageInsets {
     static let fade: CGFloat = 36
 }
 
-/// A page's scroll area: below the corner buttons and the title, and above the main action when the page has one. It is cut off with
-/// a plain rectangular clip.
-///
-/// With the temporary Page Edge Fade switch on, the page scrolls under the title and the main action and fades out as it reaches
-/// them: the scroll area is masked with a gradient, clear under the title and the action and opaque between, so the content itself
-/// fades (a color laid over it only looked like a band with the text showing through). A mask makes every scroll frame draw the page
-/// offscreen and blend it through the mask, which is why it is only on with the switch. The system's scroll edge effect is not drawn
-/// for a grouped form.
+/// A page's scroll area: below the corner buttons and the title, and above the main action when the page has one. The page scrolls
+/// under the title and the main action and fades out as it reaches them: the scroll area is masked with a gradient, clear under the
+/// title and the action and opaque between, so the content itself fades (a color laid over it only looked like a band with the text
+/// showing through). A mask makes every scroll frame draw the page offscreen and blend it through the mask. The system's scroll edge
+/// effect is not drawn for a grouped form.
 struct PageScrollArea: ViewModifier {
     let hasFooter: Bool
-    @Environment(\.design) private var design
     @Environment(\.pageScrollTop) private var scrollTop
 
     /// How far the content takes to fade in, below the title and above the main action.
     static let fadeLength: CGFloat = 26
 
     func body(content: Content) -> some View {
-        if design.pageEdgeFade && design.pageEdgeBlur {
-            let footer = hasFooter ? PageInsets.footer : 0
-            let top = max(scrollTop - (PageInsets.scrollTop - PageInsets.headerBottom), 0)
-            // The content is not faded: it goes on under the title and the action, and the glass blurs it there.
-            content
-                .contentMargins(.top, scrollTop, for: .scrollContent)
-                .contentMargins(.bottom, 0, for: .scrollContent)
-                .environment(\.pageBottomRoom, footer + PageInsets.fade + 6)
-                .contentMargins(.horizontal, 10, for: .scrollContent)
-                .scrollEdgeEffectHidden(true, for: .all)
-                .overlay(alignment: .top) { EdgeGlass(edge: .top).frame(height: top + Self.fadeLength * 1.5) }
-                .overlay(alignment: .bottom) { EdgeGlass(edge: .bottom).frame(height: footer + Self.fadeLength * 1.5) }
-        } else if design.pageEdgeFade {
-            let footer = hasFooter ? PageInsets.footer : 0
-            content
-                .contentMargins(.top, scrollTop, for: .scrollContent)
-                .contentMargins(.bottom, 0, for: .scrollContent)
-                .environment(\.pageBottomRoom, footer + PageInsets.fade + 6)
-                .contentMargins(.horizontal, 10, for: .scrollContent)
-                .scrollEdgeEffectHidden(true, for: .all)
-                .mask {
-                    VStack(spacing: 0) {
-                        Color.clear.frame(height: max(scrollTop - (PageInsets.scrollTop - PageInsets.headerBottom), 0))
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
-                        Color.black
-                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
-                        Color.clear.frame(height: max(footer - 8, 0))
-                    }
+        let footer = hasFooter ? PageInsets.footer : 0
+        content
+            .contentMargins(.top, scrollTop, for: .scrollContent)
+            .contentMargins(.bottom, 0, for: .scrollContent)
+            .environment(\.pageBottomRoom, footer + PageInsets.fade + 6)
+            .contentMargins(.horizontal, 10, for: .scrollContent)
+            .scrollEdgeEffectHidden(true, for: .all)
+            .mask {
+                VStack(spacing: 0) {
+                    Color.clear.frame(height: max(scrollTop - (PageInsets.scrollTop - PageInsets.headerBottom), 0))
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
+                    Color.black
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: Self.fadeLength)
+                    Color.clear.frame(height: max(footer - 8, 0))
                 }
-        } else {
-            content
-                .contentMargins(.top, 0, for: .scrollContent)
-                .contentMargins(.bottom, 0, for: .scrollContent)
-                .environment(\.pageBottomRoom, PageInsets.fade + 6)
-                .contentMargins(.horizontal, 10, for: .scrollContent)
-                .scrollEdgeEffectHidden(true, for: .all)
-                .padding(.top, scrollTop)
-                .padding(.bottom, hasFooter ? PageInsets.footer : 0)
-                .clipped()
-        }
+            }
     }
 }
 
@@ -347,29 +318,6 @@ struct PageBottomRoom: View {
 
     var body: some View {
         Section {} footer: { Color.clear.frame(height: max(room - 20, 0)) }
-    }
-}
-
-/// A band of Liquid Glass along a page's top or bottom edge, solid at the edge and fading out toward the page, so what scrolls under it
-/// blurs more the closer it gets to the edge. It never takes the pointer: the page scrolls through it.
-private struct EdgeGlass: View {
-    let edge: VerticalEdge
-    @Environment(\.pageGround) private var ground
-    @Environment(\.design) private var design
-
-    var body: some View {
-        // Glass lightens a deep page: the page's own color, a little darker, tinted into it brings it back to the page's brightness
-        // (measured within 3 levels). On a light page the glass adds no light and is left as it is.
-        // A page that does not say its color gets black, which comes close too (within 7 levels).
-        let tint = ground.map { $0.mix(with: .black, by: 0.15).opacity(0.6) } ?? .black.opacity(0.35)
-        let glass: Glass = design.isLight ? .regular : .regular.tint(tint)
-        Color.clear
-            .glassEffect(glass, in: Rectangle())
-            .mask {
-                LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.45), .init(color: .clear, location: 1)],
-                               startPoint: edge == .top ? .top : .bottom, endPoint: edge == .top ? .bottom : .top)
-            }
-            .allowsHitTesting(false)
     }
 }
 
@@ -813,7 +761,6 @@ struct ActionPill: View {
                 .clipShape(Self.shape)
             }
         }
-        .modifier(PillGlass(enabled: design.glass))
     }
 
     /// The button is always one line and 31 points high.
@@ -828,11 +775,3 @@ struct ActionPill: View {
     private var lighter: Color { design.actionLight }
 }
 
-/// The glass around the pill, when the window is glass.
-private struct PillGlass: ViewModifier {
-    let enabled: Bool
-
-    func body(content: Content) -> some View {
-        if enabled { content.glassEffect(.regular.interactive(), in: ActionPill.shape) } else { content }
-    }
-}

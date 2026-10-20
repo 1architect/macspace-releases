@@ -975,13 +975,23 @@ Issue 11 asked why MacSpace showed over 200 MB in Activity Monitor. Measured on 
 - **How measured.** `MemoryBenchmarkTests` (opt-in) runs the real dashboard with the real modules, read-only and without the helper,
   in a release build, and reports footprint and heap. Its transient figures vary from run to run with the timing of the modules'
   readings, so each change was measured three times; the shipped app's own launches are the final check.
-- **The closed window.** SwiftUI keeps a closed window's whole content. Dropping it frees 5 to 16 MB of the benchmark's 69 to 74 MB
-  (**measured**); MacSpace drops it ten minutes after the last window closed and builds it again when a window is next on screen.
+- **The closed window.** SwiftUI keeps a closed window's whole content, and closing it posts nothing to count on: SwiftUI hides the
+  window rather than closing it, so the release follows every change that can hide or show a window (**measured**, with a decision
+  log). Dropping the content took the view graph from 1,125 to 458 subgraphs and the live heap from 39 to 34 MB, but the footprint
+  only from 80 to 78 MB: the freed blocks share their pages with blocks still in use (**measured**). It now happens as soon as the
+  last window is hidden, and the window is built again when it is next on screen, opening as it does at launch.
 - **Tried and left out.** The lit tile light's texture made in the screen's color space: Core Animation then stops copying it, but
-  the saving is about 2 MB and a window on a screen with another color space would cost more than before (**measured**). Deleting
-  the design switches a release locks: their unused branches are never built, so the saving would be the type metadata only
-  (**inferred**).
-- **Not traced:** about 10 MB of ColorSync conversion tables (inverted tone curves), present with or without the tile light.
+  the saving is about 2 MB and a window on a screen with another color space would cost more than before (**measured**).
+- **The design switches a release locks** (glass tiles and chart elements, the glass window, the standard window with a sidebar, page
+  edge blur and the rest) were deleted with their unused branches. Their branches were never built, yet the dashboard settles lower
+  without them: at 30 s, 67 to 71 MB footprint and 39 to 40 MB of heap in use, against 73 to 78 MB and 41 to 48 MB before (**measured**,
+  three runs each). Which part of the removal gives it back was not traced; the standard window's scene, kept unopened, is gone with
+  it.
+- **ColorSync conversion tables** (about 10 MB of inverted tone curves) are Core Animation matching colors to the display: layer
+  colors, glyph colors and backdrops, one transform kept per pair of color spaces and its variants (**measured**, allocation stacks).
+  MacSpace's own colors are almost all sRGB, so there is nothing to cut short of changing colors.
+- **Left as is:** pages the scans leave partly used (10 to 17 MB the allocator keeps, **measured**): no call releases them, only
+  scanning out of process would; and no graphics memory showed in eight minutes of use with the current build (**measured**).
 
 ---
 

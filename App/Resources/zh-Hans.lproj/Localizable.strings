@@ -70,7 +70,6 @@
 "GitHub" = "GitHub";
 "Granted" = "已授予";
 "Helper approved" = "辅助程序已获批准";
-"Hide the sidebar" = "隐藏边栏";
 "How often" = "频率";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "在后台运行时，MacSpace 不显示菜单栏或程序坞图标。可从“应用程序”重新打开。";
 "Install helper" = "安装辅助程序";
@@ -117,7 +116,6 @@
 "Open Panel" = "打开面板";
 "Open System Settings" = "打开系统设置";
 "Open at login" = "登录时打开";
-"Overview" = "概览";
 "Permissions" = "权限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "点击“安装辅助程序”。如果 macOS 仍无法识别，请在终端运行：/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register，并发送输出的信息。";
 "Privileged helper" = "特权辅助程序";
@@ -144,7 +142,6 @@
 "Settings…" = "设置…";
 "Shader Studio" = "着色器工作室";
 "Show in Finder" = "在访达中显示";
-"Show the sidebar" = "显示边栏";
 "System" = "系统";
 "That cloud folder is no longer on this Mac" = "此云端文件夹已不在此 Mac 上";
 "The files stay in %@ and download again when you open them." = "文件保留在 %@，打开时会重新下载。";

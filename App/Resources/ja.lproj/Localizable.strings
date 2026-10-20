@@ -70,7 +70,6 @@
 "GitHub" = "GitHub";
 "Granted" = "許可済み";
 "Helper approved" = "ヘルパーは承認済みです";
-"Hide the sidebar" = "サイドバーを非表示";
 "How often" = "頻度";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "バックグラウンドではメニューバーやDockにアイコンを表示しません。「アプリケーション」から再度開けます。";
 "Install helper" = "ヘルパーをインストール";
@@ -117,7 +116,6 @@
 "Open Panel" = "パネルを開く";
 "Open System Settings" = "システム設定を開く";
 "Open at login" = "ログイン時に開く";
-"Overview" = "概要";
 "Permissions" = "権限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "「ヘルパーをインストール」を押してください。認識されない場合はターミナルで /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register を実行し、表示されたメッセージを送ってください。";
 "Privileged helper" = "特権ヘルパー";
@@ -144,7 +142,6 @@
 "Settings…" = "設定…";
 "Shader Studio" = "シェーダースタジオ";
 "Show in Finder" = "Finderに表示";
-"Show the sidebar" = "サイドバーを表示";
 "System" = "システム";
 "That cloud folder is no longer on this Mac" = "このクラウドフォルダはこのMacにありません";
 "The files stay in %@ and download again when you open them." = "ファイルは%@に残り、開くと再ダウンロードされます。";

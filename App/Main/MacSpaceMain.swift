@@ -65,12 +65,11 @@ struct MacSpaceMain: App {
     @StateObject private var updates = UpdateController()
 
     var body: some Scene {
-        // Only the window of the chosen kind opens at launch, and neither is restored: both opening, then one closing itself,
-        // left an empty glass frame and its shadow on screen beside the standard window.
+        // The window opens at launch and is not restored.
         Window("MacSpace", id: MacSpaceWindow.glass) {
             ReleasableContent { MainView(host: host, updates: updates) }
         }
-        .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .suppressed : .presented)
+        .defaultLaunchBehavior(.presented)
         .restorationBehavior(.disabled)
         // Opened by `macspace://main` when no window has been open yet (`AppRouter.open`).
         .handlesExternalEvents(matching: [MacSpaceWindow.glass])
@@ -89,22 +88,9 @@ struct MacSpaceMain: App {
             }
         }
 
-        // The same app in a standard macOS window with a sidebar (Settings > Design > Standard window with sidebar).
-        Window("MacSpace", id: MacSpaceWindow.standard) {
-            ReleasableContent { StandardWindowView(host: host, updates: updates) }
-        }
-        // SwiftUI lists every window scene in the Window menu, open or not: "MacSpace" twice and the Shader Studio even with the
-        // design tools off. The two other scenes leave out their item; the first keeps it, with the app's default menus (on all
-        // three, `commandsRemoved()` also took Quit and the Edit, Window and Help menus).
-        .commandsRemoved()
-        // MacSpace draws the window's buttons and its band (`StandardWindowView`); the content reaches the top of the window.
-        .windowStyle(.hiddenTitleBar)
-        .handlesExternalEvents(matching: [MacSpaceWindow.standard])
-        .defaultLaunchBehavior(DesignSettings.shared.standardWindow ? .presented : .suppressed)
-        .restorationBehavior(.disabled)
-        .defaultSize(width: 900, height: 600)
-
-        // The design tools' windows (Design menu), in development builds only (`DesignTools`).
+        // The design tools' windows (Design menu), in development builds only (`DesignTools`). SwiftUI lists every window scene in
+        // the Window menu, open or not: each leaves out its item (`commandsRemoved()`), and the main window keeps it, with the app's
+        // default menus.
         #if MACSPACE_DEV
         // Temporary: the Shader Studio (Design menu, ⌥⌘L).
         Window("Shader Studio", id: ColorLabView.windowID) {

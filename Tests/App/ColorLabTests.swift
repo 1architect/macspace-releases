@@ -77,20 +77,3 @@ final class ColorLabTests: XCTestCase {
         XCTAssertEqual(LabColor(dark.step(3)).blue, main.blue, accuracy: 0.03, "the fourth step is the main color")
     }
 }
-
-final class BackgroundAppearanceTests: XCTestCase {
-    func testTheBackgroundFollowsWhatWasChosen() {
-        var design = Design(scheme: .deep, systemIsDark: false)
-        XCTAssertFalse(design.backgroundIsLight, "the palette's: a deep palette is dark")
-        design.backgroundAppearance = .system
-        XCTAssertTrue(design.backgroundIsLight, "the system is light")
-        design.systemIsDark = true
-        XCTAssertFalse(design.backgroundIsLight, "the system turned dark")
-        design.backgroundAppearance = .light
-        XCTAssertTrue(design.backgroundIsLight, "light whatever the system says")
-        design.scheme = .paper
-        design.backgroundAppearance = .dark
-        XCTAssertFalse(design.backgroundIsLight, "dark under a light palette")
-        XCTAssertTrue(design.isLight, "the tiles keep the palette's")
-    }
-}

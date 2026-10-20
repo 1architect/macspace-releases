@@ -6,8 +6,8 @@ import SwiftUI
 /// or from Settings. Every scheme keeps the same roles: one ground per tile color, steps for marks, and one action color.
 public enum PaletteScheme: String, CaseIterable, Identifiable, Sendable {
     // Every palette is a night and day pair. Day and night of a pair share their hues; the night ramp runs dark to light, the day ramp
-    // light to dark, so a mark keeps its place in both. Day palettes are drawn for the system's white window (Window Glass off): the
-    // grounds are toned enough to stand off it, and every text and mark is checked for contrast on what it sits on.
+    // light to dark, so a mark keeps its place in both. Day palettes are drawn for the system's white window: the grounds are toned
+    // enough to stand off it, and every text and mark is checked for contrast on what it sits on.
     case deep
     case paper
     case mono
@@ -247,57 +247,10 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// What the window's background follows, apart from the tiles (which keep the palette): the palette, the system's appearance
-/// (changing with it, system wide), or light or dark whatever either says.
-public enum BackgroundAppearance: String, CaseIterable, Identifiable, Sendable {
-    case palette
-    case system
-    case light
-    case dark
-
-    public var id: String { rawValue }
-
-    public var title: String {
-        switch self {
-        case .palette: return "Follow Palette"
-        case .system: return "Follow System"
-        case .light: return "Light"
-        case .dark: return "Dark"
-        }
-    }
-}
-
-/// How the app is drawn right now: the palette, and whether tiles and their elements are Liquid Glass. Handed down the view tree in
-/// the environment, so switching redraws everything at once.
+/// How the app is drawn right now: the palette, and what the design tools changed. Handed down the view tree in the environment, so
+/// switching redraws everything at once.
 struct Design: Equatable {
     var scheme: PaletteScheme = .deep
-    var backgroundAppearance = BackgroundAppearance.palette
-    /// The system's appearance is dark right now (`DesignSettings` keeps it up to date).
-    var systemIsDark = false
-    var glass = false
-    /// Temporary, for finding what lags on hover: tiles lift, and tilt toward the pointer; glass is shaded under the pointer.
-    var lift = true
-    var tilt = true
-    var hoverShade = true
-    /// Temporary, for measuring GPU use: chart elements (blocks, dots, arcs) are glass, on glass tiles and flat ones alike, or flat color.
-    var glassElements = false
-    /// Temporary, for measuring GPU use: the window clipped to its rounded corners; tiles following the pointer.
-    var clipWindow = true
-    var trackPointer = true
-    /// Temporary, for measuring GPU use: the window itself is glass over the desktop, or a solid color.
-    var windowGlass = false
-    /// The glass window's whole background (blur, glass, fill and edge); off, the widgets float over the desktop with nothing behind them.
-    var windowBackground = true
-    /// Temporary, for measuring GPU use and comparing looks: pages fade their content out at the scroll edges (the system's effect),
-    /// or cut it off cleanly.
-    var pageEdgeFade = true
-    /// With the fade: the content scrolls on under the title and the main action, blurred by a band of Liquid Glass that fades out
-    /// toward the page, instead of fading away.
-    var pageEdgeBlur = false
-    /// Temporary, for measuring GPU use and comparing looks: tiles of the lighter `.clear` glass instead of `.regular`; a shorter lift
-    /// and lean with less bounce.
-    var clearTileGlass = false
-    var quickLift = false
     /// Temporary: the Color Lab's colors and fills for this palette (`ColorLab.swift`).
     var lab = LabOverrides()
     /// The tiles' and the glass window's corners (`CornerRadii`); here so a change redraws everything.
@@ -306,25 +259,12 @@ struct Design: Equatable {
     /// The tiles' type, from the Widget Type window (`TileType`); here so a change redraws everything.
     var tileType = TileType()
 
-    /// The lift's animation, and the lean's.
-    var liftAnimation: Animation { quickLift ? Theme.quickHover : Theme.hover }
-    var leanAnimation: Animation { quickLift ? Theme.quickLean : .interactiveSpring(duration: 0.25) }
-
     func palette(_ tint: TileTint) -> TintPalette { scheme.palette(tint).applying(lab, tint: tint, light: isLight) }
     var action: Color { lab.color(.action) ?? scheme.action.fill }
     /// Worked out from the studio's action color when it has one, unless set apart.
     var actionLight: Color { lab.color(.actionLight) ?? lab.colors[ColorRole.action.key].map { PaletteRamp.action($0, light: isLight).light } ?? scheme.action.light }
     var actionDeep: Color { lab.color(.actionDeep) ?? lab.colors[ColorRole.action.key].map { PaletteRamp.action($0, light: isLight).deep } ?? scheme.action.deep }
     var isLight: Bool { scheme.isLight }
-    /// Whether the window's background is light: the palette's, the system's, or the one chosen.
-    var backgroundIsLight: Bool {
-        switch backgroundAppearance {
-        case .palette: return isLight
-        case .system: return !systemIsDark
-        case .light: return true
-        case .dark: return false
-        }
-    }
     /// Text on tiles and pages.
     var ink: Color { lab.color(.ink) ?? (isLight ? Color(hex: 0x1C1C1E) : .white) }
     /// The Color Lab's fill for a part of the app; nil draws it as before.
@@ -339,11 +279,11 @@ struct Design: Equatable {
     }
     /// The color scheme pages and their controls are drawn in.
     var colorScheme: ColorScheme { isLight ? .light : .dark }
-    /// macOS's own window background in the light or dark the background follows (`backgroundIsLight`): the solid window (Window
-    /// Glass off) is drawn in it, so day and night follow the system's defaults.
+    /// macOS's own window background in the palette's light or dark: the window is drawn in it, so day and night follow the
+    /// system's defaults.
     var systemWindowColor: Color {
         var resolved = NSColor.windowBackgroundColor
-        NSAppearance(named: backgroundIsLight ? .aqua : .darkAqua)?.performAsCurrentDrawingAppearance {
+        NSAppearance(named: isLight ? .aqua : .darkAqua)?.performAsCurrentDrawingAppearance {
             resolved = NSColor.windowBackgroundColor.usingColorSpace(.sRGB) ?? resolved
         }
         return Color(nsColor: resolved)
@@ -369,26 +309,9 @@ public final class DesignSettings: ObservableObject {
         get { scheme.night }
         set { scheme = resolved(newValue) }
     }
-    @Published public var backgroundAppearance: BackgroundAppearance { didSet { defaults.set(backgroundAppearance.rawValue, forKey: "design.backgroundAppearance") } }
-    /// The system's appearance is dark; kept up to date while the app runs, for `.system` backgrounds.
+    /// The system's appearance is dark; kept up to date while the app runs, for the `.system` appearance mode.
     @Published private(set) var systemIsDark = DesignSettings.readSystemIsDark() { didSet { followAppearance() } }
     private var appearanceObserver: NSObjectProtocol?
-    @Published public var glass: Bool { didSet { defaults.set(glass, forKey: "design.glass") } }
-    @Published public var lift: Bool { didSet { defaults.set(lift, forKey: "design.lift") } }
-    @Published public var tilt: Bool { didSet { defaults.set(tilt, forKey: "design.tilt") } }
-    @Published public var hoverShade: Bool { didSet { defaults.set(hoverShade, forKey: "design.hoverShade") } }
-    @Published public var windowShadow: Bool { didSet { defaults.set(windowShadow, forKey: "design.windowShadow") } }
-    @Published public var glassElements: Bool { didSet { defaults.set(glassElements, forKey: "design.glassElements") } }
-    @Published public var clipWindow: Bool { didSet { defaults.set(clipWindow, forKey: "design.clipWindow") } }
-    @Published public var trackPointer: Bool { didSet { defaults.set(trackPointer, forKey: "design.trackPointer") } }
-    @Published public var windowGlass: Bool { didSet { defaults.set(windowGlass, forKey: "design.windowGlass") } }
-    @Published public var windowBackground: Bool { didSet { defaults.set(windowBackground, forKey: "design.windowBackground") } }
-    @Published public var pageEdgeFade: Bool { didSet { defaults.set(pageEdgeFade, forKey: "design.pageEdgeFade") } }
-    @Published public var pageEdgeBlur: Bool { didSet { defaults.set(pageEdgeBlur, forKey: "design.pageEdgeBlur") } }
-    @Published public var clearTileGlass: Bool { didSet { defaults.set(clearTileGlass, forKey: "design.clearTileGlass") } }
-    @Published public var quickLift: Bool { didSet { defaults.set(quickLift, forKey: "design.quickLift") } }
-    /// The edge macOS draws around its own windows: a dark hairline outside, a faint light one inside.
-    @Published public var windowBorder: Bool { didSet { defaults.set(windowBorder, forKey: "design.windowBorder") } }
     @Published public var tileRadius: CGFloat { didSet { defaults.set(Double(tileRadius), forKey: "design.tileRadius") } }
     /// The tiles' type (Widget Type window).
     @Published var tileType: TileType {
@@ -398,14 +321,6 @@ public final class DesignSettings: ObservableObject {
         }
     }
     @Published public var windowRadius: CGFloat { didSet { defaults.set(Double(windowRadius), forKey: "design.windowRadius") } }
-    /// The standard window's title bar (its title and the band behind it); off, the pages reach the top of the window.
-    @Published public var standardTitleBar: Bool { didSet { defaults.set(standardTitleBar, forKey: "design.standardTitleBar") } }
-    /// The standard window's sidebar shows each item's symbol.
-    @Published public var standardSidebarIcons: Bool { didSet { defaults.set(standardSidebarIcons, forKey: "design.standardSidebarIcons") } }
-    /// The standard window's background is Liquid Glass over the desktop instead of the window's solid color.
-    @Published public var standardGlassBackground: Bool { didSet { defaults.set(standardGlassBackground, forKey: "design.standardGlassBackground") } }
-    /// MacSpace in a standard macOS window with a sidebar instead of the glass window (`StandardWindowView`).
-    @Published public var standardWindow: Bool { didSet { defaults.set(standardWindow, forKey: "design.standardWindow") } }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
     /// The Shader Studio is picking what to edit by a click in the window, and what it edits. Not kept.
     @Published var studioPicking = false
@@ -427,32 +342,11 @@ public final class DesignSettings: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         let tool = { (key: String) in Self.tool(defaults, key) }
-        // The defaults below are the look MacSpace ships with (settled in the Design menu, 2026-10-13): flat chart blocks, no glass
-        // over the window, the page fading under its title. A release always draws them.
+        // A release always draws the Design menu's defaults.
         let scheme = PaletteScheme(rawValue: defaults.string(forKey: "design.palette") ?? "") ?? .deep
         self.scheme = scheme
         // Until one is chosen, the palette picked before there was a choice keeps its night or day.
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: "design.appearanceMode") ?? "") ?? (scheme.isLight ? .day : .night)
-        backgroundAppearance = BackgroundAppearance(rawValue: tool("design.backgroundAppearance") as? String ?? "") ?? .palette
-        glass = tool("design.glass") as? Bool ?? false
-        lift = tool("design.lift") as? Bool ?? true
-        tilt = tool("design.tilt") as? Bool ?? true
-        hoverShade = tool("design.hoverShade") as? Bool ?? true
-        windowShadow = tool("design.windowShadow") as? Bool ?? true
-        glassElements = tool("design.glassElements") as? Bool ?? false
-        clipWindow = tool("design.clipWindow") as? Bool ?? true
-        trackPointer = tool("design.trackPointer") as? Bool ?? true
-        windowGlass = tool("design.windowGlass") as? Bool ?? false
-        windowBackground = tool("design.windowBackground") as? Bool ?? true
-        pageEdgeFade = tool("design.pageEdgeFade") as? Bool ?? true
-        pageEdgeBlur = tool("design.pageEdgeBlur") as? Bool ?? false
-        clearTileGlass = tool("design.clearTileGlass") as? Bool ?? false
-        quickLift = tool("design.quickLift") as? Bool ?? false
-        windowBorder = tool("design.windowBorder") as? Bool ?? true
-        standardWindow = tool("design.standardWindow") as? Bool ?? false
-        standardTitleBar = tool("design.standardTitleBar") as? Bool ?? false
-        standardSidebarIcons = tool("design.standardSidebarIcons") as? Bool ?? false
-        standardGlassBackground = tool("design.standardGlassBackground") as? Bool ?? true
         tileRadius = CGFloat(tool("design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
         tileType = TileType.load(defaults)
         windowRadius = CGFloat(tool("design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
@@ -475,18 +369,15 @@ public final class DesignSettings: ObservableObject {
         if scheme != wanted { scheme = wanted }
     }
 
-    var design: Design { Design(scheme: scheme, backgroundAppearance: backgroundAppearance, systemIsDark: systemIsDark, glass: glass, lift: lift, tilt: tilt, hoverShade: hoverShade, glassElements: glassElements,
-                                  clipWindow: clipWindow, trackPointer: trackPointer,
-                                  windowGlass: windowGlass, windowBackground: windowBackground, pageEdgeFade: pageEdgeFade,
-                                  pageEdgeBlur: pageEdgeBlur, clearTileGlass: clearTileGlass, quickLift: quickLift, lab: colorLab[scheme.rawValue] ?? LabOverrides(),
-                                  tileRadius: tileRadius, windowRadius: windowRadius, tileType: tileType) }
+    var design: Design { Design(scheme: scheme, lab: colorLab[scheme.rawValue] ?? LabOverrides(), tileRadius: tileRadius, windowRadius: windowRadius,
+                                tileType: tileType) }
 
     /// The system's setting, global for the user: "Dark" while the appearance is dark, absent while it is light.
     private static func readSystemIsDark() -> Bool {
         UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
     }
 
-    /// The system switching between light and dark (by hand, or on its schedule) redraws the backgrounds that follow it.
+    /// The system switching between light and dark (by hand, or on its schedule) switches a theme that follows it.
     private func observeSystemAppearance() {
         appearanceObserver = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil, queue: .main) { [weak self] _ in
@@ -513,7 +404,7 @@ public enum DesignTools {
     #endif
 }
 
-/// The temporary Design menu: Liquid Glass on or off (⌥⌘G), the palettes (⌥⌘1…9), and switches for what answers the pointer.
+/// The temporary Design menu: the corners, the design tools' windows, and the palettes (⌥⌘1…9).
 public struct DesignCommands: Commands {
     @ObservedObject private var settings = DesignSettings.shared
     @Environment(\.openWindow) private var openWindow
@@ -529,13 +420,6 @@ public struct DesignCommands: Commands {
     #if MACSPACE_DEV
     private var menu: some Commands {
         CommandMenu("Design") {
-            Toggle("Standard Window with Sidebar", isOn: $settings.standardWindow)
-            Toggle("Standard Window Title Bar", isOn: $settings.standardTitleBar)
-                .disabled(!settings.standardWindow)
-            Toggle("Standard Window Sidebar Icons", isOn: $settings.standardSidebarIcons)
-                .disabled(!settings.standardWindow)
-            Toggle("Standard Window Glass Background", isOn: $settings.standardGlassBackground)
-                .disabled(!settings.standardWindow)
             Picker("Widget Corners", selection: $settings.tileRadius) {
                 ForEach(CornerRadii.choices, id: \.self) { Text("\(Int($0)) pt" + ($0 == CornerRadii.defaultTile ? " (default)" : "")).tag($0) }
             }
@@ -551,28 +435,6 @@ public struct DesignCommands: Commands {
                 .keyboardShortcut("e", modifiers: [.command, .option])
             Button("Screenshots…") { openWindow(id: ScreenshotToolView.windowID) }
                 .keyboardShortcut("s", modifiers: [.command, .option])
-            Divider()
-            Toggle("Liquid Glass Tiles", isOn: $settings.glass)
-                .keyboardShortcut("g", modifiers: [.command, .option])
-            Toggle("Glass Chart Elements", isOn: $settings.glassElements)
-            Toggle("Clip Window Corners", isOn: $settings.clipWindow)
-            Toggle("Track Pointer", isOn: $settings.trackPointer)
-            Toggle("Window Glass", isOn: $settings.windowGlass)
-            Toggle("Window Background", isOn: $settings.windowBackground)
-            Picker("Background Appearance", selection: $settings.backgroundAppearance) {
-                ForEach(BackgroundAppearance.allCases) { Text($0.title).tag($0) }
-            }
-            Toggle("Page Edge Fade", isOn: $settings.pageEdgeFade)
-            Toggle("Page Edge Glass Blur", isOn: $settings.pageEdgeBlur)
-                .disabled(!settings.pageEdgeFade)
-            Toggle("Clear Tile Glass", isOn: $settings.clearTileGlass)
-            Toggle("Quick Lift", isOn: $settings.quickLift)
-            Divider()
-            Toggle("Tile Lift", isOn: $settings.lift)
-            Toggle("Tile Tilt", isOn: $settings.tilt)
-            Toggle("Hover Shade", isOn: $settings.hoverShade)
-            Toggle("Window Shadow", isOn: $settings.windowShadow)
-            Toggle("Window Border", isOn: $settings.windowBorder)
             Divider()
             Picker("Palette", selection: $settings.scheme) {
                 ForEach(Array(PaletteScheme.allCases.enumerated()), id: \.element) { index, scheme in

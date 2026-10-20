@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:525",
-      "App\/Renderer\/ScreenView.swift:591"
+      "App\/Renderer\/ScreenView.swift:473",
+      "App\/Renderer\/ScreenView.swift:539"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:435"
+      "App\/Renderer\/ScreenView.swift:383"
     ],
     "table" : "App",
     "translations" : {
@@ -233,7 +233,7 @@
     "key" : "%lld smaller",
     "kind" : "Chart part",
     "places" : [
-      "App\/Shell\/TileArt.swift:379"
+      "App\/Shell\/TileArt.swift:271"
     ],
     "table" : "App",
     "translations" : {
@@ -386,7 +386,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/MenuBarContent.swift:151",
-      "App\/Main\/MacSpaceMain.swift:85"
+      "App\/Main\/MacSpaceMain.swift:84"
     ],
     "table" : "App",
     "translations" : {
@@ -405,7 +405,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:518"
+      "App\/Renderer\/ScreenView.swift:466"
     ],
     "table" : "App",
     "translations" : {
@@ -595,8 +595,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:320",
-      "App\/Shell\/MainView.swift:352"
+      "App\/Shell\/MainView.swift:259",
+      "App\/Shell\/MainView.swift:284"
     ],
     "table" : "App",
     "translations" : {
@@ -692,7 +692,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:88"
+      "App\/Main\/MacSpaceMain.swift:87"
     ],
     "table" : "App",
     "translations" : {
@@ -768,8 +768,7 @@
     "key" : "Close",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/WindowControls.swift:17",
-      "App\/Shell\/MainView.swift:320"
+      "App\/Shell\/WindowControls.swift:17"
     ],
     "table" : "App",
     "translations" : {
@@ -788,7 +787,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:354"
+      "App\/Shell\/MainView.swift:286"
     ],
     "table" : "App",
     "translations" : {
@@ -1058,7 +1057,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:238"
+      "App\/Shell\/MainView.swift:178"
     ],
     "table" : "App",
     "translations" : {
@@ -1173,7 +1172,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:236"
+      "App\/Shell\/MainView.swift:176"
     ],
     "table" : "App",
     "translations" : {
@@ -1340,25 +1339,6 @@
     }
   },
   {
-    "id" : "App|Hide the sidebar",
-    "key" : "Hide the sidebar",
-    "kind" : "Tooltip",
-    "places" : [
-      "App\/Shell\/StandardWindowView.swift:168"
-    ],
-    "table" : "App",
-    "translations" : {
-      "de" : "Seitenleiste ausblenden",
-      "en" : "Hide the sidebar",
-      "es" : "Ocultar la barra lateral",
-      "fr" : "Masquer la barre latérale",
-      "ja" : "サイドバーを非表示",
-      "ko" : "사이드바 가리기",
-      "pt-BR" : "Ocultar a barra lateral",
-      "zh-Hans" : "隐藏边栏"
-    }
-  },
-  {
     "id" : "App|How often",
     "key" : "How often",
     "kind" : "Menu",
@@ -1516,7 +1496,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:191",
-      "App\/Renderer\/ScreenView.swift:755"
+      "App\/Renderer\/ScreenView.swift:703"
     ],
     "table" : "App",
     "translations" : {
@@ -1538,9 +1518,8 @@
       "App\/Settings\/AboutMacSpace.swift:15",
       "App\/Shell\/HomeView.swift:18",
       "App\/Shell\/MenuBarContent.swift:101",
-      "App\/Shell\/StandardWindowView.swift:220",
       "App\/Updates\/UpdateController.swift:67",
-      "App\/Main\/MacSpaceMain.swift:70"
+      "App\/Main\/MacSpaceMain.swift:69"
     ],
     "table" : "App",
     "translations" : {
@@ -1711,8 +1690,7 @@
     "key" : "Modules",
     "kind" : "Section header",
     "places" : [
-      "App\/Settings\/SettingsView.swift:29",
-      "App\/Shell\/StandardWindowView.swift:148"
+      "App\/Settings\/SettingsView.swift:29"
     ],
     "table" : "App",
     "translations" : {
@@ -1883,7 +1861,7 @@
     "key" : "Needs attention",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/TileArt.swift:891"
+      "App\/Shell\/TileArt.swift:776"
     ],
     "table" : "App",
     "translations" : {
@@ -2242,25 +2220,6 @@
     }
   },
   {
-    "id" : "App|Overview",
-    "key" : "Overview",
-    "kind" : "Text",
-    "places" : [
-      "App\/Shell\/StandardWindowView.swift:147"
-    ],
-    "table" : "App",
-    "translations" : {
-      "de" : "Übersicht",
-      "en" : "Overview",
-      "es" : "Resumen",
-      "fr" : "Aperçu",
-      "ja" : "概要",
-      "ko" : "개요",
-      "pt-BR" : "Visão Geral",
-      "zh-Hans" : "概览"
-    }
-  },
-  {
     "id" : "App|Permissions",
     "key" : "Permissions",
     "kind" : "Title",
@@ -2399,7 +2358,7 @@
     "key" : "Refresh",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:46"
+      "App\/Shell\/MainView.swift:51"
     ],
     "table" : "App",
     "translations" : {
@@ -2532,7 +2491,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:756",
+      "App\/Renderer\/ScreenView.swift:704",
       "Sdk\/Interface\/Widgets.swift:213"
     ],
     "table" : "App",
@@ -2649,10 +2608,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:304",
-      "App\/Shell\/MainView.swift:353",
-      "App\/Shell\/StandardWindowView.swift:157",
-      "App\/Shell\/StandardWindowView.swift:222"
+      "App\/Shell\/MainView.swift:244",
+      "App\/Shell\/MainView.swift:285"
     ],
     "table" : "App",
     "translations" : {
@@ -2671,7 +2628,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:303"
+      "App\/Shell\/MainView.swift:243"
     ],
     "table" : "App",
     "translations" : {
@@ -2690,7 +2647,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:302"
+      "App\/Shell\/MainView.swift:242"
     ],
     "table" : "App",
     "translations" : {
@@ -2726,9 +2683,9 @@
   {
     "id" : "App|Shader Studio",
     "key" : "Shader Studio",
-    "kind" : "Text",
+    "kind" : "Message",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:110"
+      "App\/Main\/MacSpaceMain.swift:96"
     ],
     "table" : "App",
     "translations" : {
@@ -2761,25 +2718,6 @@
       "ko" : "Finder에서 보기",
       "pt-BR" : "Mostrar no Finder",
       "zh-Hans" : "在访达中显示"
-    }
-  },
-  {
-    "id" : "App|Show the sidebar",
-    "key" : "Show the sidebar",
-    "kind" : "Tooltip",
-    "places" : [
-      "App\/Shell\/MainView.swift:326"
-    ],
-    "table" : "App",
-    "translations" : {
-      "de" : "Seitenleiste einblenden",
-      "en" : "Show the sidebar",
-      "es" : "Mostrar la barra lateral",
-      "fr" : "Afficher la barre latérale",
-      "ja" : "サイドバーを表示",
-      "ko" : "사이드바 보기",
-      "pt-BR" : "Mostrar a barra lateral",
-      "zh-Hans" : "显示边栏"
     }
   },
   {
@@ -3226,7 +3164,7 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:754",
+      "App\/Renderer\/ScreenView.swift:702",
       "App\/Renderer\/RowActionFlag.swift:102",
       "App\/Renderer\/RowActionFlag.swift:109",
       "App\/Registry\/ModuleHandle.swift:514"
@@ -3305,7 +3243,7 @@
     "key" : "disabled",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/HomeView.swift:236"
+      "App\/Shell\/HomeView.swift:228"
     ],
     "table" : "App",
     "translations" : {
@@ -3345,7 +3283,7 @@
     "places" : [
       "App\/Settings\/SettingsStore.swift:17",
       "App\/Settings\/SettingsStore.swift:21",
-      "App\/Shell\/HomeView.swift:237"
+      "App\/Shell\/HomeView.swift:229"
     ],
     "table" : "App",
     "translations" : {
@@ -3499,7 +3437,7 @@
     "key" : "undone",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/HomeView.swift:238"
+      "App\/Shell\/HomeView.swift:230"
     ],
     "table" : "App",
     "translations" : {
@@ -3519,7 +3457,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:47",
-      "App\/Shell\/MainView.swift:236"
+      "App\/Shell\/MainView.swift:176"
     ],
     "table" : "App",
     "translations" : {
@@ -6043,7 +5981,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:158",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:163",
-      "App\/Shell\/MainView.swift:239"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -8804,7 +8742,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:756",
+      "App\/Renderer\/ScreenView.swift:704",
       "Sdk\/Interface\/Widgets.swift:213"
     ],
     "table" : "Siri",

@@ -153,13 +153,11 @@ struct TileFace: View {
         return size.width - margin - 12 - caption - padding
     }
 
-    @Environment(\.openPageRadius) private var pageRadius
-
     var body: some View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
             if drawsBackdrop {
-                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, pageRadius ?? Theme.windowRadius, progress),
+                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, Theme.windowRadius, progress),
                              loading: info.loading)
             } else {
                 Color.clear
@@ -167,16 +165,10 @@ struct TileFace: View {
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
             // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
             if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
-                // Each chart puts only its glass shapes in a glass container (it draws only glass); its text stays outside.
                 GeometryReader { proxy in
                     chart(graphic, in: proxy.size)
                 }
                 .opacity(chartOpacity)
-            }
-            // Over the chart too: the chart's glass would otherwise see the shade behind it and adapt to it late. Only where the face
-            // draws its own ground (the zoom's card); on the dashboard the ground darkens itself, in the glass layer (`TileGround`).
-            if drawsBackdrop && design.glass && design.hoverShade {
-                HoverShade(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), on: hovering, amount: Theme.tileHoverShade)
             }
         }
         .overlay {
@@ -304,8 +296,6 @@ struct HomeView: View {
     /// A page fully covers the dashboard: the tiles are not drawn (their glass and animations cost the GPU even when hidden), but
     /// their places are still laid out and recorded for the zoom back.
     var dormant = false
-    /// The Settings tile; the standard window has Settings in its sidebar instead.
-    var showsSettingsTile = true
     @State private var appeared = false
     /// The tile under the pointer, and where on it in coarse steps. Held here, not in each tile, because a tile's ground and its face
     /// are drawn in different layers and both lift and lean with it.
@@ -338,7 +328,7 @@ struct HomeView: View {
     /// The disk is rose and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
-    static func tiles(for handles: [ModuleHandle], includesSettings: Bool = true) -> [DashboardTile] {
+    static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
         let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
         var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)]
         let spare: [TileTint] = [.blue, .teal, .graphite]
@@ -350,7 +340,7 @@ struct HomeView: View {
             let size = handle.id == large ? Bento.Size(width: 2, height: 2) : Bento.Size(width: 1, height: 1)
             tiles.append(DashboardTile(destination: .module(handle.id), size: size, tint: tint ?? .blue))
         }
-        if includesSettings { tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate)) }
+        tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate))
         return tiles
     }
 
@@ -362,16 +352,15 @@ struct HomeView: View {
         return (modules.first { $0.wide } ?? modules.first)?.id
     }
 
-    /// The tiles at their places in a grid of `size`, in two layers: every tile's ground (its glass) at the bottom and every tile's face
-    /// over it, moved alike by `TilePlacement`. Not in a glass container: one drew the six grounds in a single pass (about 10 points of
-    /// GPU less while hovering), but it drew the glass apart from the faces, and a lifting tile's glass edge trailed behind its face.
+    /// The tiles at their places in a grid of `size`, in two layers: every tile's ground at the bottom and every tile's face over it,
+    /// moved alike by `TilePlacement`.
     private func grid(_ tiles: [DashboardTile], placements: [Bento.Placement], columns: Int, rows: Int, size: CGSize) -> some View {
         ZStack(alignment: .topLeading) {
             if !dormant {
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
                     DashboardGround(destination: tile.destination, host: host, storage: storage, tint: tile.tint,
-                                    lifted: pointerTile == tile.destination && design.lift, hovering: pointerTile == tile.destination)
+                                    lifted: pointerTile == tile.destination)
                         .modifier(placed(tile, index: index, count: tiles.count, frame: frame, ground: true))
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
@@ -399,20 +388,15 @@ struct HomeView: View {
     /// out: laid out again on every frame, its caption stepped from pixel to pixel (or, between pixels, blurred), and the blocks
     /// re-flowed into another arrangement (2026-10-12).
     ///
-    /// A flat tile's ground stays under the zoom card standing in for it: the card covers it, and its shadow comes and goes with the
-    /// dashboard's fade. Hidden too, the shadow appeared at once as a closing page landed on its tile (2026-10-19). A glass ground,
-    /// which casts none and would show through the card, hides.
+    /// A tile's ground stays under the zoom card standing in for it: the card covers it, and its shadow comes and goes with the
+    /// dashboard's fade. Hidden too, the shadow appeared at once as a closing page landed on its tile (2026-10-19).
     private func placed(_ tile: DashboardTile, index: Int, count: Int, frame: CGRect, face: Bool = false, ground: Bool = false) -> TilePlacement {
         let moves = pointerTile == tile.destination
-        // No 3D turn over any glass, tiles or chart elements: inside a turned (projected) view AppKit's glass is drawn the expensive
-        // way and in its dimmed look, so glass elements darkened under the pointer.
-        let turns = !design.glass && !design.glassElements
         return TilePlacement(shown: appeared && !closing, closing: closing, index: index, count: count, frame: frame,
-                             lifted: moves && design.lift && tile.opens,
-                             lean: moves && design.tilt && !reduceMotion ? lean : .center,
-                             turns: turns, liftsByTransform: face, reduceMotion: reduceMotion,
-                             liftAnimation: design.liftAnimation, leanAnimation: design.leanAnimation,
-                             hidden: hiddenTile == tile.destination && (!ground || design.glass))
+                             lifted: moves && tile.opens,
+                             lean: moves && !reduceMotion ? lean : .center,
+                             liftsByTransform: face, reduceMotion: reduceMotion,
+                             hidden: hiddenTile == tile.destination && !ground)
     }
 
     /// The pointer moved over a tile (`lean` in steps across it) or left it (nil).
@@ -427,7 +411,7 @@ struct HomeView: View {
     }
 
     var body: some View {
-        let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles, includesSettings: showsSettingsTile) : []
+        let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
         let sizes = tiles.map(\.size)
         GeometryReader { proxy in
             // A new size takes its arrangement at once, every tile following the window: the tiles used to leave and come back
@@ -471,8 +455,7 @@ struct HomeView: View {
 }
 
 /// A tile's face on the dashboard: its chart and caption, the click, and the pointer. Its ground is drawn in the layer under it
-/// (`TileGround`), and both are moved together by `TilePlacement`. A glass tile leans toward the pointer instead of turning in 3D:
-/// under a 3D rotation, glass redraws what it shows late.
+/// (`TileGround`), and both are moved together by `TilePlacement`.
 struct DashboardTileView: View {
     let tile: DashboardTile
     @ObservedObject var host: ModuleHost
@@ -518,7 +501,7 @@ struct DashboardTileView: View {
         .onContinuousHover { phase in
             switch phase {
             // The disk's tile opens nothing: it takes the pointer only to move the window, and does not lift.
-            case let .active(location) where size.width > 0 && !isHidden && design.trackPointer && tile.opens:
+            case let .active(location) where size.width > 0 && !isHidden && tile.opens:
                 let step = 10.0
                 let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
                 if next != lastStep { lastStep = next; onPointer(next) }
@@ -571,29 +554,23 @@ final class WindowMoveCheck {
     }
 }
 
-/// A tile's ground on the dashboard, in the layer under the faces. A flat tile casts its shadow from this plain rounded shape, not from
-/// its whole content (which was recomputed on every frame the tile moved); a glass tile casts none, as it would show inside the glass.
+/// A tile's ground on the dashboard, in the layer under the faces. It casts its shadow from this plain rounded shape, not from its whole
+/// content (which was recomputed on every frame the tile moved).
 struct TileGround: View {
     let tint: TileTint
     let lifted: Bool
-    /// The pointer is over the tile. A glass ground darkens its own tint, inside the glass, so the shade is the glass's own shape.
-    var hovering = false
     /// The tile is loading: its ground brightens and dims (`TileBackdrop.loading`).
     var loading = false
     @Environment(\.design) private var design
 
     var body: some View {
-        if design.glass {
-            TileBackdrop(tint: tint, darkened: hovering && design.hoverShade, loading: loading)
-        } else {
-            TileBackdrop(tint: tint, loading: loading)
-                .background {
-                    LabFill(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), color: design.palette(tint).base,
-                            fill: design.fill(.tile(tint)))
-                        .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
-                }
-                .animation(design.liftAnimation, value: lifted)
-        }
+        TileBackdrop(tint: tint, loading: loading)
+            .background {
+                LabFill(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), color: design.palette(tint).base,
+                        fill: design.fill(.tile(tint)))
+                    .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
+            }
+            .animation(Theme.hover, value: lifted)
     }
 }
 
@@ -605,18 +582,17 @@ private struct DashboardGround: View {
     @ObservedObject var storage: StorageOverview
     let tint: TileTint
     let lifted: Bool
-    let hovering: Bool
 
     var body: some View {
         switch destination {
         case let .module(id):
             if let handle = host.handle(for: id) {
-                ModuleGround(handle: handle, tint: tint, lifted: lifted, hovering: hovering)
+                ModuleGround(handle: handle, tint: tint, lifted: lifted)
             } else {
-                TileGround(tint: tint, lifted: lifted, hovering: hovering)
+                TileGround(tint: tint, lifted: lifted)
             }
-        case .storage: TileGround(tint: tint, lifted: lifted, hovering: hovering, loading: !storage.isLoaded)
-        case .settings, .home: TileGround(tint: tint, lifted: lifted, hovering: hovering)
+        case .storage: TileGround(tint: tint, lifted: lifted, loading: !storage.isLoaded)
+        case .settings, .home: TileGround(tint: tint, lifted: lifted)
         }
     }
 }
@@ -625,13 +601,12 @@ private struct ModuleGround: View {
     @ObservedObject var handle: ModuleHandle
     let tint: TileTint
     let lifted: Bool
-    let hovering: Bool
 
-    var body: some View { TileGround(tint: tint, lifted: lifted, hovering: hovering, loading: TileInfo(handle).loading) }
+    var body: some View { TileGround(tint: tint, lifted: lifted, loading: TileInfo(handle).loading) }
 }
 
-/// Moves a tile's ground and face alike: in with the window one after another, out in reverse order, to its place, lifted and leaning
-/// (or, flat, tilted) under the pointer, and hidden while the zoom stands in for it.
+/// Moves a tile's ground and face alike: in with the window one after another, out in reverse order, to its place, lifted and tilted
+/// under the pointer, and hidden while the zoom stands in for it.
 struct TilePlacement: ViewModifier {
     let shown: Bool
     let closing: Bool
@@ -640,38 +615,31 @@ struct TilePlacement: ViewModifier {
     let frame: CGRect
     let lifted: Bool
     let lean: UnitPoint
-    let turns: Bool
-    /// Lifted and leaning as a scale and an offset of what is drawn, at its resting size and place: a face, whose text and blocks must
-    /// not be laid out again on every frame. Its glass ground keeps being laid out (see below).
+    /// Lifted as a scale of what is drawn, at its resting size: a face, whose text and blocks must not be laid out again on every
+    /// frame. Its ground keeps being laid out (see below).
     var liftsByTransform = false
     let reduceMotion: Bool
-    let liftAnimation: Animation
-    let leanAnimation: Animation
     let hidden: Bool
 
-    /// The lift and the lean are laid out (the tile's size and place worked out again on every frame), not drawn as a scale and an
-    /// offset: glass moved by those effects followed on its own timing, and the darkened color inside a hovered tile's glass showed
-    /// out of line with the glass's edge while the tile lifted.
-    /// Coming in and leaving is laid out too, not a scale effect: a tile's glass ground (AppKit) followed a scale effect on its own
-    /// timing, and while the tiles came in (when the charts load) a ghost of each ground showed beside its face.
+    /// The tilt following the pointer.
+    static let leanAnimation = Animation.interactiveSpring(duration: 0.25)
+
+    /// A ground's lift, and every tile's coming in and leaving, are laid out (the tile's size worked out again on every frame), not
+    /// drawn as a scale effect. They were laid out for the glass grounds, which followed a scale effect on their own timing.
     func body(content: Content) -> some View {
         let lift: CGFloat = lifted ? 1.018 : 1
         let grow: CGFloat = (liftsByTransform ? 1 : lift) * (shown || reduceMotion ? 1 : 0.86)
-        let leanOffset = turns ? CGSize.zero : CGSize(width: (lean.x - 0.5) * 4, height: (lean.y - 0.5) * 4)
-        let laidOutLean = liftsByTransform ? CGSize.zero : leanOffset
         content
             .modifier(TileSize(size: CGSize(width: frame.width * grow, height: frame.height * grow)))
-            .animation(liftAnimation, value: lifted)
+            .animation(Theme.hover, value: lifted)
             .scaleEffect(liftsByTransform ? lift : 1)
-            .animation(liftAnimation, value: lifted)
-            .offset(liftsByTransform ? leanOffset : .zero)
-            .animation(leanAnimation, value: lean)
-            .tilted(lean, active: turns)
+            .animation(Theme.hover, value: lifted)
+            .tilted(lean)
             .opacity(shown ? 1 : 0)
             .animation(closing ? Theme.depopulate.delay(Double(count - 1 - index) * Theme.depopulateStagger)
                                : Theme.layout.delay(0.12 + Double(index) * Theme.populateStagger), value: shown)
-            .modifier(TileCenter(center: CGPoint(x: frame.midX + laidOutLean.width, y: frame.midY + laidOutLean.height)))
-            .animation(leanAnimation, value: lean)
+            .modifier(TileCenter(center: CGPoint(x: frame.midX, y: frame.midY)))
+            .animation(Self.leanAnimation, value: lean)
             .opacity(hidden ? 0 : 1)
             .transition(.scale(scale: 0.8).combined(with: .opacity))
     }

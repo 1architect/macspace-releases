@@ -3,13 +3,9 @@ import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
-/// A tile's ground: its color, lit faintly from the top left. With Liquid Glass on it is glass with that color inside it (`GlassPane`).
-/// The glass is not interactive: the system's pointer response lags behind the pointer and ignores the tile's tilt and lift, and the
-/// tile answers hover and press itself.
+/// A tile's ground: its color, lit faintly from the top left.
 struct TileBackdrop: View {
     let tint: TileTint
-    /// Under the pointer: a shade inside the glass, over its color, so the shade is part of the glass and moves exactly with it.
-    var darkened = false
     /// The corners: a tile's, growing to the window's as the tile becomes a page.
     var cornerRadius: CGFloat = Theme.tileRadius
     /// The module is reading the Mac: the ground darkens and lifts, again and again (`LoadingGlow`).
@@ -26,68 +22,22 @@ struct TileBackdrop: View {
             }
     }
 
-    @ViewBuilder
     private var ground: some View {
+        // Rounded itself: the tiles are no longer clipped to their shape. Lit by the studio's shading, by default the faint light from
+        // the top left.
         let palette = design.palette(tint)
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        if design.glass {
-            // The color is drawn inside the glass, so it shows whatever the glass picks up behind it. A tile that has become a page
-            // keeps its glass: swapping it for a flat color at the end of the zoom flickered however it was cross-faded, glass and a
-            // flat color never looking alike. The window's own glass gives way under it instead (`MainView`), so a page is still
-            // one layer of glass.
-            let cover = design.isLight ? 0.5 : 0.62
-            let shading = design.lab.shading(.tile(tint))
-            if design.fill(.tile(tint)).map({ $0.kind != .solid }) ?? false || shading != nil {
-                // The Color Lab's gradient or the studio's shading, under clear glass: AppKit's glass takes one color, so they lie
-                // behind it.
-                ZStack {
-                    ShadedFill(shape: shape, color: palette.base, accent: palette.step(3), fill: design.fill(.tile(tint)), shading: shading,
-                               light: design.isLight)
-                        .opacity(cover)
-                    GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
-                              color: .clear, opacity: 0, shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
-                }
-            } else {
-                GlassPane(corners: .radius(cornerRadius), style: design.clearTileGlass ? .clear : .regular,
-                          color: design.fill(.tile(tint))?.average(palette.base) ?? palette.base, opacity: cover,
-                          shade: darkened ? Theme.tileHoverShade * 2 * cover : 0)
-            }
-        } else {
-            // Rounded itself: the tiles are no longer clipped to their shape. Lit by the studio's shading, by default the faint light
-            // from the top left.
-            ShadedFill(shape: shape, color: palette.base, accent: palette.step(3), fill: design.fill(.tile(tint)),
-                       shading: design.shading(.tile(tint)), light: design.isLight)
-        }
+        return ShadedFill(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), color: palette.base, accent: palette.step(3),
+                          fill: design.fill(.tile(tint)), shading: design.shading(.tile(tint)), light: design.isLight)
     }
 }
 
-/// The darkening of glass under the pointer. It lies on top of the glass, in the glass's shape: glass adapts slowly to what it sees
-/// behind it, so anything that changes behind or inside it on hover lingers after the pointer has left.
-struct HoverShade<S: Shape>: View {
-    let shape: S
-    let on: Bool
-    var amount = Theme.highlightDarkening
-
-    var body: some View {
-        shape.fill(.black.opacity(on ? amount : 0))
-            .animation(Theme.highlight, value: on)
-            .allowsHitTesting(false)
-    }
-}
-
-/// A chart element's surface: flat color, or Liquid Glass with that color inside it when glass chart elements are on, whether the
-/// tiles are glass or not. Highlighted, flat color lightens
-/// and glass is shaded.
+/// A chart element's surface: flat color, lightened when highlighted.
 struct Surface<S: Shape>: View, @preconcurrency Animatable {
     let shape: S
     let color: Color
     var highlighted = false
-    /// How much of the color shows, 0...1: the loading pulse, and a block coming in. It thins the color inside the glass. Animated
-    /// frame by frame, so the glass's color follows it.
+    /// How much of the color shows, 0...1: the loading pulse, and a block coming in. Animated frame by frame.
     var strength: Double = 1
-    /// False for an element too small for glass: AppKit's glass keeps a size of its own below about ten points, and a sliver of a
-    /// block drawn as glass spread over its neighbours and past the chart. It gets the color the glass would show, without the glass.
-    var glass = true
     @Environment(\.design) private var design
 
     var animatableData: Double {
@@ -96,81 +46,23 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
     }
 
     var body: some View {
-        if design.glassElements {
-            // On glass tiles, darkened inside the glass, so the shade is the glass's own shape. On flat tiles nothing changes under
-            // the pointer.
-            let dark = highlighted && design.hoverShade && design.glass
-            let base = color
-            let shown = dark ? base.mix(with: .black, by: Theme.highlightDarkening) : base
-            let tinted = ShadedFill(shape: shape, color: shown, accent: shown.mix(with: .white, by: 0.4), fill: design.fill(.chartElements),
-                                    shading: design.shading(.chartElements), light: design.isLight)
-                .opacity(0.7 * strength)
-                .animation(Theme.highlight, value: highlighted)
-            if !glass {
-                tinted
-            } else if let corners = Self.corners(of: shape),
-                      design.fill(.chartElements).map({ $0.kind != .solid }) ?? false || design.shading(.chartElements) != nil {
-                // The Color Lab's gradient, under clear glass: AppKit's glass takes one color, so the gradient lies behind it.
-                ZStack {
-                    tinted
-                    clipped(GlassPane(corners: corners, color: .clear, opacity: 0, shade: dark ? Theme.highlightDarkening * 0.7 : 0))
-                }
-            } else if let corners = Self.corners(of: shape) {
-                clipped(GlassPane(corners: corners, color: design.fill(.chartElements)?.average(base) ?? base, opacity: 0.7 * strength,
-                                  shade: dark ? Theme.highlightDarkening * 0.7 : 0))
-            } else {
-                // A shape AppKit's glass cannot take stays SwiftUI's glass.
-                tinted.glassEffect(.regular, in: shape)
-            }
-        } else {
-            // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
-            ShadedFill(shape: shape, color: color, accent: color.mix(with: .white, by: 0.4), fill: design.fill(.chartElements),
-                       shading: design.shading(.chartElements), light: design.isLight)
-                .overlay { shape.fill(.white.opacity(highlighted ? Self.flatHighlight : 0)) }
-                .animation(Theme.highlight, value: highlighted)
-                .opacity(strength)
-        }
-    }
-
-    /// The glass cut to a shape whose corners differ (a block on the chart's outer corner); any other shape's glass as it is.
-    @ViewBuilder
-    private func clipped(_ glass: GlassPane) -> some View {
-        if let rectangle = shape as? UnevenRoundedRectangle,
-           Set([rectangle.cornerRadii.topLeading, rectangle.cornerRadii.bottomLeading, rectangle.cornerRadii.bottomTrailing,
-                rectangle.cornerRadii.topTrailing]).count > 1 {
-            glass.clipShape(shape)
-        } else {
-            glass
-        }
+        // A light laid over the color, not a brightness filter, which stays on even at 0 and costs an extra pass every frame.
+        ShadedFill(shape: shape, color: color, accent: color.mix(with: .white, by: 0.4), fill: design.fill(.chartElements),
+                   shading: design.shading(.chartElements), light: design.isLight)
+            .overlay { shape.fill(.white.opacity(highlighted ? Self.flatHighlight : 0)) }
+            .animation(Theme.highlight, value: highlighted)
+            .opacity(strength)
     }
 
     /// How much a flat element lightens under the pointer.
     static var flatHighlight: Double { 0.1 }
-
-    /// The corners AppKit's glass gives a shape, or nil for a shape it cannot take.
-    private static func corners(of shape: S) -> GlassPane.Corners? {
-        if let rectangle = shape as? RoundedRectangle { return .radius(rectangle.cornerSize.width) }
-        // AppKit's glass takes one radius: the smallest, and the glass is cut to the shape's larger corners (`clipped`).
-        if let rectangle = shape as? UnevenRoundedRectangle {
-            let radii = rectangle.cornerRadii
-            return .radius(min(radii.topLeading, radii.bottomLeading, radii.bottomTrailing, radii.topTrailing))
-        }
-        if shape is Circle || shape is Capsule { return .round }
-        return nil
-    }
 }
 
 extension View {
-    /// The pointer tilt of a flat tile. Glass tiles get none at all, not a turn of 0°: a 3D effect puts the tile in a projection layer
-    /// even when it does not turn, and glass under it is drawn the expensive way.
-    @ViewBuilder
-    func tilted(_ tilt: UnitPoint, active: Bool) -> some View {
-        if active {
-            rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
-        } else {
-            self
-        }
+    /// The pointer tilt of a tile.
+    func tilted(_ tilt: UnitPoint) -> some View {
+        rotation3DEffect(.degrees((tilt.x - 0.5) * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+            .rotation3DEffect(.degrees((0.5 - tilt.y) * 5), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
     }
 }
 
@@ -458,9 +350,6 @@ struct BlocksView: View {
     @Environment(\.appearsActive) private var appearsActive
     @State private var appeared = false
 
-    /// The narrowest block drawn as glass (`Surface.glass`).
-    static let smallestGlass: CGFloat = 12
-
     /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
     static func sizeParts(_ bytes: UInt64) -> [String] {
         let text = ByteFormat.string(bytes)
@@ -504,8 +393,7 @@ struct BlocksView: View {
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
                         placed(Surface(shape: shape, color: fill, highlighted: hovered == segment.id,
-                                       strength: appeared ? wave(context.date, index) : 0,
-                                       glass: min(rect.width, rect.height) >= Self.smallestGlass),
+                                       strength: appeared ? wave(context.date, index) : 0),
                                index: index, rect: rect)
                     }
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
@@ -536,20 +424,17 @@ struct BlocksView: View {
             .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
     }
 
-    /// Block `index`'s loading pulse: given to the block's surface (glass ignores an opacity) and laid on its name.
+    /// Block `index`'s loading pulse: given to the block's surface and laid on its name.
     private func wave(_ date: Date, _ index: Int) -> Double {
         LoadingWave.opacity(date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion)
     }
 
-    /// What is drawn over a block: its name and size when it is large enough, and on flat blocks an outline when hovered (glass has its
-    /// own edge; an outline would sit inside it).
+    /// What is drawn over a block: its name and size when it is large enough, and an outline when hovered.
     private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, shape: UnevenRoundedRectangle) -> some View {
         ZStack(alignment: .topLeading) {
-            if !design.glassElements {
-                shape
-                    .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
-                    .animation(Theme.highlight, value: hovered)
-            }
+            shape
+                .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+                .animation(Theme.highlight, value: hovered)
             // A name comes and goes as resizing the window gives its block room or takes it: the name and size where they fit (the
             // name on two lines in a tall block rather than cut short), the size alone in a narrow one.
             if labels, rect.width > 46, rect.height > 34 {
@@ -916,5 +801,30 @@ struct AttentionMark: View {
         guard t >= rest else { return 0 }
         let x = (t - rest) / pulse
         return 1 - (1 - x) * (1 - x)
+    }
+}
+
+/// A width or a leading inset laid out again on every frame while it changes, not animated by SwiftUI from where it starts to where it
+/// ends up.
+struct AnimatedLength: ViewModifier, @preconcurrency Animatable {
+    enum Kind {
+        case width
+        case leading
+    }
+
+    var value: CGFloat
+    let kind: Kind
+
+    var animatableData: CGFloat {
+        get { value }
+        set { value = newValue }
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch kind {
+        case .width: content.frame(width: max(value, 0))
+        case .leading: content.padding(.leading, max(value, 0))
+        }
     }
 }

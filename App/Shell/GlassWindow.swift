@@ -27,7 +27,8 @@ struct GlassWindowConfigurator: NSViewRepresentable {
         static let earlierFrameName = "MacSpace.glassWindow"
         static let earlierBand: CGFloat = 8
 
-        var wantsShadow = true {
+        /// Off until the window says otherwise: set up before SwiftUI hands over the value, the shadow showed at once, before the glass.
+        var wantsShadow = false {
             didSet { if wantsShadow != oldValue { showShadow(animated: true) } }
         }
         var radius: CGFloat = Theme.windowRadius {
@@ -269,31 +270,6 @@ enum KeyableWindow {
     }
 }
 
-/// A rounded rectangle that stretches to any size, the way a visual effect view takes its shape (`WindowBlur`).
-enum GlassShape {
-    private static let lock = NSLock()
-    private nonisolated(unsafe) static var masks: [CGFloat: NSImage] = [:]
-
-    /// Its corners are continuous, as the glass's are; a continuous corner bends over about 1.53 times its radius, so the corner part
-    /// of the image is that long. Made once per radius.
-    static func mask(radius: CGFloat) -> NSImage {
-        lock.lock()
-        defer { lock.unlock() }
-        if let made = masks[radius] { return made }
-        let corner = (radius * 1.53).rounded(.up)
-        let side = corner * 2 + 1
-        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-            NSColor.black.setFill()
-            NSBezierPath(cgPath: RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect).cgPath).fill()
-            return true
-        }
-        image.capInsets = NSEdgeInsets(top: corner, left: corner, bottom: corner, right: corner)
-        image.resizingMode = .stretch
-        masks[radius] = image
-        return image
-    }
-}
-
 /// Where the glass window is resized: a band along the inside of the glass's edge, wider at the corners. The glass is the window's
 /// edge, so the band is the window's own: AppKit resizes a borderless window only from a hairline at its edge. It takes the pointer
 /// only inside the band: everywhere else clicks go to the window's content.
@@ -392,91 +368,23 @@ final class ResizeBand: NSView {
     }
 }
 
-/// The glass the tiles sit on. It blurs what is behind the window, and is the window's only edge. Under an open page, whose own glass
-/// covers the whole window, only the edge is drawn.
-///
-/// Under the glass lies a plain blur of what is behind the window (`WindowBlur`). Liquid Glass alone blurs as much as the system's
-/// glass setting asks: set to clear, it hardly blurred at all, and windows behind read straight through the tiles. The blur under it
-/// keeps the window frosted whatever that setting, also under an open page.
+/// The ground the tiles sit on: macOS's own window color in the palette's light or dark (`Design.systemWindowColor`), with a faint
+/// light edge, the window's only edge. Under an open page, which covers the whole window, only the edge is drawn.
 struct GlassBackdrop: View {
     var showsGlass = true
-    /// How far a page has opened over it (the zoom's progress): the glass fades out as the page's glass grows over it, so it is
-    /// already gone when it stops being drawn. Dropped all at once, the page darkened in one frame as it settled.
-    var glassFade: CGFloat = 0
     @Environment(\.design) private var design
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
-        if design.windowBackground {
-            ZStack {
-                if design.windowGlass {
-                    WindowBlur(cornerRadius: Theme.windowRadius, isLight: design.backgroundIsLight)
-                    // The Color Lab's window fill and the studio's shading, over the blur and under the glass.
-                    if design.fill(.window) != nil || design.shading(.window) != nil {
-                        ShadedFill(shape: shape, color: design.fill(.window) == nil ? .clear : design.systemWindowColor, accent: design.action,
-                                   fill: design.fill(.window), shading: design.shading(.window), light: design.backgroundIsLight)
-                    }
-                }
-                if !showsGlass {
-                    Color.clear
-                } else if design.windowGlass {
-                    GlassPane(corners: .radius(Theme.windowRadius), style: .clear)
-                        .modifier(GlassFade(progress: glassFade))
-                } else {
-                    // Measuring switch: a solid window, to see what the full-window glass costs on every frame.
-                    ShadedFill(shape: shape, color: design.systemWindowColor, accent: design.action, fill: design.fill(.window),
-                               shading: design.shading(.window), light: design.backgroundIsLight)
-                }
+        ZStack {
+            if !showsGlass {
+                Color.clear
+            } else {
+                ShadedFill(shape: shape, color: design.systemWindowColor, accent: design.action, fill: design.fill(.window),
+                           shading: design.shading(.window), light: design.isLight)
             }
-            .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
-            .studioPickable(.window, in: shape)
-        } else {
-            // Nothing drawn behind the widgets (Design menu > Window Background); the empty ground still takes the window drag.
-            Color.clear.contentShape(Rectangle())
         }
-    }
-}
-
-/// Fades the window's glass out over the second half of a page's opening, animated with it.
-private struct GlassFade: ViewModifier, @preconcurrency Animatable {
-    var progress: CGFloat
-
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
-    func body(content: Content) -> some View {
-        content.opacity(1 - ZoomMath.ramp(progress, 0.35, 1))
-    }
-}
-
-/// A blur of what is behind the window, in the window's rounded shape: the system's own (`NSVisualEffectView`), whatever the Liquid
-/// Glass setting. With Reduce Transparency, the system draws it solid.
-///
-/// Its look follows the palette, not the system's appearance: under a light system appearance the window's background material laid a
-/// pale grey sheet over the deep tiles. The deep palettes get the dark, smoky material of a heads-up window, which blurs without
-/// whitening; the light palettes a light one.
-struct WindowBlur: NSViewRepresentable {
-    let cornerRadius: CGFloat
-    let isLight: Bool
-
-    final class BlurView: NSVisualEffectView {
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    }
-
-    func makeNSView(context: Context) -> BlurView {
-        let view = BlurView()
-        view.blendingMode = .behindWindow
-        view.state = .active
-        view.maskImage = GlassShape.mask(radius: cornerRadius)
-        return view
-    }
-
-    func updateNSView(_ view: BlurView, context: Context) {
-        let material: NSVisualEffectView.Material = isLight ? .popover : .hudWindow
-        if view.material != material { view.material = material }
-        let appearance: NSAppearance.Name = isLight ? .aqua : .darkAqua
-        if view.appearance?.name != appearance { view.appearance = NSAppearance(named: appearance) }
+        .overlay { shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.5) }
+        .studioPickable(.window, in: shape)
     }
 }

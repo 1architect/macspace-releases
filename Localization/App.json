@@ -539,15 +539,6 @@
   "ヘルパーは承認済みです",
   "보조 프로그램 승인됨"
  ],
- "Hide the sidebar": [
-  "Ocultar a barra lateral",
-  "Masquer la barre latérale",
-  "Ocultar la barra lateral",
-  "Seitenleiste ausblenden",
-  "隐藏边栏",
-  "サイドバーを非表示",
-  "사이드바 가리기"
- ],
  "How often": [
   "Frequência",
   "Fréquence",
@@ -917,15 +908,6 @@
   "ログイン時に開く",
   "로그인 시 열기"
  ],
- "Overview": [
-  "Visão Geral",
-  "Aperçu",
-  "Resumen",
-  "Übersicht",
-  "概览",
-  "概要",
-  "개요"
- ],
  "Permissions": [
   "Permissões",
   "Autorisations",
@@ -1078,15 +1060,6 @@
   "在访达中显示",
   "Finderに表示",
   "Finder에서 보기"
- ],
- "Show the sidebar": [
-  "Mostrar a barra lateral",
-  "Afficher la barre latérale",
-  "Mostrar la barra lateral",
-  "Seitenleiste einblenden",
-  "显示边栏",
-  "サイドバーを表示",
-  "사이드바 보기"
  ],
  "The helper couldn't be installed. Try again in Settings > Permissions.": [
   "Não foi possível instalar o auxiliar. Tente de novo em Ajustes > Permissões.",
