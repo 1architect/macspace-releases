@@ -306,19 +306,8 @@ struct PageScrollArea: ViewModifier {
 }
 
 extension EnvironmentValues {
-    /// Room the page leaves under its last row (`PageScrollArea`), for `PageBottomRoom`.
+    /// Room the page leaves under its last row (`PageScrollArea`), for `WidgetForm` and `PageForm`.
     @Entry var pageBottomRoom: CGFloat = 0
-}
-
-/// The room under a page's last row, so it can scroll clear of the fade and the main action. Content, not the scroll view's bottom
-/// margin: macOS keeps a band over a scroll view's margin that takes the clicks, and the rows that scrolled into it, just above the
-/// fade, could not be clicked. Goes last in each page's form.
-struct PageBottomRoom: View {
-    @Environment(\.pageBottomRoom) private var room
-
-    var body: some View {
-        Section {} footer: { Color.clear.frame(height: max(room - 20, 0)) }
-    }
 }
 
 /// The page's hero: the tile's blocks grown large, each named, with every part listed underneath (small blocks have no room for

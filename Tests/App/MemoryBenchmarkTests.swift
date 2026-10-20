@@ -105,4 +105,26 @@ final class MemoryBenchmarkTests: XCTestCase {
         }
         _ = canvas
     }
+
+    /// A module page of 263 rows (`WidgetForm`), each with a subtitle, a pill and a size: what opening it adds.
+    func testLongModulePageMemory() async throws {
+        guard ProcessInfo.processInfo.environment["MACSPACE_MEMORY_BENCHMARK"] != nil else { throw XCTSkip("Opt-in: MACSPACE_MEMORY_BENCHMARK") }
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.regular)
+        GlyphCache.apply()
+        let canvas = NSWindow(contentRect: NSRect(x: 200, y: 150, width: 716, height: 540), styleMask: [.borderless], backing: .buffered, defer: false)
+        canvas.contentView = NSHostingView(rootView: Color.clear)
+        canvas.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+        try await Task.sleep(for: .seconds(3))
+        Self.report("empty window")
+        let rows = (0..<263).map { Row(id: "row\($0)", title: "Cache \($0)", subtitle: "\($0) items", trailing: "\($0),5 MB", badges: [Badge("In use", .info)]) }
+        let widgets = [ScreenWidget.list(ListWidget(id: "list", title: "Caches", rows: rows))]
+        canvas.contentView = NSHostingView(rootView: WidgetForm(widgets: widgets, handler: { _, _, _, _ in nil }) { EmptyView() })
+        for second in [2, 10] {
+            try await Task.sleep(for: .seconds(second == 2 ? 2 : 8))
+            Self.report("263 module rows at \(second) s")
+        }
+        _ = canvas
+    }
 }

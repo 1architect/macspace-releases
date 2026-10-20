@@ -4,9 +4,8 @@ import SwiftUI
 
 /// One page, in this order: General (with the look, and a row opening the permissions the active modules need), Updates, Cleanup
 /// (automatic cleanup and its history), Notifications, the module switches, the options and background tasks of each module that
-/// has any, and last the macOS release. A system grouped form, as the module pages are: it keeps its look whatever the palette and glass settings. Only the rows
-/// whose title is not enough have an (i) (`InfoButton`). Sections are built directly in this view: wrapping them in
-/// custom views inside a ForEach made them render inside the previous card.
+/// has any, and last the macOS release. Grouped rows drawn by the page, as the module pages are (`PageForm`): it keeps its look
+/// whatever the palette and glass settings. Only the rows whose title is not enough have an (i) (`InfoButton`).
 struct SettingsView: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject var updates: UpdateController
@@ -21,19 +20,19 @@ struct SettingsView: View {
 
     var body: some View {
         let _ = tick
-        Form {
+        PageForm {
             GeneralSettingsSection(host: host)
             UpdatesSettingsSection(updates: updates)
             CleanupSection(cleaner: host.autoCleaner, host: host)
             NotificationSettingsSection()
-            Section("Modules") {
+            PageSection("Modules") {
                 ForEach(host.handles) { handle in
                     ModuleToggleRow(host: host, handle: handle)
                 }
                 if host.handles.isEmpty { Text("No modules were found.").foregroundStyle(.secondary) }
             }
             ForEach(moduleOptions) { handle in
-                Section(handle.manifest.name) {
+                PageSection(verbatim: handle.manifest.name) {
                     ForEach(handle.manifest.options) { option in
                         optionRow(handle, option)
                     }
@@ -48,7 +47,7 @@ struct SettingsView: View {
                 .rowCascade()
             }
             if !host.problems.isEmpty {
-                Section("Modules that could not be used") {
+                PageSection("Modules that could not be used") {
                     ForEach(host.problems) { problem in
                         LabeledContent {
                             Image(systemName: "exclamationmark.triangle").foregroundStyle(DesignSettings.shared.design.action)
@@ -59,11 +58,8 @@ struct SettingsView: View {
                 }
             }
             MacOSReleaseSection()
-            PageBottomRoom()
         }
         .animation(Theme.layout, value: moduleOptions.map(\.id))
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.
@@ -98,8 +94,8 @@ struct SettingsView: View {
             Toggle(option.title, isOn: Binding(get: { options.bool(option.id) },
                                                set: { value in withAnimation(Theme.layout) { host.setOption(.bool(value), option.id, module: handle.id); tick += 1 } }))
         case let .choice(choices, _):
-            Picker(option.title, selection: Binding(get: { options.string(option.id) },
-                                                    set: { host.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
+            PagePicker(verbatim: option.title, selection: Binding(get: { options.string(option.id) },
+                                                                  set: { host.setOption(.string($0), option.id, module: handle.id); tick += 1 })) {
                 // Only the choices whose app is installed (`OptionChoice.apps`).
                 ForEach(choices.filter(SettingsStore.isOffered), id: \.id) { Text($0.title).tag($0.id) }
             }
@@ -129,17 +125,14 @@ struct PermissionsPage: View {
     var body: some View {
         let _ = tick
         let permissions = Self.permissions(host)
-        Form {
-            Section {
+        PageForm {
+            PageSection {
                 if permissions.isEmpty { Text("No module needs a permission.").foregroundStyle(.secondary) }
                 ForEach(permissions, id: \.permission) { entry in
                     PermissionRow(permission: entry.permission, status: host.permissions.status(of: entry.permission)).rowCascade()
                 }
             }
-            PageBottomRoom()
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.

@@ -83,24 +83,12 @@ struct WidgetForm<Top: View>: View {
                                 .geometryGroup()
                                 .modifier(positions.item(widget.id + ":header"))
                         }
-                        VStack(spacing: 0) {
+                        // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
+                        // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
+                        LazyVStack(spacing: 0) {
                             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                                 row.view
-                                    .frame(maxWidth: .infinity, minHeight: 18, alignment: .leading)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 10)
-                                    .background {
-                                        UnevenRoundedRectangle(topLeadingRadius: index == 0 ? 10 : 0,
-                                                               bottomLeadingRadius: index == rows.count - 1 ? 10 : 0,
-                                                               bottomTrailingRadius: index == rows.count - 1 ? 10 : 0,
-                                                               topTrailingRadius: index == 0 ? 10 : 0)
-                                            .fill(.primary.opacity(0.045))
-                                    }
-                                    .overlay(alignment: .top) {
-                                        if index > 0 {
-                                            Rectangle().fill(.primary.opacity(0.07)).frame(height: 0.5).padding(.horizontal, 10)
-                                        }
-                                    }
+                                    .modifier(PageRowCell(index: index, count: rows.count))
                                     // Resolve parent placement once for the whole cell, before the cascade. Text's own content
                                     // transactions must not animate/cancel its position separately from the shade and controls.
                                     .geometryGroup()
@@ -196,12 +184,47 @@ struct WidgetForm<Top: View>: View {
     static var sectionPrefix: String { "group-section:" }
 }
 
+/// A row of a grouped list drawn by the page itself (`WidgetForm`, `PageForm`): its padding, its shade, rounded at the group's
+/// ends, and the separator above it, so all of them leave with the row's text during a cascade.
+struct PageRowCell: ViewModifier {
+    let index: Int
+    let count: Int
+    /// Settings' rows, which hold menus: 38 points tall, as a grouped form's rows, whether they hold text, a switch or a 24-point
+    /// menu (**measured**). A module row keeps 10 points above and below what it holds.
+    var fitsControls = false
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: .infinity, minHeight: fitsControls ? 26 : 18, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, fitsControls ? 6 : 10)
+            .background {
+                UnevenRoundedRectangle(topLeadingRadius: index == 0 ? 10 : 0,
+                                       bottomLeadingRadius: index == count - 1 ? 10 : 0,
+                                       bottomTrailingRadius: index == count - 1 ? 10 : 0,
+                                       topTrailingRadius: index == 0 ? 10 : 0)
+                    .fill(.primary.opacity(0.045))
+            }
+            .overlay(alignment: .top) {
+                if index > 0 {
+                    Rectangle().fill(.primary.opacity(0.07)).frame(height: 0.5).padding(.horizontal, 10)
+                }
+            }
+    }
+}
+
 /// Shared ordering for the legend, headers and rows; departure runs from the bottom up.
 extension View {
-    /// A row or section that comes and goes outside a module's list (Settings, its pages): the same arrival and departure as a
-    /// module page's rows (`PageCascade`). The change that adds or removes it must be animated (`Theme.layout`). Settings drew its
-    /// rows in and out at once while every module page cascaded them (2026-10-20).
-    func rowCascade() -> some View { transition(PageCascade.transition(index: 0, count: 1)) }
+    /// A row or section of a `PageForm` (Settings, its pages) that comes and goes: the same arrival and departure as a module
+    /// page's rows (`PageCascade`), given by the list to the whole row it draws, shade and AppKit controls included. The change that
+    /// adds or removes it must be animated (`Theme.layout`). Settings drew its rows in and out at once while every module page
+    /// cascaded them (2026-10-20).
+    func rowCascade() -> some View { containerValue(\.rowCascades, true) }
+}
+
+extension ContainerValues {
+    /// Marked by `rowCascade()`.
+    @Entry var rowCascades = false
 }
 
 enum PageCascade {

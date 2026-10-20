@@ -189,7 +189,9 @@ Never a list: no bullets, dashes or numbering, in the text or in `steps`; the ap
 
 **Rows come and go the same everywhere.** A row or section added or removed, on a module's page or in Settings, arrives and
 leaves with the page's cascade (`PageCascade`, `rowCascade()` in Settings), in an animated change. Settings is not a module
-page, so a new Settings row needs it explicitly.
+page, so a new Settings row needs it explicitly. Settings' pages are a `PageForm` of `PageSection`s, never a system `Form`: a
+form fades the switches and menus of a row on its own and leaves them in place while the row slides, and it builds every row of
+a long list at once.
 
 **One verb.** Every action that frees space is titled Free, on buttons and in confirmations ("Free", "Free 120 MB", "Free
 selected"). Not Delete, Clean, Remove or "Free all". An action that cannot be undone keeps the "Cannot be undone" pill.

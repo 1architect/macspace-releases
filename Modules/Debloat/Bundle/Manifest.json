@@ -26,7 +26,7 @@
   "backgroundTasks": [
     {
       "id": "watch",
-      "title": "Keep features disabled",
+      "title": "Disable automatically if changed",
       "detail": "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on.",
       "defaultEnabled": true,
       "intervalSeconds": 900

@@ -41,6 +41,7 @@
 "Disable %lld features again" = "再次停用 %lld 项功能";
 "Disable %lld features?" = "停用 %lld 项功能？";
 "Disable all" = "全部停用";
+"Disable automatically if changed" = "如有更改，自动停用";
 "Disabled" = "已停用";
 "Disabling" = "正在停用";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "停用功能时，会要求你在“系统设置 > 通用 > 设备管理”中批准描述文件。";
@@ -60,7 +61,6 @@
 "Install the helper in Settings" = "在设置中安装辅助程序";
 "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "无法移除其描述文件（%@）；请在“系统设置 > 通用 > 设备管理”中移除“%@”。";
 "Its profile was removed." = "其描述文件已移除。";
-"Keep features disabled" = "保持功能停用";
 "Log out to apply." = "注销后生效。";
 "MacSpace disabled it again, most recently %@." = "MacSpace 已再次停用，最近一次为 %@。";
 "MacSpace disabled them again, most recently %@." = "MacSpace 已再次停用这些功能，最近一次为 %@。";

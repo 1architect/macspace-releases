@@ -41,6 +41,7 @@
 "Disable %lld features again" = "기능 %lld개 다시 끄기";
 "Disable %lld features?" = "기능 %lld개를 끌까요?";
 "Disable all" = "모두 끄기";
+"Disable automatically if changed" = "변경되면 자동으로 끄기";
 "Disabled" = "꺼짐";
 "Disabling" = "끄는 중";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "기능을 끄면 시스템 설정 > 일반 > 기기 관리에서 프로파일 승인을 요청합니다.";
@@ -60,7 +61,6 @@
 "Install the helper in Settings" = "설정에서 보조 프로그램 설치";
 "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "프로파일을 제거하지 못했습니다(%@). 시스템 설정 > 일반 > 기기 관리에서 \"%@\"를 제거하세요.";
 "Its profile was removed." = "프로파일이 제거되었습니다.";
-"Keep features disabled" = "기능 꺼짐 유지";
 "Log out to apply." = "로그아웃하면 적용됩니다.";
 "MacSpace disabled it again, most recently %@." = "MacSpace가 다시 껐습니다. 최근: %@.";
 "MacSpace disabled them again, most recently %@." = "MacSpace가 해당 기능을 다시 껐습니다. 최근: %@.";

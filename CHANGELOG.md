@@ -21,9 +21,16 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - Tile captions keep their exact size while a tile moves, without keeping a font for every size they pass through.
 - When its window is closed, MacSpace lets go of the window's pages at once while it keeps running in the menu bar or in the
   background, and builds them again when the window is next opened, which then opens as it does at launch.
+- Long lists no longer cost memory for rows you cannot see: a module's page and Settings make only the rows on screen. Opening
+  Settings › Recent cleanups took about 170 MB with 260 cleanups on our Mac, and a module page of 260 rows as much; both now take
+  about 11 to 14 MB.
+- Recent cleanups keeps the last 100 cleanups one by one; older ones still count in Freed in total.
+- Debloat's background task is now called "Disable automatically if changed".
 
 ### Fixed
 
+- In Settings, a row's switch and menu now arrive and leave with the rest of their row when the row cascades in or out, instead of
+  fading in place on a timing of their own.
 - The window's shadow appears once the window has grown in, instead of showing at its full size while the window is still opening.
 
 ## [1.1.3] - 2026-10-19

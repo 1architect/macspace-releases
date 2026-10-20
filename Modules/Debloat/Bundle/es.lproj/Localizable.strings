@@ -41,6 +41,7 @@
 "Disable %lld features again" = "Volver a desactivar %lld funciones";
 "Disable %lld features?" = "¿Desactivar %lld funciones?";
 "Disable all" = "Desactivar todo";
+"Disable automatically if changed" = "Desactivar automáticamente si cambia";
 "Disabled" = "Desactivado";
 "Disabling" = "Desactivando";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "Desactivar una te pide aprobar un perfil en Ajustes del Sistema > General > Gestión de dispositivos.";
@@ -60,7 +61,6 @@
 "Install the helper in Settings" = "Instala el asistente en Ajustes";
 "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "No se ha podido eliminar su perfil (%@); elimina «%@» en Ajustes del Sistema > General > Gestión de dispositivos.";
 "Its profile was removed." = "Se ha eliminado su perfil.";
-"Keep features disabled" = "Mantener las funciones desactivadas";
 "Log out to apply." = "Cierra sesión para aplicarlo.";
 "MacSpace disabled it again, most recently %@." = "MacSpace la volvió a desactivar, la última vez %@.";
 "MacSpace disabled them again, most recently %@." = "MacSpace las volvió a desactivar, la última vez %@.";

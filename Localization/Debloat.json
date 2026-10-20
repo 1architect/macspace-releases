@@ -755,14 +755,14 @@
   "macOSが無効な機能を再びオンにし、MacSpaceが再度無効にすると通知します。",
   "macOS가 꺼진 기능을 다시 켜고 MacSpace가 다시 끄면 알림을 표시합니다."
  ],
- "Keep features disabled": [
-  "Manter recursos desativados",
-  "Garder les fonctions désactivées",
-  "Mantener las funciones desactivadas",
-  "Funktionen deaktiviert halten",
-  "保持功能停用",
-  "機能を無効に保つ",
-  "기능 꺼짐 유지"
+ "Disable automatically if changed": [
+  "Desativar automaticamente se houver alteração",
+  "Désactiver automatiquement en cas de changement",
+  "Desactivar automáticamente si cambia",
+  "Automatisch deaktivieren, wenn geändert",
+  "如有更改，自动停用",
+  "変更されたら自動的に無効にする",
+  "변경되면 자동으로 끄기"
  ],
  "Checks every 15 minutes while MacSpace is open, and disables again any feature macOS switched back on.": [
   "Verifica a cada 15 minutos enquanto o MacSpace está aberto e desativa de novo qualquer recurso que o macOS tenha reativado.",

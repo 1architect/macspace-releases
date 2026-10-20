@@ -990,6 +990,15 @@ Issue 11 asked why MacSpace showed over 200 MB in Activity Monitor. Measured on 
 - **ColorSync conversion tables** (about 10 MB of inverted tone curves) are Core Animation matching colors to the display: layer
   colors, glyph colors and backdrops, one transform kept per pair of color spaces and its variants (**measured**, allocation stacks).
   MacSpace's own colors are almost all sRGB, so there is nothing to cut short of changing colors.
+- **Long lists.** Every row of a list was built and kept, on screen or not: Settings' Recent cleanups (a grouped `Form`, 263
+  cleanups) took 168 MB, 13 to 181 MB footprint; a module page of 263 rows (`WidgetForm`, rows in a `VStack`) 173 MB, 13 to 186 MB.
+  A plain form of 263 rows of three texts took 65 MB, the same rows in a lazy stack 7 MB (**measured**, `MemoryBenchmarkTests`,
+  2026-10-20). Rows are now in lazy stacks on both (11 and 14 MB), and the history keeps its last 100 cleanups.
+- **Settings' own rows.** A grouped `Form` draws the AppKit parts of its rows itself: the switch, the menu's bezel and focus ring,
+  the row's shade and separator. When a row came or went with the cascade (`rowCascade`), they faded over the form's own 0.4 s and
+  never moved, while the row's text slid 14 points in 0.22 s; neither `geometryGroup` nor `compositingGroup` on the row changed it.
+  The same controls in rows the page draws itself slide and fade with the row (**measured**, frame by frame from the views'
+  frames and layer opacity, 2026-10-20). Settings now draws its rows as module pages do (`PageForm`).
 - **Left as is:** pages the scans leave partly used (10 to 17 MB the allocator keeps, **measured**): no call releases them, only
   scanning out of process would; and no graphics memory showed in eight minutes of use with the current build (**measured**).
 

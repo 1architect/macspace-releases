@@ -42,8 +42,9 @@ public final class CleanupHistory: @unchecked Sendable {
     public static let didChange = Notification.Name("com.macspace.cleanupHistoryDidChange")
     public static let defaultURL = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/MacSpace/cleanup-history.json")
-    /// Entries kept one by one; older ones only count toward the total.
-    static let keptEntries = 500
+    /// Entries kept one by one; older ones only count toward the total. Settings lists them all, and 263 had made its page take
+    /// 168 MB (2026-10-20); a history kept before the limit is trimmed when it is read.
+    static let keptEntries = 100
     /// Below this, a cleanup is the system's own churn, not worth an entry.
     public static let minimumBytes: UInt64 = 1_000_000
 
@@ -56,6 +57,17 @@ public final class CleanupHistory: @unchecked Sendable {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         store = (try? Data(contentsOf: url)).flatMap { try? decoder.decode(Store.self, from: $0) } ?? Store()
+        if Self.trim(&store) { save(store) }
+    }
+
+    /// Drops the oldest entries past `keptEntries`, adding what they freed to the total. True when it dropped any.
+    @discardableResult
+    static func trim(_ store: inout Store) -> Bool {
+        guard store.entries.count > keptEntries else { return false }
+        let dropped = store.entries.prefix(store.entries.count - keptEntries)
+        store.trimmedBytes += dropped.reduce(0) { $0 + $1.freedBytes }
+        store.entries.removeFirst(dropped.count)
+        return true
     }
 
     /// Newest first.
@@ -74,11 +86,7 @@ public final class CleanupHistory: @unchecked Sendable {
         guard freedBytes >= Self.minimumBytes else { return }
         lock.lock()
         store.entries.append(Entry(date: date, moduleID: moduleID, moduleName: moduleName, freedBytes: freedBytes, trigger: trigger, summary: summary))
-        if store.entries.count > Self.keptEntries {
-            let dropped = store.entries.prefix(store.entries.count - Self.keptEntries)
-            store.trimmedBytes += dropped.reduce(0) { $0 + $1.freedBytes }
-            store.entries.removeFirst(dropped.count)
-        }
+        Self.trim(&store)
         let snapshot = store
         lock.unlock()
         save(snapshot)

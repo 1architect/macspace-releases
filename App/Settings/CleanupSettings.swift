@@ -11,12 +11,12 @@ struct CleanupSection: View {
     @State private var lifetime = CleanupHistory.shared.lifetimeBytes
 
     var body: some View {
-        Section("Cleanup") {
+        PageSection("Cleanup") {
             Toggle(isOn: $cleaner.isEnabled.animation(Theme.layout)) {
                 InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete."))
             }
             if cleaner.isEnabled {
-                Picker("How often", selection: $cleaner.frequency) {
+                PagePicker("How often", selection: $cleaner.frequency) {
                     ForEach(AutoCleaner.Frequency.allCases) { Text($0.title).tag($0) }
                 }
                 .rowCascade()
@@ -61,14 +61,14 @@ struct CleanupHistoryPage: View {
     @Environment(\.design) private var design
 
     var body: some View {
-        Form {
+        PageForm {
             // The page's title names the list; the total is a figure of its own, not part of a title (Interface rules).
             if lifetime > 0 {
-                Section {
+                PageSection {
                     LabeledContent("Freed in total") { ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit() }
                 }
             }
-            Section {
+            PageSection {
                 if entries.isEmpty {
                     Text("Nothing cleaned yet.").foregroundStyle(.secondary).rowCascade()
                 }
@@ -83,10 +83,7 @@ struct CleanupHistoryPage: View {
                     .rowCascade()
                 }
             }
-            PageBottomRoom()
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
         .modifier(PageScrollArea(hasFooter: false))
         .environment(\.colorScheme, design.colorScheme)
         // Settings is drawn on the slate tile's color.

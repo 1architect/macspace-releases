@@ -538,7 +538,7 @@
     "key" : "Automatic",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:105"
+      "App\/Settings\/CleanupSettings.swift:123"
     ],
     "table" : "App",
     "translations" : {
@@ -595,8 +595,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:259",
-      "App\/Shell\/MainView.swift:284"
+      "App\/Shell\/MainView.swift:262",
+      "App\/Shell\/MainView.swift:287"
     ],
     "table" : "App",
     "translations" : {
@@ -615,7 +615,7 @@
     "key" : "By MacSpace",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:106"
+      "App\/Settings\/CleanupSettings.swift:124"
     ],
     "table" : "App",
     "translations" : {
@@ -634,7 +634,7 @@
     "key" : "By you",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:104"
+      "App\/Settings\/CleanupSettings.swift:122"
     ],
     "table" : "App",
     "translations" : {
@@ -787,7 +787,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:286"
+      "App\/Shell\/MainView.swift:289"
     ],
     "table" : "App",
     "translations" : {
@@ -1057,7 +1057,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:178"
+      "App\/Shell\/MainView.swift:181"
     ],
     "table" : "App",
     "translations" : {
@@ -1153,7 +1153,7 @@
     "kind" : "Label",
     "places" : [
       "App\/Settings\/CleanupSettings.swift:24",
-      "App\/Settings\/CleanupSettings.swift:68"
+      "App\/Settings\/CleanupSettings.swift:75"
     ],
     "table" : "App",
     "translations" : {
@@ -1172,7 +1172,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:176"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "App",
     "translations" : {
@@ -2051,7 +2051,7 @@
     "key" : "Nothing cleaned yet.",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/CleanupSettings.swift:73"
+      "App\/Settings\/CleanupSettings.swift:84"
     ],
     "table" : "App",
     "translations" : {
@@ -2608,8 +2608,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:244",
-      "App\/Shell\/MainView.swift:285"
+      "App\/Shell\/MainView.swift:247",
+      "App\/Shell\/MainView.swift:288"
     ],
     "table" : "App",
     "translations" : {
@@ -2628,7 +2628,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:243"
+      "App\/Shell\/MainView.swift:246"
     ],
     "table" : "App",
     "translations" : {
@@ -2647,7 +2647,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:242"
+      "App\/Shell\/MainView.swift:245"
     ],
     "table" : "App",
     "translations" : {
@@ -2705,8 +2705,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:548",
-      "App\/Renderer\/WidgetView.swift:549"
+      "App\/Renderer\/WidgetView.swift:560",
+      "App\/Renderer\/WidgetView.swift:561"
     ],
     "table" : "App",
     "translations" : {
@@ -3457,7 +3457,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:47",
-      "App\/Shell\/MainView.swift:176"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "App",
     "translations" : {
@@ -4257,6 +4257,25 @@
     }
   },
   {
+    "id" : "Debloat|Disable automatically if changed",
+    "key" : "Disable automatically if changed",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "Debloat",
+    "translations" : {
+      "de" : "Automatisch deaktivieren, wenn geändert",
+      "en" : "Disable automatically if changed",
+      "es" : "Desactivar automáticamente si cambia",
+      "fr" : "Désactiver automatiquement en cas de changement",
+      "ja" : "変更されたら自動的に無効にする",
+      "ko" : "변경되면 자동으로 끄기",
+      "pt-BR" : "Desativar automaticamente se houver alteração",
+      "zh-Hans" : "如有更改，自动停用"
+    }
+  },
+  {
     "id" : "Debloat|Disabled",
     "key" : "Disabled",
     "kind" : "Result message",
@@ -4615,25 +4634,6 @@
       "ko" : "프로파일이 제거되었습니다.",
       "pt-BR" : "O perfil foi removido.",
       "zh-Hans" : "其描述文件已移除。"
-    }
-  },
-  {
-    "id" : "Debloat|Keep features disabled",
-    "key" : "Keep features disabled",
-    "kind" : "Other",
-    "places" : [
-
-    ],
-    "table" : "Debloat",
-    "translations" : {
-      "de" : "Funktionen deaktiviert halten",
-      "en" : "Keep features disabled",
-      "es" : "Mantener las funciones desactivadas",
-      "fr" : "Garder les fonctions désactivées",
-      "ja" : "機能を無効に保つ",
-      "ko" : "기능 꺼짐 유지",
-      "pt-BR" : "Manter recursos desativados",
-      "zh-Hans" : "保持功能停用"
     }
   },
   {
@@ -5981,7 +5981,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:158",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:163",
-      "App\/Shell\/MainView.swift:179"
+      "App\/Shell\/MainView.swift:182"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {

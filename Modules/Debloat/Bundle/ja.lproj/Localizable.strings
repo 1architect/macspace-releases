@@ -41,6 +41,7 @@
 "Disable %lld features again" = "%lld個の機能を再び無効にする";
 "Disable %lld features?" = "%lld個の機能を無効にしますか？";
 "Disable all" = "すべて無効にする";
+"Disable automatically if changed" = "変更されたら自動的に無効にする";
 "Disabled" = "無効";
 "Disabling" = "無効にしています";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "無効にすると「システム設定 > 一般 > デバイス管理」でプロファイルの承認を求められます。";
@@ -60,7 +61,6 @@
 "Install the helper in Settings" = "設定でヘルパーをインストール";
 "Its profile could not be removed (%@); remove \"%@\" in System Settings > General > Device Management." = "プロファイルを削除できませんでした（%@）。「システム設定 > 一般 > デバイス管理」で「%@」を削除してください。";
 "Its profile was removed." = "プロファイルを削除しました。";
-"Keep features disabled" = "機能を無効に保つ";
 "Log out to apply." = "ログアウトすると適用されます。";
 "MacSpace disabled it again, most recently %@." = "MacSpaceが再び無効にしました。直近：%@。";
 "MacSpace disabled them again, most recently %@." = "MacSpaceがこれらを再び無効にしました。直近：%@。";

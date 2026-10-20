@@ -57,15 +57,15 @@ struct GeneralSettingsSection: View {
     @State private var loginError: String?
 
     var body: some View {
-        Section("General") {
-            Picker("Theme", selection: Binding(get: { design.theme }, set: { design.theme = $0 })) {
+        PageSection("General") {
+            PagePicker("Theme", selection: Binding(get: { design.theme }, set: { design.theme = $0 })) {
                 ForEach(PaletteScheme.themes) { Text($0.themeTitle).tag($0) }
             }
-            Picker("Appearance", selection: $design.appearanceMode) {
+            PagePicker("Appearance", selection: $design.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
             }
             SettingsLinkRow(title: String(localized: "Permissions"), note: permissionsNote) { host.settingsPage = .permissions }
-            Picker(selection: Binding(get: { closedWindow }, set: { closedWindow = $0; GeneralSettings.setClosedWindow($0) })) {
+            PagePicker(selection: Binding(get: { closedWindow }, set: { closedWindow = $0; GeneralSettings.setClosedWindow($0) })) {
                 ForEach(GeneralSettings.ClosedWindow.allCases) { Text($0.title).tag($0) }
             } label: {
                 InfoTitle(title: String(localized: "When the window closes"), info: String(localized: "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications."))
@@ -103,7 +103,7 @@ struct UpdatesSettingsSection: View {
     private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
 
     var body: some View {
-        Section("Updates") {
+        PageSection("Updates") {
             if updates.isAvailable {
                 // Check Now is on the automatic checks' row, after its title: the switch holds the row's right edge
                 // (`RowFlagPlacement`).
@@ -125,7 +125,7 @@ struct UpdatesSettingsSection: View {
 /// The release the Mac runs, for reports and debugging, at the end of Settings: selectable, so it can be copied.
 struct MacOSReleaseSection: View {
     var body: some View {
-        Section("System") {
+        PageSection("System") {
             LabeledContent("macOS") {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MacOSRelease.current.description).textSelection(.enabled).monospacedDigit()
@@ -145,7 +145,7 @@ struct NotificationSettingsSection: View {
     var body: some View {
         let _ = tick
         let notifications = AppNotifications.shared
-        Section("Notifications") {
+        PageSection("Notifications") {
             ForEach(AppNotifications.Kind.allCases) { kind in
                 Toggle(kind.title, isOn: Binding(get: { notifications.isOn(kind) }, set: { notifications.set(kind, on: $0); tick += 1 }))
             }
