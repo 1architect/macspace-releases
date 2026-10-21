@@ -27,8 +27,8 @@ enum TargetedSystemDataMeasurements {
         let entries: [CacheEntry]
         if request.actionID == "freeCaches" {
             let selected = Set(Selection.ids(request.parameters["ids"]))
-            entries = CachesPage.entries(snapshot).filter { selected.contains($0.id) }
-        } else { entries = request.actionID == "cleanAll" ? CachesPage.chosen(snapshot) : [] }
+            entries = CachesPage.entries(snapshot).filter { selected.contains($0.id) }.flatMap(\.parts)
+        } else { entries = request.actionID == "cleanAll" ? CachesPage.chosen(snapshot).flatMap(\.parts) : [] }
         var ids = itemIDs(request, snapshot: snapshot)
         ids.formUnion(entries.filter { $0.within == $0.id }.map(\.id))
         if entries.contains(where: { $0.source == .homebrew }) {

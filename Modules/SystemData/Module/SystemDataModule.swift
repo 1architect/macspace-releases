@@ -222,7 +222,7 @@ public struct SystemDataModule: MacSpaceModule {
         func deleted(_ details: [String]) -> Bool { details.contains { $0.hasPrefix("Deleted") } }
         switch entry.source {
         case .app:
-            let details = cleanAppCaches([entry.id], in: snapshot).details
+            let details = cleanAppCaches(entry.parts.map(\.id), in: snapshot).details
             return (deleted(details), details)
         case .web, .system, .appCopy:
             let items = snapshot.report.items.filter { $0.id == entry.id }

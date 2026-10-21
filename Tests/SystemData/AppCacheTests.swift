@@ -403,6 +403,33 @@ final class AppCacheTests: XCTestCase {
         XCTAssertTrue(SystemDataScreenBuilder.leftAlone(snap).isEmpty)
     }
 
+    /// An app's folders in ~/Library/Caches (`CodexBar` and `com.steipete.codexbar`) are one row: sizes and folders together, named
+    /// after the app, and each folder is still taken out of its own item.
+    func testAnAppsFoldersAreOneRow() {
+        func folder(_ name: String, bytes: UInt64) -> (AppCache, SystemDataItem) {
+            var cache = cache(.app(name: "CodexBar", lastOpened: nil), unchangedDays: 45, bytes: bytes)
+            cache.id = "appcache:\(name)"
+            cache.name = name
+            cache.path = "/c/\(name)"
+            let item = SystemDataItem(id: cache.id, title: "App cache: \(name)", kind: .appCache, paths: [cache.path], bytes: bytes, readable: true,
+                                      owners: [], inUse: false, cleanup: SystemDataCleanup(kind: .review, description: "", command: nil), notes: [])
+            return (cache, item)
+        }
+        let plain = folder("CodexBar", bytes: 60_000_000)
+        let identified = folder("com.steipete.codexbar", bytes: 40_000_000)
+        let snap = snapshot([plain.0, identified.0], items: [plain.1, identified.1])
+        let entries = CachesPage.entries(snap, now: now)
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries.first?.title, "CodexBar")
+        XCTAssertEqual(entries.first?.bytes, 100_000_000)
+        XCTAssertEqual(entries.first?.paths, ["/c/CodexBar", "/c/com.steipete.codexbar"])
+        XCTAssertEqual(entries.first?.id, "appcache:CodexBar", "the larger folder's id stands for the row")
+        XCTAssertEqual(entries.first?.parts.map(\.id), ["appcache:CodexBar", "appcache:com.steipete.codexbar"])
+        let claimed = CachesPage.claimed(snap)
+        XCTAssertEqual(claimed["appcache:CodexBar"], 60_000_000)
+        XCTAssertEqual(claimed["appcache:com.steipete.codexbar"], 40_000_000)
+    }
+
     /// Homebrew's old versions are recommended; its downloads are offered on their own, saying they come back.
     func testHomebrewIsTwoDeveloperCaches() {
         var snap = snapshot([])

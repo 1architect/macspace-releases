@@ -52,6 +52,12 @@ struct CacheEntry: Equatable {
     /// It stands for the whole of that item, not only its own size: Homebrew's downloads are its cache folder, whose rest (its
     /// package list) nothing frees, so the folder is not listed again for what is left.
     var wholeItem = false
+    /// For one row standing for several folders of the same app (`merged`): each folder as the scan and the cleaner know it. Empty
+    /// for any other cache.
+    var members: [CacheEntry] = []
+
+    /// The caches this row stands for, one each: itself, or its folders. What measures, counts and frees works on these.
+    var parts: [CacheEntry] { members.isEmpty ? [self] : members }
 
     /// The part it belongs to when it is not recommended.
     var home: Part { source == .developer || source == .homebrew ? .developer : .apps }
@@ -69,14 +75,24 @@ enum CachesPage {
         // listed. Third-party containers are System Settings' Applications, in no block or list of this page, and Other System Files
         // lists macOS's purge of them as one figure, so a container's caches are listed here only.
         let listed = report.appCaches.filter { $0.bytes >= SystemDataScreenBuilder.worthARow && AppCaches.outcome($0, now: now) != .heldBack }
-        // Two folders of one app (Sublime Text's own and `com.sublimetext.4`, an app and its extension) are told apart by their folder
-        // names.
+        // The folders of one app in `~/Library/Caches` (`CodexBar` and `com.steipete.codexbar`) are one row, `merged`. What still shares
+        // a name (an app's container, a folder of another app of the same name) is told apart by its folder name, or, for a folder named
+        // by a bundle identifier, which people do not read, by a number after the app's name.
         var titles: [String: Int] = [:]
-        for cache in listed { titles[cache.title, default: 0] += 1 }
+        var counted: Set<String> = []
+        for cache in listed where cache.container != nil || counted.insert(cache.title).inserted { titles[cache.title, default: 0] += 1 }
+        var folderRows: [String: [CacheEntry]] = [:]
+        var numbered: [String: Int] = [:]
+        func title(_ cache: AppCache) -> String {
+            guard titles[cache.title, default: 0] > 1 else { return cache.title }
+            guard AppNames.looksLikeBundleIdentifier(cache.name) else { return cache.name }
+            numbered[cache.title, default: 1] += 1
+            return "\(cache.title) (\(numbered[cache.title] ?? 2))"
+        }
         for cache in listed {
             let outcome = AppCaches.outcome(cache, now: now)
             let days = AppCaches.unchangedDays(cache, now: now)
-            var entry = CacheEntry(id: cache.id, title: titles[cache.title, default: 0] > 1 ? cache.name : cache.title, bytes: cache.bytes,
+            var entry = CacheEntry(id: cache.id, title: title(cache), bytes: cache.bytes,
                                    paths: [cache.path], source: .app, within: cache.container.map { "container:\($0)" } ?? cache.id)
             if outcome == .suggested {
                 entry.recommended = true
@@ -94,8 +110,9 @@ enum CachesPage {
                 entry.owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name, cache.title]
             }
             if cache.ownerRunning { cache.quittable == false ? inUse(&entry) : open(&entry) }
-            entries.append(entry)
+            if cache.container == nil { folderRows[cache.title, default: []].append(entry) } else { entries.append(entry) }
         }
+        for key in folderRows.keys.sorted() { entries.append(merged(folderRows[key] ?? [])) }
 
         // The web caches of Chromium and Electron apps, and the per-user system caches of third-party tools: what Clean always freed
         // while their app was closed, so recommended. With them, the code-signing copies of apps that hold space of their own (left by
@@ -107,7 +124,7 @@ enum CachesPage {
             // A copy that shares nearly everything with its app frees too little to offer.
             guard bytes >= (copy ? SystemDataScreenBuilder.manualThreshold : SystemDataScreenBuilder.worthARow) else { continue }
             let web = item.id.hasPrefix("supportcache:")
-            var entry = CacheEntry(id: item.id, title: copy ? item.title : String(item.id.drop { $0 != ":" }.dropFirst()), bytes: bytes, paths: item.paths,
+            var entry = CacheEntry(id: item.id, title: copy ? item.title : AppNames.display(String(item.id.drop { $0 != ":" }.dropFirst())), bytes: bytes, paths: item.paths,
                                    source: web ? .web : (copy ? .appCopy : .system), recommended: true, within: item.id)
             entry.owners = item.owners
             if item.inUse { open(&entry) }
@@ -155,6 +172,21 @@ enum CachesPage {
 
     /// An open app's cache: freed only by a Free the user confirms, which quits the app (`quitNote`), so not recommended, and its
     /// reason stays as a fact.
+    /// One row for the folders of one app: their sizes and folders together, recommended when each is, open when one is.
+    static func merged(_ folders: [CacheEntry]) -> CacheEntry {
+        let folders = folders.sorted { $0.bytes > $1.bytes }
+        guard var row = folders.first, folders.count > 1 else { return folders.first ?? CacheEntry(id: "", title: "", bytes: 0, paths: [], source: .app) }
+        row.bytes = folders.map(\.bytes).reduce(0, +)
+        row.paths = folders.flatMap(\.paths)
+        row.recommended = folders.allSatisfy(\.recommended)
+        row.reason = row.recommended ? folders.first { $0.reason != nil }?.reason : nil
+        row.open = folders.contains(where: \.open)
+        row.facts = folders.flatMap(\.facts).reduce(into: []) { if !$0.contains($1) { $0.append($1) } }
+        row.owners = folders.flatMap(\.owners).reduce(into: []) { if !$0.contains($1) { $0.append($1) } }
+        row.members = folders
+        return row
+    }
+
     private static func open(_ entry: inout CacheEntry) {
         entry.facts = [loc("Open now")] + [entry.reason].compactMap { $0 } + entry.facts
         entry.recommended = false
@@ -284,7 +316,7 @@ enum CachesPage {
     /// For a block (`wholeItems` false), only what each cache frees counts.
     static func claimed(_ snapshot: SystemDataSnapshot, wholeItems: Bool = true) -> [String: UInt64] {
         var claimed: [String: UInt64] = [:]
-        for entry in entries(snapshot) {
+        for entry in entries(snapshot).flatMap(\.parts) {
             guard let within = entry.within else { continue }
             let whole = entry.wholeItem && wholeItems ? snapshot.report.items.first { $0.id == within }?.bytes : nil
             claimed[within, default: 0] += max(entry.bytes, whole ?? 0)

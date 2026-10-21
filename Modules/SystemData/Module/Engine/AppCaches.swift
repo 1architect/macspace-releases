@@ -1,5 +1,6 @@
 import CoreServices
 import Foundation
+import MacSpacePlatform
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -48,7 +49,7 @@ public struct AppCache: Codable, Equatable, Sendable {
     /// The name to show: the app's when it is installed, else the folder's.
     public var title: String {
         if case let .app(name, _) = owner { return name }
-        return name
+        return AppNames.display(name)
     }
 }
 
@@ -145,7 +146,7 @@ public enum AppCaches {
         #if canImport(AppKit)
         if looksLikeBundleIdentifier(name) {
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: name) else { return .notInstalled }
-            return .app(name: FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: ""), lastOpened: lastOpened(url.path))
+            return .app(name: AppNames.name(for: name), lastOpened: lastOpened(url.path))
         }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         for folder in ["/Applications", home + "/Applications"] {
@@ -211,7 +212,7 @@ public enum AppCaches {
     /// running keeps its caches: the container's, and its app's when that is another.
     static func containerOwner(of bundleIdentifier: String) -> (owner: AppCache.Owner, bundleIdentifiers: [String]) {
         guard let app = containerApp(bundleIdentifier) else { return (.notInstalled, [bundleIdentifier]) }
-        let name = FileManager.default.displayName(atPath: app.url.path).replacingOccurrences(of: ".app", with: "")
+        let name = AppNames.name(for: app.bundleIdentifier)
         let identifiers = app.bundleIdentifier == bundleIdentifier ? [bundleIdentifier] : [bundleIdentifier, app.bundleIdentifier]
         return (.app(name: name, lastOpened: lastOpened(app.url.path)), identifiers)
     }

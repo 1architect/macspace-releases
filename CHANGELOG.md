@@ -17,6 +17,11 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - System Data no longer reads 0 GB when copies of large files sit in two categories, such as a game in an app's Application
   Support folder copied into Documents. APFS stores such a copy once until one of them changes, and MacSpace counted it in full in
   both, about 58 GB too much on our Mac.
+- Apps are named in every list and confirmation, never by their bundle identifier: "Quits OneDrive, Affinity and CodexBar" instead of
+  "com.steipete.codexbar". The name comes from the installed or running app, from the app an extension or helper belongs to, and
+  failing that is made readable from the identifier.
+- An app's cache folders in your Library's Caches (CodexBar's `CodexBar` and `com.steipete.codexbar`) are one row on the caches
+  page, with their sizes added and Free clearing all of them, instead of two rows for the same app.
 
 ## [1.1.4] - 2026-10-20
 

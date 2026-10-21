@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import MacSpacePlatform
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -89,7 +90,7 @@ public struct ProcessCheck: Sendable {
     static func runningApp(_ bundleIdentifiers: [String], apps: [RunningApp], processes: [RunningProcess], appPath: (String) -> String?,
                            bundleOf: (String) -> String? = ProcessCheck.bundleIdentifier(ofProgram:)) -> String? {
         for identifier in bundleIdentifiers {
-            if let app = apps.first(where: { $0.bundleIdentifier?.caseInsensitiveCompare(identifier) == .orderedSame }) { return app.name ?? identifier }
+            if let app = apps.first(where: { $0.bundleIdentifier?.caseInsensitiveCompare(identifier) == .orderedSame }) { return app.name ?? AppNames.display(identifier) }
             // A process counts for the bundle it comes from: the app's own program for the app, an extension's for the extension. Every
             // process inside the app's bundle counted for the app, and WhatsApp's notification extension, which macOS keeps running
             // while WhatsApp is closed and which has a container of its own, kept WhatsApp's cache from ever being freed (26B5101f,

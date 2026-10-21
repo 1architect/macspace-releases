@@ -494,7 +494,7 @@ public struct SystemDataInspector {
                 // Named after the app inside (`code_sign_clone.<random>/SketchUp.app.bundle`), as the caches page lists it.
                 let app = children(path).lazy.flatMap(children).map { ($0 as NSString).lastPathComponent }
                     .first { $0.hasSuffix(".app.bundle") || $0.hasSuffix(".app") }
-                let title = app.map { $0.replacingOccurrences(of: ".app.bundle", with: "").replacingOccurrences(of: ".app", with: "") } ?? bundleID
+                let title = app.map { $0.replacingOccurrences(of: ".app.bundle", with: "").replacingOccurrences(of: ".app", with: "") } ?? AppNames.display(bundleID)
                 add("clone:\(bundleID)", title, .codeSignClone, paths: [path], owners: [bundleID],
                     cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: loc("A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed."), command: nil),
                     notes: ["Measured on 26B5091g: deleting a 6.12 GB SketchUp clone freed no measurable space."],
@@ -502,7 +502,7 @@ public struct SystemDataInspector {
             }
             for path in children((userDir as NSString).appendingPathComponent("C")) {
                 let name = (path as NSString).lastPathComponent
-                add("usercache:\(name)", loc("System cache: \(name)"), .userSystemCache, paths: [path], owners: [name],
+                add("usercache:\(name)", loc("System cache: \(AppNames.display(name))"), .userSystemCache, paths: [path], owners: [name],
                     cleanup: isAppleCache(name) ? appleManaged : deleteWhenClosed(name == "clang" ? "a compiler" : name), minimum: Self.minimumItemBytes)
             }
         }
@@ -512,7 +512,7 @@ public struct SystemDataInspector {
         for path in children((home as NSString).appendingPathComponent("Library/Caches")) {
             let name = (path as NSString).lastPathComponent
             let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
-            add("appcache:\(name)", loc("App cache: \(name)"), .appCache, paths: [path], owners: [owner],
+            add("appcache:\(name)", loc("App cache: \(AppNames.display(name))"), .appCache, paths: [path], owners: [owner],
                 cleanup: isAppleCache(name) || AppCaches.isApple(name) ? appleManaged : appCacheReview, notes: name.hasSuffix(".ShipIt") ? ["An app updater's download cache."] : [],
                 minimum: Self.minimumItemBytes)
         }
@@ -524,7 +524,7 @@ public struct SystemDataInspector {
         }
         for path in children((home as NSString).appendingPathComponent("Library/Application Support")) {
             let name = (path as NSString).lastPathComponent
-            add("appsupport:\(name)", name, .appSupport, paths: [path], owners: [name],
+            add("appsupport:\(name)", AppNames.display(name), .appSupport, paths: [path], owners: [name],
                 cleanup: SystemDataCleanup(kind: .review, description: "", command: nil),
                 minimum: 100 * 1_000_000)
             // Chromium and Electron apps (browsers, Slack, VS Code, Claude…) keep their web caches here rather than in Caches: the
@@ -532,7 +532,7 @@ public struct SystemDataInspector {
             // whatever the app is called; taken off the app's own figure above once measured.
             let caches = Self.chromiumCaches(in: path, fileManager: fileManager)
             if !caches.isEmpty {
-                add("supportcache:\(name)", loc("App cache: \(name)"), .appCache, paths: caches, owners: Self.cacheOwners(name, caches: caches, under: path),
+                add("supportcache:\(name)", loc("App cache: \(AppNames.display(name))"), .appCache, paths: caches, owners: Self.cacheOwners(name, caches: caches, under: path),
                     cleanup: deleteWhenClosed(name), minimum: Self.minimumItemBytes)
             }
         }
@@ -599,7 +599,7 @@ public struct SystemDataInspector {
             for path in children((library as NSString).appendingPathComponent(folder)) {
                 let name = (path as NSString).lastPathComponent
                 let apple = name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.")
-                add("container:\(name)", folder == "Containers" ? loc("App container: \(name)") : loc("App group data: \(name)"), .appContainer, paths: [path], owners: [name],
+                add("container:\(name)", folder == "Containers" ? loc("App container: \(AppNames.display(name))") : loc("App group data: \(AppNames.display(name))"), .appContainer, paths: [path], owners: [name],
                     cleanup: apple ? managed(loc("Data of an Apple app or service."))
                                    : SystemDataCleanup(kind: .review, description: loc("Mostly media. Clean it up from inside the app."), command: nil),
                     minimum: 100 * 1_000_000)

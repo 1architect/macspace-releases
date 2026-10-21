@@ -556,13 +556,16 @@ enum SystemDataScreenBuilder {
     static func presentation(_ item: SystemDataItem) -> (title: String, kind: String?) {
         func name(after prefix: String) -> String { String(item.id.dropFirst(prefix.count)) }
         if item.id.hasPrefix("container:") {
-            return (name(after: "container:"), item.paths.contains { $0.contains("/Group Containers/") } ? loc("App group data") : loc("App container"))
+            return (AppNames.display(name(after: "container:")), item.paths.contains { $0.contains("/Group Containers/") } ? loc("App group data") : loc("App container"))
         }
         let kinds: [(prefix: String, kind: String)] = [("appcache:", loc("App cache")), ("supportcache:", loc("Web cache")),
                                                        ("usercache:", loc("System cache")), ("toolcache:", loc("Tool cache")),
                                                        ("cloud:", loc("Cloud storage")), ("vm:", loc("Virtual machine")),
                                                        ("library:", loc("Your Library")), ("home:", loc("Your home folder"))]
-        for entry in kinds where item.id.hasPrefix(entry.prefix) { return (name(after: entry.prefix), entry.kind) }
+        let named: Set<String> = ["appcache:", "supportcache:", "usercache:"]
+        for entry in kinds where item.id.hasPrefix(entry.prefix) {
+            return (named.contains(entry.prefix) ? AppNames.display(name(after: entry.prefix)) : name(after: entry.prefix), entry.kind)
+        }
         if item.id.hasPrefix("shared:"), item.title == name(after: "shared:") {
             return (name(after: "shared:"), loc("All users"))
         }
