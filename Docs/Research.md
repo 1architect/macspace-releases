@@ -68,7 +68,9 @@ older, coarser view of the same idea; an app cannot ask it either (`SAAppSizer` 
   thing as `available = freespace + purgeableSpace`, what `volumeAvailableCapacityForImportantUsage` returns. With plain free
   space the disk tile said 230.9 GB used against Settings' 203.28; with that key, 203.24.
   Purgeable files leave "used" only as far as CacheDelete's figure goes, not by their APFS flag: of 21 GB of cloud downloads flagged
-  purgeable, about 14 GB still counted as used.
+  purgeable, about 14 GB still counted as used. CacheDelete's figure moves on its own: "used" read 148.66, 146.54 and 146.97 GB
+  within ten minutes (2026-10-20), so a System Data total taken at the scan and Settings' reading a few minutes later can differ by
+  about 2 GB with no file changed.
 - **macOS** is every volume of the startup container but Data (System, Preboot with the prepared update, Recovery, Update, VM)
   **plus the separate Recovery container on the same disk** (partition type `Apple_APFS_Recovery`), **plus about 3.9 GB of the Data
   volume**. Measured twice, 1.5 hours apart: 47.45 GB both times, volumes 44.8266 + 2.6191 = 47.4458 GB. Ruled out: CacheDelete's
@@ -87,9 +89,16 @@ older, coarser view of the same idea; an app cannot ask it either (`SAAppSizer` 
   MacSpace's Documents sizer now applies this same check; the original difference and post-fix comparison are measured below.
 - **Applications** is app bundles, third-party
   containers and third-party group containers, Safari's container, and Apple's team-prefixed group containers
-  (`PTN9T2S29T.com.apple.videoProApps`); only `group.com.apple.…` stays with macOS. Apps' support folders in
-  `~/Library/Application Support` are **not** counted (Firefox: 536 MB in Settings' list is its bundle; its 2.31 GB profile is not
-  in it).
+  (`PTN9T2S29T.com.apple.videoProApps`); only `group.com.apple.…` stays with macOS. **It also holds the whole
+  `~/Library/Application Support`, with no row of its own** (#35). The list's rows are only the bundles; the total is more.
+  **Measured (2026-10-20, 27.2):** the rows added up to 12.87 GB against a 21.37 GB total. Test files of distinct sizes were then
+  put in place and Settings reopened each time: a folder named after an installed app's bundle identifier (3.22 GB) plus one no
+  app owns (0.81 GB) raised Applications by 3.65 GB; a folder named after the app (3.22 GB) plus a larger unowned one (1.61 GB)
+  raised it by 4.45 GB. Both readings sit 0.38 GB under "every folder counts", one baseline drift, and no other reading fits
+  both. A 1.61 GB folder in `~/Library/Caches` named after the same bundle identifier was not counted. Bundles 12.87 + Application
+  Support 7.69 + containers 0.87 = 21.43 GB, against Settings' 21.37. So an app's support folder is never System Data, and the
+  Firefox reading below (its 536 MB row is the bundle alone) says what a row shows, not what the total holds.
+  **Not measured:** the system-wide `/Library/Application Support`, which stays System Data in MacSpace.
   **Scope correction (2026-10-17):** `STMApplicationSizer` sets its Spotlight search scopes to the user's home directory,
   `/Applications/`, and `/System/Applications`, then filters user-Library apps, nested apps and several built-in identifiers.
   MacSpace retains the global `IndexedApps.paths()` lookup but filters its results for this category. The older claim that every indexed app anywhere belongs to this
@@ -1212,8 +1221,9 @@ Earlier notes that later measurements corrected, so nobody rebuilds on them.
 | Earlier reading | Replaced by |
 |---|---|
 | Settings' macOS ≈ System volume + Preboot + `AssetsV2` (32.4 against 31.06 GB) | Every volume but Data, plus the Recovery container, plus about 3.9 GB of the Data volume (section 1). |
-| Settings' Applications ≈ `/Applications` + both `Application Support` folders | Bundles + third-party containers and group containers; support folders are not counted. |
-| Apps' support files are System Data (**inferred**) | Confirmed for `~/Library/Application Support`; the decoded rules say anything unclaimed is. |
+| Settings' Applications ≈ `/Applications` + both `Application Support` folders | Bundles + third-party containers and group containers + the whole `~/Library/Application Support` (#35); `/Library/Application Support` not measured. |
+| Apps' support folders are not in Applications (Firefox's 536 MB row is only its bundle) | The rows are bundles only, but the total holds all of `~/Library/Application Support`, unowned folders too (measured with test files, 2026-10-20, #35). |
+| Apps' support files are System Data (**inferred**) | Not for `~/Library/Application Support`: Settings counts all of it in Applications (#35). |
 | Every Spotlight-indexed app anywhere belongs to Applications (**inferred**) | The Applications extension searches home, `/Applications`, and `/System/Applications`; globally indexed helpers under `/Library` and `/usr/local` are outside those scopes. Documents also excludes unindexed application bundles while walking. Rechecked 2026-10-17. |
 | MacSpace shows more than Settings (51 against 44.5 GB) because Settings over-counts Apple Intelligence (**inferred**) | Partly true while the models are installed (19.89 against 11.35 GB), but the larger gaps were the prepared update counted as System Data, CloudStorage (12 GB), apps outside `/Applications` and clones. MacSpace now computes Settings' remainder. |
 | System Data total within 0.9 GB of Settings (42.83 against 41.95) | Replaced by the remainder rule; a "Not identified" block shows what the breakdown leaves out. |

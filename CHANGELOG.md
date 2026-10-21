@@ -7,6 +7,12 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- System Data's total matches System Settings again: Settings counts everything in your Library's Application Support folder under
+  Applications, and MacSpace counted it in System Data, about 8 GB more on our Mac (#35). Settings' figure still moves by a GB or
+  two on its own between readings, as macOS updates its estimate of the space it can free.
+
 ## [1.1.4] - 2026-10-20
 
 ### Changed

@@ -236,9 +236,10 @@ public struct SettingsStorageMeter {
         // The Music app's media folder, wherever its library keeps it ("Media" or the localized "Media.localized").
         for name in ["Music/Music/Media", "Music/Music/Media.localized"] where FileManager.default.fileExists(atPath: path(name)) { musicMedia.append(path(name)) }
         return [
-            // The whole /Applications folder (including files beside bundles), eligible indexed apps in home, and containers.
+            // The whole /Applications folder (including files beside bundles), eligible indexed apps in home, containers, and the whole
+            // ~/Library/Application Support: its folders count with no row of their own, even one no app owns (measured 2026-10-20, #35).
             ("applications", [system("/Applications")] + apps.filter { !$0.hasPrefix(system("/Applications") + "/") } + appContainers(apps: apps)
-                + [path("Library/Application Support/Steam")]),
+                + [path("Library/Application Support")]),
             ("developer", [system("/Library/Developer/CommandLineTools"), system("/Library/Developer/CoreSimulator"), path("Library/Developer"),
                            path("Library/Caches/com.apple.dt.Xcode"), system("/AppleInternal/Developer")]),
             ("photos", [photoLibrary()].compactMap { $0 }),

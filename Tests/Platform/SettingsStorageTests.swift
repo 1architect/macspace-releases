@@ -117,6 +117,28 @@ final class SettingsStorageTests: XCTestCase {
                        AllocatedSize.allocatedBytes(outside.path, excluding: []) + AllocatedSize.allocatedBytes(unindexed.path, excluding: []))
     }
 
+    /// Settings counts the whole ~/Library/Application Support in Applications, a folder no app owns too (#35); Steam's folder inside
+    /// it is counted once.
+    func testApplicationsCountsAllOfApplicationSupportOnce() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("Users/me")
+        let support = home.appendingPathComponent("Library/Application Support")
+        for folder in ["Unowned", "Steam"] {
+            try FileManager.default.createDirectory(at: support.appendingPathComponent(folder), withIntermediateDirectories: true)
+            try Data(repeating: 5, count: 4_000_000).write(to: support.appendingPathComponent("\(folder)/data.bin"))
+        }
+        var meter = SettingsStorageMeter(home: home)
+        meter.root = root.path
+        meter.apps = { [] }
+        meter.space = { (100_000_000, 10_000_000) }
+        meter.dataDevice = { nil }
+        meter.desktopAndDocumentsInICloud = { false }
+        XCTAssertTrue(meter.claimedPlaces(apps: []).contains(support.path))
+        let reading = try XCTUnwrap(meter.measure())
+        XCTAssertEqual(reading.bytes("applications"), AllocatedSize.allocatedBytes(support.path, excluding: []))
+    }
+
     private func temporaryRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("settings-storage-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
