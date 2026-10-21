@@ -8,14 +8,12 @@
 "%@ left. MacSpace can free %@." = "%@ frei. MacSpace kann %@ freigeben.";
 "%@ update" = "Update auf %@";
 "%@ used" = "%@ belegt";
-"%lld cleanups" = "%lld Bereinigungen";
 "%lld files" = "%lld Dateien";
 "%lld items" = "%lld Objekte";
 "%lld needed" = "%lld erforderlich";
 "%lld smaller" = "%lld kleinere";
 "%lld%% of %@" = "%lld %% von %@";
 ", beta" = ", Beta";
-"1 cleanup" = "1 Bereinigung";
 "1 file" = "1 Datei";
 "1 item" = "1 Objekt";
 "1 needed" = "1 erforderlich";

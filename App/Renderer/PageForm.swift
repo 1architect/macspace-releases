@@ -118,7 +118,8 @@ struct PageLabeledContentStyle: LabeledContentStyle {
     }
 }
 
-/// A menu row as a grouped form draws a Picker: the title on the left, the menu on the right, at its own width.
+/// A menu row as a grouped form draws a Picker: the title on the left, the menu on the right, at its own width. The menu is
+/// borderless, its value and arrows with no button shape behind them, as System Settings draws its own (#36).
 struct PagePicker<Selection: Hashable, Label: View, Content: View>: View {
     let selection: Binding<Selection>
     @ViewBuilder let content: () -> Content
@@ -136,6 +137,8 @@ struct PagePicker<Selection: Hashable, Label: View, Content: View>: View {
             Spacer(minLength: 8)
             Picker(selection: selection, content: content, label: label)
                 .labelsHidden()
+                .pickerStyle(.menu)
+                .buttonStyle(.borderless)
                 .fixedSize()
         }
     }

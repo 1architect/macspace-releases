@@ -8,14 +8,12 @@
 "%@ left. MacSpace can free %@." = "剩余 %@。MacSpace 可释放 %@。";
 "%@ update" = "%@ 更新";
 "%@ used" = "已用 %@";
-"%lld cleanups" = "%lld 次清理";
 "%lld files" = "%lld 个文件";
 "%lld items" = "%lld 项";
 "%lld needed" = "需要 %lld 项";
 "%lld smaller" = "另外 %lld 个较小项";
 "%lld%% of %@" = "%lld%%，共 %@";
 ", beta" = "，测试版";
-"1 cleanup" = "1 次清理";
 "1 file" = "1 个文件";
 "1 item" = "1 项";
 "1 needed" = "需要 1 项";

@@ -98,15 +98,6 @@
   "%@使用中",
   "%@ 사용 중"
  ],
- "%lld cleanups": [
-  "%lld limpezas",
-  "%lld nettoyages",
-  "%lld limpiezas",
-  "%lld Bereinigungen",
-  "%lld 次清理",
-  "%lld回のクリーンアップ",
-  "정리 %lld회"
- ],
  "%lld items": [
   "%lld itens",
   "%lld éléments",
@@ -151,15 +142,6 @@
   "，测试版",
   "、ベータ版",
   ", 베타"
- ],
- "1 cleanup": [
-  "1 limpeza",
-  "1 nettoyage",
-  "1 limpieza",
-  "1 Bereinigung",
-  "1 次清理",
-  "1回のクリーンアップ",
-  "정리 1회"
  ],
  "1 item": [
   "1 item",

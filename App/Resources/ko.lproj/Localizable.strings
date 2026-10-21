@@ -8,14 +8,12 @@
 "%@ left. MacSpace can free %@." = "%@ 남음. MacSpace로 %@ 확보 가능.";
 "%@ update" = "%@ 업데이트";
 "%@ used" = "%@ 사용 중";
-"%lld cleanups" = "정리 %lld회";
 "%lld files" = "파일 %lld개";
 "%lld items" = "%lld개 항목";
 "%lld needed" = "%lld개 필요";
 "%lld smaller" = "작은 항목 %lld개";
 "%lld%% of %@" = "%lld%% (전체 %@)";
 ", beta" = ", 베타";
-"1 cleanup" = "정리 1회";
 "1 file" = "파일 1개";
 "1 item" = "항목 1개";
 "1 needed" = "1개 필요";

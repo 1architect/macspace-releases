@@ -17,6 +17,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 - System Data no longer reads 0 GB when copies of large files sit in two categories, such as a game in an app's Application
   Support folder copied into Documents. APFS stores such a copy once until one of them changes, and MacSpace counted it in full in
   both, about 58 GB too much on our Mac.
+- Settings' pop-up menus are drawn as macOS draws its own, the chosen option with no button shape behind it, and the Recent
+  cleanups row no longer shows how many cleanups there were (#36).
 - Apps are named in every list and confirmation, never by their bundle identifier: "Quits OneDrive, Affinity and CodexBar" instead of
   "com.steipete.codexbar". The name comes from the installed or running app, from the app an extension or helper belongs to, and
   failing that is made readable from the identifier.

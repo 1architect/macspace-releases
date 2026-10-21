@@ -8,14 +8,12 @@
 "%@ left. MacSpace can free %@." = "残り%@。MacSpaceで%@を解放できます。";
 "%@ update" = "%@のアップデート";
 "%@ used" = "%@使用中";
-"%lld cleanups" = "%lld回のクリーンアップ";
 "%lld files" = "%lld個のファイル";
 "%lld items" = "%lld項目";
 "%lld needed" = "%lld件必要";
 "%lld smaller" = "ほか%lld個の小さい項目";
 "%lld%% of %@" = "%lld%%（全体：%@）";
 ", beta" = "、ベータ版";
-"1 cleanup" = "1回のクリーンアップ";
 "1 file" = "1個のファイル";
 "1 item" = "1項目";
 "1 needed" = "1件必要";

@@ -7,7 +7,6 @@ import SwiftUI
 struct CleanupSection: View {
     @ObservedObject var cleaner: AutoCleaner
     @ObservedObject var host: ModuleHost
-    @State private var count = CleanupHistory.shared.entries.count
     @State private var lifetime = CleanupHistory.shared.lifetimeBytes
 
     var body: some View {
@@ -24,13 +23,10 @@ struct CleanupSection: View {
             LabeledContent("Freed in total") {
                 ChangingText(text: ByteFormat.string(lifetime), alignment: .trailing).monospacedDigit()
             }
-            SettingsLinkRow(title: String(localized: "Recent cleanups"), note: count == 1 ? String(localized: "1 cleanup") : String(localized: "\(count) cleanups")) { host.settingsPage = .cleanupHistory }
+            SettingsLinkRow(title: String(localized: "Recent cleanups"), note: nil) { host.settingsPage = .cleanupHistory }
         }
         .onReceive(NotificationCenter.default.publisher(for: CleanupHistory.didChange)) { _ in
-            withAnimation(Theme.value) {
-                count = CleanupHistory.shared.entries.count
-                lifetime = CleanupHistory.shared.lifetimeBytes
-            }
+            withAnimation(Theme.value) { lifetime = CleanupHistory.shared.lifetimeBytes }
         }
     }
 }
