@@ -305,8 +305,11 @@ public struct SettingsStorageMeter {
         for name in ["Library", "Applications", ".Trash", "Music/iTunes/iTunes Media", "Music/Music/Media", "Movies/Apple TV/Media",
                      "Movies/TV/Media", "Movies/TV/TV Library"] { excluded.insert(path(name)) }
         if desktopAndDocumentsInICloud() { excluded.formUnion([path("Desktop"), path("Documents")]) }
-        // Every place, and the home folder for Documents, measured side by side: one after the other they took 10 seconds.
-        let jobs = places.flatMap { $0.paths.map { AllocatedSize.Job(path: $0) } }
+        // Every place, and the home folder for Documents, measured side by side: one after the other they took 10 seconds. A place
+        // inside another (iOS backups in ~/Library/Application Support) counts once, in its own category: counted twice, it came off
+        // System Data twice, which could read 0.
+        let claimed = places.flatMap(\.paths)
+        let jobs = places.flatMap { $0.paths.map { place in AllocatedSize.Job(path: place, excluding: Set(claimed.filter { $0.hasPrefix(place + "/") })) } }
             + [AllocatedSize.Job(path: home.path, excluding: excluded, excludingApplications: true)]
         let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers)
         var next = 0

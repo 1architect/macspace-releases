@@ -778,7 +778,9 @@ public struct SystemDataInspector {
         for index in items.indices where (items[index].bytes ?? 0) > 0 && !items[index].paths.isEmpty {
             let roots = items[index].paths.map(plain)
             if roots.allSatisfy(isClaimed) { items[index].elsewhereBytes = items[index].bytes; continue }
-            let inside = claimed.filter { place in roots.contains { place.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
+            // Only the outermost: iOS backups are inside ~/Library/Application Support, and both are claimed.
+            let nested = claimed.filter { place in roots.contains { place.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
+            let inside = nested.filter { place in !nested.contains { place.hasPrefix($0 + "/") } }
             let bytes = inside.map { AllocatedSize.allocatedBytes($0, excluding: []) }.reduce(0, +)
             if bytes > 0 { items[index].elsewhereBytes = min(bytes, items[index].bytes ?? 0) }
         }

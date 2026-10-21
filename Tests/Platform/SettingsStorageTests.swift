@@ -139,6 +139,31 @@ final class SettingsStorageTests: XCTestCase {
         XCTAssertEqual(reading.bytes("applications"), AllocatedSize.allocatedBytes(support.path, excluding: []))
     }
 
+    /// iOS backups are in ~/Library/Application Support, which Applications claims whole: they count once, in iOS Files, so System
+    /// Data is not short of their size (with a large backup it could read 0).
+    func testBackupsInsideApplicationSupportCountOnce() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("Users/me")
+        let support = home.appendingPathComponent("Library/Application Support")
+        let backup = support.appendingPathComponent("MobileSync/Backup")
+        let unowned = support.appendingPathComponent("Unowned")
+        for folder in [backup, unowned] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data(repeating: 6, count: 4_000_000).write(to: folder.appendingPathComponent("data.bin"))
+        }
+        var meter = SettingsStorageMeter(home: home)
+        meter.root = root.path
+        meter.apps = { [] }
+        meter.space = { (100_000_000, 10_000_000) }
+        meter.dataDevice = { nil }
+        meter.desktopAndDocumentsInICloud = { false }
+        let reading = try XCTUnwrap(meter.measure())
+        let backupBytes = AllocatedSize.allocatedBytes(backup.path, excluding: [])
+        XCTAssertEqual(reading.bytes("iosFiles"), backupBytes)
+        XCTAssertEqual(reading.bytes("applications"), AllocatedSize.allocatedBytes(support.path, excluding: []) - backupBytes)
+    }
+
     private func temporaryRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("settings-storage-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
