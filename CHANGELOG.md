@@ -19,9 +19,8 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   both, about 58 GB too much on our Mac.
 - Settings' pop-up menus are drawn as macOS draws its own, the chosen option with no button shape behind it, and the Recent
   cleanups row no longer shows how many cleanups there were (#36).
-- Apps are named in every list and confirmation, never by their bundle identifier: "Quits OneDrive, Affinity and CodexBar" instead of
-  "com.steipete.codexbar". The name comes from the installed or running app, from the app an extension or helper belongs to, and
-  failing that is made readable from the identifier.
+- Apps are named in every list and confirmation instead of their bundle identifier: "Quits OneDrive, Affinity and CodexBar" instead of
+  "com.steipete.codexbar". 
 - An app's cache folders in your Library's Caches (CodexBar's `CodexBar` and `com.steipete.codexbar`) are one row on the caches
   page, with their sizes added and Free clearing all of them, instead of two rows for the same app.
 
