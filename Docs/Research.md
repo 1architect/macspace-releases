@@ -99,6 +99,9 @@ older, coarser view of the same idea; an app cannot ask it either (`SAAppSizer` 
   Support 7.69 + containers 0.87 = 21.43 GB, against Settings' 21.37. So an app's support folder is never System Data, and the
   Firefox reading below (its 536 MB row is the bundle alone) says what a row shows, not what the total holds.
   **Not measured:** the system-wide `/Library/Application Support`, which stays System Data in MacSpace.
+  **Measured, nested places (2026-10-21):** with the whole folder claimed, `MobileSync/Backup` inside it (iOS Files) was counted in
+  both categories, so a large iPhone backup came off System Data twice and could take it to 0. Each place is now measured without the
+  claimed places nested in it, and System Data's items take off only the outermost claimed places inside them.
   **Scope correction (2026-10-17):** `STMApplicationSizer` sets its Spotlight search scopes to the user's home directory,
   `/Applications/`, and `/System/Applications`, then filters user-Library apps, nested apps and several built-in identifiers.
   MacSpace retains the global `IndexedApps.paths()` lookup but filters its results for this category. The older claim that every indexed app anywhere belongs to this
@@ -145,6 +148,17 @@ update left out, was 38.5 GB against 32.3, and the whole gap is accounted for as
   2.42 and 0.97 GB by size, held 0.04 and 0.01 GB. A copy of an app that was updated afterwards keeps the older version's blocks,
   which no other file shares (Mole deletes Chrome's for that reason). Copies are offered by that figure, from 50 MB, while the app is
   closed and nothing runs from the copy; macOS makes a new one when it next checks the app.
+- **Measured: clones count once across categories too (macOS 27.2, 26B118, 2026-10-21).** The category meter (`SettingsStorage`)
+  sized each place per file, so a file cloned from one category's place into another's counted in full in both. With a 93 GB
+  CrossOver bottle in `~/Library/Application Support` (Applications) and clones of its game files in `~/Documents`, the categories
+  and macOS came to 291.37 GB against 233.02 GB used, and System Data read 0 against Settings' 21.15. `~/Documents` held 87.4 GB
+  per file, 81.3 GB of it in files sharing every block (`EF_SHARES_ALL_BLOCKS`, private size 0), and 11.4 GB with each clone family
+  counted once across the bottle and Documents. With one `CloneLedger` over every place and the Documents walk (hard links once
+  across places too), Documents read 68.17 GB and System Data 21.61, then 21.85 with the nested-places fix, against Settings'
+  21.15. Settings' macOS read 29.8 while the meter's volumes read 30.87 to 31.94 over the same hour, so most of the gap is that
+  drift. **Inferred:** Settings counts a clone family's shared blocks once, since only that reading lands near its remainder.
+  Which category holds them depends on which place the meter's workers reach first, so the split between Applications and
+  Documents can move between scans while the total does not; how Settings splits them is **unverified**.
 - **Measured: why total and breakdown differ.** Nothing has to list what System Data holds, because the total is Settings'
   remainder. The page's items are only the breakdown, and what they leave out of the total is a "Not identified" block, so a rule
   that goes wrong shows as a measured amount instead of a wrong total.
@@ -1024,6 +1038,8 @@ Issue 11 asked why MacSpace showed over 200 MB in Activity Monitor. Measured on 
 - Why does Settings count the 25 GB restore image as 21.9 GB, and Apple Intelligence at 19.89 GB when releasing the models frees
   about 10 GB?
 - Which 3.9 GB of the Data volume does Settings count as macOS? What is the 0.62 GB left after the clone ledger?
+- When a clone family spans two categories (a game in an Application Support bottle and its copy in Documents), which one does
+  Settings put the shared blocks in?
 - Which Settings are behind Siri voices, dictation, dictionaries and the developer documentation asset?
 - Do the category rules hold on a Mac with different apps, with iCloud Desktop & Documents on, or on another build?
 - Is the document-version freeze safe while an app is saving?
@@ -1230,6 +1246,7 @@ Earlier notes that later measurements corrected, so nobody rebuilds on them.
 | Command Line Tools 1.31–1.41 GB against Settings' 1.42 | The same 1.42 GB on the same build. |
 | `malloc_zone_pressure_relief` gives back about 40 MB of a closed MacSpace's heap, and lags the interface while it walks it (Issue 11, measured with allocation logging on) | It gives back nothing on macOS 27: free pages already go back on `free`, and the rest are pages still partly in use (section 6, 2026-10-20). |
 | Deleting a clone or a code-signing copy frees its `du` size | It frees nothing when it shares blocks; clones are sized once. |
+| Each category place can be sized on its own, per file (`du`-like) | Clones shared between places counted in every one of them, 58 GB over used on one Mac; places are sized with one clone ledger, and a place nested in another counts only in its own category (2026-10-21). |
 | "No notarized build exists yet" | A notarized build was made and checked on 2026-10-03; only the clean-Mac check is open. |
 | Opening a folder like the Foundation Model folders to measure them | Not possible even with Full Disk Access (SIP `restricted`). |
 | Siri, speech and language-data assets are held by ModelCatalog conditions, or by database rows that can be deleted | By client daemons' own requests (the broker, Telephony, embedded speech, ProofReader, DictionaryServices, the keyboard service). The usage rows come back, and only Spatial Photos is a ModelCatalog condition (Asset owners). |

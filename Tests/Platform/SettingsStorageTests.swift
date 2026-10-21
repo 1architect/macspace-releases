@@ -164,6 +164,29 @@ final class SettingsStorageTests: XCTestCase {
         XCTAssertEqual(reading.bytes("applications"), AllocatedSize.allocatedBytes(support.path, excluding: []) - backupBytes)
     }
 
+    /// A clone in Documents of a file in Application Support shares its blocks: the two categories hold them once, not twice.
+    func testCloneAcrossCategoriesCountsOnce() throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let home = root.appendingPathComponent("Users/me")
+        let support = home.appendingPathComponent("Library/Application Support/Bottle")
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: home.appendingPathComponent("Documents"), withIntermediateDirectories: true)
+        let original = support.appendingPathComponent("game.bin")
+        let copy = home.appendingPathComponent("Documents/game.bin")
+        try Data(repeating: 6, count: 8_000_000).write(to: original)
+        guard clonefile(original.path, copy.path, 0) == 0 else { throw XCTSkip("the temporary folder is not on APFS") }
+        var meter = SettingsStorageMeter(home: home)
+        meter.root = root.path
+        meter.apps = { [] }
+        meter.space = { (100_000_000, 10_000_000) }
+        meter.dataDevice = { nil }
+        meter.desktopAndDocumentsInICloud = { false }
+        let reading = try XCTUnwrap(meter.measure())
+        let once = AllocatedSize.allocatedBytes(original.path, excluding: [])
+        XCTAssertEqual(reading.bytes("applications") + reading.bytes("documents"), once)
+    }
+
     private func temporaryRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("settings-storage-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -311,7 +311,10 @@ public struct SettingsStorageMeter {
         let claimed = places.flatMap(\.paths)
         let jobs = places.flatMap { $0.paths.map { place in AllocatedSize.Job(path: place, excluding: Set(claimed.filter { $0.hasPrefix(place + "/") })) } }
             + [AllocatedSize.Job(path: home.path, excluding: excluded, excludingApplications: true)]
-        let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers)
+        // A clone's shared blocks count once over all the places: copies in Documents of a game in an Application Support bottle,
+        // counted in full in both, put the categories 58 GB above used and System Data at 0 (measured 2026-10-21). Which place
+        // meets a family first, and holds its shared blocks, depends on the order the workers reach them.
+        let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers, clones: CloneLedger())
         var next = 0
         var categories = places.map { place in
             defer { next += place.paths.count }
@@ -337,23 +340,28 @@ public enum AllocatedSize {
         }
     }
 
-    public static func allocatedBytes(_ root: String, excluding excluded: Set<String>, excludingApplications: Bool = false) -> UInt64 {
+    /// With a ledger, each APFS clone family's shared blocks and each hard-linked file count once across every tree measured with it.
+    public static func allocatedBytes(_ root: String, excluding excluded: Set<String>, excludingApplications: Bool = false,
+                                      clones: CloneLedger? = nil) -> UInt64 {
         var info = stat()
         guard lstat(root, &info) == 0 else { return 0 }
         guard info.st_mode & S_IFMT == S_IFDIR else { return UInt64(max(info.st_blocks, 0)) * 512 }
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else { return 0 }
-        // A file reached by several hard links counts once (`HardLinks`).
-        struct Sums { var total: UInt64 = 0, links = Set<UInt64>() }
-        return DirectoryWalk.walk(root, extended: false, initial: Sums()) { sums, path, entry in
+        // A file reached by several hard links counts once (`HardLinks`): in this tree, or with a ledger in every tree.
+        let links = clones ?? CloneLedger()
+        return DirectoryWalk.walk(root, extended: clones != nil, initial: UInt64(0)) { total, path, entry in
             if !excluded.isEmpty, excluded.contains(path()) { return .skip }
             if excludingApplications && ApplicationBundles.isApplication(path()) { return .skip }
             if entry.isDirectory {
                 return entry.isDataless ? .skip : .descend
             }
-            if entry.linkCount > 1, entry.isRegularFile, let inode = HardLinks.inode(path()), !sums.links.insert(inode).inserted { return .skip }
-            sums.total += entry.allocatedBytes
+            if entry.linkCount > 1, entry.isRegularFile, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
+            var value = entry.allocatedBytes
+            // A later member of a clone family adds only what it does not share.
+            if let clones, entry.isRegularFile, value > 0, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.privateBytes) }
+            total += value
             return .skip
-        }.state.total
+        }.state
     }
 
     /// Several trees at once, `workers` at a time, in the order given.
@@ -361,13 +369,13 @@ public enum AllocatedSize {
         allocatedBytes(jobs.map { Job(path: $0.path, excluding: $0.excluding) }, workers: workers)
     }
 
-    public static func allocatedBytes(_ jobs: [Job], workers: Int) -> [UInt64] {
+    public static func allocatedBytes(_ jobs: [Job], workers: Int, clones: CloneLedger? = nil) -> [UInt64] {
         let results = LockedArray(repeating: UInt64(0), count: jobs.count)
         let queue = JobCounter(count: jobs.count)
         DispatchQueue.concurrentPerform(iterations: min(max(workers, 1), max(jobs.count, 1))) { _ in
             while let index = queue.next() {
                 let job = jobs[index]
-                results.set(index, allocatedBytes(job.path, excluding: job.excluding, excludingApplications: job.excludingApplications))
+                results.set(index, allocatedBytes(job.path, excluding: job.excluding, excludingApplications: job.excludingApplications, clones: clones))
             }
         }
         return results.values

@@ -14,6 +14,9 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
   two on its own between readings, as macOS updates its estimate of the space it can free.
 - iPhone and iPad backups count once, in iOS Files: they are inside the Application Support folder that Applications now counts,
   so they came off System Data twice, and with a large backup System Data could read 0.
+- System Data no longer reads 0 GB when copies of large files sit in two categories, such as a game in an app's Application
+  Support folder copied into Documents. APFS stores such a copy once until one of them changes, and MacSpace counted it in full in
+  both, about 58 GB too much on our Mac.
 
 ## [1.1.4] - 2026-10-20
 
