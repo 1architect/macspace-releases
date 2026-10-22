@@ -250,6 +250,8 @@ actor SystemDataStore {
         let settings = Background { SettingsStorageMeter().measure() }
         let purgeableServices = Background { livePurgeableServices() }
         let assetFamilies = Background { AssetFamilyScanner().scan() }
+        // The cloud folders' uploaded copies too: walked after the disk, they held the scan at 75% for 2.5 seconds (2026-10-22).
+        let cloudSources = Background { PurgeableDocuments.scan(maxAge: 600) }
         let report = SystemDataInspector().inspect(progress: progress.part(0...0.65))
         let services = purgeableServices.value
         progress.report(0.7)
@@ -260,7 +262,8 @@ actor SystemDataStore {
         var snapshot = SystemDataSnapshot(report: report, purgeableAssetsBytes: purgeable, reports: reports, assetFamilies: assetFamilies.value, takenAt: Date(),
                                           assetsRetrying: PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset))
         progress.report(0.75)
-        snapshot.cloudSources = PurgeableDocuments.scan(maxAge: 600, progress: progress.part(0.75...0.78))
+        snapshot.cloudSources = cloudSources.value
+        progress.report(0.78)
         snapshot.cloudRevision = cloudRevision
         snapshot.removing = CloudDownloadRemovals.shared.current()
         snapshot.purgeableServices = services

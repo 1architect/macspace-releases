@@ -426,22 +426,34 @@ public struct SystemDataInspector {
                 for path in entry.paths { jobs.append((index, path)) }
             }
             let results = LockedArray(repeating: SizeMeasurement(bytes: nil), count: jobs.count)
+            // What freeing an app's clone gives back is a walk of the clone (`FileTreeSizer.unsharedBytes`): done by the same workers
+            // once the paths are measured, and counted in the progress. Walked one after another after the measuring, the clones kept
+            // the scan at 64% for 5 seconds (2026-10-22).
+            let reclaimJobs = pending.indices.filter { pending[$0].kind == .codeSignClone }
+            let reclaims = LockedArray<UInt64?>(repeating: nil, count: pending.count)
+            let reclaimQueue = JobCounter(count: reclaimJobs.count)
+            let work = Double(max(jobs.count + reclaimJobs.count, 1))
             // A few workers pull the next path as they finish one. One worker per path (`concurrentPerform` over the jobs) put every
             // core of the Mac on the scan: 800% CPU on a 10-core M4, from the Refresh button and from the automatic readings.
             let queue = JobCounter(count: jobs.count)
             // Counts the paths measured, for `progress`: the next number it hands out is how many are done.
-            let done = JobCounter(count: jobs.count)
+            let done = JobCounter(count: jobs.count + reclaimJobs.count)
             DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(jobs.count, 1))) { _ in
                 defer { pool.release() }
                 while let index = queue.next() {
                     let job = jobs[index]
                     results.set(index, measure(job.path, individually: pending[job.entry].minimum == 0))
-                    if let progress, let measured = done.next() { progress(Double(measured + 1) / Double(jobs.count)) }
+                    if let progress, let measured = done.next() { progress(Double(measured + 1) / work) }
+                }
+                while let index = reclaimQueue.next() {
+                    reclaims.set(reclaimJobs[index], pending[reclaimJobs[index]].expectedReclaim())
+                    if let progress, let measured = done.next() { progress(Double(measured + 1) / work) }
                 }
             }
             let sizes = results.values
+            let reclaimed = reclaims.values
             var next = 0
-            for entry in pending {
+            for (entryIndex, entry) in pending.enumerated() {
                 var total: UInt64 = 0
                 var purgeable: UInt64 = 0
                 var readable = false
@@ -472,7 +484,7 @@ public struct SystemDataInspector {
                 }
                 var item = SystemDataItem(id: entry.id, title: entry.title(), kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
                                           readable: readable, owners: entry.owners, inUse: isRunning(entry.owners, cleanup: entry.cleanup.kind, paths: entry.paths), cleanup: entry.cleanup, notes: entry.notes)
-                item.expectedReclaimBytes = entry.expectedReclaim() ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
+                item.expectedReclaimBytes = (entry.kind == .codeSignClone ? reclaimed[entryIndex] : entry.expectedReclaim()) ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
                 item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
                 items.append(item)
