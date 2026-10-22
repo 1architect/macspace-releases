@@ -75,24 +75,14 @@ enum CachesPage {
         // listed. Third-party containers are System Settings' Applications, in no block or list of this page, and Other System Files
         // lists macOS's purge of them as one figure, so a container's caches are listed here only.
         let listed = report.appCaches.filter { $0.bytes >= SystemDataScreenBuilder.worthARow && AppCaches.outcome($0, now: now) != .heldBack }
-        // The folders of one app in `~/Library/Caches` (`CodexBar` and `com.steipete.codexbar`) are one row, `merged`. What still shares
-        // a name (an app's container, a folder of another app of the same name) is told apart by its folder name, or, for a folder named
-        // by a bundle identifier, which people do not read, by a number after the app's name.
-        var titles: [String: Int] = [:]
-        var counted: Set<String> = []
-        for cache in listed where cache.container != nil || counted.insert(cache.title).inserted { titles[cache.title, default: 0] += 1 }
-        var folderRows: [String: [CacheEntry]] = [:]
-        var numbered: [String: Int] = [:]
-        func title(_ cache: AppCache) -> String {
-            guard titles[cache.title, default: 0] > 1 else { return cache.title }
-            guard AppNames.looksLikeBundleIdentifier(cache.name) else { return cache.name }
-            numbered[cache.title, default: 1] += 1
-            return "\(cache.title) (\(numbered[cache.title] ?? 2))"
-        }
+        // Everything one app keeps is one row, `merged`: its folders in `~/Library/Caches` (`CodexBar` and `com.steipete.codexbar`) and
+        // its containers' caches, the app's and its extensions' (OneDrive's app, file provider and Finder extension). The containers
+        // were left apart and told apart by a number, and OneDrive was three rows: "OneDrive", "OneDrive (2)", "OneDrive (3)" (2026-10-22).
+        var appRows: [String: [CacheEntry]] = [:]
         for cache in listed {
             let outcome = AppCaches.outcome(cache, now: now)
             let days = AppCaches.unchangedDays(cache, now: now)
-            var entry = CacheEntry(id: cache.id, title: title(cache), bytes: cache.bytes,
+            var entry = CacheEntry(id: cache.id, title: cache.title, bytes: cache.bytes,
                                    paths: [cache.path], source: .app, within: cache.container.map { "container:\($0)" } ?? cache.id)
             if outcome == .suggested {
                 entry.recommended = true
@@ -110,9 +100,9 @@ enum CachesPage {
                 entry.owners = [cache.name.hasSuffix(".ShipIt") ? String(cache.name.dropLast(".ShipIt".count)) : cache.name, cache.title]
             }
             if cache.ownerRunning { cache.quittable == false ? inUse(&entry) : open(&entry) }
-            if cache.container == nil { folderRows[cache.title, default: []].append(entry) } else { entries.append(entry) }
+            appRows[cache.title, default: []].append(entry)
         }
-        for key in folderRows.keys.sorted() { entries.append(merged(folderRows[key] ?? [])) }
+        for key in appRows.keys.sorted() { entries.append(merged(appRows[key] ?? [])) }
 
         // The web caches of Chromium and Electron apps, and the per-user system caches of third-party tools: what Clean always freed
         // while their app was closed, so recommended. With them, the code-signing copies of apps that hold space of their own (left by
@@ -172,7 +162,8 @@ enum CachesPage {
 
     /// An open app's cache: freed only by a Free the user confirms, which quits the app (`quitNote`), so not recommended, and its
     /// reason stays as a fact.
-    /// One row for the folders of one app: their sizes and folders together, recommended when each is, open when one is.
+    /// One row for what one app keeps (folders in Caches, its containers' caches): their sizes and folders together, recommended
+    /// when each is, open when one is.
     static func merged(_ folders: [CacheEntry]) -> CacheEntry {
         let folders = folders.sorted { $0.bytes > $1.bytes }
         guard var row = folders.first, folders.count > 1 else { return folders.first ?? CacheEntry(id: "", title: "", bytes: 0, paths: [], source: .app) }
@@ -183,6 +174,9 @@ enum CachesPage {
         row.open = folders.contains(where: \.open)
         row.facts = folders.flatMap(\.facts).reduce(into: []) { if !$0.contains($1) { $0.append($1) } }
         row.owners = folders.flatMap(\.owners).reduce(into: []) { if !$0.contains($1) { $0.append($1) } }
+        // Containers name their apps exactly (bundle identifiers); a folder in Caches only by its name: matched exactly only when every
+        // part is a container's.
+        row.exactOwners = folders.allSatisfy(\.exactOwners)
         row.members = folders
         return row
     }

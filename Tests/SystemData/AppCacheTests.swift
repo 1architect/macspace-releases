@@ -433,6 +433,28 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(claimed["appcache:com.steipete.codexbar"], 40_000_000)
     }
 
+    /// An app's containers (OneDrive's app, file provider and Finder extension) are one row with its folder in Caches, not
+    /// "OneDrive", "OneDrive (2)" and "OneDrive (3)"; Free empties each of them.
+    func testAnAppsContainersAreOneRow() {
+        func container(_ identifier: String, bytes: UInt64) -> AppCache {
+            var cache = cache(.app(name: "OneDrive", lastOpened: nil), unchangedDays: 45, bytes: bytes)
+            cache.id = "containercache:\(identifier)"
+            cache.name = identifier
+            cache.container = identifier
+            cache.bundleIdentifiers = [identifier]
+            return cache
+        }
+        var folder = cache(.app(name: "OneDrive", lastOpened: nil), unchangedDays: 45, bytes: 10_000_000)
+        folder.name = "com.microsoft.OneDrive"
+        let caches = [container("com.microsoft.OneDrive-mac", bytes: 300_000_000), container("com.microsoft.OneDrive-mac.FileProvider", bytes: 80_000_000),
+                      container("com.microsoft.OneDrive.FinderSync", bytes: 60_000_000), folder]
+        let entries = CachesPage.entries(snapshot(caches), now: now)
+        XCTAssertEqual(entries.map(\.title), ["OneDrive"])
+        XCTAssertEqual(entries.first?.bytes, 450_000_000)
+        XCTAssertEqual(Set(entries.first?.parts.map(\.id) ?? []), Set(caches.map(\.id)))
+        XCTAssertEqual(entries.first?.exactOwners, false, "the folder in Caches is matched by name, so the row is too")
+    }
+
     /// Homebrew's old versions are recommended; its downloads are offered on their own, saying they come back.
     func testHomebrewIsTwoDeveloperCaches() {
         var snap = snapshot([])
