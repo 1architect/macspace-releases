@@ -4451,7 +4451,7 @@
     "kind" : "Button",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:238",
-      "App\/Settings\/ChartMotionView.swift:62"
+      "App\/Settings\/ChartMotionView.swift:60"
     ],
     "table" : "Debloat",
     "translations" : {
