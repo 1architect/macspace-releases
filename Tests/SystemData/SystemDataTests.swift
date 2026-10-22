@@ -352,7 +352,7 @@ final class SystemDataTests: XCTestCase {
     /// have an item to go to; before, the item was dropped and root's caches and temporary files went unmeasured.
     func testAnItemPartlyClosedToThisProcessWaitsForTheHelper() throws {
         // The kernel's path (/private/var/…), which the helper may measure; the temporary folder's own path says /var.
-        let real = try XCTUnwrap(realpath(root.path, nil).map { defer { free($0) }; return String(cString: $0) })
+        let real = try XCTUnwrap(realpath(root.path, nil).map { pointer in defer { free(pointer) }; return String(cString: pointer) })
         try file("varfolders/zz/rootdir/X/small", mb: 1)
         try file("varfolders/zz/rootdir/T/secret", mb: 1)
         let closed = real + "/varfolders/zz/rootdir/T"

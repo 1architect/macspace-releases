@@ -70,7 +70,7 @@ struct GeneralSettingsSection: View {
             } label: {
                 InfoTitle(title: String(localized: "When the window closes"), info: String(localized: "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications."))
             }
-            Toggle(isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin)) {
+            Toggle(isOn: Binding(get: { opensAtLogin }, set: { value, _ in setOpensAtLogin(value) })) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Open at login")
                     if let loginError { StatusFlag(text: loginError) }

@@ -1,7 +1,5 @@
 {
   "features" : [
-    "refractivity",
-    "specular-location"
   ],
   "fill" : "system-dark",
   "groups" : [
@@ -53,7 +51,7 @@
         "kind" : "layer-color",
         "opacity" : 0.5
       },
-      "specular" : "inside",
+      "specular" : false,
       "translucency" : {
         "enabled" : true,
         "value" : 1

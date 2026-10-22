@@ -310,7 +310,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
 
     /// A link to a home folder, made where anyone may write (`/private/tmp`), passes the text check; the disk check refuses it.
     func testTheHelperRefusesAPathThroughALink() throws {
-        let temporary = try XCTUnwrap(realpath(FileManager.default.temporaryDirectory.path, nil).map { defer { free($0) }; return String(cString: $0) })
+        let temporary = try XCTUnwrap(realpath(FileManager.default.temporaryDirectory.path, nil).map { pointer in defer { free(pointer) }; return String(cString: pointer) })
         let folder = temporary + "/allowed-\(UUID().uuidString)"
         try FileManager.default.createDirectory(atPath: folder + "/real", withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: folder) }

@@ -792,16 +792,28 @@ private struct TileSwitch: View {
 
     var body: some View {
         let info = TileInfo(handle)
-        if case let .state(on, _, detail, meter, actionable)? = info.graphic {
-            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading, part: .switchOnly,
-                      flip: info.switchAction.map { action in { [handle] value in
-                          // Quiet, as the page's switch: it has already moved.
-                          let result = await handle.perform(action, extraParameters: ["value": value ? "true" : "false"], quiet: true)
-                          return result.map { $0.outcome != .failed } ?? false
-                      } },
-                      disabled: info.switchAction == nil)
+        switchView(info)
+    }
+
+    @ViewBuilder
+    private func switchView(_ info: TileInfo) -> some View {
+        switch info.graphic {
+        case let .some(.state(on, _, detail, meter, actionable)):
+            StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
+                      part: .switchOnly, flip: flipAction(info), disabled: info.switchAction == nil)
                 .padding(.leading, TileFace.margin)
                 .padding(.top, TileFace.topInset)
+        default:
+            EmptyView()
+        }
+    }
+
+    private func flipAction(_ info: TileInfo) -> (@MainActor (Bool) async -> Bool)? {
+        guard let action = info.switchAction else { return nil }
+        return { [handle] value in
+            // Quiet, as the page's switch: it has already moved.
+            let result = await handle.perform(action, extraParameters: ["value": value ? "true" : "false"], quiet: true)
+            return result.map { $0.outcome != .failed } ?? false
         }
     }
 }
