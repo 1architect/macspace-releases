@@ -111,6 +111,15 @@ struct MacSpaceMain: App {
         .handlesExternalEvents(matching: [])
         .windowLevel(.floating)
 
+        // Temporary: the charts' motion (Design menu, ⌥⌘G), over the main window so the charts show each change.
+        Window("Chart Motion", id: ChartMotionView.windowID) {
+            ChartMotionView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 440, height: 760)
+        .handlesExternalEvents(matching: [])
+        .windowLevel(.floating)
+
         // The README's screenshots at full color (Design menu, ⌥⌘S).
         Window("Screenshots", id: ScreenshotToolView.windowID) {
             ScreenshotToolView()

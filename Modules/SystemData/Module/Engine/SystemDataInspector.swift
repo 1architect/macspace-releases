@@ -403,15 +403,19 @@ public struct SystemDataInspector {
             return ProcessCheck.runningApp(bundleIdentifiers, apps: running, processes: processes ?? [], appPath: processCheck.appPath) != nil
         }
         // Entries are registered first and measured together afterwards, in parallel: sizing is disk-bound and independent per path.
+        // A title, and what freeing a clone would give back, are worked out only for an entry that is listed: naming an app asks
+        // Spotlight (`AppNames`) and a clone's own part is a walk of it. Done for every folder of Caches, Containers and Application
+        // Support first, most of them too small to list, they kept the scan at 0% for 4.5 seconds before it measured anything
+        // (2026-10-21).
         struct Pending {
-            var id: String, title: String, kind: SystemDataKind, paths: [String], owners: [String]
-            var cleanup: SystemDataCleanup, notes: [String], minimum: UInt64, expectedReclaim: UInt64?, measurable: Bool
+            var id: String, title: () -> String, kind: SystemDataKind, paths: [String], owners: [String]
+            var cleanup: SystemDataCleanup, notes: [String], minimum: UInt64, expectedReclaim: () -> UInt64?, measurable: Bool
         }
         var pending: [Pending] = []
         /// What each entry measured, listed or not.
         var measuredTotals: [String: UInt64] = [:]
-        func add(_ id: String, _ title: String, _ kind: SystemDataKind, paths: [String], owners: [String] = [],
-                 cleanup: SystemDataCleanup, notes: [String] = [], minimum: UInt64 = 0, expectedReclaim: UInt64? = nil,
+        func add(_ id: String, _ title: @autoclosure @escaping () -> String, _ kind: SystemDataKind, paths: [String], owners: [String] = [],
+                 cleanup: SystemDataCleanup, notes: [String] = [], minimum: UInt64 = 0, expectedReclaim: @autoclosure @escaping () -> UInt64? = nil,
                  measurable: Bool = true) {
             pending.append(Pending(id: id, title: title, kind: kind, paths: paths, owners: owners, cleanup: cleanup, notes: notes,
                                    minimum: minimum, expectedReclaim: expectedReclaim, measurable: measurable))
@@ -466,9 +470,9 @@ public struct SystemDataInspector {
                     if measured, total > 0 { smallBytes[SmallKey(kind: entry.kind, cleanup: entry.cleanup.kind), default: 0] += total }
                     continue
                 }
-                var item = SystemDataItem(id: entry.id, title: entry.title, kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
+                var item = SystemDataItem(id: entry.id, title: entry.title(), kind: entry.kind, paths: entry.paths, bytes: measured ? total : nil,
                                           readable: readable, owners: entry.owners, inUse: isRunning(entry.owners, cleanup: entry.cleanup.kind, paths: entry.paths), cleanup: entry.cleanup, notes: entry.notes)
-                item.expectedReclaimBytes = entry.expectedReclaim ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
+                item.expectedReclaimBytes = entry.expectedReclaim() ?? (entry.cleanup.kind == .deleteWhenNotRunning && measured ? total : nil)
                 item.purgeableBytes = measured ? purgeable : nil
                 // A leftover of a finished update has no manual step: there is no update to install.
                 items.append(item)

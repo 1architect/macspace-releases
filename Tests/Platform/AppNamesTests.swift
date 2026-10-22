@@ -52,9 +52,21 @@ final class AppNamesTests: XCTestCase {
 }
 
 extension AppNamesTests {
-    func testGroupContainersAreNamedAfterTheirApp() {
-        let found = AppNames.Lookup(appURL: { $0 == "com.apple.notes" ? URL(fileURLWithPath: "/System/Applications/Notes.app") : nil },
-                                    running: { [] }, indexedURL: { _ in nil })
+    /// An app bundle of its own, named Notes: the Mac's own Notes is named in the Mac's language ("Notas" in Portuguese), which
+    /// failed this test on a Mac not in English.
+    private func notesApp() throws -> URL {
+        let app = FileManager.default.temporaryDirectory.appendingPathComponent("AppNamesTests-\(UUID().uuidString)/Notes.app")
+        let contents = app.appendingPathComponent("Contents")
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        let info: [String: Any] = ["CFBundleIdentifier": "com.apple.notes", "CFBundleName": "Notes", "CFBundlePackageType": "APPL"]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: contents.appendingPathComponent("Info.plist"))
+        addTeardownBlock { try? FileManager.default.removeItem(at: app.deletingLastPathComponent()) }
+        return app
+    }
+
+    func testGroupContainersAreNamedAfterTheirApp() throws {
+        let notes = try notesApp()
+        let found = AppNames.Lookup(appURL: { $0 == "com.apple.notes" ? notes : nil }, running: { [] }, indexedURL: { _ in nil })
         XCTAssertEqual(AppNames.display("group.com.apple.notes", lookup: found), "Notes")
         XCTAssertEqual(AppNames.display("group.com.apple.replicatord", lookup: found), "Replicatord")
         XCTAssertEqual(AppNames.display("com.apple.wallpaper.agent", lookup: found), "Wallpaper")

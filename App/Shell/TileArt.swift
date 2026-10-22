@@ -68,8 +68,9 @@ extension View {
 
 // MARK: Loading
 
-/// While a tile's figures load, its chart's own elements breathe one after another, a wave running through them, instead of a band of
-/// light sweeping over the tile. With Reduce Motion they stay dimmed instead.
+/// A wave of brightness running through elements one after another, for what is under way (the loading dots, a row's flag, the menu
+/// bar icon). With Reduce Motion they stay dimmed instead. A chart's own elements no longer breathe while their figures load: the
+/// blocks open with the reading instead (`ChartMotion`), and the tile's ground still darkens and lifts (`LoadingGlow`).
 enum LoadingWave {
     static let period = 1.4
 
@@ -89,6 +90,11 @@ enum LoadingWave {
     /// Blocks to animate while a tile has nothing to show yet.
     static let placeholderBlocks: [UsageSegment] = [6, 3, 2, 1.4, 1].enumerated().map { index, weight in
         UsageSegment(id: "loading-\(index)", label: "", bytes: UInt64(weight * 1_000), tone: .series(index))
+    }
+
+    /// These are the placeholders, not a module's figures.
+    static func isPlaceholder(_ segments: [UsageSegment]) -> Bool {
+        segments.contains { $0.id.hasPrefix("loading-") }
     }
 }
 
@@ -328,7 +334,8 @@ enum BlockColor {
 }
 
 /// Blocks sized by bytes. Large enough blocks carry their name and size; the hovered block lights up. They grow in one after another
-/// when they appear and glide to new sizes.
+/// when they appear and glide to new sizes. While their figures are read anew they open out with the reading, and the amber block
+/// drains as it is freed (`ChartMotion`).
 struct BlocksView: View {
     let segments: [UsageSegment]
     let tint: TileTint
@@ -341,6 +348,10 @@ struct BlocksView: View {
     /// The layout and the most blocks drawn: a page's unless the tile says (`ChartLook.tile`).
     var look = ChartLook.page
     var loading = false
+    /// The figures are being read anew, and the blocks open out with it (`ChartMotion`): last session's figures, or the user's
+    /// Refresh. Not a cleanup's reading, nor one in the background. `fill` is how far it has come.
+    var reading = false
+    var fill: LoadFill?
     /// Where the blocks are arranged (`Treemap.arranged`), when not at the size drawn: a tile's chart at rest, so a tile moving to
     /// another cell only stretches its blocks. Each chart is arranged at its own shape, as in 1.0.3: one shape for every chart
     /// (320 by 120, stretched to each) drew blocks that did not fit the chart around them, tall slivers on a large tile (2026-10-13).
@@ -349,6 +360,39 @@ struct BlocksView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @State private var appeared = false
+    /// The blocks are opening out with a reading (`ChartMotion`); nil otherwise, and once every block is open.
+    @State private var growth: Growth?
+    /// The figures still drawn while the blocks open or the amber block drains: the new ones come in after, as the usual glide.
+    @State private var held: [UsageSegment]?
+    /// When the amber block, draining by itself, is done.
+    @State private var drainEnds: Date?
+    /// A pretend reading the Chart Motion window plays (development builds), in place of the module's.
+    @State private var rehearsal: LoadFill?
+    @State private var motion = BlockMotion()
+
+    struct Growth: Hashable {
+        /// nil while the placeholders are drawn: the first figures start closed.
+        var start: Date?
+        /// Refresh: the blocks first close into their corners.
+        var closing = false
+    }
+
+    init(segments: [UsageSegment], tint: TileTint, labels: Bool = true, hovered: String? = nil, gap: CGFloat = 3, outerRadius: CGFloat? = nil,
+         look: ChartLook = .page, loading: Bool = false, reading: Bool = false, fill: LoadFill? = nil, orderSize: CGSize? = nil) {
+        self.segments = segments
+        self.tint = tint
+        self.labels = labels
+        self.hovered = hovered
+        self.gap = gap
+        self.outerRadius = outerRadius
+        self.look = look
+        self.loading = loading
+        self.reading = reading
+        self.fill = fill
+        self.orderSize = orderSize
+        // Drawn while its figures are being read: the blocks open with it. Drawn with placeholders: the first figures open when they come.
+        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : reading ? Growth(start: Date()) : nil)
+    }
 
     /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
     static func sizeParts(_ bytes: UInt64) -> [String] {
@@ -377,7 +421,13 @@ struct BlocksView: View {
                                       style: .continuous)
     }
 
+    /// What can be freed, in bytes: the amber parts.
+    static func amber(_ segments: [UsageSegment]) -> UInt64 {
+        segments.filter { $0.tone == .caution }.reduce(0) { $0 + $1.bytes }
+    }
+
     var body: some View {
+        let segments = held ?? self.segments
         GeometryReader { proxy in
             let blocks = BlockLayout.blocks(segments, limit: look.limit)
             let shown = blocks.map(\.segment)
@@ -385,28 +435,195 @@ struct BlocksView: View {
             let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
                                          orderIn: CGRect(origin: .zero, size: orderSize ?? proxy.size), style: look.style)
             let corner = Self.radius(for: rects.map(inset))
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
+            // Opening with a reading, draining what was freed: not the placeholders, nor with Reduce Motion.
+            let plan = growth != nil && !reduceMotion && !LoadingWave.isPlaceholder(segments) && !blocks.isEmpty
+                ? GrowPlan(rects: rects.map(inset), weights: blocks.map(\.weight)) : nil
+            let draining = !reduceMotion && drainEnds != nil && shown.contains { $0.tone == .caution }
+            let moving = plan != nil || draining
+            TimelineView(.animation(minimumInterval: 1 / 60, paused: !moving || reduceMotion || !appearsActive)) { context in
+                let growing = plan.map { opening($0, ids: shown.map(\.id), at: context.date) }
+                let opens = growing?.opens
+                // The chart's width while it grows: some room kept empty at its right, sprung into at the end (`ChartMotion.finishRoom`).
+                let width = growing?.width ?? 1
+                let drain = draining ? drained(at: context.date) : 0
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
-                        let rect = inset(rects[index])
+                        let rect = Self.narrowed(inset(rects[index]), to: width)
+                        let drawn = motionRect(rect, index: index, amber: segment.tone == .caution, opens: opens, drain: drain)
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
                         placed(Surface(shape: shape, color: fill, highlighted: hovered == segment.id,
-                                       strength: appeared ? wave(context.date, index) : 0),
-                               index: index, rect: rect)
+                                       strength: appeared || plan != nil ? 1 : 0),
+                               index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
-                        let rect = inset(rects[index])
+                        let rect = Self.narrowed(inset(rects[index]), to: width)
+                        let drawn = motionRect(rect, index: index, amber: segment.tone == .caution, opens: opens, drain: drain)
+                        let moved = drawn != rect
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
-                        placed(overlay(segment, shade: shades[index], rect: rect, shape: shape).opacity(appeared ? wave(context.date, index) : 0), index: index, rect: rect)
+                        // While the block opens or drains, its name is laid out for the whole block and the block shows it as it moves,
+                        // rather than wrapping it anew at every frame. Otherwise the frames are nil: the name fills the block as it always did.
+                        placed(overlay(segment, shade: shades[index], rect: rect, shape: shape)
+                                   .opacity(appeared ? 1 : 0)
+                                   .frame(width: moved ? rect.width : nil, height: moved ? rect.height : nil)
+                                   .frame(width: moved ? drawn.width : nil, height: moved ? drawn.height : nil, alignment: .topLeading)
+                                   .clipped(),
+                               index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
                 }
             }
-            .animation(Theme.layout, value: shown)
-            .animation(.smooth(duration: 0.4), value: loading)
+            .animation(ChartMotion.glide, value: shown)
         }
         .onAppear { appeared = true }
+        // Refresh: the chart on screen closes into its corners and opens again with the reading.
+        .onChange(of: reading) { _, reading in
+            guard reading, growth == nil, !reduceMotion, !LoadingWave.isPlaceholder(self.segments) else { return }
+            motion.restartGrowth()
+            growth = Growth(start: Date(), closing: true)
+        }
+        .onChange(of: self.segments) { old, new in received(old, new) }
+        // The Chart Motion window's Replay (development builds): the reading again, a pretend one of the seconds it says.
+        .onReceive(NotificationCenter.default.publisher(for: ChartMotion.replay)) { note in
+            guard !reduceMotion, !LoadingWave.isPlaceholder(self.segments) else { return }
+            let start = Date(), count = BlockLayout.blocks(self.segments, limit: look.limit).count
+            motion.restartGrowth()
+            rehearsal = LoadFill(started: start.addingTimeInterval(ChartMotion.closingTotal(count: count)), expected: note.object as? Double ?? 3)
+            growth = Growth(start: start, closing: true)
+        }
+        // Every block open: the figures read meanwhile come in.
+        .task(id: growth) {
+            guard let start = growth?.start else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.25))
+                let stuck = reduceMotion || (held ?? self.segments).isEmpty || Date().timeIntervalSince(start) > 120
+                if stuck || motion.settled {
+                    growth = nil
+                    held = nil
+                    rehearsal = nil
+                    motion.restartGrowth()
+                    return
+                }
+            }
+        }
+        // The amber block drained by itself: the other blocks take its room.
+        .task(id: drainEnds) {
+            guard let drainEnds else { return }
+            try? await Task.sleep(for: .seconds(max(drainEnds.timeIntervalSinceNow, 0)))
+            guard !Task.isCancelled else { return }
+            motion.endDrain()
+            held = nil
+            self.drainEnds = nil
+        }
+    }
+
+    /// New figures. The first ones, after the placeholders, open from their left sides. While the blocks open or the amber block drains,
+    /// they wait for it to end. When less can be freed than before (something was), the amber block first drains by the share that
+    /// went, then the chart glides to them. Otherwise they come in as they always did.
+    private func received(_ old: [UsageSegment], _ new: [UsageSegment]) {
+        if LoadingWave.isPlaceholder(old), !LoadingWave.isPlaceholder(new) {
+            held = nil
+            motion.restartGrowth()
+            growth = reduceMotion ? nil : Growth(start: Date())
+            return
+        }
+        guard !reduceMotion else { held = nil; return }
+        if growth != nil || drainEnds != nil {
+            if held == nil { held = old }
+            return
+        }
+        let before = Self.amber(old), after = Self.amber(new)
+        if before > 0, after < before, old.contains(where: { $0.tone == .caution }) {
+            held = old
+            motion.swap = (Date(), 0, 1 - Double(after) / Double(before))
+            drainEnds = Date().addingTimeInterval(ChartMotion.draining / ChartMotion.speed)
+        } else {
+            held = nil
+        }
+    }
+
+    /// How much of its width each block has opened to at `date`: after a Refresh, closing onto its left side, last first; then opening
+    /// with the reading, each over its stretch of it (`GrowPlan`), its width following as a spring. The reading drawn is smoothed and
+    /// creeps on while the real one says nothing new (`ChartMotion.drawnReading`); once it is over, it runs to the end.
+    private func opening(_ plan: GrowPlan, ids: [String], at date: Date) -> (opens: [CGFloat], width: CGFloat) {
+        var opens = [CGFloat](repeating: 0, count: ids.count)
+        let room = min(max(ChartMotion.finishRoom, 0), 0.5)
+        guard let growth, let start = growth.start else { return (opens, CGFloat(1 - room)) }
+        var from = start
+        if growth.closing {
+            let closing = ChartMotion.closingTotal(count: ids.count)
+            let closed = start.addingTimeInterval(closing)
+            if date < closed {
+                for (position, index) in plan.sequence.reversed().enumerated() {
+                    opens[index] = ChartMotion.closed(after: date.timeIntervalSince(start) * ChartMotion.speed - Double(position) * ChartMotion.closeStagger)
+                }
+                // The room opens as the blocks close.
+                return (opens, CGFloat(1 - room * ChartMotion.easeInOut(date.timeIntervalSince(start) / max(closing, 0.01))))
+            }
+            from = closed
+        }
+        // Seconds since the last frame, at the speed set.
+        let dt = (motion.frame.map { min(max(date.timeIntervalSince($0), 0), 0.1) } ?? 0) * ChartMotion.speed
+        motion.frame = date
+        let reading: Bool, real: Double
+        if let rehearsal {
+            reading = date < rehearsal.started.addingTimeInterval(rehearsal.expected)
+            real = reading ? rehearsal.fraction(at: date) : 1
+        } else {
+            reading = self.reading
+            real = reading ? (fill ?? LoadFill(started: from, expected: LoadFill.firstGuess)).fraction(at: date) : 1
+        }
+        if real > motion.lastReal + 0.0001 || motion.lastMoved == nil {
+            motion.lastReal = max(real, motion.lastReal)
+            motion.lastMoved = date
+        }
+        let stalled = reading ? date.timeIntervalSince(motion.lastMoved ?? date) * ChartMotion.speed : 0
+        // The reading is over: the reading drawn catches up at once (`ChartMotion.ending`) rather than at its usual smoothing, so the
+        // finish comes with the end of the load and not seconds after it.
+        if !reading, motion.endedAt == nil { motion.endedAt = date }
+        motion.reading = motion.endedAt == nil
+            ? ChartMotion.drawnReading(motion.reading, reading: motion.lastReal, stalled: stalled, over: dt)
+            : motion.reading + (1 - motion.reading) * (1 - exp(-dt / ChartMotion.ending))
+        var open = true
+        for index in plan.sequence {
+            var width = motion.widths[ids[index]] ?? (0, 0)
+            ChartMotion.follow(&width, to: plan.target(index, at: motion.reading), over: dt)
+            motion.widths[ids[index]] = width
+            if abs(width.x - 1) > 0.003 || abs(width.v) > 0.02 { open = false }
+            opens[index] = CGFloat(min(max(width.x, 0), 1.15))
+        }
+        // The load is over and the reading drawn has caught up: the finish springs the chart into its room, while the last blocks
+        // still settle; the growth is over once both have come to rest.
+        if motion.endedAt != nil, motion.reading > 0.98, motion.openedAt == nil { motion.openedAt = date }
+        guard let openedAt = motion.openedAt else {
+            motion.settled = false
+            return (opens, CGFloat(1 - room))
+        }
+        let finish = date.timeIntervalSince(openedAt)
+        motion.settled = open && finish >= ChartMotion.finishTotal
+        let sprung = finish >= ChartMotion.finishTotal ? 1 : ChartMotion.spring(finish * ChartMotion.speed, bounce: ChartMotion.finishBounce, duration: ChartMotion.finishSpring)
+        return (opens, CGFloat(1 - room * (1 - sprung)))
+    }
+
+    /// A block's rectangle in a chart drawn at `width` of its own width, from its left edge.
+    static func narrowed(_ rect: CGRect, to width: CGFloat) -> CGRect {
+        guard width != 1 else { return rect }
+        return CGRect(x: rect.minX * width, y: rect.minY, width: rect.width * width, height: rect.height)
+    }
+
+    /// How much of the amber block has drained at `date`: by the share that was freed, while its place stays.
+    private func drained(at date: Date) -> Double {
+        guard let swap = motion.swap else { return 0 }
+        motion.drain = swap.from + (swap.to - swap.from) * ChartMotion.easeInOut(date.timeIntervalSince(swap.start) * ChartMotion.speed / max(ChartMotion.draining, 0.01))
+        return motion.drain
+    }
+
+    /// Where a block is drawn while it opens or drains: from its left side, as far as it has opened; the amber block drains back onto
+    /// its left side.
+    private func motionRect(_ rect: CGRect, index: Int, amber: Bool, opens: [CGFloat]?, drain: Double) -> CGRect {
+        var open = opens?[index] ?? 1
+        if amber, drain > 0 { open *= CGFloat(1 - min(max(drain, 0), 1)) }
+        return open == 1 ? rect : GrowPlan.drawn(rect, open: open)
     }
 
     /// A block's rectangle less its share of the gap. A block thinner than the gap keeps its place at no width; inset as usual, it
@@ -417,16 +634,12 @@ struct BlocksView: View {
     }
 
     /// A block's place and its coming in (growing from its middle); the same for the block and for its name. The color comes in with
-    /// it (`appeared` in the surface's strength).
-    private func placed(_ view: some View, index: Int, rect: CGRect) -> some View {
+    /// it (`appeared` in the surface's strength). A block opening with a reading (`ChartMotion`) is placed where it has opened to,
+    /// `grown` 1 and no fade.
+    private func placed(_ view: some View, index: Int, rect: CGRect, grown: Double) -> some View {
         view
-            .modifier(BlockFrame(rect: rect, grown: appeared ? 1 : 0.6))
+            .modifier(BlockFrame(rect: rect, grown: grown))
             .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
-    }
-
-    /// Block `index`'s loading pulse: given to the block's surface and laid on its name.
-    private func wave(_ date: Date, _ index: Int) -> Double {
-        LoadingWave.opacity(date, index: index, count: segments.count, loading: loading, reduceMotion: reduceMotion)
     }
 
     /// What is drawn over a block: its name and size when it is large enough, and an outline when hovered.
@@ -547,26 +760,21 @@ struct DotsView: View {
     var body: some View {
         let palette = design.palette(tint)
         let columns = Self.columns(for: dots.count, atMost: columns)
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
-                ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
-                    let wave = LoadingWave.opacity(context.date, index: index, count: dots.count, loading: loading, reduceMotion: reduceMotion)
-                    ZStack {
-                        // Only an open dot is a ring. Under a filled one it showed through while the fill breathed (loading), and the
-                        // dot looked hollow.
-                        Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
-                            .opacity(appeared && dot != .open ? 0 : wave)
-                        Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5), strength: wave)
-                            .scaleEffect(appeared && dot != .open ? 1 : 0.2)
-                            .opacity(appeared && dot != .open ? 1 : 0)
-                    }
-                    .frame(width: diameter, height: diameter)
-                    .animation(Theme.layout.delay(appeared ? 0 : 0.2 + Double(index) * 0.035), value: appeared)
-                    .animation(Theme.layout, value: dot)
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(diameter), spacing: spacing), count: columns), alignment: .leading, spacing: spacing) {
+            ForEach(Array(dots.enumerated()), id: \.offset) { index, dot in
+                ZStack {
+                    // Only an open dot is a ring: under a filled one it showed through, and the dot looked hollow.
+                    Circle().strokeBorder(palette.step(3), lineWidth: 1.5)
+                        .opacity(appeared && dot != .open ? 0 : 1)
+                    Surface(shape: Circle(), color: dot == .attention ? design.action : palette.step(5))
+                        .scaleEffect(appeared && dot != .open ? 1 : 0.2)
+                        .opacity(appeared && dot != .open ? 1 : 0)
                 }
+                .frame(width: diameter, height: diameter)
+                .animation(Theme.layout.delay(appeared ? 0 : 0.2 + Double(index) * 0.035), value: appeared)
+                .animation(Theme.layout, value: dot)
             }
         }
-        .animation(.smooth(duration: 0.4), value: loading)
         .fixedSize()
         .onAppear { appeared = true }
     }
@@ -623,10 +831,7 @@ struct StateView: View {
     @State private var fill: CGFloat = 0
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !loading || reduceMotion || !appearsActive)) { context in
-            content { index in LoadingWave.opacity(context.date, index: index, count: 3, loading: loading, reduceMotion: reduceMotion) }
-        }
-        .animation(.smooth(duration: 0.4), value: loading)
+        content { _ in 1 }
     }
 
     private func content(_ wave: (Int) -> Double) -> some View {

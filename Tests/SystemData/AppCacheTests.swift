@@ -17,9 +17,12 @@ final class AppCacheTests: XCTestCase {
 
     override func tearDownWithError() throws { try? fm.removeItem(at: root) }
 
+    /// A cache of an app of its own: caches with one name are one app's folders, drawn as one row (`CachesPage.merged`), and every
+    /// fixture named "x" made four apps' caches one row, an open one, and nothing recommended.
     private func cache(_ owner: AppCache.Owner, unchangedDays: Double, dataLike: UInt64 = 0, bytes: UInt64 = 20_000_000) -> AppCache {
-        AppCache(id: "appcache:x", name: "x", path: "/x", bytes: bytes, lastChange: now.addingTimeInterval(-unchangedDays * day), recentBytes: 0,
-                 dataLikeBytes: dataLike, owner: owner)
+        let name = "x\(UUID().uuidString.prefix(8))"
+        return AppCache(id: "appcache:\(name)", name: name, path: "/\(name)", bytes: bytes, lastChange: now.addingTimeInterval(-unchangedDays * day),
+                        recentBytes: 0, dataLikeBytes: dataLike, owner: owner)
     }
 
     /// Recommended once the app is gone or the cache was left alone for 3 days (a week when no app can be named for it); a cache

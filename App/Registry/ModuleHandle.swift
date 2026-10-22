@@ -32,6 +32,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The module is being read, as the user sees it (`isRefreshing`): since when, and how long it took last time. The page's button
     /// fills over that time (`LoadFill`), as it fills while an action runs.
     @Published public private(set) var loading: LoadFill?
+    /// The user asked for the figures again (Refresh): the charts close and open again with the reading (`ChartMotion`).
+    @Published public private(set) var isRereading = false
+    private var rereadGeneration: Int?
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
     /// An action the user started from a page button, or automatic cleanup, is running: the menu bar icon animates, and
@@ -243,7 +246,15 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         refreshRequests.insert(generation)
         let blocking = screen == nil && screenIsVisible
         if !quiet || blocking { showRefresh(generation, started: started, expected: expected, blocking: blocking) }
+        if reload && !quiet {
+            rereadGeneration = generation
+            isRereading = true
+        }
         defer {
+            if rereadGeneration == generation {
+                rereadGeneration = nil
+                isRereading = false
+            }
             refreshRequests.remove(generation)
             blockingRefreshes.remove(generation)
             if refreshes.remove(generation) != nil {

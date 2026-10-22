@@ -12,6 +12,10 @@ struct TileInfo: Equatable {
     var needsAttention = false
     var graphic: TileGraphic?
     var loading = false
+    /// The figures are being read anew: last session's, none yet, or the user's Refresh (not a cleanup's reading, nor one in the
+    /// background); and how far it has come (`LoadFill`). The chart opens out with it (`ChartMotion`).
+    var reading = false
+    var fill: LoadFill?
     /// What the switch of a `state` chart runs; nil when it cannot be flipped.
     var switchAction: Action?
 
@@ -27,9 +31,12 @@ struct TileInfo: Equatable {
                       status: reading ? Self.loadingStatus(handle.loading?.reported) : (handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
+            self.reading = (handle.tileIsStale && !handle.isCleaning) || handle.isRereading
         } else {
             self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus(handle.loading?.reported), loading: true)
+            reading = true
         }
+        fill = self.reading ? handle.loading : nil
     }
 
     /// A tile's status line while its module reads the Mac.
@@ -205,7 +212,7 @@ struct TileFace: View {
             // No names in the blocks: the one under the pointer is named in the line just under them.
             BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, gap: CGFloat(TileType.current.tileGap),
                        outerRadius: TileType.current.concentricCorners ? Theme.tileRadius - Self.margin : nil,
-                       look: .tile, loading: info.loading,
+                       look: .tile, loading: info.loading, reading: info.reading, fill: info.fill,
                        orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size })
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)

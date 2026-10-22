@@ -176,7 +176,9 @@ struct ScreenView: View {
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            detailsVisible: !refreshing, cascadeOffset: legendCount) {
                     if let hero = content.hero {
-                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning, detailsVisible: !hidesDetails)
+                        HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning,
+                                   reading: (!content.loaded && !handle.isCleaning) || handle.isRereading, fill: handle.loading,
+                                   detailsVisible: !hidesDetails)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
@@ -317,6 +319,10 @@ struct HeroBlocks: View {
     let tint: TileTint
     /// Graph work and detail visibility are independent: live reloads pulse without hiding the existing legend.
     var loading = false
+    /// The page's figures are being read anew (the first time, the tile's drawn meanwhile, or Refresh), and how far it has come: the
+    /// blocks open out with it (`ChartMotion`).
+    var reading = false
+    var fill: LoadFill?
     var detailsVisible = true
     @Environment(\.design) private var design
     @Environment(\.openGroup) private var openGroup
@@ -334,7 +340,7 @@ struct HeroBlocks: View {
         VStack(alignment: .leading, spacing: 10) {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
-            BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap, loading: loading)
+            BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap, loading: loading, reading: reading, fill: reading ? fill : nil)
                 .frame(height: 150)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
                 .onContinuousHover { phase in

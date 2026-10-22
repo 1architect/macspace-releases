@@ -321,6 +321,13 @@ public final class DesignSettings: ObservableObject {
         }
     }
     @Published public var windowRadius: CGFloat { didSet { defaults.set(Double(windowRadius), forKey: "design.windowRadius") } }
+    /// The charts' motion (Chart Motion window, `ChartMotion`).
+    @Published var motionTuning: MotionTuning {
+        didSet {
+            ChartMotion.tuning = motionTuning
+            defaults.set(try? JSONEncoder().encode(motionTuning), forKey: MotionTuning.key)
+        }
+    }
     /// Temporary: the Color Lab's overrides, per palette (`PaletteScheme.rawValue`).
     /// The Shader Studio is picking what to edit by a click in the window, and what it edits. Not kept.
     @Published var studioPicking = false
@@ -349,6 +356,7 @@ public final class DesignSettings: ObservableObject {
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: "design.appearanceMode") ?? "") ?? (scheme.isLight ? .day : .night)
         tileRadius = CGFloat(tool("design.tileRadius") as? Double ?? Double(CornerRadii.defaultTile))
         tileType = TileType.load(defaults)
+        motionTuning = MotionTuning.load(defaults)
         windowRadius = CGFloat(tool("design.windowRadius") as? Double ?? Double(CornerRadii.defaultWindow))
         colorLab = (tool("design.colorLab") as? Data).flatMap { try? JSONDecoder().decode([String: LabOverrides].self, from: $0) } ?? [:]
         observeSystemAppearance()
@@ -431,6 +439,8 @@ public struct DesignCommands: Commands {
                 .keyboardShortcut("l", modifiers: [.command, .option])
             Button("Widget Type…") { openWindow(id: WidgetTypeView.windowID) }
                 .keyboardShortcut("t", modifiers: [.command, .option])
+            Button("Chart Motion…") { openWindow(id: ChartMotionView.windowID) }
+                .keyboardShortcut("g", modifiers: [.command, .option])
             Button("Text Editor…") { openWindow(id: TextEditorView.windowID) }
                 .keyboardShortcut("e", modifiers: [.command, .option])
             Button("Screenshots…") { openWindow(id: ScreenshotToolView.windowID) }

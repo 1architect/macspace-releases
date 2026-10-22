@@ -7,7 +7,21 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-10-21
+
+### Changed
+
+- The charts come in with the reading: while a module reads your Mac, its blocks open one after another from their left side, top
+  to bottom, each still opening a little as the next appears, and the chart springs to its full width as the reading ends. Refresh
+  closes the blocks and opens them again with the new reading. A chart whose figures are already read comes in as before.
+- When space is freed, the amber block first shrinks by what was freed, in its place, and the other blocks then take the room.
+- The charts' blocks, the Debloat dots and the Siri switch no longer brighten and dim while their figures load.
+
 ### Fixed
+
+- System Data shows its loading percentage at once: it named every app folder in Caches, Containers and Application Support before
+  measuring anything, most of them too small to list, which kept it at 0% for about 4 seconds.
+- In Settings › Permissions, a flag such as "Not responding" sits beside its permission's name instead of under it.
 
 - System Data's total matches System Settings again: Settings counts everything in your Library's Application Support folder under
   Applications, and MacSpace counted it in System Data, about 8 GB more on our Mac (#35). Settings' figure still moves by a GB or
@@ -395,7 +409,8 @@ The first public release. MacSpace is a System Data and Apple Intelligence clean
 - A Permissions page in Settings that shows Full Disk Access, the helper and the configuration profile, and what each one is for.
 - A switch to open MacSpace at login.
 
-[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/1architect/macspace-releases/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/1architect/macspace-releases/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/1architect/macspace-releases/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/1architect/macspace-releases/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/1architect/macspace-releases/compare/v1.1.1...v1.1.2

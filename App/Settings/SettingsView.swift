@@ -175,11 +175,15 @@ private struct PermissionRow: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                InfoTitle(title: permission.title, info: permission.detail)
-                if let helperError { StatusFlag(text: helperError) }
-                if permission == .privilegedHelper, PrivilegedHelperInstaller.status == .enabled, ((helperStatus ?? status) == .missing) {
-                    StatusFlag(text: String(localized: "Not responding"))
+            // The flags beside the title, as on a page's rows; under it only where the row has no room for them.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    InfoTitle(title: permission.title, info: permission.detail)
+                    flags
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    InfoTitle(title: permission.title, info: permission.detail)
+                    flags
                 }
             }
             Spacer()
@@ -208,6 +212,14 @@ private struct PermissionRow: View {
                     StatusFlag(text: String(localized: "Unknown"), tone: .neutral)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var flags: some View {
+        if let helperError { StatusFlag(text: helperError) }
+        if permission == .privilegedHelper, PrivilegedHelperInstaller.status == .enabled, ((helperStatus ?? status) == .missing) {
+            StatusFlag(text: String(localized: "Not responding"))
         }
     }
 
