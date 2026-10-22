@@ -130,19 +130,4 @@ final class ChartMotionTests: XCTestCase {
         XCTAssertEqual(values.last!, 1, accuracy: 0.005)
         XCTAssertEqual(BlocksView.narrowed(CGRect(x: 100, y: 5, width: 50, height: 20), to: 0.9), CGRect(x: 90, y: 5, width: 45, height: 20))
     }
-
-    /// While the reading says nothing new for long, the reading drawn still moves on, ever slower, short of its end.
-    func testTheReadingDrawnNeverStandsStillBeforeTheEnd() {
-        var drawn = 0.0, stalled = 0.0
-        var previous = 0.0
-        for second in 1...60 {
-            for _ in 0..<60 {
-                stalled += 1 / 60
-                drawn = ChartMotion.drawnReading(drawn, reading: 0.2, stalled: stalled, over: 1 / 60)
-            }
-            if second > 5 { XCTAssertGreaterThan(drawn, previous, "still moving after \(second) s") }
-            previous = drawn
-        }
-        XCTAssertLessThan(drawn, ChartMotion.tailEnd)
-    }
 }

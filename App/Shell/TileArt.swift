@@ -594,23 +594,15 @@ struct BlocksView: View {
         }
         // The load is over and the reading drawn has caught up: the finish springs the chart into its room, while the last blocks
         // still settle; the growth is over once both have come to rest.
-        // Until then the chart creeps into its room, ever slower, so something is always moving (`ChartMotion.finishCreep`).
-        let opening = motion.openingFrom ?? from
-        motion.openingFrom = opening
-        let crept = ChartMotion.finishCreep * (1 - exp(-max(date.timeIntervalSince(opening), 0) * ChartMotion.speed / max(ChartMotion.finishCreepTime, 0.1)))
-        let roomLeft = room * (1 - min(max(crept, 0), 1))
-        if motion.endedAt != nil, motion.reading > 0.98, motion.openedAt == nil {
-            motion.openedAt = date
-            motion.roomAtFinish = roomLeft
-        }
+        if motion.endedAt != nil, motion.reading > 0.98, motion.openedAt == nil { motion.openedAt = date }
         guard let openedAt = motion.openedAt else {
             motion.settled = false
-            return (opens, CGFloat(1 - roomLeft))
+            return (opens, CGFloat(1 - room))
         }
         let finish = date.timeIntervalSince(openedAt)
         motion.settled = open && finish >= ChartMotion.finishTotal
         let sprung = finish >= ChartMotion.finishTotal ? 1 : ChartMotion.spring(finish * ChartMotion.speed, bounce: ChartMotion.finishBounce, duration: ChartMotion.finishSpring)
-        return (opens, CGFloat(1 - (motion.roomAtFinish ?? room) * (1 - sprung)))
+        return (opens, CGFloat(1 - room * (1 - sprung)))
     }
 
     /// A block's rectangle in a chart drawn at `width` of its own width, from its left edge.

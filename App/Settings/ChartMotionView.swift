@@ -56,12 +56,10 @@ public struct ChartMotionView: View {
                 slider("Room", value: $settings.motionTuning.finishRoom, in: 0...0.3, step: 0.005, format: "%.3f")
                 slider("Bounce", value: $settings.motionTuning.finishBounce, in: 0...0.8, step: 0.01, format: "%.2f")
                 slider("Spring", value: $settings.motionTuning.finishSpring, in: 0.1...1.2, step: 0.01, format: "%.2f s")
-                slider("Creep", value: $settings.motionTuning.finishCreep, in: 0...1, step: 0.01, format: "%.2f")
-                slider("Creep time", value: $settings.motionTuning.finishCreepTime, in: 1...40, step: 0.5, format: "%.1f s")
             } header: {
                 Text("Finish")
             } footer: {
-                Text("While the blocks open, the chart keeps this share of its width empty at its right and creeps into it, up to Creep of it, ever slower (Creep time); once the reading is over it springs into the rest, so the end is felt.")
+                Text("While the blocks open, the chart keeps this share of its width empty at its right; once every block is open it springs into it, so the end of the reading is felt.")
                     .foregroundStyle(.secondary)
             }
             Section("Glide to new figures") {

@@ -47,12 +47,6 @@ enum ChartMotion {
     static var finishRoom: Double { tuning.finishRoom }
     static var finishBounce: Double { tuning.finishBounce }
     static var finishSpring: Double { tuning.finishSpring }
-    /// Never still before the finish: while the reading goes on, the chart creeps into its room, up to this share of it, slower and
-    /// slower (seconds), and the reading drawn creeps on toward its end; the finish springs the rest.
-    static var finishCreep: Double { tuning.finishCreep }
-    static var finishCreepTime: Double { tuning.finishCreepTime }
-    /// Where the reading drawn creeps toward while the load goes on: just short of its end, so the last block is still opening.
-    static let tailEnd = 0.995
     /// Once the load is over, the reading drawn catches up with it this quickly, in seconds, whatever its usual smoothing.
     static let ending = 0.12
     /// How long the finish takes to come to rest, at the speed set.
@@ -103,9 +97,7 @@ enum ChartMotion {
     /// `creep` the longer (`stalled` seconds) it has said nothing new. Never back.
     static func drawnReading(_ drawn: Double, reading: Double, stalled: Double, over dt: Double) -> Double {
         let early = 1 - pow(1 - min(max(reading, 0), 1), ahead)
-        let crept = min(1, early + creep * (1 - exp(-max(stalled, 0) / max(creepTime, 0.05))))
-        // Past the creep it still goes on, ever slower, toward just short of the end: the blocks never stand still before the finish.
-        let target = crept >= tailEnd ? crept : crept + (tailEnd - crept) * (1 - exp(-max(stalled, 0) / max(creepTime * 4, 0.2)))
+        let target = min(1, early + creep * (1 - exp(-max(stalled, 0) / max(creepTime, 0.05))))
         return max(drawn, drawn + (target - drawn) * (1 - exp(-max(dt, 0) / max(smoothing, 0.005))))
     }
 
@@ -179,10 +171,6 @@ final class BlockMotion {
     /// Every block is open and at rest, and since when; the finish runs from then, and the growth is over once it has.
     var settled = false
     var openedAt: Date?
-    /// When the blocks began opening (after Refresh's closing), for the chart's creep into its room, and the room left when the
-    /// finish began.
-    var openingFrom: Date?
-    var roomAtFinish: Double?
     /// When the load was seen to be over.
     var endedAt: Date?
     /// How much of the amber block has drained, and the drain under way: from and to how much.
@@ -197,8 +185,6 @@ final class BlockMotion {
         widths = [:]
         settled = false
         openedAt = nil
-        openingFrom = nil
-        roomAtFinish = nil
         endedAt = nil
     }
 
@@ -231,8 +217,6 @@ struct MotionTuning: Codable, Equatable, Sendable {
     var finishRoom = 0.06
     var finishBounce = 0.5
     var finishSpring = 0.35
-    var finishCreep = 0.5
-    var finishCreepTime = 12.0
 
     static let key = "design.chartMotion"
 
@@ -272,7 +256,5 @@ struct MotionTuning: Codable, Equatable, Sendable {
         finishRoom = try value(.finishRoom, base.finishRoom)
         finishBounce = try value(.finishBounce, base.finishBounce)
         finishSpring = try value(.finishSpring, base.finishSpring)
-        finishCreep = try value(.finishCreep, base.finishCreep)
-        finishCreepTime = try value(.finishCreepTime, base.finishCreepTime)
     }
 }
