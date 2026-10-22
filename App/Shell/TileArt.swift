@@ -464,11 +464,14 @@ struct BlocksView: View {
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
                         // While the block opens or drains, its name is laid out for the whole block and the block shows it as it moves,
                         // rather than wrapping it anew at every frame. Otherwise the frames are nil: the name fills the block as it always did.
-                        placed(overlay(segment, shade: shades[index], rect: rect, shape: shape)
+                        // Its outline is the block's as drawn: laid out with the name at the whole block's size, it lost its right
+                        // edge while the block opened (2026-10-22).
+                        placed(overlay(segment, shade: shades[index], rect: rect, shape: shape, outlined: !moved)
                                    .opacity(appeared ? 1 : 0)
                                    .frame(width: moved ? rect.width : nil, height: moved ? rect.height : nil)
                                    .frame(width: moved ? drawn.width : nil, height: moved ? drawn.height : nil, alignment: .topLeading)
-                                   .clipped(),
+                                   .clipped()
+                                   .overlay { if moved { outline(segment, shape: shape) } },
                                index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
                 }
@@ -642,12 +645,17 @@ struct BlocksView: View {
             .animation(Theme.layout.delay(Double(index) * 0.05), value: appeared)
     }
 
+    /// A block's outline: shown when hovered.
+    private func outline(_ segment: UsageSegment, shape: UnevenRoundedRectangle) -> some View {
+        shape
+            .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
+            .animation(Theme.highlight, value: hovered)
+    }
+
     /// What is drawn over a block: its name and size when it is large enough, and an outline when hovered.
-    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, shape: UnevenRoundedRectangle) -> some View {
+    private func overlay(_ segment: UsageSegment, shade: Double, rect: CGRect, shape: UnevenRoundedRectangle, outlined: Bool = true) -> some View {
         ZStack(alignment: .topLeading) {
-            shape
-                .strokeBorder(.white.opacity(hovered == segment.id ? 0.5 : 0), lineWidth: 1)
-                .animation(Theme.highlight, value: hovered)
+            if outlined { outline(segment, shape: shape) }
             // A name comes and goes as resizing the window gives its block room or takes it: the name and size where they fit (the
             // name on two lines in a tall block rather than cut short), the size alone in a narrow one.
             if labels, rect.width > 46, rect.height > 34 {
