@@ -50,6 +50,14 @@ Three channels deliver it, and all three move together:
    `git config --global gpg.format ssh`, `git config --global user.signingkey ~/.ssh/<key>.pub`,
    `git config --global tag.gpgsign true`. For `git tag -v` to check it, list the key in the file `gpg.ssh.allowedSignersFile`
    names (`<email> <public key>`).
+
+   **A release is signed only if GitHub says so.** `git tag -v` passing means the tag is signed on this Mac; GitHub verifies it
+   only against the account's *Signing keys* (an authentication key does not count). A key missing there leaves the tag
+   `unknown_key` and the release with no Verified badge, as 1.1.4 and 1.1.5 were. Add it once with
+   `gh auth refresh -h github.com -s admin:ssh_signing_key` and
+   `gh ssh-key add ~/.ssh/<key>.pub --type signing --title "MacSpace release signing"`, then check the pushed tag before going
+   on: `Release/Scripts/VerifiedTag.sh vX.Y.Z` (private repository) must print "signed and Verified on GitHub". Release.sh and
+   Publish.sh run that check themselves and stop when it fails, and `Release/Scripts/Doctor.sh` checks the key is on the account.
    CI's `release-metadata` job checks that the tag is a valid version, that the changelog has a dated section for it and that
    the notes exist in all eight languages.
 4. **Build the draft** (private repository): `Release/Scripts/Release.sh --ref vX.Y.Z --publish draft`, or *Actions › Release*.
