@@ -158,7 +158,6 @@ public final class StatusItemController: NSObject {
     private func entry(_ title: String, _ action: Selector, key: String) -> NSMenuItem {
         let entry = NSMenuItem(title: title, action: action, keyEquivalent: key)
         entry.target = self
-        if #available(macOS 27, *) { entry.preferredImageVisibility = .hidden }
         return entry
     }
 

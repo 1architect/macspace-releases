@@ -851,7 +851,7 @@ struct LiveSwitch<Content: View>: View {
     @State private var queued: Bool?
 
     var body: some View {
-        content(Binding(get: { shown ?? isOn }, set: flip))
+        content(Binding(get: { shown ?? isOn }, set: { value, _ in flip(to: value) }))
             .onChange(of: isOn) { _, _ in if !running { shown = nil } }
     }
 
