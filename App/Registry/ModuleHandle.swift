@@ -25,7 +25,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
-    /// Actual scan work: graphs pulse immediately; existing page details remain interactive.
+    /// Actual scan work: charts move immediately; existing page details remain interactive.
     @Published public private(set) var isRefreshing = false
     /// Only the first page load hides details. Manual and automatic refreshes retain the current page.
     @Published public private(set) var isReloading = false
@@ -38,7 +38,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var progress: ActionProgress?
     @Published public private(set) var lastResult: ActionResult?
     /// An action the user started from a page button, or automatic cleanup, is running: the menu bar icon animates, and
-    /// the page's charts pulse until the figures after it are in.
+    /// block charts use `ChartMotion` until the figures after it are in.
     @Published public private(set) var isCleaning = false
     /// The action the user started that is running, for its button's text (`Action.workingTitle`).
     @Published public private(set) var runningAction: Action?
@@ -503,7 +503,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         performing = false
         updateBusy()
         // "All done" as soon as the work is: reading the Mac again takes seconds of its own (a full scan for System Data). Meanwhile
-        // the button stays full and keeps saying what the action did, the charts keep pulsing (`isCleaning`), and the rows the action
+        // the button stays full and keeps saying what the action did, the charts keep moving (`isCleaning`), and the rows the action
         // finished stay gone, until the new figures are in.
         if !quiet {
             if celebrates {

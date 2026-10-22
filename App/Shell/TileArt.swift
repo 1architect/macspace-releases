@@ -36,7 +36,7 @@ struct Surface<S: Shape>: View, @preconcurrency Animatable {
     let shape: S
     let color: Color
     var highlighted = false
-    /// How much of the color shows, 0...1: the loading pulse, and a block coming in. Animated frame by frame.
+    /// How much of the color shows, 0...1: used by non-chart loading indicators and a block coming in. Animated frame by frame.
     var strength: Double = 1
     @Environment(\.design) private var design
 
@@ -68,9 +68,8 @@ extension View {
 
 // MARK: Loading
 
-/// A wave of brightness running through elements one after another, for what is under way (the loading dots, a row's flag, the menu
-/// bar icon). With Reduce Motion they stay dimmed instead. A chart's own elements no longer breathe while their figures load: the
-/// blocks open with the reading instead (`ChartMotion`), and the tile's ground still darkens and lifts (`LoadingGlow`).
+/// A wave of brightness running through small progress indicators (loading dots, row flags, the menu bar icon). With Reduce Motion
+/// they stay dimmed instead. Charts do not use this: their loading feedback is geometry from `ChartMotion`.
 enum LoadingWave {
     static let period = 1.4
 
@@ -352,6 +351,10 @@ struct BlocksView: View {
     /// Refresh. Not a cleanup's reading, nor one in the background. `fill` is how far it has come.
     var reading = false
     var fill: LoadFill?
+    /// A page action is changing the figures represented by this chart. It uses the same geometric opening motion as a reading,
+    /// driven by the action's progress when it has one. `loading` remains the page/tile state and never animates block opacity.
+    var working = false
+    var workingFraction: Double?
     /// Where the blocks are arranged (`Treemap.arranged`), when not at the size drawn: a tile's chart at rest, so a tile moving to
     /// another cell only stretches its blocks. Each chart is arranged at its own shape, as in 1.0.3: one shape for every chart
     /// (320 by 120, stretched to each) drew blocks that did not fit the chart around them, tall slivers on a large tile (2026-10-13).
@@ -378,7 +381,8 @@ struct BlocksView: View {
     }
 
     init(segments: [UsageSegment], tint: TileTint, labels: Bool = true, hovered: String? = nil, gap: CGFloat = 3, outerRadius: CGFloat? = nil,
-         look: ChartLook = .page, loading: Bool = false, reading: Bool = false, fill: LoadFill? = nil, orderSize: CGSize? = nil) {
+         look: ChartLook = .page, loading: Bool = false, reading: Bool = false, fill: LoadFill? = nil,
+         working: Bool = false, workingFraction: Double? = nil, orderSize: CGSize? = nil) {
         self.segments = segments
         self.tint = tint
         self.labels = labels
@@ -389,9 +393,11 @@ struct BlocksView: View {
         self.loading = loading
         self.reading = reading
         self.fill = fill
+        self.working = working
+        self.workingFraction = workingFraction
         self.orderSize = orderSize
         // Drawn while its figures are being read: the blocks open with it. Drawn with placeholders: the first figures open when they come.
-        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : reading ? Growth(start: Date()) : nil)
+        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : (reading || working) ? Growth(start: Date()) : nil)
     }
 
     /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
@@ -485,6 +491,13 @@ struct BlocksView: View {
             motion.restartGrowth()
             growth = Growth(start: Date(), closing: true)
         }
+        // A page action uses the chart's geometric motion too. The old loading pulse is intentionally not restored: the current
+        // figures close, then open with the action's progress while the work runs.
+        .onChange(of: working) { _, working in
+            guard working, growth == nil, !reduceMotion, !LoadingWave.isPlaceholder(self.segments) else { return }
+            motion.restartGrowth()
+            growth = Growth(start: Date(), closing: true)
+        }
         .onChange(of: self.segments) { old, new in received(old, new) }
         // The Chart Motion window's Replay (development builds): the reading again, a pretend one of the seconds it says.
         .onReceive(NotificationCenter.default.publisher(for: ChartMotion.replay)) { note in
@@ -568,22 +581,30 @@ struct BlocksView: View {
         // Seconds since the last frame, at the speed set.
         let dt = (motion.frame.map { min(max(date.timeIntervalSince($0), 0), 0.1) } ?? 0) * ChartMotion.speed
         motion.frame = date
-        let reading: Bool, real: Double
+        let active: Bool, real: Double
         if let rehearsal {
-            reading = date < rehearsal.started.addingTimeInterval(rehearsal.expected)
-            real = reading ? rehearsal.fraction(at: date) : 1
+            active = date < rehearsal.started.addingTimeInterval(rehearsal.expected)
+            real = active ? rehearsal.fraction(at: date) : 1
+        } else if working {
+            active = true
+            if let workingFraction, workingFraction.isFinite {
+                real = min(max(workingFraction, 0), 1)
+            } else {
+                // An action with no measured progress still gets the same quick-then-slow geometric motion as an unmeasured read.
+                real = LoadFill(started: from, expected: LoadFill.firstGuess).fraction(at: date)
+            }
         } else {
-            reading = self.reading
-            real = reading ? (fill ?? LoadFill(started: from, expected: LoadFill.firstGuess)).fraction(at: date) : 1
+            active = self.reading
+            real = active ? (fill ?? LoadFill(started: from, expected: LoadFill.firstGuess)).fraction(at: date) : 1
         }
         if real > motion.lastReal + 0.0001 || motion.lastMoved == nil {
             motion.lastReal = max(real, motion.lastReal)
             motion.lastMoved = date
         }
-        let stalled = reading ? date.timeIntervalSince(motion.lastMoved ?? date) * ChartMotion.speed : 0
+        let stalled = active ? date.timeIntervalSince(motion.lastMoved ?? date) * ChartMotion.speed : 0
         // The reading is over: the reading drawn catches up at once (`ChartMotion.ending`) rather than at its usual smoothing, so the
         // finish comes with the end of the load and not seconds after it.
-        if !reading, motion.endedAt == nil { motion.endedAt = date }
+        if !active, motion.endedAt == nil { motion.endedAt = date }
         motion.reading = motion.endedAt == nil
             ? ChartMotion.drawnReading(motion.reading, reading: motion.lastReal, stalled: stalled, over: dt)
             : motion.reading + (1 - motion.reading) * (1 - exp(-dt / ChartMotion.ending))
@@ -721,7 +742,7 @@ private struct BlockFrame: ViewModifier, @preconcurrency Animatable {
     }
 }
 
-/// A loading tile or page: a shade over its ground that deepens and lifts, again and again, while its chart pulses as it loads. A
+/// A loading tile or page: a shade over its ground that deepens and lifts, again and again, while its chart uses geometric motion. A
 /// shade, not a light: brightening washed the pale grounds out. A timeline of 30 frames a second that rests while its window is not
 /// in front: a repeating animation was worked out by the app at every frame of the display (120 a second), and went on in a closed
 /// or hidden window, keeping MacSpace at 5% CPU in the menu bar.

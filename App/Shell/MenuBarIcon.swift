@@ -11,7 +11,7 @@ enum MenuBarIcon {
     /// The circles in the order they leave and come back: a snake through the rows.
     static let order = [0, 1, 2, 5, 4, 3, 6, 7, 8]
 
-    /// How much of circle `rank` (its place in `order`) shows at `date` while the icon breathes: the charts' loading wave
+    /// How much of circle `rank` (its place in `order`) shows at `date` while the icon breathes: the small-indicator loading wave
     /// (`LoadingWave.opacity`), the same pace and the same spread over the nine circles. nil: at rest, every circle full.
     static func visibility(rank: Int, at date: Date?) -> Double {
         guard let date else { return 1 }

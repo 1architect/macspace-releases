@@ -64,7 +64,8 @@ final class ScanProgressTests: XCTestCase {
             }
             XCTAssertFalse(handle.isBusy, "all scans retain an interactive existing page")
             XCTAssertFalse(handle.isReloading, "manual refresh also keeps existing details")
-            XCTAssertTrue(TileInfo(handle).loading, "the home widget pulses during either scan")
+            XCTAssertTrue(TileInfo(handle).loading, "the home widget shows loading during either scan")
+            XCTAssertTrue(TileInfo(handle).reading, "every visible scan drives ChartMotion, including quiet automatic scans")
             await control.advance(0.4)
             for _ in 0..<100 where handle.loading?.reported != 0.4 { try await Task.sleep(for: .milliseconds(5)) }
             XCTAssertEqual(handle.loading?.reported, 0.4)
@@ -103,7 +104,7 @@ final class ScanProgressTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(5))
         }
         XCTAssertTrue(handle.isShowingCompletion)
-        XCTAssertTrue(handle.isCleaning, "graphs keep pulsing until verification finishes")
+        XCTAssertTrue(handle.isCleaning, "charts keep moving until verification finishes")
         XCTAssertTrue(handle.isRefreshing)
         XCTAssertFalse(handle.isBusy, "the action has finished; returning from All done must expose a live page")
         XCTAssertFalse(handle.isReloading)
@@ -150,6 +151,7 @@ final class ScanProgressTests: XCTestCase {
         XCTAssertTrue(handle.isRefreshing)
         XCTAssertFalse(handle.isReloading, "automatic invalidation reports progress without folding the page")
         XCTAssertFalse(handle.isBusy)
+        XCTAssertTrue(TileInfo(handle).reading, "automatic scans that report progress animate the chart")
         await handle.refresh(reload: true)
         XCTAssertFalse(handle.isRefreshing, "an obsolete scan cannot keep a newer completed read loading")
         XCTAssertFalse(handle.isReloading)

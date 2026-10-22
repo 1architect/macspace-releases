@@ -326,7 +326,7 @@ struct GlassCircleButton: View {
     }
 }
 
-/// Three dots pulsing one after another, as the charts do while they load: what a busy round button shows in place of its
+/// Three dots pulsing one after another: what a busy round button shows in place of its
 /// symbol. With Reduce Motion they stay dimmed instead.
 struct LoadingDots: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

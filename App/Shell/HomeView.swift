@@ -16,6 +16,9 @@ struct TileInfo: Equatable {
     /// background); and how far it has come (`LoadFill`). The chart opens out with it (`ChartMotion`).
     var reading = false
     var fill: LoadFill?
+    /// A page action is changing the chart's figures. Block charts use this to keep `ChartMotion` running while the action works.
+    var working = false
+    var workingFraction: Double?
     /// What the switch of a `state` chart runs; nil when it cannot be flipped.
     var switchAction: Action?
 
@@ -31,7 +34,11 @@ struct TileInfo: Equatable {
                       status: reading ? Self.loadingStatus(handle.loading?.reported) : (handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
                       loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
-            self.reading = (handle.tileIsStale && !handle.isCleaning) || handle.isRereading
+            // Any visible scan uses ChartMotion, including an automatic quiet refresh once the module reports real progress.
+            // `following` reads never enter `isRefreshing`, so rapidly-following tiles still update without replaying the chart.
+            self.reading = (handle.tileIsStale || handle.isRefreshing) && !handle.isCleaning
+            self.working = handle.isCleaning
+            self.workingFraction = handle.progress?.fraction
         } else {
             self.init(title: handle.manifest.name.lowercased(), status: Self.loadingStatus(handle.loading?.reported), loading: true)
             reading = true
@@ -48,7 +55,7 @@ struct TileInfo: Equatable {
     }
 
     /// While a module cleans, its status line ("free up to 3.74 GB") says what it is doing and how far it is, as the page's pill
-    /// does, and its chart breathes: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's
+    /// does, and its block chart moves: on the dashboard the figure would otherwise stand still until the cleanup ends. In the tile's
     /// lowercase, except in German, where the message starts with a noun.
     static func cleaningStatus(_ progress: ActionProgress?) -> String {
         var text = progress?.message ?? String(localized: "working")
@@ -213,6 +220,7 @@ struct TileFace: View {
             BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, gap: CGFloat(TileType.current.tileGap),
                        outerRadius: TileType.current.concentricCorners ? Theme.tileRadius - Self.margin : nil,
                        look: .tile, loading: info.loading, reading: info.reading, fill: info.fill,
+                       working: info.working, workingFraction: info.workingFraction,
                        orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size })
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
