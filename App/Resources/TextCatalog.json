@@ -1841,7 +1841,7 @@
     "key" : "Needs attention",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/TileArt.swift:976"
+      "App\/Shell\/TileArt.swift:989"
     ],
     "table" : "App",
     "translations" : {
@@ -4451,7 +4451,7 @@
     "kind" : "Button",
     "places" : [
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:238",
-      "App\/Settings\/ChartMotionView.swift:60"
+      "App\/Settings\/ChartMotionView.swift:62"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -9843,7 +9843,7 @@
     "key" : "%@ is outside the cleanable locations.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1006"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1018"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9862,8 +9862,8 @@
     "key" : "%@ is running; quit it first.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1018",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1023"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1030",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1035"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -9884,7 +9884,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:266",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
       "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "SystemData",
@@ -9999,7 +9999,7 @@
     "key" : "\/System\/Library\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:750"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:762"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10020,7 +10020,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:266",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
       "Sdk\/Interface\/Widgets.swift:516"
     ],
     "table" : "SystemData",
@@ -10059,7 +10059,7 @@
     "key" : "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:503"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:515"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10078,7 +10078,7 @@
     "key" : "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:647"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:659"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10097,7 +10097,7 @@
     "key" : "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:657"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:669"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10215,7 +10215,7 @@
     "key" : "An app is using these files. Try again later.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1028"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1040"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10234,7 +10234,7 @@
     "key" : "An unfinished download by %@. If %@ is no longer downloading it, delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:642"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:654"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10292,8 +10292,8 @@
     "key" : "App cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:519",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:539"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:531",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:551"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10331,7 +10331,7 @@
     "key" : "App container: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:618"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10388,7 +10388,7 @@
     "key" : "App group data: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:618"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10407,7 +10407,7 @@
     "key" : "App not installed",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:100"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:90"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10483,7 +10483,7 @@
     "key" : "Apple system cache used by background services; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:485"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:497"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10521,7 +10521,7 @@
     "key" : "Apps' support files for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:944"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:956"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10540,7 +10540,7 @@
     "key" : "Apps' temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:703"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:715"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10578,7 +10578,7 @@
     "key" : "Audio plug-ins and sounds",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:947"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:959"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10597,7 +10597,7 @@
     "key" : "Battery and energy history used by System Settings > Battery.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:599"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:611"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10635,7 +10635,7 @@
     "key" : "Caches for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:948"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:960"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10654,8 +10654,8 @@
     "key" : "Caches you can free",
     "kind" : "Row title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:255",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:270"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:249",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:264"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10752,7 +10752,7 @@
     "key" : "Check Software Update in System Settings.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:601"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10809,7 +10809,7 @@
     "key" : "Cloud storage: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:631"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10847,7 +10847,7 @@
     "key" : "Come back with use",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:291"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:285"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10885,7 +10885,7 @@
     "key" : "CoreSpotlight indexes for apps' searchable content.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:615"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:627"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10928,7 +10928,7 @@
     "key" : "Daemon containers",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:612"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:624"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10966,7 +10966,7 @@
     "key" : "Data of Apple background services.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:613"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:625"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10985,7 +10985,7 @@
     "key" : "Data of an Apple app or service.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:607"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11045,7 +11045,7 @@
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:229",
       "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:233",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:21",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:292"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:286"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11064,7 +11064,7 @@
     "key" : "Diagnostic and crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:563"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:575"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11102,7 +11102,7 @@
     "key" : "Document version history",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:576",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:588",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:616"
     ],
     "table" : "SystemData",
@@ -11160,7 +11160,7 @@
     "key" : "Downloads again when needed",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:153"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:143"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11255,7 +11255,7 @@
     "key" : "Empty the Trash in Finder.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:679"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:691"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11350,7 +11350,7 @@
     "key" : "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:586"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:598"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11526,7 +11526,7 @@
     "key" : "Free recommended",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:278"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:272"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11545,8 +11545,8 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:273",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:280"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:267",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:274"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11603,7 +11603,7 @@
     "key" : "Free the selected caches?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:273"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:267"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11741,7 +11741,7 @@
     "key" : "From a deleted account. Copy what you need, then delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:664"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:676"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11817,7 +11817,7 @@
     "key" : "Home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:669"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:681"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11836,8 +11836,8 @@
     "key" : "Homebrew",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:554",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:866",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:566",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:878",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:22"
     ],
     "table" : "SystemData",
@@ -11876,7 +11876,7 @@
     "key" : "Homebrew downloads",
     "kind" : "Row title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:152"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:142"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11971,7 +11971,7 @@
     "key" : "In Finder, select files and choose Remove Download. They stay in the cloud.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:620"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:632"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12047,7 +12047,7 @@
     "key" : "In use",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:200"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:194"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12085,7 +12085,7 @@
     "key" : "Installed fonts",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:945"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:957"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12104,7 +12104,7 @@
     "key" : "Kept by macOS for its own services; it manages the size.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:684"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:696"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12123,7 +12123,7 @@
     "key" : "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:577"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12181,7 +12181,7 @@
     "key" : "Leftover macOS update files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:597",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:581"
     ],
     "table" : "SystemData",
@@ -12239,7 +12239,7 @@
     "key" : "Log files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:699"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:711"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12258,7 +12258,7 @@
     "key" : "Logs for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:949"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:961"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12296,7 +12296,7 @@
     "key" : "Managed by the kernel; shrinks after a restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:597"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:609"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12334,7 +12334,7 @@
     "key" : "Mostly media. Clean it up from inside the app.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:608"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:620"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12353,7 +12353,7 @@
     "key" : "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:549"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:561"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12372,7 +12372,7 @@
     "key" : "Not a cleanable item (%@).",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:997"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1009"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12410,7 +12410,7 @@
     "key" : "Not opened for %lld days",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:102"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:92"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12430,7 +12430,7 @@
     "kind" : "Result message",
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:321",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1012"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1024"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12449,7 +12449,7 @@
     "key" : "Nothing was freed: MacSpace couldn't check which files are in use.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1030"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1042"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12468,7 +12468,7 @@
     "key" : "Old Homebrew versions",
     "kind" : "Row title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:147"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:137"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12544,7 +12544,7 @@
     "key" : "Old reports are deleted from Free now.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:565"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:577"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12583,7 +12583,7 @@
     "key" : "Open %@",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:256"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:250"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12602,7 +12602,7 @@
     "key" : "Open now",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:191"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:185"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12697,7 +12697,7 @@
     "key" : "Per-user Spotlight metadata",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:614"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:626"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12735,7 +12735,7 @@
     "key" : "Power log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:598"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:610"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12792,8 +12792,8 @@
     "key" : "Quits %@.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:282",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:309"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:276",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:303"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12812,7 +12812,7 @@
     "key" : "Rebuilt by Spotlight; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:573"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12831,7 +12831,7 @@
     "key" : "Recommended",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:290"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:284"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12850,7 +12850,7 @@
     "key" : "Remove it with the tool that made it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:725"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:737"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12927,7 +12927,7 @@
     "key" : "Rotated by logd; deleting it removes the logs needed for troubleshooting.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:561"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:573"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12965,7 +12965,7 @@
     "key" : "Safe to delete while %@ is closed. It's rebuilt when needed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:482"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:494"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12984,7 +12984,7 @@
     "key" : "Saved home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:674"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:686"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13041,7 +13041,7 @@
     "key" : "Shared frameworks",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:946"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:958"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13060,7 +13060,7 @@
     "key" : "Shared temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:739"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:751"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13174,7 +13174,7 @@
     "key" : "Smaller items",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:801",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:813",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:254"
     ],
     "table" : "SystemData",
@@ -13213,7 +13213,7 @@
     "key" : "Spotlight index",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:572"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:584"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13232,7 +13232,7 @@
     "key" : "Staged macOS update",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:588"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:600"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13251,7 +13251,7 @@
     "key" : "Swap and sleep files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:596"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:608"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13308,7 +13308,7 @@
     "key" : "Symbols for crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:593",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:605",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:431"
     ],
     "table" : "SystemData",
@@ -13328,7 +13328,7 @@
     "key" : "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:594"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13370,7 +13370,7 @@
     "key" : "System assets",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:568"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:580"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13409,7 +13409,7 @@
     "key" : "System cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:509"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:521"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13428,7 +13428,7 @@
     "key" : "System databases",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:696",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:708",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:127"
     ],
     "table" : "SystemData",
@@ -13448,7 +13448,7 @@
     "key" : "System extensions",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:950"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:962"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13505,7 +13505,7 @@
     "key" : "Temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:702"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:714"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13524,7 +13524,7 @@
     "key" : "Temporary files of macOS and of other users on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:718"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:730"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13543,7 +13543,7 @@
     "key" : "Temporary files of macOS and other users",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:716"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:728"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13562,7 +13562,7 @@
     "key" : "Temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:740"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:752"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13714,7 +13714,7 @@
     "key" : "Tool cache: ~\/.cache\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:525"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:537"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13733,7 +13733,7 @@
     "key" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:555"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:567"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13752,7 +13752,7 @@
     "key" : "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:558"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:570"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13771,7 +13771,7 @@
     "key" : "Trash",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:678",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:690",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:389"
     ],
     "table" : "SystemData",
@@ -13812,7 +13812,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:110",
       "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:169",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:103"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:93"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13831,7 +13831,7 @@
     "key" : "Unfinished download: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:641"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:653"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13850,7 +13850,7 @@
     "key" : "Unified system log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:560"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:572"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13888,7 +13888,7 @@
     "key" : "Unused assets are removed from Free now when macOS reports any; the rest is in use.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:569"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13947,7 +13947,7 @@
     "key" : "Virtual machine: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:656"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:668"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13966,7 +13966,7 @@
     "key" : "Wallpaper and screen saver downloads",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:900",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:912",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:601"
     ],
     "table" : "SystemData",
@@ -13986,7 +13986,7 @@
     "key" : "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:903",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:915",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:602"
     ],
     "table" : "SystemData",
@@ -14103,7 +14103,7 @@
     "key" : "Xcode Command Line Tools",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:548"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:560"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14391,7 +14391,7 @@
     "key" : "macOS restore image: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:646"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:658"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14486,7 +14486,7 @@
     "key" : "the downloading app",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:640"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:652"
     ],
     "table" : "SystemData",
     "translations" : {
