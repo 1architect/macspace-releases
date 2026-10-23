@@ -11,6 +11,8 @@ struct WidgetForm<Top: View>: View {
     var showsTop = true
     var detailsVisible = true
     var cascadeOffset = 0
+    /// Whole sections reflow; rows within a section keep their existing order and identity.
+    var maximumColumns = 3
     @ViewBuilder var top: Top
     @Environment(\.sectionChoice) private var sectionChoice
     @Environment(\.pageCascadeCount) private var cascadeCount
@@ -73,57 +75,68 @@ struct WidgetForm<Top: View>: View {
         let itemIDs = Self.itemIDs(widgets)
         let structure = PageCascade.Structure(ids: itemIDs, offset: cascadeOffset, count: cascadeCount)
         let positions = Positions(itemIDs, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
-                ForEach(widgets) { widget in
-                    let title = Self.title(widget)
-                    let rows = entries(widget)
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let text = title.text, !text.isEmpty {
-                            // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
-                            // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
-                            header(text, help: title.help, part: Self.part(widget))
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .accessibilityAddTraits(.isHeader)
-                                .padding(.horizontal, 10)
-                                .geometryGroup()
-                                .modifier(positions.item(widget.id + ":header"))
-                        }
-                        // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
-                        // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
-                        LazyVStack(spacing: 0) {
-                            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                                row.view
-                                    .modifier(PageRowCell(index: index))
-                                    // Resolve parent placement once for the whole cell, before the cascade. Text's own content
-                                    // transactions must not animate/cancel its position separately from the shade and controls.
+        GeometryReader { proxy in
+            // PageScrollArea contributes 10 points per side, and the form contributes 20 more.
+            let layout = ModulePageLayout.metrics(availableWidth: proxy.size.width - 2 * PageInsets.side,
+                                                  maximumColumns: maximumColumns)
+            ScrollView {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: ModulePageLayout.gap,
+                                                             alignment: .topLeading), count: layout.columns),
+                          alignment: .leading, spacing: 20) {
+                    if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
+                    ForEach(widgets) { widget in
+                        let title = Self.title(widget)
+                        let rows = entries(widget)
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let text = title.text, !text.isEmpty {
+                                // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
+                                // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
+                                header(text, help: title.help, part: Self.part(widget))
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .padding(.horizontal, 10)
                                     .geometryGroup()
-                                    .modifier(positions.item(row.id))
-                                    .transition(positions.transition(row.id, reduceMotion: reduceMotion))
+                                    .modifier(positions.item(widget.id + ":header"))
+                            }
+                            // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
+                            // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
+                            LazyVStack(spacing: 0) {
+                                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                                    row.view
+                                        .modifier(PageRowCell(index: index))
+                                        // Resolve parent placement once for the whole cell, before the cascade. Text's own content
+                                        // transactions must not animate/cancel its position separately from the shade and controls.
+                                        .geometryGroup()
+                                        .modifier(positions.item(row.id))
+                                        .transition(positions.transition(row.id, reduceMotion: reduceMotion))
+                                }
+                            }
+                            .background {
+                                if let first = rows.first, let last = rows.last {
+                                    Color.clear
+                                        .modifier(positions.shade(first: first.id, last: last.id))
+                                        .modifier(positions.item(first.id))
+                                }
                             }
                         }
-                        .background {
-                            if let first = rows.first, let last = rows.last {
-                                Color.clear
-                                    .modifier(positions.shade(first: first.id, last: last.id))
-                                    .modifier(positions.item(first.id))
-                            }
-                        }
+                        .geometryGroup()
+                        .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
                     }
-                    .geometryGroup()
-                    .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
                 }
-                Color.clear.frame(height: max(bottomRoom - 20, 0))
+                // A row removal changes later sections' positions even when no section id changed. Wait for the existing reverse
+                // cascade to finish before closing the gap; one transaction owns the form's structural layout.
+                .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: itemIDs)
+                // Column changes update the same grid and section IDs, without re-running the arrival cascade.
+                .environment(\.modulePageColumns, layout.columns)
+                .environment(\.moduleColumnWidth, layout.columnWidth)
+                .frame(width: layout.contentWidth, alignment: .topLeading)
+                .frame(maxWidth: .infinity, alignment: .top)
+                // Match the native grouped Form’s 20-point inset above its first section header.
+                .padding(.top, 20)
+                .padding(.horizontal, 20)
+                .padding(.bottom, max(bottomRoom, 20))
             }
-            // A row removal changes later sections' positions even when no section id changed. Wait for the existing reverse
-            // cascade to finish before closing the gap; one transaction owns the form's structural layout.
-            .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: itemIDs)
-            // Match the native grouped Form’s 20-point inset above its first section header.
-            .padding(.top, 20)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
         }
         .font(.system(size: 13))
         .buttonStyle(.bordered)
