@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:521",
-      "App\/Renderer\/ScreenView.swift:587"
+      "App\/Renderer\/ScreenView.swift:524",
+      "App\/Renderer\/ScreenView.swift:590"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:430"
+      "App\/Renderer\/ScreenView.swift:433"
     ],
     "table" : "App",
     "translations" : {
@@ -367,7 +367,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:514"
+      "App\/Renderer\/ScreenView.swift:517"
     ],
     "table" : "App",
     "translations" : {
@@ -557,8 +557,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:274",
-      "App\/Shell\/MainView.swift:299"
+      "App\/Shell\/MainView.swift:275",
+      "App\/Shell\/MainView.swift:300"
     ],
     "table" : "App",
     "translations" : {
@@ -749,7 +749,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:301"
+      "App\/Shell\/MainView.swift:302"
     ],
     "table" : "App",
     "translations" : {
@@ -1476,7 +1476,7 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:204",
-      "App\/Renderer\/ScreenView.swift:748"
+      "App\/Renderer\/ScreenView.swift:751"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,7 +2471,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:749",
+      "App\/Renderer\/ScreenView.swift:752",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
@@ -2588,8 +2588,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:256",
-      "App\/Shell\/MainView.swift:300"
+      "App\/Shell\/MainView.swift:257",
+      "App\/Shell\/MainView.swift:301"
     ],
     "table" : "App",
     "translations" : {
@@ -2608,7 +2608,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:255"
+      "App\/Shell\/MainView.swift:256"
     ],
     "table" : "App",
     "translations" : {
@@ -2627,7 +2627,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:254"
+      "App\/Shell\/MainView.swift:255"
     ],
     "table" : "App",
     "translations" : {
@@ -3144,7 +3144,7 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:747",
+      "App\/Renderer\/ScreenView.swift:750",
       "App\/Renderer\/RowActionFlag.swift:104",
       "App\/Renderer\/RowActionFlag.swift:111",
       "App\/Registry\/ModuleHandle.swift:629"
@@ -3242,8 +3242,8 @@
     "key" : "disk",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:259",
       "App\/Shell\/MainView.swift:260",
+      "App\/Shell\/MainView.swift:261",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "App",
@@ -6792,8 +6792,8 @@
     "kind" : "Tile title",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:16",
-      "App\/Shell\/MainView.swift:259",
       "App\/Shell\/MainView.swift:260",
+      "App\/Shell\/MainView.swift:261",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "DiskMap",
@@ -9940,7 +9940,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:749",
+      "App\/Renderer\/ScreenView.swift:752",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",

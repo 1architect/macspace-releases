@@ -69,7 +69,8 @@ final class WideGraphLoadingTests: XCTestCase {
         XCTAssertEqual(reading.graph.width, normal.graphWidth - 2 * PageInsets.formHeaderIndent, accuracy: 1)
         XCTAssertEqual(try blueHeight(after), try blueHeight(before), accuracy: 1)
         XCTAssertGreaterThan(whitePixels(after), 20, "The existing list reveal runs after resizing")
-        XCTAssertLessThan(try blueEdge(middle), try blueEdge(after) - 5, "The intermediate graph is still resizing, not jumping directly to the final width")
+        XCTAssertGreaterThan(abs(try blueEdge(middle) - blueEdge(after)), 5,
+                             "The intermediate graph is still resizing, including the existing spring's overshoot")
         XCTAssertEqual(reading.appearances, 1, "Resize the existing graph, do not replace it")
 
         // A refresh with existing rows cannot expand the graph over them.

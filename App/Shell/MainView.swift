@@ -219,6 +219,7 @@ public struct MainView: View {
                     page(for: layer.destination)
                         .id(layer.destination)
                         .frame(width: full.width, height: full.height)
+                        .geometryGroup()
                         // One page swapped for another (Command-comma over a module's page, and Back to it) slides across.
                         .transition(.asymmetric(insertion: .move(edge: swapForward ? .trailing : .leading).combined(with: .opacity),
                                                 removal: .move(edge: swapForward ? .leading : .trailing).combined(with: .opacity)))

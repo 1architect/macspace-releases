@@ -264,13 +264,16 @@ extension EnvironmentValues {
 }
 
 /// A page with another page open over it: moved aside, faded out, and not taking clicks, until the page over it goes.
-private struct StackedPage: ViewModifier {
+struct StackedPage: ViewModifier {
     let covered: Bool
     @StateObject private var graph: CoveredGraphLifetime
     init(covered: Bool) { self.covered = covered; _graph = StateObject(wrappedValue: CoveredGraphLifetime(covered: covered)) }
     func body(content: Content) -> some View {
         content
             .environment(\.pageDrawingSuppressed, covered && !graph.draws)
+            // Resolve both panes as one page before applying navigation. A fixed graph is
+            // independent of list scrolling, but must share the list's placement during a push.
+            .geometryGroup()
             .offset(x: covered ? -80 : 0)
             .opacity(covered ? 0 : 1)
             .allowsHitTesting(!covered)
