@@ -60,9 +60,10 @@ public enum AssetModelCleanup {
     /// what is left (catalogs, the models Dictation keeps in the shared families) is not purged for again and again.
     public static let doneBelow: UInt64 = 50_000_000
 
-    /// The model assets left for `scope` to delete; 0 once its feature is under `doneBelow`.
+    /// The model assets left for `scope` to delete; 0 once its feature is under `doneBelow`. A fresh Siri withdrawal also checks
+    /// shared transcription assets, which the UI counts under Phone, even if Siri's displayed families are already empty.
     static func remaining(_ scope: Scope, releasedNow: Bool) -> Int? {
-        if let feature = ModelFeatureSettings.Feature(rawValue: scope.rawValue), let bytes = modelBytes(feature).bytes, bytes < doneBelow { return 0 }
+        if !(scope == .siri && releasedNow), let feature = ModelFeatureSettings.Feature(rawValue: scope.rawValue), let bytes = modelBytes(feature).bytes, bytes < doneBelow { return 0 }
         return inventory(scope, withdrew: releasedNow || hasWithdrawnOwners(scope))
     }
     static func journal(_ scope: Scope) -> URL {
@@ -140,7 +141,7 @@ public enum AssetModelCleanup {
     static func families(_ scope: Scope, withdrew: Bool) -> [String] {
         let shared = ["UAF_Speech_AutomaticSpeechRecognition", "UAF_Siri_TextToSpeech"]
         switch scope {
-        case .siri: return ["UAF_Siri_Understanding"] + (withdrew ? shared.suffix(1) : [])
+        case .siri: return ["UAF_Siri_Understanding"] + (withdrew ? shared : [])
         case .phone: return withdrew ? shared : []
         case .spatialPhotos: return ["UAF_Photos_SpatialPhotosRelive"]
         case .released: return ["LinguisticData"]

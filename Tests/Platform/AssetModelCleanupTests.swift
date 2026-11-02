@@ -3,6 +3,45 @@ import XCTest
 @testable import MacSpacePlatform
 
 final class AssetModelCleanupTests: XCTestCase {
+    func testSpeechRequestsAreScopedByClientAndConfiguration() {
+        XCTAssertEqual(AssetOwners.speechAssetType(scope: .siri, client: "com.apple.siri.embeddedspeech", name: "transcription.pt"), 7)
+        XCTAssertEqual(AssetOwners.speechAssetType(scope: .siri, client: "com.apple.siri.embeddedspeech", name: "assistant.en_US"), 3)
+        XCTAssertNil(AssetOwners.speechAssetType(scope: .phone, client: "com.apple.siri.embeddedspeech", name: "transcription.pt"))
+        XCTAssertNil(AssetOwners.speechAssetType(scope: .siri, client: "callscreeningcaptions", name: "language.identification"))
+        XCTAssertNil(AssetOwners.speechAssetType(scope: .siri, client: "com.apple.siri.embeddedspeech", name: "language.identification"))
+        XCTAssertEqual(AssetOwners.speechAssetType(scope: .phone, client: "com.apple.TelephonyUtilities", name: "transcription.pt"), 7)
+        XCTAssertTrue(AssetModelCleanup.families(.siri, withdrew: true).contains("UAF_Speech_AutomaticSpeechRecognition"))
+        XCTAssertFalse(AssetModelCleanup.families(.siri, withdrew: false).contains("UAF_Speech_AutomaticSpeechRecognition"))
+    }
+
+    /// Opt-in, read-only check of the installed private API against real subscription archives.
+    func testInstalledSiriTranscriptionConfiguration() throws {
+        guard ProcessInfo.processInfo.environment["MACSPACE_VERIFY_SPEECH_CONFIG"] == "1" else {
+            throw XCTSkip("Requires an explicit read-only check on a supported Mac")
+        }
+        for path in ["Frameworks/Speech.framework/Speech", "PrivateFrameworks/UnifiedAssetFramework.framework/UnifiedAssetFramework"] {
+            try AssetOwners.load("/System/Library/" + path)
+        }
+        let entitled = try AssetOwners.objcClass("SFEntitledAssetManager")
+        let configType = try AssetOwners.objcClass("SFEntitledAssetConfig")
+        try AssetOwners.check(entitled, "subscriptionNameForConfig:", "@24@0:8@16", classMethod: true)
+        try AssetOwners.check(entitled, "_assetSetSubscriptionWithConfig:expiration:", "@32@0:8@16@24", classMethod: true)
+        try AssetOwners.check(configType, "initWithLanguage:assetType:", "@32@0:8@16Q24")
+        let assets = AssetOwners.messaging(entitled, as: EntitledAssets.self)
+        let user = try AssetOwners.userGUID()
+        let rows = try AssetOwners.rows().filter {
+            $0.client == "com.apple.siri.embeddedspeech" && $0.name.hasPrefix("transcription.") && $0.user.caseInsensitiveCompare(user) == .orderedSame
+        }
+        XCTAssertFalse(rows.isEmpty, "This live check needs an existing Siri transcription owner")
+        for row in rows {
+            let config = try AssetOwners.makeConfig(configType, language: String(row.name.dropFirst("transcription.".count)), assetType: 7)
+            XCTAssertTrue(AssetOwners.equal(assets.subscriptionName(for: config), row.name))
+            let original = try AssetOwners.decode(row.archive)
+            let generated = assets.subscription(with: config, expiration: try AssetOwners.value(original, "expiration") as AnyObject?)
+            XCTAssertTrue(try AssetOwners.facts(generated).isEqual(AssetOwners.facts(original)))
+        }
+    }
+
     var off: [ModelFeatureSettings.Feature: ModelFeatureSettings.Status] {
         Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0,.init(state:.off,managedOff:true,requestedOff:true)) })
     }
@@ -102,7 +141,7 @@ final class AssetModelCleanupTests: XCTestCase {
             try model(path)
         }
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,root:root.path),2)
-        XCTAssertEqual(AssetModelCleanup.inventory(.siri,root:root.path),1)
+        XCTAssertEqual(AssetModelCleanup.inventory(.siri,root:root.path),2,"Siri can also release shared transcription models")
         XCTAssertEqual(AssetModelCleanup.inventory(.phone,withdrew:false,root:root.path),0,"other features' models in shared families do not keep Phone cleaning")
         XCTAssertEqual(AssetModelCleanup.inventory(.siri,withdrew:false,root:root.path),0,"Siri's voices are shared too")
         try model("com_apple_MobileAsset_UAF_Siri_Understanding/u.asset")

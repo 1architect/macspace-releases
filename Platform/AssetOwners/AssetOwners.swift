@@ -387,8 +387,20 @@ enum AssetOwners {
 
     // MARK: Speech
 
-    /// Siri's type-3 `assistant.<locale>` and Phone's type-7 `transcription.<language>` owners, through exact configs that must
-    /// reproduce the captured owner. Shared speech models stay while Siri or Dictation is on.
+    /// Only reviewed client/name pairs qualify. Siri also requests type-7 transcription assets; those are independent of
+    /// Telephony's identically named request. Keep Siri's requests while Siri or Dictation is active.
+    static func speechAssetType(scope: AssetModelCleanup.Scope, client: String, name: String) -> UInt? {
+        switch (scope, client) {
+        case (.phone, "com.apple.TelephonyUtilities"):
+            return name.hasPrefix("transcription.") ? 7 : nil
+        case (.siri, "com.apple.siri.embeddedspeech"):
+            if name.hasPrefix("assistant.") { return 3 }
+            return name.hasPrefix("transcription.") ? 7 : nil
+        default: return nil
+        }
+    }
+
+    /// Exact configurations must reproduce the captured owner's name, usage and subscription facts before removal.
     static func releaseSpeech(_ journal: Journal, owner: UAFManager, user: String, details: inout [String]) throws {
         let phone = journal.scope == .phone
         let client = phone ? "com.apple.TelephonyUtilities" : "com.apple.siri.embeddedspeech"
@@ -402,14 +414,14 @@ enum AssetOwners {
         try check(phone ? speech : entitled, phone ? "unsubscribeFromAssetsWithConfigs:clientIdentifier:completionHandler:"
                                                    : "unsubscribeFromAssetsWithConfigs:subscriberId:completionHandler:", "v40@0:8@16@24@?32", classMethod: true)
         let assets = messaging(entitled, as: EntitledAssets.self)
-        let prefix = phone ? "transcription." : "assistant."
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
         let all = try rows()
         var configs: [AnyObject] = [], indices: [Int] = []
-        for row in all where row.client == client && row.user.caseInsensitiveCompare(user) == .orderedSame && row.name.hasPrefix(prefix) {
-            let language = String(row.name.dropFirst(prefix.count))
+        for row in all where row.client == client && row.user.caseInsensitiveCompare(user) == .orderedSame {
+            guard let assetType = speechAssetType(scope: journal.scope, client: row.client, name: row.name) else { continue }
+            let language = String(row.name.dropFirst(assetType == 3 ? "assistant.".count : "transcription.".count))
             try require(!language.isEmpty && language.count < 40 && language.unicodeScalars.allSatisfy(allowed.contains), "Unreviewed speech language")
-            let config = try makeConfig(configType, language: language, assetType: phone ? 7 : 3)
+            let config = try makeConfig(configType, language: language, assetType: assetType)
             try require(equal(assets.subscriptionName(for: config), row.name)
                         && equal(assets.assetSetUsage(for: config), ["asr.language": language] as NSDictionary), "Speech config does not match its owner")
             let original = try decode(row.archive)
@@ -420,12 +432,15 @@ enum AssetOwners {
             indices.append(try journal.record("uaf", client: client, name: row.name, archive: row.archive, user: user, expiry: row.expiry))
             configs.append(config)
             // Siri's paired Hammer request goes with the same unsubscribe and is verified with it.
-            if !phone, let hammer = try self.row(all, client: client, name: "hammer." + language, user: user) {
+            if assetType == 3, let hammer = try self.row(all, client: client, name: "hammer." + language, user: user) {
                 indices.append(try journal.record("uaf", client: client, name: hammer.name, archive: hammer.archive, user: user, expiry: hammer.expiry))
             }
         }
         guard !configs.isEmpty else { return }
-        for index in indices { try journal.submit(index) }
+        for index in indices {
+            if !phone { try require(try speechOff(), "Siri or Dictation became active; speech cleanup stopped") }
+            try journal.submit(index)
+        }
         let reply = Reply<AnyObject?>()
         if phone {
             messaging(speech, as: SpeechAssets.self).unsubscribe(configs: configs, clientIdentifier: client) { reply.send($0) }

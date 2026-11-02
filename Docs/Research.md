@@ -1257,3 +1257,20 @@ Earlier notes that later measurements corrected, so nobody rebuilds on them.
 | Spanish growth came from an unknown source that regenerates at boot | The app under test had changed the Siri language to Spanish; editing the morphun list only removed the list entry. |
 | The advertising identifier is a plain setting | A policy: the owner reconciles it back (section 5). |
 | `launchctl disable` for Apple services as a debloat mechanism | Does not survive a boot with SIP on. |
+
+### Shared transcription request missed by Siri cleanup (2026-11-02)
+
+**Measured, 26B123:** after Telephony's transcription request had been withdrawn, the current user's
+`com.apple.siri.embeddedspeech` client still held `transcription.pt`, requesting
+`com.apple.speech.automaticspeechrecognition` with `asr.language=pt`. The shared speech family remained on disk.
+A read-only runtime check verified that a type-7 `SFEntitledAssetConfig` produces the same subscription name and
+subscription facts as that stored request. The earlier assumption that this client's speech requests were only
+`assistant.<locale>` (type 3) was incomplete. The Phone size measures the shared family, so its remaining size does
+not establish that Telephony still requests it.
+
+Siri cleanup now handles both reviewed configuration types under its own client and rollback journal, only while
+Siri is managed off and Siri and Dictation both read off. Telephony cleanup retains its own client boundary.
+The reclaim inventory includes shared ASR after Siri withdrawal, including a fresh withdrawal when Siri's displayed
+families are already below the completion threshold. Language-identification requests and unrelated clients remain
+untouched. This is verified configuration matching and regression coverage; end-to-end removal and sustained absence
+with the updated app remain unverified. macOS can recreate demand; this does not establish permanent suppression.

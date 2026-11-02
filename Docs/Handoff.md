@@ -296,3 +296,12 @@ released on 2026-10-07: GitHub release `v1.0.0`, the update feed, and the cask `
 - Per-document breakdown of the version history, so users can choose what to delete.
 - Settings counts about 3.9 GB of the Data volume as macOS, and MacSpace's clone-aware items still exceed its remainder by 0.62 GB (Research, section 1): both are stated on the page and unexplained.
 - Time Machine's local snapshots are not measured.
+
+### Shared transcription cleanup
+
+Siri's embedded-speech client can hold type-7 `transcription.<language>` requests as well as type-3
+`assistant.<locale>` requests. `AssetOwners.releaseSpeech` handles both with exact configuration checks and the Siri
+rollback journal, gated by Siri managed off and Siri/Dictation inactive. The shared ASR family is shown in the Phone
+row but must also be checked for reclaim after Siri withdraws an owner. See Research.md for the evidence and live
+validation limit. `MACSPACE_VERIFY_SPEECH_CONFIG=1 swift test --filter AssetModelCleanupTests` additionally runs an
+opt-in read-only comparison with an existing current-user Siri transcription subscription; it never removes one.
