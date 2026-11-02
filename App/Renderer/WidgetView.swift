@@ -666,14 +666,12 @@ struct RowView: View {
                     InfoButton(text: row.detail, steps: row.steps)
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                     RowBadges(badges: row.badges, quiet: flagIsActive, gap: 6, arrives: appeared)
-                    // Last in the cluster: its width changes while it works (Free, its progress, its result), and only the room
-                    // after it takes that change. Before the (i) and the folder it pushed them back and forth all through a cleanup.
-                    if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
                 }
                 // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
                 // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if placement == .beforeFigure { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing {
                 ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
             }

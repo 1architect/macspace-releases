@@ -430,8 +430,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var title: String
     /// A count the title needs ("12 items"). A fact about the row (its state, its kind, why it is checked) is a badge.
     public var subtitle: String?
-    /// The row's figure on the right edge (a size, a version). With one, the row's action flags stand right after its title, pills
-    /// and (i); without one, they take the right edge themselves. The app places them; a module only fills the two fields.
+    /// The row's figure on the right edge (a size, a version). The action flags stay attached to the right, immediately before it;
+    /// without one, they take the right edge themselves. The app places them; a module only fills the two fields.
     public var trailing: String?
     /// Short facts about the row, drawn as pills right after its title, in this order.
     public var badges: [Badge]
@@ -452,7 +452,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// handed to background work. Space MacSpace frees by itself with nothing to measure is the shared pill instead
     /// (`Badge.freeingInBackground`).
     public var activity: ActionProgress?
-    /// The row's buttons, drawn as its action flags: after the title when the row has a `trailing` figure, else on the right edge.
+    /// The row's buttons, attached to the right immediately before its `trailing` figure, else on the right edge.
     public var actions: [Action]
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
