@@ -78,14 +78,15 @@ public enum AppOwnership {
         }
         paths.formUnion(candidates.filter { !$0.contains(".app/") && !$0.contains("/.Trash/") && !$0.contains("/.Trashes/") })
         // Public registration lookup by known bundle ID. There is no claim of a complete global registration inventory.
-        let seeds = paths.compactMap { AppOwner(path: $0, knownIdentifiers: []) }
+        let seeds = paths.compactMap { path in autoreleasepool { AppOwner(path: path, knownIdentifiers: []) } }
         for id in Set(seeds.map(\.identifier)) {
-            for url in NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id) {
-                if safeExisting(url.path) { paths.insert(url.path); registered.insert(url.path) }
+            let registeredPaths = autoreleasepool { NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id).map(\.path) }
+            for path in registeredPaths {
+                if safeExisting(path) { paths.insert(path); registered.insert(path) }
             }
         }
         let prior = Dictionary(seeds.map { ($0.path, $0) }, uniquingKeysWith: { a, _ in a })
-        return AppCatalog(owners: paths.sorted().compactMap { prior[$0] ?? AppOwner(path: $0, knownIdentifiers: []) }, registeredPaths: registered)
+        return AppCatalog(owners: paths.sorted().compactMap { path in autoreleasepool { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) } }, registeredPaths: registered)
     }
     public static func installed(home: String) -> [AppOwner] { discover(home: home).owners }
     public static func classification(_ owner: AppOwner, home: String, registered: Set<String> = [], candidates: [AppOwner] = []) -> (AppClassification, String) {
@@ -117,20 +118,30 @@ public enum AppOwnership {
             .filter { $0.confidence == .verifiedExclusive && $0.source != "bundle" }.flatMap(\.paths)
     }
     public static func ownedIdentifiers(_ owner: AppOwner) -> Set<String> { owner.identifiers }
+    private static func canonicalPath(_ path: String) -> Bool {
+        path.hasPrefix("/") && path != "/" && !path.hasSuffix("/") && !path.contains("//") && !path.utf8.contains(0)
+            && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
+    }
+    private static func parent(_ path: String) -> String {
+        guard let slash = path.lastIndex(of: "/"), slash != path.startIndex else { return "/" }
+        return String(path[..<slash])
+    }
     public static func safeExisting(_ path: String) -> Bool {
-        path.hasPrefix("/") && path != "/" && FileManager.default.fileExists(atPath: path)
-            && URL(fileURLWithPath: path).standardizedFileURL.path == path
-            && URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path
+        guard canonicalPath(path) else { return false }
+        return autoreleasepool {
+            FileManager.default.fileExists(atPath: path)
+                && URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path
+        }
     }
     public static func normalizedPaths(_ paths: [String]) -> [String] {
         var selected = Set<String>()
         for path in Set(paths).sorted(by: { $0.count == $1.count ? $0 < $1 : $0.count < $1.count }) {
-            guard path.hasPrefix("/"), path != "/", URL(fileURLWithPath: path).standardizedFileURL.path == path else { continue }
-            var ancestor = (path as NSString).deletingLastPathComponent
+            guard canonicalPath(path) else { continue }
+            var ancestor = parent(path)
             var covered = false
             while ancestor != "/" && !ancestor.isEmpty {
                 if selected.contains(ancestor) { covered = true; break }
-                ancestor = (ancestor as NSString).deletingLastPathComponent
+                ancestor = parent(ancestor)
             }
             if !covered { selected.insert(path) }
         }

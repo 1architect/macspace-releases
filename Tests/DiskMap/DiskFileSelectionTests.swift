@@ -79,13 +79,15 @@ final class DiskFileSelectionTests: XCTestCase {
         _ = await store.snapshot()
         await store.recordOwnership(catalog)
         await store.flushPersistence()
-        let restored = try DiskCache.read(from: cache, root: root.path)
+        let restoredDatabase = try DiskDatabase(url: cache.appendingPathExtension("sqlite"), root: root.path)
+        let restored = try restoredDatabase.snapshot(folder: contents.path, inventory: false).index
         let id = try XCTUnwrap(restored.directories[contents.path]?.ownershipID)
         XCTAssertEqual(restored.directories[contents.path]?.ownerUID, getuid())
         XCTAssertEqual(restored.ownershipClaims?[id]?.ownerPaths, [app.path])
         try Data(repeating: 1, count: 8192).write(to: contents.appendingPathComponent("new"))
         await store.mark([contents.appendingPathComponent("new").path])
-        let updated = await store.snapshot()
+        _ = await store.snapshot()
+        let updated = await store.navigation(folder: contents.path).index
         XCTAssertEqual(updated.directories[contents.path]?.ownershipID, id)
         XCTAssertEqual(updated.ownershipClaims?[id]?.confidence, .verifiedExclusive)
         await store.flushPersistence()

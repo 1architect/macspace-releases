@@ -31,6 +31,8 @@ struct DiskIndex: Codable, Sendable {
     var catalogRevision: UInt64?
     var ownershipClaims: [UInt32: DiskOwnershipClaim]?
     var volumeUsed: UInt64?
+    var appPaths: [String]?
+    var measuredOwnershipBytes: [String: UInt64]?
     var hardlinks: [String: [DiskFile]] = [:]
     var largeFiles: [DiskFile] {
         let linked = hardlinks.values.compactMap { $0.sorted { $0.path < $1.path }.first }.filter { $0.logicalBytes >= Self.largeFileMinimum && $0.bytes > 0 }

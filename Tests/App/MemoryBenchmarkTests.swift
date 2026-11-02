@@ -14,7 +14,7 @@ import XCTest
 ///
 /// `MACSPACE_MEMORY_BENCHMARK_UI=none` reads the modules with no window, for the share the window adds. `..._HOLD=60` keeps the
 /// window up that many seconds at the end, for `heap` or `sample`. Prints `BENCHMARK` lines; asserts nothing.
-private struct ReadOnlyModule: MacSpaceModule {
+struct ReadOnlyModule: MacSpaceModule {
     let base: any MacSpaceModule
     init() { fatalError("Only made around a loaded module") }
     init(base: any MacSpaceModule) { self.base = base }
@@ -23,6 +23,7 @@ private struct ReadOnlyModule: MacSpaceModule {
     func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? { await base.status(context: context) }
     func screen(context: ModuleContext) async -> Screen { await base.screen(context: context) }
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await base.screen(context: context, progress: progress) }
+    func page(id: String, context: ModuleContext) async -> Screen? { await base.page(id: id, context: context) }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         .failed("Read-only benchmark")
     }

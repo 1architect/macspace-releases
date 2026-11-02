@@ -31,6 +31,7 @@ actor DiskInventory {
         }
         return apps ?? DiskApplications()
     }
+    func passive() -> DiskApplications { apps ?? DiskApplications() }
     func navigation(_ index: DiskIndex) async -> DiskApplications {
         if let apps { return apps }
         return await read(index)
@@ -43,7 +44,7 @@ actor DiskInventory {
             let previous = apps, loader = self.loader
             generation += 1
             pending = Reading(id: generation, revision: index.revision,
-                task: Task.detached(priority: .utility) { loader(index, previous) })
+                task: Task.detached(priority: .utility) { autoreleasepool { loader(index, previous) } })
             flight = pending
         }
         let result = await pending.task.value
@@ -80,28 +81,26 @@ public struct DiskMapModule: MacSpaceModule {
     }
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
         guard let snapshot = await store.statusView() else { return nil }
-        let apps = await browsing(snapshot.index)
+        let apps = await inventory.passive()
         return (DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files),
                 DiskMapScreenBuilder.screen(snapshot.index, apps: apps, files: snapshot.files))
     }
     public func page(id: String, context: ModuleContext) async -> Screen? {
         // Navigation uses the latest completed view; reconciliation and cache writes run independently.
+        if id.hasPrefix("folder:") || id.hasPrefix("large:") {
+            let isFolder = id.hasPrefix("folder:")
+            let path = String(id.dropFirst(isFolder ? 7 : 6))
+            let page = await store.navigation(folder: path)
+            guard page.index.contains(path, below: page.index.root), page.index.directories[path] != nil else { return nil }
+            return isFolder ? DiskMapScreenBuilder.screen(page.index, apps: DiskApplications(), folder: path, files: page.files)
+                : DiskMapScreenBuilder.allLargePage(page.index, folder: path, files: page.files)
+        }
         let snapshot = await store.navigation(), index = snapshot.index
         if id == "other-apps" { return DiskMapScreenBuilder.otherAppsPage(await browsing(index)) }
         if id.hasPrefix("app:"), let data = Data(base64Encoded: String(id.dropFirst(4))), let path = String(data: data, encoding: .utf8),
            let app = await browsing(index).apps.first(where: { $0.owner.path == path }) { return DiskMapScreenBuilder.appDataPage(app) }
         if id == "app-data-review" { return DiskMapScreenBuilder.leftoversPage(await browsing(index)) }
         if id == "apps" { return DiskMapScreenBuilder.appsPage(index, apps: await browsing(index)) }
-        if id.hasPrefix("folder:") {
-            let path = String(id.dropFirst(7))
-            guard index.contains(path, below: index.root), index.directories[path] != nil else { return nil }
-            return DiskMapScreenBuilder.screen(index, apps: DiskApplications(), folder: path, files: snapshot.files)
-        }
-        if id.hasPrefix("large:") {
-            let path = String(id.dropFirst(6))
-            guard index.contains(path, below: index.root), index.directories[path] != nil else { return nil }
-            return DiskMapScreenBuilder.allLargePage(index, folder: path, files: snapshot.files)
-        }
         return nil
     }
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -110,8 +109,9 @@ public struct DiskMapModule: MacSpaceModule {
         var result: ActionResult
         switch request.actionID {
         case "freeFiles":
-            guard let folder = request.parameters["folder"],
-                  let removal = DiskFileRemoval.execute(ids: Set(Selection.ids(request.parameters["ids"])), folder: folder, index: index, progress: progress) else {
+            guard let folder = request.parameters["folder"] else { return .failed(loc("This file cannot be deleted here.")) }
+            let scoped = await store.navigation(folder: folder)
+            guard let removal = DiskFileRemoval.execute(ids: Set(Selection.ids(request.parameters["ids"])), folder: folder, index: scoped.index, progress: progress) else {
                 return .failed(loc("This file cannot be deleted here."))
             }
             await store.mark(removal.targets)

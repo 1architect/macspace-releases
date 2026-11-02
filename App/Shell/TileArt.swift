@@ -400,7 +400,8 @@ struct BlocksView: View {
 
     init(segments: [UsageSegment], tint: TileTint, labels: Bool = true, hovered: String? = nil, gap: CGFloat = 3, outerRadius: CGFloat? = nil,
          look: ChartLook = .page, loading: Bool = false, reading: Bool = false, fill: LoadFill? = nil,
-         working: Bool = false, workingFraction: Double? = nil, orderSize: CGSize? = nil) {
+         working: Bool = false, workingFraction: Double? = nil, orderSize: CGSize? = nil, startsAppeared: Bool = false) {
+        _appeared = State(initialValue: startsAppeared)
         self.segments = segments
         self.tint = tint
         self.labels = labels
@@ -458,6 +459,9 @@ struct BlocksView: View {
             let shown = blocks.map(\.segment)
             let shades = geometry.shades
             let rects = geometry.rects
+            // A gap consumes sub-pixel tiles completely. Keep their hit geometry and data, but do not create
+            // SwiftUI surfaces/overlays with a zero drawing area for thousands of small folders.
+            let visible = Array(shown.enumerated()).filter { inset(rects[$0.offset]).width > 0 && inset(rects[$0.offset]).height > 0 }
             let corner = Self.radius(for: rects.map(inset))
             // Opening with a reading, draining what was freed: not the placeholders, nor with Reduce Motion.
             let plan = growth != nil && !reduceMotion && !LoadingWave.isPlaceholder(segments) && !blocks.isEmpty
@@ -472,7 +476,7 @@ struct BlocksView: View {
                 let drain = draining ? drained(at: context.date) : 0
                 // Two layers moved alike: the blocks, then their names over them.
                 ZStack(alignment: .topLeading) {
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
+                    ForEach(visible, id: \.element.id) { index, segment in
                         let rect = Self.narrowed(inset(rects[index]), to: width)
                         let drawn = motionRect(rect, index: index, amber: segment.tone == .caution, opens: opens, drain: drain)
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
@@ -481,7 +485,7 @@ struct BlocksView: View {
                                        strength: appeared || plan != nil ? 1 : 0),
                                index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
+                    ForEach(visible, id: \.element.id) { index, segment in
                         let rect = Self.narrowed(inset(rects[index]), to: width)
                         let drawn = motionRect(rect, index: index, amber: segment.tone == .caution, opens: opens, drain: drain)
                         let moved = drawn != rect

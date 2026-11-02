@@ -53,6 +53,7 @@ struct DiskApplications: Sendable {
         let directoryRoots = normalized.filter { index.directories[measuredPath($0, index: index)] != nil }.map { measuredPath($0, index: index) }
         for path in normalized {
             if let directory = index.directories[measuredPath(path, index: index)] { bytes += directory.bytes; continue }
+            if let measured = index.measuredOwnershipBytes?[measuredPath(path, index: index)] { bytes += measured; continue }
             var st = stat()
             guard AppOwnership.safeExisting(path), lstat(path, &st) == 0, st.st_mode & S_IFMT == S_IFREG, st.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
             let key = "\(st.st_dev):\(st.st_ino)"
@@ -68,7 +69,7 @@ struct DiskApplications: Sendable {
             // Byte revisions do not force signature verification or ownership discovery.
             result = previous
         } else {
-            let candidates = index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }.map(livePath)
+            let candidates = (index.appPaths ?? index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }).map(livePath)
             let catalog = AppOwnership.discover(home: home, candidates: candidates)
             let resolver = OwnershipResolver(catalog: catalog)
             let receipts = AppReceiptReader.read(previous: previous?.receipts)
@@ -108,7 +109,7 @@ struct DiskApplications: Sendable {
     func remeasured(_ index: DiskIndex) -> DiskApplications {
         var result = self
         for n in result.apps.indices {
-            result.apps[n].bytes = index.directories[Self.measuredPath(result.apps[n].owner.path, index: index)]?.bytes ?? 0
+            result.apps[n].bytes = index.measuredOwnershipBytes?[Self.measuredPath(result.apps[n].owner.path, index: index)] ?? index.directories[Self.measuredPath(result.apps[n].owner.path, index: index)]?.bytes ?? 0
             let ownerPath = result.apps[n].owner.path
             let claims = result.apps[n].ownership.filter { $0.source != "bundle" }.map { claim in
                 var claim = claim

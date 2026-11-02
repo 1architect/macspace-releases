@@ -142,7 +142,7 @@ enum DiskMapScreenBuilder {
     }
     static func fileSelection(_ files: [DiskFile], folder: String) -> Selection {
         let candidates = files.filter { selectable($0) }
-        return Selection(action: Action(id: "freeFiles", title: loc("Free selected"), role: .prominent, parameters: ["folder": folder],
+        return Selection(action: Action(id: "freeFiles", title: loc("Free selected"), parameters: ["folder": folder],
             confirmation: Confirmation(title: loc("Free the selected files?"), message: loc("This permanently deletes the selected files."), confirmTitle: loc("Free")),
             requires: [.fullDiskAccess], workingTitle: loc("Freeing space")),
             choices: Dictionary(candidates.map { (fileID($0.path), $0.bytes) }, uniquingKeysWith: { first, _ in first }),

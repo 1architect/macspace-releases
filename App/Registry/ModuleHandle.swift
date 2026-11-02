@@ -128,6 +128,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         for id in (all ? groupPath : Array(groupPath.suffix(1))) where pages[id] != nil {
             let page = await module.page(id: pageIDs[id] ?? id, context: context())
             guard state == .ready, reading == refreshGeneration, action == actionGeneration else { return }
+            if let position = groupPath.firstIndex(of: id), page == nil {
+                pages.removeValue(forKey: id)
+                groupPath = Array(groupPath.prefix(position))
+                break
+            }
             if groupPath.contains(id), pages[id] != page { pages[id] = page }
         }
     }
@@ -366,7 +371,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         let newTile: Tile
         let newScreen: Screen?
-        let readsScreen = !quiet || screenIsVisible
+        let readsScreen = screenIsVisible
         if quiet, !reload, let status = await module.status(context: context) {
             newTile = status.tile
             newScreen = readsScreen ? status.screen : nil

@@ -106,4 +106,60 @@ enum DiskCache {
               (index.ownershipClaims?.count ?? 0) == (header.claimCount ?? 0) else { throw Invalid.truncated }
         return index
     }
+
+    static func stream(from url: URL, root: String, directory: (DiskDirectory) throws -> Void, links: (String, [DiskFile]) throws -> Void, claim: (UInt32, DiskOwnershipClaim) throws -> Void) throws -> DiskIndex {
+        let file = try FileHandle(forReadingFrom: url)
+        defer { try? file.close() }
+        var buffer = Data(), offset = 0
+        func read(_ count: Int, eofAllowed: Bool = false) throws -> Data? {
+            var result = Data()
+            while result.count < count {
+                if offset == buffer.count {
+                    buffer = try file.read(upToCount: 64 * 1024) ?? Data(); offset = 0
+                    if buffer.isEmpty {
+                        if eofAllowed && result.isEmpty { return nil }
+                        throw Invalid.truncated
+                    }
+                }
+                let take = min(count - result.count, buffer.count - offset)
+                result.append(buffer[offset..<(offset + take)]); offset += take
+            }
+            return result
+        }
+        guard try read(magic.count) == magic else { throw Invalid.format }
+        var header: Header?
+        var index = DiskIndex(root: root)
+        var directories = 0, linkCount = 0, claimCount = 0, hasRoot = false
+        let decoder = JSONDecoder()
+        while let framing = try read(5, eofAllowed: true) {
+            try autoreleasepool {
+                let length = framing.withUnsafeBytes { Int(UInt32(littleEndian: $0.loadUnaligned(fromByteOffset: 1, as: UInt32.self))) }
+                guard length > 0, length <= maximumRecord, let payload = try read(length) else { throw Invalid.format }
+                switch framing[0] {
+                case 0:
+                    guard header == nil else { throw Invalid.format }
+                    let value = try decoder.decode(Header.self, from: payload)
+                    guard value.root == root, value.directoryCount > 0 else { throw Invalid.format }
+                    header = value; index.catalogRevision = value.catalogRevision; index.eventID = value.eventID; index.revision = value.revision; index.volumeUsed = value.volumeUsed
+                case 1:
+                    guard header != nil else { throw Invalid.format }
+                    let node = try decoder.decode(DiskDirectory.self, from: payload)
+                    guard index.contains(node.path, below: root) else { throw Invalid.format }
+                    try directory(node); directories += 1; if node.path == root { hasRoot = true }
+                case 2:
+                    guard header != nil else { throw Invalid.format }
+                    let value = try decoder.decode(Links.self, from: payload)
+                    try links(value.id, value.files); linkCount += 1
+                case 3:
+                    guard header != nil else { throw Invalid.format }
+                    let value = try decoder.decode(Claim.self, from: payload)
+                    try claim(value.id, value.claim); claimCount += 1
+                default: throw Invalid.format
+                }
+            }
+        }
+        guard let header, hasRoot, directories == header.directoryCount,
+              linkCount == header.linkCount, claimCount == (header.claimCount ?? 0) else { throw Invalid.truncated }
+        return index
+    }
 }

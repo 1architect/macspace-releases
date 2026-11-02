@@ -216,7 +216,7 @@ struct ScreenView: View {
         })
         .environment(\.pageCascadeCount, (content?.hero.map { $0.segments.count + 1 } ?? 0) + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count)
         .scrollIndicators(.never)
-        .modifier(PageScrollArea(hasFooter: hasFooter || selection != nil))
+        .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
     }
 
@@ -259,19 +259,29 @@ extension EnvironmentValues {
     @Entry var pageCascadeCount: Int = 0
     @Entry var pageScrollTop: CGFloat = PageInsets.scrollTop
     /// The page's own color.
+    @Entry var pageDrawingSuppressed = false
     @Entry var pageGround: Color?
 }
 
 /// A page with another page open over it: moved aside, faded out, and not taking clicks, until the page over it goes.
 private struct StackedPage: ViewModifier {
     let covered: Bool
-
+    @StateObject private var graph: CoveredGraphLifetime
+    init(covered: Bool) { self.covered = covered; _graph = StateObject(wrappedValue: CoveredGraphLifetime(covered: covered)) }
     func body(content: Content) -> some View {
         content
+            .environment(\.pageDrawingSuppressed, covered && !graph.draws)
             .offset(x: covered ? -80 : 0)
             .opacity(covered ? 0 : 1)
             .allowsHitTesting(!covered)
             .accessibilityHidden(covered)
+            .transaction(value: covered) { transaction in
+                if covered {
+                    let token = graph.token(for: true)
+                    transaction.addAnimationCompletion(criteria: .removed) { graph.finishCover(token) }
+                }
+            }
+            .onChange(of: covered, initial: true) { _, covered in graph.update(covered: covered) }
     }
 }
 
@@ -353,6 +363,9 @@ struct HeroBlocks: View {
     @Environment(\.moduleColumnWidth) private var columnWidth
     @Environment(\.moduleGraphHeight) private var graphHeight
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
+    @Environment(\.pageDrawingSuppressed) private var drawingSuppressed
+    @State private var hasDrawn = false
+    @State private var legendHeight: CGFloat = 0
     @State private var hovered: String?
     @State private var blocksSize = CGSize.zero
     @State private var hitGeometry = BlockGeometryCache()
@@ -364,10 +377,14 @@ struct HeroBlocks: View {
         let blocks = BlockLayout.blocks(segments)
         let hoveredSegment = hovered.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
         VStack(alignment: .leading, spacing: 10) {
+            if drawingSuppressed {
+                Color.clear.frame(height: graphHeight ?? ModulePageLayout.chartHeight(width: columnWidth, columns: columns))
+                Color.clear.frame(height: legendHeight)
+            } else {
             // The blocks reach the edges of the groups below: out of the header's indent, and out by half the gap each block keeps around
             // itself. The legend stays lined up with the headers and the rows' text.
             BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap, loading: loading, reading: reading,
-                       fill: reading ? fill : nil, working: working, workingFraction: workingFraction)
+                       fill: reading ? fill : nil, working: working, workingFraction: workingFraction, startsAppeared: hasDrawn)
                 .frame(height: graphHeight ?? ModulePageLayout.chartHeight(width: columnWidth, columns: columns))
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
                 .onContinuousHover { phase in
@@ -389,7 +406,10 @@ struct HeroBlocks: View {
                 }
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
             legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { legendHeight = $0 }
+            }
         }
+        .onAppear { hasDrawn = true }
         // Resolve the whole graph before page motion, so text's local value transactions
         // cannot cancel or detach the legend's placement from the blocks during navigation.
         .geometryGroup()

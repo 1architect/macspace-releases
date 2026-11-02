@@ -1,95 +1,157 @@
 import Foundation
 import CoreServices
+import Darwin
 import MacSpacePlatform
 import MacSpaceSdk
-import MacSpaceDiskMapPrivileged
+
+/// A single serial writer owns transactions. The presentation actor has its own bounded-cache reader,
+/// so navigation neither retains whole-index snapshots nor waits for disk scans or ownership writes.
+private actor DiskDatabaseWriter {
+    private var database: DiskDatabase?
+    private let url: URL
+    private var active: URL?
+    private var retired: [URL] = []
+    private var pointer: URL { url.appendingPathExtension("current") }
+    private let legacy: URL
+    private let root: String
+    private let excluded: [String]
+    init(url: URL, legacy: URL, root: String, excluded: [String]) { self.url = url; self.legacy = legacy; self.root = root; self.excluded = excluded }
+    func boot(progress: LoadProgressSink?) throws -> DiskIndex {
+        let name = (try? String(contentsOf: pointer, encoding: .utf8)) ?? ""
+        let destination = !name.isEmpty && !name.contains("/") && name.hasPrefix(url.lastPathComponent) ? url.deletingLastPathComponent().appendingPathComponent(name) : url
+        active = destination
+        let db = try DiskDatabase(url: destination, root: root); database = db
+        if try db.state() == nil { try db.clearIncomplete() }
+        if try db.state() == nil, FileManager.default.fileExists(atPath: legacy.path) { try? db.importLegacy(legacy) }
+        if try db.state() == nil {
+            try db.clearIncomplete()
+            var scanner = DiskDatabaseScanner(db: db, excluded: excluded)
+            try scanner.scan(.init(), cursor: FSEventsGetCurrentEventId(), progress: progress)
+        }
+        return try db.state() ?? DiskIndex(root: root)
+    }
+    func location() -> URL { active ?? url }
+    func scan(_ changes: DiskEvents.Changes, progress: LoadProgressSink?) throws -> URL {
+        guard let database, let active else { return url }
+        // Large/subtree reads prepare a new on-disk generation. Readers keep the previous committed map,
+        // while bounded commits/checkpoints prevent a disk-sized dirty-write spike in the app.
+        if !changes.recursive.isEmpty || changes.shallow.count > 128 {
+            let destination = url.appendingPathExtension(UUID().uuidString)
+            let full = changes.recursive.contains(root)
+            if !full {
+                try database.seal()
+                guard clonefile(active.path, destination.path, 0) == 0 else {
+                    try FileManager.default.copyItem(at: active, to: destination)
+                    return try prepareGeneration(destination, previous: active, changes: changes, progress: progress)
+                }
+            }
+            if full {
+                let next = try DiskDatabase(url: destination, root: root)
+                next.unpublished = true
+                if let state = try database.state() { try next.saveState(state) }
+                return try finishGeneration(next, at: destination, previous: active, changes: changes, progress: progress)
+            }
+            return try prepareGeneration(destination, previous: active, changes: changes, progress: progress)
+        }
+        var scanner = DiskDatabaseScanner(db: database, excluded: excluded)
+        try scanner.scan(changes, cursor: FSEventsGetCurrentEventId(), progress: progress)
+        return active
+    }
+    private func prepareGeneration(_ destination: URL, previous: URL, changes: DiskEvents.Changes, progress: LoadProgressSink?) throws -> URL {
+        let next = try DiskDatabase(url: destination, root: root); next.unpublished = true
+        return try finishGeneration(next, at: destination, previous: previous, changes: changes, progress: progress)
+    }
+    private func finishGeneration(_ next: DiskDatabase, at destination: URL, previous: URL, changes: DiskEvents.Changes, progress: LoadProgressSink?) throws -> URL {
+        var scanner = DiskDatabaseScanner(db: next, excluded: excluded)
+        try scanner.scan(changes, cursor: FSEventsGetCurrentEventId(), progress: progress)
+        try next.seal(); next.unpublished = false
+        try destination.lastPathComponent.write(to: pointer, atomically: true, encoding: .utf8)
+        database = next; active = destination; retired.append(previous)
+        return destination
+    }
+    func retireReaders() {
+        for old in retired {
+            for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: old.path + suffix) }
+        }
+        retired.removeAll()
+    }
+    func ownership(_ catalog: DiskApplications) throws { try database?.recordOwnership(catalog) }
+    func flush() { try? database?.checkpoint() }
+}
 
 actor DiskStore {
     private let root: String
-    private let cache: URL
+    private let url: URL
+    private let excluded: [String]
+    private let writer: DiskDatabaseWriter
+    private var reader: DiskDatabase?
     private var published: DiskSnapshot?
-    private let writer: DiskCacheWriter
     private var watcher: DiskEvents?
-    private var flight: Task<DiskSnapshot, Error>?
+    private var flight: Task<Void, Never>?
     private var relay: LoadProgressRelay?
     private var explicitlyInvalidated = false
-    private var ownershipCatalog: DiskApplications?
-    private var ownershipEvidence = Set<DiskOwnershipClaim>()
-    private var ownershipFlight: Task<DiskSnapshot, Never>?
+    private var evidenceRevision: Date?
+    private var ownershipFlight: Task<Void, Never>?
 
     init(root: String = "/", cache: URL? = nil) {
         self.root = root
-        let destination = cache ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v2.scan")
-        self.cache = destination
-        writer = DiskCacheWriter(url: destination)
+        let legacy = cache ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v2.scan")
+        let destination = cache.map { $0.appendingPathExtension("sqlite") } ?? legacy.deletingLastPathComponent().appendingPathComponent("Index-v3.sqlite")
+        url = destination
+        excluded = [legacy.deletingLastPathComponent().path] + (root == "/" ? ["/System/Volumes", "/Volumes", "/dev", "/Network"] : [])
+        writer = DiskDatabaseWriter(url: destination, legacy: legacy, root: root, excluded: excluded)
     }
-    private var exclusions: [String] { [cache.deletingLastPathComponent().path] + (root == "/" ? ["/System/Volumes", "/Volumes", "/dev", "/Network"] : []) }
     func invalidate() { explicitlyInvalidated = true }
     func mark(_ paths: [String], recursive: Bool = false) { watcher?.mark(paths, recursive: recursive) }
     func status() -> DiskIndex? { statusView()?.index }
     func statusView() -> DiskSnapshot? { watcher?.hasChanges == false && !explicitlyInvalidated && flight == nil ? published : nil }
-    func navigation() async -> DiskSnapshot {
-        if let published { return published }
-        return await view()
+    func navigation(folder: String? = nil) async -> DiskSnapshot {
+        if folder == nil, let published { return published }
+        if let reader { return (try? autoreleasepool { try reader.snapshot(folder: folder, inventory: folder == nil || folder == root) }) ?? published ?? DiskSnapshot(DiskIndex(root: root)) }
+        _ = await view()
+        return (try? reader?.snapshot(folder: folder, inventory: folder == nil || folder == root)) ?? published ?? DiskSnapshot(DiskIndex(root: root))
     }
-    /// Evidence is interned once across the measured tree, then only newly measured directories are attributed.
     func recordOwnership(_ catalog: DiskApplications) async {
-        if let ownershipFlight { _ = await ownershipFlight.value; return }
-        let evidence = Set(catalog.apps.flatMap(\.ownership))
-        ownershipCatalog = catalog
-        guard let snapshot = published, snapshot.index.ownershipClaims == nil || evidence != ownershipEvidence else { return }
-        let task = Task.detached(priority: .utility) {
-            var index = snapshot.index
-            index.ownershipClaims = DiskOwnership.assign(to: &index, catalog: catalog)
-            return DiskSnapshot(index)
-        }
-        ownershipFlight = task
-        let result = await task.value
-        ownershipFlight = nil
-        guard published?.index.revision == snapshot.index.revision else { return }
-        ownershipEvidence = evidence; published = result
-        await writer.submit(result.index)
+        guard evidenceRevision != catalog.catalogReadAt else { return }
+        if let ownershipFlight { await ownershipFlight.value; return }
+        let writer = writer
+        let task = Task.detached(priority: .utility) { try? await writer.ownership(catalog) }
+        ownershipFlight = Task { _ = await task.value }
+        _ = await task.value
+        evidenceRevision = catalog.catalogReadAt; ownershipFlight = nil
+        if let reader { published = try? autoreleasepool { try reader.snapshot() } }
     }
     func flushPersistence() async { await writer.flush() }
     func snapshot(progress: LoadProgressSink? = nil) async -> DiskIndex { await view(progress: progress).index }
     func view(progress: LoadProgressSink? = nil) async -> DiskSnapshot {
-        if let flight { if let progress { relay?.attach(progress) }; return (try? await flight.value) ?? published ?? DiskSnapshot(DiskIndex(root: root)) }
-        if published == nil, let saved = try? DiskCache.read(from: cache, root: root) { published = DiskSnapshot(saved) }
-        if watcher == nil {
-            watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: exclusions)
-            // Drain the historical replay before treating a persisted snapshot as current.
-            watcher?.flush()
-        }
-        var changes = watcher?.drain() ?? DiskEvents.Changes()
-        if explicitlyInvalidated { changes.recursive.insert(root); explicitlyInvalidated = false }
-        guard published == nil || !changes.shallow.isEmpty || !changes.recursive.isEmpty else { return published! }
-        let old = published?.index ?? DiskIndex(root: root)
-        let cursor = FSEventsGetCurrentEventId()
+        if let flight { if let progress { relay?.attach(progress) }; await flight.value; return published ?? DiskSnapshot(DiskIndex(root: root)) }
         let reports = LoadProgressRelay(); if let progress { reports.attach(progress) }; relay = reports
-        let excluded = exclusions
-        let captured = changes
-        let catalog = ownershipCatalog
-        let task = Task.detached(priority: .utility) {
-            var scanner = DiskScanner(index: old, excluded: excluded, recordVisitedDirectories: false)
-            var result = try scanner.scan(changed: captured.shallow, recursive: captured.recursive, progress: { reports.report($0) })
-            if let catalog { result.ownershipClaims = DiskOwnership.assign(to: &result, catalog: catalog, paths: scanner.measuredDirectories) }
-            result.eventID = cursor
-            result.revision = old.revision + 1
-            if old.root == "/" || old.root == DataVolume.path, let values = try? URL(fileURLWithPath: DataVolume.path).resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]), let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacityForImportantUsage {
-                result.volumeUsed = UInt64(max(0, Int64(total) - available))
-            }
-            return DiskSnapshot(result)
-        }
+        let task = Task { await reconcile(reports: reports) }
         flight = task
-        do {
-            let result = try await task.value
-            published = result
-            await writer.submit(result.index)
-        } catch {
-            watcher?.mark(Array(changes.shallow))
-            watcher?.mark(Array(changes.recursive), recursive: true)
-        }
+        await task.value
         flight = nil; relay = nil
-        return published ?? DiskSnapshot(old)
+        return published ?? DiskSnapshot(DiskIndex(root: root))
+    }
+    private func reconcile(reports: LoadProgressRelay) async {
+        do {
+            if reader == nil {
+                let metadata = try await writer.boot(progress: { reports.report($0) })
+                reader = try DiskDatabase(url: await writer.location(), root: root)
+                watcher = DiskEvents(root: root, since: metadata.eventID, excluded: excluded)
+                watcher?.flush()
+            }
+            var changes = watcher?.drain() ?? .init()
+            if explicitlyInvalidated { changes.recursive.insert(root); explicitlyInvalidated = false }
+            if !changes.shallow.isEmpty || !changes.recursive.isEmpty {
+                do {
+                    let before = await writer.location()
+                    let destination = try await writer.scan(changes, progress: { reports.report($0) })
+                    if before != destination { reader = try DiskDatabase(url: destination, root: root); await writer.retireReaders() }
+                }
+                catch { watcher?.mark(Array(changes.shallow)); watcher?.mark(Array(changes.recursive), recursive: true); throw error }
+                published = nil
+            }
+            if published == nil { published = try reader?.snapshot() }
+        } catch { /* Keep the last committed page; a subsequent refresh retries transient I/O failures. */ }
     }
 }

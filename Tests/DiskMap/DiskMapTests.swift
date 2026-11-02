@@ -162,7 +162,7 @@ final class DiskMapTests: XCTestCase {
         let store = DiskStore(root: root.path, cache: cache)
         let before = await store.snapshot()
         await store.flushPersistence()
-        XCTAssertTrue(FileManager.default.fileExists(atPath: cache.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: cache.appendingPathExtension("sqlite").path))
         try write(a + "/one", size: 65536)
         await store.mark([a + "/one"])
         let after = await store.snapshot()
