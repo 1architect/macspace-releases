@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:475",
-      "App\/Renderer\/ScreenView.swift:541"
+      "App\/Renderer\/ScreenView.swift:476",
+      "App\/Renderer\/ScreenView.swift:542"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:384"
+      "App\/Renderer\/ScreenView.swift:385"
     ],
     "table" : "App",
     "translations" : {
@@ -367,7 +367,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:468"
+      "App\/Renderer\/ScreenView.swift:469"
     ],
     "table" : "App",
     "translations" : {
@@ -1475,8 +1475,8 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:197",
-      "App\/Renderer\/ScreenView.swift:705"
+      "App\/Renderer\/ScreenView.swift:198",
+      "App\/Renderer\/ScreenView.swift:706"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,7 +2471,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:706",
+      "App\/Renderer\/ScreenView.swift:707",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
@@ -2685,8 +2685,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:684",
-      "App\/Renderer\/WidgetView.swift:685"
+      "App\/Renderer\/WidgetView.swift:705",
+      "App\/Renderer\/WidgetView.swift:706"
     ],
     "table" : "App",
     "translations" : {
@@ -3144,7 +3144,7 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:704",
+      "App\/Renderer\/ScreenView.swift:705",
       "App\/Renderer\/RowActionFlag.swift:104",
       "App\/Renderer\/RowActionFlag.swift:111",
       "App\/Registry\/ModuleHandle.swift:536"
@@ -8703,7 +8703,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:706",
+      "App\/Renderer\/ScreenView.swift:707",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",

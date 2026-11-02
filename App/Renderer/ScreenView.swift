@@ -175,6 +175,7 @@ struct ScreenView: View {
                 let refreshing = hidesDetails
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            allowsGraphBesideList: true,
+                           graphLoading: !content.loaded || handle.isRefreshing || handle.isReloading,
                            detailsVisible: !refreshing, cascadeOffset: legendCount,
                            maximumColumns: handle.screen?.layout == .singleColumn ? 1 : 3,
                            expandsGroups: true, handle: handle) {

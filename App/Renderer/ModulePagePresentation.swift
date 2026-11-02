@@ -8,6 +8,19 @@ enum ModulePagePresentation {
         var selectionGroup: Row?
     }
 
+    /// Empty list/section shells do not reserve an overview pane during the first scan.
+    static func hasContent(_ widgets: [ScreenWidget]) -> Bool {
+        widgets.contains { widget in
+            switch widget {
+            case .banner: return false
+            case let .list(list): return !list.rows.isEmpty || list.emptyMessage?.isEmpty == false
+            case let .toggles(list): return !list.rows.isEmpty
+            case let .section(section): return hasContent(section.widgets)
+            default: return true
+            }
+        }
+    }
+
     static func items(_ widgets: [ScreenWidget], width: Double, expandsGroups: Bool) -> [Item] {
         let widgets = widgets.enumerated().sorted { left, right in
             let a = priority(left.element), b = priority(right.element)

@@ -52,9 +52,12 @@ enum ModulePageLayout {
         // A readable list at the left; the graph gets the remaining room, as in the reference.
         let list = min(maximumSingleColumnWidth, max(minimumSideListWidth, width * 0.34))
         let graph = max(0, width - gap - list)
-        let height = min(max(150, viewport.height - PageInsets.scrollTop - PageInsets.footer - 120),
-                         max(220, graph * 0.5))
+        let height = sideGraphHeight(width: graph, viewportHeight: viewport.height)
         return GraphArrangement(contentWidth: width, listWidth: list, graphWidth: graph, graphHeight: height)
+    }
+
+    static func sideGraphHeight(width: CGFloat, viewportHeight: CGFloat) -> CGFloat {
+        min(max(150, viewportHeight - PageInsets.scrollTop - PageInsets.footer - 120), max(220, width * 0.5))
     }
 
     /// Storage charts gain useful height inside a narrow overview column, without growing with window height.

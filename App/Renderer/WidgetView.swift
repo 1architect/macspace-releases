@@ -10,6 +10,7 @@ struct WidgetForm<Top: View>: View {
     let handler: ActionHandler
     var showsTop = true
     var allowsGraphBesideList = false
+    var graphLoading = false
     var detailsVisible = true
     var cascadeOffset = 0
     /// Whole sections reflow; rows within a section keep their existing order and identity.
@@ -24,6 +25,7 @@ struct WidgetForm<Top: View>: View {
     @State private var flipped: Set<String> = []
     @State private var previousStructure: PageCascade.Structure?
     @State private var firstListHeaderHeight: CGFloat = 0
+    @StateObject private var loadingGraph = WideGraphLoadingState()
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
         widgets.flatMap { widget -> [String] in
@@ -80,15 +82,19 @@ struct WidgetForm<Top: View>: View {
             let layout = ModulePageLayout.metrics(availableWidth: proxy.size.width - 2 * PageInsets.side,
                                                   maximumColumns: maximumColumns)
             let graph = ModulePageLayout.graphArrangement(viewport: proxy.size, hasGraph: showsTop && allowsGraphBesideList)
+            let expandLoadingGraph = graph != nil && graphLoading && !ModulePagePresentation.hasContent(widgets)
+            // The derived initial value avoids a narrow first frame before onChange configures state.
+            let expanded = graph != nil && (expandLoadingGraph || loadingGraph.phase == .expanded)
+            let listReady = graph == nil || (!expanded && loadingGraph.phase == .ready)
             let columns = graph == nil ? layout.columns : 1
             let listWidth = graph?.listWidth ?? layout.columnWidth
             let items = ModulePagePresentation.items(widgets, width: listWidth, expandsGroups: expandsGroups)
             let ids = Self.itemIDs(items.flatMap(\.widgets))
             let structure = PageCascade.Structure(ids: ids, offset: cascadeOffset, count: cascadeCount)
-            let positions = Positions(ids, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible)
+            let positions = Positions(ids, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible && listReady)
             Group {
                 if let graph {
-                    HStack(alignment: .top, spacing: ModulePageLayout.gap) {
+                    HStack(alignment: .top, spacing: expanded ? 0 : ModulePageLayout.gap) {
                         // Only the left pane owns a scroll view. The graph is a sibling and never moves with its offset.
                         ScrollView {
                             listColumns(items, positions: positions, columns: 1, width: graph.listWidth, alignsGraph: true)
@@ -96,14 +102,19 @@ struct WidgetForm<Top: View>: View {
                                 .padding(.bottom, max(bottomRoom, 20))
                         }
                         .contentMargins(.horizontal, 0, for: .scrollContent)
-                        .frame(width: graph.listWidth)
+                        .frame(width: expanded ? 0 : graph.listWidth)
+                        .clipped()
+                        .allowsHitTesting(listReady)
+                        .accessibilityHidden(!listReady)
                         top.padding(.horizontal, PageInsets.formHeaderIndent)
-                            .environment(\.moduleColumnWidth, graph.graphWidth)
-                            .environment(\.moduleGraphHeight, graph.graphHeight)
-                            .frame(width: graph.graphWidth, alignment: .topLeading)
+                            .environment(\.moduleColumnWidth, expanded ? graph.contentWidth : graph.graphWidth)
+                            .environment(\.moduleGraphHeight, expanded
+                                          ? ModulePageLayout.sideGraphHeight(width: graph.contentWidth, viewportHeight: proxy.size.height)
+                                          : graph.graphHeight)
+                            .frame(width: expanded ? graph.contentWidth : graph.graphWidth, alignment: .topLeading)
                             // Keep initial shade alignment while the left list scrolls independently.
                             .padding(.top, scrollTop + 20
-                                     + (items.first?.widgets.first.flatMap { Self.title($0).text }?.isEmpty == false
+                                     + (!expanded && items.first?.widgets.first.flatMap { Self.title($0).text }?.isEmpty == false
                                         ? firstListHeaderHeight : 0) - HeroBlocks.gap / 2)
                     }
                     .padding(.horizontal, PageInsets.side)
@@ -129,10 +140,20 @@ struct WidgetForm<Top: View>: View {
             .environment(\.modulePageColumns, columns)
             .environment(\.moduleColumnWidth, listWidth)
             .onChange(of: structure, initial: true) { _, next in previousStructure = next }
+            .onChange(of: LoadingLayoutInput(active: graph != nil, expand: expandLoadingGraph, reduceMotion: reduceMotion), initial: true) { _, input in
+                loadingGraph.update(expand: input.expand, active: input.active, reduceMotion: input.reduceMotion)
+            }
 
         }
         .font(.system(size: 13))
         .buttonStyle(.bordered)
+        .onDisappear { loadingGraph.cancel() }
+    }
+
+    private struct LoadingLayoutInput: Equatable {
+        let active: Bool
+        let expand: Bool
+        let reduceMotion: Bool
     }
 
     private func listColumns(_ items: [ModulePagePresentation.Item], positions: Positions,
