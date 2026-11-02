@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import MacSpacePlatform
 
 /// Only directories and large files are retained. Small file bytes are still included in every folder total.
 struct DiskFile: Codable, Equatable, Sendable {
@@ -37,14 +38,16 @@ struct DiskScanner {
     let excluded: [String]
     private(set) var enumerated = Set<String>()
     private var devices = Set<dev_t>()
+    private let recordVisitedDirectories: Bool
     private var progress: ((Double) -> Void)?
     private let metadata: (String) -> stat?
     private var linksAtDirectory: [String: Set<String>] = [:]
 
-    init(index: DiskIndex, excluded: [String] = [], metadata: @escaping (String) -> stat? = { path in
+    init(index: DiskIndex, excluded: [String] = [], recordVisitedDirectories: Bool = true, metadata: @escaping (String) -> stat? = { path in
         var info = stat(); return lstat(path, &info) == 0 ? info : nil
     }) {
         self.index = index; self.excluded = excluded; self.metadata = metadata
+        self.recordVisitedDirectories = recordVisitedDirectories
         for (id, files) in index.hardlinks {
             for file in files { linksAtDirectory[(file.path as NSString).deletingLastPathComponent, default: []].insert(id) }
         }
@@ -94,64 +97,73 @@ struct DiskScanner {
             index.directories[path] = DiskDirectory(path: path)
             return
         }
-        enumerated.insert(path)
-        let urls: [URL]
-        do { urls = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: path), includingPropertiesForKeys: nil) }
-        catch {
-            var node = index.directories[path] ?? DiskDirectory(path: path)
-            node.readable = false; index.directories[path] = node
-            return
-        }
+        if recordVisitedDirectories { enumerated.insert(path) }
         let old = index.directories[path]
         var node = DiskDirectory(path: path)
-        for key in linksAtDirectory[path] ?? [] {
+        let previousLinks = linksAtDirectory[path] ?? []
+        for key in previousLinks {
             index.hardlinks[key]?.removeAll { ($0.path as NSString).deletingLastPathComponent == path }
             if index.hardlinks[key]?.isEmpty == true { index.hardlinks.removeValue(forKey: key) }
         }
-        linksAtDirectory[path] = []
-        for (n, url) in urls.enumerated() {
-            if path == index.root { progress?(Double(n) / Double(max(urls.count, 1))) }
-            try Task.checkCancellation()
-            // Foundation can canonicalize /var to /private/var in returned URLs. Keep one spelling throughout the index.
-            let child = (path as NSString).appendingPathComponent(url.lastPathComponent)
-            guard !excluded.contains(where: { index.contains(child, below: $0) }), let st = metadata(child), devices.contains(st.st_dev) else { continue }
-            switch st.st_mode & S_IFMT {
-            case S_IFDIR:
-                node.folders.append(child)
-                if recursive || index.directories[child] == nil { try read(child, recursive: true) }
-            case S_IFREG:
-                guard st.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
-                // APFS allocation excludes dataless cloud content. Reading metadata never downloads a file.
-                if url.lastPathComponent == "Info.plist", path.hasSuffix("/Contents") || path.hasSuffix("/Resources") { node.bundleIdentifier = NSDictionary(contentsOf: url)?["CFBundleIdentifier"] as? String }
-                let bytes = UInt64(max(0, st.st_blocks)) * 512
-                let logical = UInt64(max(0, st.st_size))
-                if st.st_nlink > 1 || index.hardlinks["\(st.st_dev):\(st.st_ino)"] != nil {
-                    let id = "\(st.st_dev):\(st.st_ino)"
-                    if var aliases = index.hardlinks[id] {
-                        for n in aliases.indices { aliases[n].bytes = bytes; aliases[n].logicalBytes = logical }
-                        index.hardlinks[id] = aliases
+        linksAtDirectory.removeValue(forKey: path)
+        var cancelled = false
+        let complete = autoreleasepool {
+            DirectoryWalk.entries(at: path) { name, entry in
+                guard !Task.isCancelled else { cancelled = true; return }
+                let child = path == "/" ? path + name : path + "/" + name
+                guard !excluded.contains(where: { index.contains(child, below: $0) }), devices.contains(entry.device) else { return }
+                if entry.isDirectory {
+                    node.folders.append(child)
+                } else if entry.isRegularFile, !entry.isDataless {
+                    if name == "Info.plist", path.hasSuffix("/Contents") || path.hasSuffix("/Resources") {
+                        node.bundleIdentifier = autoreleasepool { NSDictionary(contentsOfFile: child)?["CFBundleIdentifier"] as? String }
                     }
-                    linksAtDirectory[path, default: []].insert(id)
-                    index.hardlinks[id, default: []].append(DiskFile(path: child, bytes: bytes, logicalBytes: logical))
-                    continue
+                    let bytes = entry.allocatedBytes, logical = entry.logicalBytes
+                    if (entry.linkCount > 1 || !previousLinks.isEmpty), let st = metadata(child),
+                       entry.linkCount > 1 || index.hardlinks["\(st.st_dev):\(st.st_ino)"] != nil {
+                        let id = "\(st.st_dev):\(st.st_ino)"
+                        if var aliases = index.hardlinks[id] {
+                            for n in aliases.indices { aliases[n].bytes = bytes; aliases[n].logicalBytes = logical }
+                            index.hardlinks[id] = aliases
+                        }
+                        linksAtDirectory[path, default: []].insert(id)
+                        index.hardlinks[id, default: []].append(DiskFile(path: child, bytes: bytes, logicalBytes: logical))
+                    } else {
+                        node.directBytes += bytes
+                        if logical >= DiskIndex.largeFileMinimum, bytes > 0 { node.files.append(DiskFile(path: child, bytes: bytes, logicalBytes: logical)) }
+                    }
                 }
-                node.directBytes += bytes
-                if logical >= DiskIndex.largeFileMinimum, bytes > 0 { node.files.append(DiskFile(path: child, bytes: bytes, logicalBytes: logical)) }
-            case S_IFLNK:
-                // Never traverse aliases, firmlinks or another volume.
-                node.directBytes += UInt64(max(0, st.st_blocks)) * 512
-            default: break
             }
+        }
+        if cancelled { throw CancellationError() }
+        if !complete {
+            node = old ?? node
+            node.readable = false
+            index.directories[path] = node
+            return
+        }
+        // Release the native buffer and Objective-C temporaries before descending.
+        for (n, child) in node.folders.enumerated() {
+            if path == index.root { progress?(Double(n) / Double(max(node.folders.count, 1))) }
+            if recursive || index.directories[child] == nil { try read(child, recursive: true) }
         }
         for removed in Set(old?.folders ?? []).subtracting(node.folders) { remove(removed) }
         index.directories[path] = node
     }
 
     private mutating func remove(_ path: String) {
-        for key in Array(index.hardlinks.keys) {
-            index.hardlinks[key]?.removeAll { $0.path == path || $0.path.hasPrefix(path + "/") }
-            if index.hardlinks[key]?.isEmpty == true { index.hardlinks.removeValue(forKey: key) }
+        // New cloud placeholders have nothing cached. Never walk the entire index for each one.
+        var pending = [path]
+        while let current = pending.popLast() {
+            guard let node = index.directories.removeValue(forKey: current) else { continue }
+            pending.append(contentsOf: node.folders)
+            for key in linksAtDirectory.removeValue(forKey: current) ?? [] {
+                index.hardlinks[key]?.removeAll { file in
+                    guard let slash = file.path.lastIndex(of: "/") else { return false }
+                    return String(file.path[..<slash]) == current
+                }
+                if index.hardlinks[key]?.isEmpty == true { index.hardlinks.removeValue(forKey: key) }
+            }
         }
-        for key in index.directories.keys.filter({ index.contains($0, below: path) }) { index.directories.removeValue(forKey: key) }
     }
 }

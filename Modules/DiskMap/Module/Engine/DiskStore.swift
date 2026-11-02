@@ -14,7 +14,7 @@ actor DiskStore {
 
     init(root: String = "/", cache: URL? = nil) {
         self.root = root
-        self.cache = cache ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v1.json")
+        self.cache = cache ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v2.scan")
     }
     private var exclusions: [String] { [cache.deletingLastPathComponent().path] + (root == "/" ? ["/System/Volumes", "/Volumes", "/dev", "/Network"] : []) }
     func invalidate() { explicitlyInvalidated = true }
@@ -23,7 +23,7 @@ actor DiskStore {
 
     func snapshot(progress: LoadProgressSink? = nil) async -> DiskIndex {
         if let flight { if let progress { relay?.attach(progress) }; return (try? await flight.value) ?? index ?? DiskIndex(root: root) }
-        if index == nil, let data = try? Data(contentsOf: cache), let saved = try? JSONDecoder().decode(DiskIndex.self, from: data), saved.root == root { index = saved }
+        if index == nil { index = try? DiskCache.read(from: cache, root: root) }
         if watcher == nil {
             watcher = DiskEvents(root: root, since: index?.eventID ?? 0, excluded: exclusions)
             // Drain the historical replay before treating a persisted snapshot as current.
@@ -38,7 +38,7 @@ actor DiskStore {
         let excluded = exclusions
         let captured = changes
         let task = Task.detached(priority: .utility) {
-            var scanner = DiskScanner(index: old, excluded: excluded)
+            var scanner = DiskScanner(index: old, excluded: excluded, recordVisitedDirectories: false)
             var result = try scanner.scan(changed: captured.shallow, recursive: captured.recursive, progress: { reports.report($0) })
             result.eventID = cursor
             result.revision = old.revision + 1
@@ -51,8 +51,7 @@ actor DiskStore {
         do {
             let result = try await task.value
             index = result
-            try? FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if let data = try? JSONEncoder().encode(result) { try? data.write(to: cache, options: .atomic) }
+            try? DiskCache.write(result, to: cache)
         } catch {
             watcher?.mark(Array(changes.shallow))
             watcher?.mark(Array(changes.recursive), recursive: true)

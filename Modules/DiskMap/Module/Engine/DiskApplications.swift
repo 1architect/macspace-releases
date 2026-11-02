@@ -38,20 +38,24 @@ struct DiskApplications: Sendable {
             nestedIDs[livePath(app), default: []].insert(id)
         }
         var paths = Set(appPaths)
-        if let iterator = FileManager.default.enumerator(atPath: "/System/Applications") {
+        if index.root == DataVolume.path, let iterator = FileManager.default.enumerator(atPath: "/System/Applications") {
             for case let name as String in iterator where name.hasSuffix(".app") { paths.insert("/System/Applications/" + name); iterator.skipDescendants() }
         }
         var stamps: [String: Date] = [:]
         let owners = paths.compactMap { path -> AppOwner? in
+            autoreleasepool {
             let stamp = (try? FileManager.default.attributesOfItem(atPath: path + "/Contents/Info.plist"))?[.modificationDate] as? Date
             stamps[path] = stamp
             if let old = previous?.apps.first(where: { $0.owner.path == path }), old.metadataStamp == stamp { return old.owner }
-            return AppOwner(path: path, knownIdentifiers: nestedIDs[path])
+            // The disk walk already collected embedded bundle identities. An empty set must not
+            // fall back to enumerating the application's entire Contents tree a second time.
+            return AppOwner(path: path, knownIdentifiers: nestedIDs[path] ?? [])
+            }
         }
         let ids = Set(owners.flatMap { $0.identifiers })
         var result = DiskApplications()
         for owner in owners {
-            let dataPaths = AppOwnership.dataPaths(owner: owner, installed: owners, home: home)
+            let dataPaths = autoreleasepool { AppOwnership.dataPaths(owner: owner, installed: owners, home: home) }
             let bytes = index.directories[measuredPath(owner.path, index: index)]?.bytes ?? 0
             result.apps.append(DiskApplication(owner: owner, bytes: bytes, dataPaths: dataPaths, removable: AppOwnership.removable(owner, home: home), metadataStamp: stamps[owner.path]))
         }

@@ -8,23 +8,48 @@ import Foundation
 ///
 /// Given a `ScanPool`, idle workers of the pool take folders of the tree as they are found: one large tree (a cloud folder of 6
 /// seconds) no longer finishes alone after every other one.
-enum DirectoryWalk {
-    struct Entry {
-        let type: UInt32
-        let device: Int32
+public enum DirectoryWalk {
+    public struct Entry {
+        public let type: UInt32
+        public let device: Int32
         /// `st_flags` (`SF_DATALESS` for a folder still in the cloud).
-        let flags: UInt32
-        let linkCount: UInt32
-        let logicalBytes: UInt64
-        let allocatedBytes: UInt64
+        public let flags: UInt32
+        public let linkCount: UInt32
+        public let logicalBytes: UInt64
+        public let allocatedBytes: UInt64
         /// Only when the walk asks for them (`extended`): 0 otherwise.
-        let cloneFamily: UInt64
-        let privateBytes: UInt64
-        let extendedFlags: UInt64
+        public let cloneFamily: UInt64
+        public let privateBytes: UInt64
+        public let extendedFlags: UInt64
 
-        var isDirectory: Bool { type == UInt32(VDIR.rawValue) }
-        var isRegularFile: Bool { type == UInt32(VREG.rawValue) }
-        var isDataless: Bool { flags & UInt32(SF_DATALESS) != 0 }
+        public var isDirectory: Bool { type == UInt32(VDIR.rawValue) }
+        public var isRegularFile: Bool { type == UInt32(VREG.rawValue) }
+        public var isDataless: Bool { flags & UInt32(SF_DATALESS) != 0 }
+    }
+
+    /// Streams one directory in a fixed-size native buffer. No NSURL array or per-file stat call is created.
+    /// The callback finishes before this returns; nested scans should start after it returns to release the buffer first.
+    @discardableResult
+    public static func entries(at path: String, visit: (String, Entry) -> Void) -> Bool {
+        var info = stat()
+        guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR, info.st_flags & UInt32(SF_DATALESS) == 0 else { return false }
+        let capacity = 256 * 1024
+        let buffer = UnsafeMutableRawPointer.allocate(byteCount: capacity, alignment: 8)
+        defer { buffer.deallocate() }
+        var request = attributes(extended: false)
+        return Walk<Void>.list(path, &request, flags: O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW,
+                               options: 0, buffer: buffer, capacity: capacity, rootDevice: info.st_dev) { name, entry in
+            visit(String(cString: name), entry)
+        }
+    }
+
+    private static func attributes(extended: Bool) -> attrlist {
+        var list = attrlist()
+        list.bitmapcount = u_short(ATTR_BIT_MAP_COUNT)
+        list.commonattr = attrgroup_t(ATTR_CMN_RETURNED_ATTRS) | attrgroup_t(ATTR_CMN_ERROR | ATTR_CMN_NAME | ATTR_CMN_DEVID | ATTR_CMN_OBJTYPE | ATTR_CMN_FLAGS)
+        list.fileattr = attrgroup_t(ATTR_FILE_LINKCOUNT | ATTR_FILE_TOTALSIZE | ATTR_FILE_ALLOCSIZE)
+        if extended { list.forkattr = attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS) }
+        return list
     }
 
     /// What `visit` decides for a folder.
@@ -83,10 +108,7 @@ enum DirectoryWalk {
             self.makeState = makeState
             self.visit = visit
             folders = [root]
-            list.bitmapcount = u_short(ATTR_BIT_MAP_COUNT)
-            list.commonattr = attrgroup_t(ATTR_CMN_RETURNED_ATTRS) | attrgroup_t(ATTR_CMN_ERROR | ATTR_CMN_NAME | ATTR_CMN_DEVID | ATTR_CMN_OBJTYPE | ATTR_CMN_FLAGS)
-            list.fileattr = attrgroup_t(ATTR_FILE_LINKCOUNT | ATTR_FILE_TOTALSIZE | ATTR_FILE_ALLOCSIZE)
-            if extended { list.forkattr = attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS) }
+            list = DirectoryWalk.attributes(extended: extended)
             options = UInt64(extended ? FSOPT_ATTR_CMN_EXTENDED : 0)
         }
 
