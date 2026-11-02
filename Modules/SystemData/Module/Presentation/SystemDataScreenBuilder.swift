@@ -286,7 +286,6 @@ enum SystemDataScreenBuilder {
         var widgets: [ScreenWidget] = []
         if let banner = partialBanner(snapshot) { widgets.append(banner) }
         if let free = freeNow(snapshot) { widgets.append(free) }
-        if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let groups = [
             group(assetsSection(snapshot), symbol: "square.stack.3d.down.right",
                   total: shownAssetFamilies(snapshot).map(\.bytes).reduce(0, +)),
@@ -295,6 +294,7 @@ enum SystemDataScreenBuilder {
         ].compactMap { $0 }
         let rows = groups
         if !rows.isEmpty { widgets.append(.list(ListWidget(id: "groups", title: loc("What is in it"), rows: rows))) }
+        if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let blocks = blocksWithItems(snapshot)
         let hero = UsageBar(id: "usage", title: loc("What fills System Data"), totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
         return Screen(title: loc("System Data"), hero: hero, primary: cleanAll(snapshot), widgets: widgets)
@@ -372,7 +372,7 @@ enum SystemDataScreenBuilder {
         if let trash = trashRow(snapshot) { rows.append(trash) }
         guard !rows.isEmpty else { return nil }
         let sorted = rows.sorted { $0.bytes > $1.bytes }.map(\.row)
-        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))]))
+        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))], priority: .actionable))
     }
 
     static let manualThreshold: UInt64 = 50_000_000

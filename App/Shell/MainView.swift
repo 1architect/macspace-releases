@@ -69,6 +69,7 @@ public struct MainView: View {
     @State private var windowShown = false
     /// The window is closing: the tiles leave, then the glass, then the window goes.
     @State private var windowClosing = false
+    @State private var corners = WindowCornerStyle()
 
     /// `progress` is 0 on the dashboard and 1 with a page fully open; `reveal` brings in the page's content after the card has grown.
     /// The layer exists while a page is open or moving.
@@ -124,15 +125,17 @@ public struct MainView: View {
         canvas
         // Nothing draws outside the glass: a lifted tile's shadow spilling past it left a stray shadow and edge, which macOS then
         // copied into the window's own shadow.
-        .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
-        .overlay { WindowBorder(cornerRadius: Theme.windowRadius, light: designSettings.design.isLight) }
+        .clipShape(RoundedRectangle(cornerRadius: corners.windowRadius, style: .continuous))
+        .overlay { WindowBorder(cornerRadius: corners.windowRadius, light: designSettings.design.isLight) }
         .scaleEffect(windowShown || reduceMotion ? 1 : Theme.windowOpeningScale)
         .opacity(windowShown ? 1 : 0)
+        .environment(\.windowCornerStyle, corners)
+        .animation(reduceMotion ? nil : .smooth(duration: WindowCornerStyle.duration), value: corners)
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
         // The shadow grows in with the glass (`ShadowWindow.growIn`), and leaves before the glass shrinks away when the window closes.
-        .background(GlassWindowConfigurator(shadow: windowShown && !windowClosing, radius: designSettings.windowRadius))
+        .background(GlassWindowConfigurator(shadow: windowShown && !windowClosing, radius: corners.windowRadius, cornerStyle: $corners))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }
@@ -218,7 +221,7 @@ public struct MainView: View {
                                 .gesture(WindowDragGesture())
                                 .allowsWindowActivationEvents(true)
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: corners.windowRadius, style: .continuous))
                         .offset(x: full.minX, y: full.minY)
                         .allowsHitTesting(isOpen)
                     card(layer, in: size, target: full, face: false)

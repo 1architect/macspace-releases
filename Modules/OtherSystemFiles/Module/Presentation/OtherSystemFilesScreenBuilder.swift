@@ -127,7 +127,7 @@ enum OtherSystemFilesScreenBuilder {
         if let snapshots = snapshotsRow(snapshot), snapshots.freeable { rows.append((snapshots.row, snapshots.bytes)) }
         guard !rows.isEmpty else { return nil }
         let sorted = rows.enumerated().sorted { $0.element.1 != $1.element.1 ? $0.element.1 > $1.element.1 : $0.offset < $1.offset }.map(\.element.0)
-        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))]))
+        return .section(SectionWidget(id: "free", title: loc("Free now"), widgets: [.list(ListWidget(id: "free-list", rows: sorted))], priority: .actionable))
     }
 
     /// Time Machine's local snapshots as one row: how many, what they hold together (macOS's figure), and, when some can go, a Free

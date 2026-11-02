@@ -11,14 +11,15 @@ final class ModulePageLayoutTests: XCTestCase {
     }
 
     func testMediumAndFullWidthWindowsReflowWholeSections() {
-        XCTAssertEqual(ModulePageLayout.metrics(availableWidth: 1000 - 2 * PageInsets.side).columns, 2)
-        XCTAssertEqual(ModulePageLayout.metrics(availableWidth: 1440 - 2 * PageInsets.side).columns, 3)
+        XCTAssertEqual(ModulePageLayout.metrics(availableWidth: 1200 - 2 * PageInsets.side).columns, 2)
+        XCTAssertEqual(ModulePageLayout.metrics(availableWidth: 1800 - 2 * PageInsets.side).columns, 3)
     }
 
     func testNewColumnOnlyAppearsWhenEveryColumnHasRoom() {
         for count in 2...3 {
-            let threshold = CGFloat(count) * ModulePageLayout.minimumColumnWidth
+            let canvas = CGFloat(count) * ModulePageLayout.minimumColumnWidth
                 + CGFloat(count - 1) * ModulePageLayout.gap
+            let threshold = canvas / 0.8 - 2 * PageInsets.side
             XCTAssertEqual(ModulePageLayout.metrics(availableWidth: threshold - 1).columns, count - 1)
             let layout = ModulePageLayout.metrics(availableWidth: threshold)
             XCTAssertEqual(layout.columns, count)
@@ -48,9 +49,28 @@ final class ModulePageLayoutTests: XCTestCase {
         }
     }
 
+    func testSmallWindowsStackUntilBothSidesHaveReadableRoom() throws {
+        for width: CGFloat in [520, 678, 700, 780, 900, ModulePageLayout.minimumSideViewportWidth - 1] {
+            XCTAssertNil(ModulePageLayout.graphArrangement(viewport: CGSize(width: width, height: 1200), hasGraph: true))
+        }
+        XCTAssertNil(ModulePageLayout.graphArrangement(viewport: CGSize(width: 2090, height: 1140), hasGraph: false))
+        for width: CGFloat in [ModulePageLayout.minimumSideViewportWidth, 1045, 1448, 2090] {
+            let layout = try XCTUnwrap(ModulePageLayout.graphArrangement(viewport: CGSize(width: width, height: 1140), hasGraph: true))
+            XCTAssertEqual(layout.contentWidth, width - 2 * PageInsets.side)
+            XCTAssertEqual(layout.listWidth + ModulePageLayout.gap + layout.graphWidth, layout.contentWidth, accuracy: 0.001)
+            XCTAssertGreaterThanOrEqual(layout.listWidth, 440)
+            XCTAssertGreaterThanOrEqual(layout.graphWidth, 420)
+            XCTAssertLessThanOrEqual(layout.listWidth, ModulePageLayout.maximumSingleColumnWidth)
+            XCTAssertTrue(layout.graphHeight.isFinite)
+        }
+        let full = try XCTUnwrap(ModulePageLayout.graphArrangement(viewport: CGSize(width: 1448, height: 1140), hasGraph: true))
+        XCTAssertEqual(full.listWidth / full.contentWidth, 0.34, accuracy: 0.001)
+        XCTAssertNil(ModulePageLayout.graphArrangement(viewport: CGSize(width: CGFloat.infinity, height: 900), hasGraph: true))
+    }
+
     func testChartHeightIsBoundedAndDoesNotDependOnWindowHeight() {
-        XCTAssertEqual(ModulePageLayout.chartHeight(width: 420, columns: 3), 231, accuracy: 0.001)
-        XCTAssertEqual(ModulePageLayout.chartHeight(width: 480, columns: 3), 240)
+        XCTAssertEqual(ModulePageLayout.chartHeight(width: 1200, columns: 3), 294, accuracy: 0.001)
+        XCTAssertEqual(ModulePageLayout.chartHeight(width: 1608, columns: 3), 390)
         XCTAssertEqual(ModulePageLayout.chartHeight(width: 820, columns: 1), 150)
     }
 }

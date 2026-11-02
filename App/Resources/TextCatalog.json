@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:472",
-      "App\/Renderer\/ScreenView.swift:538"
+      "App\/Renderer\/ScreenView.swift:474",
+      "App\/Renderer\/ScreenView.swift:540"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:382"
+      "App\/Renderer\/ScreenView.swift:381"
     ],
     "table" : "App",
     "translations" : {
@@ -176,7 +176,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:516"
+      "Sdk\/Interface\/Widgets.swift:528"
     ],
     "table" : "App",
     "translations" : {
@@ -214,7 +214,7 @@
     "key" : "%lld smaller",
     "kind" : "Chart part",
     "places" : [
-      "App\/Shell\/TileArt.swift:276"
+      "App\/Shell\/TileArt.swift:278"
     ],
     "table" : "App",
     "translations" : {
@@ -290,7 +290,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:516"
+      "Sdk\/Interface\/Widgets.swift:528"
     ],
     "table" : "App",
     "translations" : {
@@ -367,7 +367,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:465"
+      "App\/Renderer\/ScreenView.swift:467"
     ],
     "table" : "App",
     "translations" : {
@@ -557,8 +557,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:259",
-      "App\/Shell\/MainView.swift:284"
+      "App\/Shell\/MainView.swift:262",
+      "App\/Shell\/MainView.swift:287"
     ],
     "table" : "App",
     "translations" : {
@@ -749,7 +749,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:286"
+      "App\/Shell\/MainView.swift:289"
     ],
     "table" : "App",
     "translations" : {
@@ -1019,7 +1019,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:178"
+      "App\/Shell\/MainView.swift:181"
     ],
     "table" : "App",
     "translations" : {
@@ -1152,7 +1152,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:176"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "App",
     "translations" : {
@@ -1475,8 +1475,8 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:194",
-      "App\/Renderer\/ScreenView.swift:702"
+      "App\/Renderer\/ScreenView.swift:197",
+      "App\/Renderer\/ScreenView.swift:704"
     ],
     "table" : "App",
     "translations" : {
@@ -1822,7 +1822,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:454"
+      "App\/Registry\/ModuleHandle.swift:457"
     ],
     "table" : "App",
     "translations" : {
@@ -1841,7 +1841,7 @@
     "key" : "Needs attention",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/TileArt.swift:1010"
+      "App\/Shell\/TileArt.swift:1012"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,7 +2471,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:703",
+      "App\/Renderer\/ScreenView.swift:705",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
@@ -2491,7 +2491,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:444"
+      "App\/Registry\/ModuleHandle.swift:447"
     ],
     "table" : "App",
     "translations" : {
@@ -2588,8 +2588,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:244",
-      "App\/Shell\/MainView.swift:285"
+      "App\/Shell\/MainView.swift:247",
+      "App\/Shell\/MainView.swift:288"
     ],
     "table" : "App",
     "translations" : {
@@ -2608,7 +2608,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:243"
+      "App\/Shell\/MainView.swift:246"
     ],
     "table" : "App",
     "translations" : {
@@ -2627,7 +2627,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:242"
+      "App\/Shell\/MainView.swift:245"
     ],
     "table" : "App",
     "translations" : {
@@ -2685,8 +2685,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:622",
-      "App\/Renderer\/WidgetView.swift:623"
+      "App\/Renderer\/WidgetView.swift:684",
+      "App\/Renderer\/WidgetView.swift:685"
     ],
     "table" : "App",
     "translations" : {
@@ -3144,10 +3144,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:701",
+      "App\/Renderer\/ScreenView.swift:703",
       "App\/Renderer\/RowActionFlag.swift:104",
       "App\/Renderer\/RowActionFlag.swift:111",
-      "App\/Registry\/ModuleHandle.swift:533"
+      "App\/Registry\/ModuleHandle.swift:536"
     ],
     "table" : "App",
     "translations" : {
@@ -3223,7 +3223,7 @@
     "key" : "disabled",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/HomeView.swift:243"
+      "App\/Shell\/HomeView.swift:244"
     ],
     "table" : "App",
     "translations" : {
@@ -3263,7 +3263,7 @@
     "places" : [
       "App\/Settings\/SettingsStore.swift:17",
       "App\/Settings\/SettingsStore.swift:21",
-      "App\/Shell\/HomeView.swift:244"
+      "App\/Shell\/HomeView.swift:245"
     ],
     "table" : "App",
     "translations" : {
@@ -3417,7 +3417,7 @@
     "key" : "undone",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/HomeView.swift:245"
+      "App\/Shell\/HomeView.swift:246"
     ],
     "table" : "App",
     "translations" : {
@@ -3437,7 +3437,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:61",
-      "App\/Shell\/MainView.swift:176"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "App",
     "translations" : {
@@ -5962,7 +5962,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:158",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:163",
-      "App\/Shell\/MainView.swift:179"
+      "App\/Shell\/MainView.swift:182"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -8146,7 +8146,7 @@
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:305",
-      "App\/Shell\/MainView.swift:176"
+      "App\/Shell\/MainView.swift:179"
     ],
     "table" : "Siri",
     "translations" : {
@@ -8703,7 +8703,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:703",
+      "App\/Renderer\/ScreenView.swift:705",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",
@@ -9885,7 +9885,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:516"
+      "Sdk\/Interface\/Widgets.swift:528"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10021,7 +10021,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:516"
+      "Sdk\/Interface\/Widgets.swift:528"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14046,7 +14046,7 @@
     "key" : "What is in it",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:297"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:296"
     ],
     "table" : "SystemData",
     "translations" : {

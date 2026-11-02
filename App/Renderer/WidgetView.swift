@@ -9,17 +9,21 @@ struct WidgetForm<Top: View>: View {
     let widgets: [ScreenWidget]
     let handler: ActionHandler
     var showsTop = true
+    var allowsGraphBesideList = false
     var detailsVisible = true
     var cascadeOffset = 0
     /// Whole sections reflow; rows within a section keep their existing order and identity.
     var maximumColumns = 3
+    var expandsGroups = false
+    var handle: ModuleHandle?
     @ViewBuilder var top: Top
-    @Environment(\.sectionChoice) private var sectionChoice
     @Environment(\.pageCascadeCount) private var cascadeCount
     @Environment(\.pageBottomRoom) private var bottomRoom
+    @Environment(\.pageScrollTop) private var scrollTop
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flipped: Set<String> = []
     @State private var previousStructure: PageCascade.Structure?
+    @State private var firstListHeaderHeight: CGFloat = 0
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
         widgets.flatMap { widget -> [String] in
@@ -72,76 +76,128 @@ struct WidgetForm<Top: View>: View {
     }
 
     var body: some View {
-        let itemIDs = Self.itemIDs(widgets)
-        let structure = PageCascade.Structure(ids: itemIDs, offset: cascadeOffset, count: cascadeCount)
-        let positions = Positions(itemIDs, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible)
         GeometryReader { proxy in
-            // PageScrollArea contributes 10 points per side, and the form contributes 20 more.
             let layout = ModulePageLayout.metrics(availableWidth: proxy.size.width - 2 * PageInsets.side,
                                                   maximumColumns: maximumColumns)
-            ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: ModulePageLayout.gap,
-                                                             alignment: .topLeading), count: layout.columns),
-                          alignment: .leading, spacing: 20) {
-                    if showsTop { top.padding(.horizontal, PageInsets.formHeaderIndent) }
-                    ForEach(widgets) { widget in
-                        let title = Self.title(widget)
-                        let rows = entries(widget)
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let text = title.text, !text.isEmpty {
-                                // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
-                                // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
-                                header(text, help: title.help, part: Self.part(widget))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.primary)
-                                    .accessibilityAddTraits(.isHeader)
-                                    .padding(.horizontal, 10)
-                                    .geometryGroup()
-                                    .modifier(positions.item(widget.id + ":header"))
-                            }
-                            // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
-                            // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
-                            LazyVStack(spacing: 0) {
-                                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                                    row.view
-                                        .modifier(PageRowCell(index: index))
-                                        // Resolve parent placement once for the whole cell, before the cascade. Text's own content
-                                        // transactions must not animate/cancel its position separately from the shade and controls.
-                                        .geometryGroup()
-                                        .modifier(positions.item(row.id))
-                                        .transition(positions.transition(row.id, reduceMotion: reduceMotion))
-                                }
-                            }
-                            .background {
-                                if let first = rows.first, let last = rows.last {
-                                    Color.clear
-                                        .modifier(positions.shade(first: first.id, last: last.id))
-                                        .modifier(positions.item(first.id))
-                                }
-                            }
+            let graph = ModulePageLayout.graphArrangement(viewport: proxy.size, hasGraph: showsTop && allowsGraphBesideList)
+            let columns = graph == nil ? layout.columns : 1
+            let listWidth = graph?.listWidth ?? layout.columnWidth
+            let items = ModulePagePresentation.items(widgets, width: listWidth, expandsGroups: expandsGroups)
+            let ids = Self.itemIDs(items.flatMap(\.widgets))
+            let structure = PageCascade.Structure(ids: ids, offset: cascadeOffset, count: cascadeCount)
+            let positions = Positions(ids, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible)
+            Group {
+                if let graph {
+                    HStack(alignment: .top, spacing: ModulePageLayout.gap) {
+                        // Only the left pane owns a scroll view. The graph is a sibling and never moves with its offset.
+                        ScrollView {
+                            listColumns(items, positions: positions, columns: 1, width: graph.listWidth, alignsGraph: true)
+                                .padding(.top, 20)
+                                .padding(.bottom, max(bottomRoom, 20))
                         }
-                        .geometryGroup()
-                        .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
+                        .contentMargins(.horizontal, 0, for: .scrollContent)
+                        .frame(width: graph.listWidth)
+                        top.padding(.horizontal, PageInsets.formHeaderIndent)
+                            .environment(\.moduleColumnWidth, graph.graphWidth)
+                            .environment(\.moduleGraphHeight, graph.graphHeight)
+                            .frame(width: graph.graphWidth, alignment: .topLeading)
+                            // Keep initial shade alignment while the left list scrolls independently.
+                            .padding(.top, scrollTop + 20
+                                     + (items.first?.widgets.first.flatMap { Self.title($0).text }?.isEmpty == false
+                                        ? firstListHeaderHeight : 0) - HeroBlocks.gap / 2)
+                    }
+                    .padding(.horizontal, PageInsets.side)
+                } else {
+                    // Compact pages retain a single scroll surface for graph and rows together.
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 28) {
+                            if showsTop {
+                                top.padding(.horizontal, PageInsets.formHeaderIndent)
+                                    .environment(\.moduleColumnWidth, layout.contentWidth)
+                            }
+                            listColumns(items, positions: positions, columns: columns, width: listWidth)
+                        }
+                        .frame(width: layout.contentWidth, alignment: .topLeading)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                        .padding(.top, showsTop && layout.columns > 1 ? 58 : 20)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, max(bottomRoom, 20))
                     }
                 }
-                // A row removal changes later sections' positions even when no section id changed. Wait for the existing reverse
-                // cascade to finish before closing the gap; one transaction owns the form's structural layout.
-                .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: itemIDs)
-                // Column changes update the same grid and section IDs, without re-running the arrival cascade.
-                .environment(\.modulePageColumns, layout.columns)
-                .environment(\.moduleColumnWidth, layout.columnWidth)
-                .frame(width: layout.contentWidth, alignment: .topLeading)
-                .frame(maxWidth: .infinity, alignment: .top)
-                // Match the native grouped Form’s 20-point inset above its first section header.
-                .padding(.top, 20)
-                .padding(.horizontal, 20)
-                .padding(.bottom, max(bottomRoom, 20))
             }
+            .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: ids)
+            .environment(\.modulePageColumns, columns)
+            .environment(\.moduleColumnWidth, listWidth)
+            .onChange(of: structure, initial: true) { _, next in previousStructure = next }
+
         }
         .font(.system(size: 13))
         .buttonStyle(.bordered)
-        .onChange(of: structure, initial: true) { _, next in previousStructure = next }
     }
+
+    private func listColumns(_ items: [ModulePagePresentation.Item], positions: Positions,
+                             columns: Int, width: CGFloat, alignsGraph: Bool = false) -> some View {
+        HStack(alignment: .top, spacing: ModulePageLayout.gap) {
+            ForEach(0..<columns, id: \.self) { column in
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    ForEach(Array(items.enumerated()).filter { $0.offset % columns == column }.map(\.element)) { item in
+                        VStack(alignment: .leading, spacing: 20) {
+                            ForEach(item.widgets) { widget in
+                                widgetSection(widget, positions: positions,
+                                              alignsGraph: alignsGraph && item.id == items.first?.id && widget.id == item.widgets.first?.id)
+                            }
+                        }
+                        .modifier(OverviewChoices(group: item.selectionGroup, handle: handle))
+                    }
+                }
+                .frame(width: width, alignment: .topLeading)
+            }
+        }
+    }
+
+    private func widgetSection(_ widget: ScreenWidget, positions: Positions, alignsGraph: Bool = false) -> some View {
+        let title = Self.title(widget)
+        let rows = entries(widget)
+        return VStack(alignment: .leading, spacing: 8) {
+            if let text = title.text, !text.isEmpty {
+                // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
+                // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
+                header(text, help: title.help, part: Self.part(widget))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, 10)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        if alignsGraph { firstListHeaderHeight = height + 8 }
+                    }
+                    .geometryGroup()
+                    .modifier(positions.item(widget.id + ":header"))
+            }
+            // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
+            // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
+            LazyVStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    row.view
+                        .modifier(PageRowCell(index: index))
+                        // Resolve parent placement once for the whole cell, before the cascade. Text's own content
+                        // transactions must not animate/cancel its position separately from the shade and controls.
+                        .geometryGroup()
+                        .modifier(positions.item(row.id))
+                        .transition(positions.transition(row.id, reduceMotion: reduceMotion))
+                }
+            }
+            .background {
+                if let first = rows.first, let last = rows.last {
+                    Color.clear
+                        .modifier(positions.shade(first: first.id, last: last.id))
+                        .modifier(positions.item(first.id))
+                }
+            }
+        }
+        .geometryGroup()
+        .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
+    }
+
 
     private struct Entry: Identifiable {
         let id: String
@@ -194,15 +250,8 @@ struct WidgetForm<Top: View>: View {
         }
     }
 
-    @ViewBuilder
     private func header(_ title: String, help: String?, part: String?) -> some View {
-        if let part, let choice = sectionChoice, choice.hasRows(part) {
-            HStack(spacing: 8) {
-                Toggle(title, isOn: Binding(get: { choice.isOn(part) }, set: { _ in choice.toggle(part) }))
-                    .toggleStyle(.checkbox).labelsHidden()
-                InfoTitle(title: title, info: help)
-            }
-        } else { InfoTitle(title: title, info: help) }
+        ModuleSectionHeader(title: title, help: help, part: part)
     }
 
     private static func part(_ widget: ScreenWidget) -> String? {
@@ -944,8 +993,8 @@ struct UsageBarView: View {
                 ForEach(usage.segments) { segment in
                     HStack(spacing: 6) {
                         Circle().fill(Palette.color(segment.tone, design)).frame(width: 8, height: 8)
-                        ChangingText(text: segment.label).font(.caption)
-                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary)
+                        ChangingText(text: segment.label).font(.caption).lineLimit(2)
+                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary).lineLimit(1).fixedSize()
                     }
                 }
             }

@@ -258,6 +258,13 @@ extension Action {
 
 /// A module's page. The app draws it on the module's tile, grown to fill the window: the tile's title and status stay in the corner,
 /// so the page needs no header.
+public enum ModuleLayout: String, Codable, Equatable, Sendable {
+    /// One shared scrolling surface, a full-width hero, then up to three columns of whole groups.
+    case adaptive
+    /// Settings and switches remain in one readable list, even in a full-screen window.
+    case singleColumn
+}
+
 public struct Screen: Codable, Equatable, Sendable {
     public var title: String
     public var subtitle: String?
@@ -268,9 +275,14 @@ public struct Screen: Codable, Equatable, Sendable {
     /// page shows nothing else meanwhile but its ground breathing: no placeholder rows. While an action runs it says only the
     /// action's `workingTitle` (`ActionProgress`).
     public var primary: Action?
+    /// nil decodes older screens as adaptive. The host owns widths, spacing, inline group disclosure and corner motion.
+    /// See Docs/Module-Layout.md for the shared presentation contract.
+    public var layout: ModuleLayout?
     public var widgets: [ScreenWidget]
 
-    public init(title: String, subtitle: String? = nil, hero: UsageBar? = nil, primary: Action? = nil, widgets: [ScreenWidget]) {
+    public init(title: String, subtitle: String? = nil, hero: UsageBar? = nil, primary: Action? = nil,
+                layout: ModuleLayout = .adaptive, widgets: [ScreenWidget]) {
+        self.layout = layout
         self.title = title
         self.subtitle = subtitle
         self.hero = hero
@@ -698,6 +710,12 @@ public struct TextWidget: Codable, Equatable, Sendable {
     }
 }
 
+/// Higher-priority groups are placed first, at the top left below the hero. Equal priorities keep source order.
+public enum ModuleContentPriority: Int, Codable, Equatable, Sendable {
+    case normal = 0
+    case actionable = 100
+}
+
 public struct SectionWidget: Codable, Equatable, Sendable {
     public var id: String
     public var title: String
@@ -705,8 +723,12 @@ public struct SectionWidget: Codable, Equatable, Sendable {
     public var widgets: [ScreenWidget]
     public var isCollapsible: Bool
     public var startsCollapsed: Bool
+    /// Free now uses actionable; nil is normal for older saved screens.
+    public var priority: ModuleContentPriority?
 
-    public init(id: String, title: String, subtitle: String? = nil, widgets: [ScreenWidget], isCollapsible: Bool = false, startsCollapsed: Bool = false) {
+    public init(id: String, title: String, subtitle: String? = nil, widgets: [ScreenWidget], isCollapsible: Bool = false,
+                startsCollapsed: Bool = false, priority: ModuleContentPriority = .normal) {
+        self.priority = priority
         self.id = id
         self.title = title
         self.subtitle = subtitle

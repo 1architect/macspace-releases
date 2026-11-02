@@ -191,7 +191,7 @@ enum SiriScreenBuilder {
         widgets.append(.toggles(switchList(snapshot)))
         widgets.append(.list(ListWidget(id: "icloud", title: loc("Sync to other devices"), rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
-        return Screen(title: loc("Siri & Apple Intelligence"), primary: primary(snapshot), widgets: widgets)
+        return Screen(title: loc("Siri & Apple Intelligence"), primary: primary(snapshot), layout: .singleColumn, widgets: widgets)
     }
 
     /// The page's main button, as Debloat's: free the models of the features switched off when they are still on disk, else the

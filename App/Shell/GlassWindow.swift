@@ -14,9 +14,11 @@ struct GlassWindowConfigurator: NSViewRepresentable {
     var shadow = true
     /// The glass's corner radius: the shadow is drawn again around a new one.
     var radius: CGFloat = Theme.windowRadius
+    @Binding var cornerStyle: WindowCornerStyle
 
     func makeNSView(context: Context) -> ConfiguringView { ConfiguringView() }
     func updateNSView(_ nsView: ConfiguringView, context: Context) {
+        nsView.cornerStyle = $cornerStyle
         nsView.wantsShadow = shadow
         nsView.radius = radius
     }
@@ -32,8 +34,9 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             didSet { if wantsShadow != oldValue { showShadow(animated: true, growing: wantsShadow) } }
         }
         var radius: CGFloat = Theme.windowRadius {
-            didSet { if radius != oldValue, let window { shadowWindow?.follow(window) } }
+            didSet { if radius != oldValue, let window { shadowWindow?.follow(window, radius: radius, animated: true) } }
         }
+        var cornerStyle: Binding<WindowCornerStyle>?
         private var shadowWindow: ShadowWindow?
         private var observers: [NSObjectProtocol] = []
 
@@ -74,19 +77,21 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             }
 
             let shadow = ShadowWindow()
-            shadow.follow(window)
+            shadow.follow(window, radius: radius)
             window.addChildWindow(shadow, ordered: .below)
             shadowWindow = shadow
             showShadow(animated: false)
+            updateCornerStyle()
             // A child window moves with its parent by itself, in the same frame. Moved or re-framed as well on every step of a drag,
             // it fought the move the window server was already making, and the shadow trailed and flickered behind the glass
             // (issue 34). So a move changes nothing unless the room above the glass has to change near the menu bar
             // (`ShadowWindow.roomAbove`); a new size, scale or screen draws it again.
-            for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
+            for name in [NSWindow.didResizeNotification, NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification, NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification, NSWindow.didEndLiveResizeNotification] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
                         guard let self, let window = self.window else { return }
-                        self.shadowWindow?.follow(window)
+                        self.updateCornerStyle()
+                        self.shadowWindow?.follow(window, radius: self.radius)
                         self.showShadow(animated: false)
                     }
                 })
@@ -94,15 +99,27 @@ struct GlassWindowConfigurator: NSViewRepresentable {
             observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self, let window = self.window, let shadowWindow = self.shadowWindow else { return }
-                    if shadowWindow.needsNewRoom(for: window) { shadowWindow.follow(window) }
+                    self.updateCornerStyle()
+                    if shadowWindow.needsNewRoom(for: window) { shadowWindow.follow(window, radius: self.radius) }
+                    self.showShadow(animated: true)
                 }
             })
+        }
+
+        private func updateCornerStyle() {
+            guard let window else { return }
+            let next = WindowCornerStyle.read(window)
+            // Never publish SwiftUI state in a representable's update pass.
+            DispatchQueue.main.async { [weak self, weak window] in
+                guard let self, let window, self.window === window else { return }
+                if self.cornerStyle?.wrappedValue != next { self.cornerStyle?.wrappedValue = next }
+            }
         }
 
         private func showShadow(animated: Bool, growing: Bool = false) {
             guard let shadowWindow else { return }
             // A filled window reaches the usable screen edges; its separate shadow must disappear there too.
-            let alpha: CGFloat = wantsShadow && window.map({ !WindowControls.isZoomed($0) }) == true ? 1 : 0
+            let alpha: CGFloat = wantsShadow && window.map({ !WindowCornerStyle.read($0).attached }) == true ? 1 : 0
             if growing && alpha == 1 {
                 // The glass is growing in: the shadow, already at the glass's full size, grows in with it on the same spring
                 // instead of fading in around it. Waiting for the glass to finish left the window without a shadow while it opened.
@@ -208,12 +225,12 @@ final class ShadowWindow: NSWindow {
     }
 
     /// Takes the shape of the main window's glass, which is the main window's frame.
-    func follow(_ main: NSWindow) {
+    func follow(_ main: NSWindow, radius: CGFloat = Theme.windowRadius, animated: Bool = false) {
         let glass = main.frame
         let room = Self.roomAbove(glass, screenTop: (main.screen ?? NSScreen.main)?.visibleFrame.maxY)
         let frame = Self.frame(around: glass, room: room)
-        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != Theme.windowRadius
-        drawnRadius = Theme.windowRadius
+        let redraw = frame.size != self.frame.size || container.contentsScale != backingScaleFactor || drawnRadius != radius
+        drawnRadius = radius
         self.room = room
         if frame != self.frame { setFrame(frame, display: false) }
         guard redraw else { return }
@@ -222,10 +239,10 @@ final class ShadowWindow: NSWindow {
         // The glass's own continuous corners: a circular corner of the same radius reaches outside them where the curve meets the
         // edge, and in that sliver there was neither glass nor shadow, a line of bare desktop between the shadow and the border. The
         // hole is a pixel smaller than the glass, so the shadow runs under its edge and no seam opens where the two are antialiased.
-        let shape = Self.glassPath(inner)
+        let shape = Self.glassPath(inner, radius: radius)
         let outside = CGMutablePath()
         outside.addRect(bounds)
-        outside.addPath(Self.glassPath(inner.insetBy(dx: 1 / backingScaleFactor, dy: 1 / backingScaleFactor)))
+        outside.addPath(Self.glassPath(inner.insetBy(dx: 1 / backingScaleFactor, dy: 1 / backingScaleFactor), radius: radius))
         let fadeStart = max(0, (bounds.height - Self.fade(room: room)) / max(bounds.height, 1))
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -235,6 +252,16 @@ final class ShadowWindow: NSWindow {
         container.contentsScale = backingScaleFactor
         caster.frame = bounds
         caster.contentsScale = backingScaleFactor
+        if animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            for (layer, key, to) in [(caster, "shadowPath", shape), (cutout, "path", outside)] {
+                let animation = CABasicAnimation(keyPath: key)
+                animation.fromValue = layer.presentation()?.value(forKey: key) ?? layer.value(forKey: key)
+                animation.toValue = to
+                animation.duration = WindowCornerStyle.duration
+                animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                layer.add(animation, forKey: key)
+            }
+        }
         caster.shadowPath = shape
         cutout.frame = bounds
         cutout.path = outside
@@ -262,8 +289,8 @@ final class ShadowWindow: NSWindow {
     }
 
     /// The glass's outline: the window radius with continuous corners, as SwiftUI draws the glass.
-    static func glassPath(_ rect: CGRect) -> CGPath {
-        RoundedRectangle(cornerRadius: min(Theme.windowRadius, rect.width / 2, rect.height / 2), style: .continuous).path(in: rect).cgPath
+    static func glassPath(_ rect: CGRect, radius: CGFloat = Theme.windowRadius) -> CGPath {
+        RoundedRectangle(cornerRadius: min(radius, rect.width / 2, rect.height / 2), style: .continuous).path(in: rect).cgPath
     }
 }
 
@@ -397,11 +424,12 @@ final class ResizeBand: NSView {
 /// The ground the tiles sit on: macOS's own window color in the palette's light or dark (`Design.systemWindowColor`), with a faint
 /// light edge, the window's only edge. Under an open page, which covers the whole window, only the edge is drawn.
 struct GlassBackdrop: View {
+    @Environment(\.windowCornerStyle) private var corners
     var showsGlass = true
     @Environment(\.design) private var design
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.windowRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: corners.windowRadius, style: .continuous)
         ZStack {
             if !showsGlass {
                 Color.clear

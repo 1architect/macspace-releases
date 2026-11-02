@@ -121,14 +121,14 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertNil(SystemDataScreenBuilder.freeNow(snapshot(items: [], purgeable: 1_000_000)), "1 MB is not worth a button")
     }
 
-    func testScreenShowsAPartialBannerAndCollapsesTheRest() {
+    func testScreenPrioritizesFreeableItemsBeforeOverviewGroups() {
         let items = [item("supportcache:app", kind: .appCache, bytes: 900_000_000, cleanup: .deleteWhenNotRunning, reclaim: 900_000_000),
                      item("review", kind: .appSupport, bytes: 700_000_000), item("logs", kind: .logs, bytes: 300_000_000, cleanup: .managedByMacOS)]
         var withoutAccess = snapshot(items: items, unreadable: ["/p"])
         withoutAccess.report.fullDiskAccess = false
         let screen = SystemDataScreenBuilder.screen(withoutAccess)
-        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "groups"], "what can be cleaned has its own section, item by item")
-        guard case let .list(groups)? = screen.widgets.last else { return XCTFail("the groups are one list") }
+        XCTAssertEqual(screen.widgets.map(\.id), ["partial", "free", "groups"], "Free now precedes overview groups")
+        guard case let .list(groups)? = screen.widgets.first(where: { $0.id == "groups" }) else { return XCTFail("the groups are one list") }
         XCTAssertEqual(groups.rows.map(\.id), ["review", "logs"], "a group of one is that item's own row")
         XCTAssertEqual(SystemDataScreenBuilder.tile(withoutAccess).purgeableByService[CacheDeleteService.mobileAsset], 0,
                        "the disk tile counts the assets this page purges")

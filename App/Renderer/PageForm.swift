@@ -12,19 +12,24 @@ struct PageForm<Content: View>: View {
     @Environment(\.pageBottomRoom) private var bottomRoom
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(subviews: content) { section in
-                    section
-                        .geometryGroup()
-                        .transition(section.containerValues.rowCascades ? PageCascade.transition(index: 0, count: 1) : .opacity)
+        GeometryReader { proxy in
+            let layout = ModulePageLayout.metrics(availableWidth: proxy.size.width - 2 * PageInsets.side, maximumColumns: 1)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    ForEach(subviews: content) { section in
+                        section
+                            .geometryGroup()
+                            .transition(section.containerValues.rowCascades ? PageCascade.transition(index: 0, count: 1) : .opacity)
+                    }
+                    Color.clear.frame(height: max(bottomRoom - 20, 0))
                 }
-                Color.clear.frame(height: max(bottomRoom - 20, 0))
+                .frame(width: layout.contentWidth, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .top)
+                // The grouped form's insets, as module pages draw them (`WidgetForm`).
+                .padding(.top, 20)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
-            // The grouped form's insets, as module pages draw them (`WidgetForm`).
-            .padding(.top, 20)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
         }
         // No scroll bar, as on module pages and the dashboard.
         .scrollIndicators(.never)

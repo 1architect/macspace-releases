@@ -174,7 +174,10 @@ struct ScreenView: View {
                 // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
                 let refreshing = hidesDetails
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
-                           detailsVisible: !refreshing, cascadeOffset: legendCount) {
+                           allowsGraphBesideList: true,
+                           detailsVisible: !refreshing, cascadeOffset: legendCount,
+                           maximumColumns: handle.screen?.layout == .singleColumn ? 1 : 3,
+                           expandsGroups: true, handle: handle) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning,
                                    reading: (!content.loaded || handle.isRefreshing) && !handle.isCleaning, fill: handle.loading,
@@ -202,18 +205,7 @@ struct ScreenView: View {
     /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
     /// page is in parts (`Selection.sections`) lists each part under a header of its own, with a box that checks the whole part.
     private func groupPage(_ group: Row) -> some View {
-        let widgets: [ScreenWidget]
-        if let selection = group.selection, !selection.sections.isEmpty {
-            let byID = Dictionary(group.children.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            widgets = selection.sections.compactMap { section -> ScreenWidget? in
-                let rows = section.rows.compactMap { byID[$0] }
-                guard !rows.isEmpty else { return nil }
-                return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows))
-            }
-        } else {
-            widgets = [.list(ListWidget(id: "group-items:\(group.id)", title: [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " "),
-                                        rows: group.children))]
-        }
+        let widgets = ModulePagePresentation.groupWidgets(group)
         return WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
                           maximumColumns: 1) { EmptyView() }
             .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
@@ -312,6 +304,7 @@ struct PageScrollArea: ViewModifier {
 extension EnvironmentValues {
     /// Room the page leaves under its last row (`PageScrollArea`), for `WidgetForm` and `PageForm`.
     @Entry var pageBottomRoom: CGFloat = 0
+    @Entry var moduleGraphHeight: CGFloat?
     @Entry var modulePageColumns = 1
     @Entry var moduleColumnWidth: CGFloat = ModulePageLayout.maximumSingleColumnWidth
 }
@@ -335,6 +328,7 @@ struct HeroBlocks: View {
     @Environment(\.pageCascadeCount) private var cascadeCount
     @Environment(\.modulePageColumns) private var columns
     @Environment(\.moduleColumnWidth) private var columnWidth
+    @Environment(\.moduleGraphHeight) private var graphHeight
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
     @State private var hovered: String?
     @State private var blocksSize = CGSize.zero
@@ -350,7 +344,7 @@ struct HeroBlocks: View {
             // itself. The legend stays lined up with the headers and the rows' text.
             BlocksView(segments: segments, tint: tint, hovered: hovered, gap: Self.gap, loading: loading, reading: reading,
                        fill: reading ? fill : nil, working: working, workingFraction: workingFraction)
-                .frame(height: ModulePageLayout.chartHeight(width: columnWidth, columns: columns))
+                .frame(height: graphHeight ?? ModulePageLayout.chartHeight(width: columnWidth, columns: columns))
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { blocksSize = $0 }
                 .onContinuousHover { phase in
                     switch phase {
@@ -411,6 +405,8 @@ struct HeroBlocks: View {
                         ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit())
                             .foregroundStyle(design.palette(tint).soft).fixedSize()
                     }
+                    .lineLimit(2)
+                    .help("\(segment.label) \(ByteFormat.string(segment.bytes))")
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
                     .transition(PageCascade.transition(index: index + 1, count: cascadeCount))
                 }

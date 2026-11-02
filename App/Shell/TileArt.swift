@@ -7,7 +7,9 @@ import SwiftUI
 struct TileBackdrop: View {
     let tint: TileTint
     /// The corners: a tile's, growing to the window's as the tile becomes a page.
-    var cornerRadius: CGFloat = Theme.tileRadius
+    var cornerRadius: CGFloat?
+    @Environment(\.windowCornerStyle) private var corners
+    private var resolvedRadius: CGFloat { cornerRadius ?? corners.tileRadius }
     /// The module is reading the Mac: the ground darkens and lifts, again and again (`LoadingGlow`).
     var loading = false
     @Environment(\.design) private var design
@@ -16,7 +18,7 @@ struct TileBackdrop: View {
         ground
             .overlay {
                 if loading {
-                    LoadingGlow(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                    LoadingGlow(shape: RoundedRectangle(cornerRadius: resolvedRadius, style: .continuous))
                         .transition(.opacity.animation(.smooth(duration: 0.4)))
                 }
             }
@@ -26,7 +28,7 @@ struct TileBackdrop: View {
         // Rounded itself: the tiles are no longer clipped to their shape. Lit by the studio's shading, by default the faint light from
         // the top left.
         let palette = design.palette(tint)
-        return ShadedFill(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), color: palette.base, accent: palette.step(3),
+        return ShadedFill(shape: RoundedRectangle(cornerRadius: resolvedRadius, style: .continuous), color: palette.base, accent: palette.step(3),
                           fill: design.fill(.tile(tint)), shading: design.shading(.tile(tint)), light: design.isLight)
     }
 }
@@ -678,11 +680,11 @@ struct BlocksView: View {
         ZStack(alignment: .topLeading) {
             if outlined { outline(segment, shape: shape) }
             // A name comes and goes as resizing the window gives its block room or takes it: the name and size where they fit (the
-            // name on two lines in a tall block rather than cut short), the size alone in a narrow one.
+            // name and size on one line each), the size alone in a narrow one.
             if labels, rect.width > 46, rect.height > 34 {
                 VStack(alignment: .leading, spacing: 1) {
-                    // As many lines as the block has room for under the size, up to three, rather than a name cut short.
-                    ChangingText(text: segment.label).font(.system(size: 11, weight: .medium)).lineLimit(max(1, min(3, Int((rect.height - 26) / 14))))
+                    // At most two lines total: the name, then its figure. Full text remains in hover help.
+                    ChangingText(text: segment.label).font(.system(size: 11, weight: .medium)).lineLimit(1)
                         .minimumScaleFactor(0.8)
                     ChangingText(text: ByteFormat.string(segment.bytes)).font(.system(size: 11)).opacity(0.8).lineLimit(1).minimumScaleFactor(0.75)
                 }

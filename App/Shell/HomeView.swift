@@ -94,6 +94,7 @@ struct TileInfo: Equatable {
 /// A tile's face: its deep color, its chart above the caption, and a mark when something waits for the user. `progress` runs from 0
 /// on the dashboard to 1 when the tile has become a page: the chart and the mark leave, the color stays as the page's ground.
 struct TileFace: View {
+    @Environment(\.windowCornerStyle) private var corners
     let tint: TileTint
     let info: TileInfo
     var progress: CGFloat = 0
@@ -171,7 +172,7 @@ struct TileFace: View {
         let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
         ZStack(alignment: .topLeading) {
             if drawsBackdrop {
-                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(Theme.tileRadius, Theme.windowRadius, progress),
+                TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(corners.tileRadius, corners.windowRadius, progress),
                              loading: info.loading)
             } else {
                 Color.clear
@@ -187,7 +188,7 @@ struct TileFace: View {
         }
         .overlay {
             if case let .state(on, alarming, _, _, _)? = info.graphic, on && alarming {
-                GlowEdge().opacity(chartOpacity).transition(.opacity)
+                GlowEdge(radius: corners.tileRadius).opacity(chartOpacity).transition(.opacity)
             }
         }
         // The mark sits in the bottom-left corner, on the caption's last line, clear of the switch and the window's buttons at the top.
@@ -218,7 +219,7 @@ struct TileFace: View {
             let hovered = hoveredBlock.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
             // No names in the blocks: the one under the pointer is named in the line just under them.
             BlocksView(segments: segments, tint: tint, labels: false, hovered: hovered?.id, gap: CGFloat(TileType.current.tileGap),
-                       outerRadius: TileType.current.concentricCorners ? Theme.tileRadius - Self.margin : nil,
+                       outerRadius: TileType.current.concentricCorners ? max(0, corners.tileRadius - Self.margin) : nil,
                        look: .tile, loading: info.loading, reading: info.reading, fill: info.fill,
                        working: info.working, workingFraction: info.workingFraction,
                        orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size })
@@ -472,6 +473,7 @@ struct HomeView: View {
 /// A tile's face on the dashboard: its chart and caption, the click, and the pointer. Its ground is drawn in the layer under it
 /// (`TileGround`), and both are moved together by `TilePlacement`.
 struct DashboardTileView: View {
+    @Environment(\.windowCornerStyle) private var corners
     let tile: DashboardTile
     @ObservedObject var host: ModuleHost
     @ObservedObject var storage: StorageOverview
@@ -492,7 +494,7 @@ struct DashboardTileView: View {
     @Environment(\.design) private var design
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: corners.tileRadius, style: .continuous)
         // A drag that moved the window is not a click (`WindowMoveCheck`).
         Button { if tile.opens && !WindowMoveCheck.shared.windowMoved() { open() } } label: {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
@@ -572,6 +574,7 @@ final class WindowMoveCheck {
 /// A tile's ground on the dashboard, in the layer under the faces. It casts its shadow from this plain rounded shape, not from its whole
 /// content (which was recomputed on every frame the tile moved).
 struct TileGround: View {
+    @Environment(\.windowCornerStyle) private var corners
     let tint: TileTint
     let lifted: Bool
     /// The tile is loading: its ground brightens and dims (`TileBackdrop.loading`).
@@ -581,7 +584,7 @@ struct TileGround: View {
     var body: some View {
         TileBackdrop(tint: tint, loading: loading)
             .background {
-                LabFill(shape: RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous), color: design.palette(tint).base,
+                LabFill(shape: RoundedRectangle(cornerRadius: corners.tileRadius, style: .continuous), color: design.palette(tint).base,
                         fill: design.fill(.tile(tint)))
                     .shadow(color: .black.opacity(lifted ? 0.22 : 0.07), radius: lifted ? 14 : 5, y: lifted ? 8 : 2)
             }
@@ -711,6 +714,7 @@ enum PixelGrid {
 
 /// The face and caption of the tile for `destination`, kept up to date with its module. Used on the dashboard and by the zoom.
 struct TileContent: View {
+    @Environment(\.windowCornerStyle) private var corners
     let destination: Destination
     let tint: TileTint
     @ObservedObject var host: ModuleHost
@@ -776,6 +780,7 @@ private struct ModuleTileContent: View {
 /// The tile darkens while pressed. A shade laid over it, not a brightness filter: a filter stays on the tile even at 0 and makes every
 /// frame draw the whole tile through it. It does not sink: its ground, in the layer underneath, cannot see the press.
 private struct TilePressStyle: ButtonStyle {
+    @Environment(\.windowCornerStyle) private var corners
     /// A tile that opens nothing (the disk) takes the drag that moves the window, and shows no press.
     var pressable = true
     /// Read so a change of the corner radius redraws the press shade.
@@ -784,7 +789,7 @@ private struct TilePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .overlay {
-                RoundedRectangle(cornerRadius: Theme.tileRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: corners.tileRadius, style: .continuous)
                     .fill(.black.opacity(configuration.isPressed && pressable ? 0.12 : 0))
                     .allowsHitTesting(false)
             }

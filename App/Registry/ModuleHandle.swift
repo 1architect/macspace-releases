@@ -66,8 +66,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public var groupPath: [String] = [] {
         // What was chosen on a page is forgotten once the page closes, however it closed (Back, Home, a refresh that dropped it).
         didSet {
-            if chosen.keys.contains(where: { !groupPath.contains($0) }) { chosen = chosen.filter { groupPath.contains($0.key) } }
-            if chosenAll.keys.contains(where: { !groupPath.contains($0) }) { chosenAll = chosenAll.filter { groupPath.contains($0.key) } }
+            let retained = Set(groupPath).union(chosen.keys.filter { id in
+                screen.flatMap { ScreenView.row(id, in: $0) }?.selection?.save != nil
+            })
+            chosen = chosen.filter { retained.contains($0.key) }
+            chosenAll = chosenAll.filter { retained.contains($0.key) }
         }
     }
     /// The group page on top, if any.

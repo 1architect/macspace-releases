@@ -312,6 +312,6 @@ enum DebloatScreenBuilder {
                                                footnote: loc("Disabling one asks you to approve a profile in System Settings > General > Device Management."),
                                                rows: policies.map { row($0, snapshot) })))
         }
-        return Screen(title: loc("Debloat"), primary: primary(snapshot), widgets: widgets)
+        return Screen(title: loc("Debloat"), primary: primary(snapshot), layout: .singleColumn, widgets: widgets)
     }
 }
