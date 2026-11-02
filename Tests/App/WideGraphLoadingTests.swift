@@ -17,16 +17,27 @@ final class WideGraphLoadingTests: XCTestCase {
         let width: CGFloat
         var body: some View {
             WidgetForm(widgets: reading.hasRows ? [.list(ListWidget(id: "rows", title: "Ready", rows: [Row(id: "one", title: "Ready item")]))] : [],
-                       handler: { _, _, _, _ in nil }, allowsGraphBesideList: true, graphLoading: reading.loading) {
-                Rectangle().fill(.blue).frame(height: 220)
-                    .onAppear { reading.appearances += 1 }
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { reading.graph = $0 }
+                       handler: { _, _, _, _ in nil }, allowsGraphBesideList: true, graphLoading: reading.loading,
+                       cascadeOffset: 10) {
+                Graph(reading: reading)
             }
             .modifier(PageScrollArea(hasFooter: true))
             .frame(width: width, height: 730)
             .foregroundStyle(.white)
             .background(.black)
             .environment(\.colorScheme, .dark)
+            .environment(\.pageCascadeCount, 12)
+        }
+    }
+
+    private struct Graph: View {
+        let reading: Reading
+        @Environment(\.moduleGraphHeight) private var height
+
+        var body: some View {
+            Rectangle().fill(.blue).frame(height: height ?? 220)
+                .onAppear { reading.appearances += 1 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { reading.graph = $0 }
         }
     }
 
@@ -38,19 +49,25 @@ final class WideGraphLoadingTests: XCTestCase {
         defer { window.close() }
         try await Task.sleep(for: .milliseconds(200))
         let before = try snapshot(host, name: "loading-full-width")
+        let normal = try XCTUnwrap(ModulePageLayout.graphArrangement(viewport: CGSize(width: 1448, height: 730), hasGraph: true))
         let fullWidth = reading.graph.width
         XCTAssertEqual(fullWidth, 1448 - 2 * PageInsets.side - 2 * PageInsets.formHeaderIndent, accuracy: 1)
+        XCTAssertEqual(reading.graph.height, normal.graphHeight, accuracy: 1, "Loading already uses the final graph height")
         XCTAssertEqual(reading.appearances, 1)
         reading.hasRows = true
         reading.loading = false
-        try await Task.sleep(for: .milliseconds(150))
+        try await Task.sleep(for: .milliseconds(40))
         let middle = try snapshot(host, name: "loading-resizing")
         XCTAssertGreaterThan(try blueEdge(middle), try blueEdge(before) + 5, "The graph moves right during the existing resize spring")
         XCTAssertEqual(whitePixels(middle), 0, "List text must wait for the graph resize to finish")
+        XCTAssertEqual(try blueHeight(middle), try blueHeight(before), accuracy: 1, "Only the graph width animates")
+        try await Task.sleep(for: .milliseconds(200))
+        let arriving = try snapshot(host, name: "loading-list-arriving")
+        XCTAssertGreaterThan(whitePixels(arriving), 20, "List arrival must not wait for residual spring settling or the ten preceding legend items")
         try await Task.sleep(for: .seconds(2))
         let after = try snapshot(host, name: "loading-list-revealed")
-        let normal = try XCTUnwrap(ModulePageLayout.graphArrangement(viewport: CGSize(width: 1448, height: 730), hasGraph: true))
         XCTAssertEqual(reading.graph.width, normal.graphWidth - 2 * PageInsets.formHeaderIndent, accuracy: 1)
+        XCTAssertEqual(try blueHeight(after), try blueHeight(before), accuracy: 1)
         XCTAssertGreaterThan(whitePixels(after), 20, "The existing list reveal runs after resizing")
         XCTAssertLessThan(try blueEdge(middle), try blueEdge(after) - 5, "The intermediate graph is still resizing, not jumping directly to the final width")
         XCTAssertEqual(reading.appearances, 1, "Resize the existing graph, do not replace it")
@@ -123,6 +140,15 @@ final class WideGraphLoadingTests: XCTestCase {
                color.blueComponent > 0.6 && color.redComponent < 0.5 { return CGFloat(x) / scale }
         }
         throw NSError(domain: "MissingGraph", code: 1)
+    }
+
+    private func blueHeight(_ bitmap: NSBitmapImageRep) throws -> CGFloat {
+        let scale = CGFloat(bitmap.pixelsWide) / 1448
+        let pixels = (0..<bitmap.pixelsHigh).filter { y in
+            guard let color = bitmap.colorAt(x: Int(1300 * scale), y: y)?.usingColorSpace(.deviceRGB) else { return false }
+            return color.blueComponent > 0.6 && color.redComponent < 0.5
+        }
+        return CGFloat(try XCTUnwrap(pixels.last) - XCTUnwrap(pixels.first) + 1) / scale
     }
 
     private func whitePixels(_ bitmap: NSBitmapImageRep) -> Int {

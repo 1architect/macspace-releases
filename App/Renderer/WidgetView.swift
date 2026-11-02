@@ -90,8 +90,12 @@ struct WidgetForm<Top: View>: View {
             let listWidth = graph?.listWidth ?? layout.columnWidth
             let items = ModulePagePresentation.items(widgets, width: listWidth, expandsGroups: expandsGroups)
             let ids = Self.itemIDs(items.flatMap(\.widgets))
-            let structure = PageCascade.Structure(ids: ids, offset: cascadeOffset, count: cascadeCount)
-            let positions = Positions(ids, offset: cascadeOffset, cascadeCount: cascadeCount, visible: detailsVisible && listReady)
+            // In separate panes the list starts its own cascade as soon as the graph arrives.
+            // Stacked pages still reveal the legend first, followed by the rows below it.
+            let offset = graph == nil ? cascadeOffset : 0
+            let count = graph == nil ? cascadeCount : ids.count
+            let structure = PageCascade.Structure(ids: ids, offset: offset, count: count)
+            let positions = Positions(ids, offset: offset, cascadeCount: count, visible: detailsVisible && listReady)
             Group {
                 if let graph {
                     HStack(alignment: .top, spacing: expanded ? 0 : ModulePageLayout.gap) {
@@ -108,9 +112,7 @@ struct WidgetForm<Top: View>: View {
                         .accessibilityHidden(!listReady)
                         top.padding(.horizontal, PageInsets.formHeaderIndent)
                             .environment(\.moduleColumnWidth, expanded ? graph.contentWidth : graph.graphWidth)
-                            .environment(\.moduleGraphHeight, expanded
-                                          ? ModulePageLayout.sideGraphHeight(width: graph.contentWidth, viewportHeight: proxy.size.height)
-                                          : graph.graphHeight)
+                            .environment(\.moduleGraphHeight, graph.graphHeight)
                             .frame(width: expanded ? graph.contentWidth : graph.graphWidth, alignment: .topLeading)
                             // Keep initial shade alignment while the left list scrolls independently.
                             .padding(.top, scrollTop + 20

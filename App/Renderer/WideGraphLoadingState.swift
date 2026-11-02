@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Reuses the existing layout spring, then releases the existing row reveal cascade.
+/// Reuses the chart's loading-finish spring, then releases the existing row reveal cascade.
 /// Interrupted loads invalidate the old completion instead of exposing an obsolete list.
 @MainActor
 final class WideGraphLoadingState: ObservableObject {
@@ -19,9 +19,10 @@ final class WideGraphLoadingState: ObservableObject {
             transaction.disablesAnimations = true
             withTransaction(transaction) { phase = active && expand ? .expanded : .ready }
         } else if expand {
-            withAnimation(Theme.layout) { phase = .expanded }
+            withAnimation(ChartMotion.finishAnimation) { phase = .expanded }
         } else if phase == .expanded || phase == .resizing {
-            withAnimation(Theme.layout, completionCriteria: .removed) {
+            // Reveal at the spring's logical arrival, without waiting for its residual bounce to settle.
+            withAnimation(ChartMotion.finishAnimation, completionCriteria: .logicallyComplete) {
                 phase = .resizing
             } completion: { [weak self] in
                 guard let self, self.generation == token else { return }

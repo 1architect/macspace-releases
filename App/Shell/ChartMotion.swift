@@ -51,6 +51,8 @@ enum ChartMotion {
     static let ending = 0.12
     /// How long the finish takes to come to rest, at the speed set.
     static var finishTotal: Double { max(finishSpring, 0.05) * 1.6 / speed }
+    /// Layout following the loading finish uses the same spring, bounce and playback speed as the blocks.
+    static var finishAnimation: Animation { .spring(duration: max(finishSpring, 0.05) / speed, bounce: finishBounce) }
     /// The chart's glide to new figures (`Theme.layout` unless the Chart Motion window changes it).
     static var glide: Animation { .spring(duration: tuning.glideDuration, bounce: tuning.glideBounce) }
 

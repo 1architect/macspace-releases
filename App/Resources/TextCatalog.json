@@ -2685,8 +2685,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:705",
-      "App\/Renderer\/WidgetView.swift:706"
+      "App\/Renderer\/WidgetView.swift:707",
+      "App\/Renderer\/WidgetView.swift:708"
     ],
     "table" : "App",
     "translations" : {
