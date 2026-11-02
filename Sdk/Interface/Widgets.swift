@@ -259,7 +259,7 @@ extension Action {
 /// A module's page. The app draws it on the module's tile, grown to fill the window: the tile's title and status stay in the corner,
 /// so the page needs no header.
 public enum ModuleLayout: String, Codable, Equatable, Sendable {
-    /// One shared scrolling surface, a full-width hero, then up to three columns of whole groups.
+    /// Responsive host layout: stacked graph/list in compact windows, fixed graph beside a scrolling list in wide windows.
     case adaptive
     /// Settings and switches remain in one readable list, even in a full-screen window.
     case singleColumn
@@ -710,7 +710,7 @@ public struct TextWidget: Codable, Equatable, Sendable {
     }
 }
 
-/// Higher-priority groups are placed first, at the top left below the hero. Equal priorities keep source order.
+/// Higher-priority groups take the first list slot (beside or below the graph). Equal priorities keep source order.
 public enum ModuleContentPriority: Int, Codable, Equatable, Sendable {
     case normal = 0
     case actionable = 100

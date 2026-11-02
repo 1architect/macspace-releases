@@ -989,11 +989,11 @@ struct UsageBarView: View {
                 .clipShape(Capsule())
             }
             .frame(height: 14)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)], alignment: .leading, spacing: 6) {
+            LegendFlowLayout(verticalSpacing: 6) {
                 ForEach(usage.segments) { segment in
                     HStack(spacing: 6) {
                         Circle().fill(Palette.color(segment.tone, design)).frame(width: 8, height: 8)
-                        ChangingText(text: segment.label).font(.caption).lineLimit(2)
+                        Text(segment.label).font(.caption).lineLimit(1).truncationMode(.tail)
                         ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary).lineLimit(1).fixedSize()
                     }
                 }

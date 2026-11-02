@@ -130,12 +130,13 @@ public struct MainView: View {
         .scaleEffect(windowShown || reduceMotion ? 1 : Theme.windowOpeningScale)
         .opacity(windowShown ? 1 : 0)
         .environment(\.windowCornerStyle, corners)
+        // The configurator receives this same transaction and its interpolated radius,
+        // keeping the shadow path and transparent cutout on the glass's exact curve.
+        .background(GlassWindowConfigurator(shadow: windowShown && !windowClosing, radius: corners.windowRadius, cornerStyle: $corners))
         .animation(reduceMotion ? nil : .smooth(duration: WindowCornerStyle.duration), value: corners)
         .environment(\.design, designSettings.design)
         .animation(.smooth(duration: 0.45), value: designSettings.design)
         .background { shortcuts }
-        // The shadow grows in with the glass (`ShadowWindow.growIn`), and leaves before the glass shrinks away when the window closes.
-        .background(GlassWindowConfigurator(shadow: windowShown && !windowClosing, radius: corners.windowRadius, cornerStyle: $corners))
         .ignoresSafeArea()
         .frame(minWidth: Theme.minimumSize.width, minHeight: Theme.minimumSize.height)
         .task { await host.start() }

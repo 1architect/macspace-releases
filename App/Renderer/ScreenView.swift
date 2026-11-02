@@ -365,6 +365,9 @@ struct HeroBlocks: View {
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
             legend(segments: segments, blocks: blocks, hoveredSegment: hoveredSegment)
         }
+        // Resolve the whole graph before page motion, so text's local value transactions
+        // cannot cancel or detach the legend's placement from the blocks during navigation.
+        .geometryGroup()
     }
 
     private func legend(segments: [UsageSegment], blocks: [(segment: UsageSegment, weight: Double)], hoveredSegment: UsageSegment?) -> some View {
@@ -385,10 +388,11 @@ struct HeroBlocks: View {
             }
             .font(.system(size: 11))
             .foregroundStyle(palette.soft)
+            .lineLimit(1)
             .frame(height: 14, alignment: .leading)
             .animation(Theme.hover, value: hovered)
             .modifier(PageItemReveal(index: 0, count: cascadeCount, visible: detailsVisible))
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), alignment: .leading)], alignment: .leading, spacing: 5) {
+            LegendFlowLayout() {
                 // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
                 ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
                     HStack(spacing: 6) {
@@ -401,19 +405,16 @@ struct HeroBlocks: View {
                             }
                         }
                         .frame(width: 9, height: 9)
-                        ChangingText(text: segment.label).font(.caption).lineLimit(2)
-                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit())
+                        Text(segment.label).font(.caption).lineLimit(1).truncationMode(.tail)
+                        ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption.monospacedDigit()).lineLimit(1)
                             .foregroundStyle(design.palette(tint).soft).fixedSize()
                     }
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .help("\(segment.label) \(ByteFormat.string(segment.bytes))")
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
                     .transition(PageCascade.transition(index: index + 1, count: cascadeCount))
                 }
             }
-            // Grid placement must settle without a horizontal layout animation. Each item retains its existing vertical cascade,
-            // and each value owns its numeric transition instead of animating every grid cell when the measured order changes.
-            .transaction { $0.animation = nil }
         }
     }
 }
