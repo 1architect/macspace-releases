@@ -260,6 +260,8 @@ enum BlockLayout {
     static func blocks(_ segments: [UsageSegment], limit: Int? = nil) -> [(segment: UsageSegment, weight: Double)] {
         let total = Double(segments.map(\.bytes).reduce(0, +))
         guard total > 0 else { return segments.map { ($0, Double($0.bytes)) } }
+        // Folder maps retain every navigable folder rather than merging it into an inert smaller block.
+        if segments.contains(where: { $0.pageID != nil }) { return segments.filter { $0.bytes > 0 }.sorted { $0.bytes > $1.bytes }.map { ($0, Double($0.bytes)) } }
         var shown = segments
         var small = segments.filter { $0.tone != .caution && Double($0.bytes) < total * mergeBelow }
         if let limit {

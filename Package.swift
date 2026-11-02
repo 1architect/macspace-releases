@@ -5,6 +5,7 @@ let package = Package(
     name: "MacSpace",
     platforms: [.macOS("27.0")],
     products: [
+        .library(name: "DiskMap", type: .dynamic, targets: ["MacSpaceDiskMap"]),
         .library(name: "SystemData", type: .dynamic, targets: ["MacSpaceSystemData"]),
         .library(name: "Siri", type: .dynamic, targets: ["MacSpaceSiri"]),
         .library(name: "Debloat", type: .dynamic, targets: ["MacSpaceDebloat"]),
@@ -15,6 +16,9 @@ let package = Package(
     ],
     dependencies: [.package(path: "Sdk"), .package(path: "Platform"), .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0")],
     targets: [
+        .target(name: "MacSpaceDiskMapPrivileged", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/DiskMap/Privileged"),
+        .target(name: "MacSpaceDiskMap", dependencies: ["MacSpaceDiskMapPrivileged",.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/DiskMap/Module"),
+        .testTarget(name: "DiskMapTests", dependencies: ["MacSpaceDiskMap", "MacSpaceDiskMapPrivileged", .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/DiskMap"),
         // Modules: each builds as a dynamic library and ships as a bundle in the app's PlugIns folder.
         .target(name: "MacSpaceSystemDataPrivileged", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/SystemData/Privileged"),
         .target(name: "MacSpaceSystemData", dependencies: ["MacSpaceSystemDataPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/SystemData/Module"),
@@ -28,7 +32,7 @@ let package = Package(
         .target(name: "MacSpaceApp", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "Sparkle", package: "Sparkle")], path: "App", exclude: ["Resources", "Main"]),
         .executableTarget(name: "MacSpaceMain", dependencies: ["MacSpaceApp"], path: "App/Main"),
         .executableTarget(name: "MacSpaceCli", dependencies: ["MacSpaceApp", "MacSpaceSiriPrivileged", .product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Cli"),
-        .executableTarget(name: "MacSpaceHelper", dependencies: ["MacSpaceSiriPrivileged", "MacSpaceDebloatPrivileged", "MacSpaceSystemDataPrivileged", "MacSpaceOtherSystemFilesPrivileged", .product(name: "MacSpacePlatform", package: "Platform")], path: "Helper"),
+        .executableTarget(name: "MacSpaceHelper", dependencies: ["MacSpaceDiskMapPrivileged","MacSpaceSiriPrivileged", "MacSpaceDebloatPrivileged", "MacSpaceSystemDataPrivileged", "MacSpaceOtherSystemFilesPrivileged", .product(name: "MacSpacePlatform", package: "Platform")], path: "Helper"),
         .testTarget(name: "SdkTests", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Sdk"),
         .testTarget(name: "AppTests", dependencies: ["MacSpaceApp", .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/App"),
         .testTarget(name: "SystemDataTests", dependencies: ["MacSpaceSystemData", "MacSpaceSystemDataPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/SystemData"),

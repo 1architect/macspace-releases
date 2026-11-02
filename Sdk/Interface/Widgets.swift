@@ -184,7 +184,7 @@ public enum ActionRole: String, Codable, Sendable {
     case destructive
 }
 
-/// Something the user can trigger. An action that frees space is titled Free ("Free", "Free 120 MB"), never Delete or Clean.
+/// Something the user can trigger. Cleanup is titled Free; explicit file deletion and app removal use Delete and Uninstall.
 /// The app asks for confirmation first when `confirmation` is set, and for any missing
 /// `requires` permission before it calls the module.
 public struct Action: Codable, Equatable, Sendable {
@@ -348,16 +348,19 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     /// each by what it adds to this block, so the page adds up to it. Empty: the block opens nothing, which is right when its only
     /// row would repeat its name and size. Leave it empty on a tile's chart, which is saved between launches.
     public var items: [Row]
+    /// A lazily supplied module page, for navigable folder maps.
+    public var pageID: String?
 
-    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = []) {
+    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = [], pageID: String? = nil) {
         self.id = id
         self.label = label
         self.bytes = bytes
         self.tone = tone
         self.items = items
+        self.pageID = pageID
     }
 
-    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items }
+    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items, pageID }
 
     /// `items` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -366,11 +369,13 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
         label = try container.decode(String.self, forKey: .label)
         bytes = try container.decode(UInt64.self, forKey: .bytes)
         tone = try container.decode(Tone.self, forKey: .tone)
+        pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
         items = try container.decodeIfPresent([Row].self, forKey: .items) ?? []
     }
 
     /// The page its block opens: a group of its items, named and sized as the block. nil when it has none.
     public var group: Row? {
+        if let pageID { return Row(id: pageID, title: label, pageID: pageID) }
         guard !items.isEmpty else { return nil }
         return Row.group(id: "segment:\(id)", title: label, totalBytes: bytes, rows: items)
     }
@@ -441,6 +446,10 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         set { badges = newValue.map { [$0] } ?? [] }
     }
     public var symbol: String?
+    /// Local app bundle path; the host draws its native icon at the leading edge.
+    public var iconPath: String?
+    /// Lazy navigation; shares the normal grouped-page stack, title and Back behavior.
+    public var pageID: String?
     /// What the row is, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
     /// What the user can do about the row, shown after `detail` in its (i), each step a sentence of its own (for example a manual
@@ -467,12 +476,14 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.trailing = trailing
         self.badges = (badge.map { [$0] } ?? []) + badges
+        self.iconPath = iconPath
+        self.pageID = pageID
         self.symbol = symbol
         self.detail = detail
         self.steps = steps
@@ -483,7 +494,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -496,6 +507,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
         badges = try container.decodeIfPresent([Badge].self, forKey: .badges)
             ?? (try container.decodeIfPresent(Badge.self, forKey: .badge)).map { [$0] } ?? []
+        iconPath = try container.decodeIfPresent(String.self, forKey: .iconPath)
+        pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
@@ -514,6 +527,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(trailing, forKey: .trailing)
         try container.encode(badges, forKey: .badges)
         try container.encodeIfPresent(symbol, forKey: .symbol)
+        try container.encodeIfPresent(iconPath, forKey: .iconPath)
+        try container.encodeIfPresent(pageID, forKey: .pageID)
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)

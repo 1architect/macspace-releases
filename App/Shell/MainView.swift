@@ -11,6 +11,14 @@ public enum Destination: Hashable {
     case storage
     case module(String)
     case settings
+
+    var moduleID: String? {
+        switch self {
+        case .storage: return "com.macspace.disk-map"
+        case let .module(id): return id
+        default: return nil
+        }
+    }
 }
 
 /// The page that is open over the dashboard, and the tile it grew from.
@@ -238,8 +246,8 @@ public struct MainView: View {
         case let .module(id):
             guard let handle = host.handle(for: id) else { return "" }
             // On a group's page: the module, then each group page open, in order.
-            guard let screen = handle.screen else { return handle.manifest.name }
-            let groups = handle.groupPath.compactMap { ScreenView.row($0, in: screen)?.title }
+            guard handle.screen != nil else { return handle.manifest.name }
+            let groups = handle.groupPath.compactMap { handle.navigationRow($0)?.title }
             return ([handle.manifest.name] + groups).joined(separator: " › ")
         case .settings:
             switch host.settingsPage {
@@ -247,7 +255,10 @@ public struct MainView: View {
             case .permissions?: return String(localized: "Settings › Permissions")
             case nil: return String(localized: "Settings")
             }
-        case .home, .storage: return ""
+        case .storage:
+            guard let handle = host.handle(for: "com.macspace.disk-map") else { return String(localized: "disk") }
+            return ([handle.screen?.title ?? String(localized: "disk")] + handle.groupPath.compactMap { handle.navigationRow($0)?.title }).joined(separator: " › ")
+        case .home: return ""
         }
     }
 
@@ -316,7 +327,9 @@ public struct MainView: View {
         case .settings:
             SettingsPages(host: host, updates: updates)
                 .modifier(ZoomReveal(index: 1, reveal: reveal))
-        case .home, .storage:
+        case .storage:
+            if let handle = host.handle(for: "com.macspace.disk-map") { ScreenView(handle: handle, tint: .rose, reveal: reveal) }
+        case .home:
             EmptyView()
         }
     }
@@ -324,8 +337,11 @@ public struct MainView: View {
     /// Opens a page: the tile grows into it. From another page (Command-comma over a module's page) the new page slides in over it,
     /// and Back slides back to the page it came from.
     private func present(_ destination: Destination) {
-        guard destination != .storage, destination != .home else { return }
-        if case let .module(id) = destination, host.handle(for: id) == nil { return }
+        guard destination != .home else { return }
+        if let id = destination.moduleID, host.handle(for: id) == nil { return }
+        if destination == .storage, let handle = host.handle(for: "com.macspace.disk-map"), !handle.isEnabled {
+            Task { await host.setEnabled(true, module: handle.id) }
+        }
         let tint = HomeView.tiles(for: host.dashboardHandles).first { $0.destination == destination }?.tint ?? .slate
         let origin = frames.frame(of: destination) ?? CGRect(origin: .zero, size: container)
         if let current = layer {
@@ -369,13 +385,13 @@ public struct MainView: View {
     private func close() {
         guard let open = layer, isOpen else { return }
         // Back on All done returns to this module, without closing its tile or rescanning it.
-        if case let .module(id) = open.destination, let handle = host.handle(for: id), handle.isShowingCompletion {
+        if let handle = open.destination.moduleID.flatMap { host.handle(for: $0) }, handle.isShowingCompletion {
             handle.dismissCompletion()
             handle.groupPath = []
             return
         }
         // A group's page goes back to the page under it: another group's, or its module's.
-        if case let .module(id) = open.destination, let handle = host.handle(for: id), !handle.groupPath.isEmpty {
+        if let handle = open.destination.moduleID.flatMap { host.handle(for: $0) }, !handle.groupPath.isEmpty {
             handle.popGroup()
             return
         }
@@ -414,7 +430,7 @@ private struct PageTitle: View {
     let title: (Destination) -> String
 
     var body: some View {
-        if case let .module(id) = destination, let handle = host.handle(for: id) {
+        if let handle = destination.moduleID.flatMap { host.handle(for: $0) } {
             ModulePageTitle(handle: handle) { title(destination) }
         } else {
             Text(title(destination))

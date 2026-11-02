@@ -252,6 +252,9 @@ public protocol MacSpaceModule: Sendable {
     /// the app fills the button over the time the module took last time instead.
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen
 
+    /// A lazy subpage (for example a folder map), addressed by metadata on rows or graph segments.
+    func page(id: String, context: ModuleContext) async -> Screen?
+
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult
 
     /// Restores only reversible settings changed by this module before app removal.
@@ -271,6 +274,7 @@ public protocol MacSpaceModule: Sendable {
 }
 
 public extension MacSpaceModule {
+    func page(id: String, context: ModuleContext) async -> Screen? { nil }
     func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile { await tile(context: context) }
 
     func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? { nil }

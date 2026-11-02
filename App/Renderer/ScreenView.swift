@@ -39,7 +39,7 @@ struct ScreenView: View {
         guard let screen = handle.screen else { return [] }
         var rows: [Row] = []
         for id in handle.groupPath {
-            guard let row = Self.row(id, in: screen) else { break }
+            guard let row = handle.navigationRow(id) else { break }
             rows.append(row)
         }
         return rows
@@ -103,7 +103,7 @@ struct ScreenView: View {
     static func row(_ id: String, in widgets: [ScreenWidget]) -> Row? {
         func find(_ rows: [Row]) -> Row? {
             for row in rows {
-                if row.id == id && !row.children.isEmpty { return row }
+                if row.id == id && (!row.children.isEmpty || row.pageID != nil) { return row }
                 if let found = find(row.children) { return found }
             }
             return nil
@@ -168,16 +168,18 @@ struct ScreenView: View {
     }
 
     @ViewBuilder
-    private var mainPage: some View {
+    private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive) }
+
+    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout) -> some View {
         Group {
-            if let content = self.content {
+            if let content {
                 // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
                 let refreshing = hidesDetails
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            allowsGraphBesideList: true,
                            graphLoading: !content.loaded || handle.isRefreshing || handle.isReloading,
-                           detailsVisible: !refreshing, cascadeOffset: legendCount,
-                           maximumColumns: handle.screen?.layout == .singleColumn ? 1 : 3,
+                           detailsVisible: !refreshing, cascadeOffset: content.hero.map { $0.segments.count + 1 } ?? 0,
+                           maximumColumns: layout == .singleColumn ? 1 : 3,
                            expandsGroups: true, handle: handle) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning,
@@ -198,6 +200,7 @@ struct ScreenView: View {
                     .accessibilityLabel(String(localized: "Loading"))
             }
         }
+        .environment(\.pageCascadeCount, (content?.hero.map { $0.segments.count + 1 } ?? 0) + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count)
         .scrollIndicators(.never)
         .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
@@ -205,24 +208,29 @@ struct ScreenView: View {
 
     /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
     /// page is in parts (`Selection.sections`) lists each part under a header of its own, with a box that checks the whole part.
+    @ViewBuilder
     private func groupPage(_ group: Row) -> some View {
-        let widgets = ModulePagePresentation.groupWidgets(group)
-        return WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
-                          maximumColumns: 1) { EmptyView() }
-            .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
-            .scrollIndicators(.never)
-            .modifier(PageScrollArea(hasFooter: hasFooter))
-            .animation(Theme.layout, value: hasFooter)
-            .environment(\.rowChoice, group.selection.map { selection in
-                RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in
-                    withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
-                }
-            })
-            .environment(\.sectionChoice, group.selection.flatMap { selection in
-                selection.sections.isEmpty ? nil : SectionChoice(selection: selection, checked: handle.checked(group), all: handle.allChecked(group)) { [handle] id in
-                    withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
-                }
-            })
+        if let page = handle.pages[group.id] {
+            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive)
+        } else {
+            let widgets = ModulePagePresentation.groupWidgets(group)
+            WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
+                              maximumColumns: 1) { EmptyView() }
+                .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
+                .scrollIndicators(.never)
+                .modifier(PageScrollArea(hasFooter: hasFooter))
+                .animation(Theme.layout, value: hasFooter)
+                .environment(\.rowChoice, group.selection.map { selection in
+                    RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in
+                        withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
+                    }
+                })
+                .environment(\.sectionChoice, group.selection.flatMap { selection in
+                    selection.sections.isEmpty ? nil : SectionChoice(selection: selection, checked: handle.checked(group), all: handle.allChecked(group)) { [handle] id in
+                        withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
+                    }
+                })
+        }
     }
 
     /// A box clicked: the boxes it changes (a whole part's, from its header) and the button's title and total move together, springing

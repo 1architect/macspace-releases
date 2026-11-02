@@ -291,7 +291,7 @@ struct DashboardTile: Identifiable {
     let tint: TileTint
 
     var id: Destination { destination }
-    var opens: Bool { destination != .storage }
+    var opens: Bool { true }
     /// The featured tile, two cells by two.
     var large: Bool { size.height > 1 }
 }
@@ -345,11 +345,12 @@ struct HomeView: View {
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
     static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
+        let handles = handles.filter { $0.id != "com.macspace.disk-map" }
         let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
         var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)]
         let spare: [TileTint] = [.blue, .teal, .graphite]
         var next = 0
-        let ordered = handles.filter { $0.id == large } + handles.filter { $0.id != large }
+        let ordered = handles.filter { $0.id == large && $0.id != "com.macspace.disk-map" } + handles.filter { $0.id != large && $0.id != "com.macspace.disk-map" }
         for handle in ordered {
             var tint = handle.manifest.tileTint
             if tint == nil { tint = spare[next % spare.count]; next += 1 }
@@ -517,7 +518,7 @@ struct DashboardTileView: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onContinuousHover { phase in
             switch phase {
-            // The disk's tile opens nothing: it takes the pointer only to move the window, and does not lift.
+            // Every tile, including the disk map, uses the same pointer lift.
             case let .active(location) where size.width > 0 && !isHidden && tile.opens:
                 let step = 10.0
                 let next = UnitPoint(x: (location.x / size.width * step).rounded() / step, y: (location.y / size.height * step).rounded() / step)
@@ -781,7 +782,7 @@ private struct ModuleTileContent: View {
 /// frame draw the whole tile through it. It does not sink: its ground, in the layer underneath, cannot see the press.
 private struct TilePressStyle: ButtonStyle {
     @Environment(\.windowCornerStyle) private var corners
-    /// A tile that opens nothing (the disk) takes the drag that moves the window, and shows no press.
+    /// Tiles take the drag that moves the window; selectable tiles also show their shared press treatment.
     var pressable = true
     /// Read so a change of the corner radius redraws the press shade.
     @Environment(\.design) private var design

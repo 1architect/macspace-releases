@@ -1,0 +1,362 @@
+{
+ "%lld items": [
+  "%lld itens",
+  "%lld éléments",
+  "%lld elementos",
+  "%lld Objekte",
+  "%lld 项",
+  "%lld項目",
+  "%lld개 항목"
+ ],
+ "Apps": [
+  "Apps",
+  "Apps",
+  "Apps",
+  "Apps",
+  "应用",
+  "アプリ",
+  "앱"
+ ],
+ "Couldn’t delete the file": [
+  "Não foi possível apagar o arquivo",
+  "Impossible de supprimer le fichier",
+  "No se pudo eliminar el archivo",
+  "Datei konnte nicht gelöscht werden",
+  "无法删除文件",
+  "ファイルを削除できませんでした",
+  "파일을 삭제하지 못함"
+ ],
+ "Couldn’t uninstall the app": [
+  "Não foi possível desinstalar o app",
+  "Impossible de désinstaller l’app",
+  "No se pudo desinstalar la app",
+  "App konnte nicht deinstalliert werden",
+  "无法卸载应用",
+  "アプリをアンインストールできませんでした",
+  "앱을 제거하지 못함"
+ ],
+ "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.": [
+  "Dados com identificadores exatos de apps que não foram encontrados instalados. Dados de grupos compartilhados são preservados.",
+  "Données dont l’identifiant exact ne correspond à aucune app installée. Les données des groupes partagés sont conservées.",
+  "Datos con identificadores exactos de apps que no se encontraron instaladas. Se conservan los datos de grupos compartidos.",
+  "Daten mit exakten Kennungen nicht gefundener Apps. Gemeinsam genutzte App-Gruppendaten bleiben erhalten.",
+  "具有确切应用标识符但未找到已安装应用的数据。共享应用组数据将保留。",
+  "対応するアプリが見つからない正確なアプリ識別子のデータです。共有アプリグループのデータは保持されます。",
+  "정확한 식별자에 해당하는 설치된 앱을 찾지 못한 데이터입니다. 공유 앱 그룹 데이터는 보존됩니다."
+ ],
+ "Delete": [
+  "Apagar",
+  "Supprimer",
+  "Eliminar",
+  "Löschen",
+  "删除",
+  "削除",
+  "삭제"
+ ],
+ "Delete %@?": [
+  "Apagar %@?",
+  "Supprimer %@ ?",
+  "¿Eliminar %@?",
+  "%@ löschen?",
+  "删除 %@？",
+  "%@を削除しますか？",
+  "%@을(를) 삭제할까요?"
+ ],
+ "Deleted": [
+  "Apagado",
+  "Supprimé",
+  "Eliminado",
+  "Gelöscht",
+  "已删除",
+  "削除済み",
+  "삭제됨"
+ ],
+ "Deleting": [
+  "Apagando",
+  "Suppression",
+  "Eliminando",
+  "Wird gelöscht",
+  "正在删除",
+  "削除中",
+  "삭제 중"
+ ],
+ "Disk": [
+  "Disco",
+  "Disque",
+  "Disco",
+  "Festplatte",
+  "磁盘",
+  "ディスク",
+  "디스크"
+ ],
+ "Explore disk": [
+  "Explorar disco",
+  "Explorer le disque",
+  "Explorar disco",
+  "Festplatte erkunden",
+  "浏览磁盘",
+  "ディスクを調べる",
+  "디스크 탐색"
+ ],
+ "Explore disk usage, uninstall apps and remove large files.": [
+  "Explore o uso do disco, desinstale apps e remova arquivos grandes.",
+  "Explorez le disque, désinstallez des apps et supprimez les fichiers volumineux.",
+  "Explora el disco, desinstala apps y elimina archivos grandes.",
+  "Speicherbelegung erkunden, Apps deinstallieren und große Dateien entfernen.",
+  "浏览磁盘使用情况、卸载应用并删除大文件。",
+  "ディスク使用量を調べ、アプリをアンインストールし、大きなファイルを削除します。",
+  "디스크 사용량을 탐색하고 앱과 큰 파일을 제거합니다."
+ ],
+ "Files of 100 MB or larger": [
+  "Arquivos de 100 MB ou maiores",
+  "Fichiers de 100 Mo ou plus",
+  "Archivos de 100 MB o más",
+  "Dateien ab 100 MB",
+  "100 MB 及以上的文件",
+  "100 MB以上のファイル",
+  "100 MB 이상 파일"
+ ],
+ "Free": [
+  "Liberar",
+  "Libérer",
+  "Liberar",
+  "Freigeben",
+  "释放",
+  "解放",
+  "확보"
+ ],
+ "Free leftover app data?": [
+  "Liberar dados de apps removidos?",
+  "Libérer les données d’apps supprimées ?",
+  "¿Liberar datos de apps eliminadas?",
+  "Daten entfernter Apps freigeben?",
+  "清理应用残留数据？",
+  "アプリの残存データを解放しますか？",
+  "앱 잔여 데이터를 지울까요?"
+ ],
+ "Freed app leftovers": [
+  "Dados de apps removidos liberados",
+  "Données résiduelles libérées",
+  "Datos residuales liberados",
+  "App-Reste freigegeben",
+  "已清理应用残留数据",
+  "アプリの残存データを解放しました",
+  "앱 잔여 데이터 정리됨"
+ ],
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
+ ],
+ "Install the helper in Settings": [
+  "Instale o auxiliar nos Ajustes",
+  "Installez l’assistant dans Réglages",
+  "Instala el asistente en Ajustes",
+  "Installiere das Hilfsprogramm in den Einstellungen",
+  "在设置中安装辅助程序",
+  "設定でヘルパーをインストール",
+  "설정에서 보조 프로그램 설치"
+ ],
+ "Large files": [
+  "Arquivos grandes",
+  "Fichiers volumineux",
+  "Archivos grandes",
+  "Große Dateien",
+  "大文件",
+  "大きなファイル",
+  "큰 파일"
+ ],
+ "Leftovers from removed apps": [
+  "Dados de apps removidos",
+  "Données des apps supprimées",
+  "Datos de apps eliminadas",
+  "Daten entfernter Apps",
+  "已移除应用的残留数据",
+  "削除済みアプリの残存データ",
+  "제거된 앱의 잔여 데이터"
+ ],
+ "Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.": [
+  "Espaço alocado localmente. Arquivos apenas na nuvem não são baixados. Locais protegidos ou ilegíveis podem estar incompletos; clones e snapshots do APFS podem causar diferenças em relação ao uso do disco.",
+  "Espace alloué localement. Les fichiers uniquement dans le cloud ne sont pas téléchargés. Les emplacements protégés ou illisibles peuvent être incomplets ; clones et instantanés APFS peuvent créer des écarts.",
+  "Espacio asignado localmente. Los archivos solo en la nube no se descargan. Las ubicaciones protegidas o ilegibles pueden estar incompletas; los clones y snapshots APFS pueden causar diferencias.",
+  "Lokal belegter Speicher. Reine Cloud-Dateien werden nicht geladen. Geschützte oder unlesbare Orte können unvollständig sein; APFS-Klone und Schnappschüsse können Abweichungen verursachen.",
+  "本地分配的空间。不会下载仅在云端的文件。受保护或不可读取的位置可能不完整；APFS 克隆与快照可能导致其与磁盘用量不同。",
+  "ローカルに割り当てられた容量です。クラウドのみのファイルはダウンロードしません。保護された場所や読み取れない場所は不完全な場合があり、APFSのクローンやスナップショットにより使用量に差が出ることがあります。",
+  "로컬에 할당된 공간입니다. 클라우드에만 있는 파일은 다운로드하지 않습니다. 보호되거나 읽을 수 없는 위치는 불완전할 수 있으며 APFS 복제본과 스냅샷으로 인해 디스크 사용량과 다를 수 있습니다."
+ ],
+ "More items": [
+  "Mais itens",
+  "Plus d’éléments",
+  "Más elementos",
+  "Weitere Objekte",
+  "更多项目",
+  "その他の項目",
+  "더 많은 항목"
+ ],
+ "No apps found": [
+  "Nenhum app encontrado",
+  "Aucune app trouvée",
+  "No se encontraron apps",
+  "Keine Apps gefunden",
+  "未找到应用",
+  "アプリが見つかりません",
+  "앱을 찾을 수 없음"
+ ],
+ "No large files in this folder": [
+  "Nenhum arquivo grande nesta pasta",
+  "Aucun fichier volumineux dans ce dossier",
+  "No hay archivos grandes en esta carpeta",
+  "Keine großen Dateien in diesem Ordner",
+  "此文件夹中没有大文件",
+  "このフォルダに大きなファイルはありません",
+  "이 폴더에 큰 파일 없음"
+ ],
+ "Other files": [
+  "Outros arquivos",
+  "Autres fichiers",
+  "Otros archivos",
+  "Andere Dateien",
+  "其他文件",
+  "その他のファイル",
+  "기타 파일"
+ ],
+ "Protected and other disk usage": [
+  "Dados protegidos e outros usos do disco",
+  "Données protégées et autres usages du disque",
+  "Datos protegidos y otros usos del disco",
+  "Geschützte Daten und sonstige Belegung",
+  "受保护数据及其他磁盘用量",
+  "保護されたデータとその他のディスク使用量",
+  "보호된 데이터 및 기타 디스크 사용량"
+ ],
+ "Quit the app before uninstalling it.": [
+  "Encerre o app antes de desinstalá-lo.",
+  "Quittez l’app avant de la désinstaller.",
+  "Cierra la app antes de desinstalarla.",
+  "Beenden Sie die App vor der Deinstallation.",
+  "请先退出应用再卸载。",
+  "アンインストールする前にアプリを終了してください。",
+  "제거하기 전에 앱을 종료하세요."
+ ],
+ "Some app data could not be removed": [
+  "Alguns dados de apps não puderam ser removidos",
+  "Certaines données d’apps n’ont pas pu être supprimées",
+  "No se pudieron eliminar algunos datos de apps",
+  "Einige App-Daten konnten nicht entfernt werden",
+  "部分应用数据无法移除",
+  "一部のアプリデータを削除できませんでした",
+  "일부 앱 데이터를 제거하지 못함"
+ ],
+ "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved.": [
+  "O app e seus arquivos de suporte, ajustes, caches e auxiliares serão removidos. Dados compartilhados com outros apps instalados são preservados.",
+  "L’app, ses fichiers de support, réglages, caches et assistants seront supprimés. Les données partagées avec d’autres apps installées sont conservées.",
+  "Se eliminarán la app y sus archivos de soporte, ajustes, cachés y auxiliares. Se conservan los datos compartidos con otras apps instaladas.",
+  "Die App und ihre Supportdateien, Einstellungen, Caches und Hilfsprogramme werden entfernt. Mit anderen installierten Apps geteilte Daten bleiben erhalten.",
+  "应用及其所属的支持文件、设置、缓存和辅助程序将被移除。其他已安装应用使用的共享数据将保留。",
+  "アプリとそのサポートファイル、設定、キャッシュ、ヘルパーを削除します。他のインストール済みアプリが使用する共有データは保持します。",
+  "앱과 해당 지원 파일, 설정, 캐시 및 보조 프로그램이 제거됩니다. 다른 설치된 앱과 공유하는 데이터는 보존됩니다."
+ ],
+ "This app cannot be uninstalled.": [
+  "Este app não pode ser desinstalado.",
+  "Cette app ne peut pas être désinstallée.",
+  "No se puede desinstalar esta app.",
+  "Diese App kann nicht deinstalliert werden.",
+  "无法卸载此应用。",
+  "このアプリはアンインストールできません。",
+  "이 앱은 제거할 수 없습니다."
+ ],
+ "This app is managed by macOS or MacSpace and cannot be removed here.": [
+  "Este app é gerenciado pelo macOS ou pelo MacSpace e não pode ser removido aqui.",
+  "Cette app est gérée par macOS ou MacSpace et ne peut pas être supprimée ici.",
+  "Esta app es gestionada por macOS o MacSpace y no se puede eliminar aquí.",
+  "Diese App wird von macOS oder MacSpace verwaltet und kann hier nicht entfernt werden.",
+  "此应用由 macOS 或 MacSpace 管理，无法在此移除。",
+  "このアプリはmacOSまたはMacSpaceで管理されているため、ここでは削除できません。",
+  "macOS 또는 MacSpace가 관리하는 앱이므로 여기서 제거할 수 없습니다."
+ ],
+ "This file cannot be deleted here.": [
+  "Este arquivo não pode ser apagado aqui.",
+  "Ce fichier ne peut pas être supprimé ici.",
+  "No se puede eliminar este archivo aquí.",
+  "Diese Datei kann hier nicht gelöscht werden.",
+  "无法在此删除此文件。",
+  "このファイルはここでは削除できません。",
+  "이 파일은 여기서 삭제할 수 없습니다."
+ ],
+ "This permanently deletes the file.": [
+  "Isso apaga o arquivo permanentemente.",
+  "Le fichier sera supprimé définitivement.",
+  "Esto elimina el archivo permanentemente.",
+  "Die Datei wird endgültig gelöscht.",
+  "这将永久删除该文件。",
+  "このファイルは完全に削除されます。",
+  "이 파일을 영구적으로 삭제합니다."
+ ],
+ "Uninstall": [
+  "Desinstalar",
+  "Désinstaller",
+  "Desinstalar",
+  "Deinstallieren",
+  "卸载",
+  "アンインストール",
+  "제거"
+ ],
+ "Uninstall %@?": [
+  "Desinstalar %@?",
+  "Désinstaller %@ ?",
+  "¿Desinstalar %@?",
+  "%@ deinstallieren?",
+  "卸载 %@？",
+  "%@をアンインストールしますか？",
+  "%@을(를) 제거할까요?"
+ ],
+ "Uninstall apps": [
+  "Desinstalar apps",
+  "Désinstaller des apps",
+  "Desinstalar apps",
+  "Apps deinstallieren",
+  "卸载应用",
+  "アプリをアンインストール",
+  "앱 제거"
+ ],
+ "Uninstalled": [
+  "Desinstalado",
+  "Désinstallée",
+  "Desinstalada",
+  "Deinstalliert",
+  "已卸载",
+  "アンインストール済み",
+  "제거됨"
+ ],
+ "Uninstalling": [
+  "Desinstalando",
+  "Désinstallation",
+  "Desinstalando",
+  "Wird deinstalliert",
+  "正在卸载",
+  "アンインストール中",
+  "제거 중"
+ ],
+ "Unknown action": [
+  "Ação desconhecida",
+  "Action inconnue",
+  "Acción desconocida",
+  "Unbekannte Aktion",
+  "未知操作",
+  "不明な操作",
+  "알 수 없는 작업"
+ ],
+ "disk": [
+  "disco",
+  "disque",
+  "disco",
+  "Speicher",
+  "磁盘",
+  "ディスク",
+  "디스크"
+ ]
+}

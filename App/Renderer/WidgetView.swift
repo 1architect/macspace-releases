@@ -614,7 +614,7 @@ struct RowView: View {
 
     var body: some View {
         Group {
-            if !row.children.isEmpty { groupRow } else { itemRow }
+            if !row.children.isEmpty || row.pageID != nil { groupRow } else { itemRow }
         }
         .modifier(RowAppeared(appeared: $appeared))
     }
@@ -623,6 +623,7 @@ struct RowView: View {
     /// items. Not a button: a button around the row would take the (i)'s click too.
     private var groupRow: some View {
         HStack(spacing: 10) {
+            appIcon
             TitleLine(title: row.title, note: row.subtitle)
             // The (i) first, then the pills (`itemRow`).
             InfoButton(text: row.detail)
@@ -638,8 +639,17 @@ struct RowView: View {
         .accessibilityAction { openGroup(row.id) }
     }
 
+    @ViewBuilder
+    private var appIcon: some View {
+        if let path = row.iconPath {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                .resizable().scaledToFit().frame(width: 28, height: 28).accessibilityHidden(true)
+        }
+    }
+
     private var itemRow: some View {
         HStack(spacing: 10) {
+            appIcon
             // On a page that lets the user choose, a box first; the row's title is its label.
             if let choice = rowChoice, choice.choices.contains(row.id) {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))

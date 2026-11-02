@@ -76,12 +76,44 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The group page on top, if any.
     public var openGroup: String? { groupPath.last }
 
+    @Published public private(set) var pages: [String: Screen] = [:]
+    private var openingPage: Task<Void, Never>?
+    private var pageIDs: [String: String] = [:]
+
+    public func navigationRow(_ id: String) -> Row? {
+        if let page = pages[id] { return Row(id: id, title: page.title, pageID: pageIDs[id] ?? id) }
+        if let screen, let row = ScreenView.row(id, in: screen) { return row }
+        return pages.values.lazy.compactMap { ScreenView.row(id, in: $0) }.first
+    }
+
     public func pushGroup(_ id: String) {
-        if groupPath.last != id { groupPath.append(id) }
+        guard groupPath.last != id else { return }
+        guard let pageID = navigationRow(id)?.pageID else { groupPath.append(id); return }
+        openingPage?.cancel()
+        let parent = groupPath
+        openingPage = Task { [weak self] in
+            guard let self, let module = self.module,
+                  let page = await module.page(id: pageID, context: self.context()),
+                  !Task.isCancelled, self.groupPath == parent, self.state == .ready, self.screenIsVisible else { return }
+            self.pageIDs[id] = pageID
+            self.pages[id] = page
+            withAnimation(Theme.push) { self.groupPath.append(id) }
+        }
+    }
+
+    private func refreshPages() async {
+        guard let module else { return }
+        let reading = refreshGeneration, action = actionGeneration
+        for id in groupPath where pages[id] != nil {
+            let page = await module.page(id: pageIDs[id] ?? id, context: context())
+            guard state == .ready, reading == refreshGeneration, action == actionGeneration else { return }
+            if groupPath.contains(id), pages[id] != page { pages[id] = page }
+        }
     }
 
     /// Back from the group page on top, to the one under it or to the module's page.
     public func popGroup() {
+        openingPage?.cancel()
         if !groupPath.isEmpty { groupPath.removeLast() }
     }
 
@@ -226,6 +258,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         tileIsStale = false
         lastResult = nil
         isShowingCompletion = false
+        openingPage?.cancel()
+        pages = [:]
+        pageIDs = [:]
         groupPath = []
     }
 
@@ -302,6 +337,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         if tileIsStale { tileIsStale = false }
         if let newScreen, screen != newScreen { screen = newScreen }
+        await refreshPages()
         scheduleAutoRefresh()
     }
 
@@ -519,6 +555,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if let presentation = result.presentation {
             if tile != presentation.tile { tile = presentation.tile; settings.setLastTile(presentation.tile, module: id) }
             if screen != presentation.screen { screen = presentation.screen }
+            await refreshPages()
             tileIsStale = false
             lastRefreshed = Date()
             scheduleAutoRefresh()

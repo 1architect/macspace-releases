@@ -152,8 +152,8 @@ public final class ModuleHost: ObservableObject {
             guard let window = box.window else { return false }
             return window.isVisible && !window.isMiniaturized
         }.values
-        let page = destinations.contains(.module(id))
-        let dashboard = destinations.contains(.home) || destinations.contains(.storage)
+        let page = destinations.contains(.module(id)) || (id == "com.macspace.disk-map" && destinations.contains(.storage))
+        let dashboard = destinations.contains(.home)
         return (watched && (page || dashboard), page)
     }
 
