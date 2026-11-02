@@ -8,6 +8,24 @@
   "%lld項目",
   "%lld개 항목"
  ],
+ "Additional or unconfirmed app copy; kept separate from installed apps.": [
+  "Cópia adicional ou não confirmada; separada dos apps instalados.",
+  "Copie supplémentaire ou non confirmée ; séparée des apps installées.",
+  "Copia adicional o no confirmada; separada de las apps instaladas.",
+  "Zusätzliche oder unbestätigte Kopie; getrennt von installierten Apps.",
+  "额外或未确认的应用副本，与已安装应用分开显示。",
+  "追加または未確認のコピーです。インストール済みアプリと分けて表示します。",
+  "추가 또는 미확인 복사본으로, 설치된 앱과 구분합니다."
+ ],
+ "App ownership changed. Reopen the app list and review it again.": [
+  "A propriedade do app mudou. Reabra a lista de apps e revise novamente.",
+  "La propriété de l’app a changé. Rouvrez la liste et vérifiez à nouveau.",
+  "La propiedad de la app cambió. Vuelve a abrir la lista y revísala.",
+  "Die App-Zugehörigkeit hat sich geändert. Öffne die App-Liste zur erneuten Prüfung.",
+  "应用归属已更改。请重新打开应用列表并检查。",
+  "アプリの所有関係が変わりました。一覧を開き直して確認してください。",
+  "앱 소유 관계가 변경되었습니다. 앱 목록을 다시 열어 검토하세요."
+ ],
  "Apps": [
   "Apps",
   "Apps",
@@ -16,6 +34,24 @@
   "应用",
   "アプリ",
   "앱"
+ ],
+ "Available metadata cannot establish exclusive ownership. It is preserved.": [
+  "Os metadados disponíveis não comprovam a propriedade exclusiva. Os dados serão preservados.",
+  "Les métadonnées disponibles ne prouvent pas une propriété exclusive. Les données sont préservées.",
+  "Los metadatos disponibles no prueban la propiedad exclusiva. Se conservan los datos.",
+  "Die verfügbaren Metadaten belegen keine alleinige Zugehörigkeit. Die Daten bleiben erhalten.",
+  "现有元数据无法确认独占归属，将保留数据。",
+  "現在のメタデータでは専有を確認できないため、保持します。",
+  "사용 가능한 메타데이터로 독점 소유를 확인할 수 없어 보존합니다."
+ ],
+ "Background component; its removal needs a separate lifecycle.": [
+  "Componente em segundo plano; sua remoção exige um procedimento próprio.",
+  "Composant en arrière-plan ; sa suppression nécessite une procédure dédiée.",
+  "Componente en segundo plano; requiere un proceso de eliminación propio.",
+  "Hintergrundkomponente; benötigt einen eigenen Entfernungsvorgang.",
+  "后台组件，需要专用的移除流程。",
+  "バックグラウンド構成要素のため、専用の削除手順が必要です。",
+  "백그라운드 구성 요소로, 별도의 제거 절차가 필요합니다."
  ],
  "Couldn’t delete the file": [
   "Não foi possível apagar o arquivo",
@@ -89,6 +125,15 @@
   "ディスク",
   "디스크"
  ],
+ "Evidence identifies this installation as the exclusive owner.": [
+  "As evidências identificam esta instalação como proprietária exclusiva.",
+  "Les éléments disponibles identifient cette installation comme propriétaire exclusif.",
+  "Las pruebas identifican esta instalación como propietaria exclusiva.",
+  "Nachweise bestätigen diese Installation als alleinigen Eigentümer.",
+  "证据确认此安装是唯一所有者。",
+  "このインストールの専有データであることを確認しています。",
+  "증거가 이 설치본의 독점 소유를 확인합니다."
+ ],
  "Explore disk": [
   "Explorar disco",
   "Explorer le disque",
@@ -134,6 +179,24 @@
   "アプリの残存データを解放しますか？",
   "앱 잔여 데이터를 지울까요?"
  ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar seleccionados",
+  "Auswahl freigeben",
+  "释放所选项目",
+  "選択項目を解放",
+  "선택 항목 정리"
+ ],
+ "Free the selected files?": [
+  "Liberar os arquivos selecionados?",
+  "Libérer les fichiers sélectionnés ?",
+  "¿Liberar los archivos seleccionados?",
+  "Ausgewählte Dateien freigeben?",
+  "释放所选文件？",
+  "選択したファイルを解放しますか？",
+  "선택한 파일을 정리할까요?"
+ ],
  "Freed app leftovers": [
   "Dados de apps removidos liberados",
   "Données résiduelles libérées",
@@ -142,6 +205,15 @@
   "已清理应用残留数据",
   "アプリの残存データを解放しました",
   "앱 잔여 데이터 정리됨"
+ ],
+ "Freed selected files": [
+  "Arquivos selecionados liberados",
+  "Fichiers sélectionnés libérés",
+  "Archivos seleccionados liberados",
+  "Ausgewählte Dateien freigegeben",
+  "已释放所选文件",
+  "選択したファイルを解放しました",
+  "선택한 파일을 정리했습니다"
  ],
  "Freeing space": [
   "Liberando espaço",
@@ -160,6 +232,15 @@
   "在设置中安装辅助程序",
   "設定でヘルパーをインストール",
   "설정에서 보조 프로그램 설치"
+ ],
+ "Installed app. Removal is limited to the exact reviewed targets.": [
+  "App instalado. A remoção se limita aos destinos exatos revisados.",
+  "App installée. Seules les cibles exactes vérifiées seront supprimées.",
+  "App instalada. Solo se eliminarán los destinos exactos revisados.",
+  "Installierte App. Nur die genau geprüften Ziele werden entfernt.",
+  "已安装的应用。仅移除已检查的确切目标。",
+  "インストール済みアプリです。確認した対象のみ削除します。",
+  "설치된 앱입니다. 검토한 정확한 대상만 제거합니다."
  ],
  "Large files": [
   "Arquivos grandes",
@@ -215,6 +296,33 @@
   "このフォルダに大きなファイルはありません",
   "이 폴더에 큰 파일 없음"
  ],
+ "No unmatched app data found": [
+  "Nenhum dado de app sem correspondência encontrado",
+  "Aucune donnée d’app sans correspondance",
+  "No se encontraron datos de apps sin coincidencia",
+  "Keine nicht zugeordneten App-Daten gefunden",
+  "未发现未匹配的应用数据",
+  "対応するアプリが不明なデータはありません",
+  "연결되지 않은 앱 데이터를 찾지 못했습니다"
+ ],
+ "Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.": [
+  "Somente os destinos revisados abaixo serão removidos. Dados compartilhados, inferidos e desconhecidos serão preservados.",
+  "Seules les cibles vérifiées ci-dessous seront supprimées. Les données partagées, supposées ou inconnues sont préservées.",
+  "Solo se eliminarán los destinos revisados a continuación. Se conservan los datos compartidos, supuestos y desconocidos.",
+  "Nur die folgenden geprüften Ziele werden entfernt. Gemeinsame, vermutete und unbekannte Daten bleiben erhalten.",
+  "仅移除以下已检查的目标。共享、推测关联和未知归属的数据将保留。",
+  "以下の確認済み対象のみ削除します。共有、推定、不明のデータは保持します。",
+  "아래의 검토된 대상만 제거합니다. 공유, 추정 및 알 수 없는 데이터는 보존합니다."
+ ],
+ "Other app installations also claim this data. It is preserved.": [
+  "Outras instalações também usam estes dados. Eles serão preservados.",
+  "D’autres installations utilisent aussi ces données. Elles sont préservées.",
+  "Otras instalaciones también usan estos datos. Se conservan.",
+  "Weitere Installationen beanspruchen diese Daten. Sie bleiben erhalten.",
+  "其他应用安装也关联此数据，将予以保留。",
+  "他のインストールもこのデータを使用するため、保持します。",
+  "다른 설치본도 이 데이터를 사용하므로 보존합니다."
+ ],
  "Other files": [
   "Outros arquivos",
   "Autres fichiers",
@@ -223,6 +331,15 @@
   "其他文件",
   "その他のファイル",
   "기타 파일"
+ ],
+ "Possible app data": [
+  "Possíveis dados de app",
+  "Données d’app possibles",
+  "Posibles datos de apps",
+  "Mögliche App-Daten",
+  "可能的应用数据",
+  "関連する可能性があるデータ",
+  "관련 가능성이 있는 앱 데이터"
  ],
  "Protected and other disk usage": [
   "Dados protegidos e outros usos do disco",
@@ -233,6 +350,15 @@
   "保護されたデータとその他のディスク使用量",
   "보호된 데이터 및 기타 디스크 사용량"
  ],
+ "Protected system component; cannot be removed here.": [
+  "Componente protegido do sistema; não pode ser removido aqui.",
+  "Composant système protégé ; suppression impossible ici.",
+  "Componente protegido del sistema; no se puede eliminar aquí.",
+  "Geschützte Systemkomponente; kann hier nicht entfernt werden.",
+  "受保护的系统组件，无法在此移除。",
+  "保護されたシステム構成要素のため、ここでは削除できません。",
+  "보호된 시스템 구성 요소로, 여기서 제거할 수 없습니다."
+ ],
  "Quit the app before uninstalling it.": [
   "Encerre o app antes de desinstalá-lo.",
   "Quittez l’app avant de la désinstaller.",
@@ -241,6 +367,24 @@
   "请先退出应用再卸载。",
   "アンインストールする前にアプリを終了してください。",
   "제거하기 전에 앱을 종료하세요."
+ ],
+ "Reading apps…": [
+  "Lendo apps…",
+  "Lecture des apps…",
+  "Leyendo apps…",
+  "Apps werden gelesen…",
+  "正在读取应用…",
+  "アプリを読み込み中…",
+  "앱을 읽는 중…"
+ ],
+ "Shared data": [
+  "Dados compartilhados",
+  "Données partagées",
+  "Datos compartidos",
+  "Gemeinsame Daten",
+  "共享数据",
+  "共有データ",
+  "공유 데이터"
  ],
  "Some app data could not be removed": [
   "Alguns dados de apps não puderam ser removidos",
@@ -251,6 +395,24 @@
   "一部のアプリデータを削除できませんでした",
   "일부 앱 데이터를 제거하지 못함"
  ],
+ "Some files could not be removed": [
+  "Não foi possível remover alguns arquivos",
+  "Certains fichiers n’ont pas pu être supprimés",
+  "No se pudieron eliminar algunos archivos",
+  "Einige Dateien konnten nicht entfernt werden",
+  "部分文件无法移除",
+  "一部のファイルを削除できませんでした",
+  "일부 파일을 제거하지 못했습니다"
+ ],
+ "System components and other copies": [
+  "Componentes do sistema e outras cópias",
+  "Composants système et autres copies",
+  "Componentes del sistema y otras copias",
+  "Systemkomponenten und weitere Kopien",
+  "系统组件和其他副本",
+  "システム構成要素とその他のコピー",
+  "시스템 구성 요소 및 다른 복사본"
+ ],
  "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved.": [
   "O app e seus arquivos de suporte, ajustes, caches e auxiliares serão removidos. Dados compartilhados com outros apps instalados são preservados.",
   "L’app, ses fichiers de support, réglages, caches et assistants seront supprimés. Les données partagées avec d’autres apps installées sont conservées.",
@@ -259,6 +421,24 @@
   "应用及其所属的支持文件、设置、缓存和辅助程序将被移除。其他已安装应用使用的共享数据将保留。",
   "アプリとそのサポートファイル、設定、キャッシュ、ヘルパーを削除します。他のインストール済みアプリが使用する共有データは保持します。",
   "앱과 해당 지원 파일, 설정, 캐시 및 보조 프로그램이 제거됩니다. 다른 설치된 앱과 공유하는 데이터는 보존됩니다."
+ ],
+ "The identifier or location suggests an association, but does not prove ownership. It is preserved.": [
+  "O identificador ou local sugere uma associação, mas não comprova a propriedade. Os dados serão preservados.",
+  "L’identifiant ou l’emplacement suggère un lien sans prouver la propriété. Les données sont préservées.",
+  "El identificador o la ubicación sugiere una relación, pero no prueba la propiedad. Se conservan los datos.",
+  "Kennung oder Speicherort deuten auf eine Zuordnung hin, belegen sie aber nicht. Die Daten bleiben erhalten.",
+  "标识符或位置表明可能存在关联，但不能证明归属，将保留数据。",
+  "識別子や場所から関連が推定されますが、所有関係は証明できないため保持します。",
+  "식별자나 위치가 연관성을 암시하지만 소유를 증명하지 못하므로 보존합니다."
+ ],
+ "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.": [
+  "Estes identificadores não correspondem aos apps encontrados. A propriedade é incerta, por isso os dados serão mantidos para revisão.",
+  "Ces identifiants ne correspondent à aucune app découverte. La propriété est incertaine ; les données sont conservées pour vérification.",
+  "Estos identificadores no coinciden con las apps encontradas. La propiedad es incierta, por lo que se conservan los datos para revisión.",
+  "Diese Kennungen wurden keiner gefundenen App zugeordnet. Die Zugehörigkeit ist unklar; die Daten bleiben zur Prüfung erhalten.",
+  "这些标识符未匹配到已发现的应用。归属不确定，因此保留以供检查。",
+  "見つかったアプリと識別子が一致しません。所有関係が不明なため、確認用に保持します。",
+  "발견된 앱과 일치하지 않는 식별자입니다. 소유 관계가 불확실하여 검토를 위해 보존합니다."
  ],
  "This app cannot be uninstalled.": [
   "Este app não pode ser desinstalado.",
@@ -295,6 +475,24 @@
   "这将永久删除该文件。",
   "このファイルは完全に削除されます。",
   "이 파일을 영구적으로 삭제합니다."
+ ],
+ "This permanently deletes the selected files.": [
+  "Isso exclui permanentemente os arquivos selecionados.",
+  "Les fichiers sélectionnés seront définitivement supprimés.",
+  "Esto elimina permanentemente los archivos seleccionados.",
+  "Die ausgewählten Dateien werden dauerhaft gelöscht.",
+  "这将永久删除所选文件。",
+  "選択したファイルは完全に削除されます。",
+  "선택한 파일이 영구적으로 삭제됩니다."
+ ],
+ "Uncertain ownership": [
+  "Propriedade incerta",
+  "Propriété incertaine",
+  "Propiedad incierta",
+  "Unklare Zugehörigkeit",
+  "归属不确定",
+  "所有関係が不明",
+  "소유 관계 불확실"
  ],
  "Uninstall": [
   "Desinstalar",
@@ -349,6 +547,24 @@
   "未知操作",
   "不明な操作",
   "알 수 없는 작업"
+ ],
+ "Use MacSpace’s uninstall option in Settings.": [
+  "Use a opção de desinstalar o MacSpace nos Ajustes.",
+  "Utilisez l’option de désinstallation de MacSpace dans les Réglages.",
+  "Usa la opción de desinstalar MacSpace en Ajustes.",
+  "Verwende die MacSpace-Deinstallation in den Einstellungen.",
+  "请使用设置中的 MacSpace 卸载选项。",
+  "設定にある MacSpace のアンインストールを使用してください。",
+  "설정에서 MacSpace 제거 옵션을 사용하세요."
+ ],
+ "Verified app data": [
+  "Dados de app verificados",
+  "Données d’app vérifiées",
+  "Datos de apps verificados",
+  "Bestätigte App-Daten",
+  "已验证的应用数据",
+  "確認済みのアプリデータ",
+  "확인된 앱 데이터"
  ],
  "disk": [
   "disco",

@@ -14,6 +14,7 @@ public enum DirectoryWalk {
         public let device: Int32
         /// `st_flags` (`SF_DATALESS` for a folder still in the cloud).
         public let flags: UInt32
+        public let ownerUID: UInt32
         public let linkCount: UInt32
         public let logicalBytes: UInt64
         public let allocatedBytes: UInt64
@@ -46,7 +47,7 @@ public enum DirectoryWalk {
     private static func attributes(extended: Bool) -> attrlist {
         var list = attrlist()
         list.bitmapcount = u_short(ATTR_BIT_MAP_COUNT)
-        list.commonattr = attrgroup_t(ATTR_CMN_RETURNED_ATTRS) | attrgroup_t(ATTR_CMN_ERROR | ATTR_CMN_NAME | ATTR_CMN_DEVID | ATTR_CMN_OBJTYPE | ATTR_CMN_FLAGS)
+        list.commonattr = attrgroup_t(ATTR_CMN_RETURNED_ATTRS) | attrgroup_t(ATTR_CMN_ERROR | ATTR_CMN_NAME | ATTR_CMN_DEVID | ATTR_CMN_OBJTYPE | ATTR_CMN_OWNERID | ATTR_CMN_FLAGS)
         list.fileattr = attrgroup_t(ATTR_FILE_LINKCOUNT | ATTR_FILE_TOTALSIZE | ATTR_FILE_ALLOCSIZE)
         if extended { list.forkattr = attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS) }
         return list
@@ -203,6 +204,8 @@ public enum DirectoryWalk {
                     if returned.commonattr & attrgroup_t(ATTR_CMN_DEVID) != 0 { device = field.loadUnaligned(as: Int32.self); field += 4 }
                     var type: UInt32 = 0
                     if returned.commonattr & attrgroup_t(ATTR_CMN_OBJTYPE) != 0 { type = field.loadUnaligned(as: UInt32.self); field += 4 }
+                    var ownerUID: UInt32 = 0
+                    if returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID) != 0 { ownerUID = field.loadUnaligned(as: UInt32.self); field += 4 }
                     var flags: UInt32 = 0
                     if returned.commonattr & attrgroup_t(ATTR_CMN_FLAGS) != 0 { flags = field.loadUnaligned(as: UInt32.self); field += 4 }
                     var links: UInt32 = 1
@@ -217,7 +220,7 @@ public enum DirectoryWalk {
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0 { privateBytes = UInt64(max(field.loadUnaligned(as: Int64.self), 0)); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 { family = field.loadUnaligned(as: UInt64.self); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 { extendedFlags = field.loadUnaligned(as: UInt64.self); field += 8 }
-                    body(name, Entry(type: type, device: device, flags: flags, linkCount: links, logicalBytes: logical, allocatedBytes: allocated,
+                    body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID, linkCount: links, logicalBytes: logical, allocatedBytes: allocated,
                                      cloneFamily: family, privateBytes: privateBytes, extendedFlags: extendedFlags))
                 }
             }

@@ -150,7 +150,11 @@ struct ScreenView: View {
                                   leaving: reveal < 1, dismissed: !handle.isShowingCompletion) { [handle] in
             handle.dismissCompletion()
             // A page that let the user choose what to free has done its job: back to the page under it.
-            if let id = handle.groupPath.last, let screen = handle.screen, ScreenView.row(id, in: screen)?.selection != nil { handle.popGroup() }
+            if let id = handle.groupPath.last {
+                let choosingPage = handle.pages[id].map { $0.selection != nil && $0.hero == nil } ?? false
+                let choosingGroup = handle.screen.flatMap { ScreenView.row(id, in: $0) }?.selection != nil
+                if choosingPage || choosingGroup { handle.popGroup() }
+            }
         } }
         .environment(\.colorScheme, design.colorScheme)
         .environment(\.pageGround, design.palette(tint).base)
@@ -160,7 +164,7 @@ struct ScreenView: View {
             withTransaction(instant) { details.update(busy: detailsAreBusy, initial: true) }
         }
         .onChange(of: detailsAreBusy) { _, busy in details.update(busy: busy) }
-        .onDisappear { details.cancel(); handle.dismissCompletion() }
+        .onDisappear { details.cancel(); handle.dismissCompletion(); handle.clearPageSelections() }
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
         .onChange(of: groups.count) { _, count in
             if count < handle.groupPath.count { handle.groupPath = Array(handle.groupPath.prefix(count)) }
@@ -168,9 +172,9 @@ struct ScreenView: View {
     }
 
     @ViewBuilder
-    private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive) }
+    private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive, selection: handle.screen.flatMap { handle.pageSelection($0, id: "screen:root") }) }
 
-    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout) -> some View {
+    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil) -> some View {
         Group {
             if let content {
                 // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
@@ -200,9 +204,19 @@ struct ScreenView: View {
                     .accessibilityLabel(String(localized: "Loading"))
             }
         }
+        .environment(\.rowChoice, selection.flatMap { group in
+            group.selection.map { value in RowChoice(choices: Set(value.choices.keys), checked: handle.checked(group)) { id in
+                withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
+            } }
+        })
+        .environment(\.sectionChoice, selection.flatMap { group in
+            group.selection.map { value in SectionChoice(selection: value, checked: handle.checked(group), all: handle.allChecked(group)) { id in
+                withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
+            } }
+        })
         .environment(\.pageCascadeCount, (content?.hero.map { $0.segments.count + 1 } ?? 0) + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count)
         .scrollIndicators(.never)
-        .modifier(PageScrollArea(hasFooter: hasFooter))
+        .modifier(PageScrollArea(hasFooter: hasFooter || selection != nil))
         .animation(Theme.layout, value: hasFooter)
     }
 
@@ -211,7 +225,7 @@ struct ScreenView: View {
     @ViewBuilder
     private func groupPage(_ group: Row) -> some View {
         if let page = handle.pages[group.id] {
-            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive)
+            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id))
         } else {
             let widgets = ModulePagePresentation.groupWidgets(group)
             WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
@@ -341,6 +355,7 @@ struct HeroBlocks: View {
     /// The block under the pointer: it darkens, and the line under the blocks names it, as on the tile.
     @State private var hovered: String?
     @State private var blocksSize = CGSize.zero
+    @State private var hitGeometry = BlockGeometryCache()
 
     static let gap: CGFloat = 3
 
@@ -358,7 +373,8 @@ struct HeroBlocks: View {
                 .onContinuousHover { phase in
                     switch phase {
                     case let .active(location):
-                        let id = BlocksView.segment(at: location, in: blocksSize, segments: segments)?.id
+                        let geometry = hitGeometry.value(segments: segments, size: blocksSize)
+                        let id = zip(geometry.blocks, geometry.rects).first { $0.1.contains(location) }?.0.segment.id
                         if id != hovered { hovered = id }
                     case .ended:
                         if hovered != nil { hovered = nil }
@@ -381,12 +397,13 @@ struct HeroBlocks: View {
 
     private func legend(segments: [UsageSegment], blocks: [(segment: UsageSegment, weight: Double)], hoveredSegment: UsageSegment?) -> some View {
         let palette = design.palette(tint)
+        let shades = BlockLayout.shadeMap(in: blocks)
         return VStack(alignment: .leading, spacing: 10) {
             // What the pointer is on, or what amber means: the same line as under the tile's blocks.
             HStack(spacing: 6) {
                 if let hoveredSegment {
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(BlockColor.fill(hoveredSegment, shade: BlockLayout.shade(of: hoveredSegment, in: blocks) ?? 0, tint: tint, design: design))
+                        .fill(BlockColor.fill(hoveredSegment, shade: shades[hoveredSegment.id] ?? shades[BlockLayout.smallerID] ?? 0, tint: tint, design: design))
                         .frame(width: 9, height: 9)
                     ChangingText(text: "\(hoveredSegment.label) \(ByteFormat.string(hoveredSegment.bytes))")
                 } else if !segments.isEmpty {
@@ -407,7 +424,7 @@ struct HeroBlocks: View {
                     HStack(spacing: 6) {
                         // A part left out of the blocks (too small to draw) is an outline: it has no block to share a color with.
                         Group {
-                            if let shade = BlockLayout.shade(of: segment, in: blocks) {
+                            if let shade = shades[segment.id] ?? shades[BlockLayout.smallerID] {
                                 RoundedRectangle(cornerRadius: 2).fill(BlockColor.fill(segment, shade: shade, tint: tint, design: design))
                             } else {
                                 RoundedRectangle(cornerRadius: 2).strokeBorder(design.palette(tint).soft, lineWidth: 1)
@@ -588,10 +605,7 @@ struct ActionDock: View {
 
     /// The group page on top, when it lets the user choose (`Row.selection`): its button acts on the checked rows instead of the
     /// page's main action.
-    private var choosingGroup: Row? {
-        guard let id = handle.groupPath.last, let screen = handle.screen, let group = ScreenView.row(id, in: screen), group.selection != nil else { return nil }
-        return group
-    }
+    private var choosingGroup: Row? { handle.activeSelection }
 
     /// The selection's action for the checked rows, titled with their total, carrying their ids; nil when none is checked.
     private var choiceAction: Action? {

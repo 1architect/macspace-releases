@@ -302,6 +302,19 @@ enum BlockLayout {
         return Double(position) / Double(ramp.count - 1)
     }
 
+    /// Calculate the complete ramp once, including maps with thousands of navigable folders.
+    static func shades(in blocks: [(segment: UsageSegment, weight: Double)]) -> [Double] {
+        let count = blocks.reduce(0) { $0 + ($1.segment.tone == .caution ? 0 : 1) }
+        var rank = 0
+        return blocks.map { block in
+            guard block.segment.tone != .caution else { return 0 }
+            defer { rank += 1 }
+            return count > 1 ? Double(rank) / Double(count - 1) : 0
+        }
+    }
+    static func shadeMap(in blocks: [(segment: UsageSegment, weight: Double)]) -> [String: Double] {
+        Dictionary(zip(blocks.map { $0.segment.id }, shades(in: blocks)), uniquingKeysWith: { first, _ in first })
+    }
     /// The shade of the block a part is drawn in: its own, or the block of the smaller ones. nil for a part left to the legend.
     static func shade(of segment: UsageSegment, in blocks: [(segment: UsageSegment, weight: Double)]) -> Double? {
         if let index = blocks.firstIndex(where: { $0.segment.id == segment.id }) { return shade(at: index, in: blocks) }
@@ -376,6 +389,7 @@ struct BlocksView: View {
     /// A pretend reading the Chart Motion window plays (development builds), in place of the module's.
     @State private var rehearsal: LoadFill?
     @State private var motion = BlockMotion()
+    @State private var arrangement = BlockGeometryCache()
 
     struct Growth: Hashable {
         /// nil while the placeholders are drawn: the first figures start closed.
@@ -439,11 +453,11 @@ struct BlocksView: View {
     var body: some View {
         let segments = held ?? self.segments
         GeometryReader { proxy in
-            let blocks = BlockLayout.blocks(segments, limit: look.limit)
+            let geometry = arrangement.value(segments: segments, size: proxy.size, order: orderSize, look: look)
+            let blocks = geometry.blocks
             let shown = blocks.map(\.segment)
-            let shades = shown.indices.map { BlockLayout.shade(at: $0, in: blocks) }
-            let rects = Treemap.arranged(blocks.map(\.weight), in: CGRect(origin: .zero, size: proxy.size),
-                                         orderIn: CGRect(origin: .zero, size: orderSize ?? proxy.size), style: look.style)
+            let shades = geometry.shades
+            let rects = geometry.rects
             let corner = Self.radius(for: rects.map(inset))
             // Opening with a reading, draining what was freed: not the placeholders, nor with Reduce Motion.
             let plan = growth != nil && !reduceMotion && !LoadingWave.isPlaceholder(segments) && !blocks.isEmpty

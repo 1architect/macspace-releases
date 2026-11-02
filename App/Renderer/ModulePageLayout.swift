@@ -56,6 +56,11 @@ enum ModulePageLayout {
         return GraphArrangement(contentWidth: width, listWidth: list, graphWidth: graph, graphHeight: height)
     }
 
+    /// A module row is at least 18 points plus the shared 10-point vertical padding on each side.
+    static func overviewCapacity(viewportHeight: CGFloat, rowsTop: CGFloat, top: CGFloat, bottom: CGFloat, navigation: Bool) -> Int {
+        max(5, Int(max(0, viewportHeight - rowsTop - top - bottom) / 38) - (navigation ? 1 : 0))
+    }
+
     static func sideGraphHeight(width: CGFloat, viewportHeight: CGFloat) -> CGFloat {
         min(max(150, viewportHeight - PageInsets.scrollTop - PageInsets.footer - 120), max(220, width * 0.5))
     }

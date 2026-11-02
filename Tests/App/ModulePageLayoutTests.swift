@@ -73,4 +73,10 @@ final class ModulePageLayoutTests: XCTestCase {
         XCTAssertEqual(ModulePageLayout.chartHeight(width: 1608, columns: 3), 390)
         XCTAssertEqual(ModulePageLayout.chartHeight(width: 820, columns: 1), 150)
     }
+    func testLargeFileOverviewUsesFreeHeightAndReservesNavigationAndDock() {
+        XCTAssertEqual(ModulePageLayout.overviewCapacity(viewportHeight: 900, rowsTop: 160, top: 20, bottom: 80, navigation: true), 15)
+        XCTAssertEqual(ModulePageLayout.overviewCapacity(viewportHeight: 490, rowsTop: 350, top: 20, bottom: 80, navigation: true), 5)
+        XCTAssertEqual(ModulePageLayout.overviewCapacity(viewportHeight: 1200, rowsTop: 160, top: 20, bottom: 80, navigation: true), 23)
+    }
+
 }

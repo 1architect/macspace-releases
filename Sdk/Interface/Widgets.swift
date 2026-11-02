@@ -279,9 +279,12 @@ public struct Screen: Codable, Equatable, Sendable {
     /// See Docs/Module-Layout.md for the shared presentation contract.
     public var layout: ModuleLayout?
     public var widgets: [ScreenWidget]
+    /// Page-wide choices use the same checkbox, confirmation and bottom Free action as a cache group.
+    public var selection: Selection?
 
     public init(title: String, subtitle: String? = nil, hero: UsageBar? = nil, primary: Action? = nil,
-                layout: ModuleLayout = .adaptive, widgets: [ScreenWidget]) {
+                layout: ModuleLayout = .adaptive, widgets: [ScreenWidget], selection: Selection? = nil) {
+        self.selection = selection
         self.layout = layout
         self.title = title
         self.subtitle = subtitle
@@ -558,6 +561,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 /// choice: it then decides what its other buttons and automatic cleaning free, and sends it back in `checked` and `SelectionSection.all`.
 /// Without `save`, a choice is the user's until the group's page closes.
 public struct Selection: Codable, Equatable, Sendable {
+    /// Stable scope shared by overview and More items pages of the same folder.
+    public var scope: String?
     public var action: Action
     /// The rows that can be chosen, by id, with the size each adds to the button's total. 0 is a row with no size of its own (a backup
     /// on a backup disk, whose blocks other backups share): while no checked row has a size, the button carries its title alone.
@@ -577,7 +582,8 @@ public struct Selection: Codable, Equatable, Sendable {
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil) {
+        self.scope = scope
         self.action = action
         self.choices = choices
         self.checked = checked
@@ -589,11 +595,12 @@ public struct Selection: Codable, Equatable, Sendable {
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
+    private enum CodingKeys: String, CodingKey { case scope, action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        scope = try container.decodeIfPresent(String.self, forKey: .scope)
         action = try container.decode(Action.self, forKey: .action)
         choices = try container.decode([String: UInt64].self, forKey: .choices)
         checked = try container.decodeIfPresent([String].self, forKey: .checked) ?? []
@@ -634,12 +641,15 @@ public struct ListWidget: Codable, Equatable, Sendable {
     public var id: String
     public var title: String?
     public var emptyMessage: String?
+    /// The overview shows as many rows as fit before the action dock, retaining its last navigation row.
+    public var fillsRemainingSpace: Bool?
     public var rows: [Row]
 
-    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row]) {
+    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false) {
         self.id = id
         self.title = title
         self.emptyMessage = emptyMessage
+        self.fillsRemainingSpace = fillsRemainingSpace ? true : nil
         self.rows = rows
     }
 }

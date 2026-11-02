@@ -47,6 +47,9 @@ enum ModulePagePresentation {
     }
 
     private static func split(_ widgets: [ScreenWidget], title: String?, help: String?, id: String, width: Double) -> [Item] {
+        if widgets.count == 1, case let .list(list) = widgets[0], list.fillsRemainingSpace == true {
+            return [Item(id: list.id, widgets: widgets)]
+        }
         // A section containing other widget types retains their original presentation and help.
         guard widgets.allSatisfy({ if case .list = $0 { return true }; return false }) else {
             return [Item(id: id, widgets: [.section(SectionWidget(id: id, title: title ?? "", subtitle: help, widgets: widgets))])]

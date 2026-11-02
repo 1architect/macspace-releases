@@ -7,7 +7,7 @@ public struct AppRemovalResult: Codable, Sendable {
     public var failures: [String: String]
 }
 
-/// The helper accepts an app identity, not an arbitrary list of paths. It recomputes every owned target itself.
+/// Executes only the exact reviewed plan. Missing, stale or expanded plans fail before any removal.
 public struct DiskMapPrivilegedOperations: PrivilegedOperationHandler {
     public static let uninstall = "diskmap.uninstall"
     public init() {}
@@ -18,36 +18,73 @@ public struct DiskMapPrivilegedOperations: PrivilegedOperationHandler {
         guard operation == Self.uninstall, getpwuid_r(caller.uid, &account, &buffer, buffer.count, &found) == 0,
               found != nil, let dir = account.pw_dir else { throw PrivilegedOperationError("Unknown account or operation.") }
         let home = String(cString: dir)
-        guard let path = arguments["app"], let owner = AppOwner(path: path), owner.identifier == arguments["identifier"],
-              AppOwnership.removable(owner, home: home) else { throw PrivilegedOperationError("This app cannot be uninstalled.") }
+        guard let encoded = arguments["plan"], encoded.utf8.count <= 1_048_576,
+              let plan = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)),
+              plan.owner.path == arguments["app"], plan.owner.identifier == arguments["identifier"] else {
+            throw PrivilegedOperationError("A reviewed ownership plan is required.")
+        }
         var st = stat()
-        guard lstat(path, &st) == 0, st.st_uid == caller.uid || AdminAccounts.contains(caller.uid) else { throw PrivilegedOperationError("An administrator must remove this app.") }
-        let result = AppRemovalExecutor.execute(owner: owner, installed: AppOwnership.installed(home: home), home: home, uid: caller.uid)
+        guard lstat(plan.owner.path, &st) == 0, st.st_uid == caller.uid || AdminAccounts.contains(caller.uid) else {
+            throw PrivilegedOperationError("An administrator must remove this app.")
+        }
+        guard plan.catalogCandidates.count <= 4096,
+              plan.catalogCandidates.allSatisfy({ $0.utf8.count <= 4096 && $0.hasSuffix(".app") && $0.hasPrefix("/") && URL(fileURLWithPath: $0).standardizedFileURL.path == $0 }) else {
+            throw PrivilegedOperationError("Invalid reviewed catalog candidates.")
+        }
+        let catalog = AppOwnership.discover(home: home, candidates: plan.catalogCandidates + [plan.owner.path])
+        let result = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: home)
         return try JSONEncoder().encode(result)
     }
 }
 
-/// Shared with fixture tests. Live callers reach it only after the helper validates the app and requesting account.
 public enum AppRemovalExecutor {
-    public static func execute(owner: AppOwner, installed: [AppOwner], home: String, uid: uid_t = getuid(), systemLibrary: String = "/Library",
-                               remove: (String) throws -> Void = { try FileManager.default.removeItem(atPath: $0) }) -> AppRemovalResult {
-        guard AppOwnership.removable(owner, home: home) else { return AppRemovalResult(removed: [], failures: [owner.path: "This app cannot be uninstalled."]) }
-        let path = owner.path
-        let targets = AppOwnership.dataPaths(owner: owner, installed: installed, home: home, systemLibrary: systemLibrary) + [path]
-        var result = AppRemovalResult(removed: [], failures: [:])
-        for target in targets {
-            if target == path, !result.failures.isEmpty { break }
-            guard AppOwnership.safeExisting(target) else { continue }
-            if target.hasSuffix(".plist"), target.contains("/LaunchAgents/") || target.contains("/LaunchDaemons/") {
-                let process = Process(); process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-                process.arguments = ["bootout", target.contains("/LaunchDaemons/") ? "system" : "gui/\(uid)", target]
-                process.standardOutput = FileHandle.nullDevice; process.standardError = FileHandle.nullDevice
-                do { try process.run(); process.waitUntilExit() }
-                catch { result.failures[target] = error.localizedDescription; continue }
+    /// Pure preflight apart from read-only filesystem and signature checks; injectable catalog for fixtures.
+    public static func validate(plan: AppRemovalPlan, catalog: AppCatalog, home: String, systemLibrary: String = "/Library") -> String? {
+        guard plan.version == 1, let owner = AppOwner(path: plan.owner.path, knownIdentifiers: []), owner == plan.owner else {
+            return "Application identity or signing metadata changed. Review a new plan."
+        }
+        guard AppOwnership.classification(owner, home: home, registered: catalog.registeredPaths, candidates: catalog.owners).0 == .installedUser else {
+            return "This installation requires a different removal lifecycle."
+        }
+        guard owner.codeDirectoryDigest == nil || AppOwner.validSignature(owner.path) else {
+            return "The selected app’s code signature is no longer valid."
+        }
+        // Never trust caller-supplied completeness, classifications, confidence or paths.
+        let current = OwnershipResolver(catalog: catalog).plan(for: owner, home: home, systemLibrary: systemLibrary)
+        guard !plan.targets.isEmpty, plan.targets.count <= 4096,
+              Set(plan.targets.map(\.path)).count == plan.targets.count,
+              plan.targets.contains(where: { $0.path == owner.path }),
+              AppOwnership.normalizedPaths(plan.targets.map(\.path)) == plan.targets.map(\.path).sorted() else {
+            return "Invalid or overlapping reviewed targets."
+        }
+        for target in plan.targets {
+            guard current.targets.contains(target), AppFileIdentity(path: target.path) == target.identity else {
+                return "A reviewed target's identity or ownership changed. Review a new plan."
             }
-            do { try remove(target); result.removed.append(target) }
-            catch { result.failures[target] = error.localizedDescription }
+        }
+        return nil
+    }
+    public static func execute(plan: AppRemovalPlan, catalog: AppCatalog, home: String, systemLibrary: String = "/Library",
+                               remove: (String) throws -> Void = { try FileManager.default.removeItem(atPath: $0) }) -> AppRemovalResult {
+        if let error = validate(plan: plan, catalog: catalog, home: home, systemLibrary: systemLibrary) {
+            return AppRemovalResult(removed: [], failures: [plan.owner.path: error])
+        }
+        var result = AppRemovalResult(removed: [], failures: [:])
+        // Data first, bundle last. Preflight verified every target before any side effect.
+        let targets = plan.targets.filter { $0.path != plan.owner.path } + plan.targets.filter { $0.path == plan.owner.path }
+        for target in targets {
+            guard result.failures.isEmpty else { break }
+            guard AppFileIdentity(path: target.path) == target.identity else {
+                result.failures[target.path] = "Target changed after review."; break
+            }
+            do { try remove(target.path); result.removed.append(target.path) }
+            catch { result.failures[target.path] = error.localizedDescription }
         }
         return result
+    }
+    /// Legacy source compatibility only: execution can no longer invent an unreviewed plan.
+    public static func execute(owner: AppOwner, installed: [AppOwner], home: String, uid: uid_t = getuid(), systemLibrary: String = "/Library",
+                               remove: (String) throws -> Void = { try FileManager.default.removeItem(atPath: $0) }) -> AppRemovalResult {
+        AppRemovalResult(removed: [], failures: [owner.path: "A reviewed ownership plan is required."])
     }
 }

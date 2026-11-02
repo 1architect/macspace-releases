@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import CryptoKit
 import Security
 import Darwin
 import MacSpacePlatform
@@ -12,9 +14,11 @@ public struct AppOwner: Codable, Equatable, Sendable {
     public var helpers: [String: String]
     public var team: String?
     public var identifiers: Set<String>
-    public var supportNames: Set<String>
-    public var profileDirectory: String?
-    public init?(path: String, knownIdentifiers: Set<String>? = nil) {
+    public var isBackground: Bool
+    public var signatureValid: Bool
+    public var metadataDigest: String
+    public var codeDirectoryDigest: String?
+    public init?(path: String, knownIdentifiers: Set<String>? = nil, verifySignature: Bool = false) {
         let url = URL(fileURLWithPath: path)
         var metadata = stat()
         guard lstat(path, &metadata) == 0, metadata.st_flags & UInt32(SF_DATALESS) == 0,
@@ -22,33 +26,36 @@ public struct AppOwner: Codable, Equatable, Sendable {
               lstat(path + "/Contents/Info.plist", &metadata) == 0, metadata.st_flags & UInt32(SF_DATALESS) == 0 else { return nil }
         guard url.pathExtension == "app", let info = NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist")) as? [String: Any],
               let identifier = info["CFBundleIdentifier"] as? String, Self.validIdentifier(identifier) else { return nil }
+        guard let infoData = try? Data(contentsOf: url.appendingPathComponent("Contents/Info.plist")) else { return nil }
+        metadataDigest = SHA256.hash(data: infoData).map { String(format: "%02x", $0) }.joined()
         self.path = path; self.identifier = identifier
         name = info["CFBundleDisplayName"] as? String ?? info["CFBundleName"] as? String ?? url.deletingPathExtension().lastPathComponent
-        supportNames = Set([info["CFBundleName"] as? String, info["CFBundleDisplayName"] as? String, url.deletingPathExtension().lastPathComponent].compactMap { $0 })
-        if let profile = info["CrProductDirName"] as? String {
-            let parts = profile.split(separator: "/", omittingEmptySubsequences: false)
-            profileDirectory = !profile.hasPrefix("/") && !parts.isEmpty && parts.count <= 4
-                && parts.allSatisfy { !$0.isEmpty && $0 != "." && $0 != ".." } ? profile : nil
-        } else { profileDirectory = nil }
+        isBackground = info["LSBackgroundOnly"] as? Bool == true
+        // Read signing identity/entitlements without validating every byte of every installed app during browsing.
+        // Destructive execution validates the selected app separately.
         let signing = Self.signing(path)
+        signatureValid = verifySignature && Self.validSignature(path)
+        codeDirectoryDigest = (signing?[kSecCodeInfoUnique as String] as? Data)?.base64EncodedString()
         team = signing?[kSecCodeInfoTeamIdentifier as String] as? String
         let entitlements = signing?[kSecCodeInfoEntitlementsDict as String] as? [String: Any]
         groups = (entitlements?["com.apple.security.application-groups"] as? [String] ?? []).filter(Self.validIdentifier)
-        identifiers = Set((knownIdentifiers ?? []).filter { Self.validIdentifier($0) && !$0.hasPrefix("com.apple.") }).union([identifier])
-        if knownIdentifiers == nil, let iterator = FileManager.default.enumerator(atPath: path + "/Contents") {
-            for case let relative as String in iterator {
-                var infoStat = stat()
-                guard lstat(path + "/Contents/" + relative, &infoStat) == 0 else { continue }
-                if infoStat.st_flags & UInt32(SF_DATALESS) != 0 { iterator.skipDescendants(); continue }
-                guard relative.hasSuffix("/Info.plist") else { continue }
-                let info = NSDictionary(contentsOfFile: path + "/Contents/" + relative)
-                if let id = info?["CFBundleIdentifier"] as? String, Self.validIdentifier(id), !id.hasPrefix("com.apple.") { identifiers.insert(id) }
-            }
-        }
-        helpers = (info["SMPrivilegedExecutables"] as? [String: String] ?? [:]).filter { Self.validIdentifier($0.key) }
+        identifiers = Set((knownIdentifiers ?? []).filter { Self.validIdentifier($0) }).union([identifier])
+        helpers = signing != nil ? (info["SMPrivilegedExecutables"] as? [String: String] ?? [:]).filter { Self.validIdentifier($0.key) } : [:]
     }
     public static func validIdentifier(_ id: String) -> Bool {
         id.contains(".") && id.count < 240 && id.range(of: "^[A-Za-z0-9][A-Za-z0-9._-]+$", options: .regularExpression) != nil
+    }
+    public static func validSignature(_ path: String) -> Bool {
+        var code: SecStaticCode?
+        return SecStaticCodeCreateWithPath(URL(fileURLWithPath: path) as CFURL, [], &code) == errSecSuccess
+            && code.map { SecStaticCodeCheckValidity($0, [], nil) == errSecSuccess } == true
+    }
+    public static func helperMatches(_ path: String, requirement: String, team: String?) -> Bool {
+        guard let team, signing(path)?[kSecCodeInfoTeamIdentifier as String] as? String == team else { return false }
+        var code: SecStaticCode?; var rule: SecRequirement?
+        guard SecStaticCodeCreateWithPath(URL(fileURLWithPath: path) as CFURL, [], &code) == errSecSuccess,
+              SecRequirementCreateWithString(requirement as CFString, [], &rule) == errSecSuccess, let code, let rule else { return false }
+        return SecStaticCodeCheckValidity(code, [], rule) == errSecSuccess
     }
     public static func signing(_ path: String) -> [String: Any]? {
         var code: SecStaticCode?; var info: CFDictionary?
@@ -59,82 +66,74 @@ public struct AppOwner: Codable, Equatable, Sendable {
 }
 
 public enum AppOwnership {
-    public static func installed(home: String) -> [AppOwner] {
-        var result: [AppOwner] = []
-        for root in ["/Applications", "/System/Applications", home + "/Applications"] {
-            var info = stat()
-            guard lstat(root, &info) == 0, info.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
-            guard let iterator = FileManager.default.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: [.isSymbolicLinkKey], options: [.skipsHiddenFiles]) else { continue }
+    public static func discover(home: String, candidates: [String] = []) -> AppCatalog {
+        var paths = Set<String>(), registered = Set<String>()
+        for root in ["/Applications", home + "/Applications", "/System/Applications"] {
+            guard let iterator = FileManager.default.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
             for case let url as URL in iterator {
-                var info = stat()
-                if lstat(url.path, &info) == 0, info.st_flags & UInt32(SF_DATALESS) != 0 { iterator.skipDescendants(); continue }
-                if (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink == true { iterator.skipDescendants(); continue }
-                if url.pathExtension == "app", let owner = AppOwner(path: url.path) { result.append(owner); iterator.skipDescendants() }
+                var st = stat()
+                guard lstat(url.path, &st) == 0, st.st_flags & UInt32(SF_DATALESS) == 0, st.st_mode & S_IFMT != S_IFLNK else { iterator.skipDescendants(); continue }
+                if url.pathExtension == "app" { paths.insert(url.path); iterator.skipDescendants() }
             }
         }
-        return result
+        paths.formUnion(candidates.filter { !$0.contains(".app/") && !$0.contains("/.Trash/") && !$0.contains("/.Trashes/") })
+        // Public registration lookup by known bundle ID. There is no claim of a complete global registration inventory.
+        let seeds = paths.compactMap { AppOwner(path: $0, knownIdentifiers: []) }
+        for id in Set(seeds.map(\.identifier)) {
+            for url in NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id) {
+                if safeExisting(url.path) { paths.insert(url.path); registered.insert(url.path) }
+            }
+        }
+        let prior = Dictionary(seeds.map { ($0.path, $0) }, uniquingKeysWith: { a, _ in a })
+        return AppCatalog(owners: paths.sorted().compactMap { prior[$0] ?? AppOwner(path: $0, knownIdentifiers: []) }, registeredPaths: registered)
+    }
+    public static func installed(home: String) -> [AppOwner] { discover(home: home).owners }
+    public static func classification(_ owner: AppOwner, home: String, registered: Set<String> = [], candidates: [AppOwner] = []) -> (AppClassification, String) {
+        if owner.identifier == "com.macspace" || owner.identifier.hasPrefix("com.macspace.") { return (.macSpaceLifecycle, "Use MacSpace's dedicated uninstall lifecycle.") }
+        if owner.path.hasPrefix("/System/") || owner.path.hasPrefix("/usr/") { return (.protectedSystem, "Protected operating-system location.") }
+        var protection = stat()
+        if lstat(owner.path, &protection) == 0, protection.st_flags & UInt32(SF_RESTRICTED | SF_IMMUTABLE | UF_IMMUTABLE) != 0 {
+            return (.protectedSystem, "Filesystem protection or immutable flags prevent ordinary removal.")
+        }
+        if !safeExisting(owner.path) { return (.extraCopy, "Unavailable or symbolic-link installation.") }
+        let inApplications = owner.path.hasPrefix("/Applications/") || owner.path.hasPrefix(home + "/Applications/")
+        // A standalone menu-bar app in Applications has the same removal lifecycle as any installed app.
+        if owner.isBackground { return (.background, "Background or agent application; lifecycle removal needs separate review.") }
+        let preferredCopy = candidates.contains { other in
+            other.path != owner.path && other.identifier == owner.identifier && other.team == owner.team
+                && (other.path.hasPrefix("/Applications/") || other.path.hasPrefix(home + "/Applications/"))
+        }
+        if inApplications || (registered.contains(owner.path) && !preferredCopy) {
+            return (.installedUser, "Installed application; only reviewed verified targets may be removed.")
+        }
+        return (.extraCopy, "Outside application folders and not confirmed by public registration lookup.")
     }
     public static func removable(_ owner: AppOwner, home: String) -> Bool {
-        let path = owner.path
-        return !owner.identifier.hasPrefix("com.apple.") && !owner.identifier.hasPrefix("com.macspace")
-            && (path.hasPrefix("/Applications/") || path.hasPrefix(home + "/"))
-            && path == URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        let registered = Set(NSWorkspace.shared.urlsForApplications(withBundleIdentifier: owner.identifier).map(\.path))
+        return classification(owner, home: home, registered: registered).0 == .installedUser
     }
-    /// Exact identifier-owned data plus unambiguous app-name support folders. Shared signed app groups stay if any app claims them.
     public static func dataPaths(owner: AppOwner, installed: [AppOwner], home: String, systemLibrary: String = "/Library") -> [String] {
-        let others = installed.filter { $0.path != owner.path }
-        let ids = ownedIdentifiers(owner).subtracting(others.flatMap { ownedIdentifiers($0) })
-        var paths: [String] = []
-        for library in [home + "/Library", systemLibrary] {
-            for id in ids {
-                for relative in ["Application Support/" + id, "Caches/" + id, "Preferences/" + id + ".plist", "Containers/" + id,
-                                 "Saved Application State/" + id + ".savedState", "HTTPStorages/" + id, "WebKit/" + id, "Logs/" + id, "Cookies/" + id + ".binarycookies"] {
-                    paths.append(library + "/" + relative)
-                }
-            }
-            // Chromium-based apps declare their actual product/profile directory in Info.plist.
-            // Its vendor parent can be shared, so only the product directory is owned by this app.
-            if let profile = owner.profileDirectory, !others.contains(where: {
-                $0.identifier == owner.identifier || $0.profileDirectory.map { $0 == profile || $0.hasPrefix(profile + "/") || profile.hasPrefix($0 + "/") } == true
-            }) {
-                paths.append(library + "/Application Support/" + profile)
-                paths.append(library + "/Caches/" + profile)
-            }
-            for name in owner.supportNames where !others.contains(where: {
-                $0.supportNames.contains(name) || $0.profileDirectory.map { $0 == name || $0.hasPrefix(name + "/") } == true
-            })
-                && !name.isEmpty && !name.contains("/") && name != "." && name != ".." {
-                paths.append(library + "/Application Support/" + name)
-                paths.append(library + "/Caches/" + name)
-                paths.append(library + "/Logs/" + name)
-            }
-            for group in owner.groups where !others.contains(where: { $0.groups.contains(group) }) { paths.append(library + "/Group Containers/" + group) }
-            for id in ids {
-                for kind in ["LaunchAgents", "LaunchDaemons"] {
-                    let path = library + "/" + kind + "/" + id + ".plist"
-                    if let info = NSDictionary(contentsOfFile: path), info["Label"] as? String == id,
-                       let program = info["Program"] as? String ?? (info["ProgramArguments"] as? [String])?.first,
-                       program.hasPrefix(owner.path + "/") || paths.contains(where: { program == $0 || program.hasPrefix($0 + "/") }) { paths.append(path) }
-                }
-            }
-            // ByHost preferences have a machine identifier suffix, not a fuzzy application-name match.
-            let byHost = library + "/Preferences/ByHost"
-            for name in (try? FileManager.default.contentsOfDirectory(atPath: byHost)) ?? [] where ids.contains(where: { name.hasPrefix($0 + ".") && name.hasSuffix(".plist") }) { paths.append(byHost + "/" + name) }
-        }
-        for (id, requirement) in owner.helpers where !others.contains(where: { $0.helpers[id] != nil }) {
-            let helper = "/Library/PrivilegedHelperTools/" + id
-            var code: SecStaticCode?; var rule: SecRequirement?
-            if owner.team != nil, AppOwner.signing(helper)?[kSecCodeInfoTeamIdentifier as String] as? String == owner.team,
-               SecStaticCodeCreateWithPath(URL(fileURLWithPath: helper) as CFURL, [], &code) == errSecSuccess,
-               SecRequirementCreateWithString(requirement as CFString, [], &rule) == errSecSuccess,
-               let code, let rule, SecStaticCodeCheckValidity(code, [], rule) == errSecSuccess {
-                paths += [helper, "/Library/LaunchDaemons/" + id + ".plist"]
-            }
-        }
-        return Array(Set(paths)).filter { safeExisting($0) }.sorted()
+        OwnershipResolver(catalog: AppCatalog(owners: installed)).claims(for: owner, home: home, systemLibrary: systemLibrary)
+            .filter { $0.confidence == .verifiedExclusive && $0.source != "bundle" }.flatMap(\.paths)
     }
     public static func ownedIdentifiers(_ owner: AppOwner) -> Set<String> { owner.identifiers }
     public static func safeExisting(_ path: String) -> Bool {
-        FileManager.default.fileExists(atPath: path) && URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path
+        path.hasPrefix("/") && path != "/" && FileManager.default.fileExists(atPath: path)
+            && URL(fileURLWithPath: path).standardizedFileURL.path == path
+            && URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path
+    }
+    public static func normalizedPaths(_ paths: [String]) -> [String] {
+        var selected = Set<String>()
+        for path in Set(paths).sorted(by: { $0.count == $1.count ? $0 < $1 : $0.count < $1.count }) {
+            guard path.hasPrefix("/"), path != "/", URL(fileURLWithPath: path).standardizedFileURL.path == path else { continue }
+            var ancestor = (path as NSString).deletingLastPathComponent
+            var covered = false
+            while ancestor != "/" && !ancestor.isEmpty {
+                if selected.contains(ancestor) { covered = true; break }
+                ancestor = (ancestor as NSString).deletingLastPathComponent
+            }
+            if !covered { selected.insert(path) }
+        }
+        return selected.sorted()
     }
 }

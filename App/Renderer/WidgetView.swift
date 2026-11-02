@@ -25,6 +25,9 @@ struct WidgetForm<Top: View>: View {
     @State private var flipped: Set<String> = []
     @State private var previousStructure: PageCascade.Structure?
     @State private var firstListHeaderHeight: CGFloat = 0
+    @State private var overviewRowsTop: [String: CGFloat] = [:]
+    @Namespace private var listCanvas
+    @State private var viewportHeight: CGFloat = 0
     @StateObject private var loadingGraph = WideGraphLoadingState()
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
@@ -89,7 +92,7 @@ struct WidgetForm<Top: View>: View {
             let columns = graph == nil ? layout.columns : 1
             let listWidth = graph?.listWidth ?? layout.columnWidth
             let items = ModulePagePresentation.items(widgets, width: listWidth, expandsGroups: expandsGroups)
-            let ids = Self.itemIDs(items.flatMap(\.widgets))
+            let ids = Self.itemIDs(items.flatMap(\.widgets).map(fitted))
             // In separate panes the list starts its own cascade as soon as the graph arrives.
             // Stacked pages still reveal the legend first, followed by the rows below it.
             let offset = graph == nil ? cascadeOffset : 0
@@ -102,6 +105,7 @@ struct WidgetForm<Top: View>: View {
                         // Only the left pane owns a scroll view. The graph is a sibling and never moves with its offset.
                         ScrollView {
                             listColumns(items, positions: positions, columns: 1, width: graph.listWidth, alignsGraph: true)
+                                .coordinateSpace(name: listCanvas)
                                 .padding(.top, 20)
                                 .padding(.bottom, max(bottomRoom, 20))
                         }
@@ -130,6 +134,7 @@ struct WidgetForm<Top: View>: View {
                             }
                             listColumns(items, positions: positions, columns: columns, width: listWidth)
                         }
+                        .coordinateSpace(name: listCanvas)
                         .frame(width: layout.contentWidth, alignment: .topLeading)
                         .frame(maxWidth: .infinity, alignment: .top)
                         .padding(.top, showsTop && layout.columns > 1 ? 58 : 20)
@@ -139,6 +144,7 @@ struct WidgetForm<Top: View>: View {
                 }
             }
             .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: ids)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { viewportHeight = $0 }
             .environment(\.modulePageColumns, columns)
             .environment(\.moduleColumnWidth, listWidth)
             .onChange(of: structure, initial: true) { _, next in previousStructure = next }
@@ -180,7 +186,7 @@ struct WidgetForm<Top: View>: View {
 
     private func widgetSection(_ widget: ScreenWidget, positions: Positions, alignsGraph: Bool = false) -> some View {
         let title = Self.title(widget)
-        let rows = entries(widget)
+        let rows = entries(fitted(widget))
         return VStack(alignment: .leading, spacing: 8) {
             if let text = title.text, !text.isEmpty {
                 // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
@@ -209,6 +215,9 @@ struct WidgetForm<Top: View>: View {
                         .transition(positions.transition(row.id, reduceMotion: reduceMotion))
                 }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(listCanvas)).minY } action: { top in
+                if case let .list(list) = widget, list.fillsRemainingSpace == true { overviewRowsTop[list.id] = top }
+            }
             .background {
                 if let first = rows.first, let last = rows.last {
                     Color.clear
@@ -221,6 +230,16 @@ struct WidgetForm<Top: View>: View {
         .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
     }
 
+
+    private func fitted(_ widget: ScreenWidget) -> ScreenWidget {
+        guard case var .list(list) = widget, list.fillsRemainingSpace == true else { return widget }
+        let navigation = list.rows.last?.pageID != nil ? list.rows.last : nil
+        let total = list.rows.count - (navigation == nil ? 0 : 1)
+        let capacity = ModulePageLayout.overviewCapacity(viewportHeight: viewportHeight, rowsTop: overviewRowsTop[list.id] ?? 0,
+            top: scrollTop + 20, bottom: max(PageInsets.footer + 6, bottomRoom - PageInsets.fade), navigation: navigation != nil)
+        list.rows = Array(list.rows.prefix(min(total, capacity))) + (navigation.map { [$0] } ?? [])
+        return .list(list)
+    }
 
     private struct Entry: Identifiable {
         let id: String
@@ -655,7 +674,7 @@ struct RowView: View {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
-            } else if rowChoice != nil {
+            } else if rowChoice != nil && !row.paths.isEmpty {
                 // A row that cannot be chosen now (its app is open): a dimmed box keeps the titles in line, and its pill says why.
                 Toggle(row.title, isOn: .constant(false))
                     .toggleStyle(.checkbox)

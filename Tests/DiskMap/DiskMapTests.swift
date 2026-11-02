@@ -62,10 +62,11 @@ final class DiskMapTests: XCTestCase {
         var scanner = DiskScanner(index: DiskIndex(root: root.path))
         let index = try scanner.scan(changed: [])
         XCTAssertEqual(index.largeFiles.count, 1)
+        XCTAssertEqual(index.largeFiles.first?.ownerUID, getuid())
         XCTAssertEqual(index.largeFiles.first?.logicalBytes, 100_000_000)
         XCTAssertLessThan(index.largeFiles.first!.bytes, 1_000_000)
     }
-    func testRootSectionOrderTopFiveAndFolderScope() throws {
+    func testRootSectionOrderFillingOverviewAndFolderScope() throws {
         var index = DiskIndex(root: "/disk")
         index.directories["/disk"] = DiskDirectory(path: "/disk", folders: ["/disk/A", "/disk/AB"])
         let files = (0..<8).map { DiskFile(path: "/disk/A/file\($0)", bytes: UInt64(200_000_000 + $0), logicalBytes: UInt64(200_000_000 + $0)) }
@@ -74,7 +75,8 @@ final class DiskMapTests: XCTestCase {
         let page = DiskMapScreenBuilder.screen(index, apps: DiskApplications())
         XCTAssertEqual(page.widgets.map(\.id), ["apps-class", "large-class"])
         guard case let .list(list) = page.widgets[1] else { return XCTFail() }
-        XCTAssertEqual(list.rows.count, 6)
+        XCTAssertEqual(list.rows.count, 10)
+        XCTAssertEqual(list.fillsRemainingSpace, true)
         XCTAssertEqual(list.rows.first?.title, "unrelated")
         XCTAssertEqual(list.rows.last?.pageID, "large:/disk")
         let folder = DiskMapScreenBuilder.screen(index, apps: DiskApplications(), folder: "/disk/A")
@@ -109,13 +111,13 @@ final class DiskMapTests: XCTestCase {
         let shared = root.path + "/Library/Group Containers/" + a.groups[0]
         for path in [own, other, shared] { try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true) }
         let paths = AppOwnership.dataPaths(owner: a, installed: [a, b], home: root.path)
-        XCTAssertTrue(paths.contains(own)); XCTAssertFalse(paths.contains(other)); XCTAssertFalse(paths.contains(shared))
-        XCTAssertTrue(AppOwnership.dataPaths(owner: a, installed: [a], home: root.path).contains(shared))
+        XCTAssertFalse(paths.contains(own)); XCTAssertFalse(paths.contains(other)); XCTAssertFalse(paths.contains(shared))
+        XCTAssertFalse(AppOwnership.dataPaths(owner: a, installed: [a], home: root.path).contains(shared), "An incomplete catalog cannot prove exclusive group ownership")
         try FileManager.default.removeItem(atPath: own)
         try FileManager.default.createSymbolicLink(atPath: own, withDestinationPath: other)
         XCTAssertFalse(AppOwnership.dataPaths(owner: a, installed: [a, b], home: root.path).contains(own))
         a.identifier = "com.apple.protected"
-        XCTAssertFalse(AppOwnership.removable(a, home: root.path))
+        XCTAssertTrue(AppOwnership.removable(a, home: root.path), "An identifier prefix alone cannot make a user-installed app protected")
         XCTAssertFalse(DiskMapScreenBuilder.canDelete("/System/Library/file"))
     }
     func testEventQueueTargetsParentsAndHandlesDroppedEvents() throws {
@@ -138,14 +140,18 @@ final class DiskMapTests: XCTestCase {
         try write(cache + "/data")
         let profile = root.path + "/Library/Application Support/Vendor/Product"
         try write(profile + "/Default/profile")
-        let failed = AppRemovalExecutor.execute(owner: owner, installed: [owner], home: root.path, systemLibrary: root.path + "/system-library", remove: { _ in throw POSIXError(.EACCES) })
+        let catalog = AppCatalog(owners: [owner])
+        let plan = OwnershipResolver(catalog: catalog).plan(for: owner, home: root.path, systemLibrary: root.path + "/system-library")
+        XCTAssertEqual(plan.targets.map(\.path), [path])
+        let failed = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: root.path, systemLibrary: root.path + "/system-library", remove: { _ in throw POSIXError(.EACCES) })
         XCTAssertFalse(failed.failures.isEmpty)
         XCTAssertTrue(FileManager.default.fileExists(atPath: path))
-        let removed = AppRemovalExecutor.execute(owner: owner, installed: [owner], home: root.path, systemLibrary: root.path + "/system-library")
+        let removed = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: root.path, systemLibrary: root.path + "/system-library")
         XCTAssertTrue(removed.failures.isEmpty)
-        XCTAssertTrue(removed.removed.contains(profile))
-        XCTAssertTrue(removed.removed.contains(path)); XCTAssertTrue(removed.removed.contains(cache))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: path)); XCTAssertFalse(FileManager.default.fileExists(atPath: cache))
+        XCTAssertEqual(removed.removed, [path])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: cache))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: profile), "Vendor metadata and identifier conventions are not proof of exclusive ownership")
     }
 
     func testStorePersistsAndReplaysOnlyChangedBranches() async throws {
@@ -155,12 +161,14 @@ final class DiskMapTests: XCTestCase {
         let cache = root.appendingPathComponent("cache/index.json")
         let store = DiskStore(root: root.path, cache: cache)
         let before = await store.snapshot()
+        await store.flushPersistence()
         XCTAssertTrue(FileManager.default.fileExists(atPath: cache.path))
         try write(a + "/one", size: 65536)
         await store.mark([a + "/one"])
         let after = await store.snapshot()
         XCTAssertGreaterThan(after.directories[root.path]!.bytes, before.directories[root.path]!.bytes)
         XCTAssertEqual(after.directories[b], before.directories[b])
+        await store.flushPersistence()
         // A new store must catch changes made since its persisted watermark, not trust a stale file.
         try write(a + "/one", size: 131072)
         try await Task.sleep(for: .seconds(1.2))

@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:484",
-      "App\/Renderer\/ScreenView.swift:550"
+      "App\/Renderer\/ScreenView.swift:501",
+      "App\/Renderer\/ScreenView.swift:567"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:393"
+      "App\/Renderer\/ScreenView.swift:410"
     ],
     "table" : "App",
     "translations" : {
@@ -176,7 +176,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:543"
+      "Sdk\/Interface\/Widgets.swift:546"
     ],
     "table" : "App",
     "translations" : {
@@ -290,7 +290,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:543"
+      "Sdk\/Interface\/Widgets.swift:546"
     ],
     "table" : "App",
     "translations" : {
@@ -367,7 +367,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:477"
+      "App\/Renderer\/ScreenView.swift:494"
     ],
     "table" : "App",
     "translations" : {
@@ -1475,8 +1475,8 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:200",
-      "App\/Renderer\/ScreenView.swift:714"
+      "App\/Renderer\/ScreenView.swift:204",
+      "App\/Renderer\/ScreenView.swift:728"
     ],
     "table" : "App",
     "translations" : {
@@ -1822,7 +1822,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:493"
+      "App\/Registry\/ModuleHandle.swift:543"
     ],
     "table" : "App",
     "translations" : {
@@ -1841,7 +1841,7 @@
     "key" : "Needs attention",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/TileArt.swift:1014"
+      "App\/Shell\/TileArt.swift:1028"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,7 +2471,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:715",
+      "App\/Renderer\/ScreenView.swift:729",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
@@ -2491,7 +2491,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:483"
+      "App\/Registry\/ModuleHandle.swift:533"
     ],
     "table" : "App",
     "translations" : {
@@ -2685,8 +2685,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:715",
-      "App\/Renderer\/WidgetView.swift:716"
+      "App\/Renderer\/WidgetView.swift:734",
+      "App\/Renderer\/WidgetView.swift:735"
     ],
     "table" : "App",
     "translations" : {
@@ -3144,10 +3144,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:713",
+      "App\/Renderer\/ScreenView.swift:727",
       "App\/Renderer\/RowActionFlag.swift:104",
       "App\/Renderer\/RowActionFlag.swift:111",
-      "App\/Registry\/ModuleHandle.swift:573"
+      "App\/Registry\/ModuleHandle.swift:624"
     ],
     "table" : "App",
     "translations" : {
@@ -5576,10 +5576,11 @@
   {
     "id" : "DiskMap|%lld items",
     "key" : "%lld items",
-    "kind" : "Row subtitle",
+    "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:22",
-      "Sdk\/Interface\/Widgets.swift:543"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60",
+      "Sdk\/Interface\/Widgets.swift:546"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5594,12 +5595,50 @@
     }
   },
   {
+    "id" : "DiskMap|Additional or unconfirmed app copy; kept separate from installed apps.",
+    "key" : "Additional or unconfirmed app copy; kept separate from installed apps.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:96"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Zusätzliche oder unbestätigte Kopie; getrennt von installierten Apps.",
+      "en" : "Additional or unconfirmed app copy; kept separate from installed apps.",
+      "es" : "Copia adicional o no confirmada; separada de las apps instaladas.",
+      "fr" : "Copie supplémentaire ou non confirmée ; séparée des apps installées.",
+      "ja" : "追加または未確認のコピーです。インストール済みアプリと分けて表示します。",
+      "ko" : "추가 또는 미확인 복사본으로, 설치된 앱과 구분합니다.",
+      "pt-BR" : "Cópia adicional ou não confirmada; separada dos apps instalados.",
+      "zh-Hans" : "额外或未确认的应用副本，与已安装应用分开显示。"
+    }
+  },
+  {
+    "id" : "DiskMap|App ownership changed. Reopen the app list and review it again.",
+    "key" : "App ownership changed. Reopen the app list and review it again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:125"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die App-Zugehörigkeit hat sich geändert. Öffne die App-Liste zur erneuten Prüfung.",
+      "en" : "App ownership changed. Reopen the app list and review it again.",
+      "es" : "La propiedad de la app cambió. Vuelve a abrir la lista y revísala.",
+      "fr" : "La propriété de l’app a changé. Rouvrez la liste et vérifiez à nouveau.",
+      "ja" : "アプリの所有関係が変わりました。一覧を開き直して確認してください。",
+      "ko" : "앱 소유 관계가 변경되었습니다. 앱 목록을 다시 열어 검토하세요.",
+      "pt-BR" : "A propriedade do app mudou. Reabra a lista de apps e revise novamente.",
+      "zh-Hans" : "应用归属已更改。请重新打开应用列表并检查。"
+    }
+  },
+  {
     "id" : "DiskMap|Apps",
     "key" : "Apps",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:27",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:63"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:28",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5614,11 +5653,49 @@
     }
   },
   {
+    "id" : "DiskMap|Available metadata cannot establish exclusive ownership. It is preserved.",
+    "key" : "Available metadata cannot establish exclusive ownership. It is preserved.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:113"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die verfügbaren Metadaten belegen keine alleinige Zugehörigkeit. Die Daten bleiben erhalten.",
+      "en" : "Available metadata cannot establish exclusive ownership. It is preserved.",
+      "es" : "Los metadatos disponibles no prueban la propiedad exclusiva. Se conservan los datos.",
+      "fr" : "Les métadonnées disponibles ne prouvent pas une propriété exclusive. Les données sont préservées.",
+      "ja" : "現在のメタデータでは専有を確認できないため、保持します。",
+      "ko" : "사용 가능한 메타데이터로 독점 소유를 확인할 수 없어 보존합니다.",
+      "pt-BR" : "Os metadados disponíveis não comprovam a propriedade exclusiva. Os dados serão preservados.",
+      "zh-Hans" : "现有元数据无法确认独占归属，将保留数据。"
+    }
+  },
+  {
+    "id" : "DiskMap|Background component; its removal needs a separate lifecycle.",
+    "key" : "Background component; its removal needs a separate lifecycle.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Hintergrundkomponente; benötigt einen eigenen Entfernungsvorgang.",
+      "en" : "Background component; its removal needs a separate lifecycle.",
+      "es" : "Componente en segundo plano; requiere un proceso de eliminación propio.",
+      "fr" : "Composant en arrière-plan ; sa suppression nécessite une procédure dédiée.",
+      "ja" : "バックグラウンド構成要素のため、専用の削除手順が必要です。",
+      "ko" : "백그라운드 구성 요소로, 별도의 제거 절차가 필요합니다.",
+      "pt-BR" : "Componente em segundo plano; sua remoção exige um procedimento próprio.",
+      "zh-Hans" : "后台组件，需要专用的移除流程。"
+    }
+  },
+  {
     "id" : "DiskMap|Couldn’t delete the file",
     "key" : "Couldn’t delete the file",
-    "kind" : "Result message",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:64"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5637,7 +5714,7 @@
     "key" : "Couldn’t uninstall the app",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:83"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:133"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5654,9 +5731,9 @@
   {
     "id" : "DiskMap|Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.",
     "key" : "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.",
-    "kind" : "Row detail",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:24"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5673,10 +5750,9 @@
   {
     "id" : "DiskMap|Delete",
     "key" : "Delete",
-    "kind" : "Button",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:78",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:79"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5693,9 +5769,9 @@
   {
     "id" : "DiskMap|Delete %@?",
     "key" : "Delete %@?",
-    "kind" : "Confirmation title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:79"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5712,9 +5788,9 @@
   {
     "id" : "DiskMap|Deleted",
     "key" : "Deleted",
-    "kind" : "Result message",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:63"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5731,9 +5807,9 @@
   {
     "id" : "DiskMap|Deleting",
     "key" : "Deleting",
-    "kind" : "Button while working",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:79"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5752,7 +5828,7 @@
     "key" : "Disk",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:33"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:35"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5767,11 +5843,30 @@
     }
   },
   {
+    "id" : "DiskMap|Evidence identifies this installation as the exclusive owner.",
+    "key" : "Evidence identifies this installation as the exclusive owner.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:110"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nachweise bestätigen diese Installation als alleinigen Eigentümer.",
+      "en" : "Evidence identifies this installation as the exclusive owner.",
+      "es" : "Las pruebas identifican esta instalación como propietaria exclusiva.",
+      "fr" : "Les éléments disponibles identifient cette installation comme propriétaire exclusif.",
+      "ja" : "このインストールの専有データであることを確認しています。",
+      "ko" : "증거가 이 설치본의 독점 소유를 확인합니다.",
+      "pt-BR" : "As evidências identificam esta instalação como proprietária exclusiva.",
+      "zh-Hans" : "证据确认此安装是唯一所有者。"
+    }
+  },
+  {
     "id" : "DiskMap|Explore disk",
     "key" : "Explore disk",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:14"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:16"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5809,8 +5904,8 @@
     "key" : "Files of 100 MB or larger",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:30",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:66"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:32",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5827,10 +5922,9 @@
   {
     "id" : "DiskMap|Free",
     "key" : "Free",
-    "kind" : "Button",
+    "kind" : "Confirmation button",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5847,9 +5941,9 @@
   {
     "id" : "DiskMap|Free leftover app data?",
     "key" : "Free leftover app data?",
-    "kind" : "Confirmation title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5864,11 +5958,49 @@
     }
   },
   {
+    "id" : "DiskMap|Free selected",
+    "key" : "Free selected",
+    "kind" : "Button",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:145"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Auswahl freigeben",
+      "en" : "Free selected",
+      "es" : "Liberar seleccionados",
+      "fr" : "Libérer la sélection",
+      "ja" : "選択項目を解放",
+      "ko" : "선택 항목 정리",
+      "pt-BR" : "Liberar selecionados",
+      "zh-Hans" : "释放所选项目"
+    }
+  },
+  {
+    "id" : "DiskMap|Free the selected files?",
+    "key" : "Free the selected files?",
+    "kind" : "Confirmation title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte Dateien freigeben?",
+      "en" : "Free the selected files?",
+      "es" : "¿Liberar los archivos seleccionados?",
+      "fr" : "Libérer les fichiers sélectionnés ?",
+      "ja" : "選択したファイルを解放しますか？",
+      "ko" : "선택한 파일을 정리할까요?",
+      "pt-BR" : "Liberar os arquivos selecionados?",
+      "zh-Hans" : "释放所选文件？"
+    }
+  },
+  {
     "id" : "DiskMap|Freed app leftovers",
     "key" : "Freed app leftovers",
-    "kind" : "Result message",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:72"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5883,11 +6015,31 @@
     }
   },
   {
+    "id" : "DiskMap|Freed selected files",
+    "key" : "Freed selected files",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:119"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte Dateien freigegeben",
+      "en" : "Freed selected files",
+      "es" : "Archivos seleccionados liberados",
+      "fr" : "Fichiers sélectionnés libérés",
+      "ja" : "選択したファイルを解放しました",
+      "ko" : "선택한 파일을 정리했습니다",
+      "pt-BR" : "Arquivos selecionados liberados",
+      "zh-Hans" : "已释放所选文件"
+    }
+  },
+  {
     "id" : "DiskMap|Freeing space",
     "key" : "Freeing space",
-    "kind" : "Button while working",
+    "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26",
+      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:24",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:147",
       "App\/Shell\/MainView.swift:188"
     ],
     "table" : "DiskMap",
@@ -5907,7 +6059,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:77"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:127"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5922,12 +6074,31 @@
     }
   },
   {
+    "id" : "DiskMap|Installed app. Removal is limited to the exact reviewed targets.",
+    "key" : "Installed app. Removal is limited to the exact reviewed targets.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:93"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Installierte App. Nur die genau geprüften Ziele werden entfernt.",
+      "en" : "Installed app. Removal is limited to the exact reviewed targets.",
+      "es" : "App instalada. Solo se eliminarán los destinos exactos revisados.",
+      "fr" : "App installée. Seules les cibles exactes vérifiées seront supprimées.",
+      "ja" : "インストール済みアプリです。確認した対象のみ削除します。",
+      "ko" : "설치된 앱입니다. 검토한 정확한 대상만 제거합니다.",
+      "pt-BR" : "App instalado. A remoção se limita aos destinos exatos revisados.",
+      "zh-Hans" : "已安装的应用。仅移除已检查的确切目标。"
+    }
+  },
+  {
     "id" : "DiskMap|Large files",
     "key" : "Large files",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:31",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:66"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:33",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5946,7 +6117,8 @@
     "key" : "Leftovers from removed apps",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:23"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:122"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5965,7 +6137,7 @@
     "key" : "Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:35"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:37"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5984,7 +6156,7 @@
     "key" : "More items",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:30"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:32"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6003,7 +6175,7 @@
     "key" : "No apps found",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:63"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6022,7 +6194,7 @@
     "key" : "No large files in this folder",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:66"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6037,11 +6209,68 @@
     }
   },
   {
+    "id" : "DiskMap|No unmatched app data found",
+    "key" : "No unmatched app data found",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:122"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Keine nicht zugeordneten App-Daten gefunden",
+      "en" : "No unmatched app data found",
+      "es" : "No se encontraron datos de apps sin coincidencia",
+      "fr" : "Aucune donnée d’app sans correspondance",
+      "ja" : "対応するアプリが不明なデータはありません",
+      "ko" : "연결되지 않은 앱 데이터를 찾지 못했습니다",
+      "pt-BR" : "Nenhum dado de app sem correspondência encontrado",
+      "zh-Hans" : "未发现未匹配的应用数据"
+    }
+  },
+  {
+    "id" : "DiskMap|Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.",
+    "key" : "Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:70"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nur die folgenden geprüften Ziele werden entfernt. Gemeinsame, vermutete und unbekannte Daten bleiben erhalten.",
+      "en" : "Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.",
+      "es" : "Solo se eliminarán los destinos revisados a continuación. Se conservan los datos compartidos, supuestos y desconocidos.",
+      "fr" : "Seules les cibles vérifiées ci-dessous seront supprimées. Les données partagées, supposées ou inconnues sont préservées.",
+      "ja" : "以下の確認済み対象のみ削除します。共有、推定、不明のデータは保持します。",
+      "ko" : "아래의 검토된 대상만 제거합니다. 공유, 추정 및 알 수 없는 데이터는 보존합니다.",
+      "pt-BR" : "Somente os destinos revisados abaixo serão removidos. Dados compartilhados, inferidos e desconhecidos serão preservados.",
+      "zh-Hans" : "仅移除以下已检查的目标。共享、推测关联和未知归属的数据将保留。"
+    }
+  },
+  {
+    "id" : "DiskMap|Other app installations also claim this data. It is preserved.",
+    "key" : "Other app installations also claim this data. It is preserved.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:111"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Weitere Installationen beanspruchen diese Daten. Sie bleiben erhalten.",
+      "en" : "Other app installations also claim this data. It is preserved.",
+      "es" : "Otras instalaciones también usan estos datos. Se conservan.",
+      "fr" : "D’autres installations utilisent aussi ces données. Elles sont préservées.",
+      "ja" : "他のインストールもこのデータを使用するため、保持します。",
+      "ko" : "다른 설치본도 이 데이터를 사용하므로 보존합니다.",
+      "pt-BR" : "Outras instalações também usam estes dados. Eles serão preservados.",
+      "zh-Hans" : "其他应用安装也关联此数据，将予以保留。"
+    }
+  },
+  {
     "id" : "DiskMap|Other files",
     "key" : "Other files",
     "kind" : "Chart part",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:47"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:49"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6056,11 +6285,30 @@
     }
   },
   {
+    "id" : "DiskMap|Possible app data",
+    "key" : "Possible app data",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:104"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Mögliche App-Daten",
+      "en" : "Possible app data",
+      "es" : "Posibles datos de apps",
+      "fr" : "Données d’app possibles",
+      "ja" : "関連する可能性があるデータ",
+      "ko" : "관련 가능성이 있는 앱 데이터",
+      "pt-BR" : "Possíveis dados de app",
+      "zh-Hans" : "可能的应用数据"
+    }
+  },
+  {
     "id" : "DiskMap|Protected and other disk usage",
     "key" : "Protected and other disk usage",
     "kind" : "Chart part",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:49"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:51"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6075,11 +6323,30 @@
     }
   },
   {
+    "id" : "DiskMap|Protected system component; cannot be removed here.",
+    "key" : "Protected system component; cannot be removed here.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:94"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Geschützte Systemkomponente; kann hier nicht entfernt werden.",
+      "en" : "Protected system component; cannot be removed here.",
+      "es" : "Componente protegido del sistema; no se puede eliminar aquí.",
+      "fr" : "Composant système protégé ; suppression impossible ici.",
+      "ja" : "保護されたシステム構成要素のため、ここでは削除できません。",
+      "ko" : "보호된 시스템 구성 요소로, 여기서 제거할 수 없습니다.",
+      "pt-BR" : "Componente protegido do sistema; não pode ser removido aqui.",
+      "zh-Hans" : "受保护的系统组件，无法在此移除。"
+    }
+  },
+  {
     "id" : "DiskMap|Quit the app before uninstalling it.",
     "key" : "Quit the app before uninstalling it.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:76"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6094,12 +6361,49 @@
     }
   },
   {
+    "id" : "DiskMap|Reading apps…",
+    "key" : "Reading apps…",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Apps werden gelesen…",
+      "en" : "Reading apps…",
+      "es" : "Leyendo apps…",
+      "fr" : "Lecture des apps…",
+      "ja" : "アプリを読み込み中…",
+      "ko" : "앱을 읽는 중…",
+      "pt-BR" : "Lendo apps…",
+      "zh-Hans" : "正在读取应用…"
+    }
+  },
+  {
+    "id" : "DiskMap|Shared data",
+    "key" : "Shared data",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:103"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Gemeinsame Daten",
+      "en" : "Shared data",
+      "es" : "Datos compartidos",
+      "fr" : "Données partagées",
+      "ja" : "共有データ",
+      "ko" : "공유 데이터",
+      "pt-BR" : "Dados compartilhados",
+      "zh-Hans" : "共享数据"
+    }
+  },
+  {
     "id" : "DiskMap|Some app data could not be removed",
     "key" : "Some app data could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:72",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:82"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:132"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6114,11 +6418,50 @@
     }
   },
   {
+    "id" : "DiskMap|Some files could not be removed",
+    "key" : "Some files could not be removed",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:119"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Einige Dateien konnten nicht entfernt werden",
+      "en" : "Some files could not be removed",
+      "es" : "No se pudieron eliminar algunos archivos",
+      "fr" : "Certains fichiers n’ont pas pu être supprimés",
+      "ja" : "一部のファイルを削除できませんでした",
+      "ko" : "일부 파일을 제거하지 못했습니다",
+      "pt-BR" : "Não foi possível remover alguns arquivos",
+      "zh-Hans" : "部分文件无法移除"
+    }
+  },
+  {
+    "id" : "DiskMap|System components and other copies",
+    "key" : "System components and other copies",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:78"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Systemkomponenten und weitere Kopien",
+      "en" : "System components and other copies",
+      "es" : "Componentes del sistema y otras copias",
+      "fr" : "Composants système et autres copies",
+      "ja" : "システム構成要素とその他のコピー",
+      "ko" : "시스템 구성 요소 및 다른 복사본",
+      "pt-BR" : "Componentes do sistema e outras cópias",
+      "zh-Hans" : "系统组件和其他副本"
+    }
+  },
+  {
     "id" : "DiskMap|The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved.",
     "key" : "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved.",
-    "kind" : "Confirmation message",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:58"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6133,11 +6476,50 @@
     }
   },
   {
+    "id" : "DiskMap|The identifier or location suggests an association, but does not prove ownership. It is preserved.",
+    "key" : "The identifier or location suggests an association, but does not prove ownership. It is preserved.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:112"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Kennung oder Speicherort deuten auf eine Zuordnung hin, belegen sie aber nicht. Die Daten bleiben erhalten.",
+      "en" : "The identifier or location suggests an association, but does not prove ownership. It is preserved.",
+      "es" : "El identificador o la ubicación sugiere una relación, pero no prueba la propiedad. Se conservan los datos.",
+      "fr" : "L’identifiant ou l’emplacement suggère un lien sans prouver la propriété. Les données sont préservées.",
+      "ja" : "識別子や場所から関連が推定されますが、所有関係は証明できないため保持します。",
+      "ko" : "식별자나 위치가 연관성을 암시하지만 소유를 증명하지 못하므로 보존합니다.",
+      "pt-BR" : "O identificador ou local sugere uma associação, mas não comprova a propriedade. Os dados serão preservados.",
+      "zh-Hans" : "标识符或位置表明可能存在关联，但不能证明归属，将保留数据。"
+    }
+  },
+  {
+    "id" : "DiskMap|These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.",
+    "key" : "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:27",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:119"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Diese Kennungen wurden keiner gefundenen App zugeordnet. Die Zugehörigkeit ist unklar; die Daten bleiben zur Prüfung erhalten.",
+      "en" : "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.",
+      "es" : "Estos identificadores no coinciden con las apps encontradas. La propiedad es incierta, por lo que se conservan los datos para revisión.",
+      "fr" : "Ces identifiants ne correspondent à aucune app découverte. La propriété est incertaine ; les données sont conservées pour vérification.",
+      "ja" : "見つかったアプリと識別子が一致しません。所有関係が不明なため、確認用に保持します。",
+      "ko" : "발견된 앱과 일치하지 않는 식별자입니다. 소유 관계가 불확실하여 검토를 위해 보존합니다.",
+      "pt-BR" : "Estes identificadores não correspondem aos apps encontrados. A propriedade é incerta, por isso os dados serão mantidos para revisão.",
+      "zh-Hans" : "这些标识符未匹配到已发现的应用。归属不确定，因此保留以供检查。"
+    }
+  },
+  {
     "id" : "DiskMap|This app cannot be uninstalled.",
     "key" : "This app cannot be uninstalled.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:75"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:122"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6154,9 +6536,9 @@
   {
     "id" : "DiskMap|This app is managed by macOS or MacSpace and cannot be removed here.",
     "key" : "This app is managed by macOS or MacSpace and cannot be removed here.",
-    "kind" : "Row title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6173,9 +6555,10 @@
   {
     "id" : "DiskMap|This file cannot be deleted here.",
     "key" : "This file cannot be deleted here.",
-    "kind" : "Result message",
+    "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:62"
+      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:19",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:115"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6192,9 +6575,9 @@
   {
     "id" : "DiskMap|This permanently deletes the file.",
     "key" : "This permanently deletes the file.",
-    "kind" : "Confirmation message",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:79"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6209,12 +6592,50 @@
     }
   },
   {
+    "id" : "DiskMap|This permanently deletes the selected files.",
+    "key" : "This permanently deletes the selected files.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die ausgewählten Dateien werden dauerhaft gelöscht.",
+      "en" : "This permanently deletes the selected files.",
+      "es" : "Esto elimina permanentemente los archivos seleccionados.",
+      "fr" : "Les fichiers sélectionnés seront définitivement supprimés.",
+      "ja" : "選択したファイルは完全に削除されます。",
+      "ko" : "선택한 파일이 영구적으로 삭제됩니다.",
+      "pt-BR" : "Isso exclui permanentemente os arquivos selecionados.",
+      "zh-Hans" : "这将永久删除所选文件。"
+    }
+  },
+  {
+    "id" : "DiskMap|Uncertain ownership",
+    "key" : "Uncertain ownership",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:105"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Unklare Zugehörigkeit",
+      "en" : "Uncertain ownership",
+      "es" : "Propiedad incierta",
+      "fr" : "Propriété incertaine",
+      "ja" : "所有関係が不明",
+      "ko" : "소유 관계 불확실",
+      "pt-BR" : "Propriedade incerta",
+      "zh-Hans" : "归属不确定"
+    }
+  },
+  {
     "id" : "DiskMap|Uninstall",
     "key" : "Uninstall",
     "kind" : "Button",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:56",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:58",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:67",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:70",
       "App\/Settings\/AboutMacSpace.swift:41"
     ],
     "table" : "DiskMap",
@@ -6234,7 +6655,7 @@
     "key" : "Uninstall %@?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:58"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:69"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6253,8 +6674,8 @@
     "key" : "Uninstall apps",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:22",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:63"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6273,7 +6694,7 @@
     "key" : "Uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:82"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:132"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6292,8 +6713,8 @@
     "key" : "Uninstalling",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:79",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:58"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:129",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:71"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6312,7 +6733,7 @@
     "key" : "Unknown action",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:84"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:134"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6327,11 +6748,49 @@
     }
   },
   {
+    "id" : "DiskMap|Use MacSpace’s uninstall option in Settings.",
+    "key" : "Use MacSpace’s uninstall option in Settings.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:97"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Verwende die MacSpace-Deinstallation in den Einstellungen.",
+      "en" : "Use MacSpace’s uninstall option in Settings.",
+      "es" : "Usa la opción de desinstalar MacSpace en Ajustes.",
+      "fr" : "Utilisez l’option de désinstallation de MacSpace dans les Réglages.",
+      "ja" : "設定にある MacSpace のアンインストールを使用してください。",
+      "ko" : "설정에서 MacSpace 제거 옵션을 사용하세요.",
+      "pt-BR" : "Use a opção de desinstalar o MacSpace nos Ajustes.",
+      "zh-Hans" : "请使用设置中的 MacSpace 卸载选项。"
+    }
+  },
+  {
+    "id" : "DiskMap|Verified app data",
+    "key" : "Verified app data",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:102"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Bestätigte App-Daten",
+      "en" : "Verified app data",
+      "es" : "Datos de apps verificados",
+      "fr" : "Données d’app vérifiées",
+      "ja" : "確認済みのアプリデータ",
+      "ko" : "확인된 앱 데이터",
+      "pt-BR" : "Dados de app verificados",
+      "zh-Hans" : "已验证的应用数据"
+    }
+  },
+  {
     "id" : "DiskMap|disk",
     "key" : "disk",
     "kind" : "Tile title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:14",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:16",
       "App\/Shell\/MainView.swift:259",
       "App\/Shell\/MainView.swift:260",
       "App\/Shell\/StorageOverview.swift:24"
@@ -9480,7 +9939,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:715",
+      "App\/Renderer\/ScreenView.swift:729",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",
@@ -10662,7 +11121,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:543"
+      "Sdk\/Interface\/Widgets.swift:546"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -10798,7 +11257,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:543"
+      "Sdk\/Interface\/Widgets.swift:546"
     ],
     "table" : "SystemData",
     "translations" : {

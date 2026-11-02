@@ -66,7 +66,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public var groupPath: [String] = [] {
         // What was chosen on a page is forgotten once the page closes, however it closed (Back, Home, a refresh that dropped it).
         didSet {
-            let retained = Set(groupPath).union(chosen.keys.filter { id in
+            let scopes = ([screen].compactMap { $0 } + groupPath.compactMap { pages[$0] }).compactMap { $0.selection?.scope }
+            let retained = Set(groupPath + scopes).union(chosen.keys.filter { id in
                 screen.flatMap { ScreenView.row(id, in: $0) }?.selection?.save != nil
             })
             chosen = chosen.filter { retained.contains($0.key) }
@@ -79,6 +80,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var pages: [String: Screen] = [:]
     private var openingPage: Task<Void, Never>?
     private var pageIDs: [String: String] = [:]
+    private var pageUse: [String] = []
+
+    private func retainPage(_ id: String) {
+        pageUse.removeAll { $0 == id }; pageUse.append(id)
+        while pages.count > max(12, groupPath.count + 1), let oldest = pageUse.first(where: { !groupPath.contains($0) && $0 != id }) {
+            pageUse.removeAll { $0 == oldest }; pages.removeValue(forKey: oldest); pageIDs.removeValue(forKey: oldest)
+        }
+    }
+    private func invalidateClosedPages() {
+        let active = Set(groupPath)
+        pages = pages.filter { active.contains($0.key) }
+        pageIDs = pageIDs.filter { active.contains($0.key) }
+        pageUse.removeAll { !active.contains($0) }
+    }
 
     public func navigationRow(_ id: String) -> Row? {
         if let page = pages[id] { return Row(id: id, title: page.title, pageID: pageIDs[id] ?? id) }
@@ -90,6 +105,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard groupPath.last != id else { return }
         guard let pageID = navigationRow(id)?.pageID else { groupPath.append(id); return }
         openingPage?.cancel()
+        if pages[id] != nil {
+            retainPage(id)
+            withAnimation(Theme.push) { groupPath.append(id) }
+            return
+        }
         let parent = groupPath
         openingPage = Task { [weak self] in
             guard let self, let module = self.module,
@@ -97,14 +117,15 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                   !Task.isCancelled, self.groupPath == parent, self.state == .ready, self.screenIsVisible else { return }
             self.pageIDs[id] = pageID
             self.pages[id] = page
+            self.retainPage(id)
             withAnimation(Theme.push) { self.groupPath.append(id) }
         }
     }
 
-    private func refreshPages() async {
+    private func refreshPages(all: Bool = false) async {
         guard let module else { return }
         let reading = refreshGeneration, action = actionGeneration
-        for id in groupPath where pages[id] != nil {
+        for id in (all ? groupPath : Array(groupPath.suffix(1))) where pages[id] != nil {
             let page = await module.page(id: pageIDs[id] ?? id, context: context())
             guard state == .ready, reading == refreshGeneration, action == actionGeneration else { return }
             if groupPath.contains(id), pages[id] != page { pages[id] = page }
@@ -122,6 +143,33 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var chosen: [String: Set<String>] = [:]
     /// The sections whose header box the user turned on or off, by group id (`SelectionSection.all`); nil until one is clicked.
     @Published public private(set) var chosenAll: [String: Set<String>] = [:]
+
+    /// A page-wide selection and a legacy choosing group share one renderer and action dock.
+    public func pageSelection(_ page: Screen, id: String) -> Row? {
+        guard let selection = page.selection else { return nil }
+        func rows(_ widgets: [ScreenWidget]) -> [Row] {
+            widgets.flatMap { widget -> [Row] in
+                if case let .list(list) = widget { return list.rows }
+                if case let .section(section) = widget { return rows(section.widgets) }
+                return []
+            }
+        }
+        return Row(id: selection.scope ?? id, title: page.title, children: rows(page.widgets), selection: selection)
+    }
+    public var activeSelection: Row? {
+        if let id = groupPath.last {
+            if let page = pages[id] { return pageSelection(page, id: id) }
+            return navigationRow(id).flatMap { $0.selection == nil ? nil : $0 }
+        }
+        return screen.flatMap { pageSelection($0, id: "screen:root") }
+    }
+    public func clearPageSelections() {
+        for page in ([screen].compactMap { $0 } + Array(pages.values)) {
+            if let selection = page.selection, selection.save == nil, let scope = selection.scope {
+                chosen.removeValue(forKey: scope); chosenAll.removeValue(forKey: scope)
+            }
+        }
+    }
 
     /// The rows checked on a group's page: the user's choice, or the module's suggestion, among the rows that can still be chosen.
     public func checked(_ group: Row) -> Set<String> {
@@ -261,6 +309,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         openingPage?.cancel()
         pages = [:]
         pageIDs = [:]
+        pageUse = []
         groupPath = []
     }
 
@@ -336,7 +385,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             settings.setLastTile(newTile, module: id)
         }
         if tileIsStale { tileIsStale = false }
-        if let newScreen, screen != newScreen { screen = newScreen }
+        if let newScreen, screen != newScreen { screen = newScreen; invalidateClosedPages() }
+        if reload { invalidateClosedPages() }
         await refreshPages()
         scheduleAutoRefresh()
     }
@@ -555,7 +605,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if let presentation = result.presentation {
             if tile != presentation.tile { tile = presentation.tile; settings.setLastTile(presentation.tile, module: id) }
             if screen != presentation.screen { screen = presentation.screen }
-            await refreshPages()
+            invalidateClosedPages()
+            await refreshPages(all: true)
             tileIsStale = false
             lastRefreshed = Date()
             scheduleAutoRefresh()
