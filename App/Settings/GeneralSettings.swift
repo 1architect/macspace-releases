@@ -52,6 +52,7 @@ public enum GeneralSettings {
 struct GeneralSettingsSection: View {
     @ObservedObject var host: ModuleHost
     @ObservedObject private var design = DesignSettings.shared
+    @AppStorage(FileRemovalSettings.moveToTrashKey) private var movesFilesToTrash = false
     @State private var closedWindow = GeneralSettings.closedWindow()
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -63,6 +64,9 @@ struct GeneralSettingsSection: View {
             }
             PagePicker("Appearance", selection: $design.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
+            }
+            Toggle(isOn: $movesFilesToTrash) {
+                InfoTitle(title: String(localized: "Move files to Trash"), info: String(localized: "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules."))
             }
             SettingsLinkRow(title: String(localized: "Permissions"), note: permissionsNote) { host.settingsPage = .permissions }
             PagePicker(selection: Binding(get: { closedWindow }, set: { closedWindow = $0; GeneralSettings.setClosedWindow($0) })) {

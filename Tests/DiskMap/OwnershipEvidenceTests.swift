@@ -5,7 +5,7 @@ import MacSpaceDiskMapPrivileged
 
 final class OwnershipEvidenceTests: XCTestCase {
     private func fixture(_ body: (String) throws -> Void) throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ownership-evidence-" + UUID().uuidString).resolvingSymlinksInPath().path
+        let root = URL(fileURLWithPath: "/private/tmp").appendingPathComponent("ownership-evidence-" + UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: root + "/Applications", withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: root) }
         try body(root)
@@ -164,19 +164,17 @@ final class OwnershipEvidenceTests: XCTestCase {
             let bundle = OwnershipResolver(catalog: AppCatalog(owners: [owner])).claims(for: owner, home: home, systemLibrary: home + "/SystemLibrary")[0]
             var apps = DiskApplications()
             apps.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: true, metadataStamp: nil, ownership: [bundle, shared])]
-            var index = DiskIndex(root: home)
-            for path in [owner.path, owner.path + "/Contents", owner.path + "/Shared", owner.path + "/Shared/child"] { index.directories[path] = DiskDirectory(path: path) }
-            let attributed = DiskOwnership.attribution(index: index, catalog: apps)
-            XCTAssertEqual(attributed.directories[owner.path], attributed.directories[owner.path + "/Contents"])
-            XCTAssertEqual(attributed.directories[owner.path + "/Shared"], attributed.directories[owner.path + "/Shared/child"])
-            XCTAssertEqual(attributed.claims[try XCTUnwrap(attributed.directories[owner.path + "/Shared"])]?.confidence, .shared)
-            XCTAssertEqual(attributed.claims.count, 2)
-            index.directories[owner.path]?.ownerUID = 501
-            let table = DiskOwnership.assign(to: &index, catalog: apps)
+            let db = try DiskDatabase(url: URL(fileURLWithPath: home + "/index.sqlite"), root: home)
+            for path in [owner.path, owner.path + "/Contents", owner.path + "/Shared", owner.path + "/Shared/child"] { try db.put(DiskDirectory(path: path, ownerUID: 501)) }
+            try db.recordOwnership(apps)
+            let index = try db.snapshot(folder: owner.path, inventory: false).index
+            XCTAssertEqual(index.directories[owner.path]?.ownershipID, index.directories[owner.path + "/Contents"]?.ownershipID)
             XCTAssertEqual(index.directories[owner.path]?.ownerUID, 501)
-            XCTAssertNotNil(table[try XCTUnwrap(index.directories[owner.path]?.ownershipID)])
-            _ = DiskOwnership.assign(to: &index, catalog: DiskApplications())
-            XCTAssertNil(index.directories[owner.path]?.ownershipID)
+            XCTAssertEqual(try db.ownershipEvidence(owner.path + "/Shared/child")?.confidence, .shared)
+            XCTAssertEqual(try db.ownershipEvidence(owner.path + "/Contents")?.confidence, .verifiedExclusive)
+            try db.recordOwnership(DiskApplications())
+            XCTAssertNil(try db.ownershipEvidence(owner.path))
+
         }
     }
     func testReceiptPathsAreUnknownEvenWithACompleteReadableManifest() throws {
@@ -195,13 +193,12 @@ final class OwnershipEvidenceTests: XCTestCase {
             var apps = DiskApplications()
             let bundle = DiskOwnershipClaim(paths: [owner.path], ownerPaths: [owner.path], confidence: .verifiedExclusive, source: "bundle", reason: "installation")
             apps.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: true, metadataStamp: nil, ownership: [bundle] + claims)]
-            var index = DiskIndex(root: home)
-            let contents = owner.path + "/Contents", filePath = contents + "/Info.plist"
-            index.directories[contents] = DiskDirectory(path: contents, files: [DiskFile(path: filePath, bytes: 1, logicalBytes: 1)])
-            let table = DiskOwnership.assign(to: &index, catalog: apps)
-            let evidence = try XCTUnwrap(table[try XCTUnwrap(index.directories[contents]?.files.first?.ownershipID)])
+            let db = try DiskDatabase(url: URL(fileURLWithPath: home + "/index.sqlite"), root: home)
+            try db.recordOwnership(apps)
+            let evidence = try XCTUnwrap(db.ownershipEvidence(owner.path + "/Contents/Info.plist"))
             XCTAssertEqual(evidence.confidence, .unknown)
             XCTAssertTrue(evidence.source.contains("receiptManifest:unrelated.package.identifier"))
+
         }
     }
     func testReceiptParserRejectsTraversalAndDoesNotMatchByPackageName() throws {
@@ -234,38 +231,6 @@ final class OwnershipEvidenceTests: XCTestCase {
             XCTAssertFalse(bounded.complete); XCTAssertTrue(bounded.manifests.isEmpty)
         }
     }
-    func testIncrementalAttributionPreservesUntouchedReferencesAndStableIDs() throws {
-        try fixture { home in
-            let owner = try app(home)
-            let a = owner.path + "/A", b = owner.path + "/B"
-            let claim = DiskOwnershipClaim(paths: [owner.path], ownerPaths: [owner.path], confidence: .verifiedExclusive, source: "bundle", reason: "fixture")
-            var apps = DiskApplications(); apps.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: true, metadataStamp: nil, ownership: [claim])]
-            var index = DiskIndex(root: home)
-            index.directories[a] = DiskDirectory(path: a, files: [DiskFile(path: a + "/file", bytes: 100, logicalBytes: 100)])
-            index.directories[b] = DiskDirectory(path: b)
-            index.hardlinks["link"] = [DiskFile(path: a + "/linked", bytes: 100, logicalBytes: 100), DiskFile(path: b + "/linked", bytes: 100, logicalBytes: 100)]
-            index.ownershipClaims = DiskOwnership.assign(to: &index, catalog: apps)
-            let oldID = try XCTUnwrap(index.directories[b]?.ownershipID)
-            index.directories[a]?.ownershipID = nil
-            index.ownershipClaims = DiskOwnership.assign(to: &index, catalog: apps, paths: [a])
-            XCTAssertEqual(index.directories[a]?.ownershipID, oldID)
-            XCTAssertEqual(index.directories[b]?.ownershipID, oldID)
-            index.ownershipClaims = DiskOwnership.assign(to: &index, catalog: DiskApplications(), paths: [a])
-            XCTAssertNil(index.directories[a]?.ownershipID)
-            XCTAssertNil(index.directories[a]?.files.first?.ownershipID)
-            XCTAssertNil(index.hardlinks["link"]?.first?.ownershipID)
-            XCTAssertEqual(index.hardlinks["link"]?.last?.ownershipID, oldID)
-            XCTAssertEqual(index.directories[b]?.ownershipID, oldID)
-            XCTAssertNotNil(index.ownershipClaims?[oldID])
-            let changed = DiskOwnershipClaim(paths: [a], ownerPaths: [owner.path], confidence: .unknown, source: "new", reason: "new evidence")
-            apps.apps[0].ownership = [changed]
-            index.ownershipClaims = DiskOwnership.assign(to: &index, catalog: apps, paths: [a])
-            let newID = try XCTUnwrap(index.directories[a]?.ownershipID)
-            XCTAssertNotEqual(newID, oldID); XCTAssertEqual(index.ownershipClaims?[oldID], claim)
-            XCTAssertEqual(index.ownershipClaims?[newID], changed)
-        }
-    }
-
     func testAppPresentationCountsInstalledAppsAndCarriesExactPlanWithoutExpandingRow() throws {
         try fixture { home in
             let owner = try app(home), catalog = AppCatalog(owners: [])

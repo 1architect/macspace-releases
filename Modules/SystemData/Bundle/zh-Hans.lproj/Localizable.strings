@@ -15,6 +15,7 @@
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "macOS 检查应用时创建的副本。它与应用共享空间，因此只释放旧版本留下的部分。";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "macOS 恢复映像。用于设置 Mac、设备或虚拟机后即可删除。";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "虚拟机的磁盘和状态。请在虚拟化应用中删除不再使用的虚拟机。";
+"All done" = "已完成";
 "All users" = "所有用户";
 "Allow" = "允许";
 "Allow Full Disk Access to see everything" = "允许完全磁盘访问以查看所有内容";

@@ -14,6 +14,38 @@ final class SdkTests: XCTestCase {
         XCTAssertEqual(decoded.workingTitle, action.workingTitle)
     }
 
+    func testSessionReviewMetadataAndLazyHeadersRoundTripWithLegacyDefaults() throws {
+        let selection = Selection(action: Action(id: "freeFiles", title: "Delete selected"), choices: ["file": 42],
+            sections: [.init(id: "category", title: "Category", rows: ["file"], pageID: "select:category"),
+                       .init(id: "blocked", title: "Unavailable", rows: [], unavailableReason: "Inventory incomplete")],
+            scope: "disk-files", partial: true, session: true, reviewed: ["file": "original-identity"], origins: ["file": "duplicate-proof"])
+        let screen = Screen(title: "Files", widgets: [.list(ListWidget(id: "folder", title: "Downloads", rows: [
+            Row(id: "file", title: "File"), Row(id: "keeper", title: "Keeper", unavailableReason: "Retained copy")
+        ], paths: ["/Users/test/Downloads"]))], selection: selection)
+        XCTAssertEqual(try JSONDecoder().decode(Screen.self, from: JSONEncoder().encode(screen)), screen)
+        let oldSelection = try JSONDecoder().decode(Selection.self, from: Data(#"{"action":{"id":"free","title":"Free","role":"normal","parameters":{},"requires":[]},"choices":{}}"#.utf8))
+        XCTAssertFalse(oldSelection.session)
+        XCTAssertTrue(oldSelection.reviewed.isEmpty)
+        XCTAssertTrue(oldSelection.origins.isEmpty)
+        let oldList = try JSONDecoder().decode(ListWidget.self, from: Data(#"{"id":"old","rows":[]}"#.utf8))
+        XCTAssertTrue(oldList.paths.isEmpty)
+        let oldSection = try JSONDecoder().decode(SelectionSection.self, from: Data(#"{"id":"old","title":"Old","rows":[],"all":false}"#.utf8))
+        XCTAssertNil(oldSection.pageID)
+        XCTAssertNil(oldSection.unavailableReason)
+    }
+
+    func testBulkSelectionRequestsKeepFrozenTokensAndBoundedVisibleMembership() throws {
+        let snapshot = SelectionBulk(token: "immutable", count: 100_001, bytes: 42_000_000, checked: ["file"], all: ["select:category"])
+        var selection = Selection(action: Action(id: "freeFiles", title: "Delete selected"), choices: ["file": 42], scope: "disk-files", session: true)
+        selection.bulk = snapshot; selection.bulkResolver = "selection:"
+        XCTAssertEqual(try JSONDecoder().decode(Selection.self, from: JSONEncoder().encode(selection)), selection)
+        let request = SelectionBulkRequest(token: snapshot.token, operation: "toggle", toggledID: "file", reviewed: ["file": "original"],
+            visible: ["file"], sections: ["select:category"])
+        XCTAssertEqual(SelectionBulkRequest(pageID: request.pageID), request)
+        XCTAssertNil(SelectionBulkRequest(pageID: "selection:invalid"))
+        XCTAssertNil(SelectionBulkRequest(pageID: "folder:/"))
+    }
+
     func testScreenSurvivesAJSONRoundTrip() throws {
         let action = Action(id: "clean", title: "Clean", symbol: "trash", role: .destructive, parameters: ["id": "x"],
                             confirmation: Confirmation(title: "Clean?", message: "m", confirmTitle: "Clean"), requires: [.privilegedHelper])

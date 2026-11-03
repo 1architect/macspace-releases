@@ -175,6 +175,10 @@ public enum DeveloperCaches {
             measured("gomodules", loc("Go modules"), (home as NSString).appendingPathComponent("go/pkg/mod"), owners: ["go", "gopls"],
                      method: .goModules(go: go), reason: unused)
         }
+        // Only recognized generated output folders are offered, never project source trees.
+        for output in projectOutputs(home: home) {
+            measured("project:" + output.path, output.title, output.path, owners: output.owners) { _ in nil }
+        }
         // Which are in use now, from one listing of the processes: MacSpace quits no tool, so these wait until it ends.
         if let processes = ProcessCheck.live.processes() {
             let apps = SystemDataInspector.liveRunningApps()
@@ -228,30 +232,91 @@ public enum DeveloperCaches {
         try? FileManager.default.destinationOfSymbolicLink(atPath: "/var/db/xcode_select_link")
     }
 
+    /// Bounded discovery of common project locations. Manifest plus tool-generated metadata is
+    /// required; a folder merely named target or .build is never enough.
+    static func projectOutputs(home: String) -> [Folder] {
+        let fm = FileManager.default
+        var pending = ["Documents", "Developer", "Projects", "Desktop"].map { (home + "/" + $0, 0) }
+        var result: [Folder] = [], visited = 0
+        while let (path, depth) = pending.popLast(), visited < 2000 {
+            visited += 1
+            let url = URL(fileURLWithPath: path)
+            guard url.resolvingSymlinksInPath().path == path,
+                  let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]), values.isDirectory == true, values.isSymbolicLink != true else { continue }
+            for (name, owners) in [("target", ["cargo", "rustc", "rust-analyzer"]),
+                                                    (".build", ["swift", "swift-build", "swift-package", "Xcode", "xcodebuild"])] {
+                let output = path + "/" + name
+                if verifiedProjectOutput(output, home: home) {
+                    result.append(Folder(id: output, title: (path as NSString).lastPathComponent + " — " + name, path: output, owners: owners))
+                }
+            }
+            guard depth < 5, let children = try? fm.contentsOfDirectory(atPath: path) else { continue }
+            for name in children where !name.hasPrefix(".") && !["target", "node_modules", "Library", "Applications"].contains(name) && (name as NSString).pathExtension.isEmpty {
+                if pending.count + visited < 2000 { pending.append((path + "/" + name, depth + 1)) }
+            }
+        }
+        return result
+    }
+
+    /// Revalidate the manifest and tool metadata without approving the source directory beside the output.
+    static func verifiedProjectOutput(_ path: String, home: String) -> Bool {
+        let parent = (path as NSString).deletingLastPathComponent
+        let name = (path as NSString).lastPathComponent
+        let marker: (String, String)
+        switch name {
+        case "target": marker = ("Cargo.toml", ".rustc_info.json")
+        case ".build": marker = ("Package.swift", "workspace-state.json")
+        default: return false
+        }
+        let roots = ["Documents", "Developer", "Projects", "Desktop"].map { home + "/" + $0 + "/" }
+        guard roots.contains(where: { path.hasPrefix($0) }), URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path else { return false }
+        return [parent + "/" + marker.0, path + "/" + marker.1].allSatisfy {
+            guard let attributes = try? FileManager.default.attributesOfItem(atPath: $0) else { return false }
+            return attributes[.type] as? FileAttributeType == .typeRegular
+        }
+    }
+
     // MARK: Freeing
 
     /// Frees the caches: the folders through the cleaner's checks (no owner running, nothing open in them), the simulators and Go's
-    /// modules through their tools' own commands. Returns a line per cache for the details.
-    static func free(_ caches: [DeveloperCache], home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [String] {
-        var details: [String] = []
-        let folders = caches.filter { $0.method == .delete }
+    /// modules through their tools' own commands. Returns a typed outcome for each cache.
+    static func free(_ caches: [DeveloperCache], home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [SystemDataCleanupResult] {
+        var results: [SystemDataCleanupResult] = []
+        let outputs = caches.filter { $0.id.hasPrefix("dev:project:") }.flatMap { cache in
+            cache.paths.filter { verifiedProjectOutput($0, home: home) }
+        }
+
+        let outputPaths = Set(outputs)
+        let folders = caches.filter { cache in
+            guard cache.method == .delete else { return false }
+            guard !cache.id.hasPrefix("dev:project:") || (!cache.paths.isEmpty && cache.paths.allSatisfy { outputPaths.contains($0) }) else {
+                results.append(SystemDataCleanupResult(itemID: cache.id, deleted: false, detail: "The generated output could not be verified."))
+                return false
+            }
+            return true
+        }
         if !folders.isEmpty {
             let items = folders.map { cache in
                 SystemDataItem(id: cache.id, title: cache.title, kind: .toolCache, paths: cache.paths, bytes: cache.bytes, readable: true,
                                owners: cache.owners, inUse: false, cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil),
                                notes: [])
             }
-            let report = SystemDataCleaner().clean(items, allowedRoots: allowedRoots(home: home))
-            details += report.results.map { "\($0.deleted ? "Deleted" : "Skipped"): \($0.itemID). \($0.detail)" }
+            let report = SystemDataCleaner().clean(items, allowedRoots: allowedRoots(home: home), allowedPaths: outputPaths)
+            results += report.results
         }
         for cache in caches where cache.method != .delete {
             guard let processes = ProcessCheck.live.processes() else {
-                details.append("Skipped: \(cache.id). Couldn't check which apps are open.")
+                results.append(SystemDataCleanupResult(itemID: cache.id, deleted: false, detail: "Couldn't check which apps are open."))
                 continue
             }
             if let owner = ProcessCheck.runningOwner(cache.owners, apps: SystemDataInspector.liveRunningApps(), processes: processes,
                                                      appPath: ProcessCheck.live.appPath) {
-                details.append("Skipped: \(cache.id). \(owner) is running.")
+                results.append(SystemDataCleanupResult(itemID: cache.id, deleted: false, detail: "\(owner) is running."))
+                continue
+            }
+            guard ProcessCheck.runningFromInside(cache.paths, processes: processes) == nil,
+                  ProcessCheck.live.holdsOpen(cache.paths) == false else {
+                results.append(SystemDataCleanupResult(itemID: cache.id, deleted: false, detail: "Couldn't verify that no files are in use."))
                 continue
             }
             let run: HomebrewCleanup.Run
@@ -260,9 +325,9 @@ public enum DeveloperCaches {
             case let .goModules(go): run = HomebrewCleanup.run(go, ["clean", "-modcache"], timeout: 600)
             case .delete: continue
             }
-            details.append(run.status == 0 ? "Deleted: \(cache.id)." : "Skipped: \(cache.id). \(run.stderr.trimmingCharacters(in: .whitespacesAndNewlines))")
+            results.append(SystemDataCleanupResult(itemID: cache.id, deleted: run.status == 0, detail: run.stderr.trimmingCharacters(in: .whitespacesAndNewlines)))
         }
-        return details
+        return results
     }
 
     /// The folders developer caches may be deleted from.

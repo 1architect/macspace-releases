@@ -3,6 +3,15 @@ import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
 
+private final class FinishedChoiceProgress: @unchecked Sendable {
+    private let lock = NSLock()
+    private var finished = Set<String>()
+    private let allowed: Set<String>?
+    init(allowed: Set<String>? = nil) { self.allowed = allowed }
+    func record(_ ids: [String]) { lock.withLock { finished.formUnion(allowed.map { Set(ids).intersection($0) } ?? Set(ids)) } }
+    var ids: Set<String> { lock.withLock { finished } }
+}
+
 /// One module as the app sees it: its manifest, whether it is running, and the latest screen it produced.
 @MainActor
 public final class ModuleHandle: ObservableObject, Identifiable {
@@ -64,14 +73,22 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
     @Published public var groupPath: [String] = [] {
-        // What was chosen on a page is forgotten once the page closes, however it closed (Back, Home, a refresh that dropped it).
+        // Page-local choices close with their page; explicit session scopes survive navigation.
         didSet {
-            let scopes = ([screen].compactMap { $0 } + groupPath.compactMap { pages[$0] }).compactMap { $0.selection?.scope }
-            let retained = Set(groupPath + scopes).union(chosen.keys.filter { id in
+            cancelRequestedPage()
+            invalidatePendingSelections()
+            let scopes = [screen?.selection?.scope].compactMap { $0 } + groupPath.compactMap { id in
+                pages[id]?.selection?.scope ?? navigationRow(id)?.selection?.scope
+            }
+            let retained = Set(groupPath + scopes).union(sessionScopes).union(chosen.keys.filter { id in
                 screen.flatMap { ScreenView.row(id, in: $0) }?.selection?.save != nil
             })
             chosen = chosen.filter { retained.contains($0.key) }
             chosenAll = chosenAll.filter { retained.contains($0.key) }
+            scopedChoices = scopedChoices.filter { retained.contains($0.key) }
+            scopedReviewed = scopedReviewed.filter { retained.contains($0.key) }
+            scopedOrigins = scopedOrigins.filter { retained.contains($0.key) }
+            ephemeralScopes.formIntersection(retained)
         }
     }
     /// The group page on top, if any.
@@ -95,17 +112,58 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         pageUse.removeAll { !active.contains($0) }
     }
 
-    public func navigationRow(_ id: String) -> Row? {
-        if let page = pages[id] { return Row(id: id, title: page.title, pageID: pageIDs[id] ?? id) }
-        if let screen, let row = ScreenView.row(id, in: screen) { return row }
-        return pages.values.lazy.compactMap { ScreenView.row(id, in: $0) }.first
+    /// Resolve synthetic folder maps through the existing stack; their segments always keep module destinations.
+    public func graphPage(_ id: String) -> Screen? {
+        guard id.hasPrefix("graph:"), id.hasSuffix(":" + BlockLayout.foldersID), let screen else { return nil }
+        var sources = [screen]
+        for key in groupPath {
+            if let found = sources.lazy.compactMap({ ScreenView.graphPage(id, in: $0) }).first { return found }
+            if let page = pages[key] { sources.append(page) }
+            else if let page = sources.lazy.compactMap({ ScreenView.graphPage(key, in: $0) }).first { sources.append(page) }
+        }
+        return sources.lazy.compactMap { ScreenView.graphPage(id, in: $0) }.first
     }
 
+    public func navigationRow(_ id: String) -> Row? {
+        if let graph = graphPage(id) { return Row(id: id, title: graph.title) }
+        if let page = pages[id] { return Row(id: id, title: page.title, pageID: pageIDs[id] ?? id) }
+        if let screen, let row = ScreenView.row(id, in: screen) { return row }
+        if let row = pages.values.lazy.compactMap({ ScreenView.row(id, in: $0) }).first { return row }
+        return groupPath.lazy.compactMap { self.graphPage($0) }.compactMap { ScreenView.row(id, in: $0) }.first
+    }
+
+    private var requestedPage: String?
+    private var requestedPageGeneration = 0
+    private func cancelRequestedPage() { requestedPageGeneration += 1; requestedPage = nil }
+    public func requestPage(_ id: String) {
+        cancelRequestedPage()
+        invalidatePendingSelections()
+        requestedPage = id
+        if screen != nil && screenIsVisible { Task { await openRequestedPage() } }
+    }
+    private func openRequestedPage() async {
+        guard let id = requestedPage, let module, screenIsVisible, state == .ready else { return }
+        let generation = requestedPageGeneration, parent = groupPath, action = actionGeneration, reading = refreshGeneration
+        guard let page = await module.page(id: id, context: context()), requestedPage == id,
+              generation == requestedPageGeneration, parent == groupPath, state == .ready, screenIsVisible,
+              action == actionGeneration, reading == refreshGeneration else { return }
+        reconcileSelection(page)
+        requestedPage = nil; pages[id] = page; pageIDs[id] = id; retainPage(id)
+        withAnimation(Theme.push) { groupPath.append(id) }
+    }
     public func pushGroup(_ id: String) {
         guard groupPath.last != id else { return }
-        guard let pageID = navigationRow(id)?.pageID else { groupPath.append(id); return }
+        cancelRequestedPage()
+        invalidatePendingSelections()
+        guard let row = navigationRow(id), let pageID = row.pageID else { groupPath.append(id); return }
+        let replacement = row.replacesPage ? groupPath.last : nil
+        if pageID.hasPrefix("module:") {
+            let parts = pageID.dropFirst(7).split(separator: "/", maxSplits: 1).map(String.init)
+            if let module = parts.first { AppRouter.shared.open(.module(module), page: parts.count == 2 ? parts[1] : nil) }
+            return
+        }
         openingPage?.cancel()
-        if pages[id] != nil {
+        if replacement == nil, pages[id] != nil {
             retainPage(id)
             withAnimation(Theme.push) { groupPath.append(id) }
             return
@@ -115,10 +173,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             guard let self, let module = self.module,
                   let page = await module.page(id: pageID, context: self.context()),
                   !Task.isCancelled, self.groupPath == parent, self.state == .ready, self.screenIsVisible else { return }
-            self.pageIDs[id] = pageID
-            self.pages[id] = page
-            self.retainPage(id)
-            withAnimation(Theme.push) { self.groupPath.append(id) }
+            self.reconcileSelection(page)
+            let target = replacement ?? id
+            self.pageIDs[target] = pageID
+            self.pages[target] = page
+            self.retainPage(target)
+            if replacement == nil { withAnimation(Theme.push) { self.groupPath.append(id) } }
         }
     }
 
@@ -133,12 +193,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 groupPath = Array(groupPath.prefix(position))
                 break
             }
+            if let page { reconcileSelection(page) }
             if groupPath.contains(id), pages[id] != page { pages[id] = page }
         }
     }
 
     /// Back from the group page on top, to the one under it or to the module's page.
     public func popGroup() {
+        cancelRequestedPage()
         openingPage?.cancel()
         if !groupPath.isEmpty { groupPath.removeLast() }
     }
@@ -148,10 +210,40 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var chosen: [String: Set<String>] = [:]
     /// The sections whose header box the user turned on or off, by group id (`SelectionSection.all`); nil until one is clicked.
     @Published public private(set) var chosenAll: [String: Set<String>] = [:]
+    private var scopedChoices: [String: [String: UInt64]] = [:]
+    private var ephemeralScopes = Set<String>()
+    private var sessionScopes = Set<String>()
+    private var scopedReviewed: [String: [String: String]] = [:]
+    private var scopedOrigins: [String: [String: String]] = [:]
+    @Published private var sessionBulk: [String: SelectionBulk] = [:]
+    private var bulkVisible: [String: Set<String>] = [:]
+    @Published private var bulkMembershipRevision = 0
+    private var bulkSections: [String: Set<String>] = [:]
+    private var bulkEdit: Task<Void, Never>?
+    private var sessionGroup: Row?
+    private var selectingSections = Set<String>()
+    private var selectionGeneration = 0
+    private func invalidatePendingSelections() {
+        selectionGeneration += 1
+        selectingSections.removeAll()
+    }
+    private var sessionSections: [String: [String: Set<String>]] = [:]
+    private var sessionSectionPages: [String: [String: String]] = [:]
 
     /// A page-wide selection and a legacy choosing group share one renderer and action dock.
     public func pageSelection(_ page: Screen, id: String) -> Row? {
-        guard let selection = page.selection else { return nil }
+        guard var selection = page.selection else { return nil }
+        func addHeaders(_ widgets: [ScreenWidget]) {
+            for widget in widgets {
+                if case let .list(list) = widget, list.title != nil,
+                   !selection.sections.contains(where: { $0.id == list.id }),
+                   list.rows.contains(where: { selection.choices[$0.id] != nil }) {
+                    selection.sections.append(.init(id: list.id, title: list.title ?? page.title, rows: list.rows.map(\.id)))
+                }
+                if case let .section(section) = widget { addHeaders(section.widgets) }
+            }
+        }
+        addHeaders(page.widgets)
         func rows(_ widgets: [ScreenWidget]) -> [Row] {
             widgets.flatMap { widget -> [Row] in
                 if case let .list(list) = widget { return list.rows }
@@ -159,19 +251,46 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 return []
             }
         }
-        return Row(id: selection.scope ?? id, title: page.title, children: rows(page.widgets), selection: selection)
+        return selectionGroup(Row(id: id, title: page.title, children: rows(page.widgets), selection: selection))
+    }
+    public func selectionGroup(_ group: Row) -> Row {
+        guard var selection = group.selection, let scope = selection.scope else { return group }
+        var group = group; group.id = scope
+        if selection.partial || selection.session {
+            let visible = Set(group.children.map(\.id))
+            let retained = (scopedChoices[scope] ?? [:]).filter { !visible.contains($0.key) || selection.choices[$0.key] != nil }
+            let session = selection.session
+            selection.choices.merge(retained) { current, original in session ? original : current }
+            selection.reviewed.merge(scopedReviewed[scope] ?? [:]) { _, original in original }
+            selection.origins.merge(scopedOrigins[scope] ?? [:]) { _, original in original }
+        }
+        if let bulk = sessionBulk[scope] { selection.bulk = bulk }
+        group.selection = selection
+        return group
     }
     public var activeSelection: Row? {
         if let id = groupPath.last {
-            if let page = pages[id] { return pageSelection(page, id: id) }
-            return navigationRow(id).flatMap { $0.selection == nil ? nil : $0 }
+            if let page = pages[id], let selection = pageSelection(page, id: id) { return selection }
+            if let group = navigationRow(id), group.selection != nil { return selectionGroup(group) }
+        } else if let screen, let selection = pageSelection(screen, id: "screen:root") { return selection }
+        return sessionGroup.map { group in
+            var group = group
+            group.children = []
+            group.selection?.choices = scopedChoices[group.id] ?? [:]
+            group.selection?.reviewed = scopedReviewed[group.id] ?? [:]
+            group.selection?.origins = scopedOrigins[group.id] ?? [:]
+            return selectionGroup(group)
         }
-        return screen.flatMap { pageSelection($0, id: "screen:root") }
     }
     public func clearPageSelections() {
+        for scope in ephemeralScopes where !sessionScopes.contains(scope) {
+            chosen.removeValue(forKey: scope); chosenAll.removeValue(forKey: scope); scopedChoices.removeValue(forKey: scope)
+        }
+        ephemeralScopes.removeAll()
         for page in ([screen].compactMap { $0 } + Array(pages.values)) {
-            if let selection = page.selection, selection.save == nil, let scope = selection.scope {
+            if let selection = page.selection, selection.save == nil, !selection.session, let scope = selection.scope {
                 chosen.removeValue(forKey: scope); chosenAll.removeValue(forKey: scope)
+                scopedChoices.removeValue(forKey: scope)
             }
         }
     }
@@ -179,16 +298,33 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The rows checked on a group's page: the user's choice, or the module's suggestion, among the rows that can still be chosen.
     public func checked(_ group: Row) -> Set<String> {
         guard let selection = group.selection else { return [] }
-        return (chosen[group.id] ?? Set(selection.checked)).intersection(selection.choices.keys)
+        if let bulk = selection.bulk { return Set(bulk.checked).intersection(selection.choices.keys) }
+        return (chosen[group.id] ?? (selection.session ? [] : Set(selection.checked))).intersection(selection.choices.keys)
     }
 
     /// The sections of a group's page whose header box is on.
     public func allChecked(_ group: Row) -> Set<String> {
         guard let selection = group.selection else { return [] }
-        return chosenAll[group.id] ?? Set(selection.sections.filter(\.all).map(\.id))
+        if let bulk = selection.bulk {
+            return Set(selection.sections.filter { $0.pageID.map(Set(bulk.all).contains) == true }.map(\.id))
+        }
+        guard selection.session else { return chosenAll[group.id] ?? Set(selection.sections.filter(\.all).map(\.id)) }
+        let ids = checked(group)
+        return Set(selection.sections.compactMap { section in
+            guard let pageID = section.pageID,
+                  sessionSectionPages[group.id]?[section.id] == pageID,
+                  let rows = sessionSections[group.id]?[section.id], !rows.isEmpty,
+                  rows.isSubset(of: ids) else { return nil }
+            return section.id
+        })
     }
 
     public func toggle(_ id: String, in group: Row) {
+        guard group.selection?.choices[id] != nil else { return }
+        if group.selection?.bulkResolver != nil {
+            queueBulkChange("toggle", in: group, toggledID: id)
+            return
+        }
         var ids = checked(group)
         var all = allChecked(group)
         if ids.contains(id) {
@@ -204,10 +340,45 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The header box of a section: checks every row of it that can be chosen, or clears them.
     public func toggleAll(_ sectionID: String, in group: Row) {
         guard let selection = group.selection, let section = selection.sections.first(where: { $0.id == sectionID }) else { return }
+        guard section.unavailableReason == nil else { return }
+        if selection.bulkResolver != nil {
+            queueBulkChange("toggleAll", in: group, scopePageID: section.pageID, ids: section.pageID == nil ? section.rows : [])
+            return
+        }
+        if let pageID = section.pageID {
+            let key = group.id + ":" + sectionID
+            let cancel = selectingSections.contains(key)
+            invalidatePendingSelections()
+            guard !cancel else { return }
+            selectingSections.insert(key)
+            let generation = selectionGeneration
+            Task { [weak self] in
+                guard let self else { return }
+                defer { if self.selectionGeneration == generation { self.selectingSections.remove(key) } }
+                guard let page = await self.module?.page(id: pageID, context: self.context()),
+                      let inventory = page.selection, inventory.scope == selection.scope else {
+                    if self.state == .ready, self.selectionGeneration == generation {
+                        self.lastResult = .failed(String(localized: "This selection is unavailable. Refresh and try again."))
+                    }
+                    return
+                }
+                guard self.state == .ready, self.screenIsVisible, self.selectionGeneration == generation else { return }
+                var resolved = selection
+                resolved.choices = inventory.choices
+                resolved.reviewed = inventory.reviewed
+                resolved.origins = inventory.origins
+                resolved.sections = [.init(id: sectionID, title: section.title, rows: Array(inventory.choices.keys))]
+                self.sessionSections[group.id, default: [:]][sectionID] = Set(inventory.choices.keys)
+                self.sessionSectionPages[group.id, default: [:]][sectionID] = pageID
+                var complete = group; complete.children = []; complete.selection = resolved
+                self.toggleAll(sectionID, in: self.selectionGroup(complete))
+            }
+            return
+        }
         var ids = checked(group)
         var all = allChecked(group)
         let rows = Set(section.rows).intersection(selection.choices.keys)
-        if all.contains(sectionID) || (!rows.isEmpty && rows.isSubset(of: ids)) {
+        if (!selection.session && all.contains(sectionID)) || (!rows.isEmpty && rows.isSubset(of: ids)) {
             ids.subtract(rows)
             all.remove(sectionID)
         } else {
@@ -217,18 +388,158 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         choose(ids, all: all, in: group)
     }
 
+    /// Visible checkbox membership comes from the frozen snapshot, never from a live category predicate.
+    public func choosableIDs(_ group: Row) -> Set<String> {
+        guard let selection = group.selection else { return [] }
+        let ids = Set(selection.choices.keys)
+        guard group.selection?.bulk != nil else { return ids }
+        return ids.intersection(bulkVisible[group.id] ?? [])
+    }
+
+    public var bulkMembershipKey: [String] {
+        guard let group = activeSelection, let bulk = group.selection?.bulk else { return [] }
+        return [bulk.token, String(bulkMembershipRevision)] + groupPath + (group.selection?.choices.keys.sorted() ?? [])
+    }
+
+    public func refreshBulkMembership() async {
+        guard let group = activeSelection, let selection = group.selection,
+              let bulk = selection.bulk, let prefix = selection.bulkResolver else { return }
+        let visible = Set(selection.choices.keys), sections = Set(selection.sections.compactMap(\.pageID))
+        guard !visible.isSubset(of: bulkVisible[group.id] ?? []) || !sections.isSubset(of: bulkSections[group.id] ?? []) else { return }
+        let generation = selectionGeneration
+        let request = SelectionBulkRequest(token: bulk.token, visible: visible.sorted(), sections: sections.sorted())
+        guard let page = await module?.page(id: requestPageID(request, prefix: prefix), context: context()),
+              let snapshot = page.selection?.bulk else {
+            if selectionGeneration == generation, state == .ready {
+                lastResult = .failed(String(localized: "This selection is unavailable. Refresh and try again."))
+            }
+            return
+        }
+        guard snapshot.token == bulk.token, selectionGeneration == generation,
+              sessionBulk[group.id]?.token == bulk.token, state == .ready else { return }
+        bulkVisible[group.id] = visible; bulkSections[group.id] = sections
+        sessionBulk[group.id] = snapshot
+    }
+
+    private func requestPageID(_ request: SelectionBulkRequest, prefix: String) -> String {
+        prefix + String(request.pageID.dropFirst("selection:".count))
+    }
+
+    /// Serial edits use the last accepted token. Navigation and actions invalidate their whole pending generation.
+    private func queueBulkChange(_ operation: String, in group: Row, scopePageID: String? = nil,
+                                 toggledID: String? = nil, ids: [String] = []) {
+        guard let selection = group.selection, let prefix = selection.bulkResolver else { return }
+        let key = group.id + ":" + (scopePageID ?? toggledID ?? ids.joined(separator: "\n"))
+        if operation == "toggleAll" {
+            let cancel = selectingSections.contains(key)
+            invalidatePendingSelections()
+            guard !cancel else { return }
+            selectingSections.insert(key)
+        } else if !selectingSections.isEmpty { invalidatePendingSelections() }
+        let generation = selectionGeneration, previous = bulkEdit
+        bulkEdit = Task { [weak self] in
+            await previous?.value
+            guard let self, self.selectionGeneration == generation, self.state == .ready else { return }
+            defer { if self.selectionGeneration == generation { self.selectingSections.remove(key) } }
+            let current = self.sessionBulk[group.id]
+            let explicit = current == nil ? Array(self.chosen[group.id] ?? []).sorted() : ids
+            let request = SelectionBulkRequest(token: current?.token, operation: operation, scopePageID: scopePageID,
+                toggledID: toggledID, ids: explicit.isEmpty ? ids : explicit,
+                reviewed: selection.reviewed, origins: selection.origins,
+                visible: selection.choices.keys.sorted(), sections: selection.sections.compactMap(\.pageID))
+            guard let page = await self.module?.page(id: self.requestPageID(request, prefix: prefix), context: self.context()),
+                  let snapshot = page.selection?.bulk, page.selection?.scope == selection.scope else {
+                if self.selectionGeneration == generation, self.state == .ready {
+                    self.lastResult = .failed(String(localized: "This selection is unavailable. Refresh and try again."))
+                }
+                return
+            }
+            guard self.selectionGeneration == generation, self.state == .ready, self.screenIsVisible else { return }
+            self.sessionScopes.insert(group.id)
+            var template = group; template.children = []
+            template.selection?.choices = [:]; template.selection?.reviewed = [:]; template.selection?.origins = [:]
+            template.selection?.sections = []; template.selection?.bulk = snapshot
+            self.sessionGroup = template
+            self.chosen[group.id] = []; self.scopedChoices[group.id] = [:]
+            self.scopedReviewed[group.id] = [:]; self.scopedOrigins[group.id] = [:]
+            self.bulkVisible[group.id] = Set(request.visible); self.bulkSections[group.id] = Set(request.sections)
+            self.sessionBulk[group.id] = snapshot
+        }
+    }
+
     /// Keeps the choice for the page and, when the module keeps it (`Selection.save`), sends it, quietly.
     private func choose(_ ids: Set<String>, all: Set<String>, in group: Row) {
+        invalidatePendingSelections()
+        if let selection = group.selection, selection.scope != nil, selection.save == nil {
+            if selection.session {
+                sessionScopes.insert(group.id)
+                var template = group; template.children = []
+                template.selection?.choices = [:]; template.selection?.reviewed = [:]; template.selection?.origins = [:]
+                template.selection?.sections = []
+                sessionGroup = template
+            }
+            else { ephemeralScopes.insert(group.id) }
+            if selection.partial || selection.session {
+                scopedChoices[group.id] = selection.choices.filter { ids.contains($0.key) }
+                scopedReviewed[group.id] = selection.reviewed.filter { ids.contains($0.key) }
+                scopedOrigins[group.id] = selection.origins.filter { ids.contains($0.key) }
+            }
+        }
         chosen[group.id] = ids
-        chosenAll[group.id] = all
+        chosenAll[group.id] = group.selection?.session == true ? [] : all
         guard let save = group.selection?.save else { return }
         let parameters = ["ids": Selection.parameter(ids.sorted()), "all": Selection.parameter(all.sorted())]
         Task { await perform(save, extraParameters: parameters, quiet: true) }
     }
 
+    /// A refreshed visible row that loses eligibility cannot reappear in the retained selection later.
+    private func reconcileSelection(_ page: Screen) {
+        if let selection = page.selection, let scope = selection.scope, let bulk = selection.bulk {
+            sessionBulk[scope] = bulk
+            bulkVisible[scope] = Set(selection.choices.keys)
+            bulkSections[scope] = Set(selection.sections.compactMap(\.pageID))
+        }
+        func reconcile(_ selection: Selection?, rows: [Row]) {
+            guard let selection, selection.session, let scope = selection.scope else { return }
+            let invalid = Set(rows.map(\.id)).subtracting(selection.choices.keys)
+            guard !invalid.isEmpty else { return }
+            scopedChoices[scope] = scopedChoices[scope]?.filter { !invalid.contains($0.key) }
+            scopedReviewed[scope] = scopedReviewed[scope]?.filter { !invalid.contains($0.key) }
+            scopedOrigins[scope] = scopedOrigins[scope]?.filter { !invalid.contains($0.key) }
+            chosen[scope]?.subtract(invalid)
+        }
+        func rows(_ widgets: [ScreenWidget]) -> [Row] {
+            widgets.flatMap { widget -> [Row] in
+                if case let .list(list) = widget { return list.rows }
+                if case let .section(section) = widget { return rows(section.widgets) }
+                return []
+            }
+        }
+        reconcile(page.selection, rows: rows(page.widgets))
+        for segment in page.hero?.segments ?? [] { reconcile(segment.selection, rows: segment.items) }
+    }
+
+    private func forgetFinishedChoices(_ ids: Set<String>) {
+        if !ids.isEmpty {
+            bulkMembershipRevision += 1
+            for scope in sessionBulk.keys {
+                bulkVisible[scope] = []; bulkSections[scope] = []
+            }
+        }
+        for scope in Array(scopedChoices.keys) {
+            scopedChoices[scope] = scopedChoices[scope]?.filter { !ids.contains($0.key) }
+        }
+        for scope in Array(chosen.keys) {
+            chosen[scope]?.subtract(ids)
+        }
+        for scope in Array(scopedReviewed.keys) { scopedReviewed[scope] = scopedReviewed[scope]?.filter { !ids.contains($0.key) } }
+        for scope in Array(scopedOrigins.keys) { scopedOrigins[scope] = scopedOrigins[scope]?.filter { !ids.contains($0.key) } }
+    }
+
     private var preparingForUninstall = false
 
     func beginUninstall() {
+        invalidatePendingSelections()
         preparingForUninstall = true
         autoRefresh?.cancel()
         autoRefresh = nil
@@ -302,6 +613,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     /// Drops the module's UI state. The loaded code stays in memory (bundles cannot be unloaded safely); it is simply not called.
     public func deactivate() {
+        cancelRequestedPage()
+        invalidatePendingSelections()
         if case .incompatible = state { return }
         state = .off
         autoRefresh?.cancel()
@@ -316,6 +629,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         pageIDs = [:]
         pageUse = []
         groupPath = []
+        sessionScopes = []; sessionGroup = nil; scopedReviewed = [:]; scopedOrigins = [:]; sessionSections = [:]; sessionSectionPages = [:]
+        sessionBulk = [:]; bulkVisible = [:]; bulkSections = [:]; bulkEdit = nil
+        chosen = [:]; chosenAll = [:]; scopedChoices = [:]; ephemeralScopes = []
     }
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
@@ -324,6 +640,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// module has no `status` and reads the Mac in full: each one filled the page's button and pulsed its background, every five
     /// seconds while Siri's models were being freed (2026-10-19).
     public func refresh(reload: Bool = false, quiet: Bool = false, following: Bool = false) async {
+        invalidatePendingSelections()
         guard !preparingForUninstall, state == .ready, let module else { return }
         guard !quiet || !performing else { return }
         // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
@@ -354,7 +671,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 updateBusy()
             }
         }
-        if reload { await module.invalidate() }
+        if reload { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
         // What the module says of its progress fills the Loading button (`LoadFill.reported`).
         let reports: LoadProgressSink = { [weak self] fraction in
             Task { @MainActor in
@@ -390,9 +707,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             settings.setLastTile(newTile, module: id)
         }
         if tileIsStale { tileIsStale = false }
-        if let newScreen, screen != newScreen { screen = newScreen; invalidateClosedPages() }
+        if let newScreen {
+            reconcileSelection(newScreen)
+            if screen != newScreen { screen = newScreen; invalidateClosedPages() }
+        }
         if reload { invalidateClosedPages() }
         await refreshPages()
+        await openRequestedPage()
         scheduleAutoRefresh()
     }
 
@@ -432,6 +753,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// left to do.
     @discardableResult
     public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false, rowID: String? = nil) async -> ActionResult? {
+        invalidatePendingSelections()
         // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
         // both write the module's undo journal.
         let previous = lastAction
@@ -479,6 +801,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func setWatched(_ watched: Bool, screenVisible: Bool = true) {
         let openedPage = watched && screenVisible && !screenIsVisible
         guard watched != isWatched || screenVisible != screenIsVisible else { return }
+        if !watched || !screenVisible { cancelRequestedPage() }
+        invalidatePendingSelections()
         isWatched = watched
         screenIsVisible = screenVisible
         if !watched {
@@ -571,15 +895,31 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
         }
         lastResult = nil
+        invalidatePendingSelections()
         actionGeneration += 1
         let generation = actionGeneration
         let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new }, rowID: rowID)
+        let visibleIDs = activeSelection.map { Set($0.selection?.choices.keys.map { $0 } ?? []) } ?? []
+        let completed = FinishedChoiceProgress(allowed: request.parameters["selectionToken"] == nil ? nil : visibleIDs)
         let result = await module.perform(request, context: context()) { [weak self] update in
             guard !quiet else { return }
+            completed.record(update.finished)
             Task { @MainActor in
                 guard let self, self.performing, self.actionGeneration == generation else { return }
                 self.progress = update
-                if !update.finished.isEmpty, Set(update.finished) != self.finishedRows { self.finishedRows = Set(update.finished) }
+                if !update.finished.isEmpty, Set(update.finished) != self.finishedRows {
+                    self.finishedRows = Set(update.finished)
+                    self.forgetFinishedChoices(self.finishedRows)
+                }
+            }
+        }
+        // A synchronous module may finish before its main-actor progress tasks run.
+        // Keep successful removals out of later pages and button totals in that case too.
+        if !quiet { forgetFinishedChoices(completed.ids) }
+        if result.outcome == .succeeded, let token = request.parameters["selectionToken"] {
+            for scope in Array(sessionBulk.keys) where sessionBulk[scope]?.token == token {
+                sessionBulk[scope] = nil; bulkVisible[scope] = nil; bulkSections[scope] = nil
+                if sessionGroup?.id == scope { sessionGroup?.selection?.bulk = nil }
             }
         }
         // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
@@ -609,6 +949,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         if let presentation = result.presentation {
             if tile != presentation.tile { tile = presentation.tile; settings.setLastTile(presentation.tile, module: id) }
+            reconcileSelection(presentation.screen)
             if screen != presentation.screen { screen = presentation.screen }
             invalidateClosedPages()
             await refreshPages(all: true)

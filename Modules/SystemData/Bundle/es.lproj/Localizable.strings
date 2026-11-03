@@ -15,6 +15,7 @@
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "Una copia de la app que macOS hizo al comprobarla. Comparte espacio con la app, así que solo se libera lo que dejó una versión anterior.";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "Una imagen de restauración de macOS. Cuando el Mac, el dispositivo o la máquina virtual para el que se descargó esté configurado, se puede eliminar.";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "El disco y el estado de una máquina virtual. Elimina las que ya no uses desde la app de virtualización.";
+"All done" = "Completado";
 "All users" = "Todos los usuarios";
 "Allow" = "Permitir";
 "Allow Full Disk Access to see everything" = "Permite el acceso total al disco para verlo todo";

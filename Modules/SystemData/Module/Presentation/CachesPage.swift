@@ -122,7 +122,7 @@ enum CachesPage {
         }
 
         // Developer tools' caches; those in ~/Library/Developer are System Settings' Developer, in no System Data item.
-        for cache in snapshot.developerCaches {
+        for cache in snapshot.developerCaches where cache.bytes >= SystemDataScreenBuilder.worthARow {
             var entry = CacheEntry(id: cache.id, title: cache.title, bytes: cache.bytes, paths: cache.paths, source: .developer,
                                    recommended: cache.recommended, reason: cache.reason, within: containingItem(cache.paths.first, report))
             entry.owners = cache.owners

@@ -16,12 +16,15 @@ public final class AppRouter: ObservableObject {
 
     @Published private(set) var request: Request?
     private var pending: Destination?
+    private var pendingPage: String?
+    func takePage() -> String? { defer { pendingPage = nil }; return pendingPage }
     private var counter = 0
     /// SwiftUI's `openWindow`, handed over by the window when it appears: AppKit code has no other way to open a SwiftUI window.
     var openWindow: ((String) -> Void)?
 
     /// Brings MacSpace forward, opening its window if it is closed, and then the page for `destination`, if any.
-    public func open(_ destination: Destination? = nil) {
+    public func open(_ destination: Destination? = nil, page: String? = nil) {
+        pendingPage = page
         // Running unseen in the background, MacSpace has no Dock icon: it comes back with the window.
         BackgroundPresence.shared.show()
         Self.bringForward()
@@ -164,7 +167,7 @@ public final class StatusItemController: NSObject {
 
     @objc private func openModule(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
-        AppRouter.shared.open(.module(id))
+        AppRouter.shared.open(id == "com.macspace.disk-map" ? .storage : .module(id))
     }
 
     @objc private func openApp() { AppRouter.shared.open() }

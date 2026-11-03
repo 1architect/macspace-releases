@@ -1618,5 +1618,50 @@
   "未找到",
   "見つかりません",
   "찾을 수 없음"
+ ],
+ "Other folders": [
+  "Outras pastas",
+  "Autres dossiers",
+  "Otras carpetas",
+  "Weitere Ordner",
+  "其他文件夹",
+  "その他のフォルダ",
+  "기타 폴더"
+ ],
+ "Move files to Trash": [
+  "Mover arquivos para o Lixo",
+  "Placer les fichiers dans la corbeille",
+  "Mover archivos a la Papelera",
+  "Dateien in den Papierkorb legen",
+  "将文件移到废纸篓",
+  "ファイルをゴミ箱に入れる",
+  "파일을 휴지통으로 이동"
+ ],
+ "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.": [
+  "Desativado por padrão. Quando desativado, os arquivos selecionados em Disco são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
+  "Désactivé par défaut. Les fichiers sélectionnés dans Disque sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
+  "Desactivado por defecto. Los archivos seleccionados en Disco se eliminan permanentemente. La desinstalación y las cachés siguen sus propias reglas.",
+  "Standardmäßig aus. Ausgewählte Dateien in Festplatte werden dann endgültig gelöscht. Deinstallation und Cache-Bereinigung haben eigene Regeln.",
+  "默认关闭。关闭时，磁盘中选定的文件会被永久删除。应用卸载和缓存清理采用各自的规则。",
+  "初期設定はオフです。オフの場合、ディスクで選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュの削除は別のルールに従います。",
+  "기본값은 꺼짐입니다. 꺼져 있으면 디스크에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 별도 규칙을 따릅니다。"
+ ],
+ "This selection is unavailable. Refresh and try again.": [
+  "Esta seleção está indisponível. Atualize e tente novamente.",
+  "Cette sélection est indisponible. Actualisez et réessayez.",
+  "Esta selección no está disponible. Actualiza y vuelve a intentarlo.",
+  "Diese Auswahl ist nicht verfügbar. Aktualisieren und erneut versuchen.",
+  "此选择不可用。请刷新后重试。",
+  "この選択は利用できません。更新して再試行してください。",
+  "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요."
+ ],
+ "%lld selected files": [
+  "%lld arquivos selecionados",
+  "%lld fichiers sélectionnés",
+  "%lld archivos seleccionados",
+  "%lld ausgewählte Dateien",
+  "已选择%lld个文件",
+  "%lld個の選択したファイル",
+  "선택한 파일 %lld개"
  ]
 }

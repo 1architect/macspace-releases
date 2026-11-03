@@ -11,6 +11,7 @@
 "%lld files" = "%lld個のファイル";
 "%lld items" = "%lld項目";
 "%lld needed" = "%lld件必要";
+"%lld selected files" = "%lld個の選択したファイル";
 "%lld smaller" = "ほか%lld個の小さい項目";
 "%lld%% of %@" = "%lld%%（全体：%@）";
 ", beta" = "、ベータ版";
@@ -93,6 +94,7 @@
 "Move MacSpace to the Applications folder, then reopen it." = "MacSpaceを「アプリケーション」に移動し、開き直してください。";
 "Move MacSpace to the Trash from Applications." = "「アプリケーション」からMacSpaceをゴミ箱に移動してください。";
 "Move MacSpace to your Applications folder first." = "先にMacSpaceを「アプリケーション」に移動してください。";
+"Move files to Trash" = "ファイルをゴミ箱に入れる";
 "Needed" = "必要";
 "Needed to measure everything on the disk." = "ディスク全体の測定に必要です。";
 "Needs %@" = "%@が必要";
@@ -110,11 +112,13 @@
 "Nothing to free" = "解放できるものはありません";
 "Notifications" = "通知";
 "OK" = "OK";
+"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "初期設定はオフです。オフの場合、ディスクで選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュの削除は別のルールに従います。";
 "Open Login Items" = "ログイン項目を開く";
 "Open MacSpace" = "MacSpaceを開く";
 "Open Panel" = "パネルを開く";
 "Open System Settings" = "システム設定を開く";
 "Open at login" = "ログイン時に開く";
+"Other folders" = "その他のフォルダ";
 "Permissions" = "権限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "「ヘルパーをインストール」を押してください。認識されない場合はターミナルで /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register を実行し、表示されたメッセージを送ってください。";
 "Privileged helper" = "特権ヘルパー";
@@ -148,6 +152,7 @@
 "Theme" = "テーマ";
 "This build of MacSpace does not contain the helper." = "このMacSpaceにはヘルパーが含まれていません。";
 "This copy of MacSpace is incomplete" = "このMacSpaceのコピーは不完全です";
+"This selection is unavailable. Refresh and try again." = "この選択は利用できません。更新して再試行してください。";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "リストのMacSpaceをオンにしてください。なければ、このアイコンをドラッグしてください。";
 "Turn on MacSpace under Allow in the Background." = "「バックグラウンドでの実行を許可」でMacSpaceをオンにしてください。";
 "Uninstall" = "アンインストール";

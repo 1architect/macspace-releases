@@ -16,7 +16,9 @@ final class BlockGeometryCacheTests: XCTestCase {
         _ = cache.value(segments: changed, size: size)
         XCTAssertEqual(cache.computations, 3)
         let shades = BlockLayout.shades(in: first.blocks)
-        for i in [0, 1, 400, 999] { XCTAssertEqual(shades[i], BlockLayout.shade(at: i, in: first.blocks)) }
-        XCTAssertEqual(first.blocks.count, segments.count, "Navigable folders must remain selectable")
+        for i in shades.indices { XCTAssertEqual(shades[i], BlockLayout.shade(at: i, in: first.blocks)) }
+        XCTAssertEqual(first.blocks.count, 1, "Tiny folders share the normal navigable aggregate")
+        let destinations = first.blocks.flatMap { block in block.segment.pageID.map { [$0] } ?? block.segment.items.compactMap(\.pageID) }
+        XCTAssertEqual(Set(destinations), Set(segments.compactMap(\.pageID)), "Every original folder remains reachable")
     }
 }

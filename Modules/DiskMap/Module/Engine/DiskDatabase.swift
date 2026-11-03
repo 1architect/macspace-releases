@@ -1,11 +1,25 @@
 import Foundation
 import Darwin
 import SQLite3
+import MacSpaceSdk
+import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 
-/// The complete index stays on disk. Both SQLite's page cache and every query result are bounded independently of disk size.
+/// Directory measurements and eligible large files persist; smaller files are a bounded, disposable query cache.
 final class DiskDatabase: @unchecked Sendable {
     private var db: OpaquePointer?
+    var inventoryIncludes: (String) -> Bool
+    private(set) var compact = false
+    private(set) var directoryParentIDs = true
+    var smallerScope: String?
+    var smallerIncomplete = false
+    var smallerHasMore = false
+    var smallerWindowStart: String?
+    var smallerWindowEnd: String?
+    var smallerRevision: UInt64 = 0
+    var smallerAt = Date.distantPast
+    var phase: ((String, Double, Int) -> Void)?
+    var smallerLimit = 20_000
     let root: String
     private var prepared: [String: OpaquePointer] = [:]
     private var batching = false
@@ -13,8 +27,9 @@ final class DiskDatabase: @unchecked Sendable {
     var unpublished = false
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     struct Failure: Error { var message: String }
-    init(url: URL, root: String) throws {
+    init(url: URL, root: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
         self.root = root
+        self.inventoryIncludes = { FileReviewPolicy.includes($0, home: home) }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else { throw Failure(message: "Cannot open disk index") }
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
@@ -26,23 +41,54 @@ final class DiskDatabase: @unchecked Sendable {
         try execute("PRAGMA temp_store=FILE")
         try execute("PRAGMA journal_size_limit=1048576")
         try execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), data BLOB NOT NULL)")
-        try execute("CREATE TABLE IF NOT EXISTS dirs (path TEXT PRIMARY KEY, parent TEXT NOT NULL, direct INTEGER NOT NULL, total INTEGER NOT NULL, readable INTEGER NOT NULL, uid INTEGER, bundle TEXT) WITHOUT ROWID")
-        try execute("CREATE INDEX IF NOT EXISTS dirs_parent ON dirs(parent)")
-        try execute("CREATE INDEX IF NOT EXISTS dirs_depth ON dirs(length(path) DESC,path)")
-        try execute("CREATE INDEX IF NOT EXISTS dirs_apps ON dirs(path,total) WHERE substr(path,-4)='.app'")
-        try execute("CREATE TABLE IF NOT EXISTS files (path TEXT PRIMARY KEY, parent TEXT NOT NULL, bytes INTEGER NOT NULL, logical INTEGER NOT NULL, uid INTEGER, link TEXT NOT NULL DEFAULT '') WITHOUT ROWID")
-        try execute("CREATE INDEX IF NOT EXISTS files_parent ON files(parent)")
-        try execute("CREATE INDEX IF NOT EXISTS files_links ON files(link,path) WHERE link<>''")
+        compact = try query("SELECT 1 FROM sqlite_master WHERE name='file_details' AND type='table'") == 0
+        if compact { try compactSchema() }
+        try query("PRAGMA table_info(dirs)") { if Self.text($0, 1) == "parent" { directoryParentIDs = Self.text($0, 2) == "INTEGER" } }
+        try execute("CREATE TEMP TABLE IF NOT EXISTS pending_parents(path TEXT PRIMARY KEY,parent TEXT) WITHOUT ROWID")
         try execute("CREATE TABLE IF NOT EXISTS claims (id INTEGER PRIMARY KEY, data BLOB NOT NULL UNIQUE)")
         try execute("CREATE TABLE IF NOT EXISTS ownership (path TEXT NOT NULL, claim INTEGER NOT NULL, PRIMARY KEY(path,claim)) WITHOUT ROWID")
         try execute("CREATE TEMP TABLE IF NOT EXISTS dirty (path TEXT PRIMARY KEY) WITHOUT ROWID")
+        try createIndexes()
+        if ProcessInfo.processInfo.environment["MACSPACE_DISK_METRICS"] == "1" {
+            phase = { name, seconds, directories in
+                FileHandle.standardError.write(Data("DISK_PHASE phase=\(name) seconds=\(seconds) directories=\(directories)\n".utf8))
+            }
+        }
+    }
+    private static let indexes: [(String, String)] = [
+        ("dirs_parent", "dirs(parent)"), ("dirs_depth", "dirs(length(path) DESC,id)"),
+        ("dirs_apps", "dirs(path,total) WHERE substr(path,-4)='.app'"),
+        ("dirs_bundles", "dirs(bundle) WHERE bundle<>''"),
+        ("entries_links", "entries(link,parent,name) WHERE link<>''"),
+        ("entries_large", "entries(logical DESC,parent,name) WHERE inventory=1")
+    ]
+    private func compactSchema() throws {
+        // A directory's path exists once; every file stores only its integer parent and leaf name.
+        try execute("CREATE TABLE IF NOT EXISTS dirs (id INTEGER PRIMARY KEY,path TEXT NOT NULL UNIQUE,parent INTEGER NOT NULL,direct INTEGER NOT NULL,total INTEGER NOT NULL,readable INTEGER NOT NULL,uid INTEGER,bundle TEXT)")
+        try execute("CREATE TABLE IF NOT EXISTS entries (parent INTEGER NOT NULL,name TEXT NOT NULL,bytes INTEGER NOT NULL,logical INTEGER NOT NULL,uid INTEGER,link TEXT NOT NULL,category TEXT NOT NULL,modified INTEGER,kind TEXT NOT NULL,inventory INTEGER NOT NULL,PRIMARY KEY(parent,name)) WITHOUT ROWID")
+        let projection = "SELECT CASE WHEN d.path='/' THEN '/'||e.name ELSE d.path||'/'||e.name END AS path,d.path AS parent,e.bytes,e.logical,e.uid,e.link,e.category,e.modified,e.kind FROM entries e JOIN dirs d ON d.id=e.parent"
+        try execute("CREATE VIEW IF NOT EXISTS files AS " + projection)
+        try execute("CREATE VIEW IF NOT EXISTS file_details AS " + projection + " WHERE e.inventory=1")
+        try execute("CREATE TRIGGER IF NOT EXISTS files_delete INSTEAD OF DELETE ON files BEGIN DELETE FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=OLD.parent) AND name=substr(OLD.path,length(OLD.parent)+CASE WHEN OLD.parent='/' THEN 1 ELSE 2 END); END")
+    }
+    /// Only an unpublished empty generation uses bulk collection. Lookups are built once,
+    /// before summaries/publication; normal incremental writes retain all indexes.
+    func beginInitialCollection() throws {
+        for (name, _) in Self.indexes { try execute("DROP INDEX IF EXISTS " + name) }
+    }
+    func createIndexes(progress: LoadProgressSink? = nil) throws {
+        guard compact else { return }
+        for (n, entry) in Self.indexes.enumerated() {
+            try execute("CREATE INDEX IF NOT EXISTS " + entry.0 + " ON " + entry.1)
+            progress?(Double(n + 1) / Double(Self.indexes.count))
+        }
     }
     deinit { for value in prepared.values { sqlite3_finalize(value) }; sqlite3_close(db) }
     func execute(_ sql: String) throws {
         guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw error() }
     }
     private func error() -> Failure { Failure(message: db.map { String(cString: sqlite3_errmsg($0)) } ?? "Closed index") }
-    enum Value { case text(String), number(UInt64), optional(UInt32?), data(Data) }
+    enum Value { case text(String), number(UInt64), optional(UInt32?), data(Data), date(Date?) }
     @discardableResult
     func query(_ sql: String, _ values: [Value] = [], row: (OpaquePointer) throws -> Void = { _ in }) throws -> Int {
         let stmt: OpaquePointer
@@ -61,6 +107,9 @@ final class DiskDatabase: @unchecked Sendable {
             case let .number(value): sqlite3_bind_int64(stmt, position, Int64(clamping: value))
             case let .optional(value): if let value { sqlite3_bind_int64(stmt, position, Int64(value)) } else { sqlite3_bind_null(stmt, position) }
             case let .data(value): _ = value.withUnsafeBytes { sqlite3_bind_blob(stmt, position, $0.baseAddress, Int32($0.count), transient) }
+            case let .date(value):
+                if let value { sqlite3_bind_double(stmt, position, value.timeIntervalSince1970) }
+                else { sqlite3_bind_null(stmt, position) }
             }
         }
         var count = 0
@@ -82,7 +131,10 @@ final class DiskDatabase: @unchecked Sendable {
         guard let slash = path.lastIndex(of: "/"), slash != path.startIndex else { return "/" }
         return String(path[..<slash])
     }
-    static func contains(_ path: String, below folder: String) -> Bool { path == folder || path.hasPrefix(folder == "/" ? "/" : folder + "/") }
+    static func contains(_ path: String, below folder: String) -> Bool {
+        guard path.hasPrefix("/"), !path.utf8.contains(0), !path.contains("//"), !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else { return false }
+        return path == folder || path.hasPrefix(folder == "/" ? "/" : folder + "/")
+    }
     func state() throws -> DiskIndex? {
         var result: DiskIndex?
         try query("SELECT data FROM state WHERE id=1") { result = try JSONDecoder().decode(DiskIndex.self, from: Self.data($0, 0)) }
@@ -91,6 +143,8 @@ final class DiskDatabase: @unchecked Sendable {
     func saveState(_ index: DiskIndex) throws {
         var metadata = DiskIndex(root: root)
         metadata.eventID = index.eventID; metadata.revision = index.revision; metadata.catalogRevision = index.catalogRevision; metadata.volumeUsed = index.volumeUsed
+        metadata.browseVersion = index.browseVersion
+        metadata.storageRevision = index.storageRevision; metadata.summaryVersion = index.summaryVersion
         try query("INSERT OR REPLACE INTO state VALUES(1,?)", [.data(try JSONEncoder().encode(metadata))])
     }
     func transaction<T>(_ body: () throws -> T) throws -> T {
@@ -103,20 +157,34 @@ final class DiskDatabase: @unchecked Sendable {
         catch { try? execute("ROLLBACK"); throw error }
     }
     func flushBatch() throws {
-        guard batching && writes >= 1024 else { return }
+        guard batching && writes >= 8192 else { return }
         try execute("COMMIT")
-        try execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        try execute("PRAGMA wal_checkpoint(PASSIVE)")
         writes = 0
         try execute("BEGIN IMMEDIATE")
     }
     func clearIncomplete() throws {
-        try execute("DELETE FROM dirs; DELETE FROM files; DELETE FROM claims; DELETE FROM ownership; DELETE FROM dirty")
+        try execute("DELETE FROM entries; DELETE FROM dirs; DELETE FROM claims; DELETE FROM ownership; DELETE FROM dirty; DELETE FROM pending_parents")
+    }
+    private func rememberParent(_ path: String) throws {
+        guard path != root else { return }
+        try query("INSERT OR IGNORE INTO pending_parents SELECT path,? FROM dirs WHERE path=? AND parent=0", [.text(Self.parent(path)), .text(path)])
     }
     func put(_ node: DiskDirectory) throws {
-        try query("INSERT OR REPLACE INTO dirs VALUES(?,?,?,?,?,?,?)", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.bytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? "")])
+        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET parent=excluded.parent,direct=excluded.direct,total=excluded.total,readable=excluded.readable,uid=excluded.uid,bundle=excluded.bundle", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.bytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? "")])
+        try rememberParent(node.path)
+    }
+    func ensureDirectory(_ path: String, ownerUID: UInt32? = nil) throws {
+        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),0,0,1,?,'') ON CONFLICT(path) DO UPDATE SET uid=COALESCE(dirs.uid,excluded.uid)", [.text(path), .text(path == root ? "" : Self.parent(path)), .optional(ownerUID)])
+        try rememberParent(path)
     }
     func put(_ file: DiskFile, link: String = "") throws {
-        try query("INSERT OR REPLACE INTO files VALUES(?,?,?,?,?,?)", [.text(file.path), .text(Self.parent(file.path)), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link)])
+        let eligible = file.logicalBytes >= DiskIndex.largeFileMinimum && file.bytes > 0 && file.ownerUID == getuid() && inventoryIncludes(file.path)
+        guard eligible || !link.isEmpty else { return }
+        try ensureDirectory(Self.parent(file.path))
+        try query("INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory", [
+            .text((file.path as NSString).lastPathComponent), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link),
+            .text(DiskCategory.inventoryCategory(file.path).rawValue), .date(file.modifiedAt), .text(""), .number(eligible ? 1 : 0), .text(Self.parent(file.path))])
     }
     func directory(_ path: String, contents: Bool = false) throws -> DiskDirectory? {
         var node: DiskDirectory?
@@ -124,14 +192,14 @@ final class DiskDatabase: @unchecked Sendable {
             node = DiskDirectory(path: Self.text($0, 0), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
         }
         if contents, node != nil {
-            try query("SELECT path FROM dirs WHERE parent=? ORDER BY path", [.text(path)]) { node?.folders.append(Self.text($0, 0)) }
-            node?.files = try files(parent: path)
+            try query("SELECT path FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) { node?.folders.append(Self.text($0, 0)) }
+            node?.files = try files(parent: path, limit: 200)
         }
         return node
     }
     func children(_ path: String) throws -> [String] {
         var paths: [String] = []
-        try query("SELECT path FROM dirs WHERE parent=? ORDER BY path", [.text(path)]) { paths.append(Self.text($0, 0)) }
+        try query("SELECT path FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) { paths.append(Self.text($0, 0)) }
         return paths
     }
     private func decodeFile(_ stmt: OpaquePointer) -> DiskFile {
@@ -139,10 +207,10 @@ final class DiskDatabase: @unchecked Sendable {
         if file.ownerUID == nil { var info = stat(); if lstat(file.path, &info) == 0 { file.ownerUID = info.st_uid } }
         return file
     }
-    func files(parent: String? = nil) throws -> [DiskFile] {
+    func files(parent: String? = nil, limit: Int = 200) throws -> [DiskFile] {
         var result: [DiskFile] = []
-        let sql = "SELECT path,bytes,logical,uid FROM files f WHERE logical>=100000000 AND bytes>0 AND (link='' OR path=(SELECT MIN(path) FROM files l WHERE l.link=f.link AND l.link<>''))" + (parent == nil ? "" : " AND parent=?") + " ORDER BY logical DESC,path DESC"
-        try query(sql, parent.map { [.text($0)] } ?? []) { result.append(decodeFile($0)) }
+        let sql = "SELECT path,bytes,logical,uid FROM file_details f WHERE logical>=100000000 AND bytes>0 AND " + countedDetails + (parent == nil ? "" : " AND parent=?") + " ORDER BY logical DESC,path DESC LIMIT " + String(max(1, min(limit, 200)))
+        try query(sql, parent.map { [.text($0)] } ?? []) { result.append(try reviewedFile(decodeFile($0))) }
         return result
     }
     func markTotals(_ path: String) throws {
@@ -154,30 +222,48 @@ final class DiskDatabase: @unchecked Sendable {
     }
     func linkParents(at path: String) throws -> [String] {
         var result: [String] = []
-        try query("SELECT DISTINCT parent FROM files WHERE link<>'' AND link IN (SELECT link FROM files WHERE parent=? AND link<>'')", [.text(path)]) { result.append(Self.text($0, 0)) }
+        try query("SELECT DISTINCT d.path FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND e.link IN (SELECT link FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?) AND link<>'')", [.text(path)]) { result.append(Self.text($0, 0)) }
         return result
     }
     func remove(_ path: String) throws {
-        let prefix = path == "/" ? "/" : path + "/", end = prefix + "\u{10ffff}"
+        let prefix = path == "/" ? "/" : path + "/", end = String(prefix.dropLast()) + "0"
         var links: [String] = []
-        try query("SELECT DISTINCT parent FROM files WHERE link<>'' AND link IN (SELECT link FROM files WHERE path=? OR (path>=? AND path<?))", [.text(path), .text(prefix), .text(end)]) { links.append(Self.text($0, 0)) }
+        let range: [Value] = [.text(path), .text(prefix), .text(end)]
+        try query("SELECT DISTINCT d.path FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND e.link IN (SELECT e.link FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND (d.path=? OR (d.path>=? AND d.path<?)))", range) { links.append(Self.text($0, 0)) }
         for parent in links { try markTotals(parent) }
-        try query("DELETE FROM files WHERE path=? OR (path>=? AND path<?)", [.text(path), .text(prefix), .text(end)])
-        try query("DELETE FROM dirs WHERE path=? OR (path>=? AND path<?)", [.text(path), .text(prefix), .text(end)])
+        try query("DELETE FROM entries WHERE parent IN (SELECT id FROM dirs WHERE path=? OR (path>=? AND path<?))", range)
+        try query("DELETE FROM dirs WHERE path=? OR (path>=? AND path<?)", range)
         try markTotals(Self.parent(path))
     }
-    func total(_ path: String) throws {
-        try query("UPDATE dirs SET total=direct+COALESCE((SELECT SUM(total) FROM dirs c WHERE c.parent=dirs.path),0)+COALESCE((SELECT SUM(bytes) FROM files f WHERE f.parent=dirs.path AND f.link<>'' AND f.path=(SELECT MIN(path) FROM files l WHERE l.link=f.link AND l.link<>'')),0) WHERE path=?", [.text(path)])
+    func updateLink(_ file: DiskFile, link: String) throws {
+        try query("SELECT path FROM files WHERE link=? AND link<>''", [.text(link)]) {
+            var alias = file; alias.path = Self.text($0, 0)
+            try put(alias, link: link)
+        }
     }
-    func reconcileTotals(all: Bool) throws {
+    func clearFiles(parent: String) throws {
+        try query("DELETE FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?)", [.text(parent)])
+    }
+    func total(_ path: String) throws {
+        try query("UPDATE dirs SET total=direct+COALESCE((SELECT SUM(total) FROM dirs c WHERE c.parent=dirs.id),0)+COALESCE((SELECT SUM(bytes) FROM entries e WHERE e.parent=dirs.id AND e.link<>'' AND (e.parent,e.name)=(SELECT l.parent,l.name FROM entries l WHERE l.link=e.link AND l.link<>'' ORDER BY l.parent,l.name LIMIT 1)),0) WHERE path=?", [.text(path)])
+    }
+    func reconcileTotals(all: Bool, progress: LoadProgressSink? = nil) throws {
+        try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM dirs p JOIN pending_parents q ON q.parent=p.path WHERE q.path=dirs.path),0) WHERE path IN (SELECT path FROM pending_parents); DELETE FROM pending_parents")
         if all {
-            var length = Int.max, last = ""
+            var depth: UInt64 = 2147483647, last: UInt64 = 0, done = 0, count = 0
+            try query("SELECT COUNT(*) FROM dirs") { count = Int(Self.number($0, 0)) }
             while true {
-                var batch: [String] = []
-                try query("SELECT path FROM dirs WHERE length(path)<? OR (length(path)=? AND path>?) ORDER BY length(path) DESC,path LIMIT 512", [.number(UInt64(length)), .number(UInt64(length)), .text(last)]) { batch.append(Self.text($0, 0)) }
+                var batch: [(String, UInt64)] = []
+                // Separate equal-depth and next-depth seeks: an OR/tuple cursor can restart a full index scan.
+                try query("SELECT path,id FROM dirs WHERE length(path)=? AND id>? ORDER BY id LIMIT 512", [.number(depth), .number(last)]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
+                if batch.count < 512 {
+                    try query("SELECT path,id FROM dirs WHERE length(path)<? ORDER BY length(path) DESC,id LIMIT ?", [.number(depth), .number(UInt64(512 - batch.count))]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
+                }
                 if batch.isEmpty { break }
-                for path in batch { try total(path) }
-                last = batch.last!; length = last.unicodeScalars.count
+                for (path, _) in batch { try total(path) }
+                last = batch.last!.1; depth = UInt64(batch.last!.0.unicodeScalars.count)
+                done += batch.count; progress?(0.25 + 0.75 * Double(done) / Double(max(count, 1)))
+                try Task.checkCancellation()
                 try flushBatch()
             }
         } else {
@@ -185,15 +271,46 @@ final class DiskDatabase: @unchecked Sendable {
         }
         try execute("DELETE FROM dirty")
     }
-    /// Import old framed records one at a time, never materializing the legacy dictionary.
-    func importLegacy(_ url: URL) throws {
-        try transaction {
-            let state = try DiskCache.stream(from: url, root: root, directory: { node in
-                try put(node); for file in node.files { try put(file) }; try flushBatch()
-            }, links: { id, files in for file in files { try put(file, link: id); try flushBatch() } }, claim: { _, _ in })
-            guard try directory(root) != nil else { throw Failure(message: "Incomplete imported index") }
-            try saveState(state)
+    func compactReviewIndex() throws {
+        if !compact {
+            try transaction {
+                // Keep old measurements and identity evidence. Only the redundant file representation changes.
+                try execute("ALTER TABLE dirs RENAME TO legacy_dirs")
+                try execute("ALTER TABLE files RENAME TO legacy_files")
+                try execute("ALTER TABLE file_details RENAME TO legacy_details")
+                try compactSchema()
+                try execute("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) SELECT path,0,direct,total,readable,uid,bundle FROM legacy_dirs")
+                try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM legacy_dirs l JOIN dirs p ON p.path=l.parent WHERE l.path=dirs.path),0)")
+                try query("SELECT path,bytes,logical,uid,link,modified FROM legacy_details WHERE logical>=100000000 OR link<>''") {
+                    let file = DiskFile(path: Self.text($0, 0), bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3), modifiedAt: sqlite3_column_type($0, 5) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double($0, 5)))
+                    try put(file, link: Self.text($0, 4))
+                }
+                // Some legacy hardlinks lacked detail rows; they still contribute to full-map physical totals.
+                try query("SELECT path,bytes,logical,uid,link FROM legacy_files WHERE link<>''") {
+                    let file = DiskFile(path: Self.text($0, 0), bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3))
+                    // Detail metadata wins when both legacy tables contained this name.
+                    var exists = false
+                    try query("SELECT 1 FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?) AND name=?", [.text(Self.parent(file.path)), .text((file.path as NSString).lastPathComponent)]) { _ in exists = true }
+                    if !exists { try put(file, link: Self.text($0, 4)) }
+                }
+                try execute("DROP TABLE legacy_details; DROP TABLE legacy_files; DROP TABLE legacy_dirs")
+                compact = true; directoryParentIDs = true
+                try createIndexes()
+                try execute("DROP TABLE IF EXISTS directory_stats")
+            }
         }
+        if !directoryParentIDs {
+            try transaction {
+                try execute("DROP TRIGGER IF EXISTS files_delete; DROP VIEW files; DROP VIEW file_details; ALTER TABLE dirs RENAME TO legacy_dirs")
+                try compactSchema()
+                try execute("INSERT INTO dirs SELECT id,path,0,direct,total,readable,uid,bundle FROM legacy_dirs")
+                try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM legacy_dirs l JOIN dirs p ON p.path=l.parent WHERE l.path=dirs.path),0); DROP TABLE legacy_dirs")
+                directoryParentIDs = true; try createIndexes()
+            }
+        }
+        try execute("DROP INDEX IF EXISTS dirs_depth; CREATE INDEX dirs_depth ON dirs(length(path) DESC,id)")
+        try execute("VACUUM")
+        try prepareBrowseMetadata()
     }
     func seal() throws { try execute("PRAGMA wal_checkpoint(TRUNCATE)") }
     func checkpoint() throws { try execute("PRAGMA wal_checkpoint(PASSIVE)"); try execute("PRAGMA shrink_memory") }

@@ -23,8 +23,8 @@
     "key" : "%@ freed",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:524",
-      "App\/Renderer\/ScreenView.swift:590"
+      "App\/Renderer\/ScreenView.swift:572",
+      "App\/Renderer\/ScreenView.swift:638"
     ],
     "table" : "App",
     "translations" : {
@@ -62,7 +62,7 @@
     "key" : "%@ in total",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:433"
+      "App\/Renderer\/ScreenView.swift:481"
     ],
     "table" : "App",
     "translations" : {
@@ -176,7 +176,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:546"
+      "Sdk\/Interface\/Widgets.swift:578"
     ],
     "table" : "App",
     "translations" : {
@@ -195,7 +195,7 @@
     "key" : "%lld needed",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:85"
+      "App\/Settings\/GeneralSettings.swift:89"
     ],
     "table" : "App",
     "translations" : {
@@ -210,11 +210,30 @@
     }
   },
   {
+    "id" : "App|%lld selected files",
+    "key" : "%lld selected files",
+    "kind" : "Text",
+    "places" : [
+      "App\/Renderer\/ScreenView.swift:697"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "%lld ausgewählte Dateien",
+      "en" : "%lld selected files",
+      "es" : "%lld archivos seleccionados",
+      "fr" : "%lld fichiers sélectionnés",
+      "ja" : "%lld個の選択したファイル",
+      "ko" : "선택한 파일 %lld개",
+      "pt-BR" : "%lld arquivos selecionados",
+      "zh-Hans" : "已选择%lld个文件"
+    }
+  },
+  {
     "id" : "App|%lld smaller",
     "key" : "%lld smaller",
     "kind" : "Chart part",
     "places" : [
-      "App\/Shell\/TileArt.swift:280"
+      "App\/Shell\/TileArt.swift:294"
     ],
     "table" : "App",
     "translations" : {
@@ -290,7 +309,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:546"
+      "Sdk\/Interface\/Widgets.swift:578"
     ],
     "table" : "App",
     "translations" : {
@@ -309,7 +328,7 @@
     "key" : "1 needed",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:85"
+      "App\/Settings\/GeneralSettings.swift:89"
     ],
     "table" : "App",
     "translations" : {
@@ -347,7 +366,7 @@
     "key" : "About MacSpace",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:151",
+      "App\/Shell\/MenuBarContent.swift:154",
       "App\/Main\/MacSpaceMain.swift:84"
     ],
     "table" : "App",
@@ -367,7 +386,7 @@
     "key" : "All done",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:517"
+      "App\/Renderer\/ScreenView.swift:565"
     ],
     "table" : "App",
     "translations" : {
@@ -424,7 +443,7 @@
     "key" : "Appearance",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:64"
+      "App\/Settings\/GeneralSettings.swift:65"
     ],
     "table" : "App",
     "translations" : {
@@ -557,8 +576,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:275",
-      "App\/Shell\/MainView.swift:300"
+      "App\/Shell\/MainView.swift:277",
+      "App\/Shell\/MainView.swift:302"
     ],
     "table" : "App",
     "translations" : {
@@ -635,7 +654,7 @@
     "key" : "Check Now",
     "kind" : "Button",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:113"
+      "App\/Settings\/GeneralSettings.swift:117"
     ],
     "table" : "App",
     "translations" : {
@@ -673,7 +692,7 @@
     "key" : "Check for updates automatically",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:112"
+      "App\/Settings\/GeneralSettings.swift:116"
     ],
     "table" : "App",
     "translations" : {
@@ -749,7 +768,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:302"
+      "App\/Shell\/MainView.swift:304"
     ],
     "table" : "App",
     "translations" : {
@@ -1019,7 +1038,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:190"
+      "App\/Shell\/MainView.swift:192"
     ],
     "table" : "App",
     "translations" : {
@@ -1152,7 +1171,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:188"
+      "App\/Shell\/MainView.swift:190"
     ],
     "table" : "App",
     "translations" : {
@@ -1228,7 +1247,7 @@
     "key" : "General",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:60"
+      "App\/Settings\/GeneralSettings.swift:61"
     ],
     "table" : "App",
     "translations" : {
@@ -1342,7 +1361,7 @@
     "key" : "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications.",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:71"
+      "App\/Settings\/GeneralSettings.swift:75"
     ],
     "table" : "App",
     "translations" : {
@@ -1475,8 +1494,8 @@
     "key" : "Loading",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:204",
-      "App\/Renderer\/ScreenView.swift:751"
+      "App\/Renderer\/ScreenView.swift:251",
+      "App\/Renderer\/ScreenView.swift:812"
     ],
     "table" : "App",
     "translations" : {
@@ -1497,7 +1516,7 @@
     "places" : [
       "App\/Settings\/AboutMacSpace.swift:15",
       "App\/Shell\/HomeView.swift:25",
-      "App\/Shell\/MenuBarContent.swift:101",
+      "App\/Shell\/MenuBarContent.swift:104",
       "App\/Updates\/UpdateController.swift:67",
       "App\/Main\/MacSpaceMain.swift:69"
     ],
@@ -1575,7 +1594,7 @@
     "key" : "MacSpace has not been tested on this release yet.",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:133"
+      "App\/Settings\/GeneralSettings.swift:137"
     ],
     "table" : "App",
     "translations" : {
@@ -1780,6 +1799,25 @@
     }
   },
   {
+    "id" : "App|Move files to Trash",
+    "key" : "Move files to Trash",
+    "kind" : "Title",
+    "places" : [
+      "App\/Settings\/GeneralSettings.swift:69"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Dateien in den Papierkorb legen",
+      "en" : "Move files to Trash",
+      "es" : "Mover archivos a la Papelera",
+      "fr" : "Placer les fichiers dans la corbeille",
+      "ja" : "ファイルをゴミ箱に入れる",
+      "ko" : "파일을 휴지통으로 이동",
+      "pt-BR" : "Mover arquivos para o Lixo",
+      "zh-Hans" : "将文件移到废纸篓"
+    }
+  },
+  {
     "id" : "App|Needed",
     "key" : "Needed",
     "kind" : "Message",
@@ -1822,7 +1860,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:548"
+      "App\/Registry\/ModuleHandle.swift:872"
     ],
     "table" : "App",
     "translations" : {
@@ -1841,7 +1879,7 @@
     "key" : "Needs attention",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/TileArt.swift:1032"
+      "App\/Shell\/TileArt.swift:1100"
     ],
     "table" : "App",
     "translations" : {
@@ -1917,7 +1955,7 @@
     "key" : "No modules are on",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:146"
+      "App\/Shell\/MenuBarContent.swift:149"
     ],
     "table" : "App",
     "translations" : {
@@ -1974,7 +2012,7 @@
     "key" : "Not in this build",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:119"
+      "App\/Settings\/GeneralSettings.swift:123"
     ],
     "table" : "App",
     "translations" : {
@@ -2069,7 +2107,7 @@
     "key" : "Notifications",
     "kind" : "Text",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:148"
+      "App\/Settings\/GeneralSettings.swift:152"
     ],
     "table" : "App",
     "translations" : {
@@ -2101,6 +2139,25 @@
       "ko" : "확인",
       "pt-BR" : "OK",
       "zh-Hans" : "好"
+    }
+  },
+  {
+    "id" : "App|Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
+    "key" : "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
+    "kind" : "Message",
+    "places" : [
+      "App\/Settings\/GeneralSettings.swift:69"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Standardmäßig aus. Ausgewählte Dateien in Festplatte werden dann endgültig gelöscht. Deinstallation und Cache-Bereinigung haben eigene Regeln.",
+      "en" : "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
+      "es" : "Desactivado por defecto. Los archivos seleccionados en Disco se eliminan permanentemente. La desinstalación y las cachés siguen sus propias reglas.",
+      "fr" : "Désactivé par défaut. Les fichiers sélectionnés dans Disque sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
+      "ja" : "初期設定はオフです。オフの場合、ディスクで選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュの削除は別のルールに従います。",
+      "ko" : "기본값은 꺼짐입니다. 꺼져 있으면 디스크에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 별도 규칙을 따릅니다。",
+      "pt-BR" : "Desativado por padrão. Quando desativado, os arquivos selecionados em Disco são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
+      "zh-Hans" : "默认关闭。关闭时，磁盘中选定的文件会被永久删除。应用卸载和缓存清理采用各自的规则。"
     }
   },
   {
@@ -2146,7 +2203,7 @@
     "key" : "Open Panel",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:152"
+      "App\/Shell\/MenuBarContent.swift:155"
     ],
     "table" : "App",
     "translations" : {
@@ -2185,7 +2242,7 @@
     "key" : "Open at login",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:75"
+      "App\/Settings\/GeneralSettings.swift:79"
     ],
     "table" : "App",
     "translations" : {
@@ -2200,11 +2257,30 @@
     }
   },
   {
+    "id" : "App|Other folders",
+    "key" : "Other folders",
+    "kind" : "Chart part",
+    "places" : [
+      "App\/Shell\/TileArt.swift:294"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Weitere Ordner",
+      "en" : "Other folders",
+      "es" : "Otras carpetas",
+      "fr" : "Autres dossiers",
+      "ja" : "その他のフォルダ",
+      "ko" : "기타 폴더",
+      "pt-BR" : "Outras pastas",
+      "zh-Hans" : "其他文件夹"
+    }
+  },
+  {
     "id" : "App|Permissions",
     "key" : "Permissions",
     "kind" : "Title",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:67"
+      "App\/Settings\/GeneralSettings.swift:71"
     ],
     "table" : "App",
     "translations" : {
@@ -2281,7 +2357,7 @@
     "kind" : "Title",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:22",
-      "App\/Shell\/MenuBarContent.swift:153"
+      "App\/Shell\/MenuBarContent.swift:156"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,7 +2547,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:752",
+      "App\/Renderer\/ScreenView.swift:813",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "App",
@@ -2491,7 +2567,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:538"
+      "App\/Registry\/ModuleHandle.swift:862"
     ],
     "table" : "App",
     "translations" : {
@@ -2588,8 +2664,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:257",
-      "App\/Shell\/MainView.swift:301"
+      "App\/Shell\/MainView.swift:259",
+      "App\/Shell\/MainView.swift:303"
     ],
     "table" : "App",
     "translations" : {
@@ -2608,7 +2684,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:256"
+      "App\/Shell\/MainView.swift:258"
     ],
     "table" : "App",
     "translations" : {
@@ -2627,7 +2703,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:255"
+      "App\/Shell\/MainView.swift:257"
     ],
     "table" : "App",
     "translations" : {
@@ -2646,7 +2722,7 @@
     "key" : "Settings…",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:149"
+      "App\/Shell\/MenuBarContent.swift:152"
     ],
     "table" : "App",
     "translations" : {
@@ -2685,8 +2761,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:734",
-      "App\/Renderer\/WidgetView.swift:735"
+      "App\/Renderer\/WidgetView.swift:745",
+      "App\/Renderer\/WidgetView.swift:746"
     ],
     "table" : "App",
     "translations" : {
@@ -2705,7 +2781,7 @@
     "key" : "System",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:128"
+      "App\/Settings\/GeneralSettings.swift:132"
     ],
     "table" : "App",
     "translations" : {
@@ -2781,7 +2857,7 @@
     "key" : "Theme",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:61"
+      "App\/Settings\/GeneralSettings.swift:62"
     ],
     "table" : "App",
     "translations" : {
@@ -2831,6 +2907,27 @@
       "ko" : "이 MacSpace 사본이 불완전함",
       "pt-BR" : "Esta cópia do MacSpace está incompleta",
       "zh-Hans" : "此 MacSpace 副本不完整"
+    }
+  },
+  {
+    "id" : "App|This selection is unavailable. Refresh and try again.",
+    "key" : "This selection is unavailable. Refresh and try again.",
+    "kind" : "Result message",
+    "places" : [
+      "App\/Registry\/ModuleHandle.swift:361",
+      "App\/Registry\/ModuleHandle.swift:414",
+      "App\/Registry\/ModuleHandle.swift:453"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Diese Auswahl ist nicht verfügbar. Aktualisieren und erneut versuchen.",
+      "en" : "This selection is unavailable. Refresh and try again.",
+      "es" : "Esta selección no está disponible. Actualiza y vuelve a intentarlo.",
+      "fr" : "Cette sélection est indisponible. Actualisez et réessayez.",
+      "ja" : "この選択は利用できません。更新して再試行してください。",
+      "ko" : "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요.",
+      "pt-BR" : "Esta seleção está indisponível. Atualize e tente novamente.",
+      "zh-Hans" : "此选择不可用。请刷新后重试。"
     }
   },
   {
@@ -2971,8 +3068,8 @@
     "key" : "Updates",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:106",
-      "App\/Settings\/GeneralSettings.swift:119"
+      "App\/Settings\/GeneralSettings.swift:110",
+      "App\/Settings\/GeneralSettings.swift:123"
     ],
     "table" : "App",
     "translations" : {
@@ -2991,8 +3088,8 @@
     "key" : "Version",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:116",
-      "App\/Settings\/GeneralSettings.swift:118"
+      "App\/Settings\/GeneralSettings.swift:120",
+      "App\/Settings\/GeneralSettings.swift:122"
     ],
     "table" : "App",
     "translations" : {
@@ -3125,7 +3222,7 @@
     "key" : "When the window closes",
     "kind" : "Title",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:71"
+      "App\/Settings\/GeneralSettings.swift:75"
     ],
     "table" : "App",
     "translations" : {
@@ -3144,10 +3241,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:750",
+      "App\/Renderer\/ScreenView.swift:811",
       "App\/Renderer\/RowActionFlag.swift:104",
       "App\/Renderer\/RowActionFlag.swift:111",
-      "App\/Registry\/ModuleHandle.swift:629"
+      "App\/Registry\/ModuleHandle.swift:970"
     ],
     "table" : "App",
     "translations" : {
@@ -3242,8 +3339,8 @@
     "key" : "disk",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:260",
-      "App\/Shell\/MainView.swift:261",
+      "App\/Shell\/MainView.swift:262",
+      "App\/Shell\/MainView.swift:263",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "App",
@@ -3303,7 +3400,7 @@
     "key" : "macOS",
     "kind" : "Label",
     "places" : [
-      "App\/Settings\/GeneralSettings.swift:129"
+      "App\/Settings\/GeneralSettings.swift:133"
     ],
     "table" : "App",
     "translations" : {
@@ -3439,7 +3536,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:61",
-      "App\/Shell\/MainView.swift:188"
+      "App\/Shell\/MainView.swift:190"
     ],
     "table" : "App",
     "translations" : {
@@ -5574,13 +5671,35 @@
     }
   },
   {
+    "id" : "DiskMap|%lld files could not be removed.",
+    "key" : "%lld files could not be removed.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:228"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "%lld Dateien konnten nicht entfernt werden.",
+      "en" : "%lld files could not be removed.",
+      "es" : "No se pudieron eliminar %lld archivos.",
+      "fr" : "Impossible de supprimer %lld fichiers.",
+      "ja" : "%lld個のファイルを削除できませんでした。",
+      "ko" : "%lld개 파일을 제거하지 못했습니다.",
+      "pt-BR" : "Não foi possível remover %lld arquivos.",
+      "zh-Hans" : "无法移除%lld个文件。"
+    }
+  },
+  {
     "id" : "DiskMap|%lld items",
     "key" : "%lld items",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60",
-      "Sdk\/Interface\/Widgets.swift:546"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:21",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:23",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:37",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:49",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:93",
+      "Sdk\/Interface\/Widgets.swift:578"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5599,7 +5718,7 @@
     "key" : "Additional or unconfirmed app copy; kept separate from installed apps.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:96"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:129"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5614,11 +5733,87 @@
     }
   },
   {
+    "id" : "DiskMap|All locations",
+    "key" : "All locations",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Alle Speicherorte",
+      "en" : "All locations",
+      "es" : "Todas las ubicaciones",
+      "fr" : "Tous les emplacements",
+      "ja" : "すべての場所",
+      "ko" : "모든 위치",
+      "pt-BR" : "Todos os locais",
+      "zh-Hans" : "所有位置"
+    }
+  },
+  {
+    "id" : "DiskMap|App Data",
+    "key" : "App Data",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:153"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "App-Daten",
+      "en" : "App Data",
+      "es" : "Datos de apps",
+      "fr" : "Données des apps",
+      "ja" : "アプリデータ",
+      "ko" : "앱 데이터",
+      "pt-BR" : "Dados de apps",
+      "zh-Hans" : "应用数据"
+    }
+  },
+  {
+    "id" : "DiskMap|App container",
+    "key" : "App container",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:153"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "App-Container",
+      "en" : "App container",
+      "es" : "Contenedor de app",
+      "fr" : "Conteneur d’app",
+      "ja" : "アプリコンテナ",
+      "ko" : "앱 컨테이너",
+      "pt-BR" : "Contêiner de app",
+      "zh-Hans" : "应用容器"
+    }
+  },
+  {
+    "id" : "DiskMap|App data changed. Reopen the list and review your selection again.",
+    "key" : "App data changed. Reopen the list and review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:268"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die App-Daten haben sich geändert. Öffne die Liste erneut und prüfe deine Auswahl.",
+      "en" : "App data changed. Reopen the list and review your selection again.",
+      "es" : "Los datos de apps cambiaron. Abre la lista y revisa de nuevo tu selección.",
+      "fr" : "Les données d’apps ont changé. Rouvrez la liste et vérifiez votre sélection.",
+      "ja" : "アプリデータが変更されました。一覧を開き直して選択を確認してください。",
+      "ko" : "앱 데이터가 변경되었습니다. 목록을 다시 열고 선택 항목을 검토하세요.",
+      "pt-BR" : "Os dados de apps mudaram. Reabra a lista e revise a seleção novamente.",
+      "zh-Hans" : "应用数据已更改。请重新打开列表并检查所选内容。"
+    }
+  },
+  {
     "id" : "DiskMap|App ownership changed. Reopen the app list and review it again.",
     "key" : "App ownership changed. Reopen the app list and review it again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:125"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:278"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5633,12 +5828,31 @@
     }
   },
   {
+    "id" : "DiskMap|Applications",
+    "key" : "Applications",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Programme",
+      "en" : "Applications",
+      "es" : "Aplicaciones",
+      "fr" : "Applications",
+      "ja" : "アプリケーション",
+      "ko" : "응용 프로그램",
+      "pt-BR" : "Aplicativos",
+      "zh-Hans" : "应用程序"
+    }
+  },
+  {
     "id" : "DiskMap|Apps",
     "key" : "Apps",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:28",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5653,11 +5867,69 @@
     }
   },
   {
+    "id" : "DiskMap|Archives",
+    "key" : "Archives",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:9",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Archive",
+      "en" : "Archives",
+      "es" : "Archivos comprimidos",
+      "fr" : "Archives",
+      "ja" : "アーカイブ",
+      "ko" : "압축 파일",
+      "pt-BR" : "Arquivos compactados",
+      "zh-Hans" : "压缩包"
+    }
+  },
+  {
+    "id" : "DiskMap|Archives not modified for over a year. Review their contents before choosing what to free; modification date does not establish last use.",
+    "key" : "Archives not modified for over a year. Review their contents before choosing what to free; modification date does not establish last use.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Archive, die seit über einem Jahr nicht geändert wurden. Prüfe ihren Inhalt vor dem Löschen; das Änderungsdatum belegt nicht die letzte Nutzung.",
+      "en" : "Archives not modified for over a year. Review their contents before choosing what to free; modification date does not establish last use.",
+      "es" : "Archivos comprimidos sin modificar desde hace más de un año. Revisa su contenido antes de elegir qué liberar; la fecha de modificación no indica el último uso.",
+      "fr" : "Archives non modifiées depuis plus d’un an. Examinez leur contenu avant de choisir quoi supprimer ; la date de modification n’indique pas la dernière utilisation.",
+      "ja" : "1年以上変更されていないアーカイブです。削除するものを選ぶ前に内容を確認してください。変更日は最終使用日を示しません。",
+      "ko" : "1년 넘게 수정되지 않은 압축 파일입니다. 정리할 항목을 선택하기 전에 내용을 검토하세요. 수정일은 마지막 사용일을 나타내지 않습니다.",
+      "pt-BR" : "Arquivos compactados sem modificação há mais de um ano. Revise o conteúdo antes de escolher o que liberar; a data de modificação não indica o último uso.",
+      "zh-Hans" : "一年多未修改的压缩包。选择要清理的内容前，请检查其中的文件；修改日期并不代表最后使用时间。"
+    }
+  },
+  {
+    "id" : "DiskMap|Audio",
+    "key" : "Audio",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Audio",
+      "en" : "Audio",
+      "es" : "Audio",
+      "fr" : "Audio",
+      "ja" : "オーディオ",
+      "ko" : "오디오",
+      "pt-BR" : "Áudio",
+      "zh-Hans" : "音频"
+    }
+  },
+  {
     "id" : "DiskMap|Available metadata cannot establish exclusive ownership. It is preserved.",
     "key" : "Available metadata cannot establish exclusive ownership. It is preserved.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:113"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5676,7 +5948,7 @@
     "key" : "Background component; its removal needs a separate lifecycle.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:128"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5688,6 +5960,196 @@
       "ko" : "백그라운드 구성 요소로, 별도의 제거 절차가 필요합니다.",
       "pt-BR" : "Componente em segundo plano; sua remoção exige um procedimento próprio.",
       "zh-Hans" : "后台组件，需要专用的移除流程。"
+    }
+  },
+  {
+    "id" : "DiskMap|Build outputs and dependency files not modified for over a year. Check the project's needs before removing them; this is not evidence that they are unused.",
+    "key" : "Build outputs and dependency files not modified for over a year. Check the project's needs before removing them; this is not evidence that they are unused.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Build-Ausgaben und Abhängigkeiten, die seit über einem Jahr nicht geändert wurden. Prüfe vor dem Löschen den Projektbedarf; dies belegt keine Nichtnutzung.",
+      "en" : "Build outputs and dependency files not modified for over a year. Check the project's needs before removing them; this is not evidence that they are unused.",
+      "es" : "Resultados de compilación y dependencias sin modificar desde hace más de un año. Comprueba las necesidades del proyecto antes de eliminarlos; no prueba que no se usen.",
+      "fr" : "Fichiers de compilation et dépendances non modifiés depuis plus d’un an. Vérifiez les besoins du projet avant de les supprimer ; cela ne prouve pas leur inutilisation.",
+      "ja" : "1年以上変更されていないビルド出力と依存ファイルです。削除前にプロジェクトで必要か確認してください。未使用の証拠ではありません。",
+      "ko" : "1년 넘게 수정되지 않은 빌드 출력 및 종속성 파일입니다. 삭제 전 프로젝트에 필요한지 확인하세요. 사용되지 않는다는 증거는 아닙니다.",
+      "pt-BR" : "Resultados de compilação e dependências sem modificação há mais de um ano. Verifique o que o projeto precisa antes de remover; isso não indica que estão sem uso.",
+      "zh-Hans" : "一年多未修改的构建输出和依赖文件。删除前请确认项目是否需要它们；这并不代表它们未被使用。"
+    }
+  },
+  {
+    "id" : "DiskMap|Caches & Temporary",
+    "key" : "Caches & Temporary",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Caches & temporäre Dateien",
+      "en" : "Caches & Temporary",
+      "es" : "Cachés y temporales",
+      "fr" : "Caches et fichiers temporaires",
+      "ja" : "キャッシュと一時ファイル",
+      "ko" : "캐시 및 임시 파일",
+      "pt-BR" : "Caches e temporários",
+      "zh-Hans" : "缓存与临时文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Categories",
+    "key" : "Categories",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Kategorien",
+      "en" : "Categories",
+      "es" : "Categorías",
+      "fr" : "Catégories",
+      "ja" : "カテゴリ",
+      "ko" : "카테고리",
+      "pt-BR" : "Categorias",
+      "zh-Hans" : "类别"
+    }
+  },
+  {
+    "id" : "DiskMap|Categories unavailable",
+    "key" : "Categories unavailable",
+    "kind" : "Notice",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:55"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Kategorien nicht verfügbar",
+      "en" : "Categories unavailable",
+      "es" : "Categorías no disponibles",
+      "fr" : "Catégories indisponibles",
+      "ja" : "カテゴリを利用できません",
+      "ko" : "카테고리를 사용할 수 없음",
+      "pt-BR" : "Categorias indisponíveis",
+      "zh-Hans" : "类别暂不可用"
+    }
+  },
+  {
+    "id" : "DiskMap|Category preparation failed. The previous disk map is still available. Refresh to retry.",
+    "key" : "Category preparation failed. The previous disk map is still available. Refresh to retry.",
+    "kind" : "Notice message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:55"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die Kategorien konnten nicht vorbereitet werden. Die bisherige Karte bleibt verfügbar. Aktualisiere, um es erneut zu versuchen.",
+      "en" : "Category preparation failed. The previous disk map is still available. Refresh to retry.",
+      "es" : "No se pudieron preparar las categorías. El mapa anterior sigue disponible. Actualiza para reintentar.",
+      "fr" : "Impossible de préparer les catégories. La carte précédente reste disponible. Actualisez pour réessayer.",
+      "ja" : "カテゴリを準備できませんでした。以前のディスクマップは引き続き利用できます。更新して再試行してください。",
+      "ko" : "카테고리를 준비하지 못했습니다. 이전 디스크 맵은 계속 사용할 수 있습니다. 새로 고침하여 다시 시도하세요.",
+      "pt-BR" : "Não foi possível preparar as categorias. O mapa anterior continua disponível. Atualize para tentar novamente.",
+      "zh-Hans" : "无法准备类别。之前的磁盘地图仍然可用。请刷新以重试。"
+    }
+  },
+  {
+    "id" : "DiskMap|Compare files",
+    "key" : "Compare files",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateien vergleichen",
+      "en" : "Compare files",
+      "es" : "Comparar archivos",
+      "fr" : "Comparer les fichiers",
+      "ja" : "ファイルを比較",
+      "ko" : "파일 비교",
+      "pt-BR" : "Comparar arquivos",
+      "zh-Hans" : "比较文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Compare local personal files of 100 MB or more. Exact content is verified before copies are offered for removal; one copy is always kept.",
+    "key" : "Compare local personal files of 100 MB or more. Exact content is verified before copies are offered for removal; one copy is always kept.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Vergleicht lokale persönliche Dateien ab 100 MB. Vor dem Entfernen wird der Inhalt geprüft; eine Kopie bleibt immer erhalten.",
+      "en" : "Compare local personal files of 100 MB or more. Exact content is verified before copies are offered for removal; one copy is always kept.",
+      "es" : "Compara archivos personales locales de 100 MB o más. Se verifica el contenido antes de ofrecer copias para eliminar; siempre se conserva una.",
+      "fr" : "Compare les fichiers personnels locaux de 100 Mo ou plus. Le contenu est vérifié avant de proposer des copies à supprimer ; une copie est toujours conservée.",
+      "ja" : "100 MB以上のローカルの個人ファイルを比較します。削除候補にする前に内容を検証し、必ず1つを保持します。",
+      "ko" : "100 MB 이상인 로컬 개인 파일을 비교합니다. 제거할 사본을 제안하기 전에 내용을 검증하며 항상 하나는 보존합니다.",
+      "pt-BR" : "Compara arquivos pessoais locais de 100 MB ou mais. O conteúdo é verificado antes de oferecer cópias para remoção; uma cópia é sempre mantida.",
+      "zh-Hans" : "比较至少100 MB的本地个人文件。提供可移除副本前验证完整内容，并始终保留一份。"
+    }
+  },
+  {
+    "id" : "DiskMap|Comparing files",
+    "key" : "Comparing files",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateien werden verglichen",
+      "en" : "Comparing files",
+      "es" : "Comparando archivos",
+      "fr" : "Comparaison des fichiers",
+      "ja" : "ファイルを比較中",
+      "ko" : "파일 비교 중",
+      "pt-BR" : "Comparando arquivos",
+      "zh-Hans" : "正在比较文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Comparison complete",
+    "key" : "Comparison complete",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Vergleich abgeschlossen",
+      "en" : "Comparison complete",
+      "es" : "Comparación completada",
+      "fr" : "Comparaison terminée",
+      "ja" : "比較が完了しました",
+      "ko" : "비교 완료",
+      "pt-BR" : "Comparação concluída",
+      "zh-Hans" : "比较完成"
+    }
+  },
+  {
+    "id" : "DiskMap|Couldn’t compare files",
+    "key" : "Couldn’t compare files",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateien konnten nicht verglichen werden",
+      "en" : "Couldn’t compare files",
+      "es" : "No se pudieron comparar los archivos",
+      "fr" : "Impossible de comparer les fichiers",
+      "ja" : "ファイルを比較できませんでした",
+      "ko" : "파일을 비교할 수 없습니다",
+      "pt-BR" : "Não foi possível comparar os arquivos",
+      "zh-Hans" : "无法比较文件"
     }
   },
   {
@@ -5710,11 +6172,30 @@
     }
   },
   {
+    "id" : "DiskMap|Couldn’t remove the selected files",
+    "key" : "Couldn’t remove the selected files",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:233"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte Dateien konnten nicht entfernt werden",
+      "en" : "Couldn’t remove the selected files",
+      "es" : "No se pudieron eliminar los archivos seleccionados",
+      "fr" : "Impossible de supprimer les fichiers sélectionnés",
+      "ja" : "選択したファイルを削除できませんでした",
+      "ko" : "선택한 파일을 제거할 수 없습니다",
+      "pt-BR" : "Não foi possível remover os arquivos selecionados",
+      "zh-Hans" : "无法移除所选文件"
+    }
+  },
+  {
     "id" : "DiskMap|Couldn’t uninstall the app",
     "key" : "Couldn’t uninstall the app",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:133"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:286"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5750,9 +6231,10 @@
   {
     "id" : "DiskMap|Delete",
     "key" : "Delete",
-    "kind" : "Other",
+    "kind" : "Confirmation button",
     "places" : [
-
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:164",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:187"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5824,11 +6306,30 @@
     }
   },
   {
+    "id" : "DiskMap|Developer cleanup",
+    "key" : "Developer cleanup",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Entwicklerbereinigung",
+      "en" : "Developer cleanup",
+      "es" : "Limpieza de desarrollo",
+      "fr" : "Nettoyage des outils de développement",
+      "ja" : "開発用データのクリーンアップ",
+      "ko" : "개발 데이터 정리",
+      "pt-BR" : "Limpeza de desenvolvimento",
+      "zh-Hans" : "开发清理"
+    }
+  },
+  {
     "id" : "DiskMap|Disk",
     "key" : "Disk",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:35"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:58"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5843,11 +6344,126 @@
     }
   },
   {
+    "id" : "DiskMap|Documents",
+    "key" : "Documents",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dokumente",
+      "en" : "Documents",
+      "es" : "Documentos",
+      "fr" : "Documents",
+      "ja" : "書類",
+      "ko" : "문서",
+      "pt-BR" : "Documentos",
+      "zh-Hans" : "文稿"
+    }
+  },
+  {
+    "id" : "DiskMap|Documents and media, including smaller files, not modified for over a year. This does not establish when they were last used or whether they can be deleted.",
+    "key" : "Documents and media, including smaller files, not modified for over a year. This does not establish when they were last used or whether they can be deleted.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dokumente und Medien einschließlich kleiner Dateien, die seit über einem Jahr nicht geändert wurden. Das belegt weder die letzte Nutzung noch eine sichere Löschung.",
+      "en" : "Documents and media, including smaller files, not modified for over a year. This does not establish when they were last used or whether they can be deleted.",
+      "es" : "Documentos y medios, incluidos archivos pequeños, sin modificar desde hace más de un año. No indica su último uso ni si se pueden eliminar.",
+      "fr" : "Documents et médias, y compris les petits fichiers, non modifiés depuis plus d’un an. Cela ne prouve ni leur dernière utilisation ni la possibilité de les supprimer.",
+      "ja" : "小さいファイルを含む、1年以上変更されていない書類とメディアです。最終使用日や削除の可否を示すものではありません。",
+      "ko" : "작은 파일을 포함해 1년 넘게 수정되지 않은 문서와 미디어입니다. 마지막 사용 시점이나 삭제 가능 여부를 나타내지는 않습니다.",
+      "pt-BR" : "Documentos e mídia, incluindo arquivos menores, sem modificação há mais de um ano. Isso não indica o último uso nem se podem ser apagados.",
+      "zh-Hans" : "一年多未修改的文稿与媒体，包括较小的文件。这不代表它们的最后使用时间，也不表示可以删除。"
+    }
+  },
+  {
+    "id" : "DiskMap|Downloads",
+    "key" : "Downloads",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Downloads",
+      "en" : "Downloads",
+      "es" : "Descargas",
+      "fr" : "Téléchargements",
+      "ja" : "ダウンロード",
+      "ko" : "다운로드",
+      "pt-BR" : "Downloads",
+      "zh-Hans" : "下载"
+    }
+  },
+  {
+    "id" : "DiskMap|Duplicate files",
+    "key" : "Duplicate files",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:48",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:13"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Doppelte Dateien",
+      "en" : "Duplicate files",
+      "es" : "Archivos duplicados",
+      "fr" : "Fichiers en double",
+      "ja" : "重複ファイル",
+      "ko" : "중복 파일",
+      "pt-BR" : "Arquivos duplicados",
+      "zh-Hans" : "重复文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Duplicate files changed. Compare them again before removing copies.",
+    "key" : "Duplicate files changed. Compare them again before removing copies.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Doppelte Dateien wurden geändert. Vor dem Entfernen erneut vergleichen.",
+      "en" : "Duplicate files changed. Compare them again before removing copies.",
+      "es" : "Los duplicados cambiaron. Compáralos de nuevo antes de eliminar copias.",
+      "fr" : "Les fichiers en double ont changé. Comparez-les à nouveau avant de supprimer des copies.",
+      "ja" : "重複ファイルが変更されました。削除前に再度比較してください。",
+      "ko" : "중복 파일이 변경되었습니다. 사본을 제거하기 전에 다시 비교하세요.",
+      "pt-BR" : "Os arquivos duplicados mudaram. Compare novamente antes de remover cópias.",
+      "zh-Hans" : "重复文件已更改。移除副本前请重新比较。"
+    }
+  },
+  {
+    "id" : "DiskMap|Duplicate files changed. Reopen the list and review them again.",
+    "key" : "Duplicate files changed. Reopen the list and review them again.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Doppelte Dateien wurden geändert. Liste erneut öffnen und prüfen.",
+      "en" : "Duplicate files changed. Reopen the list and review them again.",
+      "es" : "Los duplicados cambiaron. Abre la lista y revísalos de nuevo.",
+      "fr" : "Les doublons ont changé. Rouvrez la liste et vérifiez-les à nouveau.",
+      "ja" : "重複ファイルが変更されました。リストを開き直して確認してください。",
+      "ko" : "중복 파일이 변경되었습니다. 목록을 다시 열고 검토하세요.",
+      "pt-BR" : "Os arquivos duplicados mudaram. Reabra a lista e revise novamente.",
+      "zh-Hans" : "重复文件已更改。请重新打开列表并查看。"
+    }
+  },
+  {
     "id" : "DiskMap|Evidence identifies this installation as the exclusive owner.",
     "key" : "Evidence identifies this installation as the exclusive owner.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:110"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:143"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5866,7 +6482,7 @@
     "key" : "Explore disk",
     "kind" : "Tile status",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:16"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:12"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5900,12 +6516,106 @@
     }
   },
   {
+    "id" : "DiskMap|File changed since selection. Review it again.",
+    "key" : "File changed since selection. Review it again.",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:41"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die Datei wurde seit der Auswahl geändert. Erneut prüfen.",
+      "en" : "File changed since selection. Review it again.",
+      "es" : "El archivo cambió desde la selección. Revísalo de nuevo.",
+      "fr" : "Le fichier a changé depuis la sélection. Vérifiez-le à nouveau.",
+      "ja" : "選択後にファイルが変更されました。再確認してください。",
+      "ko" : "선택 이후 파일이 변경되었습니다. 다시 검토하세요.",
+      "pt-BR" : "O arquivo mudou desde a seleção. Revise novamente.",
+      "zh-Hans" : "文件自选择后已更改。请重新查看。"
+    }
+  },
+  {
+    "id" : "DiskMap|File removal settings changed. Reopen the list and confirm again.",
+    "key" : "File removal settings changed. Reopen the list and confirm again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:253"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die Löscheinstellung wurde geändert. Liste erneut öffnen und bestätigen.",
+      "en" : "File removal settings changed. Reopen the list and confirm again.",
+      "es" : "La configuración de eliminación cambió. Vuelve a abrir la lista y confirma.",
+      "fr" : "Le réglage de suppression a changé. Rouvrez la liste et confirmez à nouveau.",
+      "ja" : "ファイル削除の設定が変更されました。リストを開き直して確認してください。",
+      "ko" : "파일 제거 설정이 변경되었습니다. 목록을 다시 열고 확인하세요.",
+      "pt-BR" : "A configuração de exclusão mudou. Reabra a lista e confirme novamente.",
+      "zh-Hans" : "文件移除设置已更改。请重新打开列表并确认。"
+    }
+  },
+  {
+    "id" : "DiskMap|File types",
+    "key" : "File types",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateitypen",
+      "en" : "File types",
+      "es" : "Tipos de archivo",
+      "fr" : "Types de fichiers",
+      "ja" : "ファイルの種類",
+      "ko" : "파일 유형",
+      "pt-BR" : "Tipos de arquivo",
+      "zh-Hans" : "文件类型"
+    }
+  },
+  {
+    "id" : "DiskMap|Files",
+    "key" : "Files",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:111"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateien",
+      "en" : "Files",
+      "es" : "Archivos",
+      "fr" : "Fichiers",
+      "ja" : "ファイル",
+      "ko" : "파일",
+      "pt-BR" : "Arquivos",
+      "zh-Hans" : "文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Files changed. Reopen the list and review your selection again.",
+    "key" : "Files changed. Reopen the list and review your selection again.",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:182"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Dateien wurden geändert. Liste erneut öffnen und Auswahl prüfen.",
+      "en" : "Files changed. Reopen the list and review your selection again.",
+      "es" : "Los archivos cambiaron. Abre la lista y revisa de nuevo tu selección.",
+      "fr" : "Les fichiers ont changé. Rouvrez la liste et vérifiez votre sélection.",
+      "ja" : "ファイルが変更されました。リストを開き直して選択内容を確認してください。",
+      "ko" : "파일이 변경되었습니다. 목록을 다시 열고 선택을 검토하세요.",
+      "pt-BR" : "Os arquivos mudaram. Reabra a lista e revise a seleção novamente.",
+      "zh-Hans" : "文件已更改。请重新打开列表并检查所选项目。"
+    }
+  },
+  {
     "id" : "DiskMap|Files of 100 MB or larger",
     "key" : "Files of 100 MB or larger",
-    "kind" : "Row subtitle",
+    "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:32",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:71"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5920,11 +6630,30 @@
     }
   },
   {
+    "id" : "DiskMap|Folders",
+    "key" : "Folders",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:29"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ordner",
+      "en" : "Folders",
+      "es" : "Carpetas",
+      "fr" : "Dossiers",
+      "ja" : "フォルダ",
+      "ko" : "폴더",
+      "pt-BR" : "Pastas",
+      "zh-Hans" : "文件夹"
+    }
+  },
+  {
     "id" : "DiskMap|Free",
     "key" : "Free",
-    "kind" : "Confirmation button",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5962,7 +6691,8 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:145"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:162",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:186"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -5977,11 +6707,30 @@
     }
   },
   {
+    "id" : "DiskMap|Free the selected app data?",
+    "key" : "Free the selected app data?",
+    "kind" : "Confirmation title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:164"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte App-Daten löschen?",
+      "en" : "Free the selected app data?",
+      "es" : "¿Liberar los datos de apps seleccionados?",
+      "fr" : "Supprimer les données d’apps sélectionnées ?",
+      "ja" : "選択したアプリデータを削除しますか？",
+      "ko" : "선택한 앱 데이터를 정리할까요?",
+      "pt-BR" : "Liberar os dados de apps selecionados?",
+      "zh-Hans" : "清理所选应用数据？"
+    }
+  },
+  {
     "id" : "DiskMap|Free the selected files?",
     "key" : "Free the selected files?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:187"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6019,7 +6768,8 @@
     "key" : "Freed selected files",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:119"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:230",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:272"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6038,9 +6788,11 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:24",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:147",
-      "App\/Shell\/MainView.swift:188"
+      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:61",
+      "Modules\/DiskMap\/Module\/Engine\/DiskUnmatchedRemoval.swift:50",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:165",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:188",
+      "App\/Shell\/MainView.swift:190"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6055,11 +6807,68 @@
     }
   },
   {
+    "id" : "DiskMap|Games",
+    "key" : "Games",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Spiele",
+      "en" : "Games",
+      "es" : "Juegos",
+      "fr" : "Jeux",
+      "ja" : "ゲーム",
+      "ko" : "게임",
+      "pt-BR" : "Jogos",
+      "zh-Hans" : "游戏"
+    }
+  },
+  {
+    "id" : "DiskMap|Identical files",
+    "key" : "Identical files",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:42"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Identische Dateien",
+      "en" : "Identical files",
+      "es" : "Archivos idénticos",
+      "fr" : "Fichiers identiques",
+      "ja" : "同一のファイル",
+      "ko" : "동일한 파일",
+      "pt-BR" : "Arquivos idênticos",
+      "zh-Hans" : "相同文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Identical local personal files are grouped with one retained copy. No files are preselected.",
+    "key" : "Identical local personal files are grouped with one retained copy. No files are preselected.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:51"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Identische lokale persönliche Dateien werden mit einer beibehaltenen Kopie gruppiert. Nichts ist vorausgewählt.",
+      "en" : "Identical local personal files are grouped with one retained copy. No files are preselected.",
+      "es" : "Los archivos personales locales idénticos se agrupan con una copia conservada. No hay archivos preseleccionados.",
+      "fr" : "Les fichiers personnels locaux identiques sont regroupés avec une copie conservée. Aucun fichier n’est présélectionné.",
+      "ja" : "同一のローカル個人ファイルをグループ化し、1つを保持します。事前選択はしません。",
+      "ko" : "동일한 로컬 개인 파일을 그룹으로 묶고 하나는 보존합니다. 파일은 미리 선택되지 않습니다.",
+      "pt-BR" : "Arquivos pessoais locais idênticos são agrupados com uma cópia mantida. Nenhum arquivo vem selecionado.",
+      "zh-Hans" : "相同的本地个人文件分组显示，并保留一份副本。不预选文件。"
+    }
+  },
+  {
     "id" : "DiskMap|Install the helper in Settings",
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:127"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:280"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6078,7 +6887,7 @@
     "key" : "Installed app. Removal is limited to the exact reviewed targets.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:93"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6093,12 +6902,51 @@
     }
   },
   {
+    "id" : "DiskMap|Installers",
+    "key" : "Installers",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:10",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Installationsdateien",
+      "en" : "Installers",
+      "es" : "Instaladores",
+      "fr" : "Programmes d’installation",
+      "ja" : "インストーラ",
+      "ko" : "설치 프로그램",
+      "pt-BR" : "Instaladores",
+      "zh-Hans" : "安装程序"
+    }
+  },
+  {
+    "id" : "DiskMap|Inventory incomplete",
+    "key" : "Inventory incomplete",
+    "kind" : "Notice",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:61"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Inventar unvollständig",
+      "en" : "Inventory incomplete",
+      "es" : "Inventario incompleto",
+      "fr" : "Inventaire incomplet",
+      "ja" : "一覧が不完全です",
+      "ko" : "목록 불완전",
+      "pt-BR" : "Inventário incompleto",
+      "zh-Hans" : "清单不完整"
+    }
+  },
+  {
     "id" : "DiskMap|Large files",
     "key" : "Large files",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:33",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
+      "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:13",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6113,12 +6961,30 @@
     }
   },
   {
+    "id" : "DiskMap|Large files and duplicates",
+    "key" : "Large files and duplicates",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:52"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Große und doppelte Dateien",
+      "en" : "Large files and duplicates",
+      "es" : "Archivos grandes y duplicados",
+      "fr" : "Fichiers volumineux et doublons",
+      "ja" : "大きなファイルと重複ファイル",
+      "ko" : "대용량 및 중복 파일",
+      "pt-BR" : "Arquivos grandes e duplicados",
+      "zh-Hans" : "大文件和重复文件"
+    }
+  },
+  {
     "id" : "DiskMap|Leftovers from removed apps",
     "key" : "Leftovers from removed apps",
-    "kind" : "Row title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:26",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:122"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6137,7 +7003,7 @@
     "key" : "Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:37"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6152,11 +7018,31 @@
     }
   },
   {
+    "id" : "DiskMap|Media",
+    "key" : "Media",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:11",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Medien",
+      "en" : "Media",
+      "es" : "Multimedia",
+      "fr" : "Médias",
+      "ja" : "メディア",
+      "ko" : "미디어",
+      "pt-BR" : "Mídia",
+      "zh-Hans" : "媒体"
+    }
+  },
+  {
     "id" : "DiskMap|More items",
     "key" : "More items",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:32"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:64"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6171,11 +7057,30 @@
     }
   },
   {
+    "id" : "DiskMap|Move to Trash",
+    "key" : "Move to Trash",
+    "kind" : "Confirmation button",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:187"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "In den Papierkorb legen",
+      "en" : "Move to Trash",
+      "es" : "Mover a la Papelera",
+      "fr" : "Placer dans la corbeille",
+      "ja" : "ゴミ箱に入れる",
+      "ko" : "휴지통으로 이동",
+      "pt-BR" : "Mover para o Lixo",
+      "zh-Hans" : "移到废纸篓"
+    }
+  },
+  {
     "id" : "DiskMap|No apps found",
     "key" : "No apps found",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6190,11 +7095,68 @@
     }
   },
   {
-    "id" : "DiskMap|No large files in this folder",
-    "key" : "No large files in this folder",
+    "id" : "DiskMap|No files are selected.",
+    "key" : "No files are selected.",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:172"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Keine Dateien ausgewählt.",
+      "en" : "No files are selected.",
+      "es" : "No hay archivos seleccionados.",
+      "fr" : "Aucun fichier n’est sélectionné.",
+      "ja" : "ファイルが選択されていません。",
+      "ko" : "선택된 파일이 없습니다.",
+      "pt-BR" : "Nenhum arquivo está selecionado.",
+      "zh-Hans" : "未选择文件。"
+    }
+  },
+  {
+    "id" : "DiskMap|No files in this group",
+    "key" : "No files in this group",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:126"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:29"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Keine Dateien in dieser Gruppe",
+      "en" : "No files in this group",
+      "es" : "No hay archivos en este grupo",
+      "fr" : "Aucun fichier dans ce groupe",
+      "ja" : "このグループにファイルはありません",
+      "ko" : "이 그룹에 파일이 없음",
+      "pt-BR" : "Nenhum arquivo neste grupo",
+      "zh-Hans" : "此组中没有文件"
+    }
+  },
+  {
+    "id" : "DiskMap|No installed app was matched to this data. This does not prove the app was removed. Review the locations before selecting user-owned data to free; it may contain documents and settings.",
+    "key" : "No installed app was matched to this data. This does not prove the app was removed. Review the locations before selecting user-owned data to free; it may contain documents and settings.",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:150"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Diesen Daten wurde keine installierte App zugeordnet. Das beweist nicht, dass die App entfernt wurde. Prüfe die Speicherorte, bevor du Daten deines Kontos zum Löschen auswählst; sie können Dokumente und Einstellungen enthalten.",
+      "en" : "No installed app was matched to this data. This does not prove the app was removed. Review the locations before selecting user-owned data to free; it may contain documents and settings.",
+      "es" : "Ninguna app instalada se ha asociado a estos datos. Esto no demuestra que se haya eliminado la app. Revisa las ubicaciones antes de seleccionar datos de tu cuenta para liberar; pueden contener documentos y ajustes.",
+      "fr" : "Aucune app installée n’a été associée à ces données. Cela ne prouve pas que l’app a été supprimée. Vérifiez les emplacements avant de choisir les données de votre compte à supprimer ; elles peuvent contenir des documents et des réglages.",
+      "ja" : "このデータに対応するインストール済みアプリは見つかりませんでした。アプリが削除された証拠ではありません。削除するアカウントのデータを選ぶ前に場所を確認してください。書類や設定が含まれる場合があります。",
+      "ko" : "이 데이터에 연결된 설치 앱을 찾지 못했습니다. 앱이 제거되었다는 증거는 아닙니다. 계정 데이터를 정리할 대상으로 선택하기 전에 위치를 확인하세요. 문서와 설정이 포함될 수 있습니다.",
+      "pt-BR" : "Nenhum app instalado foi associado a estes dados. Isso não comprova que o app foi removido. Confira os locais antes de selecionar dados da sua conta para liberar; eles podem conter documentos e ajustes.",
+      "zh-Hans" : "未找到与这些数据匹配的已安装应用，但这不能证明应用已被移除。选择要清理的账户数据前，请检查其位置；其中可能包含文稿和设置。"
+    }
+  },
+  {
+    "id" : "DiskMap|No large files in this folder",
+    "key" : "No large files in this folder",
+    "kind" : "Other",
+    "places" : [
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6213,7 +7175,7 @@
     "key" : "No unmatched app data found",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:122"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:168"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6228,11 +7190,125 @@
     }
   },
   {
+    "id" : "DiskMap|No verified duplicate copies yet",
+    "key" : "No verified duplicate copies yet",
+    "kind" : "Text",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:29"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Noch keine bestätigten doppelten Kopien",
+      "en" : "No verified duplicate copies yet",
+      "es" : "Aún no hay copias duplicadas verificadas",
+      "fr" : "Aucun doublon vérifié pour le moment",
+      "ja" : "検証済みの重複コピーはまだありません",
+      "ko" : "아직 검증된 중복 사본이 없습니다",
+      "pt-BR" : "Ainda não há cópias duplicadas verificadas",
+      "zh-Hans" : "尚无已验证的重复副本"
+    }
+  },
+  {
+    "id" : "DiskMap|Not modified since %@",
+    "key" : "Not modified since %@",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nicht geändert seit %@",
+      "en" : "Not modified since %@",
+      "es" : "Sin modificar desde %@",
+      "fr" : "Non modifié depuis %@",
+      "ja" : "%@ 以降変更なし",
+      "ko" : "%@ 이후 수정되지 않음",
+      "pt-BR" : "Não modificado desde %@",
+      "zh-Hans" : "自 %@ 起未修改"
+    }
+  },
+  {
+    "id" : "DiskMap|Older archives",
+    "key" : "Older archives",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ältere Archive",
+      "en" : "Older archives",
+      "es" : "Archivos comprimidos antiguos",
+      "fr" : "Archives anciennes",
+      "ja" : "古いアーカイブ",
+      "ko" : "오래된 압축 파일",
+      "pt-BR" : "Arquivos compactados antigos",
+      "zh-Hans" : "较早的压缩包"
+    }
+  },
+  {
+    "id" : "DiskMap|Older development artifacts",
+    "key" : "Older development artifacts",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ältere Entwicklungsdateien",
+      "en" : "Older development artifacts",
+      "es" : "Archivos de desarrollo antiguos",
+      "fr" : "Anciens fichiers de développement",
+      "ja" : "古い開発生成物",
+      "ko" : "오래된 개발 산출물",
+      "pt-BR" : "Arquivos de desenvolvimento antigos",
+      "zh-Hans" : "较早的开发产物"
+    }
+  },
+  {
+    "id" : "DiskMap|Older documents & media",
+    "key" : "Older documents & media",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ältere Dokumente & Medien",
+      "en" : "Older documents & media",
+      "es" : "Documentos y medios antiguos",
+      "fr" : "Documents et médias anciens",
+      "ja" : "古い書類とメディア",
+      "ko" : "오래된 문서 및 미디어",
+      "pt-BR" : "Documentos e mídia antigos",
+      "zh-Hans" : "较早的文稿与媒体"
+    }
+  },
+  {
+    "id" : "DiskMap|Only identical extra copies of personal files of 100 MB or more are listed. One copy is kept. No files are preselected.",
+    "key" : "Only identical extra copies of personal files of 100 MB or more are listed. One copy is kept. No files are preselected.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nur zusätzliche identische Kopien persönlicher Dateien ab 100 MB werden angezeigt. Eine Kopie bleibt erhalten. Nichts ist vorausgewählt.",
+      "en" : "Only identical extra copies of personal files of 100 MB or more are listed. One copy is kept. No files are preselected.",
+      "es" : "Solo se muestran copias idénticas adicionales de archivos personales de 100 MB o más. Se conserva una copia. No hay selección previa.",
+      "fr" : "Seules les copies identiques supplémentaires de fichiers personnels de 100 Mo ou plus sont affichées. Une copie est conservée. Rien n’est présélectionné.",
+      "ja" : "100 MB以上の個人ファイルの同一内容の余分なコピーのみを表示します。1つを保持し、事前選択はしません。",
+      "ko" : "100 MB 이상 개인 파일의 동일한 추가 사본만 표시합니다. 하나는 보존하며 미리 선택하지 않습니다.",
+      "pt-BR" : "Lista apenas cópias idênticas extras de arquivos pessoais de 100 MB ou mais. Uma cópia é mantida. Nada vem selecionado.",
+      "zh-Hans" : "仅列出至少100 MB个人文件的额外相同副本。保留一份，不预选文件。"
+    }
+  },
+  {
     "id" : "DiskMap|Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.",
     "key" : "Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:70"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:103"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6247,11 +7323,108 @@
     }
   },
   {
+    "id" : "DiskMap|Only verified identical copies are offered for removal.",
+    "key" : "Only verified identical copies are offered for removal.",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:45"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nur überprüfte identische Kopien werden zur Entfernung angeboten.",
+      "en" : "Only verified identical copies are offered for removal.",
+      "es" : "Solo se ofrecen para eliminar las copias idénticas verificadas.",
+      "fr" : "Seules les copies identiques vérifiées sont proposées à la suppression.",
+      "ja" : "検証済みの同一コピーのみを削除候補にします。",
+      "ko" : "검증된 동일한 사본만 제거 대상으로 제공됩니다.",
+      "pt-BR" : "Apenas cópias idênticas verificadas são oferecidas para remoção.",
+      "zh-Hans" : "仅提供已验证的相同副本供移除。"
+    }
+  },
+  {
+    "id" : "DiskMap|Open folder in Finder",
+    "key" : "Open folder in Finder",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ordner im Finder öffnen",
+      "en" : "Open folder in Finder",
+      "es" : "Abrir carpeta en Finder",
+      "fr" : "Ouvrir le dossier dans le Finder",
+      "ja" : "Finderでフォルダを開く",
+      "ko" : "Finder에서 폴더 열기",
+      "pt-BR" : "Abrir pasta no Finder",
+      "zh-Hans" : "在访达中打开文件夹"
+    }
+  },
+  {
+    "id" : "DiskMap|Open in %@",
+    "key" : "Open in %@",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:78"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Geöffnet in %@",
+      "en" : "Open in %@",
+      "es" : "Abierto en %@",
+      "fr" : "Ouvert dans %@",
+      "ja" : "%@で開いています",
+      "ko" : "%@에서 열려 있음",
+      "pt-BR" : "Aberto em %@",
+      "zh-Hans" : "在%@中打开"
+    }
+  },
+  {
+    "id" : "DiskMap|Open now",
+    "key" : "Open now",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Jetzt geöffnet",
+      "en" : "Open now",
+      "es" : "Abierto ahora",
+      "fr" : "Ouvert actuellement",
+      "ja" : "現在開いています",
+      "ko" : "현재 열려 있음",
+      "pt-BR" : "Aberto agora",
+      "zh-Hans" : "当前已打开"
+    }
+  },
+  {
+    "id" : "DiskMap|Other",
+    "key" : "Other",
+    "kind" : "Title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:12",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:14"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Sonstige",
+      "en" : "Other",
+      "es" : "Otros",
+      "fr" : "Autres",
+      "ja" : "その他",
+      "ko" : "기타",
+      "pt-BR" : "Outros",
+      "zh-Hans" : "其他"
+    }
+  },
+  {
     "id" : "DiskMap|Other app installations also claim this data. It is preserved.",
     "key" : "Other app installations also claim this data. It is preserved.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:111"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:144"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6270,7 +7443,8 @@
     "key" : "Other files",
     "kind" : "Chart part",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:49"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:72",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:12"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6285,11 +7459,30 @@
     }
   },
   {
+    "id" : "DiskMap|Photos & Video",
+    "key" : "Photos & Video",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Fotos & Videos",
+      "en" : "Photos & Video",
+      "es" : "Fotos y vídeos",
+      "fr" : "Photos et vidéos",
+      "ja" : "写真とビデオ",
+      "ko" : "사진 및 동영상",
+      "pt-BR" : "Fotos e vídeos",
+      "zh-Hans" : "照片与视频"
+    }
+  },
+  {
     "id" : "DiskMap|Possible app data",
     "key" : "Possible app data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:104"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:137"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6304,11 +7497,30 @@
     }
   },
   {
+    "id" : "DiskMap|Projects & Development",
+    "key" : "Projects & Development",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Projekte & Entwicklung",
+      "en" : "Projects & Development",
+      "es" : "Proyectos y desarrollo",
+      "fr" : "Projets et développement",
+      "ja" : "プロジェクトと開発",
+      "ko" : "프로젝트 및 개발",
+      "pt-BR" : "Projetos e desenvolvimento",
+      "zh-Hans" : "项目与开发"
+    }
+  },
+  {
     "id" : "DiskMap|Protected and other disk usage",
     "key" : "Protected and other disk usage",
     "kind" : "Chart part",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:51"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:74"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6327,7 +7539,7 @@
     "key" : "Protected system component; cannot be removed here.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:94"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:127"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6346,7 +7558,7 @@
     "key" : "Quit the app before uninstalling it.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:126"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:279"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6365,7 +7577,8 @@
     "key" : "Reading apps…",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:168"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6380,11 +7593,183 @@
     }
   },
   {
+    "id" : "DiskMap|Recommended",
+    "key" : "Recommended",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Empfehlungen",
+      "en" : "Recommended",
+      "es" : "Recomendados",
+      "fr" : "Recommandations",
+      "ja" : "おすすめ",
+      "ko" : "추천",
+      "pt-BR" : "Recomendados",
+      "zh-Hans" : "建议检查"
+    }
+  },
+  {
+    "id" : "DiskMap|Reopen the list and confirm deletion again.",
+    "key" : "Reopen the list and confirm deletion again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:264"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Liste erneut öffnen und Löschung bestätigen.",
+      "en" : "Reopen the list and confirm deletion again.",
+      "es" : "Abre la lista y confirma de nuevo la eliminación.",
+      "fr" : "Rouvrez la liste et confirmez à nouveau la suppression.",
+      "ja" : "リストを開き直して削除を確認してください。",
+      "ko" : "목록을 다시 열고 삭제를 확인하세요.",
+      "pt-BR" : "Reabra a lista e confirme a exclusão novamente.",
+      "zh-Hans" : "请重新打开列表并确认删除。"
+    }
+  },
+  {
+    "id" : "DiskMap|Reopen the list and review your selection again.",
+    "key" : "Reopen the list and review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:261"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Liste erneut öffnen und Auswahl prüfen.",
+      "en" : "Reopen the list and review your selection again.",
+      "es" : "Abre la lista y revisa de nuevo tu selección.",
+      "fr" : "Rouvrez la liste et vérifiez votre sélection.",
+      "ja" : "リストを開き直して選択内容を確認してください。",
+      "ko" : "목록을 다시 열고 선택을 검토하세요.",
+      "pt-BR" : "Reabra a lista e revise sua seleção novamente.",
+      "zh-Hans" : "请重新打开列表并检查所选项目。"
+    }
+  },
+  {
+    "id" : "DiskMap|Retained copy",
+    "key" : "Retained copy",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:194",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:39"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Beibehaltene Kopie",
+      "en" : "Retained copy",
+      "es" : "Copia conservada",
+      "fr" : "Copie conservée",
+      "ja" : "保持するコピー",
+      "ko" : "보존할 사본",
+      "pt-BR" : "Cópia mantida",
+      "zh-Hans" : "保留的副本"
+    }
+  },
+  {
+    "id" : "DiskMap|Review before freeing",
+    "key" : "Review before freeing",
+    "kind" : "Notice",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:167"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Vor dem Löschen prüfen",
+      "en" : "Review before freeing",
+      "es" : "Revisar antes de liberar",
+      "fr" : "Vérifier avant de supprimer",
+      "ja" : "削除前に確認",
+      "ko" : "정리 전 검토",
+      "pt-BR" : "Revise antes de liberar",
+      "zh-Hans" : "清理前请检查"
+    }
+  },
+  {
+    "id" : "DiskMap|Review rebuildable tool caches in System Data. Source projects and personal files are preserved.",
+    "key" : "Review rebuildable tool caches in System Data. Source projects and personal files are preserved.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Wiederherstellbare Tool-Caches in Systemdaten prüfen. Quellprojekte und persönliche Dateien bleiben erhalten.",
+      "en" : "Review rebuildable tool caches in System Data. Source projects and personal files are preserved.",
+      "es" : "Revisa las cachés regenerables en Datos del sistema. Se conservan los proyectos y archivos personales.",
+      "fr" : "Examinez les caches reconstructibles dans Données système. Les sources et fichiers personnels sont conservés.",
+      "ja" : "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。",
+      "ko" : "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다.",
+      "pt-BR" : "Revise caches de ferramentas que podem ser recriados em Dados do Sistema. Projetos e arquivos pessoais são preservados.",
+      "zh-Hans" : "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。"
+    }
+  },
+  {
+    "id" : "DiskMap|Reviewing selected files",
+    "key" : "Reviewing selected files",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:197"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte Dateien werden geprüft",
+      "en" : "Reviewing selected files",
+      "es" : "Revisando archivos seleccionados",
+      "fr" : "Vérification des fichiers sélectionnés",
+      "ja" : "選択したファイルを確認中",
+      "ko" : "선택한 파일 검토 중",
+      "pt-BR" : "Revisando arquivos selecionados",
+      "zh-Hans" : "正在检查所选文件"
+    }
+  },
+  {
+    "id" : "DiskMap|Saved app state",
+    "key" : "Saved app state",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Gesicherter App-Status",
+      "en" : "Saved app state",
+      "es" : "Estado guardado de la app",
+      "fr" : "État sauvegardé de l’app",
+      "ja" : "保存されたアプリ状態",
+      "ko" : "저장된 앱 상태",
+      "pt-BR" : "Estado salvo do app",
+      "zh-Hans" : "已存储的应用状态"
+    }
+  },
+  {
+    "id" : "DiskMap|Selected files changed or are open. Review them again.",
+    "key" : "Selected files changed or are open. Review them again.",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:195"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.",
+      "en" : "Selected files changed or are open. Review them again.",
+      "es" : "Los archivos seleccionados cambiaron o están abiertos. Revísalos de nuevo.",
+      "fr" : "Les fichiers sélectionnés ont changé ou sont ouverts. Vérifiez-les à nouveau.",
+      "ja" : "選択したファイルが変更されたか開かれています。再確認してください。",
+      "ko" : "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요.",
+      "pt-BR" : "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.",
+      "zh-Hans" : "所选文件已更改或正在打开。请重新检查。"
+    }
+  },
+  {
     "id" : "DiskMap|Shared data",
     "key" : "Shared data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:103"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:136"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6399,11 +7784,30 @@
     }
   },
   {
+    "id" : "DiskMap|Show smaller files",
+    "key" : "Show smaller files",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Kleinere Dateien anzeigen",
+      "en" : "Show smaller files",
+      "es" : "Mostrar archivos más pequeños",
+      "fr" : "Afficher les fichiers plus petits",
+      "ja" : "小さいファイルを表示",
+      "ko" : "작은 파일 표시",
+      "pt-BR" : "Mostrar arquivos menores",
+      "zh-Hans" : "显示较小文件"
+    }
+  },
+  {
     "id" : "DiskMap|Some app data could not be removed",
     "key" : "Some app data could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:132"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:285"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6422,7 +7826,9 @@
     "key" : "Some files could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:119"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:230",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:233",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:272"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6437,12 +7843,50 @@
     }
   },
   {
+    "id" : "DiskMap|Some files could not be verified. Refresh to retry.",
+    "key" : "Some files could not be verified. Refresh to retry.",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:43"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Einige Dateien konnten nicht überprüft werden. Zum Wiederholen aktualisieren.",
+      "en" : "Some files could not be verified. Refresh to retry.",
+      "es" : "No se pudieron verificar algunos archivos. Actualiza para reintentar.",
+      "fr" : "Certains fichiers n’ont pas pu être vérifiés. Actualisez pour réessayer.",
+      "ja" : "一部のファイルを検証できませんでした。更新して再試行してください。",
+      "ko" : "일부 파일을 검증하지 못했습니다. 새로고침하여 다시 시도하세요.",
+      "pt-BR" : "Não foi possível verificar alguns arquivos. Atualize para tentar novamente.",
+      "zh-Hans" : "部分文件无法验证。请刷新重试。"
+    }
+  },
+  {
+    "id" : "DiskMap|Some files not verified",
+    "key" : "Some files not verified",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:45"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Einige Dateien wurden nicht überprüft",
+      "en" : "Some files not verified",
+      "es" : "Algunos archivos no se han verificado",
+      "fr" : "Certains fichiers ne sont pas vérifiés",
+      "ja" : "一部のファイルが未検証です",
+      "ko" : "일부 파일이 검증되지 않았습니다",
+      "pt-BR" : "Alguns arquivos não foram verificados",
+      "zh-Hans" : "部分文件未验证"
+    }
+  },
+  {
     "id" : "DiskMap|System components and other copies",
     "key" : "System components and other copies",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:60",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:78"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:93",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:111"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6476,11 +7920,30 @@
     }
   },
   {
+    "id" : "DiskMap|The completed disk map remains available while file metadata is indexed in the background.",
+    "key" : "The completed disk map remains available while file metadata is indexed in the background.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die fertige Datenträgerkarte bleibt während der Metadatenindexierung im Hintergrund verfügbar.",
+      "en" : "The completed disk map remains available while file metadata is indexed in the background.",
+      "es" : "El mapa del disco sigue disponible mientras se indexan los metadatos en segundo plano.",
+      "fr" : "La carte du disque reste disponible pendant l’indexation des métadonnées en arrière-plan.",
+      "ja" : "バックグラウンドでメタデータを索引付けする間も、完了したディスクマップを利用できます。",
+      "ko" : "백그라운드에서 파일 메타데이터를 색인하는 동안에도 완료된 디스크 맵을 사용할 수 있습니다.",
+      "pt-BR" : "O mapa de disco concluído continua disponível enquanto os metadados são indexados em segundo plano.",
+      "zh-Hans" : "在后台索引文件元数据时，已完成的磁盘地图仍然可用。"
+    }
+  },
+  {
     "id" : "DiskMap|The identifier or location suggests an association, but does not prove ownership. It is preserved.",
     "key" : "The identifier or location suggests an association, but does not prove ownership. It is preserved.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:112"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:145"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6495,12 +7958,68 @@
     }
   },
   {
+    "id" : "DiskMap|The retained duplicate copy is selected. Review the files again.",
+    "key" : "The retained duplicate copy is selected. Review the files again.",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:187"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die beizubehaltende Kopie ist ausgewählt. Dateien erneut prüfen.",
+      "en" : "The retained duplicate copy is selected. Review the files again.",
+      "es" : "La copia que se conservará está seleccionada. Revisa los archivos de nuevo.",
+      "fr" : "La copie à conserver est sélectionnée. Vérifiez les fichiers à nouveau.",
+      "ja" : "保持するコピーが選択されています。ファイルを再確認してください。",
+      "ko" : "보존할 중복 사본이 선택되었습니다. 파일을 다시 검토하세요.",
+      "pt-BR" : "A cópia duplicada a ser mantida está selecionada. Revise os arquivos novamente.",
+      "zh-Hans" : "要保留的重复副本已被选择。请重新检查文件。"
+    }
+  },
+  {
+    "id" : "DiskMap|The selected files will be moved to Trash.",
+    "key" : "The selected files will be moved to Trash.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:187"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die ausgewählten Dateien werden in den Papierkorb gelegt.",
+      "en" : "The selected files will be moved to Trash.",
+      "es" : "Los archivos seleccionados se moverán a la Papelera.",
+      "fr" : "Les fichiers sélectionnés seront placés dans la corbeille.",
+      "ja" : "選択したファイルをゴミ箱に移動します。",
+      "ko" : "선택한 파일이 휴지통으로 이동됩니다.",
+      "pt-BR" : "Os arquivos selecionados serão movidos para o Lixo.",
+      "zh-Hans" : "所选文件将移到废纸篓。"
+    }
+  },
+  {
+    "id" : "DiskMap|The selection changed. Review the files again.",
+    "key" : "The selection changed. Review the files again.",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:199"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die Auswahl wurde geändert. Dateien erneut prüfen.",
+      "en" : "The selection changed. Review the files again.",
+      "es" : "La selección cambió. Revisa los archivos de nuevo.",
+      "fr" : "La sélection a changé. Vérifiez les fichiers à nouveau.",
+      "ja" : "選択内容が変更されました。ファイルを再確認してください。",
+      "ko" : "선택이 변경되었습니다. 파일을 다시 검토하세요.",
+      "pt-BR" : "A seleção mudou. Revise os arquivos novamente.",
+      "zh-Hans" : "选择已更改。请重新检查文件。"
+    }
+  },
+  {
     "id" : "DiskMap|These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.",
     "key" : "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.",
-    "kind" : "Row detail",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:27",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:119"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6519,7 +8038,7 @@
     "key" : "This app cannot be uninstalled.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:122"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:275"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6557,9 +8076,9 @@
     "key" : "This file cannot be deleted here.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:19",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:112",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:115"
+      "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:43",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:215",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:194"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6571,6 +8090,25 @@
       "ko" : "이 파일은 여기서 삭제할 수 없습니다.",
       "pt-BR" : "Este arquivo não pode ser apagado aqui.",
       "zh-Hans" : "无法在此删除此文件。"
+    }
+  },
+  {
+    "id" : "DiskMap|This permanently deletes only the selected app-data folders.",
+    "key" : "This permanently deletes only the selected app-data folders.",
+    "kind" : "Confirmation message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:164"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nur die ausgewählten Ordner mit App-Daten werden dauerhaft gelöscht.",
+      "en" : "This permanently deletes only the selected app-data folders.",
+      "es" : "Esto elimina permanentemente solo las carpetas de datos de apps seleccionadas.",
+      "fr" : "Seuls les dossiers de données d’apps sélectionnés seront supprimés définitivement.",
+      "ja" : "選択したアプリデータのフォルダのみを完全に削除します。",
+      "ko" : "선택한 앱 데이터 폴더만 영구적으로 삭제합니다.",
+      "pt-BR" : "Isso apaga permanentemente somente as pastas de dados de apps selecionadas.",
+      "zh-Hans" : "这只会永久删除所选的应用数据文件夹。"
     }
   },
   {
@@ -6597,7 +8135,7 @@
     "key" : "This permanently deletes the selected files.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:146"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:187"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6616,7 +8154,7 @@
     "key" : "Uncertain ownership",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:105"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:138"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6635,8 +8173,8 @@
     "key" : "Uninstall",
     "kind" : "Button",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:67",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:70",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:100",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:103",
       "App\/Settings\/AboutMacSpace.swift:41"
     ],
     "table" : "DiskMap",
@@ -6656,7 +8194,7 @@
     "key" : "Uninstall %@?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:69"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:102"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6675,8 +8213,8 @@
     "key" : "Uninstall apps",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:25",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:21",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:95"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6695,7 +8233,7 @@
     "key" : "Uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:132"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:285"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6714,8 +8252,8 @@
     "key" : "Uninstalling",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:129",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:71"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:282",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:104"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6734,7 +8272,7 @@
     "key" : "Unknown action",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:134"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:287"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6749,11 +8287,32 @@
     }
   },
   {
+    "id" : "DiskMap|Unmatched app data",
+    "key" : "Unmatched app data",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:22",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:166",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:168"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Nicht zugeordnete App-Daten",
+      "en" : "Unmatched app data",
+      "es" : "Datos de apps sin correspondencia",
+      "fr" : "Données d’apps non associées",
+      "ja" : "対応するアプリが不明なデータ",
+      "ko" : "연결되지 않은 앱 데이터",
+      "pt-BR" : "Dados de apps sem correspondência",
+      "zh-Hans" : "未匹配的应用数据"
+    }
+  },
+  {
     "id" : "DiskMap|Use MacSpace’s uninstall option in Settings.",
     "key" : "Use MacSpace’s uninstall option in Settings.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:97"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:130"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6768,11 +8327,30 @@
     }
   },
   {
+    "id" : "DiskMap|Verification incomplete",
+    "key" : "Verification incomplete",
+    "kind" : "Pill",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:43"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Überprüfung unvollständig",
+      "en" : "Verification incomplete",
+      "es" : "Verificación incompleta",
+      "fr" : "Vérification incomplète",
+      "ja" : "検証が不完全です",
+      "ko" : "검증 미완료",
+      "pt-BR" : "Verificação incompleta",
+      "zh-Hans" : "验证未完成"
+    }
+  },
+  {
     "id" : "DiskMap|Verified app data",
     "key" : "Verified app data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:102"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:135"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6787,13 +8365,51 @@
     }
   },
   {
+    "id" : "DiskMap|Website data",
+    "key" : "Website data",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Websitedaten",
+      "en" : "Website data",
+      "es" : "Datos de sitios web",
+      "fr" : "Données de sites web",
+      "ja" : "Webサイトデータ",
+      "ko" : "웹 사이트 데이터",
+      "pt-BR" : "Dados de sites",
+      "zh-Hans" : "网站数据"
+    }
+  },
+  {
+    "id" : "DiskMap|Worth reviewing",
+    "key" : "Worth reviewing",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Prüfung empfohlen",
+      "en" : "Worth reviewing",
+      "es" : "Conviene revisar",
+      "fr" : "À examiner",
+      "ja" : "確認を推奨",
+      "ko" : "검토 권장",
+      "pt-BR" : "Vale revisar",
+      "zh-Hans" : "值得检查"
+    }
+  },
+  {
     "id" : "DiskMap|disk",
     "key" : "disk",
     "kind" : "Tile title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:16",
-      "App\/Shell\/MainView.swift:260",
-      "App\/Shell\/MainView.swift:261",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:12",
+      "App\/Shell\/MainView.swift:262",
+      "App\/Shell\/MainView.swift:263",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "DiskMap",
@@ -7199,7 +8815,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:158",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:163",
-      "App\/Shell\/MainView.swift:191"
+      "App\/Shell\/MainView.swift:193"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -9383,7 +10999,7 @@
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:112",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:236",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:305",
-      "App\/Shell\/MainView.swift:188"
+      "App\/Shell\/MainView.swift:190"
     ],
     "table" : "Siri",
     "translations" : {
@@ -9940,7 +11556,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:752",
+      "App\/Renderer\/ScreenView.swift:813",
       "Sdk\/Interface\/Widgets.swift:237"
     ],
     "table" : "Siri",
@@ -11080,7 +12696,7 @@
     "key" : "%@ is outside the cleanable locations.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1018"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1027"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11099,8 +12715,8 @@
     "key" : "%@ is running; quit it first.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1030",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1035"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1044",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1049"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11122,7 +12738,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:546"
+      "Sdk\/Interface\/Widgets.swift:578"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11236,7 +12852,7 @@
     "key" : "\/System\/Library\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:762"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:763"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11258,7 +12874,7 @@
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:546"
+      "Sdk\/Interface\/Widgets.swift:578"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11296,7 +12912,7 @@
     "key" : "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:515"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:516"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11315,7 +12931,7 @@
     "key" : "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:659"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:660"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11334,7 +12950,7 @@
     "key" : "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:669"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:670"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11346,6 +12962,26 @@
       "ko" : "가상 머신의 디스크와 상태입니다. 사용하지 않는 가상 머신은 가상화 앱에서 삭제하세요.",
       "pt-BR" : "O disco e o estado de uma máquina virtual. Apague as máquinas que você não usa mais no app de virtualização.",
       "zh-Hans" : "虚拟机的磁盘和状态。请在虚拟化应用中删除不再使用的虚拟机。"
+    }
+  },
+  {
+    "id" : "SystemData|All done",
+    "key" : "All done",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:429",
+      "App\/Renderer\/ScreenView.swift:565"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Fertig",
+      "en" : "All done",
+      "es" : "Completado",
+      "fr" : "Terminé",
+      "ja" : "完了",
+      "ko" : "완료",
+      "pt-BR" : "Concluído",
+      "zh-Hans" : "已完成"
     }
   },
   {
@@ -11412,9 +13048,8 @@
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:73",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:77",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:184",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:260",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:373"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:186",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:383"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11452,7 +13087,7 @@
     "key" : "An app is using these files. Try again later.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1040"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1054"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11471,7 +13106,7 @@
     "key" : "An unfinished download by %@. If %@ is no longer downloading it, delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:654"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:655"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11529,8 +13164,8 @@
     "key" : "App cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:531",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:551"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:532",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:552"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11568,7 +13203,7 @@
     "key" : "App container: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:618"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11625,7 +13260,7 @@
     "key" : "App group data: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:618"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11720,7 +13355,7 @@
     "key" : "Apple system cache used by background services; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:497"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:498"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11758,7 +13393,7 @@
     "key" : "Apps' support files for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:956"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:957"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11777,7 +13412,7 @@
     "key" : "Apps' temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:715"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:716"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11815,7 +13450,7 @@
     "key" : "Audio plug-ins and sounds",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:959"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:960"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11834,7 +13469,7 @@
     "key" : "Battery and energy history used by System Settings > Battery.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:611"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:612"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11872,7 +13507,7 @@
     "key" : "Caches for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:960"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:961"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11911,7 +13546,7 @@
     "key" : "Caches, old reports and unused system assets",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:140"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:141"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11949,7 +13584,7 @@
     "key" : "Can't run",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:215"
+      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:219"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -11989,7 +13624,7 @@
     "key" : "Check Software Update in System Settings.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:601"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:602"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12046,7 +13681,7 @@
     "key" : "Cloud storage: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:631"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:632"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12122,7 +13757,7 @@
     "key" : "CoreSpotlight indexes for apps' searchable content.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:627"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:628"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12141,12 +13776,12 @@
     "key" : "Couldn't free it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:215",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:249",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:301",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:314",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:349",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:350"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:226",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:347",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:359",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:360",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:381",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:394"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12165,7 +13800,7 @@
     "key" : "Daemon containers",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:624"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:625"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12203,7 +13838,7 @@
     "key" : "Data of Apple background services.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:625"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:626"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12222,7 +13857,7 @@
     "key" : "Data of an Apple app or service.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:620"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12279,8 +13914,10 @@
     "key" : "Developer",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:229",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:233",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:230",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:234",
+      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:239",
+      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:271",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:21",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:286"
     ],
@@ -12301,7 +13938,7 @@
     "key" : "Diagnostic and crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:575"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:576"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12339,7 +13976,7 @@
     "key" : "Document version history",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:588",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:616"
     ],
     "table" : "SystemData",
@@ -12492,7 +14129,7 @@
     "key" : "Empty the Trash in Finder.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:691"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:692"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12587,7 +14224,7 @@
     "key" : "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:598"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:599"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -12978,7 +14615,7 @@
     "key" : "From a deleted account. Copy what you need, then delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:676"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:677"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13054,7 +14691,7 @@
     "key" : "Home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:681"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:682"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13073,8 +14710,8 @@
     "key" : "Homebrew",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:566",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:878",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:567",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:879",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:22"
     ],
     "table" : "SystemData",
@@ -13132,7 +14769,7 @@
     "key" : "Homebrew is busy. Try again when it's done.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:322"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:330"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13170,7 +14807,7 @@
     "key" : "Homebrew's cleanup failed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:330"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:338"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13208,7 +14845,7 @@
     "key" : "In Finder, select files and choose Remove Download. They stay in the cloud.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:632"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:633"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13303,7 +14940,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:345"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:355"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13322,7 +14959,7 @@
     "key" : "Installed fonts",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:957"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:958"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13341,7 +14978,7 @@
     "key" : "Kept by macOS for its own services; it manages the size.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:696"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:697"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13360,7 +14997,7 @@
     "key" : "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:590"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13418,7 +15055,7 @@
     "key" : "Leftover macOS update files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:597",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:598",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:581"
     ],
     "table" : "SystemData",
@@ -13476,7 +15113,7 @@
     "key" : "Log files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:711"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:712"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13495,7 +15132,7 @@
     "key" : "Logs for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:961"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:962"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13533,7 +15170,7 @@
     "key" : "Managed by the kernel; shrinks after a restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:609"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:610"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13571,7 +15208,7 @@
     "key" : "Mostly media. Clean it up from inside the app.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:620"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:621"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13590,7 +15227,7 @@
     "key" : "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:561"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:562"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13609,7 +15246,7 @@
     "key" : "Not a cleanable item (%@).",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1009"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1013"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13666,8 +15303,8 @@
     "key" : "Nothing was freed: MacSpace couldn't check which apps are open.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:321",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1024"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:329",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1038"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13686,7 +15323,7 @@
     "key" : "Nothing was freed: MacSpace couldn't check which files are in use.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1042"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1056"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13762,7 +15399,7 @@
     "key" : "Old reports and unused system assets",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:140"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:141"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13781,7 +15418,7 @@
     "key" : "Old reports are deleted from Free now.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:577"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:578"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13934,7 +15571,7 @@
     "key" : "Per-user Spotlight metadata",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:626"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:627"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13972,7 +15609,7 @@
     "key" : "Power log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:610"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:611"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14049,7 +15686,7 @@
     "key" : "Rebuilt by Spotlight; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:586"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14087,7 +15724,7 @@
     "key" : "Remove it with the tool that made it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:737"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:738"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14164,7 +15801,7 @@
     "key" : "Rotated by logd; deleting it removes the logs needed for troubleshooting.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:573"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:574"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14202,7 +15839,7 @@
     "key" : "Safe to delete while %@ is closed. It's rebuilt when needed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:494"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:495"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14221,7 +15858,7 @@
     "key" : "Saved home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:686"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:687"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14278,7 +15915,7 @@
     "key" : "Shared frameworks",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:958"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:959"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14297,7 +15934,7 @@
     "key" : "Shared temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:751"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:752"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14335,7 +15972,7 @@
     "key" : "Simulators that can't run",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:214"
+      "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:218"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14411,7 +16048,7 @@
     "key" : "Smaller items",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:813",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:814",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:254"
     ],
     "table" : "SystemData",
@@ -14450,7 +16087,7 @@
     "key" : "Spotlight index",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:584"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14469,7 +16106,7 @@
     "key" : "Staged macOS update",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:600"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:601"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14488,7 +16125,7 @@
     "key" : "Swap and sleep files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:608"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:609"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14545,7 +16182,7 @@
     "key" : "Symbols for crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:605",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:431"
     ],
     "table" : "SystemData",
@@ -14565,7 +16202,7 @@
     "key" : "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:607"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14585,8 +16222,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:74",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:393",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:402",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:403",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:412",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:300",
       "App\/Settings\/ScreenshotToolView.swift:89"
     ],
@@ -14607,7 +16244,7 @@
     "key" : "System assets",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:580"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14646,7 +16283,7 @@
     "key" : "System cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:521"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:522"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14665,7 +16302,7 @@
     "key" : "System databases",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:708",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:709",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:127"
     ],
     "table" : "SystemData",
@@ -14685,7 +16322,7 @@
     "key" : "System extensions",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:962"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:963"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14742,7 +16379,7 @@
     "key" : "Temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:714"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:715"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14761,7 +16398,7 @@
     "key" : "Temporary files of macOS and of other users on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:730"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:731"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14780,7 +16417,7 @@
     "key" : "Temporary files of macOS and other users",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:728"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:729"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14799,7 +16436,7 @@
     "key" : "Temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:752"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:753"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14951,7 +16588,7 @@
     "key" : "Tool cache: ~\/.cache\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:537"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:538"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14970,7 +16607,7 @@
     "key" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:567"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:568"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14989,7 +16626,7 @@
     "key" : "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:570"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:571"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15008,7 +16645,7 @@
     "key" : "Trash",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:690",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:691",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:389"
     ],
     "table" : "SystemData",
@@ -15068,7 +16705,7 @@
     "key" : "Unfinished download: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:653"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:654"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15087,7 +16724,7 @@
     "key" : "Unified system log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:572"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:573"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15125,7 +16762,7 @@
     "key" : "Unused assets are removed from Free now when macOS reports any; the rest is in use.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:582"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15144,8 +16781,8 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:394",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:403",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:404",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:413",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:358"
     ],
     "table" : "SystemData",
@@ -15184,7 +16821,7 @@
     "key" : "Virtual machine: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:668"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:669"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15203,7 +16840,7 @@
     "key" : "Wallpaper and screen saver downloads",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:912",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:913",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:601"
     ],
     "table" : "SystemData",
@@ -15223,7 +16860,7 @@
     "key" : "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:915",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:916",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:602"
     ],
     "table" : "SystemData",
@@ -15340,7 +16977,7 @@
     "key" : "Xcode Command Line Tools",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:560"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:561"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15628,7 +17265,7 @@
     "key" : "macOS restore image: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:658"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:659"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15723,7 +17360,7 @@
     "key" : "the downloading app",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:652"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:653"
     ],
     "table" : "SystemData",
     "translations" : {

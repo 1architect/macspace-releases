@@ -15,6 +15,7 @@
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "macOSがアプリの検証時に作ったコピーです。アプリと領域を共有するため、旧バージョンの残りだけが解放されます。";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "macOSの復元イメージです。Mac、デバイス、仮想マシンの設定が完了したら削除できます。";
 "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app." = "仮想マシンのディスクと状態です。不要なマシンは仮想化アプリで削除してください。";
+"All done" = "完了";
 "All users" = "すべてのユーザ";
 "Allow" = "許可";
 "Allow Full Disk Access to see everything" = "フルディスクアクセスですべてを表示";

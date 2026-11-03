@@ -183,11 +183,12 @@ final class AppCacheTests: XCTestCase {
         cache.container = "com.example.Sandboxed"
         cache.bundleIdentifiers = ["com.example.Sandboxed"]
         let cleaner = SystemDataCleaner(runningApps: { [RunningApp(bundleIdentifier: "com.apple.finder", name: "Finder")] }, processCheck: .none, freeSpace: { nil })
-        let result = SystemDataModule.cleanAppCaches([cache.id], in: snapshot([cache]), now: now, home: home.path, cleaner: cleaner)
+        let result = SystemDataModule.cleanAppCaches([cache.id], in: snapshot([cache]), now: now, home: home.path, cleaner: cleaner).actionResult
         XCTAssertNotEqual(result.outcome, .failed, result.details.joined(separator: "\n"))
         XCTAssertEqual(try fm.contentsOfDirectory(atPath: caches.path), ["com.apple.nsurlsessiond"], "the folder stays, with macOS's own")
         XCTAssertTrue(fm.fileExists(atPath: container.appendingPathComponent("Data/Library/Preferences/com.example.Sandboxed.plist").path))
         XCTAssertTrue(fm.fileExists(atPath: home.appendingPathComponent("Library/Containers/com.example.Other/Data/Library/Caches/blob").path))
+        XCTAssertEqual(AppCaches.measure(caches.path, now: now, skippingApple: true)?.bytes, 0, "protected Apple service data is not a remaining actionable cache")
 
         // Its roots are the chosen containers' caches folders: the rest of a container is outside them.
         let preferences = SystemDataItem(id: "x", title: "x", kind: .appCache, paths: [container.appendingPathComponent("Data/Library/Preferences").path],
@@ -199,7 +200,7 @@ final class AppCacheTests: XCTestCase {
         apple.id = "containercache:com.apple.Notes"
         apple.container = "com.apple.Notes"
         apple.path = home.appendingPathComponent("Library/Containers/com.apple.Notes/Data/Library/Caches").path
-        XCTAssertEqual(SystemDataModule.cleanAppCaches([apple.id], in: snapshot([apple]), now: now, home: home.path, cleaner: cleaner).outcome, .failed)
+        XCTAssertEqual(SystemDataModule.cleanAppCaches([apple.id], in: snapshot([apple]), now: now, home: home.path, cleaner: cleaner).actionResult.outcome, .failed)
     }
 
     /// A container's cache is an app cache of the caches page, under the same rules; one holding media named by people is not listed.

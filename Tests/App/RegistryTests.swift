@@ -25,6 +25,7 @@ final class ScannerTests: XCTestCase {
         XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "14.0"), systemVersion: sonoma), .compatible)
         XCTAssertEqual(ModuleScanner.compatibility(of: Fixtures.manifest(minimumMacOS: "26"), systemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0)), .compatible)
         guard case .incompatible = ModuleScanner.compatibility(of: Fixtures.manifest(sdkVersion: 99), systemVersion: sonoma) else { return XCTFail() }
+        guard case .incompatible = ModuleScanner.compatibility(of: Fixtures.manifest(sdkVersion: SdkVersion.current - 1), systemVersion: sonoma) else { return XCTFail("Older binary module layouts must be rejected before loading") }
     }
 }
 

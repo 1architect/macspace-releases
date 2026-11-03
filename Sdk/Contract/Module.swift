@@ -266,6 +266,8 @@ public protocol MacSpaceModule: Sendable {
 
     /// The user pressed Refresh: drop anything cached so the next `tile` and `screen` read the system again.
     func invalidate() async
+    /// Refresh only the visible lazy inventory when supported; existing modules retain their normal refresh.
+    func invalidate(pageID: String?, context: ModuleContext) async
 
     /// Automatic cleanup, run in the background from time to time when the user turned it on in Settings: free what is safe to free
     /// without asking (what the page's main Clean action frees, never anything that cannot be undone or needs a decision). nil
@@ -283,6 +285,7 @@ public extension MacSpaceModule {
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await screen(context: context) }
 
     func invalidate() async {}
+    func invalidate(pageID: String?, context: ModuleContext) async { await invalidate() }
 
     func autoClean(context: ModuleContext) async -> CleanupReport? { nil }
 

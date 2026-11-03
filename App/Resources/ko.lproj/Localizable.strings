@@ -11,6 +11,7 @@
 "%lld files" = "파일 %lld개";
 "%lld items" = "%lld개 항목";
 "%lld needed" = "%lld개 필요";
+"%lld selected files" = "선택한 파일 %lld개";
 "%lld smaller" = "작은 항목 %lld개";
 "%lld%% of %@" = "%lld%% (전체 %@)";
 ", beta" = ", 베타";
@@ -93,6 +94,7 @@
 "Move MacSpace to the Applications folder, then reopen it." = "MacSpace를 응용 프로그램 폴더로 옮긴 후 다시 여세요.";
 "Move MacSpace to the Trash from Applications." = "응용 프로그램에서 MacSpace를 휴지통으로 옮기세요.";
 "Move MacSpace to your Applications folder first." = "먼저 MacSpace를 응용 프로그램 폴더로 옮기세요.";
+"Move files to Trash" = "파일을 휴지통으로 이동";
 "Needed" = "필요함";
 "Needed to measure everything on the disk." = "전체 디스크를 측정하려면 필요합니다.";
 "Needs %@" = "%@ 필요";
@@ -110,11 +112,13 @@
 "Nothing to free" = "확보할 공간 없음";
 "Notifications" = "알림";
 "OK" = "확인";
+"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "기본값은 꺼짐입니다. 꺼져 있으면 디스크에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 별도 규칙을 따릅니다。";
 "Open Login Items" = "로그인 항목 열기";
 "Open MacSpace" = "MacSpace 열기";
 "Open Panel" = "패널 열기";
 "Open System Settings" = "시스템 설정 열기";
 "Open at login" = "로그인 시 열기";
+"Other folders" = "기타 폴더";
 "Permissions" = "권한";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "보조 프로그램 설치를 누르세요. macOS가 인식하지 못하면 터미널에서 /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register 를 실행하고 출력 메시지를 보내주세요.";
 "Privileged helper" = "권한 보조 프로그램";
@@ -148,6 +152,7 @@
 "Theme" = "테마";
 "This build of MacSpace does not contain the helper." = "이 MacSpace 빌드에는 보조 프로그램이 없습니다.";
 "This copy of MacSpace is incomplete" = "이 MacSpace 사본이 불완전함";
+"This selection is unavailable. Refresh and try again." = "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요.";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "목록에서 MacSpace를 켜세요. 없으면 이 아이콘을 목록으로 드래그하세요.";
 "Turn on MacSpace under Allow in the Background." = "백그라운드에서 허용 아래에서 MacSpace를 켜세요.";
 "Uninstall" = "제거";

@@ -1,5 +1,7 @@
 import Foundation
+import Darwin
 import MacSpaceDiskMapPrivileged
+import MacSpacePlatform
 
 extension DiskDatabase {
     func recordOwnership(_ catalog: DiskApplications) throws {
@@ -11,7 +13,9 @@ extension DiskDatabase {
                 try query("INSERT OR IGNORE INTO claims(data) VALUES(?)", [.data(data)])
                 var id: UInt64 = 0
                 try query("SELECT id FROM claims WHERE data=?", [.data(data)]) { id = Self.number($0, 0) }
-                for path in claim.paths where Self.contains(path, below: root) {
+                for live in claim.paths {
+                    let path = root == DataVolume.path ? DataVolume.path + live : live
+                    guard Self.contains(path, below: root) else { continue }
                     try query("INSERT OR IGNORE INTO ownership VALUES(?,?)", [.text(path), .number(id)])
                 }
             }
@@ -26,15 +30,16 @@ extension DiskDatabase {
         let folder = folder ?? root
         var index = try state() ?? DiskIndex(root: root)
         guard let node = try directory(folder, contents: true) else { return DiskSnapshot(index) }
+        if index.summaryVersion == DiskIndex.summarySchemaVersion {
+            index.categories = try categorySummaries(folder: folder)
+        }
         index.directories[folder] = node
         for path in node.folders { index.directories[path] = try directory(path) }
-        let large = try files()
-        for file in large {
-            let parent = Self.parent(file.path)
-            if index.directories[parent] == nil { index.directories[parent] = try directory(parent) }
-            if index.directories[parent]?.files.contains(where: { $0.path == file.path }) == false { index.directories[parent]?.files.append(file) }
-        }
+        // `contents` includes this directory's direct files. Descendant inventories use bounded lazy queries.
         if inventory {
+            var identities = Set<String>()
+            try query("SELECT DISTINCT bundle FROM dirs WHERE bundle<>''") { identities.insert(Self.text($0, 0)) }
+            index.knownBundleIdentifiers = identities
             var appPaths: [String] = [], totals: [String: UInt64] = [:]
             try query("SELECT path,total FROM dirs WHERE substr(path,-4)='.app'") {
                 let path = Self.text($0, 0)
@@ -44,33 +49,29 @@ extension DiskDatabase {
             index.appPaths = appPaths; index.measuredOwnershipBytes = totals
             let home = FileManager.default.homeDirectoryForCurrentUser.path
             for name in ["Caches", "Containers", "Group Containers", "Application Support", "Saved Application State", "HTTPStorages", "WebKit"] {
-                let path = home + "/Library/" + name
+                let live = home + "/Library/" + name
+                let path = root == DataVolume.path ? DataVolume.path + live : live
                 if let node = try directory(path, contents: true) {
                     index.directories[path] = node
                     for path in node.folders { index.directories[path] = try directory(path) }
                 }
             }
         }
-        // Only evidence relevant to the returned page is read. The complete ownership graph remains in the database.
-        var referenced: [UInt32: DiskOwnershipClaim] = [:]
+        if try query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='duplicates'") > 0 {
+            let totals = try duplicateTotals(folder: folder)
+            index.duplicateBytes = totals.bytes; index.duplicateCount = totals.count
+        }
+        if folder == root {
+            let home = FileManager.default.homeDirectoryForCurrentUser.path
+            index.personalFolders = try FileReviewPolicy.personalFolders.compactMap { try directory(DiskApplications.measuredPath(home + "/" + $0, index: index)) }.filter { $0.bytes > 0 }
+        }
+        // Evidence IDs belong to this projection; the source graph stays on disk.
+        var referenced: [UInt32: DiskOwnershipClaim] = [:], identifiers: [DiskOwnershipClaim: UInt32] = [:]
         func ownership(_ path: String) throws -> UInt32? {
-            var path = path, found: [UInt32: DiskOwnershipClaim] = [:]
-            while Self.contains(path, below: root) {
-                try query("SELECT c.id,c.data FROM ownership o JOIN claims c ON c.id=o.claim WHERE o.path=?", [.text(path)]) {
-                    let id = UInt32(clamping: Self.number($0, 0))
-                    found[id] = try JSONDecoder().decode(DiskOwnershipClaim.self, from: Self.data($0, 1))
-                }
-                if path == root { break }; path = Self.parent(path)
-            }
-            guard !found.isEmpty else { return nil }
-            for (id, claim) in found { referenced[id] = claim }
-            if found.count == 1 { return found.keys.first }
-            let claims = Array(found.values), owners = Set(claims.flatMap(\.ownerPaths))
-            let confidence: OwnershipConfidence = owners.count > 1 || claims.contains(where: { $0.confidence == .shared }) ? .shared : claims.contains(where: { $0.confidence == .unknown }) ? .unknown : claims.contains(where: { $0.confidence == .inferred }) ? .inferred : .verifiedExclusive
-            // Combined references exist only in this page; persisted source claims retain their provenance.
-            var id = UInt32.max
-            while referenced[id] != nil { id -= 1 }
-            referenced[id] = DiskOwnershipClaim(paths: Array(Set(claims.flatMap(\.paths))), ownerPaths: Array(owners), confidence: confidence, source: "combined", reason: "Overlapping evidence; least certain classification preserved.")
+            guard let claim = try ownershipEvidence(path) else { return nil }
+            if let id = identifiers[claim] { return id }
+            let id = UInt32(identifiers.count + 1)
+            identifiers[claim] = id; referenced[id] = claim
             return id
         }
         for path in index.directories.keys {

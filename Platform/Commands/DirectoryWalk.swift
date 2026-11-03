@@ -18,6 +18,7 @@ public enum DirectoryWalk {
         public let linkCount: UInt32
         public let logicalBytes: UInt64
         public let allocatedBytes: UInt64
+        public let modifiedAt: Date?
         /// Only when the walk asks for them (`extended`): 0 otherwise.
         public let cloneFamily: UInt64
         public let privateBytes: UInt64
@@ -31,13 +32,14 @@ public enum DirectoryWalk {
     /// Streams one directory in a fixed-size native buffer. No NSURL array or per-file stat call is created.
     /// The callback finishes before this returns; nested scans should start after it returns to release the buffer first.
     @discardableResult
-    public static func entries(at path: String, visit: (String, Entry) -> Void) -> Bool {
+    public static func entries(at path: String, includingModificationDate: Bool = false, visit: (String, Entry) -> Void) -> Bool {
         var info = stat()
         guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR, info.st_flags & UInt32(SF_DATALESS) == 0 else { return false }
         let capacity = 256 * 1024
         let buffer = UnsafeMutableRawPointer.allocate(byteCount: capacity, alignment: 8)
         defer { buffer.deallocate() }
         var request = attributes(extended: false)
+        if includingModificationDate { request.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
         return Walk<Void>.list(path, &request, flags: O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW,
                                options: 0, buffer: buffer, capacity: capacity, rootDevice: info.st_dev) { name, entry in
             visit(String(cString: name), entry)
@@ -53,6 +55,17 @@ public enum DirectoryWalk {
         return list
     }
 
+    /// Bounded native workers share the existing directory queue. Each worker owns only its current
+    /// buffer and accumulator; consumers synchronize shared writes, never retain an entire file tree.
+    public static func scan<State>(_ root: String, devices: Set<Int32>, pool: ScanPool,
+                                   makeState: @escaping () -> State,
+                                   visit: @escaping (inout State, () -> String, Entry) -> Bool,
+                                   finished: @escaping (inout State, String, Bool) -> Void) {
+        _ = walk(root, extended: false, pool: pool, devices: devices, modificationDates: true,
+                 finished: finished, makeState: makeState,
+                 visit: { state, path, entry in visit(&state, path, entry) ? .descend : .skip })
+    }
+
     /// What `visit` decides for a folder.
     enum Step { case descend, skip }
 
@@ -60,12 +73,14 @@ public enum DirectoryWalk {
     /// and attributes. Folders on another volume than the root's are passed to `visit` but never entered. With a pool, `visit` runs on
     /// several threads at once, each with a `State` of its own (`makeState`); every state is returned, for the caller to add up.
     /// `unreadable` counts the folders that could not be listed (no permission, SIP), whose contents are left out.
-    static func walk<State>(_ root: String, extended: Bool, pool: ScanPool? = nil, refusesLinks: Bool = false, makeState: @escaping () -> State,
+    static func walk<State>(_ root: String, extended: Bool, pool: ScanPool? = nil, refusesLinks: Bool = false,
+                            devices: Set<Int32>? = nil, modificationDates: Bool = false,
+                            finished: ((inout State, String, Bool) -> Void)? = nil, makeState: @escaping () -> State,
                             visit: @escaping (inout State, _ path: () -> String, Entry) -> Step) -> (states: [State], unreadable: Int) {
         var rootInfo = stat()
         // A folder still only in the cloud is not listed: listing it would make the cloud app fetch it.
         guard lstat(root, &rootInfo) == 0, rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
-        let walk = Walk(root: root, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, makeState: makeState, visit: visit)
+        let walk = Walk(root: root, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, devices: devices, modificationDates: modificationDates, finished: finished, makeState: makeState, visit: visit)
         walk.work(helper: false)
         walk.helpers.wait()
         return walk.result()
@@ -83,6 +98,8 @@ public enum DirectoryWalk {
     private final class Walk<State>: @unchecked Sendable {
         let root: String
         let device: Int32
+        let devices: Set<Int32>
+        let finished: ((inout State, String, Bool) -> Void)?
         let pool: ScanPool?
         let makeState: () -> State
         let visit: (inout State, () -> String, Entry) -> Step
@@ -97,7 +114,8 @@ public enum DirectoryWalk {
         private let options: UInt64
         private let openFlags: Int32
 
-        init(root: String, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, makeState: @escaping () -> State,
+        init(root: String, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool,
+             finished: ((inout State, String, Bool) -> Void)?, makeState: @escaping () -> State,
              visit: @escaping (inout State, () -> String, Entry) -> Step) {
             // One of the two: `open` refuses `O_NOFOLLOW` together with `O_NOFOLLOW_ANY` (EINVAL on 26B5101f), which made every folder
             // unreadable to the helper and every place it measures 0 bytes (the version history, the Spotlight index and the system
@@ -105,11 +123,14 @@ public enum DirectoryWalk {
             openFlags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | (refusesLinks ? O_NOFOLLOW_ANY : O_NOFOLLOW)
             self.root = root
             self.device = device
+            self.devices = devices ?? [device]
+            self.finished = finished
             self.pool = pool
             self.makeState = makeState
             self.visit = visit
             folders = [root]
             list = DirectoryWalk.attributes(extended: extended)
+            if modificationDates { list.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
             options = UInt64(extended ? FSOPT_ATTR_CMN_EXTENDED : 0)
         }
 
@@ -164,8 +185,9 @@ public enum DirectoryWalk {
                         built = made
                         return made
                     }
-                    if visit(&state, path, entry) == .descend, entry.isDirectory, entry.device == device { found.append(path()) }
+                    if visit(&state, path, entry) == .descend, entry.isDirectory, devices.contains(entry.device) { found.append(path()) }
                 }
+                finished?(&state, folder, complete)
                 listed(found, failed: !complete)
             }
             condition.lock()
@@ -204,6 +226,11 @@ public enum DirectoryWalk {
                     if returned.commonattr & attrgroup_t(ATTR_CMN_DEVID) != 0 { device = field.loadUnaligned(as: Int32.self); field += 4 }
                     var type: UInt32 = 0
                     if returned.commonattr & attrgroup_t(ATTR_CMN_OBJTYPE) != 0 { type = field.loadUnaligned(as: UInt32.self); field += 4 }
+                    var modifiedAt: Date?
+                    if returned.commonattr & attrgroup_t(ATTR_CMN_MODTIME) != 0 {
+                        let time = field.loadUnaligned(as: timespec.self); field += MemoryLayout<timespec>.size
+                        if time.tv_sec > 0 { modifiedAt = Date(timeIntervalSince1970: Double(time.tv_sec) + Double(time.tv_nsec) / 1e9) }
+                    }
                     var ownerUID: UInt32 = 0
                     if returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID) != 0 { ownerUID = field.loadUnaligned(as: UInt32.self); field += 4 }
                     var flags: UInt32 = 0
@@ -220,7 +247,7 @@ public enum DirectoryWalk {
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0 { privateBytes = UInt64(max(field.loadUnaligned(as: Int64.self), 0)); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 { family = field.loadUnaligned(as: UInt64.self); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 { extendedFlags = field.loadUnaligned(as: UInt64.self); field += 8 }
-                    body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID, linkCount: links, logicalBytes: logical, allocatedBytes: allocated,
+                    body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID, linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
                                      cloneFamily: family, privateBytes: privateBytes, extendedFlags: extendedFlags))
                 }
             }

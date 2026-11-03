@@ -1,5 +1,6 @@
 import XCTest
 import MacSpaceSdk
+import MacSpacePlatform
 @testable import MacSpaceSystemData
 
 /// Developer tools' caches (`DeveloperCaches`) and the saved form of the rows that show them.
@@ -45,6 +46,65 @@ final class DeveloperCacheTests: XCTestCase {
     }
 
     /// The folders of ~/Library/Caches and ~/.cache claimed here are not listed again as an app's or a tool's cache.
+    func testOnlyVerifiedProjectOutputsAreOffered() throws {
+        let swift = try folder("Projects/Swift/.build"), rust = try folder("Projects/Rust/target")
+        try Data().write(to: home.appendingPathComponent("Projects/Swift/Package.swift"))
+        try Data().write(to: swift.appendingPathComponent("workspace-state.json"))
+        try Data().write(to: home.appendingPathComponent("Projects/Rust/Cargo.toml"))
+        try Data().write(to: rust.appendingPathComponent(".rustc_info.json"))
+        _ = try folder("Projects/Personal/target")
+        let outputs = DeveloperCaches.projectOutputs(home: home.resolvingSymlinksInPath().path)
+        XCTAssertEqual(Set(outputs.map { ($0.path as NSString).lastPathComponent }), [".build", "target"])
+        XCTAssertEqual(outputs.count, 2)
+    }
+
+    func testProjectOutputCannotApproveSiblingSourceOrLinkedMetadata() throws {
+        let output = try folder("Documents/Rust/target", bytes: 1)
+        let project = output.deletingLastPathComponent()
+        try Data().write(to: project.appendingPathComponent("Cargo.toml"))
+        let marker = output.appendingPathComponent(".rustc_info.json")
+        try Data().write(to: marker)
+        let canonicalHome = home.resolvingSymlinksInPath().path
+        let canonicalOutput = output.resolvingSymlinksInPath().path
+        XCTAssertTrue(DeveloperCaches.verifiedProjectOutput(canonicalOutput, home: canonicalHome))
+        XCTAssertFalse(FileReviewPolicy.includes(canonicalOutput + "/artifact", home: canonicalHome), "Disk must leave generated output to System Data")
+        XCTAssertFalse(FileReviewPolicy.includes(canonicalHome + "/Documents/Swift/.build/debug/bin", home: canonicalHome))
+        let source = try folder("Documents/Rust/src", bytes: 1)
+        let item = SystemDataItem(id: "source", title: "source", kind: .toolCache, paths: [source.path], bytes: 1,
+                                  readable: true, owners: [], inUse: false,
+                                  cleanup: .init(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
+        let cleaner = SystemDataCleaner(runningApps: { [] }, processCheck: .none, freeSpace: { nil })
+        let result = cleaner.clean([item], allowedRoots: [], allowedPaths: [canonicalOutput])
+        XCTAssertFalse(result.results[0].deleted)
+        XCTAssertTrue(fm.fileExists(atPath: source.path))
+        try fm.removeItem(at: marker)
+        try fm.createSymbolicLink(at: marker, withDestinationURL: project.appendingPathComponent("Cargo.toml"))
+        XCTAssertFalse(DeveloperCaches.verifiedProjectOutput(canonicalOutput, home: canonicalHome))
+    }
+
+    func testLinkedCacheAncestorCannotEscapeApprovedRoot() throws {
+        let caches = try folder("Library/Caches", bytes: 1)
+        let personal = try folder("Documents/Personal", bytes: 1)
+        let link = caches.appendingPathComponent("linked")
+        try fm.createSymbolicLink(at: link, withDestinationURL: personal)
+        let item = SystemDataItem(id: "link", title: "link", kind: .appCache, paths: [link.appendingPathComponent("blob").path], bytes: 1,
+                                  readable: true, owners: [], inUse: false,
+                                  cleanup: .init(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
+        let result = SystemDataCleaner(runningApps: { [] }, processCheck: .none, freeSpace: { nil }).clean([item], allowedRoots: [caches.path])
+        XCTAssertFalse(result.results[0].deleted)
+        XCTAssertTrue(fm.fileExists(atPath: personal.appendingPathComponent("blob").path))
+    }
+
+    func testCleanupBatchesKeepOverlapsAndHomebrewSerial() {
+        func entry(_ id: String, _ path: String, _ source: CacheEntry.Source = .developer) -> CacheEntry {
+            CacheEntry(id: id, title: id, bytes: 1, paths: [path], source: source)
+        }
+        let entries = [entry("a", "/a"), entry("b", "/b"), entry("nested", "/b/sub"), entry("brew", "/brew", .homebrew), entry("c", "/c")]
+        let batches = SystemDataModule.cacheCleanupBatches(entries)
+        XCTAssertEqual(batches.map { $0.map(\.id) }, [["a", "b"], ["nested"], ["brew"], ["c"]])
+        XCTAssertTrue(batches.allSatisfy { $0.count <= 2 })
+    }
+
     func testClaimedFoldersAreListedOnce() {
         XCTAssertTrue(DeveloperCaches.claimedLibraryCaches.isSuperset(of: ["pip", "org.swift.swiftpm", "bun", "Yarn"]))
         XCTAssertTrue(DeveloperCaches.claimedToolCaches.isSuperset(of: ["uv", "pre-commit"]))

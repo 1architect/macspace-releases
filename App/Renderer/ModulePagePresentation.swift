@@ -47,7 +47,8 @@ enum ModulePagePresentation {
     }
 
     private static func split(_ widgets: [ScreenWidget], title: String?, help: String?, id: String, width: Double) -> [Item] {
-        if widgets.count == 1, case let .list(list) = widgets[0], list.fillsRemainingSpace == true {
+        if widgets.count == 1, case let .list(list) = widgets[0],
+           list.fillsRemainingSpace == true || !list.paths.isEmpty || (help == nil && title == list.title && list.rows.allSatisfy({ $0.children.isEmpty })) {
             return [Item(id: list.id, widgets: widgets)]
         }
         // A section containing other widget types retains their original presentation and help.
@@ -110,7 +111,7 @@ struct OverviewChoices: ViewModifier {
     func body(content: Content) -> some View {
         if let group, let selection = group.selection, let handle {
             content
-                .environment(\.rowChoice, RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { id in
+                .environment(\.rowChoice, RowChoice(choices: handle.choosableIDs(group), checked: handle.checked(group)) { id in
                     withAnimation(ScreenView.choiceAnimation) { handle.toggle(id, in: group) }
                 })
                 .environment(\.sectionChoice, SectionChoice(selection: selection, checked: handle.checked(group), all: handle.allChecked(group)) { id in
@@ -133,6 +134,11 @@ struct ModuleSectionHeader: View {
                     .toggleStyle(.checkbox).labelsHidden()
                 InfoTitle(title: title, info: help)
             }
-        } else { InfoTitle(title: title, info: help) }
+        } else {
+            HStack(spacing: 6) {
+                InfoTitle(title: title, info: help)
+                if let part, let reason = choice?.unavailableReason(part) { BadgeView(badge: Badge(reason, .info)) }
+            }
+        }
     }
 }

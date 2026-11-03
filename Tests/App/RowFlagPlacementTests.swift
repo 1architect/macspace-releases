@@ -2,9 +2,9 @@ import XCTest
 @testable import MacSpaceApp
 
 final class RowFlagPlacementTests: XCTestCase {
-    /// The action stays attached to the right, before the size when present.
-    func testTheFlagStaysAtTheRightBeforeTheFigure() {
-        XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: true), .beforeFigure)
+    /// Public release v1.1.5 places the action after the title cluster when a size is present.
+    func testTheFlagMatchesPublicReleaseAfterTheTitleCluster() {
+        XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: true), .afterTitle)
         XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: false), .trailing)
     }
 }

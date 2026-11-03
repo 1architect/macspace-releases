@@ -128,10 +128,9 @@ public enum AppOwnership {
     }
     public static func safeExisting(_ path: String) -> Bool {
         guard canonicalPath(path) else { return false }
-        return autoreleasepool {
-            FileManager.default.fileExists(atPath: path)
-                && URL(fileURLWithPath: path).resolvingSymlinksInPath().path == path
-        }
+        guard let resolved = realpath(path, nil) else { return false }
+        defer { free(resolved) }
+        return String(cString: resolved) == path
     }
     public static func normalizedPaths(_ paths: [String]) -> [String] {
         var selected = Set<String>()

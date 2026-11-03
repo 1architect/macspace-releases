@@ -23,33 +23,42 @@ final class DiskDatabaseMemoryTests: XCTestCase {
         }
         func stop() -> UInt64 { timer.cancel(); return lock.withLock { max(maximum, DiskDatabaseMemoryTests.footprint().current) } }
     }
-    func testReadOnlyLiveCacheMigrationAndPageQueriesStayWithinMemoryBudget() throws {
-        guard ProcessInfo.processInfo.environment["MACSPACE_DATABASE_MEMORY"] == "1" else { throw XCTSkip("Opt-in read-only disk database memory benchmark") }
+    func testDatabaseIndexSummariesAndNavigationStayWithinMemoryBudget() throws {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("disk-db-memory-" + UUID().uuidString)
-        try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporary) }
-        let legacy = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v2.scan")
-        let baseline = Self.footprint(), started = Date(), sampler = Sampler()
-        let db = try DiskDatabase(url: temporary.appendingPathComponent("index.sqlite"), root: "/")
-        try db.importLegacy(legacy)
-        let imported = Date().timeIntervalSince(started), afterImport = Self.footprint()
-        let pageStart = Date(), root = try db.snapshot()
-        let folders = root.index.directories["/"]?.folders ?? []
-        var count = 0, maxProjection = 0
-        for folder in folders {
-            let page = try db.snapshot(folder: folder, inventory: false)
-            maxProjection = max(maxProjection, page.index.directories.count)
-            count += 1
-            for child in (page.index.directories[folder]?.folders ?? []).prefix(10) {
-                let next = try db.snapshot(folder: child, inventory: false)
-                maxProjection = max(maxProjection, next.index.directories.count); count += 1
+        let baseline = Self.footprint(), sampler = Sampler(), started = Date()
+        let db = try DiskDatabase(url: temporary.appendingPathComponent("index.sqlite"), root: "/fixture/Downloads", home: "/fixture")
+        try db.transaction {
+            try db.put(DiskDirectory(path: "/fixture/Downloads"))
+            for group in 0..<10 { try db.put(DiskDirectory(path: "/fixture/Downloads/\(group)")) }
+            for n in 0..<50_000 {
+                let path = "/fixture/Downloads/\(n % 10)/\(n)"
+                try db.put(DiskDirectory(path: path, directBytes: 8192))
+                for name in ["one.txt", "two.txt"] { try db.putDetail(DiskFile(path: path + "/" + name, bytes: 4096, logicalBytes: 4096, ownerUID: getuid()), link: "") }
+                try db.flushBatch()
             }
+            var state = DiskIndex(root: "/fixture/Downloads"); state.browseVersion = DiskIndex.browseSchemaVersion
+            try db.saveState(state)
         }
-        let afterPages = Self.footprint()
-        let sampled = sampler.stop()
-        let extra = sampled > baseline.current ? sampled - baseline.current : 0
-        print("DISK_DATABASE_MEMORY importSeconds=\(imported) importFootprintMiB=\(Double(afterImport.current)/1_048_576) pages=\(count) pageSeconds=\(Date().timeIntervalSince(pageStart)) maximumProjectionDirectories=\(maxProjection) currentFootprintMiB=\(Double(afterPages.current)/1_048_576) extraPeakMiB=\(Double(extra)/1_048_576)")
-        XCTAssertLessThan(extra, 45 * 1_048_576, "The disk index must leave room for the full app within 150 MB")
-        XCTAssertLessThan(maxProjection, 10000, "No page can materialize the entire folder index")
+        try db.reconcileTotals(all: true)
+        try db.prepareBrowseMetadata()
+        let indexed = Date().timeIntervalSince(started)
+        var persisted: UInt64 = 0
+        try db.query("SELECT COUNT(*) FROM entries") { persisted = DiskDatabase.number($0, 0) }
+        XCTAssertEqual(persisted, 0, "100,000 ordinary small files must not create persistent detail rows")
+        XCTAssertEqual(try db.categorySummaries().reduce(0) { $0 + $1.count }, 0)
+        XCTAssertEqual(try db.directory("/fixture/Downloads")?.bytes, 409_600_000)
+        let navigation = Date()
+        for n in 0..<100 {
+            let path = "/fixture/Downloads/\(n % 10)/\(n)"
+            let snapshot = try db.snapshot(folder: path, inventory: false)
+            XCTAssertEqual(snapshot.index.directories.count, 1)
+            XCTAssertEqual(try db.browse(.init(folder: path, kind: .category, category: .other))?.files.count, 0)
+        }
+        let pageTime = Date().timeIntervalSince(navigation), peak = sampler.stop()
+        let extra = peak > baseline.current ? peak - baseline.current : 0
+        print("DISK_DATABASE_MEMORY directories=50011 files=100000 indexSeconds=\(indexed) pages=100 pageSeconds=\(pageTime) extraPeakMiB=\(Double(extra)/1_048_576)")
+        XCTAssertLessThan(extra, 64 * 1_048_576, "Index growth must not retain a whole-file object graph")
+        XCTAssertLessThan(pageTime, 1, "Small folder navigation must not sweep the global inventory")
     }
 }

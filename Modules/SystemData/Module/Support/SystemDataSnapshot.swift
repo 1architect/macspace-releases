@@ -109,6 +109,8 @@ actor SystemDataStore {
     /// Bumped by `invalidate`: a scan that started before it (before an action) is not kept or handed out after it, or the page
     /// came back with the figures from before the action.
     private var generation = 0
+    private var mutating = false
+    private var reconciling: Task<SystemDataSnapshot, Never>?
 
     init(builder: @escaping Builder = SystemDataStore.liveSnapshot) {
         self.builder = builder
@@ -161,18 +163,31 @@ actor SystemDataStore {
         return updated
     }
 
-    /// The action already obtained this snapshot. Retire older scans and reconcile only its targets.
-    func reconcile(_ request: ActionRequest, privileged: (any PrivilegedChannel)?, choices: CacheChoices, cleaner: CacheCleaner) async -> SystemDataSnapshot? {
-        guard var cached else { return nil }
-        cached.choices = choices
-        cached.cleaner = cleaner
+    /// Retire scans before changing files, including callers already waiting on one.
+    func beginMutation() {
         generation += 1
-        let started = generation
         inflight = nil
         relay = nil
-        let updated = await TargetedSystemDataMeasurements.reconcile(cached, request: request, privileged: privileged)
+        reconciling = nil
+        mutating = true
+    }
+
+    /// Publish the affected measurements together; reads joining this work await the same snapshot.
+    func reconcile(_ request: ActionRequest, privileged: (any PrivilegedChannel)?, choices: CacheChoices, cleaner: CacheCleaner) async -> SystemDataSnapshot? {
+        guard var cached else { mutating = false; return nil }
+        cached.choices = choices
+        cached.cleaner = cleaner
+        cached.logFloor = SystemLogFloor.load()
+        beginMutation()
+        let started = generation
+        let original = cached
+        let task = Task { await TargetedSystemDataMeasurements.reconcile(original, request: request, privileged: privileged) }
+        reconciling = task
+        let updated = await task.value
         guard started == generation else { return self.cached }
         self.cached = updated
+        reconciling = nil
+        mutating = false
         return updated
     }
 
@@ -183,6 +198,12 @@ actor SystemDataStore {
 
     func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, now: Date = Date(), privileged: (any PrivilegedChannel)? = nil,
                   progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
+        if let reconciling {
+            let started = generation
+            let updated = await reconciling.value
+            return started == generation ? updated : await latestSnapshot(privileged: privileged, progress: progress)
+        }
+        if mutating, let cached { return cached }
         _ = liveCloudSnapshot()
         if let cached, now.timeIntervalSince(cached.takenAt) < maxAge, cached.helperTried || privileged == nil {
             // A scan the helper did not measure kept saying so for the scan's whole life (ten minutes), though the helper was back:
@@ -197,7 +218,7 @@ actor SystemDataStore {
             retry.helperError = nil
             let started = generation
             let measured = await RootMeasurements.apply(to: retry, channel: privileged)
-            guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged, progress: progress) }
+            guard started == generation else { return await latestSnapshot(privileged: privileged, progress: progress) }
             self.cached = measured
             return measured
         }
@@ -207,7 +228,7 @@ actor SystemDataStore {
             if let progress { relay?.attach(progress) }
             let waitedFor = generation
             let fresh = await inflight.value
-            return waitedFor == generation ? fresh : await snapshot(maxAge: maxAge, privileged: privileged, progress: progress)
+            return waitedFor == generation ? fresh : await latestSnapshot(privileged: privileged, progress: progress)
         }
         let builder = self.builder
         let relay = LoadProgressRelay()
@@ -224,7 +245,7 @@ actor SystemDataStore {
         inflight = task
         self.relay = relay
         let fresh = await task.value
-        guard started == generation else { return await snapshot(maxAge: maxAge, privileged: privileged, progress: progress) }
+        guard started == generation else { return await latestSnapshot(privileged: privileged, progress: progress) }
         cached = fresh
         helperAskedAt = Date()
         inflight = nil
@@ -232,8 +253,21 @@ actor SystemDataStore {
         return fresh
     }
 
+    private func latestSnapshot(privileged: (any PrivilegedChannel)?, progress: LoadProgressSink?) async -> SystemDataSnapshot {
+        if let reconciling {
+            let started = generation
+            let updated = await reconciling.value
+            if started == generation { return updated }
+            return await latestSnapshot(privileged: privileged, progress: progress)
+        }
+        if let cached { return cached }
+        return await snapshot(privileged: privileged, progress: progress)
+    }
+
     func invalidate() {
         cached = nil
+        mutating = false
+        reconciling = nil
         inflight = nil
         relay = nil
         generation += 1

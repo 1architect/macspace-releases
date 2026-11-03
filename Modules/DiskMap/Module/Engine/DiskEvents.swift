@@ -7,12 +7,15 @@ final class DiskEvents: @unchecked Sendable {
     private let lock = NSLock()
     private var pending = Changes()
     private var stream: FSEventStreamRef?
+    private let history = DispatchSemaphore(value: 0)
+    private var historyPending = false
     private let root: String
     private let excluded: [String]
     private let queue = DispatchQueue(label: "com.macspace.disk-map.events", qos: .utility)
 
     init(root: String, since: UInt64, excluded: [String]) {
         self.root = root; self.excluded = excluded
+        historyPending = since != 0
         var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
         stream = FSEventStreamCreate(nil, { _, info, count, raw, flags, _ in
             guard let info else { return }
@@ -33,16 +36,30 @@ final class DiskEvents: @unchecked Sendable {
         }
     }
     func note(_ rawPath: String, flags: FSEventStreamEventFlags) {
-        var path = URL(fileURLWithPath: rawPath).standardizedFileURL.path
+        if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagHistoryDone) != 0 {
+            let notify = lock.withLock { let pending = historyPending; historyPending = false; return pending }
+            if notify { history.signal() }
+            return
+        }
+        var path = rawPath
+        if path.count > 1, path.hasSuffix("/") { path.removeLast() }
+        guard path.hasPrefix("/"), !path.utf8.contains(0), !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else { return }
+        // File events may use the POSIX /private spelling even when an older caller used /var or /tmp.
+        if root.hasPrefix("/private/"), (path == "/var" || path.hasPrefix("/var/") || path == "/tmp" || path.hasPrefix("/tmp/")) { path = "/private" + path }
+        if !root.hasPrefix("/private/"), (root.hasPrefix("/var/") || root.hasPrefix("/tmp/")), path.hasPrefix("/private/") { path = String(path.dropFirst(8)) }
         if root == "/", path == "/System/Volumes/Data" || path.hasPrefix("/System/Volumes/Data/") { path = String(path.dropFirst("/System/Volumes/Data".count)); if path.isEmpty { path = "/" } }
         guard root == "/" || path == root || path.hasPrefix(root + "/"), !excluded.contains(where: { path == $0 || path.hasPrefix($0 + "/") }) else { return }
         lock.withLock {
-            let lost = FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged)
-            if flags & lost != 0 { pending.recursive.insert(path) }
+            let lost = FSEventStreamEventFlags(kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged | kFSEventStreamEventFlagEventIdsWrapped)
+            if flags & lost != 0 { pending = Changes(recursive: [root]); return }
+            if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs) != 0 { pending.recursive.insert(path) }
             else if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemIsDir) != 0 { pending.shallow.insert(path) }
             let parent = (path as NSString).deletingLastPathComponent
             if root == "/" || parent == root || parent.hasPrefix(root + "/") { pending.shallow.insert(parent) }
         }
     }
-    func flush() { if let stream { FSEventStreamFlushSync(stream) } }
+    func flush() {
+        if lock.withLock({ historyPending }) { _ = history.wait(timeout: .now() + 3) }
+        if let stream { FSEventStreamFlushSync(stream) }
+    }
 }

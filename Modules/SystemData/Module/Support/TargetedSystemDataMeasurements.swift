@@ -17,18 +17,25 @@ enum TargetedSystemDataMeasurements {
         case "eraseUnifiedLog": return [SystemDataScreenBuilder.unifiedLogID]
         case "deleteSymbolicationCache": return [SystemDataScreenBuilder.symbolsID]
         case "purgeAssets", "releaseUnusedModels": return ["assets:system"]
-        case "cleanAll": return ["reports:diagnostic", "assets:system", SystemDataScreenBuilder.unifiedLogID]
+        case "cleanAll", "autoClean":
+            var ids: Set<String> = snapshot.reports.totalBytes > 0 ? ["reports:diagnostic"] : []
+            if !snapshot.assetsRetrying, !snapshot.assetsHeld,
+               (snapshot.purgeableAssetsBytes ?? 0) > 0 || (request.actionID == "cleanAll" && SystemDataScreenBuilder.hasUnusedLanguageModels(snapshot)) { ids.insert("assets:system") }
+            if request.actionID == "cleanAll", SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil { ids.insert(SystemDataScreenBuilder.unifiedLogID) }
+            return ids
         default: return []
         }
     }
 
     static func reconcile(_ snapshot: SystemDataSnapshot, request: ActionRequest,
-                          privileged: (any PrivilegedChannel)?) async -> SystemDataSnapshot {
+                          privileged: (any PrivilegedChannel)?,
+                          measure: @Sendable ([String]) async -> [String: FileTreeSize] = measurePaths,
+                          homebrewEstimate: @escaping @Sendable (String, Bool) -> HomebrewCleanup.Estimate = { HomebrewCleanup.estimate($0, allDownloads: $1) }) async -> SystemDataSnapshot {
         let entries: [CacheEntry]
         if request.actionID == "freeCaches" {
             let selected = Set(Selection.ids(request.parameters["ids"]))
             entries = CachesPage.entries(snapshot).filter { selected.contains($0.id) }.flatMap(\.parts)
-        } else { entries = request.actionID == "cleanAll" ? CachesPage.chosen(snapshot).flatMap(\.parts) : [] }
+        } else { entries = ["cleanAll", "autoClean"].contains(request.actionID) ? CachesPage.chosen(snapshot).filter { request.actionID != "autoClean" || !$0.open }.flatMap(\.parts) : [] }
         var ids = itemIDs(request, snapshot: snapshot)
         ids.formUnion(entries.filter { $0.within == $0.id }.map(\.id))
         if entries.contains(where: { $0.source == .homebrew }) {
@@ -36,10 +43,58 @@ enum TargetedSystemDataMeasurements {
         }
         let paths = Array(Set(snapshot.report.items.filter { ids.contains($0.id) }.flatMap(\.paths) + entries.flatMap(\.paths)))
         // What the system assets became is read beside the targets: one after the other, the assets folder was walked twice in a row.
-        let assetsChanged = ["purgeAssets", "releaseUnusedModels", "cleanAll"].contains(request.actionID)
+        let assetsChanged = ids.contains("assets:system")
         async let families = assetsChanged ? Task.detached(priority: .utility) { AssetFamilyScanner().scan() }.value : nil
         async let purgeable = assetsChanged ? Task.detached(priority: .utility) { SystemDataStore.livePurgeable() }.value : nil
-        let reads = await Task.detached(priority: .utility) { () -> [String: FileTreeSize] in
+        let containerCaches = snapshot.report.appCaches.filter { cache in
+            cache.container != nil && entries.contains { $0.id == cache.id }
+        }
+        let containerPaths = Set(containerCaches.map(\.path))
+        var sizes = await measure(paths.filter { !containerPaths.contains($0) })
+        let containerSizes = await Task.detached(priority: .utility) {
+            Dictionary(uniqueKeysWithValues: containerCaches.compactMap { cache -> (String, FileTreeSize)? in
+                guard let read = AppCaches.measure(cache.path, skippingApple: true) else { return nil }
+                return (cache.path, FileTreeSize(logicalBytes: read.bytes, allocatedBytesEstimate: read.bytes))
+            })
+        }.value
+        sizes.merge(containerSizes) { _, new in new }
+        let root = paths.filter { sizes[$0] == nil && RootMeasuredLocations.isAllowed($0) }
+        if let privileged, !root.isEmpty,
+           let data = try? await privileged.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": root.sorted().joined(separator: "\n")]),
+           let response = try? JSONDecoder().decode(RootMeasurementResponse.self, from: data) {
+            for (path, bytes) in response.sizes {
+                sizes[path] = FileTreeSize(logicalBytes: bytes, allocatedBytesEstimate: bytes, purgeableBytes: response.purgeable?[path] ?? 0)
+            }
+        }
+        let targetSizes = sizes
+        let targetIDs = ids
+        let assets = assetsChanged ? (families: await families, purgeable: await purgeable) : nil
+        return await Task.detached(priority: .utility) {
+            var updated = applying(targetSizes, itemIDs: targetIDs, entries: entries, to: snapshot)
+            if targetIDs.contains("reports:diagnostic") {
+                updated.reports = DiagnosticReportCleaner(directories: DiagnosticReportCleaner.standardDirectories(home: FileManager.default.homeDirectoryForCurrentUser))
+                    .plan(olderThanDays: snapshot.reports.olderThanDays)
+            }
+            if entries.contains(where: { $0.source == .homebrew }), let plan = snapshot.homebrew {
+                // One dry run for the cleanup selected, never both full-plan probes. The other estimate is now unknown.
+                let all = entries.contains { $0.id == CachesPage.homebrewDownloads }
+                let estimate = homebrewEstimate(plan.brew, all)
+                let unknown = HomebrewCleanup.Estimate(bytes: nil, error: nil)
+                updated.homebrew = HomebrewCleanup.Plan(brew: plan.brew, standard: all ? unknown : estimate, allDownloads: all ? estimate : unknown)
+            }
+            if let assets {
+                updated.purgeableAssetsBytes = assets.purgeable
+                updated.assetFamilies = assets.families ?? updated.assetFamilies
+                updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
+                updated.assetsHeld = SystemAssetGuard.holdsAssets
+                updated.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil
+            }
+            return updated
+        }.value
+    }
+
+    static func measurePaths(_ paths: [String]) async -> [String: FileTreeSize] {
+        await Task.detached(priority: .utility) { () -> [String: FileTreeSize] in
             let found = LockedArray<FileTreeSize?>(repeating: nil, count: paths.count)
             let next = JobCounter(count: paths.count)
             DispatchQueue.concurrentPerform(iterations: min(3, max(paths.count, 1))) { _ in
@@ -55,33 +110,6 @@ enum TargetedSystemDataMeasurements {
                 }
             }
             return Dictionary(uniqueKeysWithValues: zip(paths, found.values).compactMap { path, size in size.map { (path, $0) } })
-        }.value
-        var sizes = reads
-        let root = paths.filter { sizes[$0] == nil && RootMeasuredLocations.isAllowed($0) }
-        if let privileged, !root.isEmpty,
-           let data = try? await privileged.perform(operation: SystemDataPrivilegedOperations.measure, arguments: ["paths": root.sorted().joined(separator: "\n")]),
-           let response = try? JSONDecoder().decode(RootMeasurementResponse.self, from: data) {
-            for (path, bytes) in response.sizes {
-                sizes[path] = FileTreeSize(logicalBytes: bytes, allocatedBytesEstimate: bytes, purgeableBytes: response.purgeable?[path] ?? 0)
-            }
-        }
-        let targetSizes = sizes
-        let assets = assetsChanged ? (families: await families, purgeable: await purgeable) : nil
-        return await Task.detached(priority: .utility) {
-            var updated = applying(targetSizes, itemIDs: ids, entries: entries, to: snapshot)
-            if request.actionID == "cleanReports" || request.actionID == "cleanAll" {
-                updated.reports = DiagnosticReportCleaner(directories: DiagnosticReportCleaner.standardDirectories(home: FileManager.default.homeDirectoryForCurrentUser))
-                    .plan(olderThanDays: snapshot.reports.olderThanDays)
-            }
-            if entries.contains(where: { $0.source == .homebrew }) { updated.homebrew = HomebrewCleanup.plan() }
-            if let assets {
-                updated.purgeableAssetsBytes = assets.purgeable
-                updated.assetFamilies = assets.families ?? updated.assetFamilies
-                updated.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
-                updated.assetsHeld = SystemAssetGuard.holdsAssets
-                updated.ownerCleanupAvailable = AssetModelCleanup.refusal(.released) == nil
-            }
-            return updated
         }.value
     }
 

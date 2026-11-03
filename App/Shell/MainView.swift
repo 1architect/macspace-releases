@@ -161,10 +161,12 @@ public struct MainView: View {
         // A page asked for from the menu bar; a window that has just opened waits for its tiles first.
         .onChange(of: router.request?.id, initial: true) { _, _ in
             guard let destination = router.take() else { return }
+            let page = router.takePage()
             Task {
                 if !windowShown || host.dashboardHandles.isEmpty { try? await Task.sleep(for: .milliseconds(700)) }
                 // Home is the dashboard: whatever page is open goes back to it (the Screenshots window asks for it).
                 if destination == .home { close() } else { present(destination) }
+                if let page, let id = destination.moduleID { host.handle(for: id)?.requestPage(page) }
             }
         }
     }

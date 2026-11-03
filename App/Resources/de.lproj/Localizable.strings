@@ -11,6 +11,7 @@
 "%lld files" = "%lld Dateien";
 "%lld items" = "%lld Objekte";
 "%lld needed" = "%lld erforderlich";
+"%lld selected files" = "%lld ausgewählte Dateien";
 "%lld smaller" = "%lld kleinere";
 "%lld%% of %@" = "%lld %% von %@";
 ", beta" = ", Beta";
@@ -93,6 +94,7 @@
 "Move MacSpace to the Applications folder, then reopen it." = "Bewege MacSpace in den Ordner „Programme“ und öffne es erneut.";
 "Move MacSpace to the Trash from Applications." = "Verschiebe MacSpace aus Programme in den Papierkorb.";
 "Move MacSpace to your Applications folder first." = "Bewege MacSpace zuerst in den Ordner „Programme“.";
+"Move files to Trash" = "Dateien in den Papierkorb legen";
 "Needed" = "Erforderlich";
 "Needed to measure everything on the disk." = "Erforderlich, um alles auf dem Speicher zu messen.";
 "Needs %@" = "Erfordert %@";
@@ -110,11 +112,13 @@
 "Nothing to free" = "Nichts freizugeben";
 "Notifications" = "Mitteilungen";
 "OK" = "OK";
+"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "Standardmäßig aus. Ausgewählte Dateien in Festplatte werden dann endgültig gelöscht. Deinstallation und Cache-Bereinigung haben eigene Regeln.";
 "Open Login Items" = "Anmeldeobjekte öffnen";
 "Open MacSpace" = "MacSpace öffnen";
 "Open Panel" = "Panel öffnen";
 "Open System Settings" = "Systemeinstellungen öffnen";
 "Open at login" = "Beim Anmelden öffnen";
+"Other folders" = "Weitere Ordner";
 "Permissions" = "Berechtigungen";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "Klicke auf „Hilfsprogramm installieren“. Erkennt macOS es weiterhin nicht, führe im Terminal /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register aus und sende die ausgegebene Meldung.";
 "Privileged helper" = "Privilegiertes Hilfsprogramm";
@@ -148,6 +152,7 @@
 "Theme" = "Thema";
 "This build of MacSpace does not contain the helper." = "Dieser Build von MacSpace enthält das Hilfsprogramm nicht.";
 "This copy of MacSpace is incomplete" = "Diese Kopie von MacSpace ist unvollständig";
+"This selection is unavailable. Refresh and try again." = "Diese Auswahl ist nicht verfügbar. Aktualisieren und erneut versuchen.";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "Aktiviere MacSpace in der Liste. Nicht dabei? Zieh dieses Symbol hinein.";
 "Turn on MacSpace under Allow in the Background." = "Aktiviere MacSpace unter „Im Hintergrund erlauben“.";
 "Uninstall" = "Deinstallieren";

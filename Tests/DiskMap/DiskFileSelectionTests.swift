@@ -2,6 +2,7 @@ import Foundation
 import Darwin
 import XCTest
 import MacSpaceSdk
+import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
@@ -9,14 +10,21 @@ final class DiskFileSelectionTests: XCTestCase {
     func testSelectionUsesAllocatedSizesAndScopeWithoutIndividualInfoOrActions() throws {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var index = DiskIndex(root: home)
-        let owned = DiskFile(path: home + "/movie\npart.mov", bytes: 4096, logicalBytes: 200_000_000, ownerUID: getuid())
+        let path = home + "/Downloads/macspace-selection-" + UUID().uuidString + "\npart.mov"
+        try FileManager.default.createDirectory(atPath: DiskDatabase.parent(path), withIntermediateDirectories: true)
+        try Data([65]).write(to: URL(fileURLWithPath: path))
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        let owned = DiskFile(path: path, bytes: 4096, logicalBytes: 200_000_000, ownerUID: getuid(), identity: FileReviewIdentity(path))
         let protected = DiskFile(path: home + "/other.mov", bytes: 8192, logicalBytes: 300_000_000, ownerUID: getuid() + 1)
         index.directories[home] = DiskDirectory(path: home, files: [owned, protected], bytes: 12288)
         let root = DiskMapScreenBuilder.screen(index, apps: DiskApplications())
-        let all = DiskMapScreenBuilder.allLargePage(index, folder: home)
-        XCTAssertEqual(root.selection, all.selection)
-        let selection = try XCTUnwrap(root.selection)
-        XCTAssertEqual(selection.scope, DiskMapScreenBuilder.folderID(home))
+        let request = DiskBrowseRequest(folder: home, kind: .category, category: .largeFiles)
+        let all = DiskMapScreenBuilder.browsePage(.init(request: request, files: [owned, protected], next: nil, ownership: [:]))
+        XCTAssertEqual(root.selection?.scope, "disk-files")
+        let selection = try XCTUnwrap(all.selection)
+        XCTAssertEqual(selection.scope, "disk-files")
+        XCTAssertTrue(selection.session)
+        XCTAssertEqual(selection.bulkResolver, "selection:")
         XCTAssertEqual(selection.choices, [DiskMapScreenBuilder.fileID(owned.path): 4096])
         XCTAssertTrue(selection.checked.isEmpty)
         XCTAssertEqual(selection.action.id, "freeFiles")
@@ -47,7 +55,7 @@ final class DiskFileSelectionTests: XCTestCase {
     }
 
     func testNavigationDoesNotConsumeDirtyEventsOrWaitForReconciliation() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let root = URL(fileURLWithPath: "/private/tmp").appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let target = root.appendingPathComponent("file")
@@ -66,7 +74,7 @@ final class DiskFileSelectionTests: XCTestCase {
         await store.flushPersistence()
     }
     func testMeasuredOwnershipReferencesSurvivePersistenceAndTargetedReread() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let root = URL(fileURLWithPath: "/private/tmp").appendingPathComponent(UUID().uuidString)
         let app = root.appendingPathComponent("Applications/Test.app"), contents = app.appendingPathComponent("Contents")
         try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }

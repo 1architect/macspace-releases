@@ -119,6 +119,7 @@ plutil -replace CFBundleIconFile -string "$ICON_NAME" "$APP/Contents/Info.plist"
 plutil -replace CFBundleIconName -string "$ICON_NAME" "$APP/Contents/Info.plist"
 echo "App icon: $ICON"
 # The app's translations, one folder per language (Scripts/Localize.swift writes them from Localization/).
+swift Scripts/Localize.swift
 cp -R App/Resources/*.lproj "$APP/Contents/Resources/"
 # Every text with its kind of element, for the design tools' Text Editor (Scripts/TextCatalog.swift): development builds only.
 if [ "$DEV" = 1 ]; then

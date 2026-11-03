@@ -55,7 +55,7 @@ public enum AppReceiptReader {
             let relative = parts.filter { $0 != "." }.joined(separator: "/")
             guard !relative.isEmpty else { continue }
             let path = (prefix == "/" ? "" : prefix) + "/" + relative
-            guard URL(fileURLWithPath: path).standardizedFileURL.path == path else { valid = false; continue }
+            guard !path.contains("//"), !path.utf8.contains(0) else { valid = false; continue }
             paths.append(path)
         }
         return AppReceiptManifest(identifier: identifier, paths: paths, complete: valid,

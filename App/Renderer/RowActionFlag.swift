@@ -196,12 +196,12 @@ struct RowFlagStyle: ButtonStyle {
 }
 
 /// Where a row's button goes (Interface rules, "Buttons"). With a figure on the right of the row (a size, a version) the button
-/// is attached to the right, immediately before the figure. The title, (i), folder and facts stay on the left.
+/// follows the title, information, Finder and fact badges, matching public release v1.1.5.
 /// Without one, the button takes the right edge itself.
 enum RowFlagPlacement: Equatable {
-    case beforeFigure, trailing
+    case afterTitle, trailing
 
-    static func `for`(hasTrailingFigure: Bool) -> RowFlagPlacement { hasTrailingFigure ? .beforeFigure : .trailing }
+    static func `for`(hasTrailingFigure: Bool) -> RowFlagPlacement { hasTrailingFigure ? .afterTitle : .trailing }
 }
 
 /// Shared by the page action and row flags, so both use the same wave and measured progress animation.

@@ -22,6 +22,7 @@ struct WidgetForm<Top: View>: View {
     @Environment(\.pageBottomRoom) private var bottomRoom
     @Environment(\.pageScrollTop) private var scrollTop
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sectionChoice) private var sectionChoice
     @State private var flipped: Set<String> = []
     @State private var previousStructure: PageCascade.Structure?
     @State private var firstListHeaderHeight: CGFloat = 0
@@ -191,7 +192,10 @@ struct WidgetForm<Top: View>: View {
             if let text = title.text, !text.isEmpty {
                 // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
                 // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
-                header(text, help: title.help, part: Self.part(widget))
+                HStack(spacing: 6) {
+                    header(text, help: title.help, part: Self.part(widget) ?? (sectionChoice?.selection.sections.contains(where: { $0.id == widget.id }) == true ? widget.id : nil))
+                    if case let .list(list) = widget, !list.paths.isEmpty { RevealButton(paths: list.paths) }
+                }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .accessibilityAddTraits(.isHeader)
@@ -485,13 +489,18 @@ struct SectionChoice {
         Set(selection.sections.first { $0.id == part }?.rows ?? []).intersection(selection.choices.keys)
     }
 
-    /// Every part with rows has a box, even when none of them can be chosen now (all their apps are open): turned on, it is kept, and
-    /// its rows are checked as soon as they can be.
-    func hasRows(_ part: String) -> Bool { !(selection.sections.first { $0.id == part }?.rows ?? []).isEmpty }
+    /// Session headers affect eligible rows only. Legacy saved choices retain their all-on behavior.
+    func hasRows(_ part: String) -> Bool {
+        guard let section = selection.sections.first(where: { $0.id == part }), section.unavailableReason == nil else { return false }
+        return section.pageID != nil || (selection.session ? !choosable(part).isEmpty : !section.rows.isEmpty)
+    }
+
+    func unavailableReason(_ part: String) -> String? { selection.sections.first { $0.id == part }?.unavailableReason }
 
     func isOn(_ part: String) -> Bool {
+        if selection.sections.first(where: { $0.id == part })?.pageID != nil { return all.contains(part) }
         let rows = choosable(part)
-        return all.contains(part) || (!rows.isEmpty && rows.isSubset(of: checked))
+        return (!selection.session && all.contains(part)) || (!rows.isEmpty && rows.isSubset(of: checked))
     }
 }
 
@@ -633,7 +642,15 @@ struct RowView: View {
 
     var body: some View {
         Group {
-            if !row.children.isEmpty || row.pageID != nil { groupRow } else { itemRow }
+            if let section = row.sectionID {
+                HStack(spacing: 8) {
+                    ModuleSectionHeader(title: row.title, help: row.detail, part: section)
+                        .font(.system(size: 13, weight: .semibold))
+                    Spacer(minLength: 0)
+                    if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+                }
+                .padding(.vertical, 4)
+            } else if !row.children.isEmpty || row.pageID != nil { groupRow } else { itemRow }
         }
         .modifier(RowAppeared(appeared: $appeared))
     }
@@ -674,12 +691,6 @@ struct RowView: View {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
-            } else if rowChoice != nil && !row.paths.isEmpty {
-                // A row that cannot be chosen now (its app is open): a dimmed box keeps the titles in line, and its pill says why.
-                Toggle(row.title, isOn: .constant(false))
-                    .toggleStyle(.checkbox)
-                    .labelsHidden()
-                    .disabled(true)
             }
             // A count after the title; then always in this order its (i), where its files are, its facts as pills and its button, close
             // together. The (i) and the folder stay put while pills come and go after them: a pill that came before them (Freeing in
@@ -694,13 +705,13 @@ struct RowView: View {
                 HStack(spacing: 6) {
                     InfoButton(text: row.detail, steps: row.steps)
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
-                    RowBadges(badges: row.badges, quiet: flagIsActive, gap: 6, arrives: appeared)
+                    RowBadges(badges: row.badges + (row.unavailableReason.map { [Badge($0, .info)] } ?? []), quiet: flagIsActive, gap: 6, arrives: appeared)
+                    if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
                 }
                 // PillMorph's presented width drives this HStack every frame. A second phase spring here would interpolate the
                 // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if placement == .beforeFigure { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing {
                 ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
             }
@@ -753,8 +764,8 @@ enum RevealTarget: Equatable {
     static func of(_ urls: [URL]) -> RevealTarget? {
         let urls = urls.map(\.standardizedFileURL)
         guard let first = urls.first else { return nil }
-        // One hidden folder (the Trash, ~/.Trash) is opened: selected in its parent, the Finder showed a window where it is not drawn.
-        if urls.count == 1, first.lastPathComponent.hasPrefix("."), (try? first.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+        // A folder control opens its contents directly, including hidden folders such as the Trash.
+        if urls.count == 1, (try? first.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
             return .open(first)
         }
         let parents = Set(urls.map { $0.deletingLastPathComponent().path })

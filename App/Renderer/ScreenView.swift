@@ -15,7 +15,7 @@ struct ScreenView: View {
     private var hidesDetails: Bool { !details.visible }
     private var detailsAreBusy: Bool { handle.isReloading }
 
-    private var legendCount: Int { (content?.hero?.segments.count).map { $0 + 1 } ?? 0 }
+    private var legendCount: Int { content?.hero.map { BlockLayout.legendSegments($0.segments, blocks: Self.graphBlocks($0)).count + 1 } ?? 0 }
     private var cascadeCount: Int { legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count }
 
     @State private var dockVisible = false
@@ -90,12 +90,57 @@ struct ScreenView: View {
     /// is made of (`UsageSegment.group`).
     static func row(_ id: String, in screen: Screen) -> Row? {
         if let row = row(id, in: screen.widgets) { return row }
-        for segment in screen.hero?.segments ?? [] {
-            guard let group = segment.group else { continue }
-            if group.id == id { return group }
-            if let row = row(id, in: [.list(ListWidget(id: group.id, rows: group.children))]) { return row }
+        let segments = screen.hero?.segments ?? []
+        func find(_ segments: [UsageSegment]) -> Row? {
+            for segment in segments {
+                guard let group = graphGroup(segment, usageID: screen.hero?.id ?? "", selection: screen.selection) else { continue }
+                if group.id == id { return group }
+                if let row = row(id, in: [.list(ListWidget(id: group.id, rows: group.children))]) { return row }
+            }
+            return nil
         }
-        return nil
+        if let original = find(segments) { return original }
+        // Aggregate navigation is uncommon; do not rebuild it for ordinary rows or original folder tiles.
+        return find(BlockLayout.blocks(segments).map(\.segment).filter { $0.id == BlockLayout.smallerID || $0.id == BlockLayout.foldersID })
+    }
+
+    /// A folder aggregate remains a map of the actual source segments, including nested aggregates.
+    static func graphPage(_ id: String, in screen: Screen) -> Screen? {
+        guard let hero = screen.hero else { return nil }
+        let segments = hero.segments
+        guard let aggregate = graphBlocks(hero).map(\.segment).first(where: {
+            $0.id == BlockLayout.foldersID && graphGroup($0, usageID: hero.id)?.id == id
+        }) else { return nil }
+        let destinations = Set(aggregate.items.map(\.id))
+        let forest = segments.filter { segment in segment.group.map { destinations.contains($0.id) } ?? false }
+        guard !forest.isEmpty, forest.count < segments.count || aggregate.bytes == 0 else { return nil }
+        return Screen(title: aggregate.label, hero: UsageBar(id: id, title: aggregate.label, totalBytes: aggregate.bytes, segments: forest), widgets: [])
+    }
+
+    /// Zero-byte synthetic forests show their empty folders directly instead of regrouping forever.
+    static func graphBlocks(_ usage: UsageBar) -> [(segment: UsageSegment, weight: Double)] {
+        usage.totalBytes == 0 ? usage.segments.map { ($0, 1) } : BlockLayout.blocks(usage.segments)
+    }
+
+    static func graphGroup(_ segment: UsageSegment, usageID: String, selection: Selection? = nil) -> Row? {
+        guard var group = segment.group else { return nil }
+        if segment.id == BlockLayout.smallerID || segment.id == BlockLayout.foldersID {
+            group.id = "graph:" + Data(usageID.utf8).base64EncodedString() + ":" + segment.id
+        }
+        if group.selection == nil, !group.children.isEmpty, var selection {
+            let ids = Set(group.children.map(\.id))
+            selection.choices = Dictionary(group.children.compactMap { row in selection.choices[row.id].map { (row.id, $0) } }, uniquingKeysWith: { first, _ in first })
+            selection.checked = selection.checked.filter(ids.contains)
+            selection.suggested = selection.suggested.filter(ids.contains)
+            selection.noteNames = selection.noteNames.filter { ids.contains($0.key) }
+            selection.sections = selection.sections.compactMap { section in
+                var section = section; section.rows = section.rows.filter(ids.contains)
+                return section.rows.isEmpty ? nil : section
+            }
+            if selection.scope != nil { selection.partial = true }
+            if !selection.choices.isEmpty { group.selection = selection }
+        }
+        return group
     }
 
     /// The group row with this id, wherever it is: in a list, a section, or among another group's items (a group inside a group
@@ -164,6 +209,7 @@ struct ScreenView: View {
             withTransaction(instant) { details.update(busy: detailsAreBusy, initial: true) }
         }
         .onChange(of: detailsAreBusy) { _, busy in details.update(busy: busy) }
+        .task(id: handle.bulkMembershipKey) { await handle.refreshBulkMembership() }
         .onDisappear { details.cancel(); handle.dismissCompletion(); handle.clearPageSelections() }
         // A refresh that no longer has an open group (its items were freed) goes back to the page under it.
         .onChange(of: groups.count) { _, count in
@@ -175,14 +221,15 @@ struct ScreenView: View {
     private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive, selection: handle.screen.flatMap { handle.pageSelection($0, id: "screen:root") }) }
 
     private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil) -> some View {
-        Group {
+        let legendCount = content?.hero.map { BlockLayout.legendSegments($0.segments, blocks: Self.graphBlocks($0)).count + 1 } ?? 0
+        return Group {
             if let content {
                 // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
                 let refreshing = hidesDetails
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            allowsGraphBesideList: true,
                            graphLoading: !content.loaded || handle.isRefreshing || handle.isReloading,
-                           detailsVisible: !refreshing, cascadeOffset: content.hero.map { $0.segments.count + 1 } ?? 0,
+                           detailsVisible: !refreshing, cascadeOffset: legendCount,
                            maximumColumns: layout == .singleColumn ? 1 : 3,
                            expandsGroups: true, handle: handle) {
                     if let hero = content.hero {
@@ -205,7 +252,7 @@ struct ScreenView: View {
             }
         }
         .environment(\.rowChoice, selection.flatMap { group in
-            group.selection.map { value in RowChoice(choices: Set(value.choices.keys), checked: handle.checked(group)) { id in
+            group.selection.map { value in RowChoice(choices: handle.choosableIDs(group), checked: handle.checked(group)) { id in
                 withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
             } }
         })
@@ -214,7 +261,7 @@ struct ScreenView: View {
                 withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
             } }
         })
-        .environment(\.pageCascadeCount, (content?.hero.map { $0.segments.count + 1 } ?? 0) + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count)
+        .environment(\.pageCascadeCount, legendCount + WidgetForm<EmptyView>.itemIDs(content?.widgets ?? []).count)
         .scrollIndicators(.never)
         .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
@@ -224,24 +271,25 @@ struct ScreenView: View {
     /// page is in parts (`Selection.sections`) lists each part under a header of its own, with a box that checks the whole part.
     @ViewBuilder
     private func groupPage(_ group: Row) -> some View {
-        if let page = handle.pages[group.id] {
+        if let page = handle.pages[group.id] ?? handle.graphPage(group.id) {
             modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id))
         } else {
             let widgets = ModulePagePresentation.groupWidgets(group)
+            let choiceGroup = handle.selectionGroup(group)
             WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
                               maximumColumns: 1) { EmptyView() }
                 .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
                 .scrollIndicators(.never)
                 .modifier(PageScrollArea(hasFooter: hasFooter))
                 .animation(Theme.layout, value: hasFooter)
-                .environment(\.rowChoice, group.selection.map { selection in
-                    RowChoice(choices: Set(selection.choices.keys), checked: handle.checked(group)) { [handle] id in
-                        withAnimation(Self.choiceAnimation) { handle.toggle(id, in: group) }
+                .environment(\.rowChoice, choiceGroup.selection.map { selection in
+                    RowChoice(choices: handle.choosableIDs(choiceGroup), checked: handle.checked(choiceGroup)) { [handle] id in
+                        withAnimation(Self.choiceAnimation) { handle.toggle(id, in: choiceGroup) }
                     }
                 })
-                .environment(\.sectionChoice, group.selection.flatMap { selection in
-                    selection.sections.isEmpty ? nil : SectionChoice(selection: selection, checked: handle.checked(group), all: handle.allChecked(group)) { [handle] id in
-                        withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: group) }
+                .environment(\.sectionChoice, choiceGroup.selection.flatMap { selection in
+                    selection.sections.isEmpty ? nil : SectionChoice(selection: selection, checked: handle.checked(choiceGroup), all: handle.allChecked(choiceGroup)) { [handle] id in
+                        withAnimation(Self.choiceAnimation) { handle.toggleAll(id, in: choiceGroup) }
                     }
                 })
         }
@@ -377,7 +425,7 @@ struct HeroBlocks: View {
 
     var body: some View {
         let segments = usage.segments
-        let blocks = BlockLayout.blocks(segments)
+        let blocks = ScreenView.graphBlocks(usage)
         let hoveredSegment = hovered.flatMap { id in blocks.first { $0.segment.id == id }?.segment }
         VStack(alignment: .leading, spacing: 10) {
             if drawingSuppressed {
@@ -404,7 +452,7 @@ struct HeroBlocks: View {
                 // Not while the figures are being read again.
                 .onTapGesture { location in
                     guard !loading, let segment = BlocksView.segment(at: location, in: blocksSize, segments: segments),
-                          let group = segment.group else { return }
+                          let group = ScreenView.graphGroup(segment, usageID: usage.id) else { return }
                     openGroup(group.id)
                 }
                 .padding(.horizontal, -(PageInsets.formHeaderIndent + Self.gap / 2))
@@ -443,7 +491,7 @@ struct HeroBlocks: View {
             .modifier(PageItemReveal(index: 0, count: cascadeCount, visible: detailsVisible))
             LegendFlowLayout() {
                 // Every part, in the color of the block it is drawn in (the smaller ones share theirs).
-                ForEach(Array(usage.segments.enumerated()), id: \.element.id) { index, segment in
+                ForEach(Array(BlockLayout.legendSegments(segments, blocks: blocks).enumerated()), id: \.element.id) { index, segment in
                     HStack(spacing: 6) {
                         // A part left out of the blocks (too small to draw) is an outline: it has no block to share a color with.
                         Group {
@@ -634,15 +682,28 @@ struct ActionDock: View {
     private var choiceAction: Action? {
         guard let group = choosingGroup, let selection = group.selection else { return nil }
         let ids = handle.checked(group)
-        guard !ids.isEmpty else { return nil }
+        guard selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty else { return nil }
         var action = selection.action
-        let total = ids.compactMap { selection.choices[$0] }.reduce(0, +)
+        let total = selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +)
         // While the boxes are what the module suggests, the button says so ("Free recommended").
         let suggested = Set(selection.suggested).intersection(selection.choices.keys)
         let title = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title
         // Rows with no size of their own (`Selection.choices`) put none on the button.
         action.title = total > 0 ? title + " " + ByteFormat.string(total) : title
-        action.parameters["ids"] = Selection.parameter(ids.sorted())
+        if let bulk = selection.bulk {
+            action.parameters["ids"] = nil; action.parameters["reviewed"] = nil; action.parameters["origins"] = nil
+            action.parameters["selectionToken"] = bulk.token
+            if action.confirmation != nil {
+                let count = String(format: String(localized: "%lld selected files"), Int64(clamping: bulk.count))
+                action.confirmation?.message += "\n\n" + count + " · " + ByteFormat.string(bulk.bytes)
+            }
+        } else { action.parameters["ids"] = Selection.parameter(ids.sorted()) }
+        if selection.bulk == nil, !selection.reviewed.isEmpty, let data = try? JSONEncoder().encode(selection.reviewed.filter { ids.contains($0.key) }) {
+            action.parameters["reviewed"] = String(decoding: data, as: UTF8.self)
+        }
+        if selection.bulk == nil, !selection.origins.isEmpty, let data = try? JSONEncoder().encode(selection.origins.filter { ids.contains($0.key) }) {
+            action.parameters["origins"] = String(decoding: data, as: UTF8.self)
+        }
         // The checked rows that name something in the confirmation (an open app, which the action quits), in page order.
         let names = Self.orderedIDs(group).filter(ids.contains).compactMap { selection.noteNames[$0] }.reduce(into: [String]()) { names, name in
             if !names.contains(name) { names.append(name) }

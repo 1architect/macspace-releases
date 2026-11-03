@@ -19,13 +19,18 @@ struct DiskApplication: Sendable {
 }
 struct AppLeftover: Sendable {
     var identifier: String
-    var paths: [String]
+    var path: String
     var bytes: UInt64
+    var identity: AppFileIdentity?
+    var choiceID: String {
+        struct Target: Encodable { var path: String; var identity: AppFileIdentity? }
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        return "app-data:" + ((try? encoder.encode(Target(path: path, identity: identity))) ?? Data()).base64EncodedString()
+    }
 }
 struct DiskApplications: Sendable {
     var apps: [DiskApplication] = []
-    /// Destructive legacy leftovers stay empty: absence from an incomplete catalog is not orphan evidence.
-    var leftovers: [AppLeftover] = []
+    /// Unmatched is not proof that an app was removed. Only explicit, reviewed user-data choices may be freed.
     var reviewableLeftovers: [AppLeftover] = []
     var evidenceLimitations: [String] = [
         "Public registration lookup is bounded by discovered bundle identifiers; discovery is incomplete.",
@@ -50,14 +55,12 @@ struct DiskApplications: Sendable {
     static func measuredBytes(_ paths: [String], index: DiskIndex) -> UInt64 {
         var bytes: UInt64 = 0, files = Set<String>()
         let normalized = AppOwnership.normalizedPaths(paths)
-        let directoryRoots = normalized.filter { index.directories[measuredPath($0, index: index)] != nil }.map { measuredPath($0, index: index) }
         for path in normalized {
             if let directory = index.directories[measuredPath(path, index: index)] { bytes += directory.bytes; continue }
             if let measured = index.measuredOwnershipBytes?[measuredPath(path, index: index)] { bytes += measured; continue }
             var st = stat()
             guard AppOwnership.safeExisting(path), lstat(path, &st) == 0, st.st_mode & S_IFMT == S_IFREG, st.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
             let key = "\(st.st_dev):\(st.st_ino)"
-            if let canonical = index.hardlinks[key]?.min(by: { $0.path < $1.path }), directoryRoots.contains(where: { index.contains(canonical.path, below: $0) }) { continue }
             if files.insert(key).inserted { bytes += UInt64(max(0, st.st_blocks)) * 512 }
         }
         return bytes
@@ -90,20 +93,30 @@ struct DiskApplications: Sendable {
             result.apps.sort { $0.owner.name.localizedStandardCompare($1.owner.name) == .orderedAscending }
         }
         result = result.remeasured(index)
-        // Unknown data remains reviewable, never handed to the legacy destructive leftovers action.
-        let ids = Set(result.catalog.owners.flatMap(\.identifiers))
-        var grouped: [String: [String]] = [:]
-        for base in ["Caches", "Containers", "Application Support", "HTTPStorages", "WebKit", "Saved Application State"] {
+        result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: index.knownBundleIdentifiers ?? [], home: home)
+        return result
+    }
+    static let reviewBases = ["Containers", "Application Support"]
+    static func unmatchedData(_ index: DiskIndex, apps: [DiskApplication], knownIdentifiers: Set<String>, home: String) -> [AppLeftover] {
+        let ids = knownIdentifiers.union(apps.flatMap { Array($0.owner.identifiers) + $0.owner.groups + Array($0.owner.helpers.keys) })
+        let claimed = Set(apps.flatMap(\.ownership).flatMap(\.paths))
+        var rows: [AppLeftover] = []
+        for base in reviewBases {
             let folder = measuredPath(home + "/Library/" + base, index: index)
             for path in index.directories[folder]?.folders ?? [] {
                 var id = (path as NSString).lastPathComponent
                 if id.hasSuffix(".savedState") { id = String(id.dropLast(".savedState".count)) }
-                guard AppOwner.validIdentifier(id), !ids.contains(id) else { continue }
-                grouped[id, default: []].append(livePath(path))
+                let live = livePath(path)
+                guard AppOwner.validIdentifier(id), !ids.contains(id), let node = index.directories[path], node.bytes > 0,
+                      !claimed.contains(where: { index.contains(live, below: $0) || index.contains($0, below: live) }) else { continue }
+                // Container metadata may name an identity different from the directory's name.
+                if base == "Containers", let metadataID = NSDictionary(contentsOfFile: live + "/.com.apple.containermanagerd.metadata.plist")?["MCMMetadataIdentifier"] as? String,
+                   ids.contains(metadataID) { continue }
+                let identity = DiskUnmatchedRemoval.eligible(live, home: home) ? AppFileIdentity(path: live) : nil
+                rows.append(AppLeftover(identifier: id, path: live, bytes: node.bytes, identity: identity))
             }
         }
-        result.reviewableLeftovers = grouped.sorted { $0.key < $1.key }.map { AppLeftover(identifier: $0.key, paths: $0.value.sorted(), bytes: measuredBytes($0.value, index: index)) }
-        return result
+        return rows.sorted { $0.bytes == $1.bytes ? $0.path < $1.path : $0.bytes > $1.bytes }
     }
     /// Updates allocation figures without rebuilding catalog/signing/ownership metadata.
     func remeasured(_ index: DiskIndex) -> DiskApplications {
@@ -120,7 +133,7 @@ struct DiskApplications: Sendable {
             result.apps[n].ownershipBytes = Dictionary(grouping: claims, by: \.confidence).mapValues { Self.measuredBytes($0.flatMap(\.paths), index: index) }
         }
         for n in result.reviewableLeftovers.indices {
-            result.reviewableLeftovers[n].bytes = Self.measuredBytes(result.reviewableLeftovers[n].paths, index: index)
+            result.reviewableLeftovers[n].bytes = Self.measuredBytes([result.reviewableLeftovers[n].path], index: index)
         }
         return result
     }

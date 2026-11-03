@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
@@ -971,6 +972,9 @@ public struct SystemDataCleanupResult: Codable, Equatable, Sendable {
     public let itemID: String
     public let deleted: Bool
     public let detail: String
+    /// A multi-path item can be partly removed even when its final path failed.
+    public var removedPaths: [String]? = nil
+    public var changed: Bool { deleted || !(removedPaths ?? []).isEmpty }
 }
 
 public struct SystemDataCleanupReport: Codable, Equatable, Sendable {
@@ -1002,20 +1006,30 @@ public struct SystemDataCleaner {
 
     /// `ownersAreBundleIdentifiers`: the items are what is in sandboxed apps' containers, whose owners are bundle identifiers matched
     /// exactly (`ProcessCheck.runningApp`), so the Finder, always open, does not keep `com.example.FinderSync`'s caches.
-    public func clean(_ items: [SystemDataItem], allowedRoots: [String], ownersAreBundleIdentifiers: Bool = false) -> SystemDataCleanupReport {
+    public func clean(_ items: [SystemDataItem], allowedRoots: [String], allowedPaths: Set<String> = [], ownersAreBundleIdentifiers: Bool = false) -> SystemDataCleanupReport {
         let before = freeSpace()
         let results = items.map { item -> SystemDataCleanupResult in
-            guard item.cleanup.kind == .deleteWhenNotRunning else {
+            guard item.cleanup.kind == .deleteWhenNotRunning, !item.paths.isEmpty else {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Not a cleanable item (\(item.cleanup.kind.rawValue))."))
             }
-            // Every path is checked before any is deleted, so an item is deleted whole or not at all.
+            // Validate every path before removal. A later I/O failure can still leave a partial result.
             var paths: [String] = []
             for path in item.paths {
                 let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
-                guard allowedRoots.contains(where: { standardized.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }),
+                let resolved = URL(fileURLWithPath: standardized).resolvingSymlinksInPath().path
+                let approved = allowedRoots.contains { root in
+                    let root = URL(fileURLWithPath: root).standardizedFileURL.path
+                    return standardized.hasPrefix(root + "/") && resolved == URL(fileURLWithPath: root).resolvingSymlinksInPath().path + standardized.dropFirst(root.count)
+                } || (allowedPaths.contains(standardized) && resolved == standardized)
+                guard approved,
                       !standardized.contains("/Library/Application Support/")
                         || SystemDataInspector.chromiumCacheNames.contains((standardized as NSString).lastPathComponent) else {
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(path) is outside the cleanable locations."))
+                }
+                guard let attributes = try? fileManager.attributesOfItem(atPath: standardized),
+                      attributes[.type] as? FileAttributeType != .typeSymbolicLink,
+                      (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == geteuid() else {
+                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: "The path is linked, unreadable or owned by another account.")
                 }
                 paths.append(standardized)
             }
@@ -1041,19 +1055,21 @@ public struct SystemDataCleaner {
             case nil:
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Nothing was freed: MacSpace couldn't check which files are in use."))
             }
+            var removed: [String] = []
             for path in paths {
                 // Renamed first, in one step, then deleted: an app that starts meanwhile finds no cache rather than half of one, and a
                 // folder that cannot be renamed is left as it was. What cannot be deleted goes back under its own name.
                 let doomed = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(".macspace-deleting-\(UUID().uuidString)")
                 do { try fileManager.moveItem(atPath: path, toPath: doomed) } catch {
-                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription)
+                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription, removedPaths: removed)
                 }
                 do { try fileManager.removeItem(atPath: doomed) } catch {
                     if !fileManager.fileExists(atPath: path) { try? fileManager.moveItem(atPath: doomed, toPath: path) }
-                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription)
+                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription, removedPaths: removed)
                 }
+                removed.append(path)
             }
-            return SystemDataCleanupResult(itemID: item.id, deleted: true, detail: loc("Deleted \(item.paths.joined(separator: ", "))."))
+            return SystemDataCleanupResult(itemID: item.id, deleted: true, detail: loc("Deleted \(item.paths.joined(separator: ", "))."), removedPaths: removed)
         }
         return SystemDataCleanupReport(results: results, freeBytesBefore: before, freeBytesAfter: freeSpace())
     }

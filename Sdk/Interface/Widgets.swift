@@ -291,6 +291,12 @@ public struct Screen: Codable, Equatable, Sendable {
         self.hero = hero
         self.primary = primary
         self.widgets = widgets
+        if selection != nil {
+            let lists = widgets.indices.filter { if case .list = widgets[$0] { return true }; return false }
+            if lists.count == 1, let index = lists.first, case var .list(list) = widgets[index], list.title == nil {
+                list.title = title; self.widgets[index] = .list(list)
+            }
+        }
     }
 }
 
@@ -342,6 +348,7 @@ public struct Banner: Codable, Equatable, Sendable {
 }
 
 public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
+    public enum Kind: String, Codable, Sendable { case folder, files }
     public var id: String
     public var label: String
     public var bytes: UInt64
@@ -353,17 +360,23 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public var items: [Row]
     /// A lazily supplied module page, for navigable folder maps.
     public var pageID: String?
+    /// Semantic grouping for navigable maps; file collections never merge into folder aggregates.
+    public var kind: Kind?
+    /// Eligible file rows and their existing batch action when this block opens an inline group.
+    public var selection: Selection?
 
-    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = [], pageID: String? = nil) {
+    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = [], pageID: String? = nil, kind: Kind? = nil, selection: Selection? = nil) {
         self.id = id
         self.label = label
         self.bytes = bytes
         self.tone = tone
         self.items = items
         self.pageID = pageID
+        self.kind = kind
+        self.selection = selection
     }
 
-    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items, pageID }
+    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items, pageID, kind, selection }
 
     /// `items` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -373,6 +386,8 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
         bytes = try container.decode(UInt64.self, forKey: .bytes)
         tone = try container.decode(Tone.self, forKey: .tone)
         pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
+        kind = try container.decodeIfPresent(Kind.self, forKey: .kind)
+        selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
         items = try container.decodeIfPresent([Row].self, forKey: .items) ?? []
     }
 
@@ -380,7 +395,9 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public var group: Row? {
         if let pageID { return Row(id: pageID, title: label, pageID: pageID) }
         guard !items.isEmpty else { return nil }
-        return Row.group(id: "segment:\(id)", title: label, totalBytes: bytes, rows: items)
+        var group = Row.group(id: "segment:\(id)", title: label, totalBytes: bytes, rows: items)
+        group.selection = selection
+        return group
     }
 }
 
@@ -453,6 +470,10 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var iconPath: String?
     /// Lazy navigation; shares the normal grouped-page stack, title and Back behavior.
     public var pageID: String?
+    /// Expand the current inventory in place rather than adding another breadcrumb level.
+    public var replacesPage: Bool
+    /// A lightweight folder or duplicate-set heading within one list surface.
+    public var sectionID: String?
     /// What the row is, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
     /// What the user can do about the row, shown after `detail` in its (i), each step a sentence of its own (for example a manual
@@ -476,17 +497,22 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var paths: [String]
     /// On a group: its page lets the user choose among its rows and act on the chosen ones (`Selection`).
     public var selection: Selection?
+    /// Why this row cannot be selected; shown as a fact instead of a disabled checkbox.
+    public var unavailableReason: String?
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.trailing = trailing
         self.badges = (badge.map { [$0] } ?? []) + badges
+        self.unavailableReason = unavailableReason
         self.iconPath = iconPath
         self.pageID = pageID
+        self.replacesPage = replacesPage
+        self.sectionID = sectionID
         self.symbol = symbol
         self.detail = detail
         self.steps = steps
@@ -497,7 +523,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -510,8 +536,11 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
         badges = try container.decodeIfPresent([Badge].self, forKey: .badges)
             ?? (try container.decodeIfPresent(Badge.self, forKey: .badge)).map { [$0] } ?? []
+        unavailableReason = try container.decodeIfPresent(String.self, forKey: .unavailableReason)
         iconPath = try container.decodeIfPresent(String.self, forKey: .iconPath)
         pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
+        replacesPage = try container.decodeIfPresent(Bool.self, forKey: .replacesPage) ?? false
+        sectionID = try container.decodeIfPresent(String.self, forKey: .sectionID)
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
@@ -530,8 +559,11 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(trailing, forKey: .trailing)
         try container.encode(badges, forKey: .badges)
         try container.encodeIfPresent(symbol, forKey: .symbol)
+        try container.encodeIfPresent(unavailableReason, forKey: .unavailableReason)
         try container.encodeIfPresent(iconPath, forKey: .iconPath)
         try container.encodeIfPresent(pageID, forKey: .pageID)
+        if replacesPage { try container.encode(true, forKey: .replacesPage) }
+        try container.encodeIfPresent(sectionID, forKey: .sectionID)
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)
@@ -549,6 +581,44 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
+/// A frozen disk-backed selection. Membership is supplied only for the requested visible rows.
+public struct SelectionBulk: Codable, Equatable, Sendable {
+    public var token: String
+    public var count: UInt64
+    public var bytes: UInt64
+    public var checked: [String]
+    /// Fully selected scope page IDs among those requested by the host.
+    public var all: [String]
+    public init(token: String, count: UInt64, bytes: UInt64, checked: [String], all: [String] = []) {
+        self.token = token; self.count = count; self.bytes = bytes; self.checked = checked; self.all = all
+    }
+}
+
+/// Resolves immutable selection snapshots through the module's existing page channel.
+public struct SelectionBulkRequest: Codable, Equatable, Sendable {
+    public var token: String?
+    public var operation: String
+    public var scopePageID: String?
+    public var toggledID: String?
+    /// Original explicit choices, used only to seed the first snapshot.
+    public var ids: [String]
+    public var reviewed: [String: String]
+    public var origins: [String: String]
+    public var visible: [String]
+    public var sections: [String]
+    public init(token: String? = nil, operation: String = "read", scopePageID: String? = nil, toggledID: String? = nil,
+                ids: [String] = [], reviewed: [String: String] = [:], origins: [String: String] = [:], visible: [String] = [], sections: [String] = []) {
+        self.token = token; self.operation = operation; self.scopePageID = scopePageID; self.toggledID = toggledID
+        self.ids = ids; self.reviewed = reviewed; self.origins = origins; self.visible = visible; self.sections = sections
+    }
+    public var pageID: String { "selection:" + ((try? JSONEncoder().encode(self)) ?? Data()).base64EncodedString() }
+    public init?(pageID: String) {
+        guard pageID.hasPrefix("selection:"), let data = Data(base64Encoded: String(pageID.dropFirst(10))),
+              let value = try? JSONDecoder().decode(Self.self, from: data) else { return nil }
+        self = value
+    }
+}
+
 /// A group whose page lets the user choose rows and act on the chosen ones (`Row.selection`). Each of the group's rows named in
 /// `choices` gets a checkbox, checked when the page opens if its id is in `checked`; rows not named have none. While at least one is
 /// checked, the page's bottom button is `action`, titled with its title and the checked rows' total ("Free selected 120 MB"), and runs
@@ -563,6 +633,17 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 public struct Selection: Codable, Equatable, Sendable {
     /// Stable scope shared by overview and More items pages of the same folder.
     public var scope: String?
+    /// This page supplies only part of a scoped inventory. Retain metadata for explicitly selected off-page rows.
+    public var partial: Bool
+    /// Keep explicitly selected IDs across navigation until removed or the module is disabled.
+    public var session: Bool
+    /// Opaque per-choice review metadata, retained as originally selected and sent in the action parameter `reviewed`.
+    public var reviewed: [String: String]
+    /// Opaque origin evidence (such as duplicate proof), sent with the complete selected IDs in `origins`.
+    public var origins: [String: String]
+    public var bulk: SelectionBulk?
+    /// Opt-in resolver prefix for immutable disk-backed choices.
+    public var bulkResolver: String?
     public var action: Action
     /// The rows that can be chosen, by id, with the size each adds to the button's total. 0 is a row with no size of its own (a backup
     /// on a backup disk, whose blocks other backups share): while no checked row has a size, the button carries its title alone.
@@ -582,8 +663,14 @@ public struct Selection: Codable, Equatable, Sendable {
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil) {
         self.scope = scope
+        self.partial = partial
+        self.session = session
+        self.reviewed = reviewed
+        self.origins = origins
+        self.bulk = bulk
+        self.bulkResolver = bulkResolver
         self.action = action
         self.choices = choices
         self.checked = checked
@@ -595,12 +682,18 @@ public struct Selection: Codable, Equatable, Sendable {
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         scope = try container.decodeIfPresent(String.self, forKey: .scope)
+        partial = try container.decodeIfPresent(Bool.self, forKey: .partial) ?? false
+        session = try container.decodeIfPresent(Bool.self, forKey: .session) ?? false
+        reviewed = try container.decodeIfPresent([String: String].self, forKey: .reviewed) ?? [:]
+        origins = try container.decodeIfPresent([String: String].self, forKey: .origins) ?? [:]
+        bulk = try container.decodeIfPresent(SelectionBulk.self, forKey: .bulk)
+        bulkResolver = try container.decodeIfPresent(String.self, forKey: .bulkResolver)
         action = try container.decode(Action.self, forKey: .action)
         choices = try container.decode([String: UInt64].self, forKey: .choices)
         checked = try container.decodeIfPresent([String].self, forKey: .checked) ?? []
@@ -626,12 +719,17 @@ public struct SelectionSection: Codable, Equatable, Sendable, Identifiable {
     public var title: String
     public var rows: [String]
     public var all: Bool
+    /// Resolve the complete eligible section inventory across pagination before toggling this header.
+    public var pageID: String?
+    public var unavailableReason: String?
 
-    public init(id: String, title: String, rows: [String], all: Bool = false) {
+    public init(id: String, title: String, rows: [String], all: Bool = false, pageID: String? = nil, unavailableReason: String? = nil) {
         self.id = id
         self.title = title
         self.rows = rows
         self.all = all
+        self.pageID = pageID
+        self.unavailableReason = unavailableReason
     }
 }
 
@@ -641,16 +739,30 @@ public struct ListWidget: Codable, Equatable, Sendable {
     public var id: String
     public var title: String?
     public var emptyMessage: String?
+    /// Actual folder locations, revealed by the list heading.
+    public var paths: [String]
     /// The overview shows as many rows as fit before the action dock, retaining its last navigation row.
     public var fillsRemainingSpace: Bool?
     public var rows: [Row]
 
-    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false) {
+    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = []) {
         self.id = id
         self.title = title
         self.emptyMessage = emptyMessage
+        self.paths = paths
         self.fillsRemainingSpace = fillsRemainingSpace ? true : nil
         self.rows = rows
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, title, emptyMessage, paths, fillsRemainingSpace, rows }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        emptyMessage = try container.decodeIfPresent(String.self, forKey: .emptyMessage)
+        paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
+        fillsRemainingSpace = try container.decodeIfPresent(Bool.self, forKey: .fillsRemainingSpace)
+        rows = try container.decode([Row].self, forKey: .rows)
     }
 }
 

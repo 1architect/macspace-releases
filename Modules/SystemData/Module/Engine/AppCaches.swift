@@ -109,6 +109,7 @@ public enum AppCaches {
         func seconds(_ time: timespec) -> TimeInterval { TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9 }
         while let entry = fts_read(fts) {
             let info = Int32(entry.pointee.fts_info)
+            if info == FTS_DNR || info == FTS_ERR || info == FTS_NS { return nil }
             if skippingApple, entry.pointee.fts_level == 1, let entryPath = entry.pointee.fts_path,
                isAppleEntry((String(cString: entryPath) as NSString).lastPathComponent) {
                 if info == FTS_D { fts_set(fts, entry, FTS_SKIP) }

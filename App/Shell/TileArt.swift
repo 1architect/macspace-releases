@@ -253,15 +253,58 @@ enum BlockLayout {
     static let minimumShare = 0.035
     static let actionShare = 0.07
     static let smallerID = "blocks.smaller"
+    static let foldersID = "blocks.folders"
+
+    static func isFolder(_ segment: UsageSegment) -> Bool {
+        segment.kind == .folder || (segment.kind == nil && segment.pageID != nil)
+    }
+
+    static func legendSegments(_ segments: [UsageSegment], blocks: [(segment: UsageSegment, weight: Double)]? = nil) -> [UsageSegment] {
+        guard segments.contains(where: isFolder) else { return segments }
+        return (blocks ?? Self.blocks(segments)).map(\.segment)
+    }
+
+    static func aggregate(_ parts: [UsageSegment], folders: Bool) -> UsageSegment {
+        let counts = Dictionary(parts.flatMap(\.items).map { ($0.id, 1) }, uniquingKeysWith: +)
+        let selections = parts.compactMap(\.selection)
+        let first = selections.first
+        let combinesSelection = first?.scope != nil && selections.allSatisfy {
+            $0.scope == first?.scope && $0.action == first?.action && $0.save == nil && $0.sections.isEmpty
+                && $0.note == nil && $0.noteNames.isEmpty && $0.suggestedTitle == nil
+        }
+        let rows = parts.sorted { $0.bytes == $1.bytes ? $0.id < $1.id : $0.bytes > $1.bytes }.flatMap { part -> [Row] in
+            if isFolder(part), let group = part.group {
+                var row = group; row.trailing = ByteFormat.string(part.bytes); return [row]
+            }
+            // Legacy modules may reuse a row identity on separate segment pages. Preserve those
+            // pages instead of renaming action/selection IDs or dropping one of the rows.
+            if part.selection != nil && !combinesSelection || part.items.contains(where: { (counts[$0.id] ?? 0) > 1 }), let group = part.group { return [group] }
+            if !part.items.isEmpty { return part.items }
+            if let group = part.group { return [group] }
+            return [Row(id: part.id, title: part.label, trailing: ByteFormat.string(part.bytes))]
+        }
+        var selection = combinesSelection ? first : nil
+        if selection != nil {
+            let ids = Set(rows.map(\.id))
+            selection?.choices = Dictionary(selections.flatMap { $0.choices.filter { ids.contains($0.key) } }, uniquingKeysWith: { first, _ in first })
+            selection?.checked = Array(Set(selections.flatMap(\.checked)).intersection(ids)).sorted()
+            selection?.suggested = Array(Set(selections.flatMap(\.suggested)).intersection(ids)).sorted()
+        }
+        return UsageSegment(id: folders ? foldersID : smallerID,
+                            label: folders ? String(localized: "Other folders") : String(localized: "\(parts.count) smaller"),
+                            bytes: parts.reduce(0) { $0 + $1.bytes }, tone: .series(parts.count), items: rows, selection: selection)
+    }
 
     /// The blocks in the order they are laid out, largest first, with what each one is drawn at.
     /// `limit` is the most blocks drawn, the orange one included (a tile's, `ChartLook.limit`): past it, the smallest parts are
     /// drawn as one block with the ones under 2%.
     static func blocks(_ segments: [UsageSegment], limit: Int? = nil) -> [(segment: UsageSegment, weight: Double)] {
         let total = Double(segments.map(\.bytes).reduce(0, +))
-        guard total > 0 else { return segments.map { ($0, Double($0.bytes)) } }
-        // Folder maps retain every navigable folder rather than merging it into an inert smaller block.
-        if segments.contains(where: { $0.pageID != nil }) { return segments.filter { $0.bytes > 0 }.sorted { $0.bytes > $1.bytes }.map { ($0, Double($0.bytes)) } }
+        let folderMap = segments.contains(where: isFolder)
+        guard total > 0 else {
+            let folders = segments.filter(isFolder)
+            return folders.isEmpty ? segments.map { ($0, Double($0.bytes)) } : [(aggregate(folders, folders: true), 1)]
+        }
         var shown = segments
         var small = segments.filter { $0.tone != .caution && Double($0.bytes) < total * mergeBelow }
         if let limit {
@@ -274,10 +317,35 @@ enum BlockLayout {
                 small += alone[room...]
             }
         }
-        if small.count >= 2 {
+        if folderMap, let limit {
+            // Folder and file aggregates occupy separate slots. Reserve both when enforcing
+            // the dashboard's existing block limit, without merging a file collection into folders.
+            func count(_ small: [UsageSegment]) -> Int {
+                let folders = small.filter(isFolder), files = small.filter { !isFolder($0) && $0.kind != .files }
+                let mergeFolders = folders.count > 1 || folders.first.map { Double($0.bytes) < total * dropBelow } == true
+                return segments.count - (mergeFolders ? folders.count - 1 : 0) - (files.count > 1 ? files.count - 1 : 0)
+            }
+            let candidates = segments.filter { $0.tone != .caution && $0.kind != .files }.sorted { $0.bytes == $1.bytes ? $0.id < $1.id : $0.bytes < $1.bytes }
+            var ids = Set(small.map(\.id))
+            for candidate in candidates where !ids.contains(candidate.id) {
+                if count(small) <= limit { break }
+                small.append(candidate); ids.insert(candidate.id)
+            }
+        }
+        if folderMap {
+            // Keep file collections distinct from folders. A single tiny folder must remain reachable too.
+            let folders = small.filter(isFolder)
+            let files = small.filter { !isFolder($0) && $0.kind != .files }
+            let merged = (folders.count > 1 || folders.first.map { Double($0.bytes) < total * dropBelow } == true ? folders : [])
+            let mergedFiles = files.count > 1 ? files : []
+            let ids = Set((merged + mergedFiles).map(\.id))
+            shown = segments.filter { !ids.contains($0.id) }
+            if !merged.isEmpty { shown.append(aggregate(merged, folders: true)) }
+            if !mergedFiles.isEmpty { shown.append(aggregate(mergedFiles, folders: false)) }
+        } else if small.count >= 2 {
             let ids = Set(small.map(\.id))
             shown = segments.filter { !ids.contains($0.id) }
-            shown.append(UsageSegment(id: smallerID, label: String(localized: "\(small.count) smaller"), bytes: small.map(\.bytes).reduce(0, +), tone: .series(segments.count)))
+            shown.append(aggregate(small, folders: false))
         } else if let only = small.first, Double(only.bytes) < total * dropBelow {
             shown = segments.filter { $0.id != only.id }
         }
@@ -416,7 +484,7 @@ struct BlocksView: View {
         self.workingFraction = workingFraction
         self.orderSize = orderSize
         // Drawn while its figures are being read: the blocks open with it. Drawn with placeholders: the first figures open when they come.
-        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : (reading || working) ? Growth(start: Date()) : nil)
+        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : (reading || working) ? Growth(start: Date(), closing: look == .tile && fill.map { Date().timeIntervalSince($0.started) > 0.2 } == true) : nil)
     }
 
     /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
