@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "无法读取内容。请刷新以重试。";
 "Couldn’t compare files" = "无法比较文件";
 "Couldn’t delete the file" = "无法删除文件";
+"Couldn’t delete the folder" = "无法删除文件夹";
 "Couldn’t remove the selected files" = "无法移除所选文件";
 "Couldn’t uninstall the app" = "无法卸载应用";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "具有确切应用标识符但未找到已安装应用的数据。共享应用组数据将保留。";
 "Delete" = "删除";
 "Delete %@?" = "删除 %@？";
 "Deleted" = "已删除";
+"Deleted folder" = "已删除文件夹";
 "Deleting" = "正在删除";
 "Desktop" = "桌面";
 "Developer cleanup" = "开发清理";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "无法卸载此应用。";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "此应用由 macOS 或 MacSpace 管理，无法在此移除。";
 "This file cannot be deleted here." = "无法在此删除此文件。";
+"This folder and all its contents will be moved to Trash." = "此文件夹及其所有内容将移到废纸篓。";
+"This folder cannot be deleted here." = "无法在此处删除此文件夹。";
 "This folder is empty." = "此文件夹为空。";
 "This permanently deletes only the selected app-data folders." = "这只会永久删除所选的应用数据文件夹。";
 "This permanently deletes the file." = "这将永久删除该文件。";
+"This permanently deletes the folder and all its contents." = "这会永久删除此文件夹及其所有内容。";
 "This permanently deletes the selected files." = "这将永久删除所选文件。";
 "Uncertain ownership" = "归属不确定";
 "Uninstall" = "卸载";

@@ -21,6 +21,35 @@ final class DiskPresentationContractTests: XCTestCase {
         screen.widgets.compactMap { if case let .list(list) = $0 { return list }; return nil }
     }
 
+    func testOverviewPlacesFilesAboveFolders() {
+        let index = DiskIndex(root: "/")
+        XCTAssertEqual(lists(DiskMapScreenBuilder.screen(index, apps: DiskApplications())).map(\.id),
+            ["apps-class", "large-files", "personal-folders"])
+    }
+
+    func testGraphFilesExposeOnlyReviewedEligibleDeletionAndFoldersDeclareCapabilities() throws {
+        let eligible = file("Downloads/graph.zip")
+        let selection = DiskMapScreenBuilder.fileSelection([eligible], open: [:])
+        let actions = DiskMapScreenBuilder.fileContextActions(eligible, selection: selection)
+        let deletion = try XCTUnwrap(actions.delete)
+        XCTAssertEqual(actions.paths, [eligible.path])
+        XCTAssertEqual(deletion.id, "deleteGraphFile")
+        XCTAssertEqual(deletion.parameters["id"], DiskMapScreenBuilder.fileID(eligible.path))
+        XCTAssertEqual(deletion.parameters["reviewed"], selection.reviewed[DiskMapScreenBuilder.fileID(eligible.path)])
+        XCTAssertTrue(deletion.confirmation?.message.contains(eligible.path) == true)
+        XCTAssertEqual(deletion.requires, [.fullDiskAccess])
+        let managed = file("Pictures/Photos.photoslibrary/data")
+        XCTAssertNil(DiskMapScreenBuilder.fileContextActions(managed, selection: DiskMapScreenBuilder.fileSelection([managed], open: [:])).delete)
+        var changed = eligible; changed.identity = nil
+        XCTAssertNil(DiskMapScreenBuilder.fileContextActions(changed, selection: DiskMapScreenBuilder.fileSelection([changed], open: [:])).delete)
+        var index = DiskIndex(root: "/")
+        index.directories["/"] = DiskDirectory(path: "/", folders: [home + "/Downloads"])
+        index.directories[home + "/Downloads"] = DiskDirectory(path: home + "/Downloads", bytes: 8192)
+        let folder = try XCTUnwrap(DiskMapScreenBuilder.segments(index, folder: "/").first)
+        XCTAssertEqual(folder.contextActions?.paths, [home + "/Downloads"])
+        XCTAssertEqual(folder.contextActions?.delete, folder.items.first?.contextActions?.delete)
+    }
+
     func testModuleRootAndTileUseAppsAndFilesName() {
         var index = DiskIndex(root: "/")
         index.directories["/"] = DiskDirectory(path: "/")
@@ -38,10 +67,10 @@ final class DiskPresentationContractTests: XCTestCase {
             .init(category: .media, bytes: 8192, count: 2), .init(category: .other, bytes: 0, count: 0)]
         let screen = DiskMapScreenBuilder.screen(index, apps: DiskApplications())
         let groups = lists(screen)
-        XCTAssertEqual(groups.map(\.id), ["apps-class", "personal-folders", "large-files"])
-        XCTAssertEqual(groups.last?.rows.map(\.title), ["Duplicate files", "Archives", "Media"])
+        XCTAssertEqual(groups.map(\.id), ["apps-class", "large-files", "personal-folders"])
+        XCTAssertEqual(groups.first { $0.id == "large-files" }?.rows.map(\.title), ["Duplicate files", "Archives", "Media"])
         XCTAssertFalse(groups.flatMap(\.rows).contains { $0.id.hasPrefix("file:") || $0.title == "Recommended" || $0.title == "Developer cleanup" })
-        XCTAssertEqual(groups[1].rows.first?.pageID, DiskMapScreenBuilder.folderID(home + "/Downloads"))
+        XCTAssertEqual(groups.first { $0.id == "personal-folders" }?.rows.first?.pageID, DiskMapScreenBuilder.folderID(home + "/Downloads"))
         XCTAssertEqual(screen.selection?.scope, "disk-files")
         XCTAssertEqual(screen.selection?.session, true)
         XCTAssertEqual(screen.selection?.bulkResolver, "selection:")

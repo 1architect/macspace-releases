@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "Não foi possível ler o conteúdo. Atualize para tentar novamente.";
 "Couldn’t compare files" = "Não foi possível comparar os arquivos";
 "Couldn’t delete the file" = "Não foi possível apagar o arquivo";
+"Couldn’t delete the folder" = "Não foi possível excluir a pasta";
 "Couldn’t remove the selected files" = "Não foi possível remover os arquivos selecionados";
 "Couldn’t uninstall the app" = "Não foi possível desinstalar o app";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Dados com identificadores exatos de apps que não foram encontrados instalados. Dados de grupos compartilhados são preservados.";
 "Delete" = "Apagar";
 "Delete %@?" = "Apagar %@?";
 "Deleted" = "Apagado";
+"Deleted folder" = "Pasta excluída";
 "Deleting" = "Apagando";
 "Desktop" = "Mesa";
 "Developer cleanup" = "Limpeza de desenvolvimento";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "Este app não pode ser desinstalado.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "Este app é gerenciado pelo macOS ou pelo MacSpace e não pode ser removido aqui.";
 "This file cannot be deleted here." = "Este arquivo não pode ser apagado aqui.";
+"This folder and all its contents will be moved to Trash." = "Esta pasta e todo o seu conteúdo serão movidos para o Lixo.";
+"This folder cannot be deleted here." = "Esta pasta não pode ser excluída aqui.";
 "This folder is empty." = "Esta pasta está vazia.";
 "This permanently deletes only the selected app-data folders." = "Isso apaga permanentemente somente as pastas de dados de apps selecionadas.";
 "This permanently deletes the file." = "Isso apaga o arquivo permanentemente.";
+"This permanently deletes the folder and all its contents." = "Isso exclui permanentemente a pasta e todo o seu conteúdo.";
 "This permanently deletes the selected files." = "Isso exclui permanentemente os arquivos selecionados.";
 "Uncertain ownership" = "Propriedade incerta";
 "Uninstall" = "Desinstalar";

@@ -184,7 +184,7 @@ enum SystemDataScreenBuilder {
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,
                     purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0],
-                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2, freeAction: cleanAll(snapshot))
     }
 
     /// What fills System Data as blocks, largest first, with what can be freed split out as its own block in the caution tone (every
@@ -255,6 +255,8 @@ enum SystemDataScreenBuilder {
                 }
                 segment.items = rows.sorted { $0.bytes > $1.bytes }.map(\.row)
             }
+            let paths = segment.items.flatMap(\.paths)
+            if !paths.isEmpty { segment.contextActions = GraphContextActions(paths: paths) }
             return segment
         }
     }

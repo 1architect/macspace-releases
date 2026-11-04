@@ -11,6 +11,23 @@ final class ChartMotionTests: XCTestCase {
         return (GrowPlan(rects: rects, weights: weights), rects)
     }
 
+    func testReturningDashboardDoesNotReplayGrowthEvenDuringAnOngoingScanOrCleanup() {
+        let segments = [UsageSegment(id: "data", label: "Data", bytes: 100, tone: .accent)]
+        let now = Date(), fill = LoadFill(started: Date().addingTimeInterval(-2), expected: 10)
+        for (reading, working) in [(false, false), (true, false), (false, true)] {
+            XCTAssertNil(BlocksView.initialGrowth(segments: segments, reading: reading, working: working, fill: fill,
+                look: .tile, resumes: true, now: now))
+        }
+        let fresh = BlocksView.initialGrowth(segments: segments, reading: true, working: false, fill: fill,
+            look: .tile, resumes: false, now: now)
+        XCTAssertEqual(fresh?.start, now)
+        XCTAssertEqual(fresh?.closing, true)
+        let placeholder = BlocksView.initialGrowth(segments: LoadingWave.placeholderBlocks, reading: true, working: false,
+            fill: fill, look: .tile, resumes: true, now: now)
+        XCTAssertNotNil(placeholder, "Real first data still grows when it replaces placeholders")
+        XCTAssertNil(placeholder?.start)
+    }
+
     func testFillCurveRunsFromZeroToOneWithoutGoingBack() {
         XCTAssertEqual(ChartMotion.fill(0), 0, accuracy: 0.001)
         XCTAssertEqual(ChartMotion.fill(1), 1, accuracy: 0.001)

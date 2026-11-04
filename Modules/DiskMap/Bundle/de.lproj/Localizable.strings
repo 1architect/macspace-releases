@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "Inhalt konnte nicht gelesen werden. Zum Wiederholen aktualisieren.";
 "Couldn’t compare files" = "Dateien konnten nicht verglichen werden";
 "Couldn’t delete the file" = "Datei konnte nicht gelöscht werden";
+"Couldn’t delete the folder" = "Der Ordner konnte nicht gelöscht werden";
 "Couldn’t remove the selected files" = "Ausgewählte Dateien konnten nicht entfernt werden";
 "Couldn’t uninstall the app" = "App konnte nicht deinstalliert werden";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Daten mit exakten Kennungen nicht gefundener Apps. Gemeinsam genutzte App-Gruppendaten bleiben erhalten.";
 "Delete" = "Löschen";
 "Delete %@?" = "%@ löschen?";
 "Deleted" = "Gelöscht";
+"Deleted folder" = "Ordner gelöscht";
 "Deleting" = "Wird gelöscht";
 "Desktop" = "Schreibtisch";
 "Developer cleanup" = "Entwicklerbereinigung";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "Diese App kann nicht deinstalliert werden.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "Diese App wird von macOS oder MacSpace verwaltet und kann hier nicht entfernt werden.";
 "This file cannot be deleted here." = "Diese Datei kann hier nicht gelöscht werden.";
+"This folder and all its contents will be moved to Trash." = "Dieser Ordner und sein gesamter Inhalt werden in den Papierkorb verschoben.";
+"This folder cannot be deleted here." = "Dieser Ordner kann hier nicht gelöscht werden.";
 "This folder is empty." = "Dieser Ordner ist leer.";
 "This permanently deletes only the selected app-data folders." = "Nur die ausgewählten Ordner mit App-Daten werden dauerhaft gelöscht.";
 "This permanently deletes the file." = "Die Datei wird endgültig gelöscht.";
+"This permanently deletes the folder and all its contents." = "Dadurch werden der Ordner und sein gesamter Inhalt endgültig gelöscht.";
 "This permanently deletes the selected files." = "Die ausgewählten Dateien werden dauerhaft gelöscht.";
 "Uncertain ownership" = "Unklare Zugehörigkeit";
 "Uninstall" = "Deinstallieren";

@@ -663,6 +663,7 @@ struct RowView: View {
                 .padding(.vertical, 4)
             } else if !row.children.isEmpty || row.pageID != nil { groupRow } else { itemRow }
         }
+        .graphContextMenu(label: row.title, actions: row.contextActions, enabled: row.contextActions != nil)
         .modifier(RowAppeared(appeared: $appeared))
     }
 
@@ -676,6 +677,7 @@ struct RowView: View {
             InfoButton(text: row.detail)
             RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             Spacer(minLength: 8)
+            RowActionFlags(row: row, handler: handler)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
             if !row.paths.isEmpty { RevealButton(paths: row.paths) }
@@ -1050,6 +1052,7 @@ struct UsageBarView: View {
                     ForEach(usage.segments) { segment in
                         Rectangle()
                             .fill(Palette.color(segment.tone, design))
+                            .graphContextMenu(label: segment.label, actions: segment.contextActions)
                             .frame(width: total > 0 ? max(2, proxy.size.width * Double(segment.bytes) / total) : 0)
                     }
                     Spacer(minLength: 0)
@@ -1066,6 +1069,7 @@ struct UsageBarView: View {
                         Text(segment.label).font(.caption).lineLimit(1).truncationMode(.tail)
                         ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary).lineLimit(1).fixedSize()
                     }
+                    .graphContextMenu(label: segment.label, actions: segment.contextActions)
                 }
             }
         }
@@ -1089,6 +1093,7 @@ struct BarChartView: View {
                     .frame(height: 8)
                     ChangingText(text: bar.valueLabel, alignment: .trailing).font(.caption).foregroundStyle(.secondary).frame(width: 72, alignment: .trailing)
                 }
+                .graphContextMenu(label: bar.label, actions: bar.contextActions)
             }
         }
     }

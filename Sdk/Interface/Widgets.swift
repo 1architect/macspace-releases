@@ -352,6 +352,19 @@ public struct Banner: Codable, Equatable, Sendable {
     }
 }
 
+/// Optional module capabilities for a graph element. The host always adds Refresh, even when this is nil.
+/// Paths must be real, revealable locations. Deletion runs through the module's normal action/permission channel;
+/// the host always asks for confirmation and supplies a destructive fallback if the action omits one.
+public struct GraphContextActions: Codable, Equatable, Sendable {
+    public var paths: [String]
+    public var delete: Action?
+
+    public init(paths: [String] = [], delete: Action? = nil) {
+        self.paths = paths
+        self.delete = delete
+    }
+}
+
 public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public enum Kind: String, Codable, Sendable { case folder, files }
     public var id: String
@@ -369,8 +382,10 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
     public var kind: Kind?
     /// Eligible file rows and their existing batch action when this block opens an inline group.
     public var selection: Selection?
+    /// Element-specific Finder and Delete capabilities; Refresh is provided by the host.
+    public var contextActions: GraphContextActions?
 
-    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = [], pageID: String? = nil, kind: Kind? = nil, selection: Selection? = nil) {
+    public init(id: String, label: String, bytes: UInt64, tone: Tone, items: [Row] = [], pageID: String? = nil, kind: Kind? = nil, selection: Selection? = nil, contextActions: GraphContextActions? = nil) {
         self.id = id
         self.label = label
         self.bytes = bytes
@@ -378,10 +393,11 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
         self.items = items
         self.pageID = pageID
         self.kind = kind
+        self.contextActions = contextActions
         self.selection = selection
     }
 
-    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items, pageID, kind, selection }
+    private enum CodingKeys: String, CodingKey { case id, label, bytes, tone, items, pageID, kind, selection, contextActions }
 
     /// `items` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -391,6 +407,7 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
         bytes = try container.decode(UInt64.self, forKey: .bytes)
         tone = try container.decode(Tone.self, forKey: .tone)
         pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
+        contextActions = try container.decodeIfPresent(GraphContextActions.self, forKey: .contextActions)
         kind = try container.decodeIfPresent(Kind.self, forKey: .kind)
         selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
         items = try container.decodeIfPresent([Row].self, forKey: .items) ?? []
@@ -433,13 +450,15 @@ public struct Bar: Codable, Equatable, Sendable, Identifiable {
     public var value: Double
     public var valueLabel: String
     public var tone: Tone
+    public var contextActions: GraphContextActions?
 
-    public init(id: String, label: String, value: Double, valueLabel: String, tone: Tone = .accent) {
+    public init(id: String, label: String, value: Double, valueLabel: String, tone: Tone = .accent, contextActions: GraphContextActions? = nil) {
         self.id = id
         self.label = label
         self.value = value
         self.valueLabel = valueLabel
         self.tone = tone
+        self.contextActions = contextActions
     }
 }
 
@@ -498,6 +517,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
     public var children: [Row]
+    /// Optional Finder/Delete context menu for this file or folder row; the host adds Refresh.
+    public var contextActions: GraphContextActions?
     /// Where the row's files are on disk: absolute paths to files or folders. The app draws a folder button beside the row's (i) that
     /// shows them in the Finder, selected in one window, or opens the deepest folder holding them all when they lie in many folders.
     /// Those that no longer exist are left out, and no button is drawn when none is left. Only list places the user can open: not a
@@ -510,7 +531,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -521,6 +542,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.pageID = pageID
         self.replacesPage = replacesPage
         self.sectionID = sectionID
+        self.contextActions = contextActions
         self.symbol = symbol
         self.detail = detail
         self.steps = steps
@@ -531,7 +553,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -556,6 +578,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         activity = try container.decodeIfPresent(ActionProgress.self, forKey: .activity)
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
+        contextActions = try container.decodeIfPresent(GraphContextActions.self, forKey: .contextActions)
         selection = try container.decodeIfPresent(Selection.self, forKey: .selection)
     }
 
@@ -578,6 +601,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(activity, forKey: .activity)
         try container.encode(children, forKey: .children)
         try container.encode(paths, forKey: .paths)
+        try container.encodeIfPresent(contextActions, forKey: .contextActions)
         try container.encodeIfPresent(selection, forKey: .selection)
     }
 

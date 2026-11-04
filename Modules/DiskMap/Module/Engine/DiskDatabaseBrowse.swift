@@ -31,6 +31,10 @@ extension DiskDatabase {
         }
         return claims.isEmpty ? nil : DiskOwnership.combined(claims, paths: [path])
     }
+    func canRemoveDirectory(_ path: String) throws -> Bool {
+        guard Self.contains(path, below: root), try directory(path) != nil, try ownershipEvidence(path) == nil else { return false }
+        return try query("SELECT 1 FROM ownership WHERE path>=? AND path<? LIMIT 1", [.text(path + "/"), .text(path + "0")]) == 0
+    }
     /// Only duplicate review requests content provenance. Ordinary review retains original identity without a survivor rule.
     func reviewedFile(_ input: DiskFile, duplicateEvidence: Bool = true) throws -> DiskFile {
         var file = input

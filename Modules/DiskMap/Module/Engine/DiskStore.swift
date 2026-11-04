@@ -51,7 +51,7 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
         self.database = next; self.active = destination; retired.append(active)
         return destination
     }
-    func load(_ changes: DiskEvents.Changes, progress: LoadProgressRelay, cancellation: DiskScanCancellation) throws -> URL {
+    func load(_ changes: DiskEvents.Changes, cursor: UInt64, progress: LoadProgressRelay, cancellation: DiskScanCancellation) throws -> URL {
         guard let database else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
         let metadata = try database.state()
         if !database.compact || metadata.map({ $0.storageRevision != 4 }) == true {
@@ -61,17 +61,21 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
         var changes = changes
         if try database.state() == nil || database.directory(root) == nil { changes = .init(recursive: [root]) }
         if !changes.recursive.isEmpty || !changes.shallow.isEmpty {
-            let cursor = FSEventsGetCurrentEventId(), pendingChanges = changes, excluded = self.excluded
+            let pendingChanges = changes, excluded = self.excluded
             let work: (DiskDatabase) throws -> Void = { next in
                 var scanner = DiskDatabaseScanner(db: next, excluded: excluded)
                 scanner.cancelled = { cancellation.isCancelled }
-                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0...0.65))
+                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0.04...0.65))
             }
             if try database.state() != nil, !changes.recursive.isEmpty || changes.shallow.count > 128 { _ = try generation(work) }
             else { try work(database) }
         }
         guard try self.database?.state() != nil else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
         try self.database?.preparePersonalInventory(progress: progress.part(0.65...0.75), cancelled: { cancellation.isCancelled })
+        if cancellation.isCancelled { throw CancellationError() }
+        // Empty/filtered history is still consumed history. Persist its boundary so it is not
+        // replayed again on every launch when no metadata rows needed reconciliation.
+        try self.database?.advanceEventCursor(cursor)
         return active ?? url
     }
     func retireReaders() {
@@ -90,6 +94,7 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
 }
 
 actor DiskStore {
+    nonisolated let receiptCacheURL: URL
     private let root: String
     private let excluded: [String]
     private let writer: DiskDatabaseWriter
@@ -101,10 +106,13 @@ actor DiskStore {
     private var folderViews: [String: DiskSnapshot] = [:]
     private var folderUse: [String] = []
     private var watcher: DiskEvents?
+    private var historyValidated = false
     private var bootFlight: Task<Void, Never>?
     private var flight: Task<Void, Never>?
     private var relay: LoadProgressRelay?
     private var explicitlyInvalidated = false
+    private var deferredChanges = DiskEvents.Changes()
+    private var hasDeferredChanges: Bool { !deferredChanges.shallow.isEmpty || !deferredChanges.recursive.isEmpty }
     private var evidenceRevision: Date?
     private var ownershipFlight: Task<Void, Never>?
     private var duplicateFlight: Task<DiskDuplicateReport, Error>?
@@ -117,6 +125,7 @@ actor DiskStore {
     init(root: String = "/", cache: URL? = nil, home: String = FileManager.default.homeDirectoryForCurrentUser.path) {
         self.root = root; self.home = home
         let destination = cache?.appendingPathExtension("sqlite") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v3.sqlite")
+        receiptCacheURL = destination.appendingPathExtension("receipts.json")
         excluded = [destination.deletingLastPathComponent().path] + (root == "/" ? ["/System/Volumes", "/Volumes", "/dev", "/Network"] : [])
         writer = DiskDatabaseWriter(url: destination, root: root, excluded: excluded, home: home)
         selections = DiskSelectionStorage(url: destination.appendingPathExtension("selection"), root: root, home: home)
@@ -125,9 +134,9 @@ actor DiskStore {
     private var active = true
     func setActive(_ value: Bool) {
         active = value
-        if value, reader != nil, watcher == nil { watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: excluded) }
+        if value, reader != nil, watcher == nil { watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: excluded); historyValidated = false }
         if !value {
-            watcher = nil
+            watcher = nil; historyValidated = false
             scanCancellation.cancel(); duplicateFlight?.cancel(); flight?.cancel()
             for reading in browseReadings.values where !reading.done { reading.task.cancel() }
             browseReadings = browseReadings.filter { $0.value.done }
@@ -149,11 +158,18 @@ actor DiskStore {
     }
     func mark(_ paths: [String], recursive: Bool = false) {
         folderViews.removeAll(); folderUse.removeAll()
-        watcher?.mark(paths, recursive: recursive)
+        if let watcher { watcher.mark(paths, recursive: recursive) }
+        else {
+            let normalized = DiskEvents(root: root, since: 0, excluded: excluded, startStream: false)
+            normalized.mark(paths, recursive: recursive)
+            let changes = normalized.drain()
+            deferredChanges.shallow.formUnion(changes.shallow)
+            deferredChanges.recursive.formUnion(changes.recursive)
+        }
         invalidateBrowse(recursive ? .init(recursive: Set(paths)) : .init(shallow: Set(paths)))
     }
     func statusView() -> DiskSnapshot? {
-        guard watcher?.hasChanges == false, !explicitlyInvalidated, flight == nil, !loadFailed, published?.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion else { return nil }
+        guard historyValidated, watcher?.isReplayingHistory == false, watcher?.hasChanges == false, !explicitlyInvalidated, !hasDeferredChanges, flight == nil, !loadFailed, published?.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion else { return nil }
         return published
     }
     func navigation(folder: String? = nil) async -> DiskSnapshot {
@@ -281,6 +297,7 @@ actor DiskStore {
     }
     /// Resolves explicit IDs only. The caller must compare the host's ORIGINAL reviewed identity before execution.
     func selectedFiles(_ ids: Set<String>, folder: String, reviewed: [String: String]? = nil, origins: [String: String] = [:]) -> [DiskFile]? { try? reader?.selectedFiles(ids, folder: folder, reviewed: reviewed, origins: origins) }
+    func canRemoveDirectory(_ path: String) -> Bool { (try? reader?.canRemoveDirectory(path)) == true }
     func recordOwnership(_ catalog: DiskApplications) async {
         guard evidenceRevision != catalog.catalogReadAt else { return }
         if let ownershipFlight { await ownershipFlight.value; return }
@@ -309,10 +326,15 @@ actor DiskStore {
     }
     private func boot() async {
         do {
+            let bootStarted = Date()
             let metadata = try await writer.boot(), location = await writer.location()
+            DiskScanMetrics.phase("cache-open", since: bootStarted)
+            let snapshotStarted = Date()
             reader = try DiskDatabase(url: location, root: root, home: home); readerLocation = location
             if try reader?.state() != nil { published = try reader?.snapshot() }
+            DiskScanMetrics.phase("cached-snapshot", since: snapshotStarted)
             watcher = DiskEvents(root: root, since: metadata.eventID, excluded: excluded)
+            historyValidated = false
         } catch { loadFailed = true; published = failureSnapshot() }
     }
     func view(progress: LoadProgressSink? = nil) async -> DiskSnapshot {
@@ -320,9 +342,13 @@ actor DiskStore {
         await openCache()
         if let flight {
             if let progress { relay?.attach(progress) }
-            await flight.value; return published ?? failureSnapshot()
+            await flight.value
+            // A newly active caller may have joined a read cancelled by the last window closing.
+            // Retry its preserved work instead of presenting the previous cache as a completed scan.
+            if active && flight.isCancelled { return await view(progress: progress) }
+            return published ?? failureSnapshot()
         }
-        if let published, published.index.storageRevision == 4, published.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion, !explicitlyInvalidated, !loadFailed, watcher?.hasChanges == false {
+        if let published, published.index.storageRevision == 4, published.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion, !explicitlyInvalidated, !loadFailed, !hasDeferredChanges, historyValidated, watcher?.isReplayingHistory == false, watcher?.hasChanges == false {
             if duplicateScope == nil || duplicateRevision != published.index.revision {
                 try? await verifyDuplicates(folder: root, scoped: false, progress: progress ?? { _ in })
             }
@@ -331,6 +357,7 @@ actor DiskStore {
         guard active else { return published ?? failureSnapshot() }
         let reports = LoadProgressRelay(); if let progress { reports.attach(progress) }; relay = reports
         scanCancellation = DiskScanCancellation()
+        reports.report(0.02) // The completed cache/bootstrap stage is actual work, not an elapsed-time filler.
         let task = Task {
             await reconcile(reports: reports)
             flight = nil; relay = nil
@@ -339,18 +366,29 @@ actor DiskStore {
         flight = task
         // The host retains its completed content while this request reports reconciliation progress.
         await task.value
+        if active && task.isCancelled { return await view(progress: progress) }
         return published ?? failureSnapshot()
     }
     private func reconcile(reports: LoadProgressRelay) async {
         var changes = DiskEvents.Changes()
         do {
-            reports.report(0)
+            reports.report(0.02)
             let previous = duplicateFlight; previous?.cancel(); _ = try? await previous?.value
             duplicateFlight = nil; duplicateScope = nil
-            watcher?.flush()
+            let eventStarted = Date()
+            if deferredChanges.recursive.contains(root) { watcher?.mark([root], recursive: true) }
+            let consumedThrough = watcher?.flush() ?? published?.index.eventID ?? 0
+            DiskScanMetrics.phase("event-replay", since: eventStarted)
             changes = watcher?.drain() ?? .init()
+            changes.shallow.formUnion(deferredChanges.shallow)
+            changes.recursive.formUnion(deferredChanges.recursive)
+            deferredChanges = .init()
             if explicitlyInvalidated { changes.shallow.insert(root); explicitlyInvalidated = false }
-            let destination = try await writer.load(changes, progress: reports, cancellation: scanCancellation)
+            DiskScanMetrics.write("DISK_SCOPES shallow=\(changes.shallow.count) recursive=\(changes.recursive.count) root=\(changes.recursive.contains(root))")
+            reports.report(0.04)
+            let loadStarted = Date()
+            let destination = try await writer.load(changes, cursor: consumedThrough, progress: reports, cancellation: scanCancellation)
+            DiskScanMetrics.phase("metadata-load", since: loadStarted)
             invalidateBrowse(changes)
             folderViews.removeAll(); folderUse.removeAll()
             if readerLocation != destination {
@@ -358,15 +396,20 @@ actor DiskStore {
                 await writer.retireReaders()
             }
             if let snapshot = try reader?.snapshot() { published = snapshot }
-            loadFailed = false
+            loadFailed = false; historyValidated = true
+            let duplicateStarted = Date()
             try await verifyDuplicates(folder: root, scoped: false, progress: reports.part(0.75...1))
+            DiskScanMetrics.phase("duplicate-verification", since: duplicateStarted)
             if let snapshot = try reader?.snapshot() {
                 var index = snapshot.index; index.duplicateUnknown = duplicateUnknown; index.duplicateFailure = duplicateFailure
                 published = DiskSnapshot(index)
             }
             reports.report(1)
         } catch {
-            watcher?.mark(Array(changes.shallow)); watcher?.mark(Array(changes.recursive), recursive: true)
+            // These sets already identify directories. Refeeding them as file events broadens shallow
+            // scopes to their parents and loses them entirely if the watcher was suspended.
+            deferredChanges.shallow.formUnion(changes.shallow)
+            deferredChanges.recursive.formUnion(changes.recursive)
             if error is CancellationError { return }
             loadFailed = true
             var index = published?.index ?? DiskIndex(root: root); index.loadError = true; published = DiskSnapshot(index)

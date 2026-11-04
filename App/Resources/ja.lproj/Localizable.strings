@@ -44,12 +44,15 @@
 "Close" = "閉じる";
 "Close Window" = "ウインドウを閉じる";
 "Configuration profile" = "構成プロファイル";
+"Confirm deletion of this item." = "この項目の削除を確認してください。";
 "Continue" = "続ける";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。";
 "Could not install the helper: %@" = "ヘルパーをインストールできませんでした：%@";
 "Couldn't free space. Try again later." = "空き容量を増やせませんでした。後でもう一度お試しください。";
 "Couldn’t uninstall MacSpace" = "MacSpaceをアンインストールできませんでした";
 "Day" = "昼";
+"Delete" = "削除";
+"Delete %@?" = "%@を削除しますか？";
 "Developed by\n%@" = "開発者\n%@";
 "Does the few things that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Drag into the Full Disk Access list" = "フルディスクアクセスのリストにドラッグ";
@@ -120,6 +123,7 @@
 "Open Panel" = "パネルを開く";
 "Open System Settings" = "システム設定を開く";
 "Open at login" = "ログイン時に開く";
+"Open in Finder" = "Finderで開く";
 "Other folders" = "その他のフォルダ";
 "Permissions" = "権限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "「ヘルパーをインストール」を押してください。認識されない場合はターミナルで /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register を実行し、表示されたメッセージを送ってください。";

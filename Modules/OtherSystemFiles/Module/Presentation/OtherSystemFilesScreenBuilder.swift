@@ -24,7 +24,7 @@ enum OtherSystemFilesScreenBuilder {
                     reclaimableBytes: freeable >= threshold ? freeable : nil,
                     purgeableByService: [CacheDeleteService.fsPurgeableData: freeable],
                     // Read again every few seconds while downloads are being removed, so the row and the tile follow it.
-                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2, freeAction: freeAction(snapshot, prominent: true))
     }
 
     /// What is outside System Data, largest first: what macOS counts as purgeable (what MacSpace frees in the caution tone) and a
@@ -51,6 +51,8 @@ enum OtherSystemFilesScreenBuilder {
                 ? documentsRows(segment.bytes, snapshot) ?? []
                 : rows.filter { $0.id == segment.id }
             segment.items = items.contains(where: saysMore) ? items : []
+            let paths = segment.items.flatMap(\.paths)
+            if !paths.isEmpty { segment.contextActions = GraphContextActions(paths: paths) }
             return segment
         }
     }

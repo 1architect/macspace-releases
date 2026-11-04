@@ -20,7 +20,12 @@ private final class DiskRemovalBatch: @unchecked Sendable {
 
 actor DiskInventory {
     private let loader: @Sendable (DiskIndex, DiskApplications?) -> DiskApplications
-    init(loader: @escaping @Sendable (DiskIndex, DiskApplications?) -> DiskApplications = DiskApplications.read) { self.loader = loader }
+    private let receiptCacheURL: URL?
+    private var receiptCacheLoaded = false
+    private var savedReceipts: AppReceiptCatalog?
+    init(receiptCache: URL? = nil, loader: @escaping @Sendable (DiskIndex, DiskApplications?) -> DiskApplications = DiskApplications.read) {
+        self.loader = loader; receiptCacheURL = receiptCache
+    }
     private var revision: UInt64?
     private var apps: DiskApplications?
     private struct Reading { var id: UInt64; var revision: UInt64; var task: Task<DiskApplications, Never> }
@@ -36,6 +41,11 @@ actor DiskInventory {
     func invalidate() { revision = nil; apps?.catalogRevision = nil }
     func passive() -> DiskApplications { apps ?? DiskApplications() }
     func navigation(_ index: DiskIndex) async -> DiskApplications { await read(index) }
+    func measurements(_ value: DiskApplications, index: DiskIndex) -> DiskApplications {
+        let measured = value.remeasured(index)
+        if revision == index.revision, apps?.catalogReadAt == value.catalogReadAt { apps = measured }
+        return measured
+    }
     func read(_ index: DiskIndex, force: Bool = false) async -> DiskApplications {
         guard active else { return apps ?? DiskApplications() }
         if force, let pending = flight {
@@ -46,16 +56,32 @@ actor DiskInventory {
         let pending: Reading
         if let flight { pending = flight }
         else {
-            let previous = force ? nil : apps, loader = self.loader
+            var previous = force ? nil : apps
+            if !receiptCacheLoaded {
+                savedReceipts = receiptCacheURL.flatMap { DiskReceiptCache.read($0) }
+                receiptCacheLoaded = true
+            }
+            if !force, previous == nil, index.catalogRevision != nil, let savedReceipts {
+                var seed = DiskApplications()
+                // Historical manifests are reused only after the adapter validates current plist/BOM stamps.
+                // No app signatures, classifications, ownership decisions or removal plans are cached here.
+                seed.receipts = savedReceipts
+                previous = seed
+            }
+            let loader = self.loader, previousForRead = previous
             generation += 1
             pending = Reading(id: generation, revision: index.revision,
-                task: Task.detached(priority: .utility) { autoreleasepool { loader(index, previous) } })
+                task: Task.detached(priority: .utility) { autoreleasepool { loader(index, previousForRead) } })
             flight = pending
         }
         let result = await pending.task.value
         guard active, !pending.task.isCancelled else { return apps ?? result }
         if flight?.id == pending.id {
             apps = result; revision = pending.revision; flight = nil
+            if result.receipts != savedReceipts, let receiptCacheURL {
+                DiskReceiptCache.save(result.receipts, to: receiptCacheURL)
+                savedReceipts = result.receipts
+            }
         }
         if pending.revision != index.revision { return await read(index) }
         return result
@@ -64,11 +90,22 @@ actor DiskInventory {
 public struct DiskMapModule: MacSpaceModule {
     private let store: DiskStore
     private let inventory: DiskInventory
-    public init() { store = DiskStore(); inventory = DiskInventory() }
-    init(store: DiskStore, inventory: DiskInventory = DiskInventory()) { self.store = store; self.inventory = inventory }
+    public init() {
+        let store = DiskStore()
+        self.store = store; inventory = DiskInventory(receiptCache: store.receiptCacheURL)
+    }
+    init(store: DiskStore, inventory: DiskInventory? = nil) {
+        self.store = store
+        self.inventory = inventory ?? DiskInventory(receiptCache: store.receiptCacheURL)
+    }
     private func browsing(_ index: DiskIndex) async -> DiskApplications {
+        let start = Date()
         let apps = await inventory.browsing(index) { [store] apps in await store.recordOwnership(apps) }
-        return apps.remeasured(await store.navigation().index)
+        DiskScanMetrics.phase("application-inventory-and-ownership", since: start)
+        let accountingStarted = Date()
+        let measured = await inventory.measurements(apps, index: store.navigation().index)
+        DiskScanMetrics.phase("application-allocation-reconciliation", since: accountingStarted)
+        return measured
     }
     public func setActive(_ active: Bool) async { await store.setActive(active); await inventory.setActive(active) }
     public func invalidate() async { await inventory.invalidate(); await store.invalidate() }
@@ -269,7 +306,7 @@ public struct DiskMapModule: MacSpaceModule {
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         let moveToTrash = request.parameters["trash"] == "1"
-        if ["freeFiles", "freeDuplicates"].contains(request.actionID),
+        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder"].contains(request.actionID),
            (!["0", "1"].contains(request.parameters["trash"] ?? "") || moveToTrash != FileRemovalSettings.movesToTrash()) {
             return .failed(loc("File removal settings changed. Reopen the list and confirm again."))
         }
@@ -278,6 +315,47 @@ public struct DiskMapModule: MacSpaceModule {
         var result: ActionResult
         var remainingSelection: SelectionBulk?
         switch request.actionID {
+        case "deleteFolder":
+            guard let path = request.parameters["path"], index.contains(path, below: index.root),
+                  let encoded = request.parameters["reviewed"],
+                  let expected = try? JSONDecoder().decode(ReviewedDirectoryRemoval.Identity.self, from: Data(encoded.utf8)) else {
+                return .failed(loc("Reopen the list and review your selection again."))
+            }
+            let apps = await inventory.read(index, force: true)
+            await store.recordOwnership(apps)
+            guard await store.canRemoveDirectory(path) else { return .failed(loc("This folder cannot be deleted here.")) }
+            do {
+                progress(.init(message: loc("Freeing space")))
+                let removed = try DiskDirectoryRemoval.remove(path, expected: expected, moveToTrash: moveToTrash)
+                await store.mark([path], recursive: true)
+                progress(.init(fraction: 1, message: loc("Freeing space"), finished: [DiskMapScreenBuilder.folderID(path), path]))
+                result = ActionResult(outcome: .succeeded, message: loc("Deleted folder"), removedBytes: removed)
+            } catch {
+                await store.mark([path], recursive: true)
+                result = ActionResult(outcome: .needsAttention, message: loc("Couldn’t delete the folder"), details: [error.localizedDescription])
+            }
+        case "deleteGraphFile":
+            guard let id = request.parameters["id"], let reviewed = request.parameters["reviewed"] else {
+                return .failed(loc("Reopen the list and review your selection again."))
+            }
+            // A graph deletes one reviewed target, independently of the page's retained batch selection.
+            guard let files = await store.selectedFiles([id], folder: index.root, reviewed: [id: reviewed],
+                origins: request.parameters["origin"].map { [id: $0] } ?? [:]), files.count == 1 else {
+                return .failed(loc("Selected files changed or are unavailable. Review your selection again."))
+            }
+            do {
+                if let proof = files.first?.duplicateVerification, try !proof.verify() {
+                    return .failed(loc("Selected files changed or are unavailable. Review your selection again."))
+                }
+            } catch { return .failed(error.localizedDescription) }
+            guard let removal = DiskFileRemoval.execute(ids: [id], folder: index.root, index: index, files: files,
+                confirmedMoveToTrash: moveToTrash, progress: progress) else {
+                return .failed(loc("This file cannot be deleted here."))
+            }
+            await store.mark(removal.targets)
+            result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention,
+                message: removal.failures.isEmpty ? loc("Freed selected files") : loc("Some files could not be removed"),
+                details: removal.failures, removedBytes: removal.removedBytes)
         case "freeFiles", "freeDuplicates":
             guard let token = request.parameters["selectionToken"] else { return .failed(loc("Reopen the list and review your selection again.")) }
             (result, remainingSelection) = await removeSelection(token: token, index: index, moveToTrash: moveToTrash, progress: progress)

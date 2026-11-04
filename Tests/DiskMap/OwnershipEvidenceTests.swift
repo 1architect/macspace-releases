@@ -225,8 +225,17 @@ final class OwnershipEvidenceTests: XCTestCase {
             let first = AppReceiptReader.read(directory: receiptsPath, budget: 5)
             XCTAssertTrue(first.complete); XCTAssertEqual(first.manifests.count, 1)
             XCTAssertTrue(first.manifests[0].paths.contains(home + "/Applications/Example.app/Contents/Info.plist"))
-            let second = AppReceiptReader.read(previous: first, directory: receiptsPath, budget: 5)
+            let persisted = try JSONDecoder().decode(AppReceiptCatalog.self, from: JSONEncoder().encode(first))
+            let second = AppReceiptReader.read(previous: persisted, directory: receiptsPath, budget: 5)
             XCTAssertEqual(first.manifests, second.manifests)
+            try file(payload + "/Example.app/Contents/new-file")
+            let rebuilt = Process(); rebuilt.executableURL = URL(fileURLWithPath: "/usr/bin/mkbom")
+            rebuilt.arguments = [payload, receiptsPath + "/fixture.bom"]
+            try rebuilt.run(); rebuilt.waitUntilExit(); XCTAssertEqual(rebuilt.terminationStatus, 0)
+            try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(60)], ofItemAtPath: receiptsPath + "/fixture.bom")
+            let changed = AppReceiptReader.read(previous: persisted, directory: receiptsPath, budget: 5)
+            XCTAssertTrue(changed.manifests[0].paths.contains(home + "/Applications/Example.app/Contents/new-file"),
+                "Persisted manifests must be invalidated when their source BOM stamp changes")
             let bounded = AppReceiptReader.read(directory: receiptsPath, budget: 0)
             XCTAssertFalse(bounded.complete); XCTAssertTrue(bounded.manifests.isEmpty)
         }
@@ -252,4 +261,26 @@ final class OwnershipEvidenceTests: XCTestCase {
         }
     }
 
+}
+
+extension OwnershipEvidenceTests {
+    func testFileAllocationMeasurementsAreReusedOnlyWithinTheSameScanRevision() throws {
+        try fixture { home in
+            let owner = try app(home), path = home + "/data/file"
+            try file(path)
+            var apps = DiskApplications()
+            apps.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: false,
+                ownership: [.init(paths: [path], ownerPaths: [owner.path], confidence: .unknown, source: "fixture", reason: "Historical")])]
+            var index = DiskIndex(root: home); index.inventoryAuthoritative = true; index.revision = 1
+            let first = apps.remeasured(index)
+            let bytes = try XCTUnwrap(first.apps.first?.dataBytes)
+            XCTAssertGreaterThan(bytes, 0)
+            try Data(repeating: 1, count: 131_072).write(to: URL(fileURLWithPath: path))
+            XCTAssertEqual(first.remeasured(index).apps.first?.dataBytes, bytes, "Status reads use the already measured snapshot")
+            index.revision = 2
+            XCTAssertGreaterThan(try XCTUnwrap(first.remeasured(index).apps.first?.dataBytes), bytes)
+            index.revision = 1; index.measuredOwnershipBytes = [path: 77]
+            XCTAssertEqual(first.remeasured(index).apps.first?.dataBytes, 77, "Authoritative index figures override fallback observations")
+        }
+    }
 }

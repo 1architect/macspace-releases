@@ -5,6 +5,13 @@ import MacSpacePlatform
 import MacSpaceSystemDataPrivileged
 
 final class SystemDataScreenBuilderTests: XCTestCase {
+    func testDashboardFreeUsesTheSameReviewedCleanupAsThePage() {
+        let available = snapshot(items: [], reports: 100_000_000)
+        XCTAssertEqual(SystemDataScreenBuilder.tile(available).freeAction, SystemDataScreenBuilder.cleanAll(available))
+        XCTAssertNotNil(SystemDataScreenBuilder.tile(available).freeAction?.confirmation)
+        XCTAssertNil(SystemDataScreenBuilder.tile(snapshot(items: [])).freeAction)
+    }
+
     private func item(_ id: String, kind: SystemDataKind, bytes: UInt64, cleanup: SystemDataCleanup.Kind = .review, reclaim: UInt64? = nil,
                       inUse: Bool = false, owners: [String] = []) -> SystemDataItem {
         var item = SystemDataItem(id: id, title: id, kind: kind, paths: ["/x/\(id)"], bytes: bytes, readable: true, owners: owners, inUse: inUse,

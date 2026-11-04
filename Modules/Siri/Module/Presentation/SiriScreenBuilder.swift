@@ -53,6 +53,7 @@ enum SiriScreenBuilder {
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         var tile = baseTile(snapshot)
         tile.refreshAfter = refreshAfter(snapshot)
+        tile.freeAction = snapshot.isVirtualMachine || freeingFeatures(snapshot) ? nil : freeFeatures(snapshot) ?? purge(snapshot)
         // One switch for them all: on while any of the page's switches is on; flipped, it switches every one that can be flipped to
         // its position (`tileSwitch`).
         if !snapshot.isVirtualMachine, let action = tileSwitch(snapshot) {

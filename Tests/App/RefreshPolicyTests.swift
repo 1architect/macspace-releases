@@ -73,6 +73,20 @@ final class RefreshPolicyTests: XCTestCase {
         XCTAssertEqual(handle.tile?.status, "measured")
     }
 
+    func testGraphRefreshInvalidatesAndReadsTheOwningModule() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let reads = PresentationReads()
+        let handle = try await makeHandle(directory, reads: reads)
+        defer { handle.deactivate() }
+        await reads.enableStatus()
+        let before = await reads.events.count
+        await GraphInteraction(handle: handle).refresh()
+        let after = await reads.events
+        XCTAssertEqual(Set(after.dropFirst(before)), ["invalidate", "tile", "screen"])
+        XCTAssertEqual(handle.tile?.status, "measured")
+    }
+
     func testDashboardRefreshReadsOnlyTheTile() async throws {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

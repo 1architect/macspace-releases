@@ -321,7 +321,7 @@ public struct MainView: View {
             // two as the tile settled, and the text jumped.
             TileContent(destination: layer.destination, tint: layer.tint, host: host, storage: storage,
                         captionSize: CaptionSize.tile(height: layer.origin.height, large: frames.isLarge(layer.destination)), progress: p,
-                        showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45),
+                        showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45), resumesGraphic: true,
                         restingSize: layer.origin.size, captionWidth: layer.origin.width)
         }
     }

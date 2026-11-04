@@ -30,6 +30,10 @@ struct AppLeftover: Sendable {
     }
 }
 struct DiskApplications: Sendable {
+    private struct FileMeasurement: Sendable { var bytes: UInt64; var identity: String? }
+    private var measurementRevision: UInt64?
+    private var measurementRoot: String?
+    private var fileMeasurements: [String: FileMeasurement] = [:]
     var apps: [DiskApplication] = []
     /// Unmatched is not proof that an app was removed. Only explicit, reviewed user-data choices may be freed.
     var reviewableLeftovers: [AppLeftover] = []
@@ -54,15 +58,24 @@ struct DiskApplications: Sendable {
     /// Allocated file bytes are included even when files are below the index's large-file threshold.
     /// Directory totals come from the snapshot; missing/unreadable directories remain unmeasured.
     static func measuredBytes(_ paths: [String], index: DiskIndex) -> UInt64 {
+        var measurements: [String: FileMeasurement] = [:]
+        return measuredBytes(paths, index: index, measurements: &measurements)
+    }
+    private static func measuredBytes(_ paths: [String], index: DiskIndex, measurements: inout [String: FileMeasurement]) -> UInt64 {
         var bytes: UInt64 = 0, files = Set<String>()
-        let normalized = AppOwnership.normalizedPaths(paths)
-        for path in normalized {
+        for path in AppOwnership.normalizedPaths(paths) {
             if let directory = index.directories[measuredPath(path, index: index)] { bytes += directory.bytes; continue }
             if let measured = index.measuredOwnershipBytes?[measuredPath(path, index: index)] { bytes += measured; continue }
-            var st = stat()
-            guard AppOwnership.safeExisting(path), lstat(path, &st) == 0, st.st_mode & S_IFMT == S_IFREG, st.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
-            let key = "\(st.st_dev):\(st.st_ino)"
-            if files.insert(key).inserted { bytes += UInt64(max(0, st.st_blocks)) * 512 }
+            let measurement: FileMeasurement
+            if let cached = measurements[path] { measurement = cached }
+            else {
+                var st = stat()
+                if AppOwnership.safeExisting(path), lstat(path, &st) == 0, st.st_mode & S_IFMT == S_IFREG, st.st_flags & UInt32(SF_DATALESS) == 0 {
+                    measurement = FileMeasurement(bytes: UInt64(max(0, st.st_blocks)) * 512, identity: "\(st.st_dev):\(st.st_ino)")
+                } else { measurement = FileMeasurement(bytes: 0, identity: nil) }
+                if measurements.count < 65_536 { measurements[path] = measurement }
+            }
+            if let identity = measurement.identity, files.insert(identity).inserted { bytes += measurement.bytes }
         }
         return bytes
     }
@@ -131,6 +144,7 @@ struct DiskApplications: Sendable {
     func remeasured(_ index: DiskIndex) -> DiskApplications {
         guard index.inventoryAuthoritative == true || index.appPaths != nil else { return self }
         var result = self
+        var measurements = measurementRevision == index.revision && measurementRoot == index.root ? fileMeasurements : [:]
         for n in result.apps.indices {
             result.apps[n].bytes = index.measuredOwnershipBytes?[Self.measuredPath(result.apps[n].owner.path, index: index)] ?? index.directories[Self.measuredPath(result.apps[n].owner.path, index: index)]?.bytes ?? result.apps[n].bytes
             let ownerPath = result.apps[n].owner.path
@@ -141,12 +155,14 @@ struct DiskApplications: Sendable {
                 claim.paths = claim.paths.filter { $0 != ownerPath && !$0.hasPrefix(ownerPath + "/") }
                 return claim
             }
-            result.apps[n].dataBytes = Self.measuredBytes(claims.flatMap(\.paths), index: index)
-            result.apps[n].ownershipBytes = Dictionary(grouping: claims, by: \.confidence).mapValues { Self.measuredBytes($0.flatMap(\.paths), index: index) }
+            result.apps[n].dataBytes = Self.measuredBytes(claims.flatMap(\.paths), index: index, measurements: &measurements)
+            result.apps[n].ownershipBytes = Dictionary(grouping: claims, by: \.confidence).mapValues { Self.measuredBytes($0.flatMap(\.paths), index: index, measurements: &measurements) }
         }
         for n in result.reviewableLeftovers.indices {
-            result.reviewableLeftovers[n].bytes = Self.measuredBytes([result.reviewableLeftovers[n].path], index: index)
+            result.reviewableLeftovers[n].bytes = Self.measuredBytes([result.reviewableLeftovers[n].path], index: index, measurements: &measurements)
         }
+        result.fileMeasurements = measurements
+        result.measurementRevision = index.revision; result.measurementRoot = index.root
         return result
     }
 

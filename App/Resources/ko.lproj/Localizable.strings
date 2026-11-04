@@ -44,12 +44,15 @@
 "Close" = "닫기";
 "Close Window" = "윈도우 닫기";
 "Configuration profile" = "구성 프로파일";
+"Confirm deletion of this item." = "이 항목의 삭제를 확인하세요.";
 "Continue" = "계속";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다.";
 "Could not install the helper: %@" = "보조 프로그램을 설치할 수 없음: %@";
 "Couldn't free space. Try again later." = "공간을 확보하지 못했습니다. 나중에 다시 시도하세요.";
 "Couldn’t uninstall MacSpace" = "MacSpace를 제거하지 못함";
 "Day" = "주간";
+"Delete" = "삭제";
+"Delete %@?" = "%@을(를) 삭제할까요?";
 "Developed by\n%@" = "개발자\n%@";
 "Does the few things that need an administrator." = "관리자 권한이 필요한 일부 작업을 수행합니다.";
 "Drag into the Full Disk Access list" = "전체 디스크 접근 목록으로 드래그";
@@ -120,6 +123,7 @@
 "Open Panel" = "패널 열기";
 "Open System Settings" = "시스템 설정 열기";
 "Open at login" = "로그인 시 열기";
+"Open in Finder" = "Finder에서 열기";
 "Other folders" = "기타 폴더";
 "Permissions" = "권한";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "보조 프로그램 설치를 누르세요. macOS가 인식하지 못하면 터미널에서 /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register 를 실행하고 출력 메시지를 보내주세요.";

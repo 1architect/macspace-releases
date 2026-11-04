@@ -29,12 +29,6 @@ enum DiskMapScreenBuilder {
             }
             widgets.append(.list(ListWidget(id: "apps-class", title: loc("Apps"), rows: rows)))
         }
-        if folder == index.root {
-            widgets.append(.list(ListWidget(id: "personal-folders", title: loc("Folders"), rows: (index.personalFolders ?? []).map {
-                Row(id: $0.path, title: folderName($0.path), subtitle: $0.itemCount.map { loc("\(Int(clamping: $0)) items") }, trailing: ByteFormat.string($0.bytes),
-                    paths: [FileReviewPolicy.livePath($0.path)], pageID: folderID($0.path))
-            })))
-        }
         let categories = DiskCategory.inventoryCategories.compactMap { category -> Row? in
             guard !(folder == index.root && category == .installers), let summary = index.categories?.first(where: { $0.category == category }), summary.count > 0 else { return nil }
             var row = categoryRow(summary, folder: folder, smaller: index.categoriesIncludeSmaller == true || category == .installers)
@@ -56,7 +50,7 @@ enum DiskMapScreenBuilder {
         }
         if direct?.request.kind == .managed, let node = index.directories[folder], !node.folders.isEmpty {
             widgets.append(.list(ListWidget(id: "managed-folders", title: loc("Folders"), rows: node.folders.map {
-                Row(id: folderID($0), title: folderName($0), trailing: index.directories[$0].map { ByteFormat.string($0.bytes) }, paths: [FileReviewPolicy.livePath($0)], pageID: folderID($0))
+                folderRow($0, index: index)
             })))
         }
         if folder != index.root, let direct, !direct.files.isEmpty || direct.loadingFraction != nil || direct.unavailableReason != nil {
@@ -67,6 +61,12 @@ enum DiskMapScreenBuilder {
                 emptyMessage: summaries.isEmpty && categories.isEmpty ? (direct?.loadingFraction != nil || index.categoryLoadingFraction != nil ? loc("Reading files…") : emptyExplanation(index, folder: folder)) : nil,
                 rows: summaries + categories)))
         }
+        // Overview categories follow the requested Apps, Files, Folders order.
+        if folder == index.root {
+            widgets.append(.list(ListWidget(id: "personal-folders", title: loc("Folders"), rows: (index.personalFolders ?? []).map {
+                folderRow($0.path, index: index, id: $0.path, directory: $0)
+            })))
+        }
         if index.loadError == true {
             widgets.append(.banner(Banner(id: "file-inventory-error", severity: .warning,
                 title: loc("Categories unavailable"), message: loc("Category preparation failed. The previous disk map is still available. Refresh to retry."))))
@@ -74,7 +74,7 @@ enum DiskMapScreenBuilder {
         let node = index.directories[folder]
         let title = folder == index.root ? loc("Apps and files") : folderName(folder)
         return Screen(title: title, hero: UsageBar(id: folderID(folder), title: title, totalBytes: folder == index.root ? index.volumeUsed ?? node?.bytes : node?.bytes,
-             segments: segments(index, folder: folder, files: direct?.request.kind == .managed ? direct?.files : catalog), footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")), widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
+             segments: segments(index, folder: folder, files: direct?.request.kind == .managed ? direct?.files : catalog), footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")), primary: DiskDirectoryRemoval.action(folder, node: index.directories[folder]), widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
     }
     static func categorySummaries(_ types: [DiskTypeSummary]) -> [DiskCategorySummary] {
         var totals: [DiskCategory: DiskCategorySummary] = [:]
@@ -116,14 +116,16 @@ enum DiskMapScreenBuilder {
         guard let node = index.directories[folder] else { return [] }
         var parts = node.folders.sorted().enumerated().compactMap { n, path -> UsageSegment? in
             guard let dir = index.directories[path] else { return nil }
-            let row = Row(id: folderID(path), title: folderName(path), subtitle: dir.itemCount.map { loc("\(Int(clamping: $0)) items") },
-                trailing: ByteFormat.string(dir.bytes), paths: [FileReviewPolicy.livePath(path)], pageID: folderID(path))
-            return UsageSegment(id: path, label: folderName(path), bytes: dir.bytes, tone: .series(n), items: [row], pageID: folderID(path), kind: .folder)
+            let row = folderRow(path, index: index)
+            return UsageSegment(id: path, label: row.title, bytes: dir.bytes, tone: .series(n), items: [row], pageID: folderID(path), kind: .folder, contextActions: row.contextActions)
         }
         let files = (catalog ?? index.largeFiles).filter { ($0.path as NSString).deletingLastPathComponent == folder }
+        // Graph projections stay metadata-only; the remover checks live readers again after confirmation.
+        let selection = fileSelection(files, open: [:])
         for file in files {
             var request = DiskBrowseRequest(folder: folder, kind: DiskManagedLibrary.contains(folder) ? .managed : .direct); request.focusPath = file.path
-            parts.append(UsageSegment(id: file.path, label: (file.path as NSString).lastPathComponent, bytes: file.bytes, tone: .series(parts.count), pageID: "focus:" + request.pageID))
+            parts.append(UsageSegment(id: file.path, label: (file.path as NSString).lastPathComponent, bytes: file.bytes, tone: .series(parts.count), pageID: "focus:" + request.pageID,
+                contextActions: fileContextActions(file, selection: selection)))
         }
         let direct = node.bytes - min(node.bytes, node.folders.reduce(0) { $0 + (index.directories[$1]?.bytes ?? 0) })
         let other = direct - min(direct, files.reduce(0) { $0 + $1.bytes })
@@ -132,6 +134,29 @@ enum DiskMapScreenBuilder {
             parts.append(UsageSegment(id: "unmeasured", label: loc("Protected and other disk usage"), bytes: used - node.bytes, tone: .neutral))
         }
         return parts.sorted { $0.bytes > $1.bytes }
+    }
+    static func folderRow(_ path: String, index: DiskIndex, id: String? = nil, directory: DiskDirectory? = nil, home: String = DiskDirectoryRemoval.defaultHome) -> Row {
+        let node = directory ?? index.directories[path]
+        let deletion = DiskDirectoryRemoval.action(path, node: node, home: home)
+        let paths = [FileReviewPolicy.livePath(path)]
+        return Row(id: id ?? folderID(path), title: folderName(path), subtitle: node?.itemCount.map { loc("\(Int(clamping: $0)) items") },
+            trailing: node.map { ByteFormat.string($0.bytes) }, actions: deletion.map { [$0] } ?? [], paths: paths, pageID: folderID(path),
+            contextActions: GraphContextActions(paths: paths, delete: deletion))
+    }
+    static func fileContextActions(_ file: DiskFile, selection: Selection) -> GraphContextActions {
+        let id = fileID(file.path)
+        var deletion: Action?
+        if selection.choices[id] != nil, let reviewed = selection.reviewed[id] {
+            var action = selection.action
+            action.id = "deleteGraphFile"
+            action.parameters["id"] = id
+            action.parameters["reviewed"] = reviewed
+            action.parameters["origin"] = selection.origins[id]
+            // The shared confirmation retains the configured Trash/permanent-deletion semantics and names the target.
+            action.confirmation?.message += "\n\n" + FileReviewPolicy.livePath(file.path)
+            deletion = action
+        }
+        return GraphContextActions(paths: [FileReviewPolicy.livePath(file.path)], delete: deletion)
     }
     static func applications(_ apps: DiskApplications, folder: String?) -> [DiskApplication] {
         guard let folder else { return apps.apps }
@@ -249,6 +274,7 @@ enum DiskMapScreenBuilder {
     }
     static func fileRow(_ file: DiskFile) -> Row {
         Row(id: fileID(file.path), title: (file.path as NSString).lastPathComponent, trailing: ByteFormat.string(file.logicalBytes),
-            paths: [FileReviewPolicy.livePath(file.path)], unavailableReason: selectable(file) ? nil : loc("This file cannot be deleted here."))
+            paths: [FileReviewPolicy.livePath(file.path)], unavailableReason: selectable(file) ? nil : loc("This file cannot be deleted here."),
+            contextActions: fileContextActions(file, selection: fileSelection([file], open: [:])))
     }
 }

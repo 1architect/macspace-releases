@@ -23,6 +23,29 @@ final class DiskNavigationRegressionTests: XCTestCase {
     private struct AllowedPermissions: PermissionChecker {
         func status(of permission: Permission) -> PermissionStatus { .granted }
     }
+    func testGraphDeleteRejectsMissingAndChangedReviewBeforeRemovingAnyFile() async throws {
+        let base = URL(fileURLWithPath: "/private/tmp/graph-removal-" + UUID().uuidString)
+        let downloads = base.appendingPathComponent("Downloads")
+        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let target = downloads.appendingPathComponent("target.txt"), other = downloads.appendingPathComponent("other.txt")
+        try Data([1]).write(to: target); try Data([2]).write(to: other)
+        let original = try XCTUnwrap(FileReviewIdentity(target.path))
+        let store = DiskStore(root: downloads.path, cache: base.appendingPathComponent("cache/index"), home: base.path)
+        let module = DiskMapModule(store: store, inventory: DiskInventory(loader: { _, _ in DiskApplications() }))
+        let trash = FileRemovalSettings.movesToTrash() ? "1" : "0"
+        let missing = await module.perform(.init(actionID: "deleteGraphFile", parameters: ["trash": trash]), context: context(), progress: { _ in })
+        XCTAssertEqual(missing.outcome, .failed)
+        try Data([3, 4]).write(to: target)
+        let changed = await module.perform(.init(actionID: "deleteGraphFile", parameters: ["trash": trash,
+            "id": DiskFileRemoval.id(target.path), "reviewed": String(decoding: try JSONEncoder().encode(original), as: UTF8.self)]),
+            context: context(), progress: { _ in })
+        XCTAssertEqual(changed.outcome, .failed)
+        XCTAssertEqual(try Data(contentsOf: target), Data([3, 4]))
+        XCTAssertEqual(try Data(contentsOf: other), Data([2]))
+        await store.setActive(false)
+    }
+
     func testFolderAndNestedNavigationNeverStartDuplicateOrAppDiscovery() async throws {
         let base = URL(fileURLWithPath: "/private/tmp/navigation-regression-" + UUID().uuidString)
         let home = base.appendingPathComponent("User"), downloads = home.appendingPathComponent("Downloads"), nested = downloads.appendingPathComponent("Nested")

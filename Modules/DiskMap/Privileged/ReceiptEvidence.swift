@@ -10,7 +10,7 @@ public struct AppReceiptManifest: Codable, Equatable, Sendable {
         self.identifier = identifier; self.paths = Array(Set(paths)).sorted(); self.complete = complete; self.reason = reason
     }
 }
-public struct AppReceiptCatalog: Sendable {
+public struct AppReceiptCatalog: Codable, Equatable, Sendable {
     public var manifests: [AppReceiptManifest] = []
     public var complete = false
     public var reason = "Receipt inventory has not been read."

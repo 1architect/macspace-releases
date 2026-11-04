@@ -15,6 +15,15 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
 
     private func snapshot(_ services: [String: UInt64]?) -> PurgeableSnapshot { PurgeableSnapshot(services: services, takenAt: Date()) }
 
+    func testDashboardFreeUsesThePageCleanupAndDisappearsWhenUnavailableOrRetrying() {
+        var available = snapshot(measured)
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(available).freeAction, OtherSystemFilesScreenBuilder.freeAction(available, prominent: true))
+        XCTAssertNotNil(OtherSystemFilesScreenBuilder.tile(available).freeAction)
+        available.retrying = true
+        XCTAssertNil(OtherSystemFilesScreenBuilder.tile(available).freeAction)
+        XCTAssertNil(OtherSystemFilesScreenBuilder.tile(snapshot(nil)).freeAction)
+    }
+
     func testRemovalStatusRetainsMeasurementsThroughCompletion() async throws {
         let reads = SnapshotReads()
         let store = PurgeableStore(builder: { _ in

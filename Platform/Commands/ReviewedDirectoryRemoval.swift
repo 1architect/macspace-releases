@@ -1,10 +1,10 @@
 import Darwin
 import Foundation
 
-/// Permanent, unprivileged removal of reviewed immediate children of app-data roots.
+/// Unprivileged directory removal with separate app-data and explicit personal-folder boundaries.
 /// A private on-disk manifest bounds memory while retaining every preflight identity.
 public enum ReviewedDirectoryRemoval {
-    public struct Identity: Equatable, Sendable {
+    public struct Identity: Codable, Equatable, Sendable {
         public let device: Int32
         public let inode: UInt64
         public let uid: UInt32
@@ -13,6 +13,12 @@ public enum ReviewedDirectoryRemoval {
         public init(device: Int32, inode: UInt64, uid: UInt32, modifiedSeconds: Int64, modifiedNanos: Int64) {
             self.device = device; self.inode = inode; self.uid = uid
             self.modifiedSeconds = modifiedSeconds; self.modifiedNanos = modifiedNanos
+        }
+        public init?(_ path: String) {
+            var value = stat()
+            guard lstat(path, &value) == 0, value.st_mode & S_IFMT == S_IFDIR,
+                  value.st_uid == getuid(), value.st_flags & ReviewedDirectoryRemoval.protectedFlags == 0 else { return nil }
+            self.init(value)
         }
         fileprivate init(_ value: stat) {
             self.init(device: value.st_dev, inode: value.st_ino, uid: value.st_uid,
@@ -53,11 +59,29 @@ public enum ReviewedDirectoryRemoval {
 
     /// All targets must finish preflight before a Plan can mutate any of them.
     public static func prepare(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws -> Plan {
+        try prepare(targets, home: home, personal: false)
+    }
+
+    /// Whole personal folders use the same descriptor-based preflight and guarded removal as app-data directories.
+    /// The home itself, app packages, hidden and managed roots remain outside this boundary.
+    public static func includesPersonal(_ path: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Bool {
+        guard getuid() != 0, geteuid() == getuid(), path.hasPrefix(home + "/") else { return false }
+        switch FileReviewPolicy.exclusion(path, home: home) {
+        case nil, .outsidePersonalLocation: return true
+        default: return false
+        }
+    }
+
+    public static func preparePersonal(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws -> Plan {
+        try prepare(targets, home: home, personal: true)
+    }
+
+    private static func prepare(_ targets: [Target], home: String, personal: Bool) throws -> Plan {
         guard !targets.isEmpty, targets.count <= maxTargets, Set(targets.map(\.path)).count == targets.count else {
             throw Failure(home, "Invalid or excessive directory selection")
         }
         for target in targets {
-            guard includes(target.path, home: home), target.expected.uid == getuid() else {
+            guard (personal ? includesPersonal(target.path, home: home) : includes(target.path, home: home)), target.expected.uid == getuid() else {
                 throw Failure(target.path, "Directory is outside the permitted ownership boundary")
             }
         }
@@ -68,7 +92,7 @@ public enum ReviewedDirectoryRemoval {
         }
         var prepared: [Prepared] = [], entries = 0
         for target in targets {
-            let item = try Prepared(target, home: home)
+            let item = try Prepared(target, home: home, permitsSymbolicLinks: personal)
             try item.preflight(entries: &entries)
             prepared.append(item)
         }
@@ -81,6 +105,12 @@ public enum ReviewedDirectoryRemoval {
         private let items: [Prepared]
         private var attempted: Set<Int> = []
         fileprivate init(_ items: [Prepared]) { self.items = items }
+        public var bytes: UInt64 { items.reduce(0) { $0 + $1.bytes } }
+        public func trash(at index: Int) throws {
+            try validate(at: index)
+            attempted.insert(index)
+            try items[index].trash()
+        }
         public func validate(at index: Int) throws {
             guard items.indices.contains(index), !attempted.contains(index) else { throw Failure("", "Invalid or already attempted target") }
             try items[index].validate()
@@ -116,10 +146,10 @@ public enum ReviewedDirectoryRemoval {
               a.st_mtimespec.tv_sec == b.st_mtimespec.tv_sec, a.st_mtimespec.tv_nsec == b.st_mtimespec.tv_nsec else { return false }
         return afterRename || (a.st_ctimespec.tv_sec == b.st_ctimespec.tv_sec && a.st_ctimespec.tv_nsec == b.st_ctimespec.tv_nsec)
     }
-    private static func safe(_ value: stat, device: Int32, path: String) throws {
+    private static func safe(_ value: stat, device: Int32, path: String, permitsSymbolicLinks: Bool = false) throws {
         let kind = value.st_mode & S_IFMT
         guard value.st_uid == getuid(), value.st_dev == device, value.st_flags & protectedFlags == 0,
-              kind == S_IFDIR || (kind == S_IFREG && value.st_nlink == 1) else {
+              kind == S_IFDIR || (kind == S_IFREG && value.st_nlink == 1) || (permitsSymbolicLinks && kind == S_IFLNK) else {
             throw Failure(path, "Unsafe owner, mount, flags, link, or file type")
         }
     }
@@ -178,16 +208,19 @@ public enum ReviewedDirectoryRemoval {
 
     fileprivate final class Prepared {
         let target: Target
+        let permitsSymbolicLinks: Bool
         let parts: [String]
         var ancestors: [Descriptor] = []
         let manifest: Manifest
         var top: Descriptor?
         var mount = ""
+        var bytes: UInt64 = 0
         var parent: Int32 { ancestors.last!.fd }
         var leaf: String { parts.last! }
 
-        init(_ target: Target, home: String) throws {
+        init(_ target: Target, home: String, permitsSymbolicLinks: Bool) throws {
             self.target = target
+            self.permitsSymbolicLinks = permitsSymbolicLinks
             parts = target.path.split(separator: "/").map(String.init)
             manifest = try Manifest(path: target.path)
             guard parts.count <= maxDepth else { throw Failure(target.path, "Ancestor depth limit exceeded") }
@@ -226,7 +259,8 @@ public enum ReviewedDirectoryRemoval {
             entries += 1
             guard depth <= maxDepth, entries <= maxEntries, path.utf8.count < Int(PATH_MAX) else { throw Failure(path, "Directory preflight resource limit exceeded") }
             let value = try named(parent, name, path: path)
-            try safe(value, device: top!.initial.st_dev, path: path)
+            try safe(value, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks)
+            bytes += UInt64(max(value.st_blocks, 0)) * 512
             try manifest.write(name, value, path: path)
             guard value.st_mode & S_IFMT == S_IFDIR else { return }
             let directory = try Descriptor(openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC), path: path)
@@ -254,6 +288,23 @@ public enum ReviewedDirectoryRemoval {
             try manifest.write("", path: path)
         }
 
+        func trash() throws {
+            try validate()
+            var coordinationError: NSError?, removalError: Error?
+            NSFileCoordinator().coordinate(writingItemAt: URL(fileURLWithPath: target.path), options: .forMoving, error: &coordinationError) { url in
+                do {
+                    guard url.path == target.path,
+                          URL(fileURLWithPath: target.path).resolvingSymlinksInPath().path == target.path else {
+                        throw Failure(target.path, "Directory location changed before Trash")
+                    }
+                    try validate()
+                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                } catch { removalError = error }
+            }
+            if let coordinationError { throw coordinationError }
+            if let removalError { throw removalError }
+        }
+
         func remove() throws {
             try validate()
             let stageName = ".macspace-directory-" + UUID().uuidString
@@ -277,7 +328,7 @@ public enum ReviewedDirectoryRemoval {
                    stage: Int32, stagePath: String, depth: Int) throws {
             guard depth <= maxDepth else { throw Failure(path, "Removal depth limit exceeded") }
             let current = try named(source, name, path: path)
-            try safe(current, device: top!.initial.st_dev, path: path)
+            try safe(current, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks)
             guard unchanged(current, expected) else { throw Failure(path, "Entry changed since preflight") }
             let slot = UUID().uuidString
             guard renameatx_np(source, name, stage, slot, UInt32(RENAME_EXCL)) == 0 else { throw failure(path, "Cannot guard directory entry") }
@@ -294,13 +345,15 @@ public enum ReviewedDirectoryRemoval {
                         try erase(directory.fd, child, value, path: path + "/" + child, stage: stage, stagePath: stagePath, depth: depth + 1)
                     }
                     let final = try named(stage, slot, path: path)
-                    try safe(final, device: expected.st_dev, path: path)
+                    try safe(final, device: expected.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks)
                     guard sameObject(final, moved) else { throw Failure(path, "Staged directory replaced") }
                     // Unexpected new children make rmdir fail; they are never enumerated/deleted here.
                     guard unlinkat(stage, slot, AT_REMOVEDIR) == 0 else { throw failure(path, "Cannot remove directory; remaining data preserved") }
                 } else {
+                    // Symlinks in an explicitly selected personal folder are directory entries only:
+                    // rename/unlink never opens or follows their destinations, including links to / or outside the tree.
                     let final = try named(stage, slot, path: path)
-                    try safe(final, device: expected.st_dev, path: path)
+                    try safe(final, device: expected.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks)
                     guard unchanged(final, moved) else { throw Failure(path, "Staged file changed") }
                     guard unlinkat(stage, slot, 0) == 0 else { throw failure(path, "Cannot unlink reviewed file") }
                 }

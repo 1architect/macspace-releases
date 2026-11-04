@@ -85,6 +85,7 @@ extension DiskMapScreenBuilder {
         for n in files.indices {
             if let readers = open[files[n].path], !readers.isEmpty {
                 rows[n].unavailableReason = loc("Open in \(readers.map(\.process).sorted().joined(separator: ", "))")
+                rows[n].contextActions?.delete = nil
             } else if let claim = ownership[files[n].path] {
                 rows[n].unavailableReason = ownershipExplanation(claim.confidence)
             }
@@ -100,6 +101,7 @@ extension DiskMapScreenBuilder {
                 let title = ownershipTitle(claim.confidence)
                 row.badges.append(Badge(owners.isEmpty ? title : title + ": " + owners.joined(separator: ", "), .info, help: ownershipExplanation(claim.confidence)))
                 row.unavailableReason = ownershipExplanation(claim.confidence)
+                row.contextActions?.delete = nil
             }
             return row
         }

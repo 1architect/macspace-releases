@@ -468,8 +468,8 @@ struct BlocksView: View {
 
     init(segments: [UsageSegment], tint: TileTint, labels: Bool = true, hovered: String? = nil, gap: CGFloat = 3, outerRadius: CGFloat? = nil,
          look: ChartLook = .page, loading: Bool = false, reading: Bool = false, fill: LoadFill? = nil,
-         working: Bool = false, workingFraction: Double? = nil, orderSize: CGSize? = nil, startsAppeared: Bool = false) {
-        _appeared = State(initialValue: startsAppeared)
+         working: Bool = false, workingFraction: Double? = nil, orderSize: CGSize? = nil, startsAppeared: Bool = false, resumes: Bool = false) {
+        _appeared = State(initialValue: startsAppeared || resumes)
         self.segments = segments
         self.tint = tint
         self.labels = labels
@@ -484,7 +484,16 @@ struct BlocksView: View {
         self.workingFraction = workingFraction
         self.orderSize = orderSize
         // Drawn while its figures are being read: the blocks open with it. Drawn with placeholders: the first figures open when they come.
-        _growth = State(initialValue: LoadingWave.isPlaceholder(segments) ? Growth(start: nil) : (reading || working) ? Growth(start: Date(), closing: look == .tile && fill.map { Date().timeIntervalSince($0.started) > 0.2 } == true) : nil)
+        _growth = State(initialValue: Self.initialGrowth(segments: segments, reading: reading, working: working,
+            fill: fill, look: look, resumes: resumes))
+    }
+
+    /// A chart returning from a covered dashboard starts at its current figures. Only a new scan starts the load sequence.
+    static func initialGrowth(segments: [UsageSegment], reading: Bool, working: Bool, fill: LoadFill?, look: ChartLook,
+                              resumes: Bool, now: Date = Date()) -> Growth? {
+        if LoadingWave.isPlaceholder(segments) { return Growth(start: nil) }
+        guard !resumes, reading || working else { return nil }
+        return Growth(start: now, closing: look == .tile && fill.map { now.timeIntervalSince($0.started) > 0.2 } == true)
     }
 
     /// A size split into its number and unit ("201,7 MB" -> ["201,7", "MB"]), for a narrow block.
@@ -550,7 +559,8 @@ struct BlocksView: View {
                         let fill = BlockColor.fill(segment, shade: shades[index], tint: tint, design: design)
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
                         placed(Surface(shape: shape, color: fill, highlighted: hovered == segment.id,
-                                       strength: appeared || plan != nil ? 1 : 0),
+                                       strength: appeared || plan != nil ? 1 : 0)
+                                   .graphContextMenu(label: segment.label, actions: segment.contextActions),
                                index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
                     ForEach(visible, id: \.element.id) { index, segment in
@@ -868,6 +878,13 @@ struct DotsView: View {
     @Environment(\.appearsActive) private var appearsActive
     @State private var appeared = false
 
+    init(dots: [TileDot], tint: TileTint, diameter: CGFloat = 15, spacing: CGFloat = 7, columns: Int = 7,
+         loading: Bool = false, startsAppeared: Bool = false) {
+        self.dots = dots; self.tint = tint; self.diameter = diameter; self.spacing = spacing; self.columns = columns
+        self.loading = loading
+        _appeared = State(initialValue: startsAppeared)
+    }
+
     /// As many columns as make the rows even: up to `columns` a row, and the dots shared out over the rows that takes, so 12 dots are
     /// two rows of 6, not 7 and 5.
     static func columns(for count: Int, atMost columns: Int) -> Int {
@@ -948,6 +965,15 @@ struct StateView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @State private var fill: CGFloat = 0
+
+    init(on: Bool, detail: String, meter: Double?, meterIsActionable: Bool, tint: TileTint, loading: Bool = false,
+         part: Part = .all, flip: (@MainActor (Bool) async -> Bool)? = nil, disabled: Bool = false,
+         showsDetail: Bool = true, startsAppeared: Bool = false) {
+        self.on = on; self.detail = detail; self.meter = meter; self.meterIsActionable = meterIsActionable
+        self.tint = tint; self.loading = loading; self.part = part; self.flip = flip
+        self.disabled = disabled; self.showsDetail = showsDetail
+        _fill = State(initialValue: startsAppeared ? 1 : 0)
+    }
 
     var body: some View {
         content { _ in 1 }
@@ -1039,6 +1065,11 @@ struct BarGaugeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @State private var drawn: Double = 0
+
+    init(value: Double, tint: TileTint, loading: Bool = false, startsAppeared: Bool = false) {
+        self.value = value; self.tint = tint; self.loading = loading
+        _drawn = State(initialValue: startsAppeared ? 1 : 0)
+    }
 
     var body: some View {
         let palette = design.palette(tint)

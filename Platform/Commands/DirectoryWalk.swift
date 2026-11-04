@@ -201,10 +201,11 @@ public enum DirectoryWalk {
             let descriptor = open(folder, flags)
             guard descriptor >= 0 else { return false }
             defer { close(descriptor) }
+            var complete = true
             while true {
                 let count = getattrlistbulk(descriptor, &request, buffer, capacity, options)
                 if count < 0 { return false }
-                if count == 0 { return true }
+                if count == 0 { return complete }
                 var cursor = buffer
                 for _ in 0..<count {
                     let length = Int(cursor.loadUnaligned(as: UInt32.self))
@@ -216,9 +217,9 @@ public enum DirectoryWalk {
                     if returned.commonattr & attrgroup_t(ATTR_CMN_ERROR) != 0 {
                         let error = field.loadUnaligned(as: UInt32.self)
                         field += 4
-                        if error != 0 { continue }
+                        if error != 0 { complete = false; continue }
                     }
-                    guard returned.commonattr & attrgroup_t(ATTR_CMN_NAME) != 0 else { continue }
+                    guard returned.commonattr & attrgroup_t(ATTR_CMN_NAME) != 0 else { complete = false; continue }
                     let reference = field.loadUnaligned(as: attrreference_t.self)
                     let name = UnsafePointer((field + Int(reference.attr_dataoffset)).assumingMemoryBound(to: CChar.self))
                     field += MemoryLayout<attrreference_t>.size

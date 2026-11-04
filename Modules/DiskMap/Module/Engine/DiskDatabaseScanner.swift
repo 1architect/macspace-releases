@@ -10,10 +10,28 @@ struct DiskDatabaseScanner {
     let excluded: [String]
     var metadata: (String) -> stat? = { path in var info = stat(); return lstat(path, &info) == 0 ? info : nil }
     var cancelled: @Sendable () -> Bool = { false }
+    var parallelRootRefresh = true
     private var devices = Set<dev_t>()
     private var catalogChanged = false
     private var report: LoadProgressSink?
-    private var entries = 0
+    private var expectedWork = 0
+    private var completedWork = 0
+    private var reportedWork = 0
+    private var includesEntryWork = false
+    private var estimatesUnknownScopes = false
+    private var refreshesWholeRoot = false
+
+    private mutating func advanced(directory: Bool) {
+        guard expectedWork > 0, directory || includesEntryWork else { return }
+        completedWork += 1
+        let step = max(32, expectedWork / 128)
+        guard completedWork - reportedWork >= step else { return }
+        reportedWork = completedWork
+        let fraction = estimatesUnknownScopes
+            ? Double(completedWork) / (Double(completedWork) + Double(expectedWork))
+            : min(1, Double(completedWork) / Double(expectedWork))
+        report?(0.8 * fraction)
+    }
     private(set) var visited = 0
     init(db: DiskDatabase, excluded: [String]) { self.db = db; self.excluded = excluded }
     mutating func scan(_ changes: DiskEvents.Changes, cursor: UInt64, progress: LoadProgressSink?) throws {
@@ -30,6 +48,22 @@ struct DiskDatabaseScanner {
             let initial = try db.directory(db.root) == nil
             let recursive = initial ? [db.root] : changes.recursive.sorted { $0.count < $1.count }
             var covered: [String] = []
+            for path in recursive where DiskDatabase.contains(path, below: db.root)
+                && !covered.contains(where: { DiskDatabase.contains(path, below: $0) }) { covered.append(path) }
+            let shallow = changes.shallow.filter { path in
+                DiskDatabase.contains(path, below: db.root) && !covered.contains(where: { DiskDatabase.contains(path, below: $0) })
+            }.sorted()
+            completedWork = 0; reportedWork = 0; expectedWork = 0; includesEntryWork = false; estimatesUnknownScopes = false
+            refreshesWholeRoot = !initial && covered.contains(db.root)
+            if !initial {
+                let work = try db.scanWork(recursive: covered, shallow: shallow)
+                estimatesUnknownScopes = work.unknownScopes
+                includesEntryWork = work.entries != nil || work.unknownScopes
+                expectedWork = work.directories + (work.entries ?? 0)
+                // A newly discovered subtree has no cached inventory to size it. Keep reporting work estimates
+                // there instead of declaring traversal complete after its first directory.
+                if work.unknownScopes { expectedWork = max(expectedWork, 100_000) }
+            }
             progress?(0)
             if initial {
                 try db.beginInitialCollection()
@@ -39,16 +73,17 @@ struct DiskDatabaseScanner {
                 let indexStarted = Date()
                 try db.createIndexes(progress: { progress?(0.7 + 0.1 * $0) })
                 db.phase?("indexes", Date().timeIntervalSince(indexStarted), visited)
-                covered = [db.root]
+            } else if refreshesWholeRoot && parallelRootRefresh {
+                let walkStarted = Date()
+                try nativeRefresh()
+                db.phase?("parallel-refresh", Date().timeIntervalSince(walkStarted), visited)
             } else {
-                for path in recursive where !covered.contains(where: { DiskDatabase.contains(path, below: $0) }) {
-                    try read(path, recursive: true); covered.append(path)
-                }
+                for path in covered { try read(path, recursive: true) }
             }
-            let shallow = changes.shallow.filter { path in !covered.contains(where: { DiskDatabase.contains(path, below: $0) }) }.sorted()
-            for (n, path) in shallow.enumerated() { try read(path, recursive: false); progress?(0.8 * Double(n + 1) / Double(max(shallow.count, 1))) }
+            for path in shallow { try read(path, recursive: false) }
+            progress?(0.8)
             let totalsStarted = Date()
-            try db.reconcileTotals(all: initial, progress: { progress?(0.8 + 0.19 * $0) })
+            try db.reconcileTotals(all: initial || refreshesWholeRoot, progress: { progress?(0.8 + 0.19 * $0) })
             db.phase?("totals", Date().timeIntervalSince(totalsStarted), visited)
             if initial { state.storageRevision = 4; state.personalInventoryVersion = DiskIndex.personalInventorySchemaVersion }
             state.eventID = cursor; state.revision += 1
@@ -144,44 +179,45 @@ struct DiskDatabaseScanner {
     private mutating func read(_ path: String, recursive: Bool) throws {
         if cancelled() { throw CancellationError() }; try Task.checkCancellation()
         guard DiskDatabase.contains(path, below: db.root), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return }
+        advanced(directory: true)
         guard let info = metadata(path) else {
-            if errno == ENOENT || errno == ENOTDIR { try db.remove(path) }
+            if errno == ENOENT || errno == ENOTDIR { try db.remove(path, markAffectedTotals: !refreshesWholeRoot) }
             else if var retained = try db.directory(path) { retained.readable = false; try db.put(retained) }
             return
         }
         guard info.st_mode & S_IFMT == S_IFDIR, devices.contains(info.st_dev) else {
-            try db.remove(path)
+            try db.remove(path, markAffectedTotals: !refreshesWholeRoot)
             return
         }
         if path.hasSuffix(".app") || (path.range(of: ".app/", options: .literal) != nil) { catalogChanged = true }
-        try db.markTotals(path)
+        if !refreshesWholeRoot { try db.markTotals(path) }
         if info.st_flags & UInt32(SF_DATALESS) != 0 {
             var retained = try db.directory(path) ?? DiskDirectory(path: path, ownerUID: info.st_uid)
             retained.readable = false; try db.put(retained); return
         }
         let old = try db.directory(path), oldChildren = try db.children(path)
-        var node = DiskDirectory(path: path, itemCount: 0, ownerUID: info.st_uid)
+        var node = DiskDirectory(path: path, itemCount: 0, bytes: refreshesWholeRoot ? old?.bytes ?? 0 : 0, ownerUID: info.st_uid)
         var folders: [String] = [], failure: Error?
-        let oldLinkParents = try db.linkParents(at: path)
+        let oldLinkParents = refreshesWholeRoot ? [] : try db.linkParents(at: path)
+        let hadLinkedEntries = refreshesWholeRoot ? try db.hasLinkedEntries(parent: path) : !oldLinkParents.isEmpty
         for parent in oldLinkParents { try db.markTotals(parent) }
         try db.execute("SAVEPOINT directory_read")
         try db.ensureDirectory(path, ownerUID: info.st_uid)
-        try db.clearFiles(parent: path)
+        if refreshesWholeRoot { try db.beginDirectoryRefresh() } else { try db.clearFiles(parent: path) }
         let complete = autoreleasepool {
             DirectoryWalk.entries(at: path, includingModificationDate: true) { name, entry in
                 guard failure == nil else { return }
                 do {
                     if cancelled() { throw CancellationError() }; try Task.checkCancellation()
                     node.itemCount = (node.itemCount ?? 0) + 1
-                    entries += 1
-                    if entries % 2048 == 0 { report?(0.8 * Double(entries) / Double(entries + 100_000)) }
+                    advanced(directory: false)
                     let child = path == "/" ? "/" + name : path + "/" + name
                     guard devices.contains(entry.device), !excluded.contains(where: { DiskDatabase.contains(child, below: $0) }) else { return }
                     if entry.isDirectory { folders.append(child) }
                     else if entry.isRegularFile && !entry.isDataless {
                         if let id = Self.bundleIdentifier(child, parent: path, entry: entry) { node.bundleIdentifier = id }
                         let file = DiskFile(path: child, bytes: entry.allocatedBytes, logicalBytes: entry.logicalBytes, ownerUID: entry.ownerUID, modifiedAt: entry.modifiedAt)
-                        let identity = entry.linkCount > 1 || !oldLinkParents.isEmpty ? metadata(child) : nil
+                        let identity = entry.linkCount > 1 || hadLinkedEntries ? metadata(child) : nil
                         let hasIdentity = identity != nil
                         let key = identity.map { "\($0.st_dev):\($0.st_ino)" } ?? ""
                         if entry.linkCount > 1 && !hasIdentity { node.readable = false }
@@ -198,10 +234,10 @@ struct DiskDatabaseScanner {
                                 // The nonempty predicate is required for SQLite to use the partial hard-link indexes.
                                 try db.updateLink(file, link: key)
                             }
-                            try db.put(file, link: key)
+                            try db.put(file, link: key, trackSeen: refreshesWholeRoot)
                         } else {
                             node.directBytes += file.bytes
-                            if file.bytes > 0 { try db.put(file) }
+                            if file.bytes > 0 { try db.put(file, trackSeen: refreshesWholeRoot) }
                         }
                     }
                 } catch { failure = error }
@@ -215,16 +251,112 @@ struct DiskDatabaseScanner {
             try db.execute("ROLLBACK TO directory_read"); try db.execute("RELEASE directory_read")
             var retained = old ?? node; retained.readable = false; try db.put(retained); return
         }
+        if refreshesWholeRoot { try db.finishDirectoryRefresh(path) }
         try db.execute("RELEASE directory_read")
         visited += 1
         if old?.bundleIdentifier != node.bundleIdentifier || path.contains(".app/") || path.hasSuffix(".app") { catalogChanged = true }
         if Set(oldChildren) != Set(folders), folders.contains(where: { $0.hasSuffix(".app") }) || oldChildren.contains(where: { $0.hasSuffix(".app") }) || (path.range(of: "/Library/", options: .literal) != nil) { catalogChanged = true }
-        for removed in Set(oldChildren).subtracting(folders) { try db.remove(removed) }
+        for removed in Set(oldChildren).subtracting(folders) { try db.remove(removed, markAffectedTotals: !refreshesWholeRoot) }
         try db.put(node)
         try db.flushBatch()
-        for parent in try db.linkParents(at: path) { try db.markTotals(parent) }
+        if !refreshesWholeRoot { for parent in try db.linkParents(at: path) { try db.markTotals(parent) } }
         for child in folders {
             if try recursive || db.directory(child) == nil { try read(child, recursive: true) }
         }
+    }
+}
+
+extension DiskDatabaseScanner {
+    /// Eight bounded native readers feed one staged SQLite writer. No per-directory transaction/query chain
+    /// is needed, and an incomplete enumeration never erases the previously completed directory inventory.
+    private mutating func nativeRefresh() throws {
+        guard let rootInfo = metadata(db.root), rootInfo.st_mode & S_IFMT == S_IFDIR,
+              rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else {
+            try read(db.root, recursive: true)
+            return
+        }
+        struct Batch {
+            var items: UInt64 = 0, pendingItems = 0
+            var bytes: UInt64 = 0
+            var bundle: String?
+            var readable = true, app = false, hadLinks: Bool?
+            var files: [(DiskFile, String)] = []
+            var folders: [(String, UInt32?)] = []
+        }
+        let db = db, metadata = metadata, devices = devices, excluded = excluded, report = report, cancelled = cancelled
+        let inventoryIncludes = db.inventoryIncludes, includeEntries = includesEntryWork, expected = expectedWork
+        try db.beginNativeRefresh()
+        try db.nativeDirectorySeen(db.root, uid: rootInfo.st_uid)
+        let lock = NSLock()
+        var failure: Error?, directories = 0, entries = 0
+        var changedCatalog = try db.query("SELECT 1 FROM dirs WHERE substr(path,-4)='.app' LIMIT 1") > 0
+        func writing(_ operation: () throws -> Void) {
+            lock.withLock {
+                guard failure == nil else { return }
+                do {
+                    if cancelled() { throw CancellationError() }
+                    try Task.checkCancellation()
+                    try operation(); try db.flushBatch()
+                } catch { failure = error }
+            }
+        }
+        func progress() {
+            let done = includeEntries ? entries + directories : directories
+            if expected > 0 { report?(0.8 * min(1, Double(done) / Double(expected))) }
+        }
+        func flush(_ batch: inout Batch) {
+            writing {
+                for (path, uid) in batch.folders { try db.nativeDirectorySeen(path, uid: uid) }
+                for (file, link) in batch.files { try db.put(file, link: link, staging: true) }
+                entries += batch.pendingItems
+                if batch.app { changedCatalog = true }
+                progress()
+            }
+            batch.pendingItems = 0
+            batch.files.removeAll(keepingCapacity: true); batch.folders.removeAll(keepingCapacity: true)
+        }
+        DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Batch() }, visit: { batch, makePath, entry in
+            batch.items += 1; batch.pendingItems += 1
+            if cancelled() { writing { throw CancellationError() }; return false }
+            let path = makePath()
+            guard devices.contains(entry.device), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return false }
+            if entry.isDirectory {
+                batch.folders.append((path, entry.ownerUID))
+                if path.hasSuffix(".app") || path.contains(".app/") { batch.app = true }
+                if batch.folders.count >= 256 { flush(&batch) }
+                guard !lock.withLock({ failure != nil }), let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                return info.st_flags & UInt32(SF_DATALESS) == 0
+            }
+            guard entry.isRegularFile && !entry.isDataless else { return false }
+            let parent = DiskDatabase.parent(path)
+            if batch.hadLinks == nil { writing { batch.hadLinks = try db.hasLinkedEntries(parent: parent) } }
+            let identity = entry.linkCount > 1 || batch.hadLinks == true ? metadata(path) : nil
+            var link = ""
+            if let identity {
+                let key = "\(identity.st_dev):\(identity.st_ino)"
+                if entry.linkCount > 1 { link = key }
+                else { writing { if try db.hasKnownLink(key) { link = key } } }
+            } else if entry.linkCount > 1 { batch.readable = false }
+            if link.isEmpty { batch.bytes += entry.allocatedBytes }
+            if let id = Self.bundleIdentifier(path, parent: parent, entry: entry) { batch.bundle = id }
+            if !link.isEmpty || (entry.allocatedBytes > 0 && entry.ownerUID == getuid() && inventoryIncludes(path)) {
+                batch.files.append((DiskFile(path: path, bytes: entry.allocatedBytes, logicalBytes: entry.logicalBytes,
+                    ownerUID: entry.ownerUID, modifiedAt: entry.modifiedAt), link))
+            }
+            if batch.files.count >= 256 || batch.pendingItems >= 1_024 { flush(&batch) }
+            return false
+        }, finished: { batch, path, complete in
+            flush(&batch)
+            writing {
+                try db.nativeDirectoryFinished(path, direct: batch.bytes, bundle: batch.bundle,
+                    readable: batch.readable, items: batch.items, complete: complete)
+                directories += 1; progress()
+            }
+            batch = Batch()
+        })
+        if let failure { throw failure }
+        let bundlesChanged = try db.finishNativeRefresh(cancelled: cancelled)
+        catalogChanged = catalogChanged || changedCatalog || bundlesChanged
+        visited = directories
     }
 }

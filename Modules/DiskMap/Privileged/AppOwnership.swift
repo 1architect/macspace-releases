@@ -121,8 +121,7 @@ public enum AppOwnership {
     }
     public static func ownedIdentifiers(_ owner: AppOwner) -> Set<String> { owner.identifiers }
     private static func canonicalPath(_ path: String) -> Bool {
-        path.hasPrefix("/") && path != "/" && !path.hasSuffix("/") && !path.contains("//") && !path.utf8.contains(0)
-            && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
+        FileReviewPolicy.isNormalizedAbsolutePath(path, allowTrailingSlash: false)
     }
     private static func parent(_ path: String) -> String {
         guard let slash = path.lastIndex(of: "/"), slash != path.startIndex else { return "/" }
@@ -135,17 +134,16 @@ public enum AppOwnership {
         return String(cString: resolved) == path
     }
     public static func normalizedPaths(_ paths: [String]) -> [String] {
-        var selected = Set<String>()
-        for path in Set(paths).sorted(by: { $0.count == $1.count ? $0 < $1 : $0.count < $1.count }) {
-            guard canonicalPath(path) else { continue }
+        let candidates = Set(paths.filter(canonicalPath))
+        // Every valid candidate ancestor covers this path, whether that ancestor is itself covered
+        // by an outer candidate or not. No length/grapheme sort is needed to discover the outermost set.
+        return candidates.filter { path in
             var ancestor = parent(path)
-            var covered = false
             while ancestor != "/" && !ancestor.isEmpty {
-                if selected.contains(ancestor) { covered = true; break }
+                if candidates.contains(ancestor) { return false }
                 ancestor = parent(ancestor)
             }
-            if !covered { selected.insert(path) }
-        }
-        return selected.sorted()
+            return true
+        }.sorted()
     }
 }

@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "Impossible de lire le contenu. Actualisez pour réessayer.";
 "Couldn’t compare files" = "Impossible de comparer les fichiers";
 "Couldn’t delete the file" = "Impossible de supprimer le fichier";
+"Couldn’t delete the folder" = "Impossible de supprimer le dossier";
 "Couldn’t remove the selected files" = "Impossible de supprimer les fichiers sélectionnés";
 "Couldn’t uninstall the app" = "Impossible de désinstaller l’app";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Données dont l’identifiant exact ne correspond à aucune app installée. Les données des groupes partagés sont conservées.";
 "Delete" = "Supprimer";
 "Delete %@?" = "Supprimer %@ ?";
 "Deleted" = "Supprimé";
+"Deleted folder" = "Dossier supprimé";
 "Deleting" = "Suppression";
 "Desktop" = "Bureau";
 "Developer cleanup" = "Nettoyage des outils de développement";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "Cette app ne peut pas être désinstallée.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "Cette app est gérée par macOS ou MacSpace et ne peut pas être supprimée ici.";
 "This file cannot be deleted here." = "Ce fichier ne peut pas être supprimé ici.";
+"This folder and all its contents will be moved to Trash." = "Ce dossier et tout son contenu seront placés dans la corbeille.";
+"This folder cannot be deleted here." = "Ce dossier ne peut pas être supprimé ici.";
 "This folder is empty." = "Ce dossier est vide.";
 "This permanently deletes only the selected app-data folders." = "Seuls les dossiers de données d’apps sélectionnés seront supprimés définitivement.";
 "This permanently deletes the file." = "Le fichier sera supprimé définitivement.";
+"This permanently deletes the folder and all its contents." = "Le dossier et tout son contenu seront supprimés définitivement.";
 "This permanently deletes the selected files." = "Les fichiers sélectionnés seront définitivement supprimés.";
 "Uncertain ownership" = "Propriété incertaine";
 "Uninstall" = "Désinstaller";

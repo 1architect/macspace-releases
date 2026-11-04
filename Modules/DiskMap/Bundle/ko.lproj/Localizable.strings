@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "내용을 읽을 수 없습니다. 새로고침하여 다시 시도하세요.";
 "Couldn’t compare files" = "파일을 비교할 수 없습니다";
 "Couldn’t delete the file" = "파일을 삭제하지 못함";
+"Couldn’t delete the folder" = "폴더를 삭제할 수 없습니다";
 "Couldn’t remove the selected files" = "선택한 파일을 제거할 수 없습니다";
 "Couldn’t uninstall the app" = "앱을 제거하지 못함";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "정확한 식별자에 해당하는 설치된 앱을 찾지 못한 데이터입니다. 공유 앱 그룹 데이터는 보존됩니다.";
 "Delete" = "삭제";
 "Delete %@?" = "%@을(를) 삭제할까요?";
 "Deleted" = "삭제됨";
+"Deleted folder" = "폴더 삭제됨";
 "Deleting" = "삭제 중";
 "Desktop" = "데스크탑";
 "Developer cleanup" = "개발 데이터 정리";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "이 앱은 제거할 수 없습니다.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "macOS 또는 MacSpace가 관리하는 앱이므로 여기서 제거할 수 없습니다.";
 "This file cannot be deleted here." = "이 파일은 여기서 삭제할 수 없습니다.";
+"This folder and all its contents will be moved to Trash." = "이 폴더와 모든 내용이 휴지통으로 이동됩니다.";
+"This folder cannot be deleted here." = "이 폴더는 여기에서 삭제할 수 없습니다.";
 "This folder is empty." = "이 폴더는 비어 있습니다.";
 "This permanently deletes only the selected app-data folders." = "선택한 앱 데이터 폴더만 영구적으로 삭제합니다.";
 "This permanently deletes the file." = "이 파일을 영구적으로 삭제합니다.";
+"This permanently deletes the folder and all its contents." = "이 폴더와 모든 내용이 영구적으로 삭제됩니다.";
 "This permanently deletes the selected files." = "선택한 파일이 영구적으로 삭제됩니다.";
 "Uncertain ownership" = "소유 관계 불확실";
 "Uninstall" = "제거";

@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "内容を読み取れませんでした。更新して再試行してください。";
 "Couldn’t compare files" = "ファイルを比較できませんでした";
 "Couldn’t delete the file" = "ファイルを削除できませんでした";
+"Couldn’t delete the folder" = "フォルダを削除できませんでした";
 "Couldn’t remove the selected files" = "選択したファイルを削除できませんでした";
 "Couldn’t uninstall the app" = "アプリをアンインストールできませんでした";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "対応するアプリが見つからない正確なアプリ識別子のデータです。共有アプリグループのデータは保持されます。";
 "Delete" = "削除";
 "Delete %@?" = "%@を削除しますか？";
 "Deleted" = "削除済み";
+"Deleted folder" = "フォルダを削除しました";
 "Deleting" = "削除中";
 "Desktop" = "デスクトップ";
 "Developer cleanup" = "開発用データのクリーンアップ";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "このアプリはアンインストールできません。";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "このアプリはmacOSまたはMacSpaceで管理されているため、ここでは削除できません。";
 "This file cannot be deleted here." = "このファイルはここでは削除できません。";
+"This folder and all its contents will be moved to Trash." = "このフォルダとそのすべての内容をゴミ箱に移動します。";
+"This folder cannot be deleted here." = "このフォルダはここでは削除できません。";
 "This folder is empty." = "このフォルダは空です。";
 "This permanently deletes only the selected app-data folders." = "選択したアプリデータのフォルダのみを完全に削除します。";
 "This permanently deletes the file." = "このファイルは完全に削除されます。";
+"This permanently deletes the folder and all its contents." = "このフォルダとそのすべての内容を完全に削除します。";
 "This permanently deletes the selected files." = "選択したファイルは完全に削除されます。";
 "Uncertain ownership" = "所有関係が不明";
 "Uninstall" = "アンインストール";

@@ -154,3 +154,47 @@ Siri and Spatial Photos use the existing ToggleRow control; Phone combines local
 The separate default-enabled `featureModels` background task checks explicitly managed-off Siri, Phone and Spatial Photos controls every 300 seconds while MacSpace is open; the optional 900-second AI watch remains separate. Shared owner operations run in the signed CLI, and one guarded CacheDelete pass serves a batch. Unknown eligibility stops new owner cleanup and its deferred purge attempts. Empty target inventories do not start another purge. System Data retains the `purgeAssets` action identity and `Row.activity` flag during model-cleanup background retries.
 
 Implementation and validation: [Issue 16 implementation reference](Research.md#issue-16-implementation-reference).
+
+
+## Apps and Files cached refresh work (2026-11-04)
+
+Recursive refreshes mark each affected folder and its ancestors for total reconciliation. A mark now stops at the first ancestor already present in the transaction's dirty table: that ancestor's chain is already covered. Path validation runs once at the input boundary. This retains hard-link alias reconciliation and rollback behavior without repeatedly validating and inserting the shared root chain for every directory. No unbounded Swift path cache is added.
+
+Refresh progress uses the cached directory and entry counts for the affected scopes, including directory-only work. Caches with missing entry counts report measured directory work until those counts have been filled by a completed reread. Traversal retains its 0–80% scan phase, followed by totals counted through the existing database cursor; the host's existing module-stage weights and monotonic relay still apply. Cached progress uses work performed rather than a timer or the old fixed 100,000-entry heuristic. Entirely new subtrees retain a work-based estimate until their first inventory is available, instead of claiming their traversal is complete prematurely. Cached content remains visible throughout.
+
+
+## Focus and scan lifetime (2026-11-04)
+
+Switching to another application stops future automatic polling but lets an already-running read of a visible MacSpace window finish. Returning to MacSpace retains that read and its progress instead of starting another generation. Lazy page reads and action verification use the same activity rule. Activity updates are serialized and coalesced so an old queued suspension cannot cancel a newer read.
+
+Closing/hiding the last visible window still suspends optional inventory work. The host retires its read/page generations before suspension, so a cancelled module reply containing the previous cache cannot be published or recorded as a successful refresh. Disk inventory retains exact interrupted directory scopes independently of its watcher and retries a cancelled flight when a newly active caller joins it. Cancelled shallow directory scopes are not reinterpreted as file events on their parents.
+
+## Filesystem history and full-root reconciliation (2026-11-04)
+
+A queued root rescan subsumes pending historical details. FSEvents callbacks retain lazy CF path access and continue handling history-completion flags, without decoding every covered file path. The pending directory ledger is bounded at 8,192 scopes; a larger backlog conservatively becomes one root rescan. Native dropped/wrapped/root-change flags likewise invalidate the whole root, regardless of the event path's exclusion. Draining restores precise tracking for later events. No change coverage is silently discarded.
+
+Lexical path checks use a single UTF-8 pass with the same absolute-path, NUL, duplicate-separator and dot-component rejection. Existing no-follow, ownership and filesystem checks remain authoritative.
+
+A full-root reconciliation already recalculates every directory, so it avoids per-directory hard-link parent expansion and repeated dirty-ancestor insertion. Per-directory savepoints track seen entry names, retain unchanged rows, remove absent names only after a complete enumeration, and preserve the prior cache on unreadable directories. Global depth-ordered totals still cover hard-link allocation transfers, including aliases beneath an unreadable directory. Conditional updates avoid rewriting identical directory, file and total rows.
+
+Opt-in `MACSPACE_DISK_METRICS=1` phase timings can also be written to `MACSPACE_DISK_METRICS_FILE`, allowing a complete native replay from an isolated SQLite backup to be profiled without controlling the app UI. The measured stale-cache full-root pass over about 386,000 directories fell from approximately 150 seconds to 69 seconds; a new module/store reopening the completed checkpoint took approximately 5.7 seconds. This is an end-to-end backend measurement, not an animation or a synthetic percentage.
+
+## Further loading reductions (2026-11-04)
+
+An already-required full-root read can begin without waiting for historical FSEvents delivery. The watcher records a current-event coverage boundary before that read; historical IDs through the boundary are covered by the forthcoming full scan, while newer IDs remain tracked. Native loss/wrap/root-change control flags and history completion are processed even for covered batches. Wrapped IDs clear the old boundary, including combined completion/wrap flags. Cancelled full-root scopes retain this coverage rule on retry. This removes the old replay wait without advancing a completed index before its scan actually commits.
+
+Receipt manifests and their plist/BOM timestamps are retained in a versioned, owner-only cache. The receipt adapter still checks current source timestamps before reuse; a changed BOM is reread. No app signing, classification, ownership decision or removal plan is persisted by this cache, and forced app reviews bypass its seed.
+
+Ownership-path normalization filters valid candidates once and tests ancestors directly against that set, retaining the previous outermost-path semantics and lexical output order without repeated grapheme-length sorting. File-allocation fallbacks are deduplicated within a bounded cache tied to the scan root and revision; a new revision rereads the files, and authoritative projected measurements always take precedence. Fresh destructive preflight remains unchanged. The reconciled allocation view is also retained in the inventory actor so later status reads do not revert to an earlier presentation.
+
+Against the same isolated cache baseline, release-mode full catch-up improved from 70.9 to 53.8 seconds, and cached reopening from 5.6 to 2.4 seconds. Two final measured runs yielded approximately 54 seconds / 2.4 seconds. A trial reusable directory-buffer API did not improve end-to-end timing and was removed. Measurements use the full tile/screen backend load; visual app verification remains with the maintainer.
+
+## Parallel full refresh and startup progress (2026-11-04)
+
+Full-root refreshes now reuse the existing eight-reader native directory walker. One SQLite writer stages file rows and per-directory completion records in temporary on-disk tables. Staging uses bounded worker batches; incomplete directories never replace their previous file memberships or measurements. Only fully enumerated directories are merged. Missing branches are removed only beneath a fully enumerated parent. Pending parent IDs are resolved before removals, and changed hard-link families still update retained aliases beneath unreadable branches. Cancellation preserves the completed index; published generations remain atomic. The existing sequential path remains the comparison/reference path and handles targeted refreshes.
+
+A retained cache is not considered current merely because its event watcher has not delivered history yet. Startup validates that history first. Completed, filtered/empty history advances its consumed event cursor without claiming a new measurement revision, preventing old history from being replayed indefinitely on each launch. If historical delivery has not completed within one second, a current full-root read conservatively covers the old backlog. Its watcher restarts at the coverage boundary so newer changes are replayed and old callbacks cannot consume the scan's resources. Wrapped/lost-event handling retains root invalidation.
+
+Bootstrap and event-preparation stages report work as they finish (2% and 4% of the storage read); the traversal follows its measured cached workload. No time-based percentage filler is used. Native enumeration now reports an incomplete directory when a per-entry error or missing name occurs, allowing its previous truth to be retained rather than publishing a partial replacement.
+
+The final opt-in release-mode cold-start replay starts timing before cache bootstrap and does not pre-open or force a root invalidation. Against the same stale cache, first positive module progress arrived at 0.39 seconds, the full history catch-up and module presentation completed in 27.6 seconds, and a new store/module reopened in 2.7 seconds. The preceding full refresh was approximately 54 seconds. A separate forced-root run completed in 23.4 seconds. Cold replay includes an explicit maximum-first-progress and total-load validation. Synthetic parallel/sequential comparisons verify the final directory/file measurements, new nested parents, removals, symlink exclusion, changed hard-link aliases, unreadable/dataless branches, partial enumeration and cancellation/retry.

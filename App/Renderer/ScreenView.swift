@@ -191,6 +191,7 @@ struct ScreenView: View {
             }
         }
         .animation(Theme.push, value: groups.map(\.id))
+        .environment(\.graphInteraction, GraphInteraction(handle: handle))
         .environment(\.rowActivity, RowActivity(rowID: handle.runningRowID, action: handle.runningAction, progress: handle.progress, queued: handle.queuedRows, results: handle.rowResults, dismiss: handle.dismissRowResult))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
@@ -522,6 +523,7 @@ struct HeroBlocks: View {
                             .foregroundStyle(design.palette(tint).soft).fixedSize()
                     }
                     .lineLimit(1)
+                    .graphContextMenu(label: segment.label, actions: segment.contextActions)
                     .help("\(segment.label) \(ByteFormat.string(segment.bytes))")
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
                     .transition(PageCascade.transition(index: index + 1, count: cascadeCount))
@@ -739,7 +741,10 @@ struct ActionDock: View {
     }
 
     /// The page's main action, or on a page that lets the user choose, the action on the chosen rows.
-    private var mainAction: Action? { choosingGroup != nil ? choiceAction : handle.screen?.primary }
+    private var mainAction: Action? {
+        if let id = handle.groupPath.last, let primary = handle.pages[id]?.primary { return choiceAction ?? primary }
+        return choosingGroup != nil ? choiceAction : handle.screen?.primary
+    }
 
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
@@ -841,6 +846,12 @@ struct ActionPill: View {
         }
     }
 
+    /// Keep the actionable reason and affected path available even when the one-line label is truncated.
+    var helpText: String {
+        guard case let .done(result) = phase else { return text }
+        return ([text] + result.details).filter { !$0.isEmpty }.joined(separator: "\n")
+    }
+
     /// Everything, a failure included, is drawn in the action color: the app has no red.
     private var fill: Color { design.action }
     private var ink: Color { design.actionDeep }
@@ -867,7 +878,7 @@ struct ActionPill: View {
         }
         .buttonStyle(.plain)
         .studioPickable(.mainButton, in: Self.shape)
-        .help(text)
+        .help(helpText)
         .onHover { hovering = $0 }
         .task(id: phase) {
             // A success goes back to the action by itself; anything else stays until it is clicked.

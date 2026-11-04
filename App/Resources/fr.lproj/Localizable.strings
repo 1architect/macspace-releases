@@ -44,12 +44,15 @@
 "Close" = "Fermer";
 "Close Window" = "Fermer la fenêtre";
 "Configuration profile" = "Profil de configuration";
+"Confirm deletion of this item." = "Confirmez la suppression de cet élément.";
 "Continue" = "Continuer";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.";
 "Could not install the helper: %@" = "Impossible d’installer l’assistant : %@";
 "Couldn't free space. Try again later." = "Impossible de libérer de l’espace. Réessayez plus tard.";
 "Couldn’t uninstall MacSpace" = "Impossible de désinstaller MacSpace";
 "Day" = "Jour";
+"Delete" = "Supprimer";
+"Delete %@?" = "Supprimer %@ ?";
 "Developed by\n%@" = "Développé par\n%@";
 "Does the few things that need an administrator." = "Effectue les quelques tâches qui demandent un administrateur.";
 "Drag into the Full Disk Access list" = "Faites glisser dans la liste Accès complet au disque";
@@ -120,6 +123,7 @@
 "Open Panel" = "Ouvrir le panneau";
 "Open System Settings" = "Ouvrir Réglages Système";
 "Open at login" = "Ouvrir à la connexion";
+"Open in Finder" = "Ouvrir dans le Finder";
 "Other folders" = "Autres dossiers";
 "Permissions" = "Autorisations";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "Cliquez sur Installer l’assistant. Si macOS ne le reconnaît toujours pas, exécutez dans Terminal : /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register et envoyez le message affiché.";

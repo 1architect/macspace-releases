@@ -33,12 +33,14 @@
 "Contents could not be read. Refresh to retry." = "No se pudo leer el contenido. Actualiza para reintentar.";
 "Couldn’t compare files" = "No se pudieron comparar los archivos";
 "Couldn’t delete the file" = "No se pudo eliminar el archivo";
+"Couldn’t delete the folder" = "No se pudo eliminar la carpeta";
 "Couldn’t remove the selected files" = "No se pudieron eliminar los archivos seleccionados";
 "Couldn’t uninstall the app" = "No se pudo desinstalar la app";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Datos con identificadores exactos de apps que no se encontraron instaladas. Se conservan los datos de grupos compartidos.";
 "Delete" = "Eliminar";
 "Delete %@?" = "¿Eliminar %@?";
 "Deleted" = "Eliminado";
+"Deleted folder" = "Carpeta eliminada";
 "Deleting" = "Eliminando";
 "Desktop" = "Escritorio";
 "Developer cleanup" = "Limpieza de desarrollo";
@@ -156,9 +158,12 @@
 "This app cannot be uninstalled." = "No se puede desinstalar esta app.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "Esta app es gestionada por macOS o MacSpace y no se puede eliminar aquí.";
 "This file cannot be deleted here." = "No se puede eliminar este archivo aquí.";
+"This folder and all its contents will be moved to Trash." = "Esta carpeta y todo su contenido se moverán a la papelera.";
+"This folder cannot be deleted here." = "Esta carpeta no se puede eliminar aquí.";
 "This folder is empty." = "Esta carpeta está vacía.";
 "This permanently deletes only the selected app-data folders." = "Esto elimina permanentemente solo las carpetas de datos de apps seleccionadas.";
 "This permanently deletes the file." = "Esto elimina el archivo permanentemente.";
+"This permanently deletes the folder and all its contents." = "Esto elimina permanentemente la carpeta y todo su contenido.";
 "This permanently deletes the selected files." = "Esto elimina permanentemente los archivos seleccionados.";
 "Uncertain ownership" = "Propiedad incierta";
 "Uninstall" = "Desinstalar";

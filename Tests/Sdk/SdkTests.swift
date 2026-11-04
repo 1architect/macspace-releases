@@ -2,6 +2,37 @@ import XCTest
 import MacSpaceSdk
 
 final class SdkTests: XCTestCase {
+    func testDashboardFreeAndFolderRowCapabilitiesRoundTripWithoutBecomingRequired() throws {
+        let action = Action(id: "cleanup", title: "Free", confirmation: Confirmation(title: "Free?", message: "Reviewed targets", confirmTitle: "Free"))
+        let tile = Tile(title: "Module", status: "Ready", freeAction: action)
+        let row = Row(id: "folder", title: "Folder", contextActions: GraphContextActions(paths: ["/fixture/folder"], delete: action))
+        let encoder = JSONEncoder(), decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(Tile.self, from: encoder.encode(tile)), tile)
+        XCTAssertEqual(try decoder.decode(Row.self, from: encoder.encode(row)), row)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(tile)) as? [String: Any])
+        object.removeValue(forKey: "freeAction")
+        XCTAssertNil(try decoder.decode(Tile.self, from: JSONSerialization.data(withJSONObject: object)).freeAction)
+        object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(row)) as? [String: Any])
+        object.removeValue(forKey: "contextActions")
+        XCTAssertNil(try decoder.decode(Row.self, from: JSONSerialization.data(withJSONObject: object)).contextActions)
+    }
+
+    func testGraphCapabilitiesRoundTripAndLegacyElementsNeedNoMetadata() throws {
+        let actions = GraphContextActions(paths: ["/fixture/file"], delete: Action(id: "remove", title: "Remove", parameters: ["target": "reviewed"]))
+        let segment = UsageSegment(id: "file", label: "File", bytes: 42, tone: .accent, contextActions: actions)
+        let bar = Bar(id: "file", label: "File", value: 42, valueLabel: "42 B", contextActions: actions)
+        let encoder = JSONEncoder(), decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(UsageSegment.self, from: encoder.encode(segment)), segment)
+        XCTAssertEqual(try decoder.decode(Bar.self, from: encoder.encode(bar)), bar)
+        for data in [try encoder.encode(segment), try encoder.encode(bar)] {
+            var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            object.removeValue(forKey: "contextActions")
+            let legacy = try JSONSerialization.data(withJSONObject: object)
+            if object["bytes"] != nil { XCTAssertNil(try decoder.decode(UsageSegment.self, from: legacy).contextActions) }
+            else { XCTAssertNil(try decoder.decode(Bar.self, from: legacy).contextActions) }
+        }
+    }
+
     func testActionLabelSamplesRoundTripAndOlderActionsStillDecode() throws {
         let action = Action(id: "free", title: "Free", workingTitle: "Freeing", labelSamples: ["Removing downloads", "Removing 999 MB"])
         let encoder = JSONEncoder()

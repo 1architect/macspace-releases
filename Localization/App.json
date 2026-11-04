@@ -395,6 +395,15 @@
   "構成プロファイル",
   "구성 프로파일"
  ],
+ "Confirm deletion of this item.": [
+  "Confirme a exclusão deste item.",
+  "Confirmez la suppression de cet élément.",
+  "Confirma la eliminación de este elemento.",
+  "Bestätige das Löschen dieses Objekts.",
+  "请确认删除此项目。",
+  "この項目の削除を確認してください。",
+  "이 항목의 삭제를 확인하세요."
+ ],
  "Continue": [
   "Continuar",
   "Continuer",
@@ -448,6 +457,24 @@
   "日间",
   "昼",
   "주간"
+ ],
+ "Delete": [
+  "Excluir",
+  "Supprimer",
+  "Eliminar",
+  "Löschen",
+  "删除",
+  "削除",
+  "삭제"
+ ],
+ "Delete %@?": [
+  "Excluir %@?",
+  "Supprimer %@ ?",
+  "¿Eliminar %@?",
+  "%@ löschen?",
+  "删除 %@？",
+  "%@を削除しますか？",
+  "%@을(를) 삭제할까요?"
  ],
  "Developed by\n%@": [
   "Desenvolvido por\n%@",
@@ -1078,6 +1105,15 @@
   "登录时打开",
   "ログイン時に開く",
   "로그인 시 열기"
+ ],
+ "Open in Finder": [
+  "Abrir no Finder",
+  "Ouvrir dans le Finder",
+  "Abrir en Finder",
+  "Im Finder öffnen",
+  "在访达中打开",
+  "Finderで開く",
+  "Finder에서 열기"
  ],
  "Other folders": [
   "Outras pastas",

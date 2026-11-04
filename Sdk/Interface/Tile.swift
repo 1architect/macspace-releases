@@ -37,9 +37,11 @@ public struct Tile: Codable, Equatable, Sendable {
     /// What the switch of a `state` chart runs when it is flipped on the dashboard, with `value` "true" or "false", as a switch row on
     /// the page. nil leaves the switch shown but not flippable.
     public var switchAction: Action?
+    /// Optional module-wide cleanup exposed as Free anywhere on the dashboard tile.
+    public var freeAction: Action?
 
     public init(title: String, figure: String? = nil, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil,
-                reclaimableBytes: UInt64? = nil, purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil, switchAction: Action? = nil) {
+                reclaimableBytes: UInt64? = nil, purgeableByService: [String: UInt64] = [:], refreshAfter: Double? = nil, switchAction: Action? = nil, freeAction: Action? = nil) {
         self.title = title
         self.figure = figure
         self.status = status
@@ -49,9 +51,10 @@ public struct Tile: Codable, Equatable, Sendable {
         self.purgeableByService = purgeableByService
         self.refreshAfter = refreshAfter
         self.switchAction = switchAction
+        self.freeAction = freeAction
     }
 
-    private enum CodingKeys: String, CodingKey { case title, figure, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter, switchAction }
+    private enum CodingKeys: String, CodingKey { case title, figure, status, needsAttention, graphic, reclaimableBytes, purgeableByService, refreshAfter, switchAction, freeAction }
 
     /// `purgeableByService` may be missing (a tile saved by an earlier version).
     public init(from decoder: Decoder) throws {
@@ -65,6 +68,7 @@ public struct Tile: Codable, Equatable, Sendable {
         purgeableByService = try container.decodeIfPresent([String: UInt64].self, forKey: .purgeableByService) ?? [:]
         refreshAfter = try container.decodeIfPresent(Double.self, forKey: .refreshAfter)
         switchAction = try container.decodeIfPresent(Action.self, forKey: .switchAction)
+        freeAction = try container.decodeIfPresent(Action.self, forKey: .freeAction)
     }
 }
 

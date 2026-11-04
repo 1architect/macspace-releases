@@ -27,6 +27,8 @@ final class DiskDatabase: @unchecked Sendable {
     private var folderCounts: [String: (revision: UInt64, count: UInt64)] = [:]
     private var batching = false
     private var writes = 0
+    /// Mutation statements in the current unflushed batch, available to backend performance diagnostics.
+    var batchWriteCount: Int { writes }
     var unpublished = false
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     struct Failure: LocalizedError { var message: String; var errorDescription: String? { message } }
@@ -55,6 +57,7 @@ final class DiskDatabase: @unchecked Sendable {
         try execute("CREATE TABLE IF NOT EXISTS claims (id INTEGER PRIMARY KEY, data BLOB NOT NULL UNIQUE)")
         try execute("CREATE TABLE IF NOT EXISTS ownership (path TEXT NOT NULL, claim INTEGER NOT NULL, PRIMARY KEY(path,claim)) WITHOUT ROWID")
         try execute("CREATE TEMP TABLE IF NOT EXISTS dirty (path TEXT PRIMARY KEY) WITHOUT ROWID")
+        try execute("CREATE TEMP TABLE IF NOT EXISTS seen_entries (name TEXT PRIMARY KEY) WITHOUT ROWID")
         try createIndexes()
         if compact, try state()?.summaryVersion != DiskIndex.summarySchemaVersion {
             var cursor = ""
@@ -72,7 +75,7 @@ final class DiskDatabase: @unchecked Sendable {
         }
         if ProcessInfo.processInfo.environment["MACSPACE_DISK_METRICS"] == "1" {
             phase = { name, seconds, directories in
-                FileHandle.standardError.write(Data("DISK_PHASE phase=\(name) seconds=\(seconds) directories=\(directories)\n".utf8))
+                DiskScanMetrics.write("DISK_PHASE phase=\(name) seconds=\(seconds) directories=\(directories)")
             }
         }
     }
@@ -153,7 +156,7 @@ final class DiskDatabase: @unchecked Sendable {
         return String(path[..<slash])
     }
     static func contains(_ path: String, below folder: String) -> Bool {
-        guard path.hasPrefix("/"), !path.utf8.contains(0), !path.contains("//"), !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else { return false }
+        guard FileReviewPolicy.isNormalizedAbsolutePath(path) else { return false }
         return path == folder || path.hasPrefix(folder == "/" ? "/" : folder + "/")
     }
     func state() throws -> DiskIndex? {
@@ -193,21 +196,25 @@ final class DiskDatabase: @unchecked Sendable {
         try query("INSERT OR IGNORE INTO pending_parents SELECT path,? FROM dirs WHERE path=? AND parent=0", [.text(Self.parent(path)), .text(path)])
     }
     func put(_ node: DiskDirectory) throws {
-        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET parent=excluded.parent,direct=excluded.direct,total=excluded.total,readable=excluded.readable,uid=excluded.uid,bundle=excluded.bundle", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.bytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? "")])
-        try query("UPDATE dirs SET items=? WHERE path=?", [node.itemCount.map { .number($0) } ?? .optional(nil), .text(node.path)])
+        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET parent=excluded.parent,direct=excluded.direct,total=excluded.total,readable=excluded.readable,uid=excluded.uid,bundle=excluded.bundle WHERE dirs.parent IS NOT excluded.parent OR dirs.direct IS NOT excluded.direct OR dirs.total IS NOT excluded.total OR dirs.readable IS NOT excluded.readable OR dirs.uid IS NOT excluded.uid OR dirs.bundle IS NOT excluded.bundle", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.bytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? "")])
+        try query("UPDATE dirs SET items=? WHERE path=? AND items IS NOT ?", [node.itemCount.map { .number($0) } ?? .optional(nil), .text(node.path), node.itemCount.map { .number($0) } ?? .optional(nil)])
         try rememberParent(node.path)
     }
     func ensureDirectory(_ path: String, ownerUID: UInt32? = nil) throws {
-        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),0,0,1,?,'') ON CONFLICT(path) DO UPDATE SET uid=COALESCE(dirs.uid,excluded.uid)", [.text(path), .text(path == root ? "" : Self.parent(path)), .optional(ownerUID)])
+        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),0,0,1,?,'') ON CONFLICT(path) DO UPDATE SET uid=excluded.uid WHERE dirs.uid IS NULL AND excluded.uid IS NOT NULL", [.text(path), .text(path == root ? "" : Self.parent(path)), .optional(ownerUID)])
         try rememberParent(path)
     }
-    func put(_ file: DiskFile, link: String = "") throws {
+    private static let entryInsertSQL = "INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory WHERE entries.bytes IS NOT excluded.bytes OR entries.logical IS NOT excluded.logical OR entries.uid IS NOT excluded.uid OR entries.link IS NOT excluded.link OR entries.category IS NOT excluded.category OR entries.modified IS NOT excluded.modified OR entries.kind IS NOT excluded.kind OR entries.inventory IS NOT excluded.inventory"
+    private static let refreshInsertSQL = entryInsertSQL.replacingOccurrences(of: "entries", with: "refresh_entries")
+    func put(_ file: DiskFile, link: String = "", trackSeen: Bool = false, staging: Bool = false) throws {
         let eligible = file.bytes > 0 && file.ownerUID == getuid() && inventoryIncludes(file.path)
         guard eligible || !link.isEmpty else { return }
-        try ensureDirectory(Self.parent(file.path))
-        try query("INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory", [
-            .text((file.path as NSString).lastPathComponent), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link),
-            .text(eligible ? DiskCategory.inventoryCategory(file.path).rawValue : DiskCategory.other.rawValue), .date(file.modifiedAt), .text(eligible ? DiskFileType.key(file.path) : ""), .number(eligible ? 1 : 0), .text(Self.parent(file.path))])
+        let parent = Self.parent(file.path), name = (file.path as NSString).lastPathComponent
+        try ensureDirectory(parent)
+        try query(staging ? Self.refreshInsertSQL : Self.entryInsertSQL, [
+            .text(name), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link),
+            .text(eligible ? DiskCategory.inventoryCategory(file.path).rawValue : DiskCategory.other.rawValue), .date(file.modifiedAt), .text(eligible ? DiskFileType.key(file.path) : ""), .number(eligible ? 1 : 0), .text(parent)])
+        if trackSeen { try query("INSERT OR IGNORE INTO seen_entries VALUES(?)", [.text(name)]) }
     }
     func directory(_ path: String, contents: Bool = false) throws -> DiskDirectory? {
         var node: DiskDirectory?
@@ -250,26 +257,62 @@ final class DiskDatabase: @unchecked Sendable {
         return result
     }
     func markTotals(_ path: String) throws {
+        guard Self.contains(path, below: root) else { return }
         var current = path
-        while Self.contains(current, below: root) {
+        while true {
             try query("INSERT OR IGNORE INTO dirty VALUES(?)", [.text(current)])
-            if current == root { break }; current = Self.parent(current)
+            // A successful mark already includes its ancestor chain in this transaction. Stop at the first
+            // shared parent instead of validating/reinserting that same chain for every folder and hard-link alias.
+            if sqlite3_changes(db) == 0 || current == root { break }
+            current = Self.parent(current)
         }
+    }
+
+    /// Reuse cached enumeration counts, without touching filesystem contents. Legacy caches with missing item counts
+    /// use directory work alone; the first refresh fills their counts for subsequent entry-based estimates.
+    func scanWork(recursive: [String], shallow: [String]) throws -> (directories: Int, entries: Int?, unknownScopes: Bool) {
+        var directories = 0, entries = 0, known = true, unknownScopes = false
+        func add(_ sql: String, _ values: [Value]) throws {
+            try query(sql, values) {
+                let count = Int(Self.number($0, 0)), measured = Int(Self.number($0, 2))
+                directories += max(count, 1)
+                entries += Int(Self.number($0, 1))
+                if count == 0 { unknownScopes = true }
+                if count == 0 || count != measured { known = false }
+            }
+        }
+        for path in recursive {
+            try add("SELECT COUNT(*),COALESCE(SUM(items),0),COUNT(items) FROM dirs WHERE path=? OR (path>=? AND path<?)",
+                [.text(path), .text(path == "/" ? "/" : path + "/"), .text(path == "/" ? "0" : path + "0")])
+        }
+        for path in shallow {
+            try add("SELECT COUNT(*),COALESCE(SUM(items),0),COUNT(items) FROM dirs WHERE path=?", [.text(path)])
+        }
+        return (directories, known ? entries : nil, unknownScopes)
+    }
+    func hasLinkedEntries(parent: String) throws -> Bool {
+        try query("SELECT 1 FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?) AND link<>'' LIMIT 1", [.text(parent)]) > 0
+    }
+    func beginDirectoryRefresh() throws { try execute("DELETE FROM seen_entries") }
+    func finishDirectoryRefresh(_ path: String) throws {
+        try query("DELETE FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?) AND name NOT IN (SELECT name FROM seen_entries)", [.text(path)])
     }
     func linkParents(at path: String) throws -> [String] {
         var result: [String] = []
         try query("SELECT DISTINCT d.path FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND e.link IN (SELECT link FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?) AND link<>'')", [.text(path)]) { result.append(Self.text($0, 0)) }
         return result
     }
-    func remove(_ path: String) throws {
+    func remove(_ path: String, markAffectedTotals: Bool = true) throws {
         let prefix = path == "/" ? "/" : path + "/", end = String(prefix.dropLast()) + "0"
         var links: [String] = []
         let range: [Value] = [.text(path), .text(prefix), .text(end)]
-        try query("SELECT DISTINCT d.path FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND e.link IN (SELECT e.link FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND (d.path=? OR (d.path>=? AND d.path<?)))", range) { links.append(Self.text($0, 0)) }
-        for parent in links { try markTotals(parent) }
+        if markAffectedTotals {
+          try query("SELECT DISTINCT d.path FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND e.link IN (SELECT e.link FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link<>'' AND (d.path=? OR (d.path>=? AND d.path<?)))", range) { links.append(Self.text($0, 0)) }
+          for parent in links { try markTotals(parent) }
+        }
         try query("DELETE FROM entries WHERE parent IN (SELECT id FROM dirs WHERE path=? OR (path>=? AND path<?))", range)
         try query("DELETE FROM dirs WHERE path=? OR (path>=? AND path<?)", range)
-        try markTotals(Self.parent(path))
+        if markAffectedTotals { try markTotals(Self.parent(path)) }
     }
     func updateLink(_ file: DiskFile, link: String) throws {
         try query("SELECT path FROM files WHERE link=? AND link<>''", [.text(link)]) {
@@ -281,10 +324,22 @@ final class DiskDatabase: @unchecked Sendable {
         try query("DELETE FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?)", [.text(parent)])
     }
     func total(_ path: String) throws {
-        try query("UPDATE dirs SET total=direct+COALESCE((SELECT SUM(total) FROM dirs c WHERE c.parent=dirs.id),0)+COALESCE((SELECT SUM(bytes) FROM entries e WHERE e.parent=dirs.id AND e.link<>'' AND (e.parent,e.name)=(SELECT l.parent,l.name FROM entries l WHERE l.link=e.link AND l.link<>'' ORDER BY l.parent,l.name LIMIT 1)),0) WHERE path=?", [.text(path)])
+        let measured = "direct+COALESCE((SELECT SUM(total) FROM dirs c WHERE c.parent=dirs.id),0)+COALESCE((SELECT SUM(bytes) FROM entries e WHERE e.parent=dirs.id AND e.link<>'' AND (e.parent,e.name)=(SELECT l.parent,l.name FROM entries l WHERE l.link=e.link AND l.link<>'' ORDER BY l.parent,l.name LIMIT 1)),0)"
+        try query("UPDATE dirs SET total=\(measured) WHERE path=? AND total IS NOT (\(measured))", [.text(path)])
+    }
+    func resolvePendingParents() throws {
+        try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM dirs p JOIN pending_parents q ON q.parent=p.path WHERE q.path=dirs.path),0) WHERE path IN (SELECT path FROM pending_parents); DELETE FROM pending_parents")
+    }
+    func advanceEventCursor(_ cursor: UInt64) throws {
+        guard var metadata = try state(), cursor > metadata.eventID else { return }
+        try transaction {
+            metadata.eventID = cursor
+            try saveState(metadata)
+        }
+        try checkpoint()
     }
     func reconcileTotals(all: Bool, progress: LoadProgressSink? = nil) throws {
-        try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM dirs p JOIN pending_parents q ON q.parent=p.path WHERE q.path=dirs.path),0) WHERE path IN (SELECT path FROM pending_parents); DELETE FROM pending_parents")
+        try resolvePendingParents()
         if all {
             var depth: UInt64 = 2147483647, last: UInt64 = 0, done = 0, count = 0
             try query("SELECT COUNT(*) FROM dirs") { count = Int(Self.number($0, 0)) }
@@ -303,7 +358,15 @@ final class DiskDatabase: @unchecked Sendable {
                 try flushBatch()
             }
         } else {
-            try query("SELECT path FROM dirty ORDER BY length(path) DESC") { try total(Self.text($0, 0)) }
+            var count = 0, done = 0
+            try query("SELECT COUNT(*) FROM dirty") { count = Int(Self.number($0, 0)) }
+            let step = max(32, count / 128)
+            progress?(0)
+            try query("SELECT path FROM dirty ORDER BY length(path) DESC") {
+                try total(Self.text($0, 0)); done += 1
+                if done % step == 0 { progress?(Double(done) / Double(max(count, 1))) }
+            }
+            progress?(1)
         }
         try execute("DELETE FROM dirty")
     }

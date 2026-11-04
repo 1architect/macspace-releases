@@ -107,6 +107,8 @@ struct TileFace: View {
     var drawsBackdrop = true
     /// The switch of a `state` chart is drawn over the tile, apart from the face (`TileSwitch`); the face keeps its place.
     var switchOverlaid = false
+    /// Remounted under a returning page: the zoom owns its reveal, so the graphic starts at rest.
+    var resumesGraphic = false
     @Environment(\.design) private var design
 
     /// Room left under the chart for the caption: a one-line caption at 22 points, with the margin under it (`margin`).
@@ -222,7 +224,7 @@ struct TileFace: View {
                        outerRadius: TileType.current.concentricCorners ? max(0, corners.tileRadius - Self.margin) : nil,
                        look: .tile, loading: info.loading, reading: info.reading, fill: info.fill,
                        working: info.working, workingFraction: info.workingFraction,
-                       orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size })
+                       orderSize: restingSize.map { Self.chartArea(in: $0, info: info, captionSize: captionSize, restingSize: $0).size }, resumes: resumesGraphic)
                 .frame(width: area.width, height: area.height)
                 .offset(x: area.minX, y: area.minY)
             // What the pointer is on, and nothing otherwise: its name and size, in the tile's small text, just under the blocks and as
@@ -239,7 +241,8 @@ struct TileFace: View {
             .animation(Theme.hover, value: hovered?.id)
         case let .dots(dots):
             VStack(alignment: .leading, spacing: 10) {
-                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 2 * Self.margin - 6 * 7) / 7), loading: info.loading)
+                DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 2 * Self.margin - 6 * 7) / 7), loading: info.loading, startsAppeared: resumesGraphic)
+                    .graphContextMenu(label: info.title)
                 HStack(spacing: 10) {
                     legend(Circle().fill(palette.step(5)), String(localized: "disabled"))
                     legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), String(localized: "enabled"))
@@ -255,7 +258,8 @@ struct TileFace: View {
         case let .state(on, _, detail, meter, actionable):
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
                       part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil,
-                      showsDetail: StateView.detailFits(detail, width: size.width - 2 * Self.margin))
+                      showsDetail: StateView.detailFits(detail, width: size.width - 2 * Self.margin), startsAppeared: resumesGraphic)
+                .graphContextMenu(label: info.title)
                 // The tile's width, so the detail stays on one line; the meter keeps its own width (`StateView`).
                 .frame(width: max(size.width - 2 * Self.margin, 0), alignment: .leading)
                 .padding(.leading, Self.margin)
@@ -264,7 +268,8 @@ struct TileFace: View {
             // A bar across the tile, centered in the room between the window's close button, in this tile's top-left corner, and
             // the caption, which says the figures.
             let top = GlassCircleButton.margin + GlassCircleButton.diameter
-            BarGaugeView(value: value, tint: tint, loading: info.loading)
+            BarGaugeView(value: value, tint: tint, loading: info.loading, startsAppeared: resumesGraphic)
+                .graphContextMenu(label: info.title)
                 .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
                 .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
         }
@@ -384,7 +389,7 @@ struct HomeView: View {
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
                     DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height, large: tile.large), restingSize: frame.size,
-                                      isHidden: hiddenTile == tile.destination, hovering: pointerTile == tile.destination,
+                                      isHidden: hiddenTile == tile.destination, resumesGraphic: hiddenTile != nil, hovering: pointerTile == tile.destination,
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
                     }
@@ -484,6 +489,7 @@ struct DashboardTileView: View {
     let restingSize: CGSize
     /// The tile is under an open page: it ignores the pointer, so it comes back flat when the page closes onto it.
     var isHidden = false
+    var resumesGraphic = false
     /// The pointer is over this tile (held by the dashboard).
     var hovering = false
     /// Reports the pointer in coarse steps across the tile (10 %), or nil when it leaves: only a change of step moves the tile.
@@ -501,7 +507,7 @@ struct DashboardTileView: View {
         Button { if tile.opens && !WindowMoveCheck.shared.windowMoved() { open() } } label: {
             // Not clipped: everything in the tile is drawn inside its shape already, and a clip made every frame mask the whole tile.
             TileContent(destination: tile.destination, tint: tile.tint, host: host, storage: storage, captionSize: captionSize,
-                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true, restingSize: restingSize)
+                        hovering: hovering, hoveredBlock: hoveredBlock, drawsBackdrop: false, switchOverlaid: true, resumesGraphic: resumesGraphic, restingSize: restingSize)
                 .contentShape(shape)
         }
         .buttonStyle(TilePressStyle(pressable: tile.opens))
@@ -512,6 +518,8 @@ struct DashboardTileView: View {
         .overlay(alignment: .topLeading) {
             if case let .module(id) = tile.destination, let handle = host.handle(for: id) { TileSwitch(handle: handle, tint: tile.tint) }
         }
+        .modifier(dashboardMenu)
+        .environment(\.graphContextMenusEnabled, false)
         .studioPickable(.tile(tile.tint), in: shape)
         // The whole dashboard moves the window, the tiles too: they never move themselves, so a drag on one has nothing else to do.
         .simultaneousGesture(WindowDragGesture())
@@ -533,6 +541,15 @@ struct DashboardTileView: View {
         .onChange(of: isHidden) { _, hidden in if hidden { resetPointer() } }
         // Watching the mouse from the first press on (`WindowMoveCheck`).
         .onAppear { _ = WindowMoveCheck.shared }
+    }
+
+    private var dashboardMenu: DashboardContextMenu {
+        let id = tile.destination == .storage ? "com.macspace.disk-map" : tile.destination.moduleID
+        let handle = id.flatMap { host.handle(for: $0) }
+        let refreshStorage: (@MainActor () async -> Void)?
+        if tile.destination == .storage { refreshStorage = { await storage.refresh() } }
+        else { refreshStorage = nil }
+        return DashboardContextMenu(handle: handle, refreshStorage: refreshStorage)
     }
 
     private func resetPointer() {
@@ -734,6 +751,7 @@ struct TileContent: View {
     var captionOpacity: CGFloat = 1
     /// The dashboard draws a `state` chart's switch over the tile itself (`TileSwitch`).
     var switchOverlaid = false
+    var resumesGraphic = false
     /// The tile's size in its cell (`TileFace.restingSize`); nil where it is drawn at rest.
     var restingSize: CGSize?
     /// The width the caption is laid out in, when not the tile's: the zoom's, the tile's on the dashboard.
@@ -758,7 +776,7 @@ struct TileContent: View {
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
-                                      drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize,
+                                      drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, resumesGraphic: resumesGraphic, captionSize: captionSize,
                                       restingSize: restingSize) } else { Color.clear }
             if showsCaption {
                 TileCaption(title: info.title, figure: info.figure, status: info.status, size: captionSize, loading: info.loading,
@@ -776,7 +794,10 @@ private struct ModuleTileContent: View {
     @ObservedObject var handle: ModuleHandle
     let content: TileContent
 
-    var body: some View { content.layout(TileInfo(handle)) }
+    var body: some View {
+        content.layout(TileInfo(handle))
+            .environment(\.graphInteraction, GraphInteraction(handle: handle))
+    }
 }
 
 /// The tile darkens while pressed. A shade laid over it, not a brightness filter: a filter stays on the tile even at 0 and makes every
@@ -815,6 +836,8 @@ private struct TileSwitch: View {
                           return result.map { $0.outcome != .failed } ?? false
                       } },
                       disabled: info.switchAction == nil)
+                .graphContextMenu(label: info.title)
+                .environment(\.graphInteraction, GraphInteraction(handle: handle))
                 .padding(.leading, TileFace.margin)
                 .padding(.top, TileFace.topInset)
         }

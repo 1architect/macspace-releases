@@ -135,12 +135,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     @Published public private(set) var pageLoading: LoadFill?
     private var pageLoadGeneration = 0
+    private var pageRequests = Set<Int>()
     private func loadPage(_ id: String) async -> Screen? {
         guard let module else { return nil }
         pageLoadGeneration += 1
         let generation = pageLoadGeneration
         let started = Date()
-        defer { if generation == pageLoadGeneration { pageLoadGeneration += 1; pageLoading = nil; updateBusy() } }
+        pageRequests.insert(generation)
+        defer {
+            pageRequests.remove(generation)
+            if generation == pageLoadGeneration { pageLoadGeneration += 1; pageLoading = nil; updateBusy() }
+            requestModuleActivityUpdate()
+            scheduleAutoRefresh()
+        }
+        await syncModuleActivity()
+        guard generation == pageLoadGeneration, state == .ready, !Task.isCancelled else { return nil }
         return await module.page(id: id, context: context(), progress: { [weak self] fraction in
             Task { @MainActor in
                 guard let self, self.pageLoadGeneration == generation, fraction.isFinite, self.screenIsVisible else { return }
@@ -650,12 +659,46 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     func cancelUninstall() { preparingForUninstall = false }
 
     private var module: (any MacSpaceModule)?
+    private var activityTask: Task<Void, Never>?
+    private var activityGeneration = 0
+    private var appliedModuleActivity: Bool?
+    private var hasCurrentRefresh: Bool { refreshRequests.contains(refreshGeneration) }
+    private var needsModuleActivity: Bool {
+        state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
+            (isWatched && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
+    }
+
+    /// Focus changes stop optional polling, not an in-flight read of a still-visible window or an action.
+    /// Serialize/coalesce updates so a queued old suspension cannot cancel a newer foreground read.
+    private func syncModuleActivity() async {
+        guard let module else { return }
+        activityGeneration += 1
+        let generation = activityGeneration, previous = activityTask
+        let task = Task { @MainActor [weak self] in
+            await previous?.value
+            guard let self, self.activityGeneration == generation else { return }
+            let active = self.needsModuleActivity
+            guard self.appliedModuleActivity != active else { return }
+            await module.setActive(active)
+            self.appliedModuleActivity = active
+        }
+        activityTask = task
+        while let pending = activityTask {
+            let observed = activityGeneration
+            await pending.value
+            if observed == activityGeneration { activityTask = nil }
+        }
+    }
+    private func requestModuleActivityUpdate() {
+        Task { @MainActor [weak self] in await self?.syncModuleActivity() }
+    }
     /// Refreshes under way, and whether an action is running: both make the module busy.
     private var refreshes: Set<Int> = []
     private var blockingRefreshes: Set<Int> = []
     private var refreshRequests: Set<Int> = []
     private var loadingGeneration: Int?
     private var performing = false
+    private var actionNeedsModuleActivity = false
     /// Bumped by each refresh: a slower, older one that finishes last must not put back figures older than the newest.
     private var refreshGeneration = 0
     /// Bumped by each action: a progress message that arrives after its action finished must not show again.
@@ -718,7 +761,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         cancelRequestedPage()
         invalidatePendingSelections()
         if case .incompatible = state { return }
-        Task { await module?.setActive(false) }
+        requestModuleActivityUpdate()
         pageLoadGeneration += 1; pageLoading = nil
         refreshGeneration += 1; clearRefreshPresentation()
         state = .off
@@ -751,8 +794,6 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
         autoRefresh?.cancel()
         autoRefresh = nil
-        await module.setActive(isWatched && Self.isAppActive())
-        guard state == .ready, isEnabled else { return }
         let context = context()
         refreshGeneration += 1
         clearRefreshPresentation()
@@ -777,7 +818,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 if refreshes.isEmpty { loading = nil; loadingGeneration = nil }
                 updateBusy()
             }
+            requestModuleActivityUpdate()
+            scheduleAutoRefresh()
         }
+        await syncModuleActivity()
+        guard generation == refreshGeneration, state == .ready, isEnabled, !Task.isCancelled else { return }
         if reload {
             if let id = groupPath.last, let forest = graphPage(id) {
                 for segment in forest.hero?.segments ?? [] {
@@ -810,7 +855,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             async let nextScreen: Screen? = readsScreen ? module.screen(context: context, progress: reports) : nil
             (newTile, newScreen) = await (nextTile, nextScreen)
         }
-        guard generation == refreshGeneration, state == .ready else { return }
+        guard generation == refreshGeneration, state == .ready, !Task.isCancelled else { return }
         if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = Date()
         // Only what changed is published: each published value redraws the tile and the page, and the readings that follow the Mac
@@ -919,7 +964,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         invalidatePendingSelections()
         isWatched = watched
         screenIsVisible = screenVisible
-        Task { await module?.setActive(watched && Self.isAppActive() && state == .ready && isEnabled) }
+        if !watched {
+            // A suspended read can return its previous cache. Retire its generation before cancellation;
+            // it must not publish that response or record a successful refresh time.
+            refreshGeneration += 1; clearRefreshPresentation()
+            pageLoadGeneration += 1; pageLoading = nil; updateBusy()
+        }
+        requestModuleActivityUpdate()
         if !watched {
             autoRefresh?.cancel()
             autoRefresh = nil
@@ -934,11 +985,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Back in front: figures older than the usual minute are read again now, and the readings go back to every minute.
     func appResignedActive() {
         autoRefresh?.cancel(); autoRefresh = nil
-        Task { await module?.setActive(false) }
+        requestModuleActivityUpdate()
     }
     func appBecameActive() {
         guard state == .ready, isWatched, isEnabled else { return }
-        Task { await module?.setActive(isWatched) }
+        requestModuleActivityUpdate()
+        guard !hasCurrentRefresh, pageRequests.isEmpty, !actionNeedsModuleActivity, !performing else { return }
         let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
         if age >= Self.autoRefreshInterval, !performing {
             Task { if isWatched { await refresh(quiet: true) } }
@@ -955,7 +1007,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Schedules the next quiet reading after the one that just finished.
     private func scheduleAutoRefresh() {
         autoRefresh?.cancel()
-        guard state == .ready, isWatched, Self.isAppActive() else { return }
+        guard state == .ready, isWatched, Self.isAppActive(), !hasCurrentRefresh, pageRequests.isEmpty, !actionNeedsModuleActivity else { return }
         let interval = Self.isAppActive() ? Self.autoRefreshInterval : Self.backgroundRefreshInterval
         // A tile that is changing (`Tile.refreshAfter`) is followed at its own pace, in front or not, without showing loading.
         let pagePending = groupPath.last.flatMap { pages[$0] }?.loadingFraction ?? (groupPath.isEmpty ? screen?.loadingFraction : nil)
@@ -1007,6 +1059,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         refreshGeneration += 1
         clearRefreshPresentation()
         performing = true
+        actionNeedsModuleActivity = true
         let started = Date()
         if !quiet {
             updateBusy()
@@ -1023,7 +1076,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 runningAction = nil
                 runningRowID = nil
             }
+            actionNeedsModuleActivity = false
+            requestModuleActivityUpdate()
+            scheduleAutoRefresh()
         }
+        await syncModuleActivity()
         lastResult = nil
         invalidatePendingSelections()
         actionGeneration += 1
@@ -1147,7 +1204,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard !preparingForUninstall, state == .ready, manifest.autoClean == true, let module else { return nil }
         isCleaning = true
         performing = true
-        defer { isCleaning = false; performing = false; updateBusy() }
+        actionNeedsModuleActivity = true
+        defer { isCleaning = false; performing = false; actionNeedsModuleActivity = false; updateBusy(); requestModuleActivityUpdate(); scheduleAutoRefresh() }
+        await syncModuleActivity()
         let report = await module.autoClean(context: context())
         if let report {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: report.freedBytes, trigger: .automatic, summary: report.summary)

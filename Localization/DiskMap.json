@@ -296,6 +296,15 @@
   "ファイルを削除できませんでした",
   "파일을 삭제하지 못함"
  ],
+ "Couldn’t delete the folder": [
+  "Não foi possível excluir a pasta",
+  "Impossible de supprimer le dossier",
+  "No se pudo eliminar la carpeta",
+  "Der Ordner konnte nicht gelöscht werden",
+  "无法删除文件夹",
+  "フォルダを削除できませんでした",
+  "폴더를 삭제할 수 없습니다"
+ ],
  "Couldn’t remove the selected files": [
   "Não foi possível remover os arquivos selecionados",
   "Impossible de supprimer les fichiers sélectionnés",
@@ -349,6 +358,15 @@
   "已删除",
   "削除済み",
   "삭제됨"
+ ],
+ "Deleted folder": [
+  "Pasta excluída",
+  "Dossier supprimé",
+  "Carpeta eliminada",
+  "Ordner gelöscht",
+  "已删除文件夹",
+  "フォルダを削除しました",
+  "폴더 삭제됨"
  ],
  "Deleting": [
   "Apagando",
@@ -1403,6 +1421,24 @@
   "このファイルはここでは削除できません。",
   "이 파일은 여기서 삭제할 수 없습니다."
  ],
+ "This folder and all its contents will be moved to Trash.": [
+  "Esta pasta e todo o seu conteúdo serão movidos para o Lixo.",
+  "Ce dossier et tout son contenu seront placés dans la corbeille.",
+  "Esta carpeta y todo su contenido se moverán a la papelera.",
+  "Dieser Ordner und sein gesamter Inhalt werden in den Papierkorb verschoben.",
+  "此文件夹及其所有内容将移到废纸篓。",
+  "このフォルダとそのすべての内容をゴミ箱に移動します。",
+  "이 폴더와 모든 내용이 휴지통으로 이동됩니다."
+ ],
+ "This folder cannot be deleted here.": [
+  "Esta pasta não pode ser excluída aqui.",
+  "Ce dossier ne peut pas être supprimé ici.",
+  "Esta carpeta no se puede eliminar aquí.",
+  "Dieser Ordner kann hier nicht gelöscht werden.",
+  "无法在此处删除此文件夹。",
+  "このフォルダはここでは削除できません。",
+  "이 폴더는 여기에서 삭제할 수 없습니다."
+ ],
  "This folder is empty.": [
   "Esta pasta está vazia.",
   "Ce dossier est vide.",
@@ -1429,6 +1465,15 @@
   "这将永久删除该文件。",
   "このファイルは完全に削除されます。",
   "이 파일을 영구적으로 삭제합니다."
+ ],
+ "This permanently deletes the folder and all its contents.": [
+  "Isso exclui permanentemente a pasta e todo o seu conteúdo.",
+  "Le dossier et tout son contenu seront supprimés définitivement.",
+  "Esto elimina permanentemente la carpeta y todo su contenido.",
+  "Dadurch werden der Ordner und sein gesamter Inhalt endgültig gelöscht.",
+  "这会永久删除此文件夹及其所有内容。",
+  "このフォルダとそのすべての内容を完全に削除します。",
+  "이 폴더와 모든 내용이 영구적으로 삭제됩니다."
  ],
  "This permanently deletes the selected files.": [
   "Isso exclui permanentemente os arquivos selecionados.",

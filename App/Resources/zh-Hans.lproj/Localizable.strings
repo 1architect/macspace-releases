@@ -44,12 +44,15 @@
 "Close" = "关闭";
 "Close Window" = "关闭窗口";
 "Configuration profile" = "配置描述文件";
+"Confirm deletion of this item." = "请确认删除此项目。";
 "Continue" = "继续";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。";
 "Could not install the helper: %@" = "无法安装辅助程序：%@";
 "Couldn't free space. Try again later." = "无法释放空间，请稍后重试。";
 "Couldn’t uninstall MacSpace" = "无法卸载 MacSpace";
 "Day" = "日间";
+"Delete" = "删除";
+"Delete %@?" = "删除 %@？";
 "Developed by\n%@" = "开发者\n%@";
 "Does the few things that need an administrator." = "执行少量需要管理员权限的操作。";
 "Drag into the Full Disk Access list" = "拖入完全磁盘访问列表";
@@ -120,6 +123,7 @@
 "Open Panel" = "打开面板";
 "Open System Settings" = "打开系统设置";
 "Open at login" = "登录时打开";
+"Open in Finder" = "在访达中打开";
 "Other folders" = "其他文件夹";
 "Permissions" = "权限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "点击“安装辅助程序”。如果 macOS 仍无法识别，请在终端运行：/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register，并发送输出的信息。";

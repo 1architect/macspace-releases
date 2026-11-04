@@ -189,3 +189,32 @@ final class DiskDatabaseTests: XCTestCase {
 
 
 }
+
+extension DiskDatabaseTests {
+    func testWholeRootRefreshPreservesAllocationTransferredToAnUnreadableHardlinkAlias() throws {
+        try fixture { root, db in
+            let a = root.path + "/A", b = root.path + "/B"
+            try file(a + "/source")
+            try FileManager.default.createDirectory(atPath: b, withIntermediateDirectories: true)
+            try FileManager.default.linkItem(atPath: a + "/source", toPath: b + "/alias")
+            var scanner = DiskDatabaseScanner(db: db, excluded: [root.path + "/cache"])
+            try scanner.scan(.init(), cursor: 1, progress: nil)
+            let before = try XCTUnwrap(db.directory(root.path)?.bytes)
+            try FileManager.default.removeItem(atPath: a + "/source")
+            scanner = DiskDatabaseScanner(db: db, excluded: [root.path + "/cache"])
+            scanner.metadata = { path in
+                if path == b { errno = EACCES; return nil }
+                var value = stat(); return lstat(path, &value) == 0 ? value : nil
+            }
+            try scanner.scan(.init(recursive: [root.path]), cursor: 2, progress: nil)
+            XCTAssertEqual(try db.directory(root.path)?.bytes, before)
+            XCTAssertEqual(try db.directory(b)?.bytes, before)
+            XCTAssertEqual(try db.directory(b)?.readable, false)
+            try file(b + "/alias", bytes: 131_072)
+            scanner = DiskDatabaseScanner(db: db, excluded: [root.path + "/cache"])
+            try scanner.scan(.init(recursive: [root.path]), cursor: 3, progress: nil)
+            XCTAssertGreaterThan(try XCTUnwrap(db.directory(root.path)?.bytes), before)
+            XCTAssertEqual(try db.directory(root.path)?.bytes, try db.directory(b)?.bytes)
+        }
+    }
+}

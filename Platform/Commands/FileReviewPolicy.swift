@@ -15,10 +15,28 @@ public enum FileReviewPolicy {
         let path = livePath(path)
         return path == "/Applications" || path == home + "/Applications"
     }
+    /// Lexical validation only; symlink/ownership checks remain at their existing filesystem boundaries.
+    /// Iterating UTF-8 avoids allocating a component array and doing grapheme segmentation for every scanned path.
+    public static func isNormalizedAbsolutePath(_ path: String, allowTrailingSlash: Bool = true) -> Bool {
+        guard path.utf8.first == 47 else { return false }
+        var afterSlash = false, dotsOnly = true, componentLength = 0
+        for byte in path.utf8 {
+            if byte == 0 { return false }
+            if byte == 47 {
+                if afterSlash || (dotsOnly && (componentLength == 1 || componentLength == 2)) { return false }
+                afterSlash = true; dotsOnly = true; componentLength = 0
+            } else {
+                afterSlash = false; componentLength += 1
+                if byte != 46 { dotsOnly = false }
+            }
+        }
+        if !allowTrailingSlash && afterSlash { return false }
+        return !dotsOnly || (componentLength != 1 && componentLength != 2)
+    }
+
     public static func exclusion(_ original: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Exclusion? {
         let path = livePath(original)
-        guard path.hasPrefix("/"), !path.utf8.contains(0), !path.contains("//"), !path.hasSuffix("/"),
-              !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) else { return .invalidPath }
+        guard isNormalizedAbsolutePath(path, allowTrailingSlash: false) else { return .invalidPath }
         guard path.hasPrefix(home + "/") else { return .outsidePersonalLocation }
         let parts = path.dropFirst(home.count + 1).split(separator: "/")
         let managed: Set<String> = ["Library", "Applications", "node_modules", "target", "DerivedData", "Caches"]
