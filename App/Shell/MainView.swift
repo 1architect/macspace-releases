@@ -320,7 +320,7 @@ public struct MainView: View {
             // already where they will settle. Laid out at the card's size, the caption took one line in the large card and broke onto
             // two as the tile settled, and the text jumped.
             TileContent(destination: layer.destination, tint: layer.tint, host: host, storage: storage,
-                        captionSize: CaptionSize.tile(height: layer.origin.height, large: frames.isLarge(layer.destination)), progress: p,
+                        captionSize: CaptionSize.tile(height: layer.origin.height, large: frames.isLarge(layer.destination)), progress: p, returning: !isOpen,
                         showsFace: face, showsCaption: !face, captionOpacity: 1 - ZoomMath.ramp(p, 0.05, 0.45),
                         restingSize: layer.origin.size, captionWidth: layer.origin.width)
         }

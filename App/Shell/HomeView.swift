@@ -98,6 +98,8 @@ struct TileFace: View {
     let tint: TileTint
     let info: TileInfo
     var progress: CGFloat = 0
+    /// Back has begun: mount the graphic immediately so its own entrance runs during the shrink.
+    var returning = false
     /// The pointer is over the tile, and which block of its chart it is on. Not the pointer's position: the face is redrawn only
     /// when one of these changes, not on every mouse move.
     var hovering = false
@@ -169,7 +171,7 @@ struct TileFace: View {
     }
 
     var body: some View {
-        let chartOpacity = 1 - ZoomMath.ramp(progress, 0, 0.35)
+        let chartOpacity = ZoomMath.graphicOpacity(progress: progress, returning: returning)
         ZStack(alignment: .topLeading) {
             if drawsBackdrop {
                 TileBackdrop(tint: tint, cornerRadius: ZoomMath.lerp(corners.tileRadius, corners.windowRadius, progress),
@@ -178,10 +180,15 @@ struct TileFace: View {
                 Color.clear
             }
             // While a tile has nothing to show yet, placeholder blocks breathe in its place.
-            // Not drawn once it has faded out (on the card under an open page): its animations would keep the window redrawing.
-            if chartOpacity > 0, let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
+            // Release drawing under a fully open page, but mount at the beginning of Back rather than
+            // waiting for opacity to become positive near the end of the shrink. This applies to every graphic type.
+            if ZoomMath.drawsGraphic(progress: progress, returning: returning), let graphic = info.graphic ?? (info.loading ? .blocks(LoadingWave.placeholderBlocks) : nil) {
                 GeometryReader { proxy in
-                    chart(graphic, in: proxy.size)
+                    let layout = ZoomMath.graphicLayout(proposed: proxy.size, resting: restingSize, returning: returning)
+                    chart(graphic, in: layout)
+                        .frame(width: layout.width, height: layout.height, alignment: .topLeading)
+                        .scaleEffect(ZoomMath.graphicScale(layout: layout, proposed: proxy.size), anchor: .topLeading)
+                        .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
                 }
                 .opacity(chartOpacity)
             }
@@ -737,6 +744,7 @@ struct TileContent: View {
     @ObservedObject var storage: StorageOverview
     var captionSize: CGFloat
     var progress: CGFloat = 0
+    var returning = false
     var captionPadding: CGFloat = CaptionSize.tilePadding
     var hovering = false
     var hoveredBlock: String?
@@ -771,7 +779,7 @@ struct TileContent: View {
 
     func layout(_ info: TileInfo) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            if showsFace { TileFace(tint: tint, info: info, progress: progress, hovering: hovering, hoveredBlock: hoveredBlock,
+            if showsFace { TileFace(tint: tint, info: info, progress: progress, returning: returning, hovering: hovering, hoveredBlock: hoveredBlock,
                                       drawsBackdrop: drawsBackdrop, switchOverlaid: switchOverlaid, captionSize: captionSize,
                                       restingSize: restingSize) } else { Color.clear }
             if showsCaption {

@@ -6,6 +6,29 @@ enum ZoomSpace {
 }
 
 enum ZoomMath {
+    /// Returning graphics must mount when Back starts, before the shrinking card makes them visible.
+    /// Opening can still release a graphic once the page covers it.
+    static func drawsGraphic(progress: CGFloat, returning: Bool) -> Bool {
+        returning || graphicOpacity(progress: progress, returning: false) > 0
+    }
+
+    static func graphicOpacity(progress: CGFloat, returning: Bool) -> CGFloat {
+        1 - ramp(progress, 0, returning ? 1 : 0.35)
+    }
+
+    /// A graphic's own springs animate in one tile-sized layout while the card moves around it.
+    /// Otherwise each zoom frame retargets the block frames and invalidates the chart's geometry cache.
+    static func graphicLayout(proposed: CGSize, resting: CGSize?, returning: Bool) -> CGSize {
+        guard returning, let resting, resting.width.isFinite, resting.height.isFinite,
+              resting.width > 0, resting.height > 0 else { return proposed }
+        return resting
+    }
+
+    static func graphicScale(layout: CGSize, proposed: CGSize) -> CGSize {
+        CGSize(width: layout.width > 0 ? proposed.width / layout.width : 1,
+               height: layout.height > 0 ? proposed.height / layout.height : 1)
+    }
+
     /// 0 until `start`, 1 from `end`, smooth in between.
     static func ramp(_ value: CGFloat, _ start: CGFloat, _ end: CGFloat) -> CGFloat {
         let t = min(max((value - start) / (end - start), 0), 1)
