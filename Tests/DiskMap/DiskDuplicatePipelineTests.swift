@@ -90,9 +90,9 @@ final class DiskDuplicatePipelineTests: XCTestCase {
         XCTAssertEqual(first.verified, 3)
         XCTAssertEqual(first.unknown, 0)
         let page = try await storage.page(root)
-        XCTAssertEqual(page.files.map(\.path), [b.path])
+        XCTAssertEqual(page.files.map(\.path), [a.path, b.path])
         XCTAssertEqual(page.duplicateGroups.first?.keeper.path, a.path)
-        XCTAssertTrue(page.duplicateGroups.first?.keeper.retainedDuplicateKeeper == true)
+        XCTAssertNotNil(page.duplicateGroups.first?.keeper.duplicateVerification)
         XCTAssertEqual(page.files.first?.logicalBytes, 128 * 1_048_576)
         let cacheCount = try await storage.cacheCount()
         XCTAssertEqual(cacheCount, 4)
@@ -142,7 +142,7 @@ final class DiskDuplicatePipelineTests: XCTestCase {
             if name == "second" { XCTAssertEqual(result.unknown, 1) }
         }
         let first = try await storage.page(root.appendingPathComponent("first"))
-        XCTAssertEqual(first.files.count, 1)
+        XCTAssertEqual(first.files.count, 2)
         let second = try await storage.page(root.appendingPathComponent("second"))
         XCTAssertTrue(second.files.isEmpty)
     }

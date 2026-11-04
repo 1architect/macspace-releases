@@ -114,7 +114,7 @@ struct ScreenView: View {
         let destinations = Set(aggregate.items.map(\.id))
         let forest = segments.filter { segment in segment.group.map { destinations.contains($0.id) } ?? false }
         guard !forest.isEmpty, forest.count < segments.count || aggregate.bytes == 0 else { return nil }
-        return Screen(title: aggregate.label, hero: UsageBar(id: id, title: aggregate.label, totalBytes: aggregate.bytes, segments: forest), widgets: [])
+        return Screen(title: aggregate.label, hero: UsageBar(id: id, title: aggregate.label, totalBytes: aggregate.bytes, segments: forest), widgets: [.list(ListWidget(id: id + ":folders", title: aggregate.label, rows: forest.compactMap(\.group)))])
     }
 
     /// Zero-byte synthetic forests show their empty folders directly instead of regrouping forever.
@@ -124,6 +124,16 @@ struct ScreenView: View {
 
     static func graphGroup(_ segment: UsageSegment, usageID: String, selection: Selection? = nil) -> Row? {
         guard var group = segment.group else { return nil }
+        if segment.id == BlockLayout.smallerID,
+           let destination = segment.items.compactMap(\.pageID).first(where: { $0.hasPrefix("focus:browse:") }),
+           let data = Data(base64Encoded: String(destination.dropFirst("focus:browse:".count))),
+           var request = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            request.removeValue(forKey: "focusPath")
+            if let encoded = try? JSONSerialization.data(withJSONObject: request, options: [.sortedKeys]) {
+                let id = "focus:browse:" + encoded.base64EncodedString()
+                return Row(id: id, title: segment.label, pageID: id)
+            }
+        }
         if segment.id == BlockLayout.smallerID || segment.id == BlockLayout.foldersID {
             group.id = "graph:" + Data(usageID.utf8).base64EncodedString() + ":" + segment.id
         }
@@ -191,7 +201,7 @@ struct ScreenView: View {
                 .padding(.bottom, 18)
                 .modifier(ZoomReveal(index: 2, reveal: reveal))
         }
-        .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, reloading: handle.isCleaning,
+        .overlay { AllDoneOverlay(token: handle.allDone, freed: handle.allDoneFreed, removed: handle.allDoneRemoved, reloading: handle.isCleaning,
                                   leaving: reveal < 1, dismissed: !handle.isShowingCompletion) { [handle] in
             handle.dismissCompletion()
             // A page that let the user choose what to free has done its job: back to the page under it.
@@ -220,12 +230,13 @@ struct ScreenView: View {
     @ViewBuilder
     private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive, selection: handle.screen.flatMap { handle.pageSelection($0, id: "screen:root") }) }
 
-    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil) -> some View {
+    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil, navigation: Bool = false) -> some View {
         let legendCount = content?.hero.map { BlockLayout.legendSegments($0.segments, blocks: Self.graphBlocks($0)).count + 1 } ?? 0
-        return Group {
+        return ScrollViewReader { proxy in
+          Group {
             if let content {
                 // Keep existing rows and legend through every live scan. Only the first load uses the details cascade.
-                let refreshing = hidesDetails
+                let refreshing = hidesDetails && !navigation
                 WidgetForm(widgets: content.widgets, handler: handler, showsTop: content.hero != nil,
                            allowsGraphBesideList: true,
                            graphLoading: !content.loaded || handle.isRefreshing || handle.isReloading,
@@ -236,7 +247,7 @@ struct ScreenView: View {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning,
                                    reading: (!content.loaded || handle.isRefreshing) && !handle.isCleaning, fill: handle.loading,
                                    working: handle.isCleaning, workingFraction: handle.progress?.fraction,
-                                   detailsVisible: !hidesDetails)
+                                   detailsVisible: !hidesDetails || navigation)
                             .padding(.bottom, 4)
                             .textCase(nil)
                             .foregroundStyle(.primary)
@@ -265,6 +276,10 @@ struct ScreenView: View {
         .scrollIndicators(.never)
         .modifier(PageScrollArea(hasFooter: hasFooter))
         .animation(Theme.layout, value: hasFooter)
+        .onChange(of: handle.focusedRowID) { _, id in
+            if let id { withAnimation(Theme.layout) { proxy.scrollTo(id, anchor: .center) } }
+        }
+        }
     }
 
     /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
@@ -272,7 +287,7 @@ struct ScreenView: View {
     @ViewBuilder
     private func groupPage(_ group: Row) -> some View {
         if let page = handle.pages[group.id] ?? handle.graphPage(group.id) {
-            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id))
+            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id), navigation: true)
         } else {
             let widgets = ModulePagePresentation.groupWidgets(group)
             let choiceGroup = handle.selectionGroup(group)
@@ -523,6 +538,7 @@ private struct AllDoneOverlay: View {
     let token: Int
     /// What the action freed (`ModuleHandle.allDoneFreed`); nothing is counted when it freed nothing measured.
     let freed: UInt64?
+    let removed: UInt64?
     /// The module is still reading the Mac after the action (`ModuleHandle.isCleaning`): the page stays until it is done, so the page
     /// it goes back to has its new figures. Gone back to at once, that page stood half loaded and did not answer (2026-10-13).
     let reloading: Bool
@@ -537,6 +553,7 @@ private struct AllDoneOverlay: View {
     @State private var appeared = false
     /// What is counted on this page, kept from when it opened.
     @State private var counted: UInt64?
+    @State private var countedRemoval = false
     @State private var countWidthText: String?
     /// How far the count is, 0 to 1.
     @State private var progress = 0.0
@@ -569,7 +586,7 @@ private struct AllDoneOverlay: View {
                             .opacity(appeared ? 1 : 0)
                             .blur(radius: appeared || reduceMotion ? 0 : 6)
                         if let counted {
-                            ChangingText(text: String(format: String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)),
+                            ChangingText(text: String(format: countedRemoval ? String(localized: "%@ removed") : String(localized: "%@ freed"), Self.counting(UInt64(Double(counted) * progress), toward: counted)),
                                          alignment: .center,
                                          maximumText: countWidthText)
                                 .font(Font(CaptionFont.status(size: Self.textSize)))
@@ -593,8 +610,9 @@ private struct AllDoneOverlay: View {
         .onChange(of: token) { _, _ in
             count?.cancel()
             guard !leaving else { lifetime.dismiss(); return }
-            counted = freed.flatMap { $0 > 0 ? $0 : nil }
-            countWidthText = counted.map(Self.countingWidthText)
+            countedRemoval = removed != nil
+            counted = (removed ?? freed).flatMap { $0 > 0 ? $0 : nil }
+            countWidthText = counted.map { Self.countingWidthText($0, removed: countedRemoval) }
             progress = 0
             appeared = false
             lifetime.reloading = reloading
@@ -630,12 +648,12 @@ private struct AllDoneOverlay: View {
     }
 
     /// Reserve the widest numeric mask from this exact count sequence, including fractional intermediate values.
-    static func countingWidthText(_ total: UInt64) -> String {
+    static func countingWidthText(_ total: UInt64, removed: Bool = false) -> String {
         let font = CaptionFont.status(size: textSize)
         return (0...countSteps).map { step in
             let t = Double(step) / Double(countSteps)
             let bytes = UInt64(Double(total) * (1 - pow(1 - t, 3)))
-            return String(format: String(localized: "%@ freed"), counting(bytes, toward: total))
+            return String(format: removed ? String(localized: "%@ removed") : String(localized: "%@ freed"), counting(bytes, toward: total))
         }.max { left, right in
             func width(_ value: String) -> CGFloat {
                 let mask = value.map { $0.isNumber ? "8" : String($0) }.joined()
@@ -682,7 +700,7 @@ struct ActionDock: View {
     private var choiceAction: Action? {
         guard let group = choosingGroup, let selection = group.selection else { return nil }
         let ids = handle.checked(group)
-        guard selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty else { return nil }
+        guard selection.bulk?.unavailableReason == nil, selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty else { return nil }
         var action = selection.action
         let total = selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +)
         // While the boxes are what the module suggests, the button says so ("Free recommended").
@@ -729,8 +747,14 @@ struct ActionDock: View {
         if handle.isReloading { return .loading(handle.loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning && handle.isBusy { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
+        if choosingGroup != nil, let primary = choiceAction { return .idle(primary) }
+        if let reason = choosingGroup?.selection?.bulk?.unavailableReason { return .done(.failed(reason)) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
         // (`Screen.primary`).
+        if handle.isSelectingFiles { return .loading(nil) }
+        if let loading = handle.pageLoading { return .loading(loading) }
+        let page = handle.groupPath.last.flatMap { handle.pages[$0] } ?? handle.screen
+        if page?.hero == nil, let fraction = page?.loadingFraction { return .loading(LoadFill(started: Date(), expected: LoadFill.firstGuess, reported: fraction)) }
         if handle.screen == nil || handle.isRefreshing { return .loading(handle.loading) }
         if let notice, notice.action != nil || mainAction == nil || showsPassingNotice { return .notice(notice) }
         if let primary = mainAction { return .idle(primary) }
@@ -745,7 +769,7 @@ struct ActionDock: View {
                 ActionPill(phase: phase, maximumWidth: availableWidth, dismiss: {
                     if case .notice = phase { showsPassingNotice = false } else { handle.dismissResult() }
                 }) { [handle] action in
-                    guard ConfirmationAlert.ask(action) else { return }
+                    guard !handle.isEditingSelection, ConfirmationAlert.ask(action) else { return }
                     await handle.perform(action)
                 }
                 .transition(.opacity)
@@ -809,7 +833,9 @@ struct ActionPill: View {
         switch phase {
         case let .idle(action): return action.title
         case let .working(title, _): return title ?? String(localized: "Working")
-        case .loading: return String(localized: "Loading")
+        case let .loading(fill):
+            if let fraction = fill?.reported { return String(localized: "Loading") + " \(Int(min(0.99, max(0, fraction)) * 100))%" }
+            return String(localized: "Loading")
         case let .done(result): return result.restartRequired ? String(localized: "Restart to finish") : result.message
         case let .notice(banner): return banner.title
         }

@@ -1,9 +1,9 @@
 {
   "id": "com.macspace.disk-map",
-  "name": "Disk",
+  "name": "Apps and files",
   "summary": "Explore disk usage, uninstall apps and remove large files.",
   "version": "0.1.0",
-  "sdkVersion": 13,
+  "sdkVersion": 16,
   "symbol": "internaldrive",
   "minimumMacOS": "27.0",
   "order": 0,

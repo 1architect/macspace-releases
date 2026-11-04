@@ -345,9 +345,10 @@ struct HomeView: View {
     /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
     @MainActor
     static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
+        let diskEnabled = handles.contains { $0.id == "com.macspace.disk-map" && $0.isEnabled }
         let handles = handles.filter { $0.id != "com.macspace.disk-map" }
         let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
-        var tiles = [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)]
+        var tiles: [DashboardTile] = diskEnabled ? [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)] : []
         let spare: [TileTint] = [.blue, .teal, .graphite]
         var next = 0
         let ordered = handles.filter { $0.id == large && $0.id != "com.macspace.disk-map" } + handles.filter { $0.id != large && $0.id != "com.macspace.disk-map" }

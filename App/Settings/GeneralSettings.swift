@@ -66,7 +66,7 @@ struct GeneralSettingsSection: View {
                 ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
             }
             Toggle(isOn: $movesFilesToTrash) {
-                InfoTitle(title: String(localized: "Move files to Trash"), info: String(localized: "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules."))
+                InfoTitle(title: String(localized: "Move files to Trash"), info: String(localized: "Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules."))
             }
             SettingsLinkRow(title: String(localized: "Permissions"), note: permissionsNote) { host.settingsPage = .permissions }
             PagePicker(selection: Binding(get: { closedWindow }, set: { closedWindow = $0; GeneralSettings.setClosedWindow($0) })) {

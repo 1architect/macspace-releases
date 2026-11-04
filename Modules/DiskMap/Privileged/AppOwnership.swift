@@ -71,6 +71,7 @@ public enum AppOwnership {
         for root in ["/Applications", home + "/Applications", "/System/Applications"] {
             guard let iterator = FileManager.default.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
             for case let url as URL in iterator {
+                if Task.isCancelled { return AppCatalog(owners: []) }
                 var st = stat()
                 guard lstat(url.path, &st) == 0, st.st_flags & UInt32(SF_DATALESS) == 0, st.st_mode & S_IFMT != S_IFLNK else { iterator.skipDescendants(); continue }
                 if url.pathExtension == "app" { paths.insert(url.path); iterator.skipDescendants() }
@@ -78,15 +79,16 @@ public enum AppOwnership {
         }
         paths.formUnion(candidates.filter { !$0.contains(".app/") && !$0.contains("/.Trash/") && !$0.contains("/.Trashes/") })
         // Public registration lookup by known bundle ID. There is no claim of a complete global registration inventory.
-        let seeds = paths.compactMap { path in autoreleasepool { AppOwner(path: path, knownIdentifiers: []) } }
+        let seeds = paths.compactMap { path in Task.isCancelled ? nil : autoreleasepool { AppOwner(path: path, knownIdentifiers: []) } }
         for id in Set(seeds.map(\.identifier)) {
+            if Task.isCancelled { return AppCatalog(owners: []) }
             let registeredPaths = autoreleasepool { NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id).map(\.path) }
             for path in registeredPaths {
                 if safeExisting(path) { paths.insert(path); registered.insert(path) }
             }
         }
         let prior = Dictionary(seeds.map { ($0.path, $0) }, uniquingKeysWith: { a, _ in a })
-        return AppCatalog(owners: paths.sorted().compactMap { path in autoreleasepool { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) } }, registeredPaths: registered)
+        return AppCatalog(owners: paths.sorted().compactMap { path in Task.isCancelled ? nil : autoreleasepool { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) } }, registeredPaths: registered)
     }
     public static func installed(home: String) -> [AppOwner] { discover(home: home).owners }
     public static func classification(_ owner: AppOwner, home: String, registered: Set<String> = [], candidates: [AppOwner] = []) -> (AppClassification, String) {

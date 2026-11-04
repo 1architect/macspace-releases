@@ -4,6 +4,13 @@ import Darwin
 import MacSpacePlatform
 import MacSpaceSdk
 
+private final class DiskScanCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+    func cancel() { lock.withLock { value = true } }
+    var isCancelled: Bool { lock.withLock { value } }
+}
+
 /// Only metadata and short transactions occupy this actor. Duplicate content reads run outside it.
 private actor DiskDatabaseWriter: DiskDuplicateStorage {
     private var database: DiskDatabase?
@@ -44,7 +51,7 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
         self.database = next; self.active = destination; retired.append(active)
         return destination
     }
-    func load(_ changes: DiskEvents.Changes, progress: LoadProgressRelay) throws -> URL {
+    func load(_ changes: DiskEvents.Changes, progress: LoadProgressRelay, cancellation: DiskScanCancellation) throws -> URL {
         guard let database else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
         let metadata = try database.state()
         if !database.compact || metadata.map({ $0.storageRevision != 4 }) == true {
@@ -57,12 +64,14 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
             let cursor = FSEventsGetCurrentEventId(), pendingChanges = changes, excluded = self.excluded
             let work: (DiskDatabase) throws -> Void = { next in
                 var scanner = DiskDatabaseScanner(db: next, excluded: excluded)
-                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0...1))
+                scanner.cancelled = { cancellation.isCancelled }
+                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0...0.65))
             }
             if try database.state() != nil, !changes.recursive.isEmpty || changes.shallow.count > 128 { _ = try generation(work) }
             else { try work(database) }
         }
         guard try self.database?.state() != nil else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
+        try self.database?.preparePersonalInventory(progress: progress.part(0.65...0.75), cancelled: { cancellation.isCancelled })
         return active ?? url
     }
     func retireReaders() {
@@ -89,6 +98,8 @@ actor DiskStore {
     private var reader: DiskDatabase?
     private var readerLocation: URL?
     private var published: DiskSnapshot?
+    private var folderViews: [String: DiskSnapshot] = [:]
+    private var folderUse: [String] = []
     private var watcher: DiskEvents?
     private var bootFlight: Task<Void, Never>?
     private var flight: Task<Void, Never>?
@@ -110,25 +121,118 @@ actor DiskStore {
         writer = DiskDatabaseWriter(url: destination, root: root, excluded: excluded, home: home)
         selections = DiskSelectionStorage(url: destination.appendingPathExtension("selection"), root: root, home: home)
     }
-    func invalidate() { explicitlyInvalidated = true }
-    func mark(_ paths: [String], recursive: Bool = false) { watcher?.mark(paths, recursive: recursive) }
+    private var scanCancellation = DiskScanCancellation()
+    private var active = true
+    func setActive(_ value: Bool) {
+        active = value
+        if value, reader != nil, watcher == nil { watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: excluded) }
+        if !value {
+            watcher = nil
+            scanCancellation.cancel(); duplicateFlight?.cancel(); flight?.cancel()
+            for reading in browseReadings.values where !reading.done { reading.task.cancel() }
+            browseReadings = browseReadings.filter { $0.value.done }
+        }
+    }
+    func invalidate() {
+        folderViews.removeAll(); folderUse.removeAll()
+        explicitlyInvalidated = true
+        for reading in browseReadings.values { reading.task.cancel() }
+        browseReadings.removeAll(); browseUse.removeAll()
+    }
+    private func invalidateBrowse(_ changes: DiskEvents.Changes) {
+        let affected = browseReadings.filter { _, reading in
+            let folder = reading.preview.request.folder
+            return changes.shallow.contains { DiskDatabase.contains($0, below: folder) }
+                || changes.recursive.contains { DiskDatabase.contains($0, below: folder) || DiskDatabase.contains(folder, below: $0) }
+        }.keys
+        for key in affected { browseReadings.removeValue(forKey: key)?.task.cancel(); browseUse.removeAll { $0 == key } }
+    }
+    func mark(_ paths: [String], recursive: Bool = false) {
+        folderViews.removeAll(); folderUse.removeAll()
+        watcher?.mark(paths, recursive: recursive)
+        invalidateBrowse(recursive ? .init(recursive: Set(paths)) : .init(shallow: Set(paths)))
+    }
     func statusView() -> DiskSnapshot? {
-        guard watcher?.hasChanges == false, !explicitlyInvalidated, flight == nil, !loadFailed else { return nil }
+        guard watcher?.hasChanges == false, !explicitlyInvalidated, flight == nil, !loadFailed, published?.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion else { return nil }
         return published
     }
     func navigation(folder: String? = nil) async -> DiskSnapshot {
+        await openCache()
         if published == nil { _ = await view() }
         if folder == nil, let published { return published }
-        return (try? autoreleasepool { try reader?.snapshot(folder: folder, inventory: folder == root) }) ?? published ?? failureSnapshot()
+        guard let folder else { return published ?? failureSnapshot() }
+        if let cached = folderViews[folder] { return cached }
+        let result = (try? autoreleasepool { try reader?.snapshot(folder: folder, inventory: folder == root) }) ?? published ?? failureSnapshot()
+        folderViews[folder] = result; folderUse.removeAll { $0 == folder }; folderUse.append(folder)
+        while folderUse.count > 12 { folderViews.removeValue(forKey: folderUse.removeFirst()) }
+        return result
     }
-    func browse(_ request: DiskBrowseRequest) async -> DiskBrowsePage? {
+    func folderFiles(_ folder: String, includeSmaller: Bool = false, focusPath: String? = nil) async -> DiskBrowsePage? {
+        await openCache()
         if published == nil { _ = await view() }
-        if request.kind == .duplicates { startDuplicates(folder: request.folder, scoped: request.folder != root) }
-        return try? autoreleasepool { request.kind == .duplicates ? try reader?.duplicatePage(request) : try reader?.browse(request) }
+        if DiskManagedLibrary.contains(folder, home: home) {
+            var request = DiskBrowseRequest(folder: folder, kind: .managed); request.inFolder = true; request.focusPath = focusPath
+            return await browse(request)
+        }
+        var request = DiskBrowseRequest(folder: folder, kind: .category, category: .largeFiles); request.inFolder = true; request.focusPath = focusPath
+        if !includeSmaller, let cached = try? reader?.browse(request), !cached.files.isEmpty { return cached }
+        request.includeSmaller = true
+        return await browse(request)
+    }
+    private struct BrowseReading {
+        var id: UUID
+        var task: Task<DiskBrowsePage?, Never>
+        var progress: LoadProgressRelay
+        var preview: DiskBrowsePage
+        var result: DiskBrowsePage?
+        var done = false
+    }
+    private var browseReadings: [String: BrowseReading] = [:]
+    private var browseUse: [String] = []
+    private func finishBrowse(_ key: String, id: UUID, result: DiskBrowsePage?) {
+        guard var reading = browseReadings[key], reading.id == id else { return }
+        var failed = reading.preview; failed.loadingFraction = nil
+        failed.unavailableReason = loc("Contents could not be read. Refresh to retry.")
+        reading.result = result ?? failed; reading.done = true; browseReadings[key] = reading
+    }
+    func browse(_ request: DiskBrowseRequest, progress: @escaping LoadProgressSink = { _ in }) async -> DiskBrowsePage? {
+        await openCache()
+        if published == nil { _ = await view() }
+        if request.kind == .duplicates { return try? reader?.duplicatePage(request) }
+        if reader?.canReview(request) == false { return DiskBrowsePage(request: request, files: [], ownership: [:]) }
+        guard request.usesMetadataInventory else { return try? reader?.browse(request, progress: progress) }
+        let key = request.pageID
+        if let reading = browseReadings[key] {
+            if reading.done { return reading.result }
+            reading.progress.attach(progress)
+            _ = await reading.task.value
+            return browseReadings[key]?.result
+        }
+        guard active, let sourceURL = readerLocation else { return nil }
+        let preview = DiskBrowsePage(request: request, files: [], ownership: [:])
+        let reports = LoadProgressRelay(), root = root, home = home, id = UUID()
+        reports.attach(progress)
+        let task = Task.detached(priority: .utility) { [weak self] () -> DiskBrowsePage? in
+            let result: DiskBrowsePage?
+            do {
+                try Task.checkCancellation()
+                let db = try DiskDatabase(url: sourceURL, root: root, home: home)
+                result = try db.browse(request, progress: reports.part(0...1))
+            } catch { result = nil }
+            await self?.finishBrowse(key, id: id, result: result)
+            return result
+        }
+        browseReadings[key] = .init(id: id, task: task, progress: reports, preview: preview)
+        browseUse.removeAll { $0 == key }; browseUse.append(key)
+        while browseUse.count > 4 {
+            let oldest = browseUse.removeFirst(); browseReadings.removeValue(forKey: oldest)?.task.cancel()
+        }
+        _ = await task.value
+        return browseReadings[key]?.result
     }
     func selection(_ request: SelectionBulkRequest) async throws -> SelectionBulk {
         if published == nil { _ = await view() }
-        if let flight { await flight.value }
+        if request.operation != "membership", let flight { await flight.value }
         guard let source = readerLocation else { throw DiskDatabase.Failure(message: "Disk inventory is unavailable.") }
         return try await selections.apply(request, sourceURL: source)
     }
@@ -137,31 +241,38 @@ actor DiskStore {
     func selectionSummary(token: String) async throws -> SelectionBulk { try await selections.summary(token: token) }
     func selectionFiles(token: String, after: String = "", limit: Int = 200) async throws -> [DiskFile] { try await selections.files(token: token, after: after, limit: limit) }
     func selectionContains(token: String, path: String) async throws -> Bool { try await selections.contains(token: token, path: path) }
+    func resolveSelection(_ files: [DiskFile], token: String) async throws -> [DiskFile] {
+        guard let source = readerLocation else { throw DiskDatabase.Failure(message: "Disk inventory is unavailable.") }
+        return try await selections.resolved(files, token: token, sourceURL: source)
+    }
+    func recordPreflight(_ files: [DiskFile], token: String) async throws { try await selections.recordPreflight(files, token: token) }
+    func executionFiles(_ files: [DiskFile], token: String) async throws -> [DiskFile] { try await selections.executionFiles(files, token: token) }
     func recordSelectionRemoved(token: String, paths: [String]) async throws { try await selections.recordRemoved(token: token, paths: paths) }
     func selectionAfterRemoving(token: String, paths: [String]) async throws -> SelectionBulk { try await selections.removing(token: token, paths: paths) }
-    private func startDuplicates(folder: String, scoped: Bool) {
-        guard flight == nil else { return }
+    private func verifyDuplicates(folder: String, scoped: Bool, progress: @escaping LoadProgressSink = { _ in }) async throws {
+        guard active else { throw CancellationError() }
         let revision = published?.index.revision
-        guard duplicateScope != folder || duplicateRevision != revision else { return }
-        let previous = duplicateFlight; previous?.cancel()
+        if duplicateScope == folder && duplicateRevision == revision {
+            if let duplicateFlight { _ = try await duplicateFlight.value }
+            return
+        }
+        let previous = duplicateFlight; previous?.cancel(); _ = try? await previous?.value
         duplicateScope = folder; duplicateRevision = revision
-        duplicateUnknown = nil; duplicateFailure = false
-        let writer = writer
-        duplicateFlight = Task {
-            _ = try? await previous?.value
-            try Task.checkCancellation()
-            do {
-                let report = try await DiskDuplicatePipeline.run(storage: writer, folder: folder, scoped: scoped, published: { [weak self] in await self?.publishDuplicates() })
-                duplicateUnknown = report.unknown
-                publishDuplicates()
-                return report
-            } catch {
-                if !(error is CancellationError) { duplicateFailure = true; duplicateScope = nil; publishDuplicates() }
-                throw error
-            }
+        let writer = writer, home = home
+        let task = Task { try await DiskDuplicatePipeline.run(storage: writer, folder: folder, scoped: scoped, progress: progress, eligible: { FileReviewPolicy.includes($0, home: home) }) }
+        duplicateFlight = task
+        do {
+            let report = try await task.value
+            duplicateUnknown = report.unknown; duplicateFailure = false
+            publishDuplicates()
+        } catch {
+            duplicateScope = nil
+            if !(error is CancellationError) { duplicateFailure = true; publishDuplicates() }
+            throw error
         }
     }
     private func publishDuplicates() {
+        folderViews.removeAll(); folderUse.removeAll()
         if flight == nil, let reader, let snapshot = try? reader.snapshot() {
             var index = snapshot.index
             index.duplicateUnknown = duplicateUnknown; index.duplicateFailure = duplicateFailure
@@ -191,6 +302,11 @@ actor DiskStore {
         return published?.index ?? failureSnapshot().index
     }
     private func failureSnapshot() -> DiskSnapshot { var index = DiskIndex(root: root); index.loadError = true; return DiskSnapshot(index) }
+    private func openCache() async {
+        guard active, reader == nil else { return }
+        if let bootFlight { await bootFlight.value }
+        else { let task = Task { await boot() }; bootFlight = task; await task.value; bootFlight = nil }
+    }
     private func boot() async {
         do {
             let metadata = try await writer.boot(), location = await writer.location()
@@ -200,27 +316,28 @@ actor DiskStore {
         } catch { loadFailed = true; published = failureSnapshot() }
     }
     func view(progress: LoadProgressSink? = nil) async -> DiskSnapshot {
-        if reader == nil {
-            if let bootFlight { await bootFlight.value }
-            else { let task = Task { await boot() }; bootFlight = task; await task.value; bootFlight = nil }
-        }
+        guard active else { return published ?? failureSnapshot() }
+        await openCache()
         if let flight {
             if let progress { relay?.attach(progress) }
-            if let published { return published }
             await flight.value; return published ?? failureSnapshot()
         }
-        if let published, published.index.storageRevision == 4, !explicitlyInvalidated, !loadFailed, watcher?.hasChanges == false {
-            progress?(1); startDuplicates(folder: root, scoped: false); return published
+        if let published, published.index.storageRevision == 4, published.index.personalInventoryVersion == DiskIndex.personalInventorySchemaVersion, !explicitlyInvalidated, !loadFailed, watcher?.hasChanges == false {
+            if duplicateScope == nil || duplicateRevision != published.index.revision {
+                try? await verifyDuplicates(folder: root, scoped: false, progress: progress ?? { _ in })
+            }
+            progress?(1); return self.published ?? published
         }
+        guard active else { return published ?? failureSnapshot() }
         let reports = LoadProgressRelay(); if let progress { reports.attach(progress) }; relay = reports
+        scanCancellation = DiskScanCancellation()
         let task = Task {
             await reconcile(reports: reports)
             flight = nil; relay = nil
-            if !loadFailed { startDuplicates(folder: root, scoped: false) }
+
         }
         flight = task
-        // A completed cached projection is available immediately, while changed branches reconcile in the background.
-        if let published { progress?(1); return published }
+        // The host retains its completed content while this request reports reconciliation progress.
         await task.value
         return published ?? failureSnapshot()
     }
@@ -233,15 +350,24 @@ actor DiskStore {
             watcher?.flush()
             changes = watcher?.drain() ?? .init()
             if explicitlyInvalidated { changes.shallow.insert(root); explicitlyInvalidated = false }
-            let destination = try await writer.load(changes, progress: reports)
+            let destination = try await writer.load(changes, progress: reports, cancellation: scanCancellation)
+            invalidateBrowse(changes)
+            folderViews.removeAll(); folderUse.removeAll()
             if readerLocation != destination {
                 reader = try DiskDatabase(url: destination, root: root, home: home); readerLocation = destination
                 await writer.retireReaders()
             }
             if let snapshot = try reader?.snapshot() { published = snapshot }
-            loadFailed = false; reports.report(1)
+            loadFailed = false
+            try await verifyDuplicates(folder: root, scoped: false, progress: reports.part(0.75...1))
+            if let snapshot = try reader?.snapshot() {
+                var index = snapshot.index; index.duplicateUnknown = duplicateUnknown; index.duplicateFailure = duplicateFailure
+                published = DiskSnapshot(index)
+            }
+            reports.report(1)
         } catch {
             watcher?.mark(Array(changes.shallow)); watcher?.mark(Array(changes.recursive), recursive: true)
+            if error is CancellationError { return }
             loadFailed = true
             var index = published?.index ?? DiskIndex(root: root); index.loadError = true; published = DiskSnapshot(index)
         }

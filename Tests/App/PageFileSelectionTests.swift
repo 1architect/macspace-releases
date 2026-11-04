@@ -71,7 +71,7 @@ private struct SessionSelectionModule: MacSpaceModule {
         inventory.reviewed["two"] = "second"
         if id == "second-folder" { inventory.choices = ["two": 200] }
         if id == "smaller" { inventory.choices["small"] = 1; inventory.reviewed["small"] = "small" }
-        let rows = id == "category" ? [Row(id: "expand", title: "Show smaller files", pageID: "small-files", replacesPage: true)] : [Row(id: "small-file", title: "Small")]
+        let rows = id == "category" ? [Row(id: "expand", title: "Show all files", pageID: "small-files")] : [Row(id: "small-file", title: "Small")]
         return Screen(title: "Files", widgets: [.list(ListWidget(id: "files", title: "Files", rows: rows))], selection: inventory)
     }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -209,7 +209,7 @@ final class PageFileSelectionTests: XCTestCase {
         let root = try XCTUnwrap(handle.activeSelection)
         handle.toggle("file:0", in: root)
         handle.pushGroup("more")
-        for _ in 0..<100 where handle.groupPath.isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        for _ in 0..<100 where handle.pages["more"]?.selection == nil { try await Task.sleep(for: .milliseconds(5)) }
         let more = try XCTUnwrap(handle.activeSelection)
         XCTAssertEqual(handle.checked(more), ["file:0"])
         handle.toggle("file:1", in: more)
@@ -241,17 +241,15 @@ final class PageFileSelectionTests: XCTestCase {
         return handle
     }
 
-    func testSmallerFileExpansionReplacesCurrentCategoryWithoutAnotherBreadcrumb() async throws {
+    func testShowAllFilesPushesThroughDefaultNavigation() async throws {
         let handle = try await sessionHandle(); defer { handle.deactivate() }
         handle.requestPage("category")
         for _ in 0..<100 where handle.groupPath.isEmpty { await Task.yield() }
         XCTAssertEqual(handle.groupPath, ["category"])
         handle.pushGroup("expand")
-        for _ in 0..<100 where handle.pages["category"]?.widgets.first.map({ widget in
-            if case let .list(list) = widget { return list.rows.first?.id == "expand" }; return false
-        }) == true { await Task.yield() }
-        XCTAssertEqual(handle.groupPath, ["category"])
-        guard case let .list(list)? = handle.pages["category"]?.widgets.first else { return XCTFail() }
+        for _ in 0..<100 where handle.pages["expand"]?.selection == nil { await Task.yield() }
+        XCTAssertEqual(handle.groupPath, ["category", "expand"], "Show all files uses a normal push and a new breadcrumb level")
+        guard case let .list(list)? = handle.pages["expand"]?.widgets.first else { return XCTFail() }
         XCTAssertEqual(list.rows.first?.id, "small-file")
         XCTAssertFalse(handle.checked(try XCTUnwrap(handle.activeSelection)).contains("small"))
     }
@@ -330,6 +328,24 @@ final class PageFileSelectionTests: XCTestCase {
         for _ in 0..<100 where handle.lastResult == nil { await Task.yield() }
         XCTAssertEqual(handle.lastResult?.outcome, .failed)
         XCTAssertEqual(handle.checked(try XCTUnwrap(handle.pageSelection(page, id: "folder"))), ["one"])
+    }
+
+    func testQuietRefreshDoesNotCancelCheckboxEditsOrHideFreshChoices() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first), snapshots = BulkSelectionSnapshots()
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BulkSelectionModule(snapshots: snapshots) })
+        await handle.activate(); defer { handle.deactivate() }
+        handle.toggle("one", in: try XCTUnwrap(handle.activeSelection))
+        await handle.refresh(quiet: true)
+        for _ in 0..<100 where handle.activeSelection?.selection?.bulk == nil { await Task.yield() }
+        let group = try XCTUnwrap(handle.activeSelection)
+        XCTAssertEqual(handle.checked(group), ["one"])
+        XCTAssertEqual(handle.choosableIDs(group), ["one", "two"])
+        var expanded = try XCTUnwrap(handle.screen); expanded.selection?.choices["small"] = 1
+        let current = try XCTUnwrap(handle.pageSelection(expanded, id: "expanded"))
+        XCTAssertTrue(handle.choosableIDs(current).contains("small"), "A fresh eligible checkbox never waits for a later membership task")
+        XCTAssertFalse(handle.checked(current).contains("small"))
     }
 
     func testBulkSelectionUsesBoundedMembershipAndFrozenTokenForMoreThanTenThousandFiles() async throws {

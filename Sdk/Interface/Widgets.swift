@@ -281,10 +281,13 @@ public struct Screen: Codable, Equatable, Sendable {
     public var widgets: [ScreenWidget]
     /// Page-wide choices use the same checkbox, confirmation and bottom Free action as a cache group.
     public var selection: Selection?
+    /// Optional ongoing metadata work; existing content remains interactive.
+    public var loadingFraction: Double?
 
     public init(title: String, subtitle: String? = nil, hero: UsageBar? = nil, primary: Action? = nil,
-                layout: ModuleLayout = .adaptive, widgets: [ScreenWidget], selection: Selection? = nil) {
+                layout: ModuleLayout = .adaptive, widgets: [ScreenWidget], selection: Selection? = nil, loadingFraction: Double? = nil) {
         self.selection = selection
+        self.loadingFraction = loadingFraction
         self.layout = layout
         self.title = title
         self.subtitle = subtitle
@@ -393,7 +396,10 @@ public struct UsageSegment: Codable, Equatable, Sendable, Identifiable {
 
     /// The page its block opens: a group of its items, named and sized as the block. nil when it has none.
     public var group: Row? {
-        if let pageID { return Row(id: pageID, title: label, pageID: pageID) }
+        if let pageID {
+            if let folder = items.first, kind == .folder, folder.pageID == pageID { return folder }
+            return Row(id: pageID, title: label, pageID: pageID)
+        }
         guard !items.isEmpty else { return nil }
         var group = Row.group(id: "segment:\(id)", title: label, totalBytes: bytes, rows: items)
         group.selection = selection
@@ -581,6 +587,17 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
+public struct SelectionIssue: Codable, Equatable, Sendable {
+    public var id: String
+    public var title: String
+    public var path: String
+    public var bytes: UInt64
+    public var reason: String
+    public init(id: String, title: String, path: String, bytes: UInt64, reason: String) {
+        self.id = id; self.title = title; self.path = path; self.bytes = bytes; self.reason = reason
+    }
+}
+
 /// A frozen disk-backed selection. Membership is supplied only for the requested visible rows.
 public struct SelectionBulk: Codable, Equatable, Sendable {
     public var token: String
@@ -589,8 +606,12 @@ public struct SelectionBulk: Codable, Equatable, Sendable {
     public var checked: [String]
     /// Fully selected scope page IDs among those requested by the host.
     public var all: [String]
-    public init(token: String, count: UInt64, bytes: UInt64, checked: [String], all: [String] = []) {
-        self.token = token; self.count = count; self.bytes = bytes; self.checked = checked; self.all = all
+    public var unavailableReason: String?
+    public var partialScopes: [String]?
+    public var issues: [SelectionIssue]?
+    public init(token: String, count: UInt64, bytes: UInt64, checked: [String], all: [String] = [], unavailableReason: String? = nil, partialScopes: [String]? = nil, issues: [SelectionIssue]? = nil) {
+        self.partialScopes = partialScopes; self.issues = issues
+        self.token = token; self.count = count; self.bytes = bytes; self.checked = checked; self.all = all; self.unavailableReason = unavailableReason
     }
 }
 
@@ -738,6 +759,8 @@ public struct SelectionSection: Codable, Equatable, Sendable, Identifiable {
 public struct ListWidget: Codable, Equatable, Sendable {
     public var id: String
     public var title: String?
+    public var subtitle: String?
+    public var trailing: String?
     public var emptyMessage: String?
     /// Actual folder locations, revealed by the list heading.
     public var paths: [String]
@@ -745,20 +768,23 @@ public struct ListWidget: Codable, Equatable, Sendable {
     public var fillsRemainingSpace: Bool?
     public var rows: [Row]
 
-    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = []) {
+    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = [], subtitle: String? = nil, trailing: String? = nil) {
         self.id = id
         self.title = title
         self.emptyMessage = emptyMessage
+        self.subtitle = subtitle; self.trailing = trailing
         self.paths = paths
         self.fillsRemainingSpace = fillsRemainingSpace ? true : nil
         self.rows = rows
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, emptyMessage, paths, fillsRemainingSpace, rows }
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, emptyMessage, paths, fillsRemainingSpace, rows }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         title = try container.decodeIfPresent(String.self, forKey: .title)
+        subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
+        trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
         emptyMessage = try container.decodeIfPresent(String.self, forKey: .emptyMessage)
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
         fillsRemainingSpace = try container.decodeIfPresent(Bool.self, forKey: .fillsRemainingSpace)

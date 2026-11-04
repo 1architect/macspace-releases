@@ -1,9 +1,9 @@
 # Disk — updated presentation and correctness fix plan
 
-Status: proposed, awaiting approval before app changes.
+Status: implementation authorized by the user on 2026-11-03; implemented; code-level verification passed. App/UI verification remains with the user.
 Date: 2026-11-03.
 
-This plan incorporates the latest screenshot feedback and supersedes conflicting presentation decisions in earlier plans. Creating this document does not authorize implementation. App and visual verification remains with the user.
+This plan incorporates the latest screenshot feedback and supersedes conflicting presentation decisions in earlier plans. The user’s implementation request authorizes these changes. App and visual verification remains with the user.
 
 ## 1. Objectives
 
@@ -285,3 +285,13 @@ Translate recognized folder names, including Documents, Desktop, Pictures, Movie
 - Complete category/type selection spans pagination with bounded memory and exact confirmation count/size.
 - Safety and failure recovery remain enforced for every entry point.
 - No manual app/UI checks are run by the agent unless the user explicitly requests them.
+
+## Implementation record
+
+The implementation follows this revision and the accompanying selection, idle CPU, app-readiness and progress reports. SDK 14 carries page progress, foreground suspension and explicit selection issues. The current contract is documented in `Docs/Module-Layout.md`; code-level verification and limitations are recorded in `Docs/Disk-Final-Security-Review.md`. App/UI verification remains with the user.
+
+## Latest user-directed corrections (2026-11-03)
+
+The user subsequently changed duplicate-header behavior: Select All must automatically choose removable copies while preserving a verified survivor (one selected file for a two-copy set). This supersedes section 5's earlier requirement that header Select All select every copy and report a conflict. Manual/cross-category all-copy conflicts still fail closed.
+
+The approved follow-up also removes loading on cached page transitions, routes Installers directly to its indexed all-size inventory, moves subcategory headings outside file lists, includes descendant files in folder scope even when direct metadata files exist, and provides read-only photo-library inspection. These changes, the requested independent duplicate review and verification are recorded in the module contract/security review.

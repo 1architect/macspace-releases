@@ -6,6 +6,7 @@
 "%@ in total" = "총 %@";
 "%@ left." = "%@ 남음.";
 "%@ left. MacSpace can free %@." = "%@ 남음. MacSpace로 %@ 확보 가능.";
+"%@ removed" = "%@ 삭제됨";
 "%@ update" = "%@ 업데이트";
 "%@ used" = "%@ 사용 중";
 "%lld files" = "파일 %lld개";
@@ -27,6 +28,7 @@
 "Applies the Debloat policies you turn on." = "활성화한 Debloat 정책을 적용합니다.";
 "Approve in Settings" = "설정에서 승인";
 "Approve the helper" = "보조 프로그램 승인";
+"Apps and files" = "앱 및 파일";
 "Automatic" = "자동";
 "Automatic cleanup" = "자동 정리";
 "Automatic cleanup: %@" = "자동 정리: %@";
@@ -112,7 +114,7 @@
 "Nothing to free" = "확보할 공간 없음";
 "Notifications" = "알림";
 "OK" = "확인";
-"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "기본값은 꺼짐입니다. 꺼져 있으면 디스크에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 별도 규칙을 따릅니다。";
+"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "기본적으로 꺼져 있습니다. 꺼져 있으면 앱 및 파일에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 각자의 제거 규칙을 따릅니다.";
 "Open Login Items" = "로그인 항목 열기";
 "Open MacSpace" = "MacSpace 열기";
 "Open Panel" = "패널 열기";
@@ -139,6 +141,7 @@
 "Restore" = "복원";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpace가 변경한 설정을 복원하고 앱을 휴지통으로 옮깁니다. 기록은 유지됩니다. 삭제한 파일은 복원할 수 없습니다.";
 "Restoring settings" = "설정 복원 중";
+"Selected files need review" = "선택한 파일을 검토해야 합니다";
 "Settings" = "설정";
 "Settings › Permissions" = "설정 › 권한";
 "Settings › Recent cleanups" = "설정 › 최근 정리";

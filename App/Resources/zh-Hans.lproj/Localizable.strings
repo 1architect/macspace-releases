@@ -6,6 +6,7 @@
 "%@ in total" = "共 %@";
 "%@ left." = "剩余 %@。";
 "%@ left. MacSpace can free %@." = "剩余 %@。MacSpace 可释放 %@。";
+"%@ removed" = "已移除 %@";
 "%@ update" = "%@ 更新";
 "%@ used" = "已用 %@";
 "%lld files" = "%lld 个文件";
@@ -27,6 +28,7 @@
 "Applies the Debloat policies you turn on." = "应用你启用的 Debloat 策略。";
 "Approve in Settings" = "在设置中批准";
 "Approve the helper" = "批准辅助程序";
+"Apps and files" = "应用与文件";
 "Automatic" = "自动";
 "Automatic cleanup" = "自动清理";
 "Automatic cleanup: %@" = "自动清理：%@";
@@ -112,7 +114,7 @@
 "Nothing to free" = "没有可释放的内容";
 "Notifications" = "通知";
 "OK" = "好";
-"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "默认关闭。关闭时，磁盘中选定的文件会被永久删除。应用卸载和缓存清理采用各自的规则。";
+"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "默认关闭。关闭时，“应用与文件”中选定的文件将被永久删除。应用卸载和缓存清理遵循各自的规则。";
 "Open Login Items" = "打开登录项";
 "Open MacSpace" = "打开 MacSpace";
 "Open Panel" = "打开面板";
@@ -139,6 +141,7 @@
 "Restore" = "还原";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。";
 "Restoring settings" = "正在还原设置";
+"Selected files need review" = "所选文件需要检查";
 "Settings" = "设置";
 "Settings › Permissions" = "设置 › 权限";
 "Settings › Recent cleanups" = "设置 › 最近清理";

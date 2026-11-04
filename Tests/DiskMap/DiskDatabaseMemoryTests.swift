@@ -45,7 +45,7 @@ final class DiskDatabaseMemoryTests: XCTestCase {
         let indexed = Date().timeIntervalSince(started)
         var persisted: UInt64 = 0
         try db.query("SELECT COUNT(*) FROM entries") { persisted = DiskDatabase.number($0, 0) }
-        XCTAssertEqual(persisted, 0, "100,000 ordinary small files must not create persistent detail rows")
+        XCTAssertEqual(persisted, 100_000, "Reviewable personal metadata stays on disk so Show all does not rescan; Swift projections stay bounded")
         XCTAssertEqual(try db.categorySummaries().reduce(0) { $0 + $1.count }, 0)
         XCTAssertEqual(try db.directory("/fixture/Downloads")?.bytes, 409_600_000)
         let navigation = Date()

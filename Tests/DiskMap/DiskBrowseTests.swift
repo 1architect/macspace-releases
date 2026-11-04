@@ -51,7 +51,7 @@ final class DiskBrowseTests: XCTestCase {
             XCTAssertFalse(all.contains { $0.path.contains("/AB/") })
             var stored: UInt64 = 0
             try db.query("SELECT COUNT(*) FROM entries") { stored = DiskDatabase.number($0, 0) }
-            XCTAssertEqual(stored, 452, "Showing small files does not persist their detail rows")
+            XCTAssertEqual(stored, 453, "The scan retains approved personal-file metadata so all-size pages do not re-enumerate folders")
         }
     }
     func testFolderHeaderSelectsExactParentAndOriginalReviewedIdentityRejectsReplacement() throws {
@@ -92,17 +92,17 @@ final class DiskBrowseTests: XCTestCase {
             for n in 0..<220 { try write(root.path + "/file-\(n).txt") }
             var scanner = DiskDatabaseScanner(db: db, excluded: [])
             try scanner.scan(.init(), cursor: 1, progress: nil)
-            var request = DiskBrowseRequest(folder: root.path, kind: .category, category: .other); request.includeSmaller = true
+            var request = DiskBrowseRequest(folder: root.path, kind: .category, category: .documents); request.includeSmaller = true
             let first = try XCTUnwrap(db.browse(request)), cached = db.smallerAt
             XCTAssertEqual(first.files.count, 200)
             _ = try db.browse(try XCTUnwrap(first.next)); XCTAssertEqual(db.smallerAt, cached)
             db.smallerIncomplete = true
             XCTAssertEqual(try collect(request, db: db).count, 220, "Full selection streaming is independent of browse-cache status")
             var rows: UInt64 = 1; try db.query("SELECT COUNT(*) FROM entries") { rows = DiskDatabase.number($0, 0) }
-            XCTAssertEqual(rows, 0)
+            XCTAssertEqual(rows, 220)
         }
     }
-    func testSmallerBrowseRebuildsBoundedWindowsWithoutTruncatingTheCategory() throws {
+    func testAllSizeBrowseUsesBoundedDatabasePagesWithoutRescanning() throws {
         try fixture { root, db in
             for n in 0..<451 { try write(root.path + String(format: "/%04d.zip", n)) }
             var scanner = DiskDatabaseScanner(db: db, excluded: [])
@@ -115,8 +115,8 @@ final class DiskBrowseTests: XCTestCase {
                 XCTAssertNil(page.unavailableReason)
                 for file in page.files { XCTAssertTrue(paths.insert(file.path).inserted) }
                 var cached: UInt64 = 0
-                try db.query("SELECT COUNT(*) FROM smaller") { cached = DiskDatabase.number($0, 0) }
-                XCTAssertLessThanOrEqual(cached, 256)
+                try db.query("SELECT 1 FROM sqlite_temp_master WHERE name='smaller'") { cached = DiskDatabase.number($0, 0) }
+                XCTAssertEqual(cached, 0, "Ordinary all-size browsing must not start a metadata cache/walk")
                 cursor = page.next
             }
             XCTAssertEqual(paths.count, 451)
@@ -130,7 +130,7 @@ final class DiskBrowseTests: XCTestCase {
                 try db.put(DiskFile(path: root.path + "/" + name, bytes: 4096, logicalBytes: 100_000_000, ownerUID: getuid()))
             }
             let files = try XCTUnwrap(db.browse(.init(folder: root.path, kind: .category, category: .largeFiles))).files
-            XCTAssertEqual(files.map { DiskCategory.inventoryCategory($0.path) }, [.archives, .installers, .media, .other])
+            XCTAssertEqual(Set(files.map { DiskCategory.inventoryCategory($0.path) }), Set([.archives, .installers, .media, .other]))
             XCTAssertEqual(try db.categorySummaries().map(\.category), DiskCategory.inventoryCategories)
         }
     }

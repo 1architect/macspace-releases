@@ -26,29 +26,23 @@ actor DiskInventory {
     private struct Reading { var id: UInt64; var revision: UInt64; var task: Task<DiskApplications, Never> }
     private var flight: Reading?
     private var generation: UInt64 = 0
-    private var background: Task<Void, Never>?
-    func browsing(_ index: DiskIndex, ready: @escaping @Sendable (DiskApplications) async -> Void) -> DiskApplications {
-        let needsRead = revision != index.revision || apps.map { Date().timeIntervalSince($0.catalogReadAt) >= DiskApplications.metadataRefreshInterval } != false
-        if needsRead && background == nil {
-            background = Task {
-                let result = await read(index)
-                await ready(result)
-                background = nil
-            }
-        }
-        return apps ?? DiskApplications()
+    func browsing(_ index: DiskIndex, ready: @escaping @Sendable (DiskApplications) async -> Void) async -> DiskApplications {
+        let result = await read(index)
+        if active { await ready(result) }
+        return result
     }
+    private var active = true
+    func setActive(_ value: Bool) { active = value; if !value { flight?.task.cancel(); flight = nil } }
+    func invalidate() { revision = nil; apps?.catalogRevision = nil }
     func passive() -> DiskApplications { apps ?? DiskApplications() }
-    func navigation(_ index: DiskIndex) async -> DiskApplications {
-        if let apps { return apps }
-        return await read(index)
-    }
+    func navigation(_ index: DiskIndex) async -> DiskApplications { await read(index) }
     func read(_ index: DiskIndex, force: Bool = false) async -> DiskApplications {
+        guard active else { return apps ?? DiskApplications() }
         if force, let pending = flight {
             let result = await pending.task.value
             if flight?.id == pending.id { apps = result; revision = pending.revision; flight = nil }
         }
-        if !force, revision == index.revision, let apps, Date().timeIntervalSince(apps.catalogReadAt) < DiskApplications.metadataRefreshInterval { return apps }
+        if !force, revision == index.revision, let apps { return apps }
         let pending: Reading
         if let flight { pending = flight }
         else {
@@ -59,6 +53,7 @@ actor DiskInventory {
             flight = pending
         }
         let result = await pending.task.value
+        guard active, !pending.task.isCancelled else { return apps ?? result }
         if flight?.id == pending.id {
             apps = result; revision = pending.revision; flight = nil
         }
@@ -67,63 +62,91 @@ actor DiskInventory {
     }
 }
 public struct DiskMapModule: MacSpaceModule {
-    private let store = DiskStore()
-    private let inventory = DiskInventory()
-    public init() {}
+    private let store: DiskStore
+    private let inventory: DiskInventory
+    public init() { store = DiskStore(); inventory = DiskInventory() }
+    init(store: DiskStore, inventory: DiskInventory = DiskInventory()) { self.store = store; self.inventory = inventory }
     private func browsing(_ index: DiskIndex) async -> DiskApplications {
-        await inventory.browsing(index) { [store] apps in await store.recordOwnership(apps) }
+        let apps = await inventory.browsing(index) { [store] apps in await store.recordOwnership(apps) }
+        return apps.remeasured(await store.navigation().index)
     }
-    public func invalidate() async { await store.invalidate() }
+    public func setActive(_ active: Bool) async { await store.setActive(active); await inventory.setActive(active) }
+    public func invalidate() async { await inventory.invalidate(); await store.invalidate() }
     public func invalidate(pageID: String?, context: ModuleContext) async {
-        if let id = pageID, let request = DiskBrowseRequest(id: id) {
+        if let id = pageID, let request = DiskBrowseRequest(id: id.hasPrefix("focus:") ? String(id.dropFirst(6)) : id) {
             await store.mark([request.folder], recursive: true)
         } else if let id = pageID, id.hasPrefix("folder:") {
             await store.mark([String(id.dropFirst(7))], recursive: true)
-        } else { await store.invalidate() }
+        } else { await invalidate() }
     }
     public func tile(context: ModuleContext) async -> Tile {
         let snapshot = await store.view(); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
     }
     public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
-        let snapshot = await store.view(progress: progress); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
+        let snapshot = await store.view(progress: { progress(0.85 * $0) }); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
     }
     public func screen(context: ModuleContext) async -> Screen {
         let snapshot = await store.view()
         let apps = await browsing(snapshot.index)
-        return DiskMapScreenBuilder.screen(snapshot.index, apps: apps, files: snapshot.files)
+        let completed = await store.navigation()
+        return DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
     }
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        let snapshot = await store.view(progress: progress)
+        let snapshot = await store.view(progress: { progress(0.85 * $0) })
+        progress(0.85)
         let apps = await browsing(snapshot.index)
-        return DiskMapScreenBuilder.screen(snapshot.index, apps: apps, files: snapshot.files)
+        progress(1)
+        let completed = await store.navigation()
+        return DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
     }
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
         guard let snapshot = await store.statusView() else { return nil }
         let apps = await inventory.passive()
+        guard apps.catalogReadAt != .distantPast else { return nil }
         return (DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files),
                 DiskMapScreenBuilder.screen(snapshot.index, apps: apps, files: snapshot.files))
     }
-    public func page(id: String, context: ModuleContext) async -> Screen? {
+    public func page(id: String, context: ModuleContext) async -> Screen? { await page(id: id, context: context, progress: { _ in }) }
+    public func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
         if let request = SelectionBulkRequest(pageID: id) {
-            guard let bulk = try? await store.selection(request) else { return nil }
+            let bulk: SelectionBulk
+            do { bulk = try await store.selection(request) }
+            catch {
+                var selection = DiskMapScreenBuilder.fileSelection([])
+                if let token = request.token { selection.bulk = try? await store.selectionSummary(token: token) }
+                if selection.bulk == nil { selection.bulk = .init(token: "", count: 0, bytes: 0, checked: []) }
+                selection.bulk?.unavailableReason = error.localizedDescription
+                return Screen(title: loc("Files"), widgets: [], selection: selection)
+            }
             var selection = DiskMapScreenBuilder.fileSelection([])
             selection.bulk = bulk
             return Screen(title: loc("Files"), widgets: [], selection: selection)
         }
+        if id.hasPrefix("focus:"), let request = DiskBrowseRequest(id: String(id.dropFirst(6))) {
+            let snapshot = await store.navigation(folder: request.folder)
+            guard snapshot.index.contains(request.folder, below: snapshot.index.root), snapshot.index.directories[request.folder] != nil else { return nil }
+            let direct = await store.folderFiles(request.folder, includeSmaller: request.focusPath == nil || request.includeSmaller, focusPath: request.focusPath)
+            let apps = await inventory.passive()
+            var screen = DiskMapScreenBuilder.screen(snapshot.index, apps: apps, folder: request.folder, files: snapshot.files, direct: direct)
+            if request.folder == snapshot.index.root, let direct { screen.widgets += DiskMapScreenBuilder.browsePage(direct).widgets }
+            return screen
+        }
         if let request = DiskBrowseRequest(id: id) {
             let snapshot = await store.navigation()
             guard snapshot.index.contains(request.folder, below: snapshot.index.root) else { return nil }
-            if request.category == .largeFiles, request.largeType == nil {
+            guard let files = await store.browse(request, progress: progress) else { return nil }
+            if request.inFolder {
                 let folder = await store.navigation(folder: request.folder)
-                return DiskMapScreenBuilder.screen(folder.index, apps: await browsing(folder.index), folder: request.folder, files: folder.files)
+                return DiskMapScreenBuilder.screen(folder.index, apps: await inventory.passive(), folder: request.folder, files: folder.files, direct: files)
             }
-            return await store.browse(request).map(DiskMapScreenBuilder.browsePage)
+            return DiskMapScreenBuilder.browsePage(files)
         }
         if id.hasPrefix("folder:") || id.hasPrefix("large:") {
             let path = String(id.dropFirst(id.hasPrefix("folder:") ? 7 : 6))
             let snapshot = await store.navigation(folder: path)
             guard snapshot.index.contains(path, below: snapshot.index.root), snapshot.index.directories[path] != nil else { return nil }
-            return DiskMapScreenBuilder.screen(snapshot.index, apps: await browsing(snapshot.index), folder: path, files: snapshot.files)
+            let files = await store.folderFiles(path)
+            return DiskMapScreenBuilder.screen(snapshot.index, apps: await inventory.passive(), folder: path, files: snapshot.files, direct: files)
         }
         let snapshot = await store.navigation(), index = snapshot.index
         if id == "apps" || id == "other-apps" || id.hasPrefix("apps:") || id.hasPrefix("other-apps:") {
@@ -149,11 +172,11 @@ public struct DiskMapModule: MacSpaceModule {
         let paths = Set(original.map(\.path))
         guard live.count == original.count, paths.count == original.count else { return nil }
         for file in original {
-            guard let now = live[file.path], DiskMapScreenBuilder.selectable(now), !file.retainedDuplicateKeeper,
+            guard let now = live[file.path], DiskMapScreenBuilder.selectable(now),
                   let identity = file.identity, now.identity == identity else { return nil }
             if let proof = file.duplicateVerification {
-                guard proof.path == file.path, proof.identity == identity, !paths.contains(proof.keeper) else { return nil }
-            } else if now.duplicateVerification != nil { return nil }
+                guard proof.path == file.path, proof.identity == identity else { return nil }
+            }
         }
         return original
     }
@@ -161,7 +184,7 @@ public struct DiskMapModule: MacSpaceModule {
     private func removeSelection(token: String, index: DiskIndex, moveToTrash: Bool,
                                  progress: @escaping ProgressSink) async -> (ActionResult, SelectionBulk?) {
         var remaining: SelectionBulk?
-        var removed: UInt64 = 0, failures: UInt64 = 0
+        var removed: UInt64 = 0, removedBytes: UInt64 = 0, failures: UInt64 = 0
         var details: [String] = []
         var pendingRemoved: [String] = []
         var result: ActionResult
@@ -181,18 +204,14 @@ public struct DiskMapModule: MacSpaceModule {
                       let original = Self.reviewedSelection(current, original: files) else {
                     throw DiskDatabase.Failure(message: loc("Files changed. Reopen the list and review your selection again."))
                 }
-                for proof in original.compactMap(\.duplicateVerification) {
-                    let keeperSelected = try await store.selectionContains(token: token, path: proof.keeper)
-                    guard !keeperSelected else {
-                        throw DiskDatabase.Failure(message: loc("The retained duplicate copy is selected. Review the files again."))
-                    }
-                }
+                let verified = try await store.resolveSelection(original, token: token)
                 guard try await Task.detached(priority: .utility, operation: {
                     guard original.allSatisfy({ DiskFileRemoval.canDelete($0.path) }),
                           OpenFileUse.inspect(Set(original.map(\.path))).isEmpty else { return false }
-                    for proof in original.compactMap(\.duplicateVerification) { if try !proof.verify() { return false } }
+                    for proof in verified.compactMap(\.duplicateVerification) { if try !proof.verify() { return false } }
                     return true
                 }).value else { throw DiskDatabase.Failure(message: loc("Selected files changed or are open. Review them again.")) }
+                try await store.recordPreflight(verified, token: token)
                 reviewed += UInt64(files.count); after = last.path
                 progress(.init(fraction: 0.5 * Double(reviewed) / Double(snapshot.count), message: loc("Reviewing selected files")))
             }
@@ -206,16 +225,17 @@ public struct DiskMapModule: MacSpaceModule {
                 let completed = DiskRemovalBatch(), offset = processed
                 let ids = Set(files.map { DiskFileRemoval.id($0.path) })
                 guard let current = await store.selectedFiles(ids, folder: index.root),
-                      let original = Self.reviewedSelection(current, original: files),
-                      let removal = DiskFileRemoval.execute(ids: ids, folder: index.root,
-                    index: index, files: original, confirmedMoveToTrash: moveToTrash, progress: { update in
+                      let original = Self.reviewedSelection(current, original: files) else { throw DiskDatabase.Failure(message: loc("Selected files changed or are unavailable. Review your selection again.")) }
+                let resolved = try await store.executionFiles(original, token: token)
+                guard let removal = DiskFileRemoval.execute(ids: ids, folder: index.root,
+                    index: index, files: resolved, confirmedMoveToTrash: moveToTrash, progress: { update in
                         completed.record(update.finished)
                         progress(.init(fraction: 0.5 + 0.5 * (Double(offset) + (update.fraction ?? 0) * Double(files.count)) / Double(snapshot.count),
                             message: update.message, finished: update.finished))
                     }) else { throw DiskDatabase.Failure(message: loc("This file cannot be deleted here.")) }
                 let finished = completed.ids
                 let paths = files.filter { finished.contains(DiskFileRemoval.id($0.path)) }.map(\.path)
-                removed += UInt64(paths.count); failures += UInt64(files.count - paths.count)
+                removed += UInt64(paths.count); removedBytes += removal.removedBytes; failures += UInt64(files.count - paths.count)
                 details += removal.failures.prefix(max(0, 20 - details.count))
                 await store.mark(removal.targets)
                 if !paths.isEmpty {
@@ -242,6 +262,7 @@ public struct DiskMapModule: MacSpaceModule {
                 result.details.append(error.localizedDescription)
             }
         }
+        result.removedBytes = removedBytes
         await store.unpinSelection(token: token)
         return (result, remaining)
     }
@@ -286,7 +307,7 @@ public struct DiskMapModule: MacSpaceModule {
             } catch { return .failed(loc("Couldn’t uninstall the app"), details: [error.localizedDescription]) }
         default: return .failed(loc("Unknown action"))
         }
-        if let before, let after = DataVolume.settledFreeBytes() { result.freedBytes = after > before ? after - before : 0 }
+        if let before, let after = DataVolume.freeBytes() { result.freedBytes = after > before ? after - before : 0 }
         let updated = await store.view()
         let apps = await inventory.read(updated.index)
         await store.recordOwnership(apps)

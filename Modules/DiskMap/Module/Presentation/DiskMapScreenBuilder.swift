@@ -9,67 +9,125 @@ enum DiskMapScreenBuilder {
     static func fileID(_ path: String) -> String { DiskFileRemoval.id(path) }
     static func folderID(_ path: String) -> String { "folder:" + path }
     static func tile(_ index: DiskIndex, files: [DiskFile]? = nil) -> Tile {
-        Tile(title: loc("disk"), figure: ByteFormat.string(index.directories[index.root]?.bytes ?? 0), status: loc("Explore disk"),
-             graphic: .blocks(segments(index, folder: index.root, files: files)), refreshAfter: 5)
+        Tile(title: loc("Apps and files"), figure: ByteFormat.string(index.directories[index.root]?.bytes ?? 0), status: loc("Explore disk"),
+             graphic: .blocks(segments(index, folder: index.root, files: files)))
     }
-    static func screen(_ index: DiskIndex, apps: DiskApplications, folder: String? = nil, files catalog: [DiskFile]? = nil) -> Screen {
+    static func screen(_ index: DiskIndex, apps: DiskApplications, folder: String? = nil, files catalog: [DiskFile]? = nil, direct: DiskBrowsePage? = nil) -> Screen {
         let folder = folder ?? index.root
         var widgets: [ScreenWidget] = []
+        let directContent = direct.map(browsePage)
         if folder == index.root || FileReviewPolicy.applicationsFolder(folder) {
             let appFolder = folder == index.root ? nil : folder
             let installed = applications(apps, folder: appFolder).filter { $0.classification == .installedUser }
-            var rows = [Row(id: "apps", title: loc("Uninstall apps"), subtitle: apps.catalogReadAt == .distantPast ? nil : loc("\(installed.count) items"), pageID: appsPageID(folder: appFolder))]
+            var rows = [Row(id: "apps", title: loc("Uninstall apps"), subtitle: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : loc("\(installed.count) items"), trailing: installed.allSatisfy(\.measurementComplete) && apps.catalogReadAt != .distantPast ? ByteFormat.string(installed.reduce(0) { $0 + $1.bytes + ($1.ownershipBytes[.verifiedExclusive] ?? 0) }) : nil, pageID: appsPageID(folder: appFolder))]
             rows.append(Row(id: "leftovers", title: loc("Unmatched app data"),
-                subtitle: apps.catalogReadAt == .distantPast ? nil : loc("\(apps.reviewableLeftovers.count) items"),
-                trailing: apps.catalogReadAt == .distantPast ? nil : ByteFormat.string(apps.reviewableLeftovers.reduce(0) { $0 + $1.bytes }),
+                subtitle: apps.measurementsComplete ? loc("\(apps.reviewableLeftovers.count) items") : loc("Measurements pending"),
+                trailing: apps.measurementsComplete || !apps.reviewableLeftovers.isEmpty ? ByteFormat.string(apps.reviewableLeftovers.reduce(0) { $0 + $1.bytes }) : nil,
                 badges: appFolder == nil ? [] : [Badge(loc("All locations"), .info)], detail: unmatchedExplanation, pageID: "app-data-review"))
+            if folder == index.root, let summary = index.categories?.first(where: { $0.category == .installers && $0.count > 0 }) {
+                rows.append(categoryRow(summary, folder: folder, smaller: true))
+            }
             widgets.append(.list(ListWidget(id: "apps-class", title: loc("Apps"), rows: rows)))
         }
         if folder == index.root {
             widgets.append(.list(ListWidget(id: "personal-folders", title: loc("Folders"), rows: (index.personalFolders ?? []).map {
-                Row(id: $0.path, title: ($0.path as NSString).lastPathComponent, trailing: ByteFormat.string($0.bytes),
+                Row(id: $0.path, title: folderName($0.path), subtitle: $0.itemCount.map { loc("\(Int(clamping: $0)) items") }, trailing: ByteFormat.string($0.bytes),
                     paths: [FileReviewPolicy.livePath($0.path)], pageID: folderID($0.path))
             })))
         }
         let categories = DiskCategory.inventoryCategories.compactMap { category -> Row? in
-            guard let summary = index.categories?.first(where: { $0.category == category }), summary.count > 0 else { return nil }
-            let request = DiskBrowseRequest(folder: folder, kind: .category, category: category)
-            return Row(id: request.pageID, title: category.title, subtitle: loc("\(Int(clamping: summary.count)) items"),
-                trailing: ByteFormat.string(summary.bytes), pageID: request.pageID)
+            guard !(folder == index.root && category == .installers), let summary = index.categories?.first(where: { $0.category == category }), summary.count > 0 else { return nil }
+            var row = categoryRow(summary, folder: folder, smaller: index.categoriesIncludeSmaller == true || category == .installers)
+            if index.categoryLoadingFraction != nil { row.subtitle = loc("Reading files…"); row.trailing = nil }
+            return row
         }
         let duplicates = DiskBrowseRequest(folder: folder, kind: .duplicates)
-        var duplicateBadges: [Badge] = []
-        if index.duplicateFailure == true {
-            duplicateBadges.append(Badge(loc("Verification incomplete"), .info, help: loc("Some files could not be verified. Refresh to retry.")))
-        } else if let unknown = index.duplicateUnknown, unknown > 0 {
-            duplicateBadges.append(Badge(loc("Some files not verified"), .info, help: loc("Only verified identical copies are offered for removal.")))
+        var summaries: [Row] = []
+        if let count = index.duplicateCount, count > 0 {
+            summaries.append(Row(id: duplicates.pageID, title: loc("Duplicate files"), subtitle: loc("\(Int(clamping: count)) items"),
+                trailing: index.duplicateBytes.map(ByteFormat.string), detail: loc("Choose the copies to remove. At least one verified copy must remain unselected."), pageID: duplicates.pageID))
         }
-        let duplicateCount = folder == index.root && (index.duplicateCount ?? 0) > 0 ? index.duplicateCount : nil
-        let duplicateRow = Row(id: duplicates.pageID, title: loc("Duplicate files"),
-            subtitle: duplicateCount.map { loc("\(Int(clamping: $0)) items") },
-            trailing: duplicateCount == nil ? nil : index.duplicateBytes.map(ByteFormat.string), badges: duplicateBadges,
-            detail: loc("Identical local personal files are grouped with one retained copy. No files are preselected."), pageID: duplicates.pageID)
-        widgets.append(.list(ListWidget(id: "large-files", title: loc("Large files and duplicates"), rows: [duplicateRow] + categories, paths: [FileReviewPolicy.livePath(folder)])))
+        let libraries = (index.directories[folder]?.folders ?? []).filter { DiskManagedLibrary.isLibraryName(($0 as NSString).lastPathComponent) }
+        if !libraries.isEmpty {
+            widgets.append(.list(ListWidget(id: "photo-libraries", title: loc("Photo libraries"), rows: libraries.map {
+                Row(id: folderID($0), title: ($0 as NSString).lastPathComponent, trailing: index.directories[$0].map { ByteFormat.string($0.bytes) },
+                    badges: [Badge(loc("Managed by Photos"), .info)], paths: [FileReviewPolicy.livePath($0)], pageID: folderID($0))
+            })))
+        }
+        if direct?.request.kind == .managed, let node = index.directories[folder], !node.folders.isEmpty {
+            widgets.append(.list(ListWidget(id: "managed-folders", title: loc("Folders"), rows: node.folders.map {
+                Row(id: folderID($0), title: folderName($0), trailing: index.directories[$0].map { ByteFormat.string($0.bytes) }, paths: [FileReviewPolicy.livePath($0)], pageID: folderID($0))
+            })))
+        }
+        if folder != index.root, let direct, !direct.files.isEmpty || direct.loadingFraction != nil || direct.unavailableReason != nil {
+            widgets += directContent?.widgets ?? []
+            if !summaries.isEmpty { widgets.append(.list(ListWidget(id: "duplicates", rows: summaries))) }
+        } else {
+            widgets.append(.list(ListWidget(id: "large-files", title: loc("Files"),
+                emptyMessage: summaries.isEmpty && categories.isEmpty ? (direct?.loadingFraction != nil || index.categoryLoadingFraction != nil ? loc("Reading files…") : emptyExplanation(index, folder: folder)) : nil,
+                rows: summaries + categories)))
+        }
         if index.loadError == true {
             widgets.append(.banner(Banner(id: "file-inventory-error", severity: .warning,
                 title: loc("Categories unavailable"), message: loc("Category preparation failed. The previous disk map is still available. Refresh to retry."))))
         }
         let node = index.directories[folder]
-        let title = folder == index.root ? loc("Disk") : (DiskApplications.livePath(folder) as NSString).lastPathComponent
+        let title = folder == index.root ? loc("Apps and files") : folderName(folder)
         return Screen(title: title, hero: UsageBar(id: folderID(folder), title: title, totalBytes: folder == index.root ? index.volumeUsed ?? node?.bytes : node?.bytes,
-             segments: segments(index, folder: folder, files: catalog), footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")), widgets: widgets, selection: fileSelection([]))
+             segments: segments(index, folder: folder, files: direct?.request.kind == .managed ? direct?.files : catalog), footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")), widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
+    }
+    static func categorySummaries(_ types: [DiskTypeSummary]) -> [DiskCategorySummary] {
+        var totals: [DiskCategory: DiskCategorySummary] = [:]
+        for type in types {
+            let key = type.key
+            let ext = key.hasPrefix("ext:") ? String(key.dropFirst(4)) : ["images": "png", "audio": "mp3", "video": "mp4", "text-documents": "docx", "spreadsheets": "xlsx", "presentations": "pptx"][key, default: "bin"]
+            let category = DiskCategory.inventoryCategory("file." + ext)
+            var total = totals[category] ?? .init(category: category, bytes: 0, count: 0)
+            total.bytes += type.bytes; total.count += type.count; totals[category] = total
+        }
+        return DiskCategory.inventoryCategories.compactMap { totals[$0] }
+    }
+    static func categoryRow(_ summary: DiskCategorySummary, folder: String, smaller: Bool) -> Row {
+        var request = DiskBrowseRequest(folder: folder, kind: .category, category: summary.category); request.includeSmaller = smaller
+        return Row(id: request.pageID, title: summary.category.title, subtitle: loc("\(Int(clamping: summary.count)) items"), trailing: ByteFormat.string(summary.bytes), pageID: request.pageID)
+    }
+    static func folderName(_ path: String) -> String {
+        let live = FileReviewPolicy.livePath(path), home = FileManager.default.homeDirectoryForCurrentUser.path
+        let known = FileReviewPolicy.personalFolders + ["Applications"]
+        let name = (live as NSString).lastPathComponent
+        guard known.contains(name), live == home + "/" + name || live == "/Applications" else { return name }
+        switch name {
+        case "Downloads": return loc("Downloads")
+        case "Documents": return loc("Documents")
+        case "Desktop": return loc("Desktop")
+        case "Pictures": return loc("Pictures")
+        case "Movies": return loc("Movies")
+        case "Music": return loc("Music")
+        default: return loc("Applications")
+        }
+    }
+    private static func emptyExplanation(_ index: DiskIndex, folder: String) -> String {
+        guard let node = index.directories[folder], node.readable else { return loc("Contents could not be read.") }
+        if node.bytes == 0 && node.folders.isEmpty { return loc("This folder is empty.") }
+        if !FileReviewPolicy.includes(folder + "/candidate") { return loc("Managed or protected files are excluded from personal cleanup.") }
+        return loc("No reviewable personal files in this scope.")
     }
     static func segments(_ index: DiskIndex, folder: String, files catalog: [DiskFile]? = nil) -> [UsageSegment] {
         guard let node = index.directories[folder] else { return [] }
         var parts = node.folders.sorted().enumerated().compactMap { n, path -> UsageSegment? in
             guard let dir = index.directories[path] else { return nil }
-            return UsageSegment(id: path, label: (path as NSString).lastPathComponent, bytes: dir.bytes, tone: .series(n), pageID: folderID(path), kind: .folder)
+            let row = Row(id: folderID(path), title: folderName(path), subtitle: dir.itemCount.map { loc("\(Int(clamping: $0)) items") },
+                trailing: ByteFormat.string(dir.bytes), paths: [FileReviewPolicy.livePath(path)], pageID: folderID(path))
+            return UsageSegment(id: path, label: folderName(path), bytes: dir.bytes, tone: .series(n), items: [row], pageID: folderID(path), kind: .folder)
         }
         let files = (catalog ?? index.largeFiles).filter { ($0.path as NSString).deletingLastPathComponent == folder }
-        for file in files { parts.append(UsageSegment(id: file.path, label: (file.path as NSString).lastPathComponent, bytes: file.bytes, tone: .series(parts.count), items: [fileRow(file)], selection: fileSelection([file]))) }
+        for file in files {
+            var request = DiskBrowseRequest(folder: folder, kind: DiskManagedLibrary.contains(folder) ? .managed : .direct); request.focusPath = file.path
+            parts.append(UsageSegment(id: file.path, label: (file.path as NSString).lastPathComponent, bytes: file.bytes, tone: .series(parts.count), pageID: "focus:" + request.pageID))
+        }
         let direct = node.bytes - min(node.bytes, node.folders.reduce(0) { $0 + (index.directories[$1]?.bytes ?? 0) })
         let other = direct - min(direct, files.reduce(0) { $0 + $1.bytes })
-        if other > 0 { parts.append(UsageSegment(id: folder + ":files", label: loc("Other files"), bytes: other, tone: .series(parts.count), pageID: DiskBrowseRequest(folder: folder, kind: .direct).pageID, kind: .files)) }
+        if other > 0 { parts.append(UsageSegment(id: folder + ":files", label: loc("Other files"), bytes: other, tone: .series(parts.count), pageID: "focus:" + DiskBrowseRequest(folder: folder, kind: DiskManagedLibrary.contains(folder) ? .managed : .direct).pageID, kind: .files)) }
         if folder == index.root, let used = index.volumeUsed, used > node.bytes {
             parts.append(UsageSegment(id: "unmeasured", label: loc("Protected and other disk usage"), bytes: used - node.bytes, tone: .neutral))
         }
@@ -104,7 +162,7 @@ enum DiskMapScreenBuilder {
                 requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
         } : nil
         let hasData = app.ownership.contains { $0.source != "bundle" }
-        return Row(id: app.owner.path, title: app.owner.name, trailing: ByteFormat.string(app.bytes + (app.ownershipBytes[.verifiedExclusive] ?? 0)),
+        return Row(id: app.owner.path, title: app.owner.name, trailing: app.measurementComplete ? ByteFormat.string(app.bytes + (app.ownershipBytes[.verifiedExclusive] ?? 0)) : loc("Measurements pending"),
             detail: app.owner.identifier + "\n" + eligibilityReason(app.classification), actions: action.map { [$0] } ?? [], paths: [app.owner.path], iconPath: app.owner.path, pageID: !hasData ? nil : "app:" + Data(app.owner.path.utf8).base64EncodedString())
     }
     static func otherAppsPage(_ apps: DiskApplications, folder: String? = nil) -> Screen {
@@ -165,11 +223,11 @@ enum DiskMapScreenBuilder {
             requires: [.fullDiskAccess], workingTitle: loc("Freeing space")), choices: choices, scope: "unmatched-app-data")
         return Screen(title: loc("Unmatched app data"), layout: .singleColumn,
             widgets: [.banner(Banner(id: "unmatched-explanation", severity: .warning, title: loc("Review before freeing"), message: unmatchedExplanation)),
-                      .list(ListWidget(id: "reviewable-app-data", title: loc("Unmatched app data"), emptyMessage: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : loc("No unmatched app data found"), rows: rows))], selection: selection)
+                      .list(ListWidget(id: "reviewable-app-data", title: loc("Unmatched app data"), emptyMessage: apps.measurementsComplete ? loc("No unmatched app data found") : loc("App-data measurements are unavailable or incomplete."), rows: rows))], selection: selection)
     }
 
     static func canDelete(_ path: String) -> Bool { DiskFileRemoval.canDelete(path) }
-    static func selectable(_ file: DiskFile) -> Bool { !file.retainedDuplicateKeeper && DiskFileRemoval.selectable(file) }
+    static func selectable(_ file: DiskFile) -> Bool { DiskFileRemoval.selectable(file) && file.identity != nil }
     static func fileSelection(_ files: [DiskFile], open: [String: [OpenFileUse.Reader]]? = nil) -> Selection {
         let inUse = open ?? OpenFileUse.inspect(Set(files.map(\.path)))
         let candidates = files.filter { selectable($0) && inUse[$0.path]?.isEmpty != false }
@@ -191,6 +249,6 @@ enum DiskMapScreenBuilder {
     }
     static func fileRow(_ file: DiskFile) -> Row {
         Row(id: fileID(file.path), title: (file.path as NSString).lastPathComponent, trailing: ByteFormat.string(file.logicalBytes),
-            paths: [FileReviewPolicy.livePath(file.path)], unavailableReason: file.retainedDuplicateKeeper ? loc("Retained copy") : (selectable(file) ? nil : loc("This file cannot be deleted here.")))
+            paths: [FileReviewPolicy.livePath(file.path)], unavailableReason: selectable(file) ? nil : loc("This file cannot be deleted here."))
     }
 }

@@ -127,7 +127,7 @@ final class DiskDatabaseTests: XCTestCase {
             }
             var count: UInt64 = 0
             try db.query("SELECT COUNT(*) FROM files") { count = DiskDatabase.number($0, 0) }
-            XCTAssertEqual(count, 33, "Ordinary small files contribute totals without persisted metadata")
+            XCTAssertEqual(count, 32 * 64 + 33, "Approved personal metadata and hardlink allocation records persist without a second whole-disk representation")
             XCTAssertEqual(try db.state()?.eventID, 123)
         }
     }

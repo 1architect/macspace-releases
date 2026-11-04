@@ -50,6 +50,7 @@ final class DiskFileSelectionTests: XCTestCase {
         let result = try XCTUnwrap(DiskFileRemoval.execute(ids: Set(files.prefix(2).map { DiskMapScreenBuilder.fileID($0.path) }), folder: "/fixture/A", index: index, eligible: { $0 != files[1].path }, remove: { removed.append($0) }))
         XCTAssertEqual(removed, [files[0].path])
         XCTAssertEqual(result.failures.count, 1)
+        XCTAssertEqual(result.removedBytes, files[0].bytes, "Only successfully removed targets contribute to the completion total")
         XCTAssertEqual(Set(result.targets), Set(files.prefix(2).map(\.path)))
         XCTAssertFalse(removed.contains(files[2].path))
     }
@@ -101,7 +102,7 @@ final class DiskFileSelectionTests: XCTestCase {
         await store.flushPersistence()
     }
 
-    func testAppInventoryBrowseReturnsWhileMetadataIsStillReading() async throws {
+    func testAppInventoryBrowseCompletesMetadataBeforePublishingReady() async throws {
         let inventory = DiskInventory(loader: { index, _ in
             Thread.sleep(forTimeInterval: 0.15)
             var apps = DiskApplications(); apps.catalogReadAt = Date(); apps.catalogRevision = index.catalogRevision
@@ -110,12 +111,29 @@ final class DiskFileSelectionTests: XCTestCase {
         let index = DiskIndex(root: "/fixture")
         let started = Date()
         let first = await inventory.browsing(index, ready: { _ in })
-        XCTAssertEqual(first.catalogReadAt, .distantPast)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.05)
+        XCTAssertNotEqual(first.catalogReadAt, .distantPast)
+        XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(started), 0.15)
         let loaded = await inventory.read(index)
         XCTAssertNotEqual(loaded.catalogReadAt, .distantPast)
         let current = await inventory.browsing(index, ready: { _ in })
         XCTAssertEqual(current.catalogReadAt, loaded.catalogReadAt)
     }
 
+}
+
+extension DiskFileSelectionTests {
+    func testRemovedTotalUsesOnlyCompletedFileTargetsAcrossOneGigabyteBatch() throws {
+        var index = DiskIndex(root: "/fixture")
+        index.directories[index.root] = .init(path: index.root)
+        let files = [DiskFile(path: "/fixture/first", bytes: 600_000_000, logicalBytes: 600_000_000),
+                     DiskFile(path: "/fixture/second", bytes: 400_000_000, logicalBytes: 400_000_000)]
+        let ids = Set(files.map { DiskFileRemoval.id($0.path) })
+        var removed: [String] = []
+        let result = try XCTUnwrap(DiskFileRemoval.execute(ids: ids, folder: index.root, index: index, files: files,
+            eligible: { _ in true }, remove: { removed.append($0) }))
+        XCTAssertEqual(result.removedBytes, 1_000_000_000); XCTAssertEqual(removed.count, 2)
+        let partial = try XCTUnwrap(DiskFileRemoval.execute(ids: ids, folder: index.root, index: index, files: files,
+            eligible: { _ in true }, remove: { if $0 == files[0].path { throw CocoaError(.fileWriteNoPermission) } }))
+        XCTAssertEqual(partial.removedBytes, 400_000_000); XCTAssertEqual(partial.failures.count, 1)
+    }
 }

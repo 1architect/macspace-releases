@@ -4,6 +4,8 @@ import CoreServices
 /// FSEvents replays changes since the persisted index watermark, including changes while MacSpace was closed.
 final class DiskEvents: @unchecked Sendable {
     struct Changes: Sendable { var shallow = Set<String>(); var recursive = Set<String>() }
+    private final class Target: @unchecked Sendable { weak var owner: DiskEvents? }
+    private let target = Target()
     private let lock = NSLock()
     private var pending = Changes()
     private var stream: FSEventStreamRef?
@@ -16,17 +18,24 @@ final class DiskEvents: @unchecked Sendable {
     init(root: String, since: UInt64, excluded: [String]) {
         self.root = root; self.excluded = excluded
         historyPending = since != 0
-        var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
+        target.owner = self
+        var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(target).toOpaque(), retain: { raw in
+            guard let raw else { return nil }
+            _ = Unmanaged<Target>.fromOpaque(raw).retain()
+            return raw
+        }, release: { raw in
+            if let raw { Unmanaged<Target>.fromOpaque(raw).release() }
+        }, copyDescription: nil)
         stream = FSEventStreamCreate(nil, { _, info, count, raw, flags, _ in
             guard let info else { return }
-            let watcher = Unmanaged<DiskEvents>.fromOpaque(info).takeUnretainedValue()
+            guard let watcher = Unmanaged<Target>.fromOpaque(info).takeUnretainedValue().owner else { return }
             let paths = unsafeBitCast(raw, to: NSArray.self) as! [String]
             for i in 0..<count { watcher.note(paths[i], flags: flags[i]) }
         }, &context, [root] as CFArray, since == 0 ? FSEventStreamEventId(kFSEventStreamEventIdSinceNow) : since, 0.5,
             FSEventStreamCreateFlags(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot))
         if let stream { FSEventStreamSetDispatchQueue(stream, queue); FSEventStreamStart(stream) }
     }
-    deinit { if let stream { FSEventStreamStop(stream); FSEventStreamInvalidate(stream); FSEventStreamRelease(stream) } }
+    deinit { target.owner = nil; if let stream { FSEventStreamStop(stream); FSEventStreamInvalidate(stream); FSEventStreamRelease(stream) } }
     var hasChanges: Bool { lock.withLock { !pending.shallow.isEmpty || !pending.recursive.isEmpty } }
     func drain() -> Changes { lock.withLock { let next = pending; pending = Changes(); return next } }
     func mark(_ paths: [String], recursive: Bool = false) {

@@ -357,3 +357,19 @@ final class UpdateControllerTests: XCTestCase {
         controller.checkForUpdates() // must be a no-op, not a crash
     }
 }
+
+extension HostTests {
+    func testDisablingDiskRemovesItsTileAndCannotBeUndoneByNavigation() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let host = try makeHost(modules: [(Fixtures.manifest(id: "com.macspace.disk-map"), "Disk")], directory: directory)
+        await host.reload()
+        XCTAssertTrue(host.canOpen(.storage))
+        XCTAssertTrue(HomeView.tiles(for: host.dashboardHandles).contains { $0.destination == .storage })
+        await host.setEnabled(false, module: "com.macspace.disk-map")
+        XCTAssertFalse(host.canOpen(.storage)); XCTAssertFalse(host.canOpen(.module("com.macspace.disk-map")))
+        XCTAssertFalse(HomeView.tiles(for: host.dashboardHandles).contains { $0.destination == .storage })
+        XCTAssertFalse(host.settings.isEnabled(module: "com.macspace.disk-map"))
+        await host.setEnabled(true, module: "com.macspace.disk-map")
+        XCTAssertTrue(host.canOpen(.storage))
+    }
+}

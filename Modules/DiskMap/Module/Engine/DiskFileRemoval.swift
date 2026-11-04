@@ -18,6 +18,7 @@ enum DiskFileRemoval {
     struct Result {
         var targets: [String]
         var failures: [String]
+        var removedBytes: UInt64 = 0
     }
     static func execute(ids: Set<String>, folder: String, index: DiskIndex,
                         files: [DiskFile]? = nil,
@@ -54,6 +55,7 @@ enum DiskFileRemoval {
                         guard confirmedMoveToTrash != nil, let identity = identities[file.path] else { throw CocoaError(.fileReadNoSuchFile) }
                         try ReviewedFileRemoval.remove(file.path, expected: identity, moveToTrash: moveToTrash)
                     }
+                    result.removedBytes += file.bytes
                     finished.append(Self.id(file.path))
                 }
                 catch { result.failures.append(file.path + ": " + error.localizedDescription) }

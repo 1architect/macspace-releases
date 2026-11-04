@@ -17,17 +17,21 @@ final class DiskBulkSelectionStorageTests: XCTestCase {
             for n in 0..<10_021 {
                 try Data([UInt8(n % 251)]).write(to: root.appendingPathComponent(String(format: "%05d.txt", n)))
             }
-            var state = DiskIndex(root: root.path); state.storageRevision = 4
-            try db.saveState(state); try db.seal()
+            var scanner = DiskDatabaseScanner(db: db, excluded: [])
+            try scanner.scan(.init(recursive: [root.path]), cursor: 1, progress: nil)
+            try db.seal()
         }
         let storage = DiskSelectionStorage(url: home.appendingPathComponent("cache/selected.sqlite"), root: root.path, home: home.path)
-        var scope = DiskBrowseRequest(folder: root.path, kind: .category, category: .other)
+        var scope = DiskBrowseRequest(folder: root.path, kind: .category, category: .documents)
         scope.includeSmaller = true
         let firstID = DiskFileRemoval.id(root.appendingPathComponent("00000.txt").path)
         let request = SelectionBulkRequest(operation: "toggleAll", scopePageID: "select:" + scope.pageID, visible: [firstID], sections: ["select:" + scope.pageID])
         let first = try await storage.apply(request, sourceURL: source)
         XCTAssertEqual(first.count, 10_021)
         XCTAssertEqual(first.checked, [firstID])
+        let membership = try await storage.apply(.init(token: first.token, operation: "membership", visible: [firstID], sections: ["select:" + scope.pageID]), sourceURL: source)
+        XCTAssertEqual(membership.checked, [firstID])
+        XCTAssertEqual(membership.all, ["select:" + scope.pageID], "Bounded navigation preserves an already resolved complete header")
         let page = try await storage.files(token: first.token, after: "", limit: 999999)
         XCTAssertEqual(page.count, 200)
         XCTAssertNotNil(page.first?.identity)

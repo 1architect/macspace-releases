@@ -5,10 +5,11 @@ import MacSpaceSdk
 import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 
-/// Directory measurements and eligible large files persist; smaller files are a bounded, disposable query cache.
+/// Directory measurements and reviewable personal-file metadata persist; Swift retains bounded page projections.
 final class DiskDatabase: @unchecked Sendable {
     private var db: OpaquePointer?
     var inventoryIncludes: (String) -> Bool
+    let duplicateEligibility: DiskDuplicateEligibility
     private(set) var compact = false
     private(set) var directoryParentIDs = true
     var smallerScope: String?
@@ -21,14 +22,17 @@ final class DiskDatabase: @unchecked Sendable {
     var phase: ((String, Double, Int) -> Void)?
     var smallerLimit = 20_000
     let root: String
+    let home: String
     private var prepared: [String: OpaquePointer] = [:]
+    private var folderCounts: [String: (revision: UInt64, count: UInt64)] = [:]
     private var batching = false
     private var writes = 0
     var unpublished = false
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-    struct Failure: Error { var message: String }
+    struct Failure: LocalizedError { var message: String; var errorDescription: String? { message } }
     init(url: URL, root: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
-        self.root = root
+        self.root = root; self.home = home
+        self.duplicateEligibility = DiskDuplicateEligibility(home: home)
         self.inventoryIncludes = { FileReviewPolicy.includes($0, home: home) }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else { throw Failure(message: "Cannot open disk index") }
@@ -44,11 +48,28 @@ final class DiskDatabase: @unchecked Sendable {
         compact = try query("SELECT 1 FROM sqlite_master WHERE name='file_details' AND type='table'") == 0
         if compact { try compactSchema() }
         try query("PRAGMA table_info(dirs)") { if Self.text($0, 1) == "parent" { directoryParentIDs = Self.text($0, 2) == "INTEGER" } }
+        var hasItemCount = false
+        try query("PRAGMA table_info(dirs)") { if Self.text($0, 1) == "items" { hasItemCount = true } }
+        if !hasItemCount { try execute("ALTER TABLE dirs ADD COLUMN items INTEGER") }
         try execute("CREATE TEMP TABLE IF NOT EXISTS pending_parents(path TEXT PRIMARY KEY,parent TEXT) WITHOUT ROWID")
         try execute("CREATE TABLE IF NOT EXISTS claims (id INTEGER PRIMARY KEY, data BLOB NOT NULL UNIQUE)")
         try execute("CREATE TABLE IF NOT EXISTS ownership (path TEXT NOT NULL, claim INTEGER NOT NULL, PRIMARY KEY(path,claim)) WITHOUT ROWID")
         try execute("CREATE TEMP TABLE IF NOT EXISTS dirty (path TEXT PRIMARY KEY) WITHOUT ROWID")
         try createIndexes()
+        if compact, try state()?.summaryVersion != DiskIndex.summarySchemaVersion {
+            var cursor = ""
+            while true {
+                try Task.checkCancellation()
+                var paths: [String] = []
+                try query("SELECT path FROM file_details WHERE path>? ORDER BY path LIMIT 256", [.text(cursor)]) { paths.append(Self.text($0, 0)) }
+                guard let last = paths.last else { break }
+                for path in paths {
+                    try query("UPDATE entries SET category=?,kind=? WHERE parent=(SELECT id FROM dirs WHERE path=?) AND name=?", [.text(DiskCategory.inventoryCategory(path).rawValue), .text(DiskFileType.key(path)), .text(Self.parent(path)), .text((path as NSString).lastPathComponent)])
+                }
+                cursor = last
+            }
+            if var metadata = try state() { metadata.summaryVersion = DiskIndex.summarySchemaVersion; try saveState(metadata) }
+        }
         if ProcessInfo.processInfo.environment["MACSPACE_DISK_METRICS"] == "1" {
             phase = { name, seconds, directories in
                 FileHandle.standardError.write(Data("DISK_PHASE phase=\(name) seconds=\(seconds) directories=\(directories)\n".utf8))
@@ -64,7 +85,7 @@ final class DiskDatabase: @unchecked Sendable {
     ]
     private func compactSchema() throws {
         // A directory's path exists once; every file stores only its integer parent and leaf name.
-        try execute("CREATE TABLE IF NOT EXISTS dirs (id INTEGER PRIMARY KEY,path TEXT NOT NULL UNIQUE,parent INTEGER NOT NULL,direct INTEGER NOT NULL,total INTEGER NOT NULL,readable INTEGER NOT NULL,uid INTEGER,bundle TEXT)")
+        try execute("CREATE TABLE IF NOT EXISTS dirs (id INTEGER PRIMARY KEY,path TEXT NOT NULL UNIQUE,parent INTEGER NOT NULL,direct INTEGER NOT NULL,total INTEGER NOT NULL,readable INTEGER NOT NULL,uid INTEGER,bundle TEXT,items INTEGER)")
         try execute("CREATE TABLE IF NOT EXISTS entries (parent INTEGER NOT NULL,name TEXT NOT NULL,bytes INTEGER NOT NULL,logical INTEGER NOT NULL,uid INTEGER,link TEXT NOT NULL,category TEXT NOT NULL,modified INTEGER,kind TEXT NOT NULL,inventory INTEGER NOT NULL,PRIMARY KEY(parent,name)) WITHOUT ROWID")
         let projection = "SELECT CASE WHEN d.path='/' THEN '/'||e.name ELSE d.path||'/'||e.name END AS path,d.path AS parent,e.bytes,e.logical,e.uid,e.link,e.category,e.modified,e.kind FROM entries e JOIN dirs d ON d.id=e.parent"
         try execute("CREATE VIEW IF NOT EXISTS files AS " + projection)
@@ -145,6 +166,7 @@ final class DiskDatabase: @unchecked Sendable {
         metadata.eventID = index.eventID; metadata.revision = index.revision; metadata.catalogRevision = index.catalogRevision; metadata.volumeUsed = index.volumeUsed
         metadata.browseVersion = index.browseVersion
         metadata.storageRevision = index.storageRevision; metadata.summaryVersion = index.summaryVersion
+        metadata.personalInventoryVersion = index.personalInventoryVersion
         try query("INSERT OR REPLACE INTO state VALUES(1,?)", [.data(try JSONEncoder().encode(metadata))])
     }
     func transaction<T>(_ body: () throws -> T) throws -> T {
@@ -172,6 +194,7 @@ final class DiskDatabase: @unchecked Sendable {
     }
     func put(_ node: DiskDirectory) throws {
         try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,?,?,?,?) ON CONFLICT(path) DO UPDATE SET parent=excluded.parent,direct=excluded.direct,total=excluded.total,readable=excluded.readable,uid=excluded.uid,bundle=excluded.bundle", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.bytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? "")])
+        try query("UPDATE dirs SET items=? WHERE path=?", [node.itemCount.map { .number($0) } ?? .optional(nil), .text(node.path)])
         try rememberParent(node.path)
     }
     func ensureDirectory(_ path: String, ownerUID: UInt32? = nil) throws {
@@ -179,22 +202,35 @@ final class DiskDatabase: @unchecked Sendable {
         try rememberParent(path)
     }
     func put(_ file: DiskFile, link: String = "") throws {
-        let eligible = file.logicalBytes >= DiskIndex.largeFileMinimum && file.bytes > 0 && file.ownerUID == getuid() && inventoryIncludes(file.path)
+        let eligible = file.bytes > 0 && file.ownerUID == getuid() && inventoryIncludes(file.path)
         guard eligible || !link.isEmpty else { return }
         try ensureDirectory(Self.parent(file.path))
         try query("INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory", [
             .text((file.path as NSString).lastPathComponent), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link),
-            .text(DiskCategory.inventoryCategory(file.path).rawValue), .date(file.modifiedAt), .text(""), .number(eligible ? 1 : 0), .text(Self.parent(file.path))])
+            .text(eligible ? DiskCategory.inventoryCategory(file.path).rawValue : DiskCategory.other.rawValue), .date(file.modifiedAt), .text(eligible ? DiskFileType.key(file.path) : ""), .number(eligible ? 1 : 0), .text(Self.parent(file.path))])
     }
     func directory(_ path: String, contents: Bool = false) throws -> DiskDirectory? {
         var node: DiskDirectory?
-        try query("SELECT path,direct,total,readable,uid,bundle FROM dirs WHERE path=?", [.text(path)]) {
-            node = DiskDirectory(path: Self.text($0, 0), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
+        try query("SELECT path,direct,total,readable,uid,bundle,items FROM dirs WHERE path=?", [.text(path)]) {
+            node = DiskDirectory(path: Self.text($0, 0), itemCount: sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.number($0, 6), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
         }
         if contents, node != nil {
             try query("SELECT path FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) { node?.folders.append(Self.text($0, 0)) }
             node?.files = try files(parent: path, limit: 200)
         }
+        return node
+    }
+    /// Legacy caches lack direct entry counts. Measure only visible folder roots once per revision.
+    func countedDirectory(_ path: String) throws -> DiskDirectory? {
+        guard var node = try directory(path) else { return nil }
+        guard node.itemCount == nil else { return node }
+        let revision = try state()?.revision ?? 0
+        if let cached = folderCounts[path], cached.revision == revision { node.itemCount = cached.count; return node }
+        var count: UInt64 = 0
+        let complete = autoreleasepool { DirectoryWalk.entries(at: path) { _, _ in count += 1 } }
+        guard complete else { return node }
+        if folderCounts.count >= 256 { folderCounts.removeAll(keepingCapacity: true) }
+        folderCounts[path] = (revision, count); node.itemCount = count
         return node
     }
     func children(_ path: String) throws -> [String] {
@@ -210,7 +246,7 @@ final class DiskDatabase: @unchecked Sendable {
     func files(parent: String? = nil, limit: Int = 200) throws -> [DiskFile] {
         var result: [DiskFile] = []
         let sql = "SELECT path,bytes,logical,uid FROM file_details f WHERE logical>=100000000 AND bytes>0 AND " + countedDetails + (parent == nil ? "" : " AND parent=?") + " ORDER BY logical DESC,path DESC LIMIT " + String(max(1, min(limit, 200)))
-        try query(sql, parent.map { [.text($0)] } ?? []) { result.append(try reviewedFile(decodeFile($0))) }
+        try query(sql, parent.map { [.text($0)] } ?? []) { result.append(try reviewedFile(decodeFile($0), duplicateEvidence: false)) }
         return result
     }
     func markTotals(_ path: String) throws {
@@ -296,6 +332,19 @@ final class DiskDatabase: @unchecked Sendable {
                 try execute("DROP TABLE legacy_details; DROP TABLE legacy_files; DROP TABLE legacy_dirs")
                 compact = true; directoryParentIDs = true
                 try createIndexes()
+        if compact, try state()?.summaryVersion != DiskIndex.summarySchemaVersion {
+            var cursor = ""
+            while true {
+                try Task.checkCancellation()
+                var paths: [String] = []
+                try query("SELECT path FROM file_details WHERE path>? ORDER BY path LIMIT 256", [.text(cursor)]) { paths.append(Self.text($0, 0)) }
+                guard let last = paths.last else { break }
+                for path in paths {
+                    try query("UPDATE entries SET category=?,kind=? WHERE parent=(SELECT id FROM dirs WHERE path=?) AND name=?", [.text(DiskCategory.inventoryCategory(path).rawValue), .text(DiskFileType.key(path)), .text(Self.parent(path)), .text((path as NSString).lastPathComponent)])
+                }
+                cursor = last
+            }
+        }
                 try execute("DROP TABLE IF EXISTS directory_stats")
             }
         }
@@ -303,7 +352,7 @@ final class DiskDatabase: @unchecked Sendable {
             try transaction {
                 try execute("DROP TRIGGER IF EXISTS files_delete; DROP VIEW files; DROP VIEW file_details; ALTER TABLE dirs RENAME TO legacy_dirs")
                 try compactSchema()
-                try execute("INSERT INTO dirs SELECT id,path,0,direct,total,readable,uid,bundle FROM legacy_dirs")
+                try execute("INSERT INTO dirs(id,path,parent,direct,total,readable,uid,bundle) SELECT id,path,0,direct,total,readable,uid,bundle FROM legacy_dirs")
                 try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM legacy_dirs l JOIN dirs p ON p.path=l.parent WHERE l.path=dirs.path),0); DROP TABLE legacy_dirs")
                 directoryParentIDs = true; try createIndexes()
             }

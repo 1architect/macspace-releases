@@ -194,7 +194,17 @@ struct WidgetForm<Top: View>: View {
                 // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
                 HStack(spacing: 6) {
                     header(text, help: title.help, part: Self.part(widget) ?? (sectionChoice?.selection.sections.contains(where: { $0.id == widget.id }) == true ? widget.id : nil))
-                    if case let .list(list) = widget, !list.paths.isEmpty { RevealButton(paths: list.paths) }
+                    if case let .list(list) = widget {
+                        if let subtitle = list.subtitle { Text(subtitle).foregroundStyle(.secondary) }
+                        if let trailing = list.trailing {
+                            Spacer(minLength: 8)
+                            ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        if !list.paths.isEmpty {
+                            if list.trailing == nil { Spacer(minLength: 8) }
+                            RevealButton(paths: list.paths)
+                        }
+                    }
                 }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
@@ -211,6 +221,8 @@ struct WidgetForm<Top: View>: View {
             LazyVStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     row.view
+                        .id(row.id)
+                        .background(handle?.focusedRowID == row.id ? Color.accentColor.opacity(0.12) : Color.clear)
                         .modifier(PageRowCell(index: index))
                         // Resolve parent placement once for the whole cell, before the cascade. Text's own content
                         // transactions must not animate/cancel its position separately from the shade and controls.
@@ -497,6 +509,12 @@ struct SectionChoice {
 
     func unavailableReason(_ part: String) -> String? { selection.sections.first { $0.id == part }?.unavailableReason }
 
+    func isMixed(_ part: String) -> Bool {
+        guard !isOn(part) else { return false }
+        if let pageID = selection.sections.first(where: { $0.id == part })?.pageID,
+           selection.bulk?.partialScopes?.contains(pageID) == true { return true }
+        return !choosable(part).isDisjoint(with: checked)
+    }
     func isOn(_ part: String) -> Bool {
         if selection.sections.first(where: { $0.id == part })?.pageID != nil { return all.contains(part) }
         let rows = choosable(part)
@@ -646,7 +664,9 @@ struct RowView: View {
                 HStack(spacing: 8) {
                     ModuleSectionHeader(title: row.title, help: row.detail, part: section)
                         .font(.system(size: 13, weight: .semibold))
+                    if let subtitle = row.subtitle { Text(subtitle).foregroundStyle(.secondary) }
                     Spacer(minLength: 0)
+                    if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                 }
                 .padding(.vertical, 4)
@@ -667,6 +687,7 @@ struct RowView: View {
             Spacer(minLength: 8)
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
         }
         .contentShape(Rectangle())
         .onTapGesture { openGroup(row.id) }
@@ -692,10 +713,7 @@ struct RowView: View {
                     .toggleStyle(.checkbox)
                     .labelsHidden()
             }
-            // A count after the title; then always in this order its (i), where its files are, its facts as pills and its button, close
-            // together. The (i) and the folder stay put while pills come and go after them: a pill that came before them (Freeing in
-            // the background, in place of Free) pushed them along and stood at the start of the row instead of where Free had been
-            // (2026-10-20).
+            // The title, information, badges and row actions precede the size; Finder is the final row control.
             // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
             // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
             // half of what was left while room stood empty after it: its warning pill truncated to "Não…" and came back, and the size
@@ -704,7 +722,6 @@ struct RowView: View {
                 TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
                 HStack(spacing: 6) {
                     InfoButton(text: row.detail, steps: row.steps)
-                    if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                     RowBadges(badges: row.badges + (row.unavailableReason.map { [Badge($0, .info)] } ?? []), quiet: flagIsActive, gap: 6, arrives: appeared)
                     if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
                 }
@@ -717,6 +734,7 @@ struct RowView: View {
             }
             // No figure on the right: the flag takes the right edge (`RowFlagPlacement`).
             if placement == .trailing { RowActionFlags(row: row, handler: handler) }
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
         }
     }
 }

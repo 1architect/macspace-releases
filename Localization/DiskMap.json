@@ -1,4 +1,31 @@
 {
+ "%@ files": [
+  "Arquivos %@",
+  "Fichiers %@",
+  "Archivos %@",
+  "%@-Dateien",
+  "%@ 文件",
+  "%@ファイル",
+  "%@ 파일"
+ ],
+ "%lld files could not be removed.": [
+  "Não foi possível remover %lld arquivos.",
+  "Impossible de supprimer %lld fichiers.",
+  "No se pudieron eliminar %lld archivos.",
+  "%lld Dateien konnten nicht entfernt werden.",
+  "无法移除%lld个文件。",
+  "%lld個のファイルを削除できませんでした。",
+  "%lld개 파일을 제거하지 못했습니다."
+ ],
+ "%lld identical copies": [
+  "%lld cópias idênticas",
+  "%lld copies identiques",
+  "%lld copias idénticas",
+  "%lld identische Kopien",
+  "%lld 个相同副本",
+  "%lld個の同一コピー",
+  "동일한 복사본 %lld개"
+ ],
  "%lld items": [
   "%lld itens",
   "%lld éléments",
@@ -16,6 +43,15 @@
   "额外或未确认的应用副本，与已安装应用分开显示。",
   "追加または未確認のコピーです。インストール済みアプリと分けて表示します。",
   "추가 또는 미확인 복사본으로, 설치된 앱과 구분합니다."
+ ],
+ "All locations": [
+  "Todos os locais",
+  "Tous les emplacements",
+  "Todas las ubicaciones",
+  "Alle Speicherorte",
+  "所有位置",
+  "すべての場所",
+  "모든 위치"
  ],
  "App Data": [
   "Dados de apps",
@@ -53,6 +89,15 @@
   "アプリの所有関係が変わりました。一覧を開き直して確認してください。",
   "앱 소유 관계가 변경되었습니다. 앱 목록을 다시 열어 검토하세요."
  ],
+ "App-data measurements are unavailable or incomplete.": [
+  "As medições dos dados de apps estão indisponíveis ou incompletas.",
+  "Les mesures des données d’apps sont indisponibles ou incomplètes.",
+  "Las mediciones de datos de apps no están disponibles o están incompletas.",
+  "Messwerte der App-Daten fehlen oder sind unvollständig.",
+  "应用数据测量不可用或不完整。",
+  "アプリデータの測定が利用できないか不完全です。",
+  "앱 데이터 측정값을 사용할 수 없거나 불완전합니다."
+ ],
  "Applications": [
   "Aplicativos",
   "Applications",
@@ -70,6 +115,15 @@
   "应用",
   "アプリ",
   "앱"
+ ],
+ "Apps and files": [
+  "Apps e arquivos",
+  "Apps et fichiers",
+  "Apps y archivos",
+  "Apps und Dateien",
+  "应用与文件",
+  "アプリとファイル",
+  "앱 및 파일"
  ],
  "Archives": [
   "Arquivos compactados",
@@ -161,6 +215,78 @@
   "カテゴリを準備できませんでした。以前のディスクマップは引き続き利用できます。更新して再試行してください。",
   "카테고리를 준비하지 못했습니다. 이전 디스크 맵은 계속 사용할 수 있습니다. 새로 고침하여 다시 시도하세요."
  ],
+ "Choose the copies to remove. At least one verified copy must remain unselected.": [
+  "Escolha as cópias para remover. Ao menos uma cópia verificada deve permanecer desmarcada.",
+  "Choisissez les copies à supprimer. Au moins une copie vérifiée doit rester non sélectionnée.",
+  "Elige las copias que quieres eliminar. Al menos una copia verificada debe quedar sin seleccionar.",
+  "Wähle die zu löschenden Kopien. Mindestens eine verifizierte Kopie muss abgewählt bleiben.",
+  "选择要移除的副本。必须至少保留一个未选中的已验证副本。",
+  "削除するコピーを選択してください。検証済みコピーを少なくとも1つ未選択で残す必要があります。",
+  "삭제할 복사본을 선택하세요. 확인된 복사본을 하나 이상 선택하지 않은 상태로 남겨야 합니다."
+ ],
+ "Compare files": [
+  "Comparar arquivos",
+  "Comparer les fichiers",
+  "Comparar archivos",
+  "Dateien vergleichen",
+  "比较文件",
+  "ファイルを比較",
+  "파일 비교"
+ ],
+ "Compare local personal files of 100 MB or more. Exact content is verified before copies are offered for removal; one copy is always kept.": [
+  "Compara arquivos pessoais locais de 100 MB ou mais. O conteúdo é verificado antes de oferecer cópias para remoção; uma cópia é sempre mantida.",
+  "Compare les fichiers personnels locaux de 100 Mo ou plus. Le contenu est vérifié avant de proposer des copies à supprimer ; une copie est toujours conservée.",
+  "Compara archivos personales locales de 100 MB o más. Se verifica el contenido antes de ofrecer copias para eliminar; siempre se conserva una.",
+  "Vergleicht lokale persönliche Dateien ab 100 MB. Vor dem Entfernen wird der Inhalt geprüft; eine Kopie bleibt immer erhalten.",
+  "比较至少100 MB的本地个人文件。提供可移除副本前验证完整内容，并始终保留一份。",
+  "100 MB以上のローカルの個人ファイルを比較します。削除候補にする前に内容を検証し、必ず1つを保持します。",
+  "100 MB 이상인 로컬 개인 파일을 비교합니다. 제거할 사본을 제안하기 전에 내용을 검증하며 항상 하나는 보존합니다."
+ ],
+ "Comparing files": [
+  "Comparando arquivos",
+  "Comparaison des fichiers",
+  "Comparando archivos",
+  "Dateien werden verglichen",
+  "正在比较文件",
+  "ファイルを比較中",
+  "파일 비교 중"
+ ],
+ "Comparison complete": [
+  "Comparação concluída",
+  "Comparaison terminée",
+  "Comparación completada",
+  "Vergleich abgeschlossen",
+  "比较完成",
+  "比較が完了しました",
+  "비교 완료"
+ ],
+ "Contents could not be read.": [
+  "Não foi possível ler o conteúdo.",
+  "Impossible de lire le contenu.",
+  "No se pudo leer el contenido.",
+  "Der Inhalt konnte nicht gelesen werden.",
+  "无法读取内容。",
+  "内容を読み取れませんでした。",
+  "내용을 읽을 수 없습니다."
+ ],
+ "Contents could not be read. Refresh to retry.": [
+  "Não foi possível ler o conteúdo. Atualize para tentar novamente.",
+  "Impossible de lire le contenu. Actualisez pour réessayer.",
+  "No se pudo leer el contenido. Actualiza para reintentar.",
+  "Inhalt konnte nicht gelesen werden. Zum Wiederholen aktualisieren.",
+  "无法读取内容。请刷新以重试。",
+  "内容を読み取れませんでした。更新して再試行してください。",
+  "내용을 읽을 수 없습니다. 새로고침하여 다시 시도하세요."
+ ],
+ "Couldn’t compare files": [
+  "Não foi possível comparar os arquivos",
+  "Impossible de comparer les fichiers",
+  "No se pudieron comparar los archivos",
+  "Dateien konnten nicht verglichen werden",
+  "无法比较文件",
+  "ファイルを比較できませんでした",
+  "파일을 비교할 수 없습니다"
+ ],
  "Couldn’t delete the file": [
   "Não foi possível apagar o arquivo",
   "Impossible de supprimer le fichier",
@@ -169,6 +295,15 @@
   "无法删除文件",
   "ファイルを削除できませんでした",
   "파일을 삭제하지 못함"
+ ],
+ "Couldn’t remove the selected files": [
+  "Não foi possível remover os arquivos selecionados",
+  "Impossible de supprimer les fichiers sélectionnés",
+  "No se pudieron eliminar los archivos seleccionados",
+  "Ausgewählte Dateien konnten nicht entfernt werden",
+  "无法移除所选文件",
+  "選択したファイルを削除できませんでした",
+  "선택한 파일을 제거할 수 없습니다"
  ],
  "Couldn’t uninstall the app": [
   "Não foi possível desinstalar o app",
@@ -224,14 +359,23 @@
   "削除中",
   "삭제 중"
  ],
- "Disk": [
-  "Disco",
-  "Disque",
-  "Disco",
-  "Festplatte",
-  "磁盘",
-  "ディスク",
-  "디스크"
+ "Desktop": [
+  "Mesa",
+  "Bureau",
+  "Escritorio",
+  "Schreibtisch",
+  "桌面",
+  "デスクトップ",
+  "데스크탑"
+ ],
+ "Developer cleanup": [
+  "Limpeza de desenvolvimento",
+  "Nettoyage des outils de développement",
+  "Limpieza de desarrollo",
+  "Entwicklerbereinigung",
+  "开发清理",
+  "開発用データのクリーンアップ",
+  "개발 데이터 정리"
  ],
  "Documents": [
   "Documentos",
@@ -260,6 +404,33 @@
   "ダウンロード",
   "다운로드"
  ],
+ "Duplicate files": [
+  "Arquivos duplicados",
+  "Fichiers en double",
+  "Archivos duplicados",
+  "Doppelte Dateien",
+  "重复文件",
+  "重複ファイル",
+  "중복 파일"
+ ],
+ "Duplicate files changed. Compare them again before removing copies.": [
+  "Os arquivos duplicados mudaram. Compare novamente antes de remover cópias.",
+  "Les fichiers en double ont changé. Comparez-les à nouveau avant de supprimer des copies.",
+  "Los duplicados cambiaron. Compáralos de nuevo antes de eliminar copias.",
+  "Doppelte Dateien wurden geändert. Vor dem Entfernen erneut vergleichen.",
+  "重复文件已更改。移除副本前请重新比较。",
+  "重複ファイルが変更されました。削除前に再度比較してください。",
+  "중복 파일이 변경되었습니다. 사본을 제거하기 전에 다시 비교하세요."
+ ],
+ "Duplicate files changed. Reopen the list and review them again.": [
+  "Os arquivos duplicados mudaram. Reabra a lista e revise novamente.",
+  "Les doublons ont changé. Rouvrez la liste et vérifiez-les à nouveau.",
+  "Los duplicados cambiaron. Abre la lista y revísalos de nuevo.",
+  "Doppelte Dateien wurden geändert. Liste erneut öffnen und prüfen.",
+  "重复文件已更改。请重新打开列表并查看。",
+  "重複ファイルが変更されました。リストを開き直して確認してください。",
+  "중복 파일이 변경되었습니다. 목록을 다시 열고 검토하세요."
+ ],
  "Evidence identifies this installation as the exclusive owner.": [
   "As evidências identificam esta instalação como proprietária exclusiva.",
   "Les éléments disponibles identifient cette installation comme propriétaire exclusif.",
@@ -287,6 +458,51 @@
   "ディスク使用量を調べ、アプリをアンインストールし、大きなファイルを削除します。",
   "디스크 사용량을 탐색하고 앱과 큰 파일을 제거합니다."
  ],
+ "File changed since selection. Review it again.": [
+  "O arquivo mudou desde a seleção. Revise novamente.",
+  "Le fichier a changé depuis la sélection. Vérifiez-le à nouveau.",
+  "El archivo cambió desde la selección. Revísalo de nuevo.",
+  "Die Datei wurde seit der Auswahl geändert. Erneut prüfen.",
+  "文件自选择后已更改。请重新查看。",
+  "選択後にファイルが変更されました。再確認してください。",
+  "선택 이후 파일이 변경되었습니다. 다시 검토하세요."
+ ],
+ "File removal settings changed. Reopen the list and confirm again.": [
+  "A configuração de exclusão mudou. Reabra a lista e confirme novamente.",
+  "Le réglage de suppression a changé. Rouvrez la liste et confirmez à nouveau.",
+  "La configuración de eliminación cambió. Vuelve a abrir la lista y confirma.",
+  "Die Löscheinstellung wurde geändert. Liste erneut öffnen und bestätigen.",
+  "文件移除设置已更改。请重新打开列表并确认。",
+  "ファイル削除の設定が変更されました。リストを開き直して確認してください。",
+  "파일 제거 설정이 변경되었습니다. 목록을 다시 열고 확인하세요."
+ ],
+ "File types": [
+  "Tipos de arquivo",
+  "Types de fichiers",
+  "Tipos de archivo",
+  "Dateitypen",
+  "文件类型",
+  "ファイルの種類",
+  "파일 유형"
+ ],
+ "Files": [
+  "Arquivos",
+  "Fichiers",
+  "Archivos",
+  "Dateien",
+  "文件",
+  "ファイル",
+  "파일"
+ ],
+ "Files changed. Reopen the list and review your selection again.": [
+  "Os arquivos mudaram. Reabra a lista e revise a seleção novamente.",
+  "Les fichiers ont changé. Rouvrez la liste et vérifiez votre sélection.",
+  "Los archivos cambiaron. Abre la lista y revisa de nuevo tu selección.",
+  "Dateien wurden geändert. Liste erneut öffnen und Auswahl prüfen.",
+  "文件已更改。请重新打开列表并检查所选项目。",
+  "ファイルが変更されました。リストを開き直して選択内容を確認してください。",
+  "파일이 변경되었습니다. 목록을 다시 열고 선택을 검토하세요."
+ ],
  "Files of 100 MB or larger": [
   "Arquivos de 100 MB ou maiores",
   "Fichiers de 100 Mo ou plus",
@@ -295,6 +511,15 @@
   "100 MB 及以上的文件",
   "100 MB以上のファイル",
   "100 MB 이상 파일"
+ ],
+ "Folders": [
+  "Pastas",
+  "Dossiers",
+  "Carpetas",
+  "Ordner",
+  "文件夹",
+  "フォルダ",
+  "폴더"
  ],
  "Free": [
   "Liberar",
@@ -377,6 +602,33 @@
   "ゲーム",
   "게임"
  ],
+ "Identical files": [
+  "Arquivos idênticos",
+  "Fichiers identiques",
+  "Archivos idénticos",
+  "Identische Dateien",
+  "相同文件",
+  "同一のファイル",
+  "동일한 파일"
+ ],
+ "Identical local personal files are grouped with one retained copy. No files are preselected.": [
+  "Arquivos pessoais locais idênticos são agrupados com uma cópia mantida. Nenhum arquivo vem selecionado.",
+  "Les fichiers personnels locaux identiques sont regroupés avec une copie conservée. Aucun fichier n’est présélectionné.",
+  "Los archivos personales locales idénticos se agrupan con una copia conservada. No hay archivos preseleccionados.",
+  "Identische lokale persönliche Dateien werden mit einer beibehaltenen Kopie gruppiert. Nichts ist vorausgewählt.",
+  "相同的本地个人文件分组显示，并保留一份副本。不预选文件。",
+  "同一のローカル個人ファイルをグループ化し、1つを保持します。事前選択はしません。",
+  "동일한 로컬 개인 파일을 그룹으로 묶고 하나는 보존합니다. 파일은 미리 선택되지 않습니다."
+ ],
+ "Images": [
+  "Imagens",
+  "Images",
+  "Imágenes",
+  "Bilder",
+  "图像",
+  "画像",
+  "이미지"
+ ],
  "Install the helper in Settings": [
   "Instale o auxiliar nos Ajustes",
   "Installez l’assistant dans Réglages",
@@ -404,6 +656,15 @@
   "インストーラ",
   "설치 프로그램"
  ],
+ "Inventory incomplete": [
+  "Inventário incompleto",
+  "Inventaire incomplet",
+  "Inventario incompleto",
+  "Inventar unvollständig",
+  "清单不完整",
+  "一覧が不完全です",
+  "목록 불완전"
+ ],
  "Large files": [
   "Arquivos grandes",
   "Fichiers volumineux",
@@ -412,6 +673,24 @@
   "大文件",
   "大きなファイル",
   "큰 파일"
+ ],
+ "Large files and duplicates": [
+  "Arquivos grandes e duplicados",
+  "Fichiers volumineux et doublons",
+  "Archivos grandes y duplicados",
+  "Große und doppelte Dateien",
+  "大文件和重复文件",
+  "大きなファイルと重複ファイル",
+  "대용량 및 중복 파일"
+ ],
+ "Leave at least one verified copy of each duplicate set unselected.": [
+  "Deixe ao menos uma cópia verificada de cada grupo de duplicados desmarcada.",
+  "Laissez au moins une copie vérifiée de chaque groupe de doublons non sélectionnée.",
+  "Deja sin seleccionar al menos una copia verificada de cada grupo de duplicados.",
+  "Lasse mindestens eine verifizierte Kopie jeder Duplikatgruppe abgewählt.",
+  "每组重复文件中至少保留一个未选中的已验证副本。",
+  "重複ファイルの各グループで、検証済みコピーを少なくとも1つ未選択で残してください。",
+  "각 중복 그룹에서 확인된 복사본을 하나 이상 선택하지 않은 상태로 남겨 두세요."
  ],
  "Leftovers from removed apps": [
   "Dados de apps removidos",
@@ -431,6 +710,51 @@
   "ローカルに割り当てられた容量です。クラウドのみのファイルはダウンロードしません。保護された場所や読み取れない場所は不完全な場合があり、APFSのクローンやスナップショットにより使用量に差が出ることがあります。",
   "로컬에 할당된 공간입니다. 클라우드에만 있는 파일은 다운로드하지 않습니다. 보호되거나 읽을 수 없는 위치는 불완전할 수 있으며 APFS 복제본과 스냅샷으로 인해 디스크 사용량과 다를 수 있습니다."
  ],
+ "Managed by Photos": [
+  "Gerenciado pelo Fotos",
+  "Géré par Photos",
+  "Administrado por Fotos",
+  "Von Fotos verwaltet",
+  "由照片管理",
+  "写真で管理",
+  "사진 앱에서 관리"
+ ],
+ "Managed by Photos; browse or reveal in Finder.": [
+  "Gerenciado pelo Fotos; navegue ou revele no Finder.",
+  "Géré par Photos ; parcourez ou affichez dans le Finder.",
+  "Administrado por Fotos; explora o muestra en Finder.",
+  "Von Fotos verwaltet; durchsuchen oder im Finder anzeigen.",
+  "由照片管理；可浏览或在访达中显示。",
+  "写真で管理されています。閲覧するかFinderで表示してください。",
+  "사진 앱에서 관리합니다. 탐색하거나 Finder에서 표시하세요."
+ ],
+ "Managed or protected files are excluded from personal cleanup.": [
+  "Arquivos gerenciados ou protegidos não fazem parte da limpeza pessoal.",
+  "Les fichiers gérés ou protégés sont exclus du nettoyage personnel.",
+  "Los archivos administrados o protegidos se excluyen de la limpieza personal.",
+  "Verwaltete oder geschützte Dateien sind von der persönlichen Bereinigung ausgeschlossen.",
+  "个人清理不包括受管理或受保护的文件。",
+  "管理対象または保護されたファイルは個人ファイルのクリーンアップに含まれません。",
+  "관리되거나 보호된 파일은 개인 파일 정리에서 제외됩니다."
+ ],
+ "Measurements pending": [
+  "Medições pendentes",
+  "Mesures en attente",
+  "Mediciones pendientes",
+  "Messungen ausstehend",
+  "等待测量",
+  "測定待ち",
+  "측정 대기 중"
+ ],
+ "Media": [
+  "Mídia",
+  "Médias",
+  "Multimedia",
+  "Medien",
+  "媒体",
+  "メディア",
+  "미디어"
+ ],
  "More items": [
   "Mais itens",
   "Plus d’éléments",
@@ -439,6 +763,33 @@
   "更多项目",
   "その他の項目",
   "더 많은 항목"
+ ],
+ "Move to Trash": [
+  "Mover para o Lixo",
+  "Placer dans la corbeille",
+  "Mover a la Papelera",
+  "In den Papierkorb legen",
+  "移到废纸篓",
+  "ゴミ箱に入れる",
+  "휴지통으로 이동"
+ ],
+ "Movies": [
+  "Filmes",
+  "Vidéos",
+  "Películas",
+  "Filme",
+  "影片",
+  "ムービー",
+  "동영상"
+ ],
+ "Music": [
+  "Música",
+  "Musique",
+  "Música",
+  "Musik",
+  "音乐",
+  "ミュージック",
+  "음악"
  ],
  "No apps found": [
   "Nenhum app encontrado",
@@ -449,6 +800,15 @@
   "アプリが見つかりません",
   "앱을 찾을 수 없음"
  ],
+ "No files are selected.": [
+  "Nenhum arquivo está selecionado.",
+  "Aucun fichier n’est sélectionné.",
+  "No hay archivos seleccionados.",
+  "Keine Dateien ausgewählt.",
+  "未选择文件。",
+  "ファイルが選択されていません。",
+  "선택된 파일이 없습니다."
+ ],
  "No files in this group": [
   "Nenhum arquivo neste grupo",
   "Aucun fichier dans ce groupe",
@@ -457,6 +817,15 @@
   "此组中没有文件",
   "このグループにファイルはありません",
   "이 그룹에 파일이 없음"
+ ],
+ "No files match this size and type scope.": [
+  "Nenhum arquivo corresponde a este tamanho e tipo.",
+  "Aucun fichier ne correspond à cette taille et à ce type.",
+  "Ningún archivo coincide con este tamaño y tipo.",
+  "Keine Dateien entsprechen diesem Größen- und Typbereich.",
+  "没有文件符合此大小和类型范围。",
+  "このサイズと種類の範囲に一致するファイルはありません。",
+  "이 크기와 유형 범위에 일치하는 파일이 없습니다."
  ],
  "No installed app was matched to this data. This does not prove the app was removed. Review the locations before selecting user-owned data to free; it may contain documents and settings.": [
   "Nenhum app instalado foi associado a estes dados. Isso não comprova que o app foi removido. Confira os locais antes de selecionar dados da sua conta para liberar; eles podem conter documentos e ajustes.",
@@ -476,6 +845,15 @@
   "このフォルダに大きなファイルはありません",
   "이 폴더에 큰 파일 없음"
  ],
+ "No reviewable personal files in this scope.": [
+  "Nenhum arquivo pessoal para revisar neste local.",
+  "Aucun fichier personnel à examiner dans ce périmètre.",
+  "No hay archivos personales que revisar en este ámbito.",
+  "Keine überprüfbaren persönlichen Dateien in diesem Bereich.",
+  "此范围内没有可供检查的个人文件。",
+  "この範囲に確認可能な個人ファイルはありません。",
+  "이 범위에 검토할 수 있는 개인 파일이 없습니다."
+ ],
  "No unmatched app data found": [
   "Nenhum dado de app sem correspondência encontrado",
   "Aucune donnée d’app sans correspondance",
@@ -484,6 +862,15 @@
   "未发现未匹配的应用数据",
   "対応するアプリが不明なデータはありません",
   "연결되지 않은 앱 데이터를 찾지 못했습니다"
+ ],
+ "No verified duplicate copies yet": [
+  "Ainda não há cópias duplicadas verificadas",
+  "Aucun doublon vérifié pour le moment",
+  "Aún no hay copias duplicadas verificadas",
+  "Noch keine bestätigten doppelten Kopien",
+  "尚无已验证的重复副本",
+  "検証済みの重複コピーはまだありません",
+  "아직 검증된 중복 사본이 없습니다"
  ],
  "Not modified since %@": [
   "Não modificado desde %@",
@@ -521,6 +908,15 @@
   "古い書類とメディア",
   "오래된 문서 및 미디어"
  ],
+ "Only identical extra copies of personal files of 100 MB or more are listed. One copy is kept. No files are preselected.": [
+  "Lista apenas cópias idênticas extras de arquivos pessoais de 100 MB ou mais. Uma cópia é mantida. Nada vem selecionado.",
+  "Seules les copies identiques supplémentaires de fichiers personnels de 100 Mo ou plus sont affichées. Une copie est conservée. Rien n’est présélectionné.",
+  "Solo se muestran copias idénticas adicionales de archivos personales de 100 MB o más. Se conserva una copia. No hay selección previa.",
+  "Nur zusätzliche identische Kopien persönlicher Dateien ab 100 MB werden angezeigt. Eine Kopie bleibt erhalten. Nichts ist vorausgewählt.",
+  "仅列出至少100 MB个人文件的额外相同副本。保留一份，不预选文件。",
+  "100 MB以上の個人ファイルの同一内容の余分なコピーのみを表示します。1つを保持し、事前選択はしません。",
+  "100 MB 이상 개인 파일의 동일한 추가 사본만 표시합니다. 하나는 보존하며 미리 선택하지 않습니다."
+ ],
  "Only the following reviewed targets will be removed. Shared, inferred and unknown data is preserved.": [
   "Somente os destinos revisados abaixo serão removidos. Dados compartilhados, inferidos e desconhecidos serão preservados.",
   "Seules les cibles vérifiées ci-dessous seront supprimées. Les données partagées, supposées ou inconnues sont préservées.",
@@ -529,6 +925,42 @@
   "仅移除以下已检查的目标。共享、推测关联和未知归属的数据将保留。",
   "以下の確認済み対象のみ削除します。共有、推定、不明のデータは保持します。",
   "아래의 검토된 대상만 제거합니다. 공유, 추정 및 알 수 없는 데이터는 보존합니다."
+ ],
+ "Only verified identical copies are offered for removal.": [
+  "Apenas cópias idênticas verificadas são oferecidas para remoção.",
+  "Seules les copies identiques vérifiées sont proposées à la suppression.",
+  "Solo se ofrecen para eliminar las copias idénticas verificadas.",
+  "Nur überprüfte identische Kopien werden zur Entfernung angeboten.",
+  "仅提供已验证的相同副本供移除。",
+  "検証済みの同一コピーのみを削除候補にします。",
+  "검증된 동일한 사본만 제거 대상으로 제공됩니다."
+ ],
+ "Open folder in Finder": [
+  "Abrir pasta no Finder",
+  "Ouvrir le dossier dans le Finder",
+  "Abrir carpeta en Finder",
+  "Ordner im Finder öffnen",
+  "在访达中打开文件夹",
+  "Finderでフォルダを開く",
+  "Finder에서 폴더 열기"
+ ],
+ "Open in %@": [
+  "Aberto em %@",
+  "Ouvert dans %@",
+  "Abierto en %@",
+  "Geöffnet in %@",
+  "在%@中打开",
+  "%@で開いています",
+  "%@에서 열려 있음"
+ ],
+ "Open now": [
+  "Aberto agora",
+  "Ouvert actuellement",
+  "Abierto ahora",
+  "Jetzt geöffnet",
+  "当前已打开",
+  "現在開いています",
+  "현재 열려 있음"
  ],
  "Other": [
   "Outros",
@@ -557,6 +989,33 @@
   "その他のファイル",
   "기타 파일"
  ],
+ "Other formats": [
+  "Outros formatos",
+  "Autres formats",
+  "Otros formatos",
+  "Andere Formate",
+  "其他格式",
+  "その他の形式",
+  "기타 형식"
+ ],
+ "PDF documents": [
+  "Documentos PDF",
+  "Documents PDF",
+  "Documentos PDF",
+  "PDF-Dokumente",
+  "PDF 文档",
+  "PDF書類",
+  "PDF 문서"
+ ],
+ "Photo libraries": [
+  "Fototecas",
+  "Photothèques",
+  "Fototecas",
+  "Fotomediatheken",
+  "照片图库",
+  "写真ライブラリ",
+  "사진 보관함"
+ ],
  "Photos & Video": [
   "Fotos e vídeos",
   "Photos et vidéos",
@@ -566,6 +1025,15 @@
   "写真とビデオ",
   "사진 및 동영상"
  ],
+ "Pictures": [
+  "Imagens",
+  "Images",
+  "Imágenes",
+  "Bilder",
+  "图片",
+  "ピクチャ",
+  "그림"
+ ],
  "Possible app data": [
   "Possíveis dados de app",
   "Données d’app possibles",
@@ -574,6 +1042,24 @@
   "可能的应用数据",
   "関連する可能性があるデータ",
   "관련 가능성이 있는 앱 데이터"
+ ],
+ "Presentations": [
+  "Apresentações",
+  "Présentations",
+  "Presentaciones",
+  "Präsentationen",
+  "演示文稿",
+  "プレゼンテーション",
+  "프레젠테이션"
+ ],
+ "Project resources are excluded from duplicate cleanup.": [
+  "Recursos de projetos não fazem parte da limpeza de duplicados.",
+  "Les ressources de projets sont exclues du nettoyage des doublons.",
+  "Los recursos de proyectos se excluyen de la limpieza de duplicados.",
+  "Projektressourcen sind von der Duplikatbereinigung ausgeschlossen.",
+  "重复文件清理不包括项目资源。",
+  "プロジェクトのリソースは重複ファイルのクリーンアップから除外されます。",
+  "프로젝트 리소스는 중복 파일 정리에서 제외됩니다."
  ],
  "Projects & Development": [
   "Projetos e desenvolvimento",
@@ -620,6 +1106,15 @@
   "アプリを読み込み中…",
   "앱을 읽는 중…"
  ],
+ "Reading files…": [
+  "Lendo arquivos…",
+  "Lecture des fichiers…",
+  "Leyendo archivos…",
+  "Dateien werden gelesen…",
+  "正在读取文件…",
+  "ファイルを読み取り中…",
+  "파일 읽는 중…"
+ ],
  "Recommended": [
   "Recomendados",
   "Recommandations",
@@ -628,6 +1123,33 @@
   "建议检查",
   "おすすめ",
   "추천"
+ ],
+ "Reopen the list and confirm deletion again.": [
+  "Reabra a lista e confirme a exclusão novamente.",
+  "Rouvrez la liste et confirmez à nouveau la suppression.",
+  "Abre la lista y confirma de nuevo la eliminación.",
+  "Liste erneut öffnen und Löschung bestätigen.",
+  "请重新打开列表并确认删除。",
+  "リストを開き直して削除を確認してください。",
+  "목록을 다시 열고 삭제를 확인하세요."
+ ],
+ "Reopen the list and review your selection again.": [
+  "Reabra a lista e revise sua seleção novamente.",
+  "Rouvrez la liste et vérifiez votre sélection.",
+  "Abre la lista y revisa de nuevo tu selección.",
+  "Liste erneut öffnen und Auswahl prüfen.",
+  "请重新打开列表并检查所选项目。",
+  "リストを開き直して選択内容を確認してください。",
+  "목록을 다시 열고 선택을 검토하세요."
+ ],
+ "Retained copy": [
+  "Cópia mantida",
+  "Copie conservée",
+  "Copia conservada",
+  "Beibehaltene Kopie",
+  "保留的副本",
+  "保持するコピー",
+  "보존할 사본"
  ],
  "Review before freeing": [
   "Revise antes de liberar",
@@ -638,6 +1160,24 @@
   "削除前に確認",
   "정리 전 검토"
  ],
+ "Review rebuildable tool caches in System Data. Source projects and personal files are preserved.": [
+  "Revise caches de ferramentas que podem ser recriados em Dados do Sistema. Projetos e arquivos pessoais são preservados.",
+  "Examinez les caches reconstructibles dans Données système. Les sources et fichiers personnels sont conservés.",
+  "Revisa las cachés regenerables en Datos del sistema. Se conservan los proyectos y archivos personales.",
+  "Wiederherstellbare Tool-Caches in Systemdaten prüfen. Quellprojekte und persönliche Dateien bleiben erhalten.",
+  "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。",
+  "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。",
+  "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다."
+ ],
+ "Reviewing selected files": [
+  "Revisando arquivos selecionados",
+  "Vérification des fichiers sélectionnés",
+  "Revisando archivos seleccionados",
+  "Ausgewählte Dateien werden geprüft",
+  "正在检查所选文件",
+  "選択したファイルを確認中",
+  "선택한 파일 검토 중"
+ ],
  "Saved app state": [
   "Estado salvo do app",
   "État sauvegardé de l’app",
@@ -647,6 +1187,24 @@
   "保存されたアプリ状態",
   "저장된 앱 상태"
  ],
+ "Selected files changed or are open. Review them again.": [
+  "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.",
+  "Les fichiers sélectionnés ont changé ou sont ouverts. Vérifiez-les à nouveau.",
+  "Los archivos seleccionados cambiaron o están abiertos. Revísalos de nuevo.",
+  "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.",
+  "所选文件已更改或正在打开。请重新检查。",
+  "選択したファイルが変更されたか開かれています。再確認してください。",
+  "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요."
+ ],
+ "Selected files changed or are unavailable. Review your selection again.": [
+  "Os arquivos selecionados mudaram ou estão indisponíveis. Revise a seleção novamente.",
+  "Les fichiers sélectionnés ont changé ou sont indisponibles. Vérifiez à nouveau votre sélection.",
+  "Los archivos seleccionados cambiaron o no están disponibles. Revisa tu selección de nuevo.",
+  "Ausgewählte Dateien wurden geändert oder sind nicht verfügbar. Prüfe die Auswahl erneut.",
+  "所选文件已更改或不可用。请重新检查选择。",
+  "選択したファイルが変更されたか利用できません。選択内容を再確認してください。",
+  "선택한 파일이 변경되었거나 사용할 수 없습니다. 선택 항목을 다시 검토하세요."
+ ],
  "Shared data": [
   "Dados compartilhados",
   "Données partagées",
@@ -655,6 +1213,42 @@
   "共享数据",
   "共有データ",
   "공유 데이터"
+ ],
+ "Show all files": [
+  "Mostrar todos os arquivos",
+  "Afficher tous les fichiers",
+  "Mostrar todos los archivos",
+  "Alle Dateien anzeigen",
+  "显示所有文件",
+  "すべてのファイルを表示",
+  "모든 파일 보기"
+ ],
+ "Show smaller files": [
+  "Mostrar arquivos menores",
+  "Afficher les fichiers plus petits",
+  "Mostrar archivos más pequeños",
+  "Kleinere Dateien anzeigen",
+  "显示较小文件",
+  "小さいファイルを表示",
+  "작은 파일 표시"
+ ],
+ "Sizes show allocated space.": [
+  "Os tamanhos mostram o espaço alocado.",
+  "Les tailles indiquent l’espace alloué.",
+  "Los tamaños muestran el espacio asignado.",
+  "Die Größen zeigen den zugewiesenen Speicherplatz.",
+  "大小表示已分配的空间。",
+  "サイズは割り当てられた容量を示します。",
+  "크기는 할당된 공간을 표시합니다."
+ ],
+ "SketchUp projects": [
+  "Projetos do SketchUp",
+  "Projets SketchUp",
+  "Proyectos de SketchUp",
+  "SketchUp-Projekte",
+  "SketchUp 项目",
+  "SketchUpプロジェクト",
+  "SketchUp 프로젝트"
  ],
  "Some app data could not be removed": [
   "Alguns dados de apps não puderam ser removidos",
@@ -674,6 +1268,33 @@
   "一部のファイルを削除できませんでした",
   "일부 파일을 제거하지 못했습니다"
  ],
+ "Some files could not be verified. Refresh to retry.": [
+  "Não foi possível verificar alguns arquivos. Atualize para tentar novamente.",
+  "Certains fichiers n’ont pas pu être vérifiés. Actualisez pour réessayer.",
+  "No se pudieron verificar algunos archivos. Actualiza para reintentar.",
+  "Einige Dateien konnten nicht überprüft werden. Zum Wiederholen aktualisieren.",
+  "部分文件无法验证。请刷新重试。",
+  "一部のファイルを検証できませんでした。更新して再試行してください。",
+  "일부 파일을 검증하지 못했습니다. 새로고침하여 다시 시도하세요."
+ ],
+ "Some files not verified": [
+  "Alguns arquivos não foram verificados",
+  "Certains fichiers ne sont pas vérifiés",
+  "Algunos archivos no se han verificado",
+  "Einige Dateien wurden nicht überprüft",
+  "部分文件未验证",
+  "一部のファイルが未検証です",
+  "일부 파일이 검증되지 않았습니다"
+ ],
+ "Spreadsheets": [
+  "Planilhas",
+  "Feuilles de calcul",
+  "Hojas de cálculo",
+  "Tabellen",
+  "电子表格",
+  "スプレッドシート",
+  "스프레드시트"
+ ],
  "System components and other copies": [
   "Componentes do sistema e outras cópias",
   "Composants système et autres copies",
@@ -682,6 +1303,15 @@
   "系统组件和其他副本",
   "システム構成要素とその他のコピー",
   "시스템 구성 요소 및 다른 복사본"
+ ],
+ "Text documents": [
+  "Documentos de texto",
+  "Documents texte",
+  "Documentos de texto",
+  "Textdokumente",
+  "文本文档",
+  "テキスト書類",
+  "텍스트 문서"
  ],
  "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved.": [
   "O app e seus arquivos de suporte, ajustes, caches e auxiliares serão removidos. Dados compartilhados com outros apps instalados são preservados.",
@@ -709,6 +1339,33 @@
   "标识符或位置表明可能存在关联，但不能证明归属，将保留数据。",
   "識別子や場所から関連が推定されますが、所有関係は証明できないため保持します。",
   "식별자나 위치가 연관성을 암시하지만 소유를 증명하지 못하므로 보존합니다."
+ ],
+ "The retained duplicate copy is selected. Review the files again.": [
+  "A cópia duplicada a ser mantida está selecionada. Revise os arquivos novamente.",
+  "La copie à conserver est sélectionnée. Vérifiez les fichiers à nouveau.",
+  "La copia que se conservará está seleccionada. Revisa los archivos de nuevo.",
+  "Die beizubehaltende Kopie ist ausgewählt. Dateien erneut prüfen.",
+  "要保留的重复副本已被选择。请重新检查文件。",
+  "保持するコピーが選択されています。ファイルを再確認してください。",
+  "보존할 중복 사본이 선택되었습니다. 파일을 다시 검토하세요."
+ ],
+ "The selected files will be moved to Trash.": [
+  "Os arquivos selecionados serão movidos para o Lixo.",
+  "Les fichiers sélectionnés seront placés dans la corbeille.",
+  "Los archivos seleccionados se moverán a la Papelera.",
+  "Die ausgewählten Dateien werden in den Papierkorb gelegt.",
+  "所选文件将移到废纸篓。",
+  "選択したファイルをゴミ箱に移動します。",
+  "선택한 파일이 휴지통으로 이동됩니다."
+ ],
+ "The selection changed. Review the files again.": [
+  "A seleção mudou. Revise os arquivos novamente.",
+  "La sélection a changé. Vérifiez les fichiers à nouveau.",
+  "La selección cambió. Revisa los archivos de nuevo.",
+  "Die Auswahl wurde geändert. Dateien erneut prüfen.",
+  "选择已更改。请重新检查文件。",
+  "選択内容が変更されました。ファイルを再確認してください。",
+  "선택이 변경되었습니다. 파일을 다시 검토하세요."
  ],
  "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review.": [
   "Estes identificadores não correspondem aos apps encontrados. A propriedade é incerta, por isso os dados serão mantidos para revisão.",
@@ -745,6 +1402,15 @@
   "无法在此删除此文件。",
   "このファイルはここでは削除できません。",
   "이 파일은 여기서 삭제할 수 없습니다."
+ ],
+ "This folder is empty.": [
+  "Esta pasta está vazia.",
+  "Ce dossier est vide.",
+  "Esta carpeta está vacía.",
+  "Dieser Ordner ist leer.",
+  "此文件夹为空。",
+  "このフォルダは空です。",
+  "이 폴더는 비어 있습니다."
  ],
  "This permanently deletes only the selected app-data folders.": [
   "Isso apaga permanentemente somente as pastas de dados de apps selecionadas.",
@@ -845,6 +1511,15 @@
   "対応するアプリが不明なデータ",
   "연결되지 않은 앱 데이터"
  ],
+ "Up to %@ can be removed while keeping one copy of each set.": [
+  "É possível remover até %@ mantendo uma cópia de cada grupo.",
+  "Vous pouvez supprimer jusqu’à %@ en conservant une copie de chaque groupe.",
+  "Puedes eliminar hasta %@ conservando una copia de cada grupo.",
+  "Bis zu %@ können entfernt werden, wenn eine Kopie jeder Gruppe erhalten bleibt.",
+  "每组保留一个副本时，最多可移除 %@。",
+  "各グループのコピーを1つ残して、最大%@を削除できます。",
+  "각 그룹의 복사본 하나를 남기면서 최대 %@를 삭제할 수 있습니다."
+ ],
  "Use MacSpace’s uninstall option in Settings.": [
   "Use a opção de desinstalar o MacSpace nos Ajustes.",
   "Utilisez l’option de désinstallation de MacSpace dans les Réglages.",
@@ -854,6 +1529,15 @@
   "設定にある MacSpace のアンインストールを使用してください。",
   "설정에서 MacSpace 제거 옵션을 사용하세요."
  ],
+ "Verification incomplete": [
+  "Verificação incompleta",
+  "Vérification incomplète",
+  "Verificación incompleta",
+  "Überprüfung unvollständig",
+  "验证未完成",
+  "検証が不完全です",
+  "검증 미완료"
+ ],
  "Verified app data": [
   "Dados de app verificados",
   "Données d’app vérifiées",
@@ -862,6 +1546,15 @@
   "已验证的应用数据",
   "確認済みのアプリデータ",
   "확인된 앱 데이터"
+ ],
+ "Videos": [
+  "Vídeos",
+  "Vidéos",
+  "Vídeos",
+  "Videos",
+  "视频",
+  "ビデオ",
+  "비디오"
  ],
  "Website data": [
   "Dados de sites",
@@ -880,410 +1573,5 @@
   "值得检查",
   "確認を推奨",
   "검토 권장"
- ],
- "disk": [
-  "disco",
-  "disque",
-  "disco",
-  "Speicher",
-  "磁盘",
-  "ディスク",
-  "디스크"
- ],
- "Duplicate files": [
-  "Arquivos duplicados",
-  "Fichiers en double",
-  "Archivos duplicados",
-  "Doppelte Dateien",
-  "重复文件",
-  "重複ファイル",
-  "중복 파일"
- ],
- "Developer cleanup": [
-  "Limpeza de desenvolvimento",
-  "Nettoyage des outils de développement",
-  "Limpieza de desarrollo",
-  "Entwicklerbereinigung",
-  "开发清理",
-  "開発用データのクリーンアップ",
-  "개발 데이터 정리"
- ],
- "Folders": [
-  "Pastas",
-  "Dossiers",
-  "Carpetas",
-  "Ordner",
-  "文件夹",
-  "フォルダ",
-  "폴더"
- ],
- "Open folder in Finder": [
-  "Abrir pasta no Finder",
-  "Ouvrir le dossier dans le Finder",
-  "Abrir carpeta en Finder",
-  "Ordner im Finder öffnen",
-  "在访达中打开文件夹",
-  "Finderでフォルダを開く",
-  "Finder에서 폴더 열기"
- ],
- "File types": [
-  "Tipos de arquivo",
-  "Types de fichiers",
-  "Tipos de archivo",
-  "Dateitypen",
-  "文件类型",
-  "ファイルの種類",
-  "파일 유형"
- ],
- "Compare files": [
-  "Comparar arquivos",
-  "Comparer les fichiers",
-  "Comparar archivos",
-  "Dateien vergleichen",
-  "比较文件",
-  "ファイルを比較",
-  "파일 비교"
- ],
- "Comparing files": [
-  "Comparando arquivos",
-  "Comparaison des fichiers",
-  "Comparando archivos",
-  "Dateien werden verglichen",
-  "正在比较文件",
-  "ファイルを比較中",
-  "파일 비교 중"
- ],
- "Comparison complete": [
-  "Comparação concluída",
-  "Comparaison terminée",
-  "Comparación completada",
-  "Vergleich abgeschlossen",
-  "比较完成",
-  "比較が完了しました",
-  "비교 완료"
- ],
- "Couldn’t compare files": [
-  "Não foi possível comparar os arquivos",
-  "Impossible de comparer les fichiers",
-  "No se pudieron comparar los archivos",
-  "Dateien konnten nicht verglichen werden",
-  "无法比较文件",
-  "ファイルを比較できませんでした",
-  "파일을 비교할 수 없습니다"
- ],
- "Move to Trash": [
-  "Mover para o Lixo",
-  "Placer dans la corbeille",
-  "Mover a la Papelera",
-  "In den Papierkorb legen",
-  "移到废纸篓",
-  "ゴミ箱に入れる",
-  "휴지통으로 이동"
- ],
- "The selected files will be moved to Trash.": [
-  "Os arquivos selecionados serão movidos para o Lixo.",
-  "Les fichiers sélectionnés seront placés dans la corbeille.",
-  "Los archivos seleccionados se moverán a la Papelera.",
-  "Die ausgewählten Dateien werden in den Papierkorb gelegt.",
-  "所选文件将移到废纸篓。",
-  "選択したファイルをゴミ箱に移動します。",
-  "선택한 파일이 휴지통으로 이동됩니다."
- ],
- "Duplicate files changed. Compare them again before removing copies.": [
-  "Os arquivos duplicados mudaram. Compare novamente antes de remover cópias.",
-  "Les fichiers en double ont changé. Comparez-les à nouveau avant de supprimer des copies.",
-  "Los duplicados cambiaron. Compáralos de nuevo antes de eliminar copias.",
-  "Doppelte Dateien wurden geändert. Vor dem Entfernen erneut vergleichen.",
-  "重复文件已更改。移除副本前请重新比较。",
-  "重複ファイルが変更されました。削除前に再度比較してください。",
-  "중복 파일이 변경되었습니다. 사본을 제거하기 전에 다시 비교하세요."
- ],
- "File removal settings changed. Reopen the list and confirm again.": [
-  "A configuração de exclusão mudou. Reabra a lista e confirme novamente.",
-  "Le réglage de suppression a changé. Rouvrez la liste et confirmez à nouveau.",
-  "La configuración de eliminación cambió. Vuelve a abrir la lista y confirma.",
-  "Die Löscheinstellung wurde geändert. Liste erneut öffnen und bestätigen.",
-  "文件移除设置已更改。请重新打开列表并确认。",
-  "ファイル削除の設定が変更されました。リストを開き直して確認してください。",
-  "파일 제거 설정이 변경되었습니다. 목록을 다시 열고 확인하세요."
- ],
- "Review rebuildable tool caches in System Data. Source projects and personal files are preserved.": [
-  "Revise caches de ferramentas que podem ser recriados em Dados do Sistema. Projetos e arquivos pessoais são preservados.",
-  "Examinez les caches reconstructibles dans Données système. Les sources et fichiers personnels sont conservés.",
-  "Revisa las cachés regenerables en Datos del sistema. Se conservan los proyectos y archivos personales.",
-  "Wiederherstellbare Tool-Caches in Systemdaten prüfen. Quellprojekte und persönliche Dateien bleiben erhalten.",
-  "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。",
-  "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。",
-  "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다."
- ],
- "Compare local personal files of 100 MB or more. Exact content is verified before copies are offered for removal; one copy is always kept.": [
-  "Compara arquivos pessoais locais de 100 MB ou mais. O conteúdo é verificado antes de oferecer cópias para remoção; uma cópia é sempre mantida.",
-  "Compare les fichiers personnels locaux de 100 Mo ou plus. Le contenu est vérifié avant de proposer des copies à supprimer ; une copie est toujours conservée.",
-  "Compara archivos personales locales de 100 MB o más. Se verifica el contenido antes de ofrecer copias para eliminar; siempre se conserva una.",
-  "Vergleicht lokale persönliche Dateien ab 100 MB. Vor dem Entfernen wird der Inhalt geprüft; eine Kopie bleibt immer erhalten.",
-  "比较至少100 MB的本地个人文件。提供可移除副本前验证完整内容，并始终保留一份。",
-  "100 MB以上のローカルの個人ファイルを比較します。削除候補にする前に内容を検証し、必ず1つを保持します。",
-  "100 MB 이상인 로컬 개인 파일을 비교합니다. 제거할 사본을 제안하기 전에 내용을 검증하며 항상 하나는 보존합니다."
- ],
- "Only identical extra copies of personal files of 100 MB or more are listed. One copy is kept. No files are preselected.": [
-  "Lista apenas cópias idênticas extras de arquivos pessoais de 100 MB ou mais. Uma cópia é mantida. Nada vem selecionado.",
-  "Seules les copies identiques supplémentaires de fichiers personnels de 100 Mo ou plus sont affichées. Une copie est conservée. Rien n’est présélectionné.",
-  "Solo se muestran copias idénticas adicionales de archivos personales de 100 MB o más. Se conserva una copia. No hay selección previa.",
-  "Nur zusätzliche identische Kopien persönlicher Dateien ab 100 MB werden angezeigt. Eine Kopie bleibt erhalten. Nichts ist vorausgewählt.",
-  "仅列出至少100 MB个人文件的额外相同副本。保留一份，不预选文件。",
-  "100 MB以上の個人ファイルの同一内容の余分なコピーのみを表示します。1つを保持し、事前選択はしません。",
-  "100 MB 이상 개인 파일의 동일한 추가 사본만 표시합니다. 하나는 보존하며 미리 선택하지 않습니다."
- ],
- "Open now": [
-  "Aberto agora",
-  "Ouvert actuellement",
-  "Abierto ahora",
-  "Jetzt geöffnet",
-  "当前已打开",
-  "現在開いています",
-  "현재 열려 있음"
- ],
- "Large files and duplicates": [
-  "Arquivos grandes e duplicados",
-  "Fichiers volumineux et doublons",
-  "Archivos grandes y duplicados",
-  "Große und doppelte Dateien",
-  "大文件和重复文件",
-  "大きなファイルと重複ファイル",
-  "대용량 및 중복 파일"
- ],
- "Media": [
-  "Mídia",
-  "Médias",
-  "Multimedia",
-  "Medien",
-  "媒体",
-  "メディア",
-  "미디어"
- ],
- "Show smaller files": [
-  "Mostrar arquivos menores",
-  "Afficher les fichiers plus petits",
-  "Mostrar archivos más pequeños",
-  "Kleinere Dateien anzeigen",
-  "显示较小文件",
-  "小さいファイルを表示",
-  "작은 파일 표시"
- ],
- "Retained copy": [
-  "Cópia mantida",
-  "Copie conservée",
-  "Copia conservada",
-  "Beibehaltene Kopie",
-  "保留的副本",
-  "保持するコピー",
-  "보존할 사본"
- ],
- "Identical files": [
-  "Arquivos idênticos",
-  "Fichiers identiques",
-  "Archivos idénticos",
-  "Identische Dateien",
-  "相同文件",
-  "同一のファイル",
-  "동일한 파일"
- ],
- "All locations": [
-  "Todos os locais",
-  "Tous les emplacements",
-  "Todas las ubicaciones",
-  "Alle Speicherorte",
-  "所有位置",
-  "すべての場所",
-  "모든 위치"
- ],
- "Inventory incomplete": [
-  "Inventário incompleto",
-  "Inventaire incomplet",
-  "Inventario incompleto",
-  "Inventar unvollständig",
-  "清单不完整",
-  "一覧が不完全です",
-  "목록 불완전"
- ],
- "No verified duplicate copies yet": [
-  "Ainda não há cópias duplicadas verificadas",
-  "Aucun doublon vérifié pour le moment",
-  "Aún no hay copias duplicadas verificadas",
-  "Noch keine bestätigten doppelten Kopien",
-  "尚无已验证的重复副本",
-  "検証済みの重複コピーはまだありません",
-  "아직 검증된 중복 사본이 없습니다"
- ],
- "Verification incomplete": [
-  "Verificação incompleta",
-  "Vérification incomplète",
-  "Verificación incompleta",
-  "Überprüfung unvollständig",
-  "验证未完成",
-  "検証が不完全です",
-  "검증 미완료"
- ],
- "Some files not verified": [
-  "Alguns arquivos não foram verificados",
-  "Certains fichiers ne sont pas vérifiés",
-  "Algunos archivos no se han verificado",
-  "Einige Dateien wurden nicht überprüft",
-  "部分文件未验证",
-  "一部のファイルが未検証です",
-  "일부 파일이 검증되지 않았습니다"
- ],
- "Only verified identical copies are offered for removal.": [
-  "Apenas cópias idênticas verificadas são oferecidas para remoção.",
-  "Seules les copies identiques vérifiées sont proposées à la suppression.",
-  "Solo se ofrecen para eliminar las copias idénticas verificadas.",
-  "Nur überprüfte identische Kopien werden zur Entfernung angeboten.",
-  "仅提供已验证的相同副本供移除。",
-  "検証済みの同一コピーのみを削除候補にします。",
-  "검증된 동일한 사본만 제거 대상으로 제공됩니다."
- ],
- "Some files could not be verified. Refresh to retry.": [
-  "Não foi possível verificar alguns arquivos. Atualize para tentar novamente.",
-  "Certains fichiers n’ont pas pu être vérifiés. Actualisez pour réessayer.",
-  "No se pudieron verificar algunos archivos. Actualiza para reintentar.",
-  "Einige Dateien konnten nicht überprüft werden. Zum Wiederholen aktualisieren.",
-  "部分文件无法验证。请刷新重试。",
-  "一部のファイルを検証できませんでした。更新して再試行してください。",
-  "일부 파일을 검증하지 못했습니다. 새로고침하여 다시 시도하세요."
- ],
- "Identical local personal files are grouped with one retained copy. No files are preselected.": [
-  "Arquivos pessoais locais idênticos são agrupados com uma cópia mantida. Nenhum arquivo vem selecionado.",
-  "Les fichiers personnels locaux identiques sont regroupés avec une copie conservée. Aucun fichier n’est présélectionné.",
-  "Los archivos personales locales idénticos se agrupan con una copia conservada. No hay archivos preseleccionados.",
-  "Identische lokale persönliche Dateien werden mit einer beibehaltenen Kopie gruppiert. Nichts ist vorausgewählt.",
-  "相同的本地个人文件分组显示，并保留一份副本。不预选文件。",
-  "同一のローカル個人ファイルをグループ化し、1つを保持します。事前選択はしません。",
-  "동일한 로컬 개인 파일을 그룹으로 묶고 하나는 보존합니다. 파일은 미리 선택되지 않습니다."
- ],
- "File changed since selection. Review it again.": [
-  "O arquivo mudou desde a seleção. Revise novamente.",
-  "Le fichier a changé depuis la sélection. Vérifiez-le à nouveau.",
-  "El archivo cambió desde la selección. Revísalo de nuevo.",
-  "Die Datei wurde seit der Auswahl geändert. Erneut prüfen.",
-  "文件自选择后已更改。请重新查看。",
-  "選択後にファイルが変更されました。再確認してください。",
-  "선택 이후 파일이 변경되었습니다. 다시 검토하세요."
- ],
- "Files changed. Reopen the list and review your selection again.": [
-  "Os arquivos mudaram. Reabra a lista e revise a seleção novamente.",
-  "Les fichiers ont changé. Rouvrez la liste et vérifiez votre sélection.",
-  "Los archivos cambiaron. Abre la lista y revisa de nuevo tu selección.",
-  "Dateien wurden geändert. Liste erneut öffnen und Auswahl prüfen.",
-  "文件已更改。请重新打开列表并检查所选项目。",
-  "ファイルが変更されました。リストを開き直して選択内容を確認してください。",
-  "파일이 변경되었습니다. 목록을 다시 열고 선택을 검토하세요."
- ],
- "Duplicate files changed. Reopen the list and review them again.": [
-  "Os arquivos duplicados mudaram. Reabra a lista e revise novamente.",
-  "Les doublons ont changé. Rouvrez la liste et vérifiez-les à nouveau.",
-  "Los duplicados cambiaron. Abre la lista y revísalos de nuevo.",
-  "Doppelte Dateien wurden geändert. Liste erneut öffnen und prüfen.",
-  "重复文件已更改。请重新打开列表并查看。",
-  "重複ファイルが変更されました。リストを開き直して確認してください。",
-  "중복 파일이 변경되었습니다. 목록을 다시 열고 검토하세요."
- ],
- "Reopen the list and confirm deletion again.": [
-  "Reabra a lista e confirme a exclusão novamente.",
-  "Rouvrez la liste et confirmez à nouveau la suppression.",
-  "Abre la lista y confirma de nuevo la eliminación.",
-  "Liste erneut öffnen und Löschung bestätigen.",
-  "请重新打开列表并确认删除。",
-  "リストを開き直して削除を確認してください。",
-  "목록을 다시 열고 삭제를 확인하세요."
- ],
- "Files": [
-  "Arquivos",
-  "Fichiers",
-  "Archivos",
-  "Dateien",
-  "文件",
-  "ファイル",
-  "파일"
- ],
- "Couldn’t remove the selected files": [
-  "Não foi possível remover os arquivos selecionados",
-  "Impossible de supprimer les fichiers sélectionnés",
-  "No se pudieron eliminar los archivos seleccionados",
-  "Ausgewählte Dateien konnten nicht entfernt werden",
-  "无法移除所选文件",
-  "選択したファイルを削除できませんでした",
-  "선택한 파일을 제거할 수 없습니다"
- ],
- "No files are selected.": [
-  "Nenhum arquivo está selecionado.",
-  "Aucun fichier n’est sélectionné.",
-  "No hay archivos seleccionados.",
-  "Keine Dateien ausgewählt.",
-  "未选择文件。",
-  "ファイルが選択されていません。",
-  "선택된 파일이 없습니다."
- ],
- "Reopen the list and review your selection again.": [
-  "Reabra a lista e revise sua seleção novamente.",
-  "Rouvrez la liste et vérifiez votre sélection.",
-  "Abre la lista y revisa de nuevo tu selección.",
-  "Liste erneut öffnen und Auswahl prüfen.",
-  "请重新打开列表并检查所选项目。",
-  "リストを開き直して選択内容を確認してください。",
-  "목록을 다시 열고 선택을 검토하세요."
- ],
- "Reviewing selected files": [
-  "Revisando arquivos selecionados",
-  "Vérification des fichiers sélectionnés",
-  "Revisando archivos seleccionados",
-  "Ausgewählte Dateien werden geprüft",
-  "正在检查所选文件",
-  "選択したファイルを確認中",
-  "선택한 파일 검토 중"
- ],
- "Selected files changed or are open. Review them again.": [
-  "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.",
-  "Les fichiers sélectionnés ont changé ou sont ouverts. Vérifiez-les à nouveau.",
-  "Los archivos seleccionados cambiaron o están abiertos. Revísalos de nuevo.",
-  "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.",
-  "所选文件已更改或正在打开。请重新检查。",
-  "選択したファイルが変更されたか開かれています。再確認してください。",
-  "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요."
- ],
- "The retained duplicate copy is selected. Review the files again.": [
-  "A cópia duplicada a ser mantida está selecionada. Revise os arquivos novamente.",
-  "La copie à conserver est sélectionnée. Vérifiez les fichiers à nouveau.",
-  "La copia que se conservará está seleccionada. Revisa los archivos de nuevo.",
-  "Die beizubehaltende Kopie ist ausgewählt. Dateien erneut prüfen.",
-  "要保留的重复副本已被选择。请重新检查文件。",
-  "保持するコピーが選択されています。ファイルを再確認してください。",
-  "보존할 중복 사본이 선택되었습니다. 파일을 다시 검토하세요."
- ],
- "The selection changed. Review the files again.": [
-  "A seleção mudou. Revise os arquivos novamente.",
-  "La sélection a changé. Vérifiez les fichiers à nouveau.",
-  "La selección cambió. Revisa los archivos de nuevo.",
-  "Die Auswahl wurde geändert. Dateien erneut prüfen.",
-  "选择已更改。请重新检查文件。",
-  "選択内容が変更されました。ファイルを再確認してください。",
-  "선택이 변경되었습니다. 파일을 다시 검토하세요."
- ],
- "%lld files could not be removed.": [
-  "Não foi possível remover %lld arquivos.",
-  "Impossible de supprimer %lld fichiers.",
-  "No se pudieron eliminar %lld archivos.",
-  "%lld Dateien konnten nicht entfernt werden.",
-  "无法移除%lld个文件。",
-  "%lld個のファイルを削除できませんでした。",
-  "%lld개 파일을 제거하지 못했습니다."
- ],
- "Open in %@": [
-  "Aberto em %@",
-  "Ouvert dans %@",
-  "Abierto en %@",
-  "Geöffnet in %@",
-  "在%@中打开",
-  "%@で開いています",
-  "%@에서 열려 있음"
  ]
 }

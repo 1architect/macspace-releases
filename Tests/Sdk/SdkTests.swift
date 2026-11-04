@@ -203,3 +203,16 @@ final class SdkTests: XCTestCase {
         XCTAssertTrue(row.isFreeingInBackground)
     }
 }
+
+extension SdkTests {
+    func testRemovedAllocationIsSeparateFromVolumeReclamationAndLegacyResultsDecode() throws {
+        let result = ActionResult(outcome: .succeeded, message: "Removed", freedBytes: 100_000_000, removedBytes: 1_000_000_000)
+        let data = try JSONEncoder().encode(result)
+        let decoded = try JSONDecoder().decode(ActionResult.self, from: data)
+        XCTAssertEqual(decoded.removedBytes, 1_000_000_000); XCTAssertEqual(decoded.freedBytes, 100_000_000)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        legacy.removeValue(forKey: "removedBytes")
+        let old = try JSONDecoder().decode(ActionResult.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(old.removedBytes); XCTAssertEqual(old.freedBytes, 100_000_000)
+    }
+}

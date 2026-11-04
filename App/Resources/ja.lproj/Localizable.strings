@@ -6,6 +6,7 @@
 "%@ in total" = "合計%@";
 "%@ left." = "残り%@。";
 "%@ left. MacSpace can free %@." = "残り%@。MacSpaceで%@を解放できます。";
+"%@ removed" = "%@を削除";
 "%@ update" = "%@のアップデート";
 "%@ used" = "%@使用中";
 "%lld files" = "%lld個のファイル";
@@ -27,6 +28,7 @@
 "Applies the Debloat policies you turn on." = "有効にしたDebloatポリシーを適用します。";
 "Approve in Settings" = "設定で承認";
 "Approve the helper" = "ヘルパーを承認";
+"Apps and files" = "アプリとファイル";
 "Automatic" = "自動";
 "Automatic cleanup" = "自動クリーンアップ";
 "Automatic cleanup: %@" = "自動クリーンアップ：%@";
@@ -112,7 +114,7 @@
 "Nothing to free" = "解放できるものはありません";
 "Notifications" = "通知";
 "OK" = "OK";
-"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "初期設定はオフです。オフの場合、ディスクで選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュの削除は別のルールに従います。";
+"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "初期設定ではオフです。オフの場合、「アプリとファイル」で選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュのクリーンアップには、それぞれの削除ルールが適用されます。";
 "Open Login Items" = "ログイン項目を開く";
 "Open MacSpace" = "MacSpaceを開く";
 "Open Panel" = "パネルを開く";
@@ -139,6 +141,7 @@
 "Restore" = "元に戻す";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。";
 "Restoring settings" = "設定を復元中";
+"Selected files need review" = "選択したファイルの確認が必要です";
 "Settings" = "設定";
 "Settings › Permissions" = "設定 › 権限";
 "Settings › Recent cleanups" = "設定 › 最近のクリーンアップ";

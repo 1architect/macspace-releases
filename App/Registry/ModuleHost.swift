@@ -111,11 +111,15 @@ public final class ModuleHost: ObservableObject {
     }
 
     private var activationObserver: NSObjectProtocol?
+    private var deactivationObserver: NSObjectProtocol?
 
     /// Coming back to MacSpace (from System Settings, after approving a profile), the modules that depend on approvals given there
     /// read the Mac again: without it, the page kept saying the profile was waiting. The others catch up if their figures are old
     /// (`ModuleHandle.appBecameActive`).
     private func observeActivation() {
+        deactivationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.activeHandles.forEach { $0.appResignedActive() } }
+        }
         activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -240,6 +244,11 @@ public final class ModuleHost: ObservableObject {
         applySchedule()
     }
 
+    func canOpen(_ destination: Destination) -> Bool {
+        guard let id = destination.moduleID else { return true }
+        guard let handle = handle(for: id) else { return false }
+        return handle.isEnabled && handle.state == .ready
+    }
     public func handle(for id: String) -> ModuleHandle? { handles.first { $0.id == id } }
 
     public var activeHandles: [ModuleHandle] { handles.filter { $0.state == .ready } }

@@ -34,7 +34,7 @@ final class FolderAggregationTests: XCTestCase {
         let aggregate = try XCTUnwrap(BlockLayout.blocks(parts).first { $0.segment.id == BlockLayout.foldersID }?.segment)
         let id = try XCTUnwrap(ScreenView.graphGroup(aggregate, usageID: "root")?.id)
         let map = try XCTUnwrap(ScreenView.graphPage(id, in: screen))
-        XCTAssertTrue(map.widgets.isEmpty)
+        XCTAssertFalse(map.widgets.isEmpty, "Synthetic maps expose only the exact represented folder destinations")
         XCTAssertEqual(Set(map.hero?.segments.compactMap(\.pageID) ?? []), ["folder:/medium", "folder:/tiny"])
         XCTAssertEqual(map.hero?.totalBytes, 1001)
         let child = try XCTUnwrap(ScreenView.graphBlocks(try XCTUnwrap(map.hero)).first { $0.segment.id == BlockLayout.foldersID }?.segment)

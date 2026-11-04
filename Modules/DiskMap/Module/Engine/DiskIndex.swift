@@ -11,13 +11,14 @@ struct DiskFile: Codable, Equatable, Sendable {
     var ownershipID: UInt32?
     var modifiedAt: Date?
     var identity: FileReviewIdentity? = nil
+    /// Set only for choices originating in Duplicate files, not ordinary file-category cleanup.
     var duplicateVerification: DiskDuplicateVerification? = nil
-    var retainedDuplicateKeeper: Bool = false
 }
 struct DiskDirectory: Codable, Equatable, Sendable {
     var path: String
     var folders: [String] = []
     var files: [DiskFile] = []
+    var itemCount: UInt64? = nil
     var directBytes: UInt64 = 0
     var bytes: UInt64 = 0
     var readable = true
@@ -49,8 +50,13 @@ struct DiskIndex: Codable, Sendable {
     var overviewFiles: [DiskFile]?
     var personalFolders: [DiskDirectory]?
     var categories: [DiskCategorySummary]?
+    var categoryLoadingFraction: Double?
+    var categoriesIncludeSmaller: Bool?
+    var inventoryAuthoritative: Bool?
+    var personalInventoryVersion: Int?
+    static let personalInventorySchemaVersion = 1
     static let browseSchemaVersion = 4
-    static let summarySchemaVersion = 3
+    static let summarySchemaVersion = 4
     var largeFiles: [DiskFile] {
         directories.values.flatMap(\.files).filter { $0.logicalBytes >= Self.largeFileMinimum && $0.bytes > 0 }.sorted { ($0.logicalBytes, $0.path) > ($1.logicalBytes, $1.path) }
     }

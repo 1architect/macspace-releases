@@ -9,6 +9,7 @@ struct DiskDatabaseScanner {
     let db: DiskDatabase
     let excluded: [String]
     var metadata: (String) -> stat? = { path in var info = stat(); return lstat(path, &info) == 0 ? info : nil }
+    var cancelled: @Sendable () -> Bool = { false }
     private var devices = Set<dev_t>()
     private var catalogChanged = false
     private var report: LoadProgressSink?
@@ -16,6 +17,7 @@ struct DiskDatabaseScanner {
     private(set) var visited = 0
     init(db: DiskDatabase, excluded: [String]) { self.db = db; self.excluded = excluded }
     mutating func scan(_ changes: DiskEvents.Changes, cursor: UInt64, progress: LoadProgressSink?) throws {
+        if cancelled() { throw CancellationError() }
         // Bounded batches may survive a cancelled first walk. Only a committed state record proves completion.
         if try db.state() == nil { try db.clearIncomplete() }
         if let info = metadata(db.root) { devices.insert(info.st_dev) }
@@ -48,7 +50,7 @@ struct DiskDatabaseScanner {
             let totalsStarted = Date()
             try db.reconcileTotals(all: initial, progress: { progress?(0.8 + 0.19 * $0) })
             db.phase?("totals", Date().timeIntervalSince(totalsStarted), visited)
-            if initial { state.storageRevision = 4 }
+            if initial { state.storageRevision = 4; state.personalInventoryVersion = DiskIndex.personalInventorySchemaVersion }
             state.eventID = cursor; state.revision += 1
             if initial || changes.recursive.contains(db.root) {
                 state.browseVersion = DiskIndex.browseSchemaVersion; state.summaryVersion = DiskIndex.summarySchemaVersion
@@ -74,11 +76,11 @@ struct DiskDatabaseScanner {
     /// Filesystem waits overlap across eight existing native workers; SQLite still has one writer.
     private mutating func initialScan() throws {
         struct Totals {
-            var bytes: UInt64 = 0; var bundle: String?; var readable = true
+            var bytes: UInt64 = 0; var items: UInt64 = 0; var bundle: String?; var readable = true
             var files: [(DiskFile, String)] = []
             var folders: [DiskDirectory] = []
         }
-        let db = db, metadata = metadata, devices = devices, excluded = excluded, report = report
+        let db = db, metadata = metadata, devices = devices, excluded = excluded, report = report, cancelled = cancelled
         guard let info = metadata(db.root) else { throw DiskDatabase.Failure(message: "The scan root is unreadable") }
         try db.put(DiskDirectory(path: db.root, ownerUID: info.st_uid))
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else {
@@ -89,7 +91,7 @@ struct DiskDatabaseScanner {
         func writing(_ work: () throws -> Void) {
             lock.withLock {
                 guard failure == nil else { return }
-                do { try Task.checkCancellation(); try work(); try db.flushBatch() }
+                do { if cancelled() { throw CancellationError() }; try Task.checkCancellation(); try work(); try db.flushBatch() }
                 catch { failure = error }
             }
         }
@@ -105,7 +107,9 @@ struct DiskDatabaseScanner {
             totals.files.removeAll(keepingCapacity: true); totals.folders.removeAll(keepingCapacity: true)
         }
         DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, visit: { totals, makePath, entry in
+            totals.items += 1
             let path = makePath()
+            if cancelled() { writing { throw CancellationError() }; return false }
             guard devices.contains(entry.device), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return false }
             if entry.isDirectory {
                 guard !lock.withLock({ failure != nil }), let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
@@ -128,17 +132,17 @@ struct DiskDatabaseScanner {
             flush(&totals)
             writing {
                 try db.ensureDirectory(path)
-                try db.query("UPDATE dirs SET direct=?,bundle=?,readable=? WHERE path=?", [.number(totals.bytes), .text(totals.bundle ?? ""), .number(complete && totals.readable ? 1 : 0), .text(path)])
+                try db.query("UPDATE dirs SET direct=?,bundle=?,readable=?,items=? WHERE path=?", [.number(totals.bytes), .text(totals.bundle ?? ""), .number(complete && totals.readable ? 1 : 0), complete ? .number(totals.items) : .optional(nil), .text(path)])
                 directories += 1
             }
-            totals.bytes = 0; totals.bundle = nil; totals.readable = true
+            totals.bytes = 0; totals.items = 0; totals.bundle = nil; totals.readable = true
         })
         if let failure { throw failure }
         visited = directories
     }
 
     private mutating func read(_ path: String, recursive: Bool) throws {
-        try Task.checkCancellation()
+        if cancelled() { throw CancellationError() }; try Task.checkCancellation()
         guard DiskDatabase.contains(path, below: db.root), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return }
         guard let info = metadata(path) else {
             if errno == ENOENT || errno == ENOTDIR { try db.remove(path) }
@@ -156,7 +160,7 @@ struct DiskDatabaseScanner {
             retained.readable = false; try db.put(retained); return
         }
         let old = try db.directory(path), oldChildren = try db.children(path)
-        var node = DiskDirectory(path: path, ownerUID: info.st_uid)
+        var node = DiskDirectory(path: path, itemCount: 0, ownerUID: info.st_uid)
         var folders: [String] = [], failure: Error?
         let oldLinkParents = try db.linkParents(at: path)
         for parent in oldLinkParents { try db.markTotals(parent) }
@@ -167,7 +171,8 @@ struct DiskDatabaseScanner {
             DirectoryWalk.entries(at: path, includingModificationDate: true) { name, entry in
                 guard failure == nil else { return }
                 do {
-                    try Task.checkCancellation()
+                    if cancelled() { throw CancellationError() }; try Task.checkCancellation()
+                    node.itemCount = (node.itemCount ?? 0) + 1
                     entries += 1
                     if entries % 2048 == 0 { report?(0.8 * Double(entries) / Double(entries + 100_000)) }
                     let child = path == "/" ? "/" + name : path + "/" + name
@@ -196,7 +201,7 @@ struct DiskDatabaseScanner {
                             try db.put(file, link: key)
                         } else {
                             node.directBytes += file.bytes
-                            if file.logicalBytes >= DiskIndex.largeFileMinimum && file.bytes > 0 { try db.put(file) }
+                            if file.bytes > 0 { try db.put(file) }
                         }
                     }
                 } catch { failure = error }
@@ -212,7 +217,7 @@ struct DiskDatabaseScanner {
         }
         try db.execute("RELEASE directory_read")
         visited += 1
-        if old?.bundleIdentifier != node.bundleIdentifier { catalogChanged = true }
+        if old?.bundleIdentifier != node.bundleIdentifier || path.contains(".app/") || path.hasSuffix(".app") { catalogChanged = true }
         if Set(oldChildren) != Set(folders), folders.contains(where: { $0.hasSuffix(".app") }) || oldChildren.contains(where: { $0.hasSuffix(".app") }) || (path.range(of: "/Library/", options: .literal) != nil) { catalogChanged = true }
         for removed in Set(oldChildren).subtracting(folders) { try db.remove(removed) }
         try db.put(node)

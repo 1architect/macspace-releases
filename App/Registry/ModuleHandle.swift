@@ -70,6 +70,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func dismissCompletion() { isShowingCompletion = false }
     /// What the action behind the latest `allDone` freed (`ActionResult.freedBytes`): the page counts up to it under "All done".
     public private(set) var allDoneFreed: UInt64?
+    public private(set) var allDoneRemoved: UInt64?
     /// The group pages open over the module's page (`Row.children`), by id, the top one last; empty on the module's own page. A group
     /// opened from a group's page goes on top of it, and Back returns to the page under it, as everywhere else in the app.
     @Published public var groupPath: [String] = [] {
@@ -132,6 +133,25 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         return groupPath.lazy.compactMap { self.graphPage($0) }.compactMap { ScreenView.row(id, in: $0) }.first
     }
 
+    @Published public private(set) var pageLoading: LoadFill?
+    private var pageLoadGeneration = 0
+    private func loadPage(_ id: String) async -> Screen? {
+        guard let module else { return nil }
+        pageLoadGeneration += 1
+        let generation = pageLoadGeneration
+        let started = Date()
+        defer { if generation == pageLoadGeneration { pageLoadGeneration += 1; pageLoading = nil; updateBusy() } }
+        return await module.page(id: id, context: context(), progress: { [weak self] fraction in
+            Task { @MainActor in
+                guard let self, self.pageLoadGeneration == generation, fraction.isFinite, self.screenIsVisible else { return }
+                if fraction < 1, self.pageLoading == nil {
+                    self.pageLoading = LoadFill(started: started, expected: LoadFill.firstGuess)
+                    self.updateBusy()
+                }
+                self.pageLoading?.reported = min(1, max(0, fraction))
+            }
+        })
+    }
     private var requestedPage: String?
     private var requestedPageGeneration = 0
     private func cancelRequestedPage() { requestedPageGeneration += 1; requestedPage = nil }
@@ -144,14 +164,33 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private func openRequestedPage() async {
         guard let id = requestedPage, let module, screenIsVisible, state == .ready else { return }
         let generation = requestedPageGeneration, parent = groupPath, action = actionGeneration, reading = refreshGeneration
-        guard let page = await module.page(id: id, context: context()), requestedPage == id,
+        guard let page = await preparedPage(await loadPage(id)), requestedPage == id,
               generation == requestedPageGeneration, parent == groupPath, state == .ready, screenIsVisible,
               action == actionGeneration, reading == refreshGeneration else { return }
         reconcileSelection(page)
         requestedPage = nil; pages[id] = page; pageIDs[id] = id; retainPage(id)
         withAnimation(Theme.push) { groupPath.append(id) }
+        scheduleAutoRefresh()
     }
+    @Published public private(set) var focusedRowID: String?
     public func pushGroup(_ id: String) {
+        if id.hasPrefix("focus:") {
+            openingPage?.cancel()
+            let parent = groupPath
+            openingPage = Task { [weak self] in
+                guard let self, let page = await self.preparedPage(await self.loadPage(id)), !Task.isCancelled,
+                      self.groupPath == parent, self.state == .ready, self.screenIsVisible else { return }
+                self.reconcileSelection(page)
+                if let current = parent.last { self.pages[current] = page; self.pageIDs[current] = id } else { self.screen = page }
+                self.scheduleAutoRefresh()
+                self.focusedRowID = nil
+                if let data = Data(base64Encoded: String(id.dropFirst("focus:browse:".count))),
+                   let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let path = payload["focusPath"] as? String {
+                    self.focusedRowID = "file:" + Data(path.utf8).base64EncodedString()
+                }
+            }
+            return
+        }
         guard groupPath.last != id else { return }
         cancelRequestedPage()
         invalidatePendingSelections()
@@ -168,26 +207,56 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             withAnimation(Theme.push) { groupPath.append(id) }
             return
         }
-        let parent = groupPath
+        let parent = groupPath, action = actionGeneration, navigation = requestedPageGeneration
+        // Rows and graph are prepared together before the existing page transition starts.
         openingPage = Task { [weak self] in
-            guard let self, let module = self.module,
-                  let page = await module.page(id: pageID, context: self.context()),
-                  !Task.isCancelled, self.groupPath == parent, self.state == .ready, self.screenIsVisible else { return }
+            guard let self, let page = await self.preparedPage(await self.loadPage(pageID)),
+                  !Task.isCancelled, self.groupPath == parent, self.actionGeneration == action,
+                  self.requestedPageGeneration == navigation, self.state == .ready, self.screenIsVisible else { return }
             self.reconcileSelection(page)
-            let target = replacement ?? id
-            self.pageIDs[target] = pageID
-            self.pages[target] = page
-            self.retainPage(target)
-            if replacement == nil { withAnimation(Theme.push) { self.groupPath.append(id) } }
+            self.pageIDs[id] = pageID
+            self.pages[id] = page
+            self.retainPage(id)
+            withAnimation(Theme.push) {
+                if replacement != nil { self.groupPath[self.groupPath.count - 1] = id }
+                else { self.groupPath.append(id) }
+            }
+            self.scheduleAutoRefresh()
         }
+    }
+
+    private func preparedPage(_ page: Screen?) async -> Screen? {
+        guard var page, let selection = page.selection, let scope = selection.scope,
+              let prefix = selection.bulkResolver, let bulk = sessionBulk[scope], let module else { return page }
+        let request = SelectionBulkRequest(token: bulk.token, operation: "membership", visible: selection.choices.keys.sorted(), sections: selection.sections.compactMap(\.pageID))
+        guard let resolved = await module.page(id: requestPageID(request, prefix: prefix), context: context()), let resolvedSnapshot = resolved.selection?.bulk else { return nil }
+        guard sessionBulk[scope]?.token == bulk.token else { return await preparedPage(page) }
+        var snapshot = resolvedSnapshot
+        snapshot.unavailableReason = bulk.unavailableReason
+        snapshot.issues = bulk.issues
+        if let issues = snapshot.issues, !issues.isEmpty {
+            var extra: [Row] = []
+            for issue in issues {
+                page.selection?.choices[issue.id] = issue.bytes
+                if !snapshot.checked.contains(issue.id) { snapshot.checked.append(issue.id) }
+                if ScreenView.row(issue.id, in: page) == nil {
+                    extra.append(Row(id: issue.id, title: issue.title, trailing: ByteFormat.string(issue.bytes), paths: [issue.path], unavailableReason: issue.reason))
+                }
+            }
+            if !extra.isEmpty { page.widgets.insert(.list(ListWidget(id: "selection-issues", title: String(localized: "Selected files need review"), rows: extra)), at: 0) }
+        }
+        page.selection?.bulk = snapshot
+        return page
     }
 
     private func refreshPages(all: Bool = false) async {
         guard let module else { return }
-        let reading = refreshGeneration, action = actionGeneration
+        let reading = refreshGeneration, action = actionGeneration, navigation = requestedPageGeneration
         for id in (all ? groupPath : Array(groupPath.suffix(1))) where pages[id] != nil {
-            let page = await module.page(id: pageIDs[id] ?? id, context: context())
-            guard state == .ready, reading == refreshGeneration, action == actionGeneration else { return }
+            let destination = pageIDs[id] ?? id
+            let page = await preparedPage(await module.page(id: destination, context: context()))
+            guard state == .ready, reading == refreshGeneration, action == actionGeneration,
+                  navigation == requestedPageGeneration, (pageIDs[id] ?? id) == destination else { return }
             if let position = groupPath.firstIndex(of: id), page == nil {
                 pages.removeValue(forKey: id)
                 groupPath = Array(groupPath.prefix(position))
@@ -221,11 +290,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var bulkSections: [String: Set<String>] = [:]
     private var bulkEdit: Task<Void, Never>?
     private var sessionGroup: Row?
-    private var selectingSections = Set<String>()
+    @Published private var selectingSections = Set<String>()
+    public var isSelectingFiles: Bool { !selectingSections.isEmpty }
+    private struct PendingFileToggle {
+        var key: UUID
+        var id: String
+        var bytes: UInt64
+    }
+    @Published private var pendingFileToggles: [String: [PendingFileToggle]] = [:]
+    public var isEditingSelection: Bool { isSelectingFiles || pendingFileToggles.values.contains { !$0.isEmpty } }
     private var selectionGeneration = 0
     private func invalidatePendingSelections() {
         selectionGeneration += 1
         selectingSections.removeAll()
+        pendingFileToggles.removeAll()
     }
     private var sessionSections: [String: [String: Set<String>]] = [:]
     private var sessionSectionPages: [String: [String: String]] = [:]
@@ -265,6 +343,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             selection.origins.merge(scopedOrigins[scope] ?? [:]) { _, original in original }
         }
         if let bulk = sessionBulk[scope] { selection.bulk = bulk }
+        if let pending = pendingFileToggles[scope], !pending.isEmpty {
+            let explicit = chosen[scope] ?? []
+            var display = selection.bulk ?? SelectionBulk(token: "", count: UInt64(explicit.count),
+                bytes: explicit.compactMap { selection.choices[$0] }.reduce(0, +), checked: Array(explicit))
+            var checked = Set(display.checked)
+            for edit in pending {
+                if checked.remove(edit.id) != nil {
+                    display.count -= min(display.count, 1); display.bytes -= min(display.bytes, edit.bytes)
+                } else {
+                    checked.insert(edit.id); display.count += 1; display.bytes += edit.bytes
+                }
+            }
+            display.checked = checked.sorted(); display.all = []
+            selection.bulk = display
+        }
         group.selection = selection
         return group
     }
@@ -393,15 +486,17 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard let selection = group.selection else { return [] }
         let ids = Set(selection.choices.keys)
         guard group.selection?.bulk != nil else { return ids }
-        return ids.intersection(bulkVisible[group.id] ?? [])
+        return ids
     }
 
     public var bulkMembershipKey: [String] {
+        guard !performing, !isCleaning, !isEditingSelection else { return [] }
         guard let group = activeSelection, let bulk = group.selection?.bulk else { return [] }
         return [bulk.token, String(bulkMembershipRevision)] + groupPath + (group.selection?.choices.keys.sorted() ?? [])
     }
 
     public func refreshBulkMembership() async {
+        guard !performing, !isCleaning, !isEditingSelection else { return }
         guard let group = activeSelection, let selection = group.selection,
               let bulk = selection.bulk, let prefix = selection.bulkResolver else { return }
         let visible = Set(selection.choices.keys), sections = Set(selection.sections.compactMap(\.pageID))
@@ -416,7 +511,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             return
         }
         guard snapshot.token == bulk.token, selectionGeneration == generation,
-              sessionBulk[group.id]?.token == bulk.token, state == .ready else { return }
+              sessionBulk[group.id]?.token == bulk.token, state == .ready, !performing, !isCleaning else { return }
         bulkVisible[group.id] = visible; bulkSections[group.id] = sections
         sessionBulk[group.id] = snapshot
     }
@@ -436,11 +531,18 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             guard !cancel else { return }
             selectingSections.insert(key)
         } else if !selectingSections.isEmpty { invalidatePendingSelections() }
+        let pendingKey = UUID()
+        if operation == "toggle", let id = toggledID, let bytes = selection.choices[id] {
+            pendingFileToggles[group.id, default: []].append(.init(key: pendingKey, id: id, bytes: bytes))
+        }
         let generation = selectionGeneration, previous = bulkEdit
         bulkEdit = Task { [weak self] in
             await previous?.value
             guard let self, self.selectionGeneration == generation, self.state == .ready else { return }
-            defer { if self.selectionGeneration == generation { self.selectingSections.remove(key) } }
+            defer {
+                if self.selectionGeneration == generation { self.selectingSections.remove(key) }
+                self.pendingFileToggles[group.id]?.removeAll { $0.key == pendingKey }
+            }
             let current = self.sessionBulk[group.id]
             let explicit = current == nil ? Array(self.chosen[group.id] ?? []).sorted() : ids
             let request = SelectionBulkRequest(token: current?.token, operation: operation, scopePageID: scopePageID,
@@ -616,6 +718,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         cancelRequestedPage()
         invalidatePendingSelections()
         if case .incompatible = state { return }
+        Task { await module?.setActive(false) }
+        pageLoadGeneration += 1; pageLoading = nil
+        refreshGeneration += 1; clearRefreshPresentation()
         state = .off
         autoRefresh?.cancel()
         autoRefresh = nil
@@ -640,12 +745,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// module has no `status` and reads the Mac in full: each one filled the page's button and pulsed its background, every five
     /// seconds while Siri's models were being freed (2026-10-19).
     public func refresh(reload: Bool = false, quiet: Bool = false, following: Bool = false) async {
-        invalidatePendingSelections()
+        if reload || !quiet { invalidatePendingSelections() }
         guard !preparingForUninstall, state == .ready, let module else { return }
         guard !quiet || !performing else { return }
         // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
         autoRefresh?.cancel()
         autoRefresh = nil
+        await module.setActive(isWatched && Self.isAppActive())
+        guard state == .ready, isEnabled else { return }
         let context = context()
         refreshGeneration += 1
         clearRefreshPresentation()
@@ -671,14 +778,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 updateBusy()
             }
         }
-        if reload { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
+        if reload {
+            if let id = groupPath.last, let forest = graphPage(id) {
+                for segment in forest.hero?.segments ?? [] {
+                    if let pageID = segment.pageID { await module.invalidate(pageID: pageID, context: context) }
+                }
+            } else { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
+        }
         // What the module says of its progress fills the Loading button (`LoadFill.reported`).
         let reports: LoadProgressSink = { [weak self] fraction in
             Task { @MainActor in
                 guard let self, fraction.isFinite, generation == self.refreshGeneration,
                       self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
                 if !self.refreshes.contains(generation) {
-                    guard self.isWatched, !following else { return }
+                    guard fraction < 1, self.isWatched, !following else { return }
                     self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
                 }
                 let fraction = min(max(fraction, 0), 1)
@@ -707,7 +820,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             settings.setLastTile(newTile, module: id)
         }
         if tileIsStale { tileIsStale = false }
-        if let newScreen {
+        if let newScreen = await preparedPage(newScreen) {
+            guard generation == refreshGeneration, state == .ready else { return }
             reconcileSelection(newScreen)
             if screen != newScreen { screen = newScreen; invalidateClosedPages() }
         }
@@ -728,7 +842,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private func updateBusy() {
-        let busy = performing || !blockingRefreshes.isEmpty
+        let busy = performing || !blockingRefreshes.isEmpty || pageLoading != nil
         if isBusy != busy { isBusy = busy }
         let refreshing = !refreshes.isEmpty
         if isRefreshing != refreshing { isRefreshing = refreshing }
@@ -805,6 +919,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         invalidatePendingSelections()
         isWatched = watched
         screenIsVisible = screenVisible
+        Task { await module?.setActive(watched && Self.isAppActive() && state == .ready && isEnabled) }
         if !watched {
             autoRefresh?.cancel()
             autoRefresh = nil
@@ -817,21 +932,34 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     /// Back in front: figures older than the usual minute are read again now, and the readings go back to every minute.
+    func appResignedActive() {
+        autoRefresh?.cancel(); autoRefresh = nil
+        Task { await module?.setActive(false) }
+    }
     func appBecameActive() {
-        guard state == .ready, isWatched else { return }
+        guard state == .ready, isWatched, isEnabled else { return }
+        Task { await module?.setActive(isWatched) }
         let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
         if age >= Self.autoRefreshInterval, !performing {
             Task { if isWatched { await refresh(quiet: true) } }
         } else { scheduleAutoRefresh() }
     }
 
+    /// Follow the current metadata worker without reconciling unrelated global filesystem events.
+    func followPendingPage() async {
+        guard state == .ready, isWatched, screenIsVisible else { return }
+        await refreshPages()
+        scheduleAutoRefresh()
+    }
+
     /// Schedules the next quiet reading after the one that just finished.
     private func scheduleAutoRefresh() {
         autoRefresh?.cancel()
-        guard state == .ready, isWatched else { return }
+        guard state == .ready, isWatched, Self.isAppActive() else { return }
         let interval = Self.isAppActive() ? Self.autoRefreshInterval : Self.backgroundRefreshInterval
         // A tile that is changing (`Tile.refreshAfter`) is followed at its own pace, in front or not, without showing loading.
-        let delay = max(min(tile?.refreshAfter ?? interval, interval), Self.fastestAutoRefresh)
+        let pagePending = groupPath.last.flatMap { pages[$0] }?.loadingFraction ?? (groupPath.isEmpty ? screen?.loadingFraction : nil)
+        let delay = pagePending != nil ? Self.fastestAutoRefresh : max(min(tile?.refreshAfter ?? interval, interval), Self.fastestAutoRefresh)
         let following = delay < interval
         autoRefresh = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
@@ -839,7 +967,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             // This timer has fired. The read may cancel a pending timer, without canceling its own task.
             self.autoRefresh = nil
             // Not while an action runs: it reads the module again itself when it ends.
-            if self.performing { self.scheduleAutoRefresh() } else { await self.refresh(quiet: true, following: following) }
+            if self.performing { self.scheduleAutoRefresh() }
+            else if pagePending != nil { await self.followPendingPage() }
+            else { await self.refresh(quiet: true, following: following) }
         }
     }
 
@@ -925,7 +1055,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
         // button's text.
         let continuesInRow = result.outcome == .succeeded && !result.restartRequired && result.presentation?.screen.activeRow(for: request) != nil
-        let celebrates = !quiet && rowID == nil && !continuesInRow && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || !result.message.isEmpty)
+        let celebrates = !quiet && rowID == nil && !continuesInRow && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || result.removedBytes != nil || !result.message.isEmpty)
         if let rowID, !quiet {
             setRowResult(result.message.isEmpty || continuesInRow ? nil : result, for: rowID)
         } else if !continuesInRow && ((!quiet && !celebrates) || result.outcome != .succeeded || result.restartRequired) { lastResult = result }
@@ -942,6 +1072,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !quiet {
             if celebrates {
                 allDoneFreed = result.freedBytes
+                allDoneRemoved = result.removedBytes
                 isShowingCompletion = true
                 allDone += 1
             }

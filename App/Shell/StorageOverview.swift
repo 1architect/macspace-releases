@@ -21,7 +21,7 @@ final class StorageOverview: ObservableObject {
     }
 
     func status() -> (title: String, detail: String) {
-        guard let usedBytes else { return (String(localized: "disk"), String(localized: "reading")) }
+        guard let usedBytes else { return (String(localized: "Apps and files"), String(localized: "reading")) }
         let detail: String = totalBytes.map { total in
             let size = ByteFormat.string(total)
             guard let fraction = usedFraction else { return String(localized: "of \(size)") }
@@ -69,7 +69,7 @@ final class StorageOverview: ObservableObject {
     /// tile is read again anyway after every cleanup and each time MacSpace comes back to the front.
     func watch(every interval: Double = 60) async {
         while !Task.isCancelled {
-            if lastRead.map({ Date().timeIntervalSince($0) >= interval / 2 }) ?? true { await refresh() }
+            if NSApp?.isActive != false, lastRead.map({ Date().timeIntervalSince($0) >= interval / 2 }) ?? true { await refresh() }
             try? await Task.sleep(for: .seconds(interval))
         }
     }

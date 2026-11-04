@@ -6,6 +6,7 @@ import MacSpacePlatform
 struct DiskApplication: Sendable {
     var owner: AppOwner
     var bytes: UInt64
+    var measurementComplete = false
     /// Only verified exclusive data targets, for compatibility with existing presentation code.
     var dataPaths: [String]
     var removable: Bool
@@ -37,12 +38,12 @@ struct DiskApplications: Sendable {
         "Receipt manifests are historical, potentially incomplete evidence; receipt paths and helpers are never auto-deleted.",
         "Container metadata and signed groups remain reviewable until exclusivity can be established."
     ]
+    var measurementsComplete = false
     var discoveryComplete = false
     var catalogRevision: UInt64?
     var catalogReadAt: Date = .distantPast
     var catalog = AppCatalog(owners: [])
     var receipts = AppReceiptCatalog()
-    static let metadataRefreshInterval: TimeInterval = 60
     static func livePath(_ path: String) -> String {
         path.hasPrefix(DataVolume.path + "/") ? String(path.dropFirst(DataVolume.path.count)) : path
     }
@@ -66,9 +67,10 @@ struct DiskApplications: Sendable {
         return bytes
     }
     static func read(_ index: DiskIndex, previous: DiskApplications?) -> DiskApplications {
+        guard index.inventoryAuthoritative == true || index.appPaths != nil && index.knownBundleIdentifiers != nil else { return previous ?? DiskApplications() }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var result: DiskApplications
-        if let previous, previous.catalogRevision == index.catalogRevision, Date().timeIntervalSince(previous.catalogReadAt) < metadataRefreshInterval {
+        if let previous, previous.catalogRevision == index.catalogRevision {
             // Byte revisions do not force signature verification or ownership discovery.
             result = previous
         } else {
@@ -82,6 +84,7 @@ struct DiskApplications: Sendable {
             result.catalogRevision = index.catalogRevision
             result.catalog = catalog; result.discoveryComplete = catalog.discoveryComplete; result.catalogReadAt = Date()
             for owner in catalog.owners {
+                if Task.isCancelled { return previous ?? DiskApplications() }
                 let classification = AppOwnership.classification(owner, home: home, registered: catalog.registeredPaths, candidates: catalog.owners)
                 let ownership = resolver.claims(for: owner, home: home) + (receiptClaims[owner.path] ?? [])
                 let plan = classification.0 == .installedUser ? resolver.plan(for: owner, home: home) : nil
@@ -93,7 +96,13 @@ struct DiskApplications: Sendable {
             result.apps.sort { $0.owner.name.localizedStandardCompare($1.owner.name) == .orderedAscending }
         }
         result = result.remeasured(index)
-        result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: index.knownBundleIdentifiers ?? [], home: home)
+        let measuredBases = reviewBases.map { measuredPath(home + "/Library/" + $0, index: index) }
+        result.measurementsComplete = measuredBases.allSatisfy { index.directories[$0]?.readable == true }
+        if result.measurementsComplete {
+            result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: index.knownBundleIdentifiers ?? [], home: home)
+        } else if let previous {
+            result.reviewableLeftovers = previous.reviewableLeftovers
+        }
         return result
     }
     static let reviewBases = ["Containers", "Application Support"]
@@ -120,10 +129,13 @@ struct DiskApplications: Sendable {
     }
     /// Updates allocation figures without rebuilding catalog/signing/ownership metadata.
     func remeasured(_ index: DiskIndex) -> DiskApplications {
+        guard index.inventoryAuthoritative == true || index.appPaths != nil else { return self }
         var result = self
         for n in result.apps.indices {
-            result.apps[n].bytes = index.measuredOwnershipBytes?[Self.measuredPath(result.apps[n].owner.path, index: index)] ?? index.directories[Self.measuredPath(result.apps[n].owner.path, index: index)]?.bytes ?? 0
+            result.apps[n].bytes = index.measuredOwnershipBytes?[Self.measuredPath(result.apps[n].owner.path, index: index)] ?? index.directories[Self.measuredPath(result.apps[n].owner.path, index: index)]?.bytes ?? result.apps[n].bytes
             let ownerPath = result.apps[n].owner.path
+            let measuredPath = Self.measuredPath(ownerPath, index: index)
+            result.apps[n].measurementComplete = index.measuredOwnershipBytes?[measuredPath] != nil || index.directories[measuredPath]?.readable == true
             let claims = result.apps[n].ownership.filter { $0.source != "bundle" }.map { claim in
                 var claim = claim
                 claim.paths = claim.paths.filter { $0 != ownerPath && !$0.hasPrefix(ownerPath + "/") }

@@ -6,6 +6,7 @@
 "%@ in total" = "%@ en total";
 "%@ left." = "%@ disponibles.";
 "%@ left. MacSpace can free %@." = "%@ disponibles. MacSpace puede liberar %@.";
+"%@ removed" = "%@ eliminados";
 "%@ update" = "Actualización de %@";
 "%@ used" = "%@ usados";
 "%lld files" = "%lld archivos";
@@ -27,6 +28,7 @@
 "Applies the Debloat policies you turn on." = "Aplica las políticas de Debloat que actives.";
 "Approve in Settings" = "Aprobar en Ajustes";
 "Approve the helper" = "Aprueba el asistente";
+"Apps and files" = "Apps y archivos";
 "Automatic" = "Automática";
 "Automatic cleanup" = "Limpieza automática";
 "Automatic cleanup: %@" = "Limpieza automática: %@";
@@ -112,7 +114,7 @@
 "Nothing to free" = "Nada que liberar";
 "Notifications" = "Notificaciones";
 "OK" = "Aceptar";
-"Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "Desactivado por defecto. Los archivos seleccionados en Disco se eliminan permanentemente. La desinstalación y las cachés siguen sus propias reglas.";
+"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "Desactivado por defecto. Los archivos seleccionados en Apps y archivos se eliminan permanentemente cuando está desactivado. La desinstalación y las cachés siguen sus propias reglas.";
 "Open Login Items" = "Abrir Ítems de inicio";
 "Open MacSpace" = "Abrir MacSpace";
 "Open Panel" = "Abrir panel";
@@ -139,6 +141,7 @@
 "Restore" = "Restaurar";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.";
 "Restoring settings" = "Restaurando ajustes";
+"Selected files need review" = "Los archivos seleccionados necesitan revisión";
 "Settings" = "Ajustes";
 "Settings › Permissions" = "Ajustes › Permisos";
 "Settings › Recent cleanups" = "Ajustes › Limpiezas recientes";

@@ -21,10 +21,18 @@ final class DiskPresentationContractTests: XCTestCase {
         screen.widgets.compactMap { if case let .list(list) = $0 { return list }; return nil }
     }
 
+    func testModuleRootAndTileUseAppsAndFilesName() {
+        var index = DiskIndex(root: "/")
+        index.directories["/"] = DiskDirectory(path: "/")
+        XCTAssertEqual(DiskMapScreenBuilder.tile(index).title, "Apps and files")
+        XCTAssertEqual(DiskMapScreenBuilder.screen(index, apps: DiskApplications()).title, "Apps and files")
+    }
+
     func testRootShowsDuplicatesFirstAndOnlyNonemptyContentCategories() throws {
         var index = DiskIndex(root: "/")
         index.directories["/"] = DiskDirectory(path: "/")
         index.overviewFiles = [file("Downloads/raw-preview.zip")]
+        index.duplicateCount = 1; index.duplicateBytes = 4096
         index.personalFolders = [DiskDirectory(path: home + "/Downloads", bytes: 4096)]
         index.categories = [.init(category: .archives, bytes: 4096, count: 1), .init(category: .installers, bytes: 0, count: 0),
             .init(category: .media, bytes: 8192, count: 2), .init(category: .other, bytes: 0, count: 0)]
@@ -48,21 +56,21 @@ final class DiskPresentationContractTests: XCTestCase {
             index.directories[folder] = DiskDirectory(path: folder)
             let screen = DiskMapScreenBuilder.screen(index, apps: DiskApplications(), folder: folder)
             let inventory = try XCTUnwrap(lists(screen).first { $0.id == "large-files" })
-            XCTAssertEqual(inventory.rows.map(\.title), ["Duplicate files"])
+            XCTAssertTrue(inventory.rows.isEmpty)
             XCTAssertNil(inventory.rows.first?.trailing)
             XCTAssertNil(inventory.rows.first?.subtitle)
         }
         var root = DiskIndex(root: "/")
         root.categories = []; root.duplicateCount = 0; root.duplicateBytes = 0
         let pending = try XCTUnwrap(lists(DiskMapScreenBuilder.screen(root, apps: DiskApplications())).first { $0.id == "large-files" })
-        XCTAssertEqual(pending.rows.map(\.title), ["Duplicate files"])
+        XCTAssertTrue(pending.rows.isEmpty)
         XCTAssertNil(pending.rows.first?.trailing)
         XCTAssertNil(pending.rows.first?.subtitle)
         var scoped = DiskIndex(root: "/")
         scoped.categories = [.init(category: .installers, bytes: 8192, count: 1)]
         scoped.directories[folder] = DiskDirectory(path: folder)
         let inventory = try XCTUnwrap(lists(DiskMapScreenBuilder.screen(scoped, apps: DiskApplications(), folder: folder)).first { $0.id == "large-files" })
-        XCTAssertEqual(inventory.rows.map(\.title), ["Duplicate files", "Installers"])
+        XCTAssertEqual(inventory.rows.map(\.title), ["Installers"])
         XCTAssertEqual(DiskBrowseRequest(id: try XCTUnwrap(inventory.rows.last?.pageID))?.folder, folder)
     }
 
@@ -72,7 +80,7 @@ final class DiskPresentationContractTests: XCTestCase {
         let page = DiskBrowsePage(request: request, files: files, ownership: [:])
         let screen = DiskMapScreenBuilder.browsePage(page)
         let headers = try XCTUnwrap(screen.selection?.sections)
-        XCTAssertEqual(headers.count, 3)
+        XCTAssertEqual(headers.count, 1)
         for header in headers {
             let id = try XCTUnwrap(header.pageID)
             XCTAssertTrue(id.hasPrefix("select:"))
@@ -83,9 +91,11 @@ final class DiskPresentationContractTests: XCTestCase {
             XCTAssertNil(scope.afterSize)
         }
         XCTAssertNil(DiskBrowseRequest(id: String(try XCTUnwrap(headers.first?.pageID).dropFirst(7)))?.selectionParent)
-        XCTAssertEqual(Set(headers.dropFirst().compactMap { DiskBrowseRequest(id: String($0.pageID!.dropFirst(7)))?.selectionParent }), Set(files.map { DiskDatabase.parent($0.path) }))
-        XCTAssertEqual(lists(screen).flatMap(\.rows).filter { $0.sectionID != nil && !$0.paths.isEmpty }.count, 2)
+        XCTAssertTrue(headers.allSatisfy { DiskBrowseRequest(id: String($0.pageID!.dropFirst(7)))?.selectionParent == nil })
+        XCTAssertEqual(headers.compactMap { DiskBrowseRequest(id: String($0.pageID!.dropFirst(7)))?.fileType }, ["ext:zip"])
+        XCTAssertEqual(lists(screen).flatMap(\.rows).filter { $0.sectionID != nil && !$0.paths.isEmpty }.count, 0)
         XCTAssertEqual(lists(screen).filter { $0.id != "smaller-files" }.count, 1)
+        XCTAssertTrue(lists(screen).flatMap(\.rows).allSatisfy { $0.sectionID == nil }, "Type headings belong outside the file list")
         XCTAssertFalse(lists(screen).flatMap(\.rows).contains { $0.title == "Open folder in Finder" })
 
         var next = request; next.afterPath = files[0].path; next.afterSize = files[0].logicalBytes
@@ -94,42 +104,44 @@ final class DiskPresentationContractTests: XCTestCase {
         XCTAssertNotEqual(DiskMapScreenBuilder.selectionPageID(request), DiskMapScreenBuilder.selectionPageID(other))
     }
 
-    func testSmallerFilesStayInCategoryAndDoNotPreselectOrReuseLargeHeader() throws {
+    func testShowAllFilesUsesNewListOnlyPageAndDoesNotPreselect() throws {
         let request = DiskBrowseRequest(folder: home + "/Downloads", kind: .category, category: .archives)
         let screen = DiskMapScreenBuilder.browsePage(.init(request: request, files: [], ownership: [:]))
         let row = try XCTUnwrap(lists(screen).last?.rows.last)
-        XCTAssertEqual(row.title, "Show smaller files")
-        XCTAssertTrue(row.replacesPage)
+        XCTAssertEqual(row.title, "Show all files")
+        XCTAssertFalse(row.replacesPage)
         var smaller = try XCTUnwrap(DiskBrowseRequest(id: XCTUnwrap(row.pageID)))
         XCTAssertEqual(smaller.folder, request.folder)
         XCTAssertEqual(smaller.category, request.category)
         XCTAssertTrue(smaller.includeSmaller)
+        XCTAssertFalse(smaller.inFolder)
         let expanded = DiskMapScreenBuilder.browsePage(.init(request: smaller, files: [file("Downloads/small.zip")], ownership: [:]))
         XCTAssertTrue(expanded.selection?.checked.isEmpty == true)
+        XCTAssertNil(expanded.hero)
+        XCTAssertEqual(expanded.layout, .singleColumn)
         XCTAssertNotEqual(expanded.selection?.sections.first?.id, screen.selection?.sections.first?.id)
-        XCTAssertFalse(lists(expanded).flatMap(\.rows).contains { $0.title == "Show smaller files" })
+        XCTAssertFalse(lists(expanded).flatMap(\.rows).contains { $0.title == "Show all files" })
         smaller.afterPath = home + "/Downloads/small.zip"; smaller.afterSize = 1
-        XCTAssertEqual(DiskMapScreenBuilder.selectionPageID(smaller), expanded.selection?.sections.first?.pageID)
+        XCTAssertEqual(DiskMapScreenBuilder.selectionPageID({ var value = smaller; value.fileType = "ext:zip"; return value }()), expanded.selection?.sections.first?.pageID)
     }
 
-    func testDuplicateKeeperHasNoCheckboxAndCopiesCarryOriginalProof() throws {
+    func testEveryDuplicateCopyIsSelectableAndCarriesOriginalProof() throws {
         var keeper = file("Downloads/A.zip"), copy = file("Downloads/B.zip", inode: 2)
-        keeper.retainedDuplicateKeeper = true
         let proof = DiskDuplicateVerification(path: copy.path, identity: try XCTUnwrap(copy.identity), keeper: keeper.path,
             keeperIdentity: try XCTUnwrap(keeper.identity), digest: Data([1, 2, 3]))
         copy.duplicateVerification = proof
-        var page = DiskBrowsePage(request: .init(folder: home + "/Downloads", kind: .duplicates), files: [copy], ownership: [:])
+        keeper.duplicateVerification = .init(path: keeper.path, identity: keeper.identity!, keeper: copy.path, keeperIdentity: copy.identity!, digest: proof.digest)
+        var page = DiskBrowsePage(request: .init(folder: home + "/Downloads", kind: .duplicates), files: [keeper, copy], ownership: [:])
         page.duplicateGroups = [.init(id: "digest", keeper: keeper, copies: [copy])]
         let screen = DiskMapScreenBuilder.browsePage(page), rows = lists(screen).flatMap(\.rows)
-        let retained = try XCTUnwrap(rows.first { $0.badges.contains { $0.text == "Retained copy" } })
-        XCTAssertNil(screen.selection?.choices[retained.id])
-        XCTAssertNil(screen.selection?.choices[DiskFileRemoval.id(keeper.path)])
+        XCTAssertFalse(rows.contains { $0.badges.contains { $0.text == "Retained copy" } })
+        XCTAssertEqual(screen.selection?.choices[DiskFileRemoval.id(keeper.path)], keeper.bytes)
         let copyID = DiskFileRemoval.id(copy.path)
         XCTAssertEqual(screen.selection?.choices[copyID], copy.bytes)
         let origin = try XCTUnwrap(screen.selection?.origins[copyID])
         XCTAssertEqual(try JSONDecoder().decode(DiskDuplicateVerification.self, from: Data(origin.utf8)), proof)
         XCTAssertFalse(rows.contains { $0.actions.contains { $0.id == "findDuplicates" } || $0.title == "Compare files" })
-        XCTAssertEqual(DiskMapScreenBuilder.fileSelection([keeper, copy], open: [:]).choices.count, 1)
+        XCTAssertEqual(DiskMapScreenBuilder.fileSelection([keeper, copy], open: [:]).choices.count, 2)
     }
 
     func testOriginalReviewRejectsStaleFilesMissingProofAndSelectedKeeperAcrossFolders() throws {
@@ -140,13 +152,11 @@ final class DiskPresentationContractTests: XCTestCase {
         let selected = try XCTUnwrap(DiskMapModule.reviewedSelection([normal, marked], original: [normal, marked]))
         XCTAssertEqual(selected.map(\.path), [normal.path, duplicate.path])
         XCTAssertEqual(selected[1].duplicateVerification, proof)
-        XCTAssertNil(DiskMapModule.reviewedSelection([normal, marked], original: [normal, duplicate]))
+        XCTAssertNotNil(DiskMapModule.reviewedSelection([normal, marked], original: [normal, duplicate]), "Newly discovered duplicate relationships are validated against the complete token before removal")
         var stale = normal; stale.identity = identity(99)
         XCTAssertNil(DiskMapModule.reviewedSelection([stale, marked], original: [normal, marked]))
         let includingKeeper = [normal, marked, keeper]
-        XCTAssertNil(DiskMapModule.reviewedSelection(includingKeeper, original: includingKeeper))
-        var retained = normal; retained.retainedDuplicateKeeper = true
-        XCTAssertNil(DiskMapModule.reviewedSelection([retained], original: [normal]))
+        XCTAssertNotNil(DiskMapModule.reviewedSelection(includingKeeper, original: includingKeeper), "The selection store reports survivor conflicts without silently changing choices")
         var refreshedProof = marked
         refreshedProof.duplicateVerification?.keeperIdentity = identity(99)
         XCTAssertEqual(DiskMapModule.reviewedSelection([normal, refreshedProof], original: [normal, marked])?[1].duplicateVerification, proof,

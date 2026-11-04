@@ -30,12 +30,13 @@ extension DiskDatabase {
         let folder = folder ?? root
         var index = try state() ?? DiskIndex(root: root)
         guard let node = try directory(folder, contents: true) else { return DiskSnapshot(index) }
-        if index.summaryVersion == DiskIndex.summarySchemaVersion {
+        if index.summaryVersion == DiskIndex.summarySchemaVersion || index.storageRevision == 4 {
             index.categories = try categorySummaries(folder: folder)
         }
         index.directories[folder] = node
         for path in node.folders { index.directories[path] = try directory(path) }
         // `contents` includes this directory's direct files. Descendant inventories use bounded lazy queries.
+        index.inventoryAuthoritative = inventory
         if inventory {
             var identities = Set<String>()
             try query("SELECT DISTINCT bundle FROM dirs WHERE bundle<>''") { identities.insert(Self.text($0, 0)) }
@@ -63,7 +64,12 @@ extension DiskDatabase {
         }
         if folder == root {
             let home = FileManager.default.homeDirectoryForCurrentUser.path
-            index.personalFolders = try FileReviewPolicy.personalFolders.compactMap { try directory(DiskApplications.measuredPath(home + "/" + $0, index: index)) }.filter { $0.bytes > 0 }
+            index.personalFolders = try FileReviewPolicy.personalFolders.compactMap { try countedDirectory(DiskApplications.measuredPath(home + "/" + $0, index: index)) }.filter { $0.bytes > 0 }
+        }
+        // Empty ownership relations need no ancestor queries for every map child.
+        if try query("SELECT 1 FROM ownership LIMIT 1") == 0 {
+            index.ownershipClaims = [:]
+            return DiskSnapshot(index)
         }
         // Evidence IDs belong to this projection; the source graph stays on disk.
         var referenced: [UInt32: DiskOwnershipClaim] = [:], identifiers: [DiskOwnershipClaim: UInt32] = [:]

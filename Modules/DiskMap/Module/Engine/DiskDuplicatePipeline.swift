@@ -2,6 +2,7 @@ import CryptoKit
 import Darwin
 import Foundation
 import MacSpacePlatform
+import MacSpaceSdk
 
 /// Only metadata crosses the writer boundary. Every content read happens on one utility worker.
 protocol DiskDuplicateStorage: Sendable {
@@ -31,17 +32,19 @@ struct DiskDuplicateReport: Sendable {
 
 enum DiskDuplicatePipeline {
     static func run(storage: any DiskDuplicateStorage, folder: String, minimumSize: UInt64 = 100_000_000,
-                    scoped: Bool = false, eligible: @escaping @Sendable (String) -> Bool = { FileReviewPolicy.includes($0) }, published: @escaping @Sendable () async -> Void = {}) async throws -> DiskDuplicateReport {
+                    scoped: Bool = false, progress: @escaping LoadProgressSink = { _ in }, eligible: @escaping @Sendable (String) -> Bool = { FileReviewPolicy.includes($0) }, published: @escaping @Sendable () async -> Void = {}) async throws -> DiskDuplicateReport {
+        let policy = DiskDuplicateEligibility()
         let worker = Task.detached(priority: .utility) {
-            try await process(storage: storage, folder: folder, minimumSize: minimumSize, scoped: scoped, eligible: eligible, published: published)
+            try await process(storage: storage, folder: folder, minimumSize: minimumSize, scoped: scoped, eligible: { eligible($0) && policy.allows($0) }, progress: progress, published: published)
         }
         return try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
     }
 
     private static func process(storage: any DiskDuplicateStorage, folder: String, minimumSize: UInt64,
-                                scoped: Bool, eligible: @Sendable (String) -> Bool, published: @Sendable () async -> Void) async throws -> DiskDuplicateReport {
+                                scoped: Bool, eligible: @Sendable (String) -> Bool, progress: @escaping LoadProgressSink, published: @Sendable () async -> Void) async throws -> DiskDuplicateReport {
         try Task.checkCancellation()
-        var report = DiskDuplicateReport(), enumerationFailures = 0
+        var report = DiskDuplicateReport(), enumerationFailures = 0, candidates = 0
+        progress(0)
         try await storage.beginDuplicatePass(folder: folder, minimumSize: scoped ? 1 : minimumSize)
         if scoped {
             // Expanded scopes discover small files on demand; no whole-disk small-file index.
@@ -60,6 +63,7 @@ enum DiskDuplicatePipeline {
                 guard identity.uid == getuid(), identity.size > 0, FileReviewIdentity(info) == identity else { continue }
                 let file = DiskFile(path: url.path, bytes: UInt64(max(0, info.st_blocks)) * 512, logicalBytes: UInt64(identity.size), ownerUID: identity.uid)
                 try await storage.stageDuplicate(file, identity: identity)
+                candidates += 1; progress(0.1 * Double(candidates) / Double(candidates + 1000))
             }
         } else {
             var after = ""
@@ -73,6 +77,7 @@ enum DiskDuplicatePipeline {
                     guard let identity = FileReviewIdentity(file.path), UInt64(max(0, identity.size)) == file.logicalBytes else { report.unknown += 1; continue }
                     guard identity.uid == getuid(), identity.size > 0 else { continue }
                     try await storage.stageDuplicate(file, identity: identity)
+                candidates += 1; progress(0.1 * Double(candidates) / Double(candidates + 1000))
                 }
                 after = last.path
             }
@@ -80,7 +85,7 @@ enum DiskDuplicatePipeline {
         let reader = DiskDuplicateReader()
         report.unknown += enumerationFailures
         for sampling in [true, false] {
-            var after = ""
+            var after = "", completed = 0
             while true {
                 try Task.checkCancellation()
                 let batch = try await storage.duplicateWork(sample: sampling, after: after)
@@ -97,6 +102,8 @@ enum DiskDuplicatePipeline {
                     } catch is CancellationError { throw CancellationError() }
                     catch { report.unknown += 1; try await storage.failDuplicate(work.file.path); continue }
                     try await storage.saveDuplicate(work, sample: sample, digest: digest)
+                    completed += 1
+                    progress((sampling ? 0.1 : 0.3) + (sampling ? 0.2 : 0.69) * min(1, Double(completed) / Double(max(candidates, 1))))
                     if sampling { if work.sample == nil { report.sampled += 1 } }
                     else if work.digest == nil { report.verified += 1 }
                     else { report.reused += 1 }
@@ -108,6 +115,7 @@ enum DiskDuplicatePipeline {
         // An incomplete walk cannot establish that cached paths vanished.
         if enumerationFailures == 0 { try await storage.finishDuplicatePass() }
         await published()
+        progress(1)
         return report
     }
 }

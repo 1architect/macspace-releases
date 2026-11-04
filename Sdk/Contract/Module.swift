@@ -144,10 +144,12 @@ public struct ActionResult: Codable, Equatable, Sendable {
     public var restartRequired: Bool
     /// Space the action freed, measured on the volume, when it cleaned something. The app adds it to the cleanup history.
     public var freedBytes: UInt64?
+    /// Verified allocation of successfully removed file targets; distinct from volume space reclaimed.
+    public var removedBytes: UInt64?
     public var presentation: ModulePresentation?
 
     public init(outcome: Outcome, message: String, details: [String] = [], refresh: Bool = true, restartRequired: Bool = false,
-                freedBytes: UInt64? = nil, presentation: ModulePresentation? = nil) {
+                freedBytes: UInt64? = nil, presentation: ModulePresentation? = nil, removedBytes: UInt64? = nil) {
         self.presentation = presentation
         self.outcome = outcome
         self.message = message
@@ -155,6 +157,7 @@ public struct ActionResult: Codable, Equatable, Sendable {
         self.refresh = refresh
         self.restartRequired = restartRequired
         self.freedBytes = freedBytes
+        self.removedBytes = removedBytes
     }
 
     public static func succeeded(_ message: String, details: [String] = [], restartRequired: Bool = false, freedBytes: UInt64? = nil) -> ActionResult {
@@ -254,6 +257,7 @@ public protocol MacSpaceModule: Sendable {
 
     /// A lazy subpage (for example a folder map), addressed by metadata on rows or graph segments.
     func page(id: String, context: ModuleContext) async -> Screen?
+    func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen?
 
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult
 
@@ -266,6 +270,8 @@ public protocol MacSpaceModule: Sendable {
 
     /// The user pressed Refresh: drop anything cached so the next `tile` and `screen` read the system again.
     func invalidate() async
+    /// Suspend optional inventory work while no foreground surface needs it.
+    func setActive(_ active: Bool) async
     /// Refresh only the visible lazy inventory when supported; existing modules retain their normal refresh.
     func invalidate(pageID: String?, context: ModuleContext) async
 
@@ -277,6 +283,7 @@ public protocol MacSpaceModule: Sendable {
 
 public extension MacSpaceModule {
     func page(id: String, context: ModuleContext) async -> Screen? { nil }
+    func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? { await page(id: id, context: context) }
     func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile { await tile(context: context) }
 
     func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? { nil }
@@ -285,6 +292,7 @@ public extension MacSpaceModule {
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen { await screen(context: context) }
 
     func invalidate() async {}
+    func setActive(_ active: Bool) async {}
     func invalidate(pageID: String?, context: ModuleContext) async { await invalidate() }
 
     func autoClean(context: ModuleContext) async -> CleanupReport? { nil }

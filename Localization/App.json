@@ -1,39 +1,12 @@
 {
- "Restart required": [
-  "Reinicialização necessária",
-  "Redémarrage nécessaire",
-  "Es necesario reiniciar",
-  "Neustart erforderlich",
-  "需要重新启动",
-  "再起動が必要です",
-  "재시동 필요"
- ],
- "Freeing in the background": [
-  "Liberando em segundo plano",
-  "Libération en arrière-plan",
-  "Liberando en segundo plano",
-  "Wird im Hintergrund freigegeben",
-  "正在后台释放",
-  "バックグラウンドで解放中",
-  "백그라운드에서 확보 중"
- ],
- "Restart your Mac to apply this change.": [
-  "Reinicie o Mac para aplicar esta alteração.",
-  "Redémarrez votre Mac pour appliquer cette modification.",
-  "Reinicia el Mac para aplicar este cambio.",
-  "Starte deinen Mac neu, um diese Änderung anzuwenden.",
-  "重新启动 Mac 以应用此更改。",
-  "この変更を適用するにはMacを再起動してください。",
-  "이 변경 사항을 적용하려면 Mac을 재시동하세요."
- ],
- "Restart your Mac from the Apple menu.": [
-  "Reinicie o Mac pelo menu Apple.",
-  "Redémarrez votre Mac depuis le menu Pomme.",
-  "Reinicia el Mac desde el menú Apple.",
-  "Starte deinen Mac über das Apple-Menü neu.",
-  "请从苹果菜单重新启动 Mac。",
-  "アップルメニューからMacを再起動してください。",
-  "Apple 메뉴에서 Mac을 재시동하세요."
+ "%@ files on this Mac": [
+  "Arquivos do %@ neste Mac",
+  "Fichiers %@ sur ce Mac",
+  "Archivos de %@ en este Mac",
+  "%@-Dateien auf diesem Mac",
+  "此 Mac 上的 %@ 文件",
+  "このMac上の%@のファイル",
+  "이 Mac의 %@ 파일"
  ],
  "%@ freed": [
   "%@ liberados",
@@ -80,6 +53,15 @@
   "残り%@。MacSpaceで%@を解放できます。",
   "%@ 남음. MacSpace로 %@ 확보 가능."
  ],
+ "%@ removed": [
+  "%@ removidos",
+  "%@ supprimés",
+  "%@ eliminados",
+  "%@ entfernt",
+  "已移除 %@",
+  "%@を削除",
+  "%@ 삭제됨"
+ ],
  "%@ update": [
   "Atualização do %@",
   "Mise à jour %@",
@@ -98,6 +80,15 @@
   "%@使用中",
   "%@ 사용 중"
  ],
+ "%lld files": [
+  "%lld arquivos",
+  "%lld fichiers",
+  "%lld archivos",
+  "%lld Dateien",
+  "%lld 个文件",
+  "%lld個のファイル",
+  "파일 %lld개"
+ ],
  "%lld items": [
   "%lld itens",
   "%lld éléments",
@@ -115,6 +106,15 @@
   "需要 %lld 项",
   "%lld件必要",
   "%lld개 필요"
+ ],
+ "%lld selected files": [
+  "%lld arquivos selecionados",
+  "%lld fichiers sélectionnés",
+  "%lld archivos seleccionados",
+  "%lld ausgewählte Dateien",
+  "已选择%lld个文件",
+  "%lld個の選択したファイル",
+  "선택한 파일 %lld개"
  ],
  "%lld smaller": [
   "%lld menores",
@@ -143,6 +143,15 @@
   "、ベータ版",
   ", 베타"
  ],
+ "1 file": [
+  "1 arquivo",
+  "1 fichier",
+  "1 archivo",
+  "1 Datei",
+  "1 个文件",
+  "1個のファイル",
+  "파일 1개"
+ ],
  "1 item": [
   "1 item",
   "1 élément",
@@ -160,6 +169,33 @@
   "需要 1 项",
   "1件必要",
   "1개 필요"
+ ],
+ "About": [
+  "Sobre",
+  "À propos",
+  "Acerca de",
+  "Über",
+  "关于",
+  "このアプリについて",
+  "정보"
+ ],
+ "About MacSpace": [
+  "Sobre o MacSpace",
+  "À propos de MacSpace",
+  "Acerca de MacSpace",
+  "Über MacSpace",
+  "关于 MacSpace",
+  "MacSpaceについて",
+  "MacSpace 정보"
+ ],
+ "All done": [
+  "Pronto",
+  "Terminé",
+  "Listo",
+  "Fertig",
+  "全部完成",
+  "完了",
+  "모두 완료"
  ],
  "Allow Full Disk Access": [
   "Permitir Acesso Total ao Disco",
@@ -215,6 +251,24 @@
   "ヘルパーを承認",
   "보조 프로그램 승인"
  ],
+ "Apps and files": [
+  "Apps e arquivos",
+  "Apps et fichiers",
+  "Apps y archivos",
+  "Apps und Dateien",
+  "应用与文件",
+  "アプリとファイル",
+  "앱 및 파일"
+ ],
+ "Automatic": [
+  "Automática",
+  "Automatique",
+  "Automática",
+  "Automatisch",
+  "自动",
+  "自動",
+  "자동"
+ ],
  "Automatic cleanup": [
   "Limpeza automática",
   "Nettoyage automatique",
@@ -241,6 +295,24 @@
   "返回",
   "戻る",
   "뒤로"
+ ],
+ "By MacSpace": [
+  "Pelo MacSpace",
+  "Par MacSpace",
+  "Por MacSpace",
+  "Von MacSpace",
+  "由 MacSpace 执行",
+  "MacSpaceによる処理",
+  "MacSpace가 수행"
+ ],
+ "By you": [
+  "Por você",
+  "Par vous",
+  "Por ti",
+  "Von dir",
+  "由你执行",
+  "手動",
+  "사용자가 수행"
  ],
  "Cancel": [
   "Cancelar",
@@ -305,33 +377,6 @@
   "閉じる",
   "닫기"
  ],
- "Maximize": [
-  "Maximizar",
-  "Agrandir",
-  "Maximizar",
-  "Maximieren",
-  "最大化",
-  "最大化",
-  "최대화"
- ],
- "Minimize": [
-  "Minimizar",
-  "Réduire",
-  "Minimizar",
-  "Minimieren",
-  "最小化",
-  "最小化",
-  "최소화"
- ],
- "Restore": [
-  "Restaurar",
-  "Restaurer",
-  "Restaurar",
-  "Wiederherstellen",
-  "还原",
-  "元に戻す",
-  "복원"
- ],
  "Close Window": [
   "Fechar Janela",
   "Fermer la fenêtre",
@@ -359,6 +404,15 @@
   "続ける",
   "계속"
  ],
+ "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.": [
+  "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.",
+  "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.",
+  "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.",
+  "Kopien von Cloud-Dateien auf diesem Mac. Beim Entfernen bleiben die Dateien in der Cloud.",
+  "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。",
+  "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。",
+  "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다."
+ ],
  "Could not install the helper: %@": [
   "Não foi possível instalar o auxiliar: %@",
   "Impossible d’installer l’assistant : %@",
@@ -377,6 +431,15 @@
   "空き容量を増やせませんでした。後でもう一度お試しください。",
   "공간을 확보하지 못했습니다. 나중에 다시 시도하세요."
  ],
+ "Couldn’t uninstall MacSpace": [
+  "Não foi possível desinstalar o MacSpace",
+  "Impossible de désinstaller MacSpace",
+  "No se pudo desinstalar MacSpace",
+  "MacSpace konnte nicht deinstalliert werden",
+  "无法卸载 MacSpace",
+  "MacSpaceをアンインストールできませんでした",
+  "MacSpace를 제거하지 못함"
+ ],
  "Day": [
   "Dia",
   "Jour",
@@ -385,6 +448,15 @@
   "日间",
   "昼",
   "주간"
+ ],
+ "Developed by\n%@": [
+  "Desenvolvido por\n%@",
+  "Développé par\n%@",
+  "Desarrollado por\n%@",
+  "Entwickelt von\n%@",
+  "开发者\n%@",
+  "開発者\n%@",
+  "개발자\n%@"
  ],
  "Does the few things that need an administrator.": [
   "Faz as poucas tarefas que exigem um administrador.",
@@ -449,6 +521,24 @@
   "システムに合わせる",
   "시스템 설정 따르기"
  ],
+ "Free": [
+  "Liberar",
+  "Libérer",
+  "Liberar",
+  "Freigeben",
+  "释放",
+  "解放",
+  "확보"
+ ],
+ "Free %@ of %@ downloads?": [
+  "Liberar %@ de downloads do %@?",
+  "Libérer %@ de téléchargements de %@ ?",
+  "¿Liberar %@ de descargas de %@?",
+  "%@ an Downloads von %@ freigeben?",
+  "释放 %@ 的 %@ 下载？",
+  "%@分の%@のダウンロードを解放しますか？",
+  "%@의 %@ 다운로드를 정리할까요?"
+ ],
  "Freed %@": [
   "%@ liberados",
   "%@ libérés",
@@ -466,6 +556,24 @@
   "累计释放",
   "解放した合計",
   "총 확보 공간"
+ ],
+ "Freeing in the background": [
+  "Liberando em segundo plano",
+  "Libération en arrière-plan",
+  "Liberando en segundo plano",
+  "Wird im Hintergrund freigegeben",
+  "正在后台释放",
+  "バックグラウンドで解放中",
+  "백그라운드에서 확보 중"
+ ],
+ "Freeing space": [
+  "Liberando espaço",
+  "Libération d’espace",
+  "Liberando espacio",
+  "Speicher wird freigegeben",
+  "正在释放空间",
+  "空き容量を増やしています",
+  "공간 확보 중"
  ],
  "Frees caches, old reports and other files that are safe to delete.": [
   "Libera caches, relatórios antigos e outros arquivos que podem ser apagados com segurança.",
@@ -511,6 +619,15 @@
   "接收通知",
   "通知を受け取る",
   "알림 받기"
+ ],
+ "GitHub": [
+  "GitHub",
+  "GitHub",
+  "GitHub",
+  "GitHub",
+  "GitHub",
+  "GitHub",
+  "GitHub"
  ],
  "Granted": [
   "Concedido",
@@ -584,6 +701,15 @@
   "メニューバーで実行を続ける",
   "메뉴 막대에서 계속 실행"
  ],
+ "Kept while Apple Intelligence is on": [
+  "Mantido enquanto a Apple Intelligence estiver ativa",
+  "Conservé tant qu’Apple Intelligence est activé",
+  "Se conserva mientras Apple Intelligence esté activado",
+  "Bleibt, solange Apple Intelligence aktiv ist",
+  "Apple 智能开启时保留",
+  "Apple Intelligenceがオンの間は保持",
+  "Apple Intelligence가 켜져 있는 동안 유지"
+ ],
  "Later": [
   "Mais tarde",
   "Plus tard",
@@ -598,15 +724,6 @@
   "Chargement",
   "Cargando",
   "Wird geladen",
-  "正在加载",
-  "読み込み中",
-  "로드 중"
- ],
- "loading": [
-  "carregando",
-  "chargement",
-  "cargando",
-  "wird geladen",
   "正在加载",
   "読み込み中",
   "로드 중"
@@ -674,6 +791,24 @@
   "すべてのシステムデータを確認するために必要です。",
   "모든 시스템 데이터를 보려면 이 권한이 필요합니다."
  ],
+ "Maximize": [
+  "Maximizar",
+  "Agrandir",
+  "Maximizar",
+  "Maximieren",
+  "最大化",
+  "最大化",
+  "최대화"
+ ],
+ "Minimize": [
+  "Minimizar",
+  "Réduire",
+  "Minimizar",
+  "Minimieren",
+  "最小化",
+  "最小化",
+  "최소화"
+ ],
  "Modules": [
   "Módulos",
   "Modules",
@@ -710,6 +845,15 @@
   "MacSpaceを「アプリケーション」に移動し、開き直してください。",
   "MacSpace를 응용 프로그램 폴더로 옮긴 후 다시 여세요."
  ],
+ "Move MacSpace to the Trash from Applications.": [
+  "Mova o MacSpace de Aplicativos para o Lixo.",
+  "Placez MacSpace dans la Corbeille depuis Applications.",
+  "Mueve MacSpace de Aplicaciones a la Papelera.",
+  "Verschiebe MacSpace aus Programme in den Papierkorb.",
+  "从“应用程序”将 MacSpace 移到废纸篓。",
+  "「アプリケーション」からMacSpaceをゴミ箱に移動してください。",
+  "응용 프로그램에서 MacSpace를 휴지통으로 옮기세요."
+ ],
  "Move MacSpace to your Applications folder first.": [
   "Primeiro, mova o MacSpace para a pasta Aplicativos.",
   "Placez d’abord MacSpace dans le dossier Applications.",
@@ -718,6 +862,15 @@
   "请先将 MacSpace 移到“应用程序”文件夹。",
   "先にMacSpaceを「アプリケーション」に移動してください。",
   "먼저 MacSpace를 응용 프로그램 폴더로 옮기세요."
+ ],
+ "Move files to Trash": [
+  "Mover arquivos para o Lixo",
+  "Placer les fichiers dans la corbeille",
+  "Mover archivos a la Papelera",
+  "Dateien in den Papierkorb legen",
+  "将文件移到废纸篓",
+  "ファイルをゴミ箱に入れる",
+  "파일을 휴지통으로 이동"
  ],
  "Needed": [
   "Necessário",
@@ -800,6 +953,15 @@
   "モジュールが見つかりません。",
   "모듈을 찾을 수 없습니다."
  ],
+ "Not found": [
+  "Não encontrado",
+  "Introuvable",
+  "No encontrado",
+  "Nicht gefunden",
+  "未找到",
+  "見つかりません",
+  "찾을 수 없음"
+ ],
  "Not in this build": [
   "Não incluído nesta versão",
   "Absent de cette version",
@@ -854,6 +1016,24 @@
   "通知",
   "알림"
  ],
+ "OK": [
+  "OK",
+  "OK",
+  "Aceptar",
+  "OK",
+  "好",
+  "OK",
+  "확인"
+ ],
+ "Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.": [
+  "Desativado por padrão. Quando desativado, os arquivos selecionados em Apps e arquivos são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
+  "Désactivé par défaut. Les fichiers sélectionnés dans Apps et fichiers sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
+  "Desactivado por defecto. Los archivos seleccionados en Apps y archivos se eliminan permanentemente cuando está desactivado. La desinstalación y las cachés siguen sus propias reglas.",
+  "Standardmäßig deaktiviert. Ausgewählte Dateien in Apps und Dateien werden dann endgültig gelöscht. Für App-Deinstallation und Cache-Bereinigung gelten eigene Regeln.",
+  "默认关闭。关闭时，“应用与文件”中选定的文件将被永久删除。应用卸载和缓存清理遵循各自的规则。",
+  "初期設定ではオフです。オフの場合、「アプリとファイル」で選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュのクリーンアップには、それぞれの削除ルールが適用されます。",
+  "기본적으로 꺼져 있습니다. 꺼져 있으면 앱 및 파일에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 각자의 제거 규칙을 따릅니다."
+ ],
  "Open Login Items": [
   "Abrir Itens de Início",
   "Ouvrir Ouverture",
@@ -898,6 +1078,15 @@
   "登录时打开",
   "ログイン時に開く",
   "로그인 시 열기"
+ ],
+ "Other folders": [
+  "Outras pastas",
+  "Autres dossiers",
+  "Otras carpetas",
+  "Weitere Ordner",
+  "其他文件夹",
+  "その他のフォルダ",
+  "기타 폴더"
  ],
  "Permissions": [
   "Permissões",
@@ -971,6 +1160,33 @@
   "更新",
   "새로 고침"
  ],
+ "Removing %@": [
+  "Removendo %@",
+  "Suppression de %@",
+  "Eliminando %@",
+  "%@ werden entfernt",
+  "正在移除 %@",
+  "%@を削除中",
+  "%@ 제거 중"
+ ],
+ "Removing %lld%%, %@": [
+  "Removendo %lld%%, %@",
+  "Suppression %lld %%, %@",
+  "Eliminando %lld %%, %@",
+  "Wird entfernt %lld %%, %@",
+  "正在移除 %lld%%，%@",
+  "削除中 %lld%%、%@",
+  "제거 중 %lld%%, %@"
+ ],
+ "Removing downloads": [
+  "Removendo downloads",
+  "Suppression des téléchargements",
+  "Eliminando descargas",
+  "Downloads werden entfernt",
+  "正在移除下载",
+  "ダウンロードを削除中",
+  "다운로드 제거 중"
+ ],
  "Repair helper": [
   "Reparar auxiliar",
   "Réparer l’assistant",
@@ -989,6 +1205,15 @@
   "修復中",
   "복구 중"
  ],
+ "Restart required": [
+  "Reinicialização necessária",
+  "Redémarrage nécessaire",
+  "Es necesario reiniciar",
+  "Neustart erforderlich",
+  "需要重新启动",
+  "再起動が必要です",
+  "재시동 필요"
+ ],
  "Restart to finish": [
   "Reinicie para concluir",
   "Redémarrez pour terminer",
@@ -997,6 +1222,60 @@
   "重新启动以完成",
   "再起動して完了",
   "완료하려면 재시동"
+ ],
+ "Restart your Mac from the Apple menu.": [
+  "Reinicie o Mac pelo menu Apple.",
+  "Redémarrez votre Mac depuis le menu Pomme.",
+  "Reinicia el Mac desde el menú Apple.",
+  "Starte deinen Mac über das Apple-Menü neu.",
+  "请从苹果菜单重新启动 Mac。",
+  "アップルメニューからMacを再起動してください。",
+  "Apple 메뉴에서 Mac을 재시동하세요."
+ ],
+ "Restart your Mac to apply this change.": [
+  "Reinicie o Mac para aplicar esta alteração.",
+  "Redémarrez votre Mac pour appliquer cette modification.",
+  "Reinicia el Mac para aplicar este cambio.",
+  "Starte deinen Mac neu, um diese Änderung anzuwenden.",
+  "重新启动 Mac 以应用此更改。",
+  "この変更を適用するにはMacを再起動してください。",
+  "이 변경 사항을 적용하려면 Mac을 재시동하세요."
+ ],
+ "Restore": [
+  "Restaurar",
+  "Restaurer",
+  "Restaurar",
+  "Wiederherstellen",
+  "还原",
+  "元に戻す",
+  "복원"
+ ],
+ "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.": [
+  "Restaura os ajustes alterados pelo MacSpace e move o app para o Lixo. Seu histórico é mantido. Arquivos apagados não podem ser restaurados.",
+  "Restaure les réglages modifiés par MacSpace et place l’app dans la Corbeille. Votre historique est conservé. Les fichiers supprimés ne peuvent pas être restaurés.",
+  "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.",
+  "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.",
+  "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。",
+  "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。",
+  "MacSpace가 변경한 설정을 복원하고 앱을 휴지통으로 옮깁니다. 기록은 유지됩니다. 삭제한 파일은 복원할 수 없습니다."
+ ],
+ "Restoring settings": [
+  "Restaurando ajustes",
+  "Restauration des réglages",
+  "Restaurando ajustes",
+  "Einstellungen wiederherstellen",
+  "正在还原设置",
+  "設定を復元中",
+  "설정 복원 중"
+ ],
+ "Selected files need review": [
+  "Arquivos selecionados precisam de revisão",
+  "Les fichiers sélectionnés doivent être vérifiés",
+  "Los archivos seleccionados necesitan revisión",
+  "Ausgewählte Dateien müssen überprüft werden",
+  "所选文件需要检查",
+  "選択したファイルの確認が必要です",
+  "선택한 파일을 검토해야 합니다"
  ],
  "Settings": [
   "Ajustes",
@@ -1052,6 +1331,33 @@
   "Finderに表示",
   "Finder에서 보기"
  ],
+ "System": [
+  "Sistema",
+  "Système",
+  "Sistema",
+  "System",
+  "系统",
+  "システム",
+  "시스템"
+ ],
+ "That cloud folder is no longer on this Mac": [
+  "Essa pasta da nuvem não está mais neste Mac",
+  "Ce dossier cloud n’est plus sur ce Mac",
+  "Esa carpeta de la nube ya no está en este Mac",
+  "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac",
+  "此云端文件夹已不在此 Mac 上",
+  "このクラウドフォルダはこのMacにありません",
+  "이 클라우드 폴더가 더 이상 이 Mac에 없음"
+ ],
+ "The files stay in %@ and download again when you open them.": [
+  "Os arquivos continuam no %@ e são baixados de novo quando você os abre.",
+  "Les fichiers restent dans %@ et sont retéléchargés à l’ouverture.",
+  "Los archivos se quedan en %@ y se vuelven a descargar al abrirlos.",
+  "Die Dateien bleiben in %@ und werden beim Öffnen erneut geladen.",
+  "文件保留在 %@，打开时会重新下载。",
+  "ファイルは%@に残り、開くと再ダウンロードされます。",
+  "파일은 %@에 유지되며 열 때 다시 다운로드됩니다."
+ ],
  "The helper couldn't be installed. Try again in Settings > Permissions.": [
   "Não foi possível instalar o auxiliar. Tente de novo em Ajustes > Permissões.",
   "Impossible d’installer l’assistant. Réessayez dans Réglages > Autorisations.",
@@ -1088,6 +1394,15 @@
   "このMacSpaceのコピーは不完全です",
   "이 MacSpace 사본이 불완전함"
  ],
+ "This selection is unavailable. Refresh and try again.": [
+  "Esta seleção está indisponível. Atualize e tente novamente.",
+  "Cette sélection est indisponible. Actualisez et réessayez.",
+  "Esta selección no está disponible. Actualiza y vuelve a intentarlo.",
+  "Diese Auswahl ist nicht verfügbar. Aktualisieren und erneut versuchen.",
+  "此选择不可用。请刷新后重试。",
+  "この選択は利用できません。更新して再試行してください。",
+  "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요."
+ ],
  "Turn on MacSpace in the list. Not there? Drag this icon into it.": [
   "Ative o MacSpace na lista. Não está lá? Arraste este ícone para ela.",
   "Activez MacSpace dans la liste. Absent ? Faites-y glisser cette icône.",
@@ -1105,6 +1420,42 @@
   "在“允许在后台”下开启 MacSpace。",
   "「バックグラウンドでの実行を許可」でMacSpaceをオンにしてください。",
   "백그라운드에서 허용 아래에서 MacSpace를 켜세요."
+ ],
+ "Uninstall": [
+  "Desinstalar",
+  "Désinstaller",
+  "Desinstalar",
+  "Deinstallieren",
+  "卸载",
+  "アンインストール",
+  "제거"
+ ],
+ "Uninstall MacSpace?": [
+  "Desinstalar o MacSpace?",
+  "Désinstaller MacSpace ?",
+  "¿Desinstalar MacSpace?",
+  "MacSpace deinstallieren?",
+  "卸载 MacSpace？",
+  "MacSpaceをアンインストールしますか？",
+  "MacSpace를 제거할까요?"
+ ],
+ "Uninstall MacSpace…": [
+  "Desinstalar o MacSpace…",
+  "Désinstaller MacSpace…",
+  "Desinstalar MacSpace…",
+  "MacSpace deinstallieren…",
+  "卸载 MacSpace…",
+  "MacSpaceをアンインストール…",
+  "MacSpace 제거…"
+ ],
+ "Uninstall…": [
+  "Desinstalar…",
+  "Désinstaller…",
+  "Desinstalar…",
+  "Deinstallieren…",
+  "卸载…",
+  "アンインストール…",
+  "제거…"
  ],
  "Unknown": [
   "Desconhecido",
@@ -1132,6 +1483,24 @@
   "版本",
   "バージョン",
   "버전"
+ ],
+ "Version %@": [
+  "Versão %@",
+  "Version %@",
+  "Versión %@",
+  "Version %@",
+  "版本 %@",
+  "バージョン %@",
+  "버전 %@"
+ ],
+ "Wait for the current task to finish, then try again.": [
+  "Aguarde a tarefa atual terminar e tente novamente.",
+  "Attendez la fin de la tâche en cours, puis réessayez.",
+  "Espera a que termine la tarea actual y vuelve a intentarlo.",
+  "Warte, bis die aktuelle Aufgabe beendet ist, und versuche es erneut.",
+  "请等待当前任务完成后重试。",
+  "現在の処理が終わってから再度お試しください。",
+  "현재 작업이 끝난 후 다시 시도하세요."
  ],
  "When MacSpace frees space, or your disk is almost full.": [
   "Quando o MacSpace liberar espaço ou o disco estiver quase cheio.",
@@ -1214,24 +1583,6 @@
   "ディスクがほぼ満杯です",
   "디스크가 거의 찼습니다"
  ],
- "Automatic": [
-  "Automática",
-  "Automatique",
-  "Automática",
-  "Automatisch",
-  "自动",
-  "自動",
-  "자동"
- ],
- "By you": [
-  "Por você",
-  "Par vous",
-  "Por ti",
-  "Von dir",
-  "由你执行",
-  "手動",
-  "사용자가 수행"
- ],
  "disabled": [
   "desativados",
   "désactivés",
@@ -1259,14 +1610,14 @@
   "有効",
   "켜짐"
  ],
- "By MacSpace": [
-  "Pelo MacSpace",
-  "Par MacSpace",
-  "Por MacSpace",
-  "Von MacSpace",
-  "由 MacSpace 执行",
-  "MacSpaceによる処理",
-  "MacSpace가 수행"
+ "loading": [
+  "carregando",
+  "chargement",
+  "cargando",
+  "wird geladen",
+  "正在加载",
+  "読み込み中",
+  "로드 중"
  ],
  "macOS": [
   "macOS",
@@ -1339,329 +1690,5 @@
   "正在处理",
   "処理中",
   "작업 중"
- ],
- "Kept while Apple Intelligence is on": [
-  "Mantido enquanto a Apple Intelligence estiver ativa",
-  "Conservé tant qu’Apple Intelligence est activé",
-  "Se conserva mientras Apple Intelligence esté activado",
-  "Bleibt, solange Apple Intelligence aktiv ist",
-  "Apple 智能开启时保留",
-  "Apple Intelligenceがオンの間は保持",
-  "Apple Intelligence가 켜져 있는 동안 유지"
- ],
- "All done": [
-  "Pronto",
-  "Terminé",
-  "Listo",
-  "Fertig",
-  "全部完成",
-  "完了",
-  "모두 완료"
- ],
- "System": [
-  "Sistema",
-  "Système",
-  "Sistema",
-  "System",
-  "系统",
-  "システム",
-  "시스템"
- ],
- "About": [
-  "Sobre",
-  "À propos",
-  "Acerca de",
-  "Über",
-  "关于",
-  "このアプリについて",
-  "정보"
- ],
- "Restoring settings": [
-  "Restaurando ajustes",
-  "Restauration des réglages",
-  "Restaurando ajustes",
-  "Einstellungen wiederherstellen",
-  "正在还原设置",
-  "設定を復元中",
-  "설정 복원 중"
- ],
- "Uninstall MacSpace…": [
-  "Desinstalar o MacSpace…",
-  "Désinstaller MacSpace…",
-  "Desinstalar MacSpace…",
-  "MacSpace deinstallieren…",
-  "卸载 MacSpace…",
-  "MacSpaceをアンインストール…",
-  "MacSpace 제거…"
- ],
- "Uninstall MacSpace?": [
-  "Desinstalar o MacSpace?",
-  "Désinstaller MacSpace ?",
-  "¿Desinstalar MacSpace?",
-  "MacSpace deinstallieren?",
-  "卸载 MacSpace？",
-  "MacSpaceをアンインストールしますか？",
-  "MacSpace를 제거할까요?"
- ],
- "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored.": [
-  "Restaura os ajustes alterados pelo MacSpace e move o app para o Lixo. Seu histórico é mantido. Arquivos apagados não podem ser restaurados.",
-  "Restaure les réglages modifiés par MacSpace et place l’app dans la Corbeille. Votre historique est conservé. Les fichiers supprimés ne peuvent pas être restaurés.",
-  "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.",
-  "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.",
-  "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。",
-  "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。",
-  "MacSpace가 변경한 설정을 복원하고 앱을 휴지통으로 옮깁니다. 기록은 유지됩니다. 삭제한 파일은 복원할 수 없습니다."
- ],
- "Uninstall": [
-  "Desinstalar",
-  "Désinstaller",
-  "Desinstalar",
-  "Deinstallieren",
-  "卸载",
-  "アンインストール",
-  "제거"
- ],
- "Couldn’t uninstall MacSpace": [
-  "Não foi possível desinstalar o MacSpace",
-  "Impossible de désinstaller MacSpace",
-  "No se pudo desinstalar MacSpace",
-  "MacSpace konnte nicht deinstalliert werden",
-  "无法卸载 MacSpace",
-  "MacSpaceをアンインストールできませんでした",
-  "MacSpace를 제거하지 못함"
- ],
- "Move MacSpace to the Trash from Applications.": [
-  "Mova o MacSpace de Aplicativos para o Lixo.",
-  "Placez MacSpace dans la Corbeille depuis Applications.",
-  "Mueve MacSpace de Aplicaciones a la Papelera.",
-  "Verschiebe MacSpace aus Programme in den Papierkorb.",
-  "从“应用程序”将 MacSpace 移到废纸篓。",
-  "「アプリケーション」からMacSpaceをゴミ箱に移動してください。",
-  "응용 프로그램에서 MacSpace를 휴지통으로 옮기세요."
- ],
- "Wait for the current task to finish, then try again.": [
-  "Aguarde a tarefa atual terminar e tente novamente.",
-  "Attendez la fin de la tâche en cours, puis réessayez.",
-  "Espera a que termine la tarea actual y vuelve a intentarlo.",
-  "Warte, bis die aktuelle Aufgabe beendet ist, und versuche es erneut.",
-  "请等待当前任务完成后重试。",
-  "現在の処理が終わってから再度お試しください。",
-  "현재 작업이 끝난 후 다시 시도하세요."
- ],
- "GitHub": [
-  "GitHub",
-  "GitHub",
-  "GitHub",
-  "GitHub",
-  "GitHub",
-  "GitHub",
-  "GitHub"
- ],
- "About MacSpace": [
-  "Sobre o MacSpace",
-  "À propos de MacSpace",
-  "Acerca de MacSpace",
-  "Über MacSpace",
-  "关于 MacSpace",
-  "MacSpaceについて",
-  "MacSpace 정보"
- ],
- "Version %@": [
-  "Versão %@",
-  "Version %@",
-  "Versión %@",
-  "Version %@",
-  "版本 %@",
-  "バージョン %@",
-  "버전 %@"
- ],
- "Developed by\n%@": [
-  "Desenvolvido por\n%@",
-  "Développé par\n%@",
-  "Desarrollado por\n%@",
-  "Entwickelt von\n%@",
-  "开发者\n%@",
-  "開発者\n%@",
-  "개발자\n%@"
- ],
- "OK": [
-  "OK",
-  "OK",
-  "Aceptar",
-  "OK",
-  "好",
-  "OK",
-  "확인"
- ],
- "Uninstall…": [
-  "Desinstalar…",
-  "Désinstaller…",
-  "Desinstalar…",
-  "Deinstallieren…",
-  "卸载…",
-  "アンインストール…",
-  "제거…"
- ],
- "Free": [
-  "Liberar",
-  "Libérer",
-  "Liberar",
-  "Freigeben",
-  "释放",
-  "解放",
-  "확보"
- ],
- "Freeing space": [
-  "Liberando espaço",
-  "Libération d’espace",
-  "Liberando espacio",
-  "Speicher wird freigegeben",
-  "正在释放空间",
-  "空き容量を増やしています",
-  "공간 확보 중"
- ],
- "1 file": [
-  "1 arquivo",
-  "1 fichier",
-  "1 archivo",
-  "1 Datei",
-  "1 个文件",
-  "1個のファイル",
-  "파일 1개"
- ],
- "%lld files": [
-  "%lld arquivos",
-  "%lld fichiers",
-  "%lld archivos",
-  "%lld Dateien",
-  "%lld 个文件",
-  "%lld個のファイル",
-  "파일 %lld개"
- ],
- "%@ files on this Mac": [
-  "Arquivos do %@ neste Mac",
-  "Fichiers %@ sur ce Mac",
-  "Archivos de %@ en este Mac",
-  "%@-Dateien auf diesem Mac",
-  "此 Mac 上的 %@ 文件",
-  "このMac上の%@のファイル",
-  "이 Mac의 %@ 파일"
- ],
- "Free %@ of %@ downloads?": [
-  "Liberar %@ de downloads do %@?",
-  "Libérer %@ de téléchargements de %@ ?",
-  "¿Liberar %@ de descargas de %@?",
-  "%@ an Downloads von %@ freigeben?",
-  "释放 %@ 的 %@ 下载？",
-  "%@分の%@のダウンロードを解放しますか？",
-  "%@의 %@ 다운로드를 정리할까요?"
- ],
- "The files stay in %@ and download again when you open them.": [
-  "Os arquivos continuam no %@ e são baixados de novo quando você os abre.",
-  "Les fichiers restent dans %@ et sont retéléchargés à l’ouverture.",
-  "Los archivos se quedan en %@ y se vuelven a descargar al abrirlos.",
-  "Die Dateien bleiben in %@ und werden beim Öffnen erneut geladen.",
-  "文件保留在 %@，打开时会重新下载。",
-  "ファイルは%@に残り、開くと再ダウンロードされます。",
-  "파일은 %@에 유지되며 열 때 다시 다운로드됩니다."
- ],
- "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.": [
-  "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.",
-  "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.",
-  "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.",
-  "Kopien von Cloud-Dateien auf diesem Mac. Beim Entfernen bleiben die Dateien in der Cloud.",
-  "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。",
-  "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。",
-  "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다."
- ],
- "Removing %@": [
-  "Removendo %@",
-  "Suppression de %@",
-  "Eliminando %@",
-  "%@ werden entfernt",
-  "正在移除 %@",
-  "%@を削除中",
-  "%@ 제거 중"
- ],
- "Removing downloads": [
-  "Removendo downloads",
-  "Suppression des téléchargements",
-  "Eliminando descargas",
-  "Downloads werden entfernt",
-  "正在移除下载",
-  "ダウンロードを削除中",
-  "다운로드 제거 중"
- ],
- "That cloud folder is no longer on this Mac": [
-  "Essa pasta da nuvem não está mais neste Mac",
-  "Ce dossier cloud n’est plus sur ce Mac",
-  "Esa carpeta de la nube ya no está en este Mac",
-  "Dieser Cloud-Ordner ist nicht mehr auf diesem Mac",
-  "此云端文件夹已不在此 Mac 上",
-  "このクラウドフォルダはこのMacにありません",
-  "이 클라우드 폴더가 더 이상 이 Mac에 없음"
- ],
- "Removing %lld%%, %@": [
-  "Removendo %lld%%, %@",
-  "Suppression %lld %%, %@",
-  "Eliminando %lld %%, %@",
-  "Wird entfernt %lld %%, %@",
-  "正在移除 %lld%%，%@",
-  "削除中 %lld%%、%@",
-  "제거 중 %lld%%, %@"
- ],
- "Not found": [
-  "Não encontrado",
-  "Introuvable",
-  "No encontrado",
-  "Nicht gefunden",
-  "未找到",
-  "見つかりません",
-  "찾을 수 없음"
- ],
- "Other folders": [
-  "Outras pastas",
-  "Autres dossiers",
-  "Otras carpetas",
-  "Weitere Ordner",
-  "其他文件夹",
-  "その他のフォルダ",
-  "기타 폴더"
- ],
- "Move files to Trash": [
-  "Mover arquivos para o Lixo",
-  "Placer les fichiers dans la corbeille",
-  "Mover archivos a la Papelera",
-  "Dateien in den Papierkorb legen",
-  "将文件移到废纸篓",
-  "ファイルをゴミ箱に入れる",
-  "파일을 휴지통으로 이동"
- ],
- "Off by default. Selected files in Disk are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.": [
-  "Desativado por padrão. Quando desativado, os arquivos selecionados em Disco são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
-  "Désactivé par défaut. Les fichiers sélectionnés dans Disque sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
-  "Desactivado por defecto. Los archivos seleccionados en Disco se eliminan permanentemente. La desinstalación y las cachés siguen sus propias reglas.",
-  "Standardmäßig aus. Ausgewählte Dateien in Festplatte werden dann endgültig gelöscht. Deinstallation und Cache-Bereinigung haben eigene Regeln.",
-  "默认关闭。关闭时，磁盘中选定的文件会被永久删除。应用卸载和缓存清理采用各自的规则。",
-  "初期設定はオフです。オフの場合、ディスクで選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュの削除は別のルールに従います。",
-  "기본값은 꺼짐입니다. 꺼져 있으면 디스크에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 별도 규칙을 따릅니다。"
- ],
- "This selection is unavailable. Refresh and try again.": [
-  "Esta seleção está indisponível. Atualize e tente novamente.",
-  "Cette sélection est indisponible. Actualisez et réessayez.",
-  "Esta selección no está disponible. Actualiza y vuelve a intentarlo.",
-  "Diese Auswahl ist nicht verfügbar. Aktualisieren und erneut versuchen.",
-  "此选择不可用。请刷新后重试。",
-  "この選択は利用できません。更新して再試行してください。",
-  "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요."
- ],
- "%lld selected files": [
-  "%lld arquivos selecionados",
-  "%lld fichiers sélectionnés",
-  "%lld archivos seleccionados",
-  "%lld ausgewählte Dateien",
-  "已选择%lld个文件",
-  "%lld個の選択したファイル",
-  "선택한 파일 %lld개"
  ]
 }

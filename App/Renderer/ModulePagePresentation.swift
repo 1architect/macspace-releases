@@ -130,8 +130,8 @@ struct ModuleSectionHeader: View {
     var body: some View {
         if let part, let choice, choice.hasRows(part) {
             HStack(spacing: 8) {
-                Toggle(title, isOn: Binding(get: { choice.isOn(part) }, set: { _ in choice.toggle(part) }))
-                    .toggleStyle(.checkbox).labelsHidden()
+                HeaderCheckbox(on: choice.isOn(part), mixed: choice.isMixed(part)) { choice.toggle(part) }
+                    .frame(width: 14, height: 14).accessibilityLabel(title)
                 InfoTitle(title: title, info: help)
             }
         } else {
@@ -140,5 +140,27 @@ struct ModuleSectionHeader: View {
                 if let part, let reason = choice?.unavailableReason(part) { BadgeView(badge: Badge(reason, .info)) }
             }
         }
+    }
+}
+
+/// The same native checkbox as file rows, including macOS's mixed state for partial selections.
+private struct HeaderCheckbox: NSViewRepresentable {
+    var on: Bool
+    var mixed: Bool
+    var toggle: @MainActor () -> Void
+    final class Coordinator: NSObject {
+        var toggle: @MainActor () -> Void
+        init(_ toggle: @escaping @MainActor () -> Void) { self.toggle = toggle }
+        @MainActor @objc func clicked() { toggle() }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator(toggle) }
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton(checkboxWithTitle: "", target: context.coordinator, action: #selector(Coordinator.clicked))
+        button.allowsMixedState = true
+        return button
+    }
+    func updateNSView(_ button: NSButton, context: Context) {
+        context.coordinator.toggle = toggle
+        button.state = mixed ? .mixed : on ? .on : .off
     }
 }

@@ -56,7 +56,7 @@ private struct RefreshButton: View {
     @ObservedObject var handle: ModuleHandle
 
     var body: some View {
-        GlassCircleButton(symbol: "arrow.clockwise", help: String(localized: "Refresh"), busy: handle.isBusy) {
+        GlassCircleButton(symbol: "arrow.clockwise", help: String(localized: "Refresh"), busy: handle.isBusy || handle.isRefreshing || handle.isSelectingFiles) {
             Task { await handle.refresh(reload: true) }
         }
     }
@@ -156,6 +156,12 @@ public struct MainView: View {
             withAnimation(Theme.windowIn) { windowShown = true }
         }
         .onDisappear { windowShown = false; windowClosing = false }
+        .onChange(of: host.activeHandles.map(\.id)) { _, _ in
+            guard let destination = layer?.destination, let id = destination.moduleID,
+                  host.handle(for: id)?.isEnabled == false else { return }
+            returnTo = nil
+            close()
+        }
         .onChange(of: remote.command?.id) { _, _ in handleRemote() }
         .onAppear { AppRouter.shared.openWindow = { [openWindow] id in openWindow(id: id) } }
         // A page asked for from the menu bar; a window that has just opened waits for its tiles first.
@@ -259,8 +265,8 @@ public struct MainView: View {
             case nil: return String(localized: "Settings")
             }
         case .storage:
-            guard let handle = host.handle(for: "com.macspace.disk-map") else { return String(localized: "disk") }
-            return ([handle.screen?.title ?? String(localized: "disk")] + handle.groupPath.compactMap { handle.navigationRow($0)?.title }).joined(separator: " › ")
+            guard let handle = host.handle(for: "com.macspace.disk-map") else { return String(localized: "Apps and files") }
+            return ([handle.screen?.title ?? String(localized: "Apps and files")] + handle.groupPath.compactMap { handle.navigationRow($0)?.title }).joined(separator: " › ")
         case .home: return ""
         }
     }
@@ -288,7 +294,7 @@ public struct MainView: View {
                     .allowsHitTesting(false)
             }
             Spacer(minLength: 8)
-            if isOpen, case let .module(id)? = layer?.destination, let handle = host.handle(for: id) {
+            if isOpen, let id = layer?.destination.moduleID, let handle = host.handle(for: id) {
                 RefreshButton(handle: handle)
                     .transition(.opacity)
             }
@@ -341,10 +347,7 @@ public struct MainView: View {
     /// and Back slides back to the page it came from.
     private func present(_ destination: Destination) {
         guard destination != .home else { return }
-        if let id = destination.moduleID, host.handle(for: id) == nil { return }
-        if destination == .storage, let handle = host.handle(for: "com.macspace.disk-map"), !handle.isEnabled {
-            Task { await host.setEnabled(true, module: handle.id) }
-        }
+        guard host.canOpen(destination) else { return }
         let tint = HomeView.tiles(for: host.dashboardHandles).first { $0.destination == destination }?.tint ?? .slate
         let origin = frames.frame(of: destination) ?? CGRect(origin: .zero, size: container)
         if let current = layer {
@@ -404,13 +407,14 @@ public struct MainView: View {
             return
         }
         // Settings opened over a page goes back to that page.
-        if let previous = returnTo {
+        if let previous = returnTo, host.canOpen(previous.destination) {
             returnTo = nil
             swapForward = false
             withAnimation(Theme.push) { layer = ZoomLayer(destination: previous.destination, origin: frames.frame(of: previous.destination) ?? previous.origin,
                                                           tint: previous.tint) }
             return
         }
+        returnTo = nil
         // The tiles are drawn again before the card starts shrinking onto them.
         pageSettled = false
         generation += 1
