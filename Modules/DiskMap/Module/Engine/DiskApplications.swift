@@ -2,6 +2,7 @@ import Foundation
 import Darwin
 import MacSpaceDiskMapPrivileged
 import MacSpacePlatform
+import MacSpaceSdk
 
 struct DiskApplication: Sendable {
     var owner: AppOwner
@@ -79,7 +80,7 @@ struct DiskApplications: Sendable {
         }
         return bytes
     }
-    static func read(_ index: DiskIndex, previous: DiskApplications?) -> DiskApplications {
+    static func read(_ index: DiskIndex, previous: DiskApplications?, progress: @escaping LoadProgressSink = { _ in }) -> DiskApplications {
         guard index.inventoryAuthoritative == true || index.appPaths != nil && index.knownBundleIdentifiers != nil else { return previous ?? DiskApplications() }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var result: DiskApplications
@@ -88,9 +89,10 @@ struct DiskApplications: Sendable {
             result = previous
         } else {
             let candidates = (index.appPaths ?? index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }).map(livePath)
-            let catalog = AppOwnership.discover(home: home, candidates: candidates)
+            let catalog = AppOwnership.discover(home: home, candidates: candidates, progress: { progress(0.25 * $0) })
             let resolver = OwnershipResolver(catalog: catalog)
             let receipts = AppReceiptReader.read(previous: previous?.receipts)
+            progress(0.4)
             let receiptClaims = receipts.claims(owners: catalog.owners)
             result = DiskApplications()
             result.receipts = receipts
@@ -105,10 +107,11 @@ struct DiskApplications: Sendable {
                 let stamp = (try? FileManager.default.attributesOfItem(atPath: owner.path + "/Contents/Info.plist"))?[.modificationDate] as? Date
                 result.apps.append(DiskApplication(owner: owner, bytes: 0, dataPaths: dataPaths, removable: plan != nil,
                     metadataStamp: stamp, classification: classification.0, reason: classification.1, ownership: ownership, plan: plan))
+                progress(0.4 + 0.5 * Double(result.apps.count) / Double(max(catalog.owners.count, 1)))
             }
             result.apps.sort { $0.owner.name.localizedStandardCompare($1.owner.name) == .orderedAscending }
         }
-        result = result.remeasured(index)
+        result = result.remeasured(index, progress: { progress(0.9 + 0.06 * $0) })
         let measuredBases = reviewBases.map { measuredPath(home + "/Library/" + $0, index: index) }
         result.measurementsComplete = measuredBases.allSatisfy { index.directories[$0]?.readable == true }
         if result.measurementsComplete {
@@ -116,6 +119,7 @@ struct DiskApplications: Sendable {
         } else if let previous {
             result.reviewableLeftovers = previous.reviewableLeftovers
         }
+        progress(1)
         return result
     }
     static let reviewBases = ["Containers", "Application Support"]
@@ -141,7 +145,7 @@ struct DiskApplications: Sendable {
         return rows.sorted { $0.bytes == $1.bytes ? $0.path < $1.path : $0.bytes > $1.bytes }
     }
     /// Updates allocation figures without rebuilding catalog/signing/ownership metadata.
-    func remeasured(_ index: DiskIndex) -> DiskApplications {
+    func remeasured(_ index: DiskIndex, progress: LoadProgressSink = { _ in }) -> DiskApplications {
         guard index.inventoryAuthoritative == true || index.appPaths != nil else { return self }
         var result = self
         var measurements = measurementRevision == index.revision && measurementRoot == index.root ? fileMeasurements : [:]
@@ -157,6 +161,7 @@ struct DiskApplications: Sendable {
             }
             result.apps[n].dataBytes = Self.measuredBytes(claims.flatMap(\.paths), index: index, measurements: &measurements)
             result.apps[n].ownershipBytes = Dictionary(grouping: claims, by: \.confidence).mapValues { Self.measuredBytes($0.flatMap(\.paths), index: index, measurements: &measurements) }
+            progress(Double(n + 1) / Double(max(result.apps.count, 1)))
         }
         for n in result.reviewableLeftovers.indices {
             result.reviewableLeftovers[n].bytes = Self.measuredBytes([result.reviewableLeftovers[n].path], index: index, measurements: &measurements)

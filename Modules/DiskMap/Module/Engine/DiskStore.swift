@@ -61,17 +61,19 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
         var changes = changes
         if try database.state() == nil || database.directory(root) == nil { changes = .init(recursive: [root]) }
         if !changes.recursive.isEmpty || !changes.shallow.isEmpty {
+            // Enumeration and totals dominate this read. Inventory migration and duplicate checks
+            // usually have no pending work; do not reserve most of the indicator for those stages.
             let pendingChanges = changes, excluded = self.excluded
             let work: (DiskDatabase) throws -> Void = { next in
                 var scanner = DiskDatabaseScanner(db: next, excluded: excluded)
                 scanner.cancelled = { cancellation.isCancelled }
-                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0.04...0.65))
+                try scanner.scan(pendingChanges, cursor: cursor, progress: progress.part(0.04...0.92))
             }
             if try database.state() != nil, !changes.recursive.isEmpty || changes.shallow.count > 128 { _ = try generation(work) }
             else { try work(database) }
         }
         guard try self.database?.state() != nil else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
-        try self.database?.preparePersonalInventory(progress: progress.part(0.65...0.75), cancelled: { cancellation.isCancelled })
+        try self.database?.preparePersonalInventory(progress: progress.part(0.92...0.94), cancelled: { cancellation.isCancelled })
         if cancellation.isCancelled { throw CancellationError() }
         // Empty/filtered history is still consumed history. Persist its boundary so it is not
         // replayed again on every launch when no metadata rows needed reconciliation.
@@ -398,7 +400,7 @@ actor DiskStore {
             if let snapshot = try reader?.snapshot() { published = snapshot }
             loadFailed = false; historyValidated = true
             let duplicateStarted = Date()
-            try await verifyDuplicates(folder: root, scoped: false, progress: reports.part(0.75...1))
+            try await verifyDuplicates(folder: root, scoped: false, progress: reports.part(0.94...1))
             DiskScanMetrics.phase("duplicate-verification", since: duplicateStarted)
             if let snapshot = try reader?.snapshot() {
                 var index = snapshot.index; index.duplicateUnknown = duplicateUnknown; index.duplicateFailure = duplicateFailure

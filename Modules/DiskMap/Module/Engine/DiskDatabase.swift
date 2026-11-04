@@ -343,6 +343,8 @@ final class DiskDatabase: @unchecked Sendable {
         if all {
             var depth: UInt64 = 2147483647, last: UInt64 = 0, done = 0, count = 0
             try query("SELECT COUNT(*) FROM dirs") { count = Int(Self.number($0, 0)) }
+            let step = max(1, count / 128)
+            progress?(0)
             while true {
                 var batch: [(String, UInt64)] = []
                 // Separate equal-depth and next-depth seeks: an OR/tuple cursor can restart a full index scan.
@@ -351,9 +353,11 @@ final class DiskDatabase: @unchecked Sendable {
                     try query("SELECT path,id FROM dirs WHERE length(path)<? ORDER BY length(path) DESC,id LIMIT ?", [.number(depth), .number(UInt64(512 - batch.count))]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
                 }
                 if batch.isEmpty { break }
-                for (path, _) in batch { try total(path) }
+                for (path, _) in batch {
+                    try total(path); done += 1
+                    if done % step == 0 || done == count { progress?(Double(done) / Double(max(count, 1))) }
+                }
                 last = batch.last!.1; depth = UInt64(batch.last!.0.unicodeScalars.count)
-                done += batch.count; progress?(0.25 + 0.75 * Double(done) / Double(max(count, 1)))
                 try Task.checkCancellation()
                 try flushBatch()
             }

@@ -47,7 +47,9 @@ final class DiskPresentationContractTests: XCTestCase {
         index.directories[home + "/Downloads"] = DiskDirectory(path: home + "/Downloads", bytes: 8192)
         let folder = try XCTUnwrap(DiskMapScreenBuilder.segments(index, folder: "/").first)
         XCTAssertEqual(folder.contextActions?.paths, [home + "/Downloads"])
-        XCTAssertEqual(folder.contextActions?.delete, folder.items.first?.contextActions?.delete)
+        XCTAssertEqual(folder.contextActions?.delete, DiskDirectoryRemoval.action(home + "/Downloads", node: index.directories[home + "/Downloads"]))
+        XCTAssertNil(folder.items.first?.contextActions?.delete)
+        XCTAssertTrue(folder.items.first?.actions.isEmpty == true)
     }
 
     func testModuleRootAndTileUseAppsAndFilesName() {
@@ -71,6 +73,7 @@ final class DiskPresentationContractTests: XCTestCase {
         XCTAssertEqual(groups.first { $0.id == "large-files" }?.rows.map(\.title), ["Duplicate files", "Archives", "Media"])
         XCTAssertFalse(groups.flatMap(\.rows).contains { $0.id.hasPrefix("file:") || $0.title == "Recommended" || $0.title == "Developer cleanup" })
         XCTAssertEqual(groups.first { $0.id == "personal-folders" }?.rows.first?.pageID, DiskMapScreenBuilder.folderID(home + "/Downloads"))
+        XCTAssertTrue(groups.first { $0.id == "personal-folders" }?.rows.allSatisfy { $0.actions.isEmpty && $0.contextActions?.delete == nil } == true)
         XCTAssertEqual(screen.selection?.scope, "disk-files")
         XCTAssertEqual(screen.selection?.session, true)
         XCTAssertEqual(screen.selection?.bulkResolver, "selection:")
@@ -84,6 +87,8 @@ final class DiskPresentationContractTests: XCTestCase {
             index.categories = summaries
             index.directories[folder] = DiskDirectory(path: folder)
             let screen = DiskMapScreenBuilder.screen(index, apps: DiskApplications(), folder: folder)
+            XCTAssertNil(screen.hero, "An empty folder uses a list-only page without blank graph space")
+            XCTAssertEqual(screen.layout, .singleColumn)
             let inventory = try XCTUnwrap(lists(screen).first { $0.id == "large-files" })
             XCTAssertTrue(inventory.rows.isEmpty)
             XCTAssertNil(inventory.rows.first?.trailing)

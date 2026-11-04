@@ -29,7 +29,7 @@ final class DiskDirectoryRemovalTests: XCTestCase {
         }
     }
 
-    func testDirectoryActionsAppearOnRowsAndNameWholeFolderAndTrashPolicyInConfirmation() throws {
+    func testDirectoryActionsNameWholeFolderAndTrashPolicyButAreAbsentFromLists() throws {
         try fixture { home, path in
             var index = DiskIndex(root: home)
             let node = DiskDirectory(path: path, bytes: 8192, ownerUID: getuid())
@@ -43,12 +43,14 @@ final class DiskDirectoryRemovalTests: XCTestCase {
             XCTAssertEqual(action.parameters["trash"], FileRemovalSettings.movesToTrash() ? "1" : "0")
             XCTAssertTrue(action.confirmation?.message.contains("all its contents") == true)
             XCTAssertTrue(action.confirmation?.message.contains(path) == true)
-            let row = DiskMapScreenBuilder.folderRow(path, index: index, home: home)
-            XCTAssertEqual(row.contextActions?.delete, action)
-            XCTAssertEqual(row.actions, [action])
+            let row = DiskMapScreenBuilder.folderRow(path, index: index)
+            XCTAssertNil(row.contextActions?.delete)
+            XCTAssertTrue(row.actions.isEmpty)
+            XCTAssertEqual(row.paths, [path])
+            XCTAssertEqual(row.pageID, DiskMapScreenBuilder.folderID(path))
             var missingProjection = DiskIndex(root: home)
             missingProjection.personalFolders = [node]
-            XCTAssertEqual(DiskMapScreenBuilder.folderRow(path, index: missingProjection, directory: node, home: home).trailing, row.trailing)
+            XCTAssertEqual(DiskMapScreenBuilder.folderRow(path, index: missingProjection, directory: node).trailing, row.trailing)
         }
     }
 

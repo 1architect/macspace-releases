@@ -4,6 +4,14 @@ import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
 final class DiskRefreshPerformanceTests: XCTestCase {
+    private struct Options: OptionStore {
+        func bool(_ id: String) -> Bool { false }
+        func string(_ id: String) -> String { "" }
+        func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
+    }
+    private struct Permissions: PermissionChecker {
+        func status(of permission: Permission) -> PermissionStatus { .granted }
+    }
     private final class Reports: @unchecked Sendable {
         private let lock = NSLock()
         private var recorded: [Double] = []
@@ -17,6 +25,80 @@ final class DiskRefreshPerformanceTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: home) }
         let db = try DiskDatabase(url: home.appendingPathComponent("cache/index.sqlite"), root: root.path, home: home.path)
         try body(root, db)
+    }
+
+    func testModuleProgressCoversScanAndInventoryWithoutLargeReservedJumps() async throws {
+        let home = URL(fileURLWithPath: "/private/tmp/module-progress-" + UUID().uuidString)
+        let root = home.appendingPathComponent("Downloads")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        for n in 0..<480 { try FileManager.default.createDirectory(at: root.appendingPathComponent("folder-\(n)"), withIntermediateDirectories: false) }
+        let store = DiskStore(root: root.path, cache: home.appendingPathComponent("cache/index"), home: home.path)
+        _ = await store.view()
+        await store.mark([root.path], recursive: true)
+        let inventoryStarted = expectation(description: "Inventory starts after measured scan progress")
+        let releaseInventory = DispatchSemaphore(value: 0)
+        defer { releaseInventory.signal() }
+        let inventory = DiskInventory(progressiveLoader: { _, _, progress in
+            inventoryStarted.fulfill()
+            _ = releaseInventory.wait(timeout: .now() + 10)
+            for step in 0...10 { progress(Double(step) / 10) }
+            return DiskApplications()
+        })
+        let module = DiskMapModule(store: store, inventory: inventory)
+        let context = ModuleContext(manifest: ModuleManifest(id: "com.macspace.disk-map", name: "Disk", summary: "", version: "test", symbol: "internaldrive"), options: Options(), permissions: Permissions())
+        let reports = Reports(), relay = LoadProgressRelay()
+        relay.attach { reports.add($0) }
+        let read = Task {
+            async let tile = module.tile(context: context, progress: { relay.report($0) })
+            async let screen = module.screen(context: context, progress: { relay.report($0) })
+            return await (tile, screen)
+        }
+        await fulfillment(of: [inventoryStarted], timeout: 10)
+        XCTAssertTrue(reports.values.contains { $0 > 0.6 && $0 < 0.8 }, "Scanning must fill the main portion of the indicator")
+        XCTAssertEqual(try XCTUnwrap(reports.values.last), 0.9, accuracy: 0.001)
+        XCTAssertFalse(reports.values.contains(1), "A completed tile cannot finish the page's inventory progress")
+        releaseInventory.signal()
+        _ = await read.value
+        let values = reports.values
+        XCTAssertTrue(values.contains { $0 > 0.9 && $0 < 0.98 }, "App inventory must report its own measured work")
+        XCTAssertEqual(values.last, 1)
+        XCTAssertTrue(zip(values, values.dropFirst()).allSatisfy { $1 >= $0 })
+        // Bounded native batches can finish a large fraction of this tiny fixture at once. The regression
+        // is the reserved, unreported tail after traversal, even with no migrations or duplicate candidates.
+        let tail = Array(values.drop(while: { $0 < 0.4 }))
+        XCTAssertTrue(zip(tail, tail.dropFirst()).allSatisfy { $1 - $0 < 0.1 }, "No-op stages must not reserve a large jump at completion: \(tail)")
+        await module.setActive(false)
+    }
+
+    func testInventoryJoinReplaysProgressAndCachedReadCompletesImmediately() async throws {
+        let started = expectation(description: "Inventory reading"), joined = expectation(description: "Joined progress")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let inventory = DiskInventory(progressiveLoader: { _, _, progress in
+            progress(0.2); started.fulfill()
+            _ = release.wait(timeout: .now() + 10)
+            for step in [0.4, 0.6, 0.8] { progress(step) }
+            return DiskApplications()
+        })
+        let index = DiskIndex(root: "/"), firstReports = Reports(), joinedReports = Reports()
+        let first = Task { await inventory.read(index, progress: { firstReports.add($0) }) }
+        await fulfillment(of: [started], timeout: 10)
+        let second = Task {
+            await inventory.read(index, progress: {
+                joinedReports.add($0)
+                if $0 == 0.2 { joined.fulfill() }
+            })
+        }
+        await fulfillment(of: [joined], timeout: 10)
+        release.signal()
+        _ = await (first.value, second.value)
+        XCTAssertEqual(firstReports.values, [0.2, 0.4, 0.6, 0.8, 1])
+        XCTAssertEqual(joinedReports.values, firstReports.values)
+        let cached = Reports()
+        _ = await inventory.read(index, progress: { cached.add($0) })
+        XCTAssertEqual(cached.values, [1])
+        await inventory.setActive(false)
     }
 
     func testSharedAncestorMarkingStaysBoundedAndIncludesEveryAffectedParent() throws {

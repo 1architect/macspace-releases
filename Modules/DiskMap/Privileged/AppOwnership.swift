@@ -66,7 +66,7 @@ public struct AppOwner: Codable, Equatable, Sendable {
 }
 
 public enum AppOwnership {
-    public static func discover(home: String, candidates: [String] = []) -> AppCatalog {
+    public static func discover(home: String, candidates: [String] = [], progress: @Sendable (Double) -> Void = { _ in }) -> AppCatalog {
         var paths = Set<String>(), registered = Set<String>()
         for root in ["/Applications", home + "/Applications", "/System/Applications"] {
             guard let iterator = FileManager.default.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
@@ -79,16 +79,30 @@ public enum AppOwnership {
         }
         paths.formUnion(candidates.filter { !$0.contains(".app/") && !$0.contains("/.Trash/") && !$0.contains("/.Trashes/") })
         // Public registration lookup by known bundle ID. There is no claim of a complete global registration inventory.
-        let seeds = paths.compactMap { path in Task.isCancelled ? nil : autoreleasepool { AppOwner(path: path, knownIdentifiers: []) } }
-        for id in Set(seeds.map(\.identifier)) {
+        var seeds: [AppOwner] = []
+        for (offset, path) in paths.sorted().enumerated() {
+            if Task.isCancelled { return AppCatalog(owners: []) }
+            if let owner = autoreleasepool(invoking: { AppOwner(path: path, knownIdentifiers: []) }) { seeds.append(owner) }
+            progress(0.4 * Double(offset + 1) / Double(max(paths.count, 1)))
+        }
+        let identifiers = Set(seeds.map(\.identifier))
+        for (offset, id) in identifiers.sorted().enumerated() {
             if Task.isCancelled { return AppCatalog(owners: []) }
             let registeredPaths = autoreleasepool { NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id).map(\.path) }
             for path in registeredPaths {
                 if safeExisting(path) { paths.insert(path); registered.insert(path) }
             }
+            progress(0.4 + 0.4 * Double(offset + 1) / Double(max(identifiers.count, 1)))
         }
         let prior = Dictionary(seeds.map { ($0.path, $0) }, uniquingKeysWith: { a, _ in a })
-        return AppCatalog(owners: paths.sorted().compactMap { path in Task.isCancelled ? nil : autoreleasepool { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) } }, registeredPaths: registered)
+        var owners: [AppOwner] = []
+        for (offset, path) in paths.sorted().enumerated() {
+            if Task.isCancelled { return AppCatalog(owners: []) }
+            if let owner = autoreleasepool(invoking: { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) }) { owners.append(owner) }
+            progress(0.8 + 0.2 * Double(offset + 1) / Double(max(paths.count, 1)))
+        }
+        progress(1)
+        return AppCatalog(owners: owners, registeredPaths: registered)
     }
     public static func installed(home: String) -> [AppOwner] { discover(home: home).owners }
     public static func classification(_ owner: AppOwner, home: String, registered: Set<String> = [], candidates: [AppOwner] = []) -> (AppClassification, String) {

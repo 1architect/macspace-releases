@@ -73,8 +73,12 @@ enum DiskMapScreenBuilder {
         }
         let node = index.directories[folder]
         let title = folder == index.root ? loc("Apps and files") : folderName(folder)
-        return Screen(title: title, hero: UsageBar(id: folderID(folder), title: title, totalBytes: folder == index.root ? index.volumeUsed ?? node?.bytes : node?.bytes,
-             segments: segments(index, folder: folder, files: direct?.request.kind == .managed ? direct?.files : catalog), footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")), primary: DiskDirectoryRemoval.action(folder, node: index.directories[folder]), widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
+        let parts = segments(index, folder: folder, files: direct?.request.kind == .managed ? direct?.files : catalog)
+        let hero = parts.contains { $0.bytes > 0 } ? UsageBar(id: folderID(folder), title: title,
+            totalBytes: folder == index.root ? index.volumeUsed ?? node?.bytes : node?.bytes, segments: parts,
+            footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")) : nil
+        return Screen(title: title, hero: hero, primary: DiskDirectoryRemoval.action(folder, node: node), layout: hero == nil ? .singleColumn : .adaptive,
+            widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
     }
     static func categorySummaries(_ types: [DiskTypeSummary]) -> [DiskCategorySummary] {
         var totals: [DiskCategory: DiskCategorySummary] = [:]
@@ -117,7 +121,8 @@ enum DiskMapScreenBuilder {
         var parts = node.folders.sorted().enumerated().compactMap { n, path -> UsageSegment? in
             guard let dir = index.directories[path] else { return nil }
             let row = folderRow(path, index: index)
-            return UsageSegment(id: path, label: row.title, bytes: dir.bytes, tone: .series(n), items: [row], pageID: folderID(path), kind: .folder, contextActions: row.contextActions)
+            return UsageSegment(id: path, label: row.title, bytes: dir.bytes, tone: .series(n), items: [row], pageID: folderID(path), kind: .folder,
+                contextActions: GraphContextActions(paths: row.paths, delete: DiskDirectoryRemoval.action(path, node: dir)))
         }
         let files = (catalog ?? index.largeFiles).filter { ($0.path as NSString).deletingLastPathComponent == folder }
         // Graph projections stay metadata-only; the remover checks live readers again after confirmation.
@@ -135,13 +140,12 @@ enum DiskMapScreenBuilder {
         }
         return parts.sorted { $0.bytes > $1.bytes }
     }
-    static func folderRow(_ path: String, index: DiskIndex, id: String? = nil, directory: DiskDirectory? = nil, home: String = DiskDirectoryRemoval.defaultHome) -> Row {
+    static func folderRow(_ path: String, index: DiskIndex, id: String? = nil, directory: DiskDirectory? = nil) -> Row {
         let node = directory ?? index.directories[path]
-        let deletion = DiskDirectoryRemoval.action(path, node: node, home: home)
         let paths = [FileReviewPolicy.livePath(path)]
         return Row(id: id ?? folderID(path), title: folderName(path), subtitle: node?.itemCount.map { loc("\(Int(clamping: $0)) items") },
-            trailing: node.map { ByteFormat.string($0.bytes) }, actions: deletion.map { [$0] } ?? [], paths: paths, pageID: folderID(path),
-            contextActions: GraphContextActions(paths: paths, delete: deletion))
+            trailing: node.map { ByteFormat.string($0.bytes) }, paths: paths, pageID: folderID(path),
+            contextActions: GraphContextActions(paths: paths))
     }
     static func fileContextActions(_ file: DiskFile, selection: Selection) -> GraphContextActions {
         let id = fileID(file.path)

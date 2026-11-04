@@ -19,20 +19,26 @@ private final class DiskRemovalBatch: @unchecked Sendable {
 }
 
 actor DiskInventory {
-    private let loader: @Sendable (DiskIndex, DiskApplications?) -> DiskApplications
+    private let loader: @Sendable (DiskIndex, DiskApplications?, @escaping LoadProgressSink) -> DiskApplications
     private let receiptCacheURL: URL?
     private var receiptCacheLoaded = false
     private var savedReceipts: AppReceiptCatalog?
-    init(receiptCache: URL? = nil, loader: @escaping @Sendable (DiskIndex, DiskApplications?) -> DiskApplications = DiskApplications.read) {
-        self.loader = loader; receiptCacheURL = receiptCache
+    init(receiptCache: URL? = nil, progressiveLoader: @escaping @Sendable (DiskIndex, DiskApplications?, @escaping LoadProgressSink) -> DiskApplications = DiskApplications.read) {
+        loader = progressiveLoader; receiptCacheURL = receiptCache
+    }
+    init(receiptCache: URL? = nil, loader: @escaping @Sendable (DiskIndex, DiskApplications?) -> DiskApplications) {
+        self.loader = { index, previous, progress in
+            let result = loader(index, previous); progress(1); return result
+        }
+        receiptCacheURL = receiptCache
     }
     private var revision: UInt64?
     private var apps: DiskApplications?
-    private struct Reading { var id: UInt64; var revision: UInt64; var task: Task<DiskApplications, Never> }
+    private struct Reading { var id: UInt64; var revision: UInt64; var task: Task<DiskApplications, Never>; var progress: LoadProgressRelay }
     private var flight: Reading?
     private var generation: UInt64 = 0
-    func browsing(_ index: DiskIndex, ready: @escaping @Sendable (DiskApplications) async -> Void) async -> DiskApplications {
-        let result = await read(index)
+    func browsing(_ index: DiskIndex, progress: LoadProgressSink? = nil, ready: @escaping @Sendable (DiskApplications) async -> Void) async -> DiskApplications {
+        let result = await read(index, progress: progress)
         if active { await ready(result) }
         return result
     }
@@ -46,13 +52,13 @@ actor DiskInventory {
         if revision == index.revision, apps?.catalogReadAt == value.catalogReadAt { apps = measured }
         return measured
     }
-    func read(_ index: DiskIndex, force: Bool = false) async -> DiskApplications {
+    func read(_ index: DiskIndex, force: Bool = false, progress: LoadProgressSink? = nil) async -> DiskApplications {
         guard active else { return apps ?? DiskApplications() }
         if force, let pending = flight {
             let result = await pending.task.value
             if flight?.id == pending.id { apps = result; revision = pending.revision; flight = nil }
         }
-        if !force, revision == index.revision, let apps { return apps }
+        if !force, revision == index.revision, let apps { progress?(1); return apps }
         let pending: Reading
         if let flight { pending = flight }
         else {
@@ -69,11 +75,17 @@ actor DiskInventory {
                 previous = seed
             }
             let loader = self.loader, previousForRead = previous
+            let reports = LoadProgressRelay()
             generation += 1
             pending = Reading(id: generation, revision: index.revision,
-                task: Task.detached(priority: .utility) { autoreleasepool { loader(index, previousForRead) } })
+                task: Task.detached(priority: .utility) {
+                    let result = autoreleasepool { loader(index, previousForRead, { reports.report($0) }) }
+                    reports.report(1)
+                    return result
+                }, progress: reports)
             flight = pending
         }
+        if let progress { pending.progress.attach(progress) }
         let result = await pending.task.value
         guard active, !pending.task.isCancelled else { return apps ?? result }
         if flight?.id == pending.id {
@@ -83,7 +95,7 @@ actor DiskInventory {
                 savedReceipts = result.receipts
             }
         }
-        if pending.revision != index.revision { return await read(index) }
+        if pending.revision != index.revision { return await read(index, progress: progress) }
         return result
     }
 }
@@ -98,13 +110,17 @@ public struct DiskMapModule: MacSpaceModule {
         self.store = store
         self.inventory = inventory ?? DiskInventory(receiptCache: store.receiptCacheURL)
     }
-    private func browsing(_ index: DiskIndex) async -> DiskApplications {
+    private func browsing(_ index: DiskIndex, progress: @escaping LoadProgressSink = { _ in }) async -> DiskApplications {
         let start = Date()
-        let apps = await inventory.browsing(index) { [store] apps in await store.recordOwnership(apps) }
+        let apps = await inventory.browsing(index, progress: { progress(0.85 * $0) }) { [store] apps in
+            await store.recordOwnership(apps)
+            progress(0.95)
+        }
         DiskScanMetrics.phase("application-inventory-and-ownership", since: start)
         let accountingStarted = Date()
         let measured = await inventory.measurements(apps, index: store.navigation().index)
         DiskScanMetrics.phase("application-allocation-reconciliation", since: accountingStarted)
+        progress(1)
         return measured
     }
     public func setActive(_ active: Bool) async { await store.setActive(active); await inventory.setActive(active) }
@@ -120,7 +136,7 @@ public struct DiskMapModule: MacSpaceModule {
         let snapshot = await store.view(); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
     }
     public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
-        let snapshot = await store.view(progress: { progress(0.85 * $0) }); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
+        let snapshot = await store.view(progress: { progress(0.9 * $0) }); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
     }
     public func screen(context: ModuleContext) async -> Screen {
         let snapshot = await store.view()
@@ -129,12 +145,12 @@ public struct DiskMapModule: MacSpaceModule {
         return DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
     }
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        let snapshot = await store.view(progress: { progress(0.85 * $0) })
-        progress(0.85)
-        let apps = await browsing(snapshot.index)
-        progress(1)
+        let snapshot = await store.view(progress: { progress(0.9 * $0) })
+        let apps = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
         let completed = await store.navigation()
-        return DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
+        let screen = DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
+        progress(1)
+        return screen
     }
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
         guard let snapshot = await store.statusView() else { return nil }
