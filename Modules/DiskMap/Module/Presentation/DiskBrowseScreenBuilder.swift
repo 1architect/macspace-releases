@@ -44,8 +44,7 @@ extension DiskMapScreenBuilder {
                 for n in rows.indices {
                     rows[n].trailing = ByteFormat.string(members[n].bytes)
                 }
-                widgets.append(.list(ListWidget(id: id, title: (group.keeper.path as NSString).lastPathComponent, rows: rows,
-                    subtitle: loc("\(group.copyCount ?? members.count) identical copies"), trailing: group.totalBytes.map(ByteFormat.string))))
+                widgets.append(.list(ListWidget(id: id, title: (group.keeper.path as NSString).lastPathComponent, rows: rows)))
             }
         } else {
             let grouped = Dictionary(grouping: page.files) { DiskFileType.key($0.path) }
@@ -57,13 +56,11 @@ extension DiskMapScreenBuilder {
             for key in ordered {
                 let files = grouped[key, default: []].sorted { $0.logicalBytes == $1.logicalBytes ? $0.path < $1.path : $0.logicalBytes > $1.logicalBytes }
                 let id = "type:" + page.request.selectionScope + ":" + key, name = DiskFileType.title(key)
-                let total = page.types.first { $0.key == key }
                 var rows = reviewRows(files, ownership: page.ownership, open: open)
                 if page.request.kind == .managed {
                     for n in rows.indices { rows[n].unavailableReason = loc("Managed by Photos; browse or reveal in Finder.") }
                 }
-                widgets.append(.list(ListWidget(id: id, title: name, rows: rows,
-                    subtitle: total.map { loc("\(Int(clamping: $0.count)) items") }, trailing: total.map { ByteFormat.string($0.bytes) })))
+                widgets.append(.list(ListWidget(id: id, title: name, rows: rows)))
                 var scope = page.request; scope.fileType = key; scope.afterPath = nil; scope.afterSize = nil; scope.focusPath = nil
                 selection.sections.append(.init(id: id, title: name, rows: files.map { fileID($0.path) }, pageID: selectionPageID(scope), unavailableReason: page.unavailableReason))
             }

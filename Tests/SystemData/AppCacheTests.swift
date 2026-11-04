@@ -257,6 +257,7 @@ final class AppCacheTests: XCTestCase {
         let row = try XCTUnwrap(CachesPage.row(snapshot([offered, inUse, suggested, running]), now: now))
         let selection = try XCTUnwrap(row.selection)
         XCTAssertEqual(selection.sections.map(\.id), ["recommended", "apps"])
+        XCTAssertEqual(selection.sections.map(\.title), [CachesPage.partTitle(.recommended), CachesPage.partTitle(.apps)], "Selection headings contain names only, never quantities")
         XCTAssertEqual(selection.sections[1].rows, ["appcache:open", "appcache:busy", "appcache:tool"], "largest first")
         XCTAssertEqual(selection.checked, ["appcache:gone"])
         XCTAssertEqual(selection.suggested, ["appcache:gone"])

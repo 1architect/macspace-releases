@@ -84,3 +84,20 @@ final class ModuleOverviewTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(Screen.self, from: JSONEncoder().encode(screen)), screen)
     }
 }
+
+extension ModuleOverviewTests {
+    func testExpandedAndDrilldownHeadingsNeverPromoteRowQuantities() throws {
+        let child = Row(id: "managed", title: "Managed by macOS", subtitle: "19 items", trailing: "12 GB")
+        var group = Row.group(id: "everything", title: "Everything else", totalBytes: 19_350_000_000, rows: [child])
+        group.subtitle = "31 items"
+        for width in [350.0, 520, 820] {
+            let items = ModulePagePresentation.items([.list(.init(id: "overview", rows: [group]))], width: width, expandsGroups: true)
+            guard case let .section(section) = try XCTUnwrap(items.first?.widgets.first),
+                  case let .list(list) = try XCTUnwrap(section.widgets.first) else { return XCTFail() }
+            XCTAssertEqual(section.title, "Everything else")
+            XCTAssertEqual(list.rows, [child], "Measurements remain on individual rows")
+        }
+        guard case let .section(section) = try XCTUnwrap(ModulePagePresentation.groupWidgets(group).first) else { return XCTFail() }
+        XCTAssertEqual(section.title, "Everything else")
+    }
+}

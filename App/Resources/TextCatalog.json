@@ -196,7 +196,7 @@
     "key" : "%lld items",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:584"
+      "Sdk\/Interface\/Widgets.swift:586"
     ],
     "table" : "App",
     "translations" : {
@@ -329,7 +329,7 @@
     "key" : "1 item",
     "kind" : "Row subtitle",
     "places" : [
-      "Sdk\/Interface\/Widgets.swift:584"
+      "Sdk\/Interface\/Widgets.swift:586"
     ],
     "table" : "App",
     "translations" : {
@@ -2590,7 +2590,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Renderer\/ScreenView.swift:839",
-      "Sdk\/Interface\/Widgets.swift:237"
+      "Sdk\/Interface\/Widgets.swift:239"
     ],
     "table" : "App",
     "translations" : {
@@ -2822,8 +2822,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:763",
-      "App\/Renderer\/WidgetView.swift:764"
+      "App\/Renderer\/WidgetView.swift:754",
+      "App\/Renderer\/WidgetView.swift:755"
     ],
     "table" : "App",
     "translations" : {
@@ -5770,9 +5770,9 @@
   {
     "id" : "DiskMap|%lld identical copies",
     "key" : "%lld identical copies",
-    "kind" : "Text",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:48"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6821,7 +6821,7 @@
     "key" : "Files of 100 MB or larger",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:83"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7152,7 +7152,7 @@
     "key" : "Inventory incomplete",
     "kind" : "Notice",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:76"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:73"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7287,7 +7287,7 @@
     "key" : "Managed by Photos; browse or reveal in Finder.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:63"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:61"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7365,7 +7365,7 @@
     "key" : "More items",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:78"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:75"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7500,7 +7500,7 @@
     "key" : "No files match this size and type scope.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:72"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7595,7 +7595,7 @@
     "key" : "No verified duplicate copies yet",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:72"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7767,7 +7767,7 @@
     "kind" : "Row detail",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:102",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:90"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:87"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8117,7 +8117,7 @@
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:41",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:67",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:72"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8346,7 +8346,7 @@
     "key" : "Show all files",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:81"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:78"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8384,7 +8384,7 @@
     "key" : "Sizes show allocated space.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:83"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8984,7 +8984,7 @@
     "key" : "Up to %@ can be removed while keeping one copy of each set.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:83"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -12245,7 +12245,7 @@
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
       "App\/Renderer\/ScreenView.swift:839",
-      "Sdk\/Interface\/Widgets.swift:237"
+      "Sdk\/Interface\/Widgets.swift:239"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13425,8 +13425,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:584"
+      "Sdk\/Interface\/Widgets.swift:586"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -13561,8 +13560,7 @@
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:118",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:315",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:260",
-      "Sdk\/Interface\/Widgets.swift:584"
+      "Sdk\/Interface\/Widgets.swift:586"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14215,7 +14213,7 @@
     "kind" : "Row title",
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:249",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:264"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:262"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14407,7 +14405,7 @@
     "key" : "Come back with use",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:285"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:283"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -14607,7 +14605,7 @@
       "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:239",
       "Modules\/SystemData\/Module\/Engine\/DeveloperCaches.swift:271",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:21",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:286"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:284"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15088,7 +15086,7 @@
     "key" : "Free recommended",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:272"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:270"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15107,8 +15105,8 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:267",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:274"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:265",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:272"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15165,7 +15163,7 @@
     "key" : "Free the selected caches?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:267"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:265"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16354,8 +16352,8 @@
     "key" : "Quits %@.",
     "kind" : "Confirmation message",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:276",
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:303"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:274",
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:301"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16393,7 +16391,7 @@
     "key" : "Recommended",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:284"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:282"
     ],
     "table" : "SystemData",
     "translations" : {

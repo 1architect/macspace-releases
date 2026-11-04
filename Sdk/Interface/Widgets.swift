@@ -83,6 +83,8 @@ extension Row {
 /// Titles of lists and sections (`ListWidget.title`, `ToggleList.title`, `SectionWidget.title`, `UsageBar.title`): every page draws
 /// them as macOS's System Settings draws its grouped lists, semibold in the text's color, the same in Settings and in every module.
 /// A title names the group in a few words ("Models", "Free now"); it is not a sentence and carries no count or state.
+/// List, section and selection headings MUST NOT include appended quantities: item counts, byte sizes/totals or percentages.
+/// Keep those measurements on item/navigation rows, selected-action labels or chart figures. Numeric filenames remain valid titles.
 ///
 /// The rule for every text the app shows behind an (i): `Row.detail`, `ToggleRow.detail`, `SectionWidget.subtitle`, `UsageBar.footnote`,
 /// `ToggleList.footnote` and `ButtonWidget.footnote`. It says what the item is and what acting on it does, the same whatever its state:
@@ -646,7 +648,7 @@ public struct SelectionBulkRequest: Codable, Equatable, Sendable {
 /// with the checked ids, one per line, in the parameter `ids` (ids can hold commas, a folder's name for one). While the boxes are
 /// exactly `suggested`, the button is titled `suggestedTitle` instead ("Free recommended 1.2 GB").
 ///
-/// With `sections`, the page lists the rows in those parts, in that order, each under its title ("Recommended 3 items 1.2 GB")
+/// With `sections`, the page lists the rows in those parts, in that order, each under its name alone ("Recommended"; no counts, byte totals or percentages)
 /// and, when it has rows to choose, a box that checks or clears them all. With `save`, every change is sent to the module at once (`save` with the
 /// parameters `ids`, the checked rows, and `all`, the sections whose header box is on, one per line), so the module can keep the
 /// choice: it then decides what its other buttons and automatic cleaning free, and sends it back in `checked` and `SelectionSection.all`.
@@ -737,6 +739,7 @@ public struct Selection: Codable, Equatable, Sendable {
 /// which keeps rows that join the part later checked too.
 public struct SelectionSection: Codable, Equatable, Sendable, Identifiable {
     public var id: String
+    /// Group name only; no counts, sizes, totals or percentages in the selection heading.
     public var title: String
     public var rows: [String]
     public var all: Bool
@@ -758,9 +761,8 @@ public struct SelectionSection: Codable, Equatable, Sendable, Identifiable {
 /// needs a comment where the list is built.
 public struct ListWidget: Codable, Equatable, Sendable {
     public var id: String
+    /// A group name only. Quantity subtitles/trailing measurements are prohibited on list headings.
     public var title: String?
-    public var subtitle: String?
-    public var trailing: String?
     public var emptyMessage: String?
     /// Actual folder locations, revealed by the list heading.
     public var paths: [String]
@@ -768,23 +770,21 @@ public struct ListWidget: Codable, Equatable, Sendable {
     public var fillsRemainingSpace: Bool?
     public var rows: [Row]
 
-    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = [], subtitle: String? = nil, trailing: String? = nil) {
+    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = []) {
         self.id = id
         self.title = title
         self.emptyMessage = emptyMessage
-        self.subtitle = subtitle; self.trailing = trailing
         self.paths = paths
         self.fillsRemainingSpace = fillsRemainingSpace ? true : nil
         self.rows = rows
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, subtitle, trailing, emptyMessage, paths, fillsRemainingSpace, rows }
+    private enum CodingKeys: String, CodingKey { case id, title, emptyMessage, paths, fillsRemainingSpace, rows }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         title = try container.decodeIfPresent(String.self, forKey: .title)
-        subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
-        trailing = try container.decodeIfPresent(String.self, forKey: .trailing)
+        // Old saved heading quantities are intentionally ignored; row measurements remain unchanged.
         emptyMessage = try container.decodeIfPresent(String.self, forKey: .emptyMessage)
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
         fillsRemainingSpace = try container.decodeIfPresent(Bool.self, forKey: .fillsRemainingSpace)

@@ -194,16 +194,9 @@ struct WidgetForm<Top: View>: View {
                 // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
                 HStack(spacing: 6) {
                     header(text, help: title.help, part: Self.part(widget) ?? (sectionChoice?.selection.sections.contains(where: { $0.id == widget.id }) == true ? widget.id : nil))
-                    if case let .list(list) = widget {
-                        if let subtitle = list.subtitle { Text(subtitle).foregroundStyle(.secondary) }
-                        if let trailing = list.trailing {
-                            Spacer(minLength: 8)
-                            ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary)
-                        }
-                        if !list.paths.isEmpty {
-                            if list.trailing == nil { Spacer(minLength: 8) }
-                            RevealButton(paths: list.paths)
-                        }
+                    if case let .list(list) = widget, !list.paths.isEmpty {
+                        Spacer(minLength: 8)
+                        RevealButton(paths: list.paths)
                     }
                 }
                     .font(.system(size: 13, weight: .semibold))
@@ -664,9 +657,7 @@ struct RowView: View {
                 HStack(spacing: 8) {
                     ModuleSectionHeader(title: row.title, help: row.detail, part: section)
                         .font(.system(size: 13, weight: .semibold))
-                    if let subtitle = row.subtitle { Text(subtitle).foregroundStyle(.secondary) }
                     Spacer(minLength: 0)
-                    if let trailing = row.trailing { Text(trailing).monospacedDigit().foregroundStyle(.secondary) }
                     if !row.paths.isEmpty { RevealButton(paths: row.paths) }
                 }
                 .padding(.vertical, 4)

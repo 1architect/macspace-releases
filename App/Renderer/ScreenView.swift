@@ -282,7 +282,7 @@ struct ScreenView: View {
         }
     }
 
-    /// Every item of a group, each with its size and actions, under a header that repeats the group's count and total. A group whose
+    /// Every item of a group, each with its size and actions, under the group name alone. A group whose
     /// page is in parts (`Selection.sections`) lists each part under a header of its own, with a box that checks the whole part.
     @ViewBuilder
     private func groupPage(_ group: Row) -> some View {

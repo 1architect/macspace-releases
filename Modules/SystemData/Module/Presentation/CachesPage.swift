@@ -257,9 +257,7 @@ enum CachesPage {
             guard !members.isEmpty else { continue }
             let partRows = members.map { row($0, part: part) }
             rows += partRows
-            let count = members.count == 1 ? loc("1 item") : loc("\(members.count) items")
-            let title = [partTitle(part), count, ByteFormat.string(members.map(\.bytes).reduce(0, +))].joined(separator: " ")
-            sections.append(SelectionSection(id: part.rawValue, title: title, rows: partRows.map(\.id), all: choices.all.contains(part.rawValue)))
+            sections.append(SelectionSection(id: part.rawValue, title: partTitle(part), rows: partRows.map(\.id), all: choices.all.contains(part.rawValue)))
         }
         var group = Row.group(id: groupID, title: loc("Caches you can free"), totalBytes: all.map(\.bytes).reduce(0, +), rows: rows)
         let choosable = all.filter(self.choosable)

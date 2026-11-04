@@ -94,8 +94,7 @@ enum ModulePagePresentation {
                 return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows))
             }
         }
-        let title = [group.title, group.subtitle, group.trailing].compactMap { $0 }.joined(separator: " ")
-        return [.section(SectionWidget(id: "group-items:\(group.id)", title: title, subtitle: group.detail,
+        return [.section(SectionWidget(id: "group-items:\(group.id)", title: group.title, subtitle: group.detail,
                                       widgets: [.list(ListWidget(id: "group-items-list:\(group.id)", rows: group.children))]))]
     }
 }

@@ -216,3 +216,14 @@ extension SdkTests {
         XCTAssertNil(old.removedBytes); XCTAssertEqual(old.freedBytes, 100_000_000)
     }
 }
+
+extension SdkTests {
+    func testLegacyHeadingQuantitiesAreIgnoredWhileRowQuantitiesRemain() throws {
+        let saved = Data(#"{"id":"hdr","title":"HDR files","subtitle":"1 item","trailing":"105.2 MB","rows":[{"id":"image","title":"image.hdr","subtitle":"1 item","trailing":"105.2 MB"}]}"#.utf8)
+        let list = try JSONDecoder().decode(ListWidget.self, from: saved)
+        XCTAssertEqual(list.title, "HDR files")
+        XCTAssertEqual(list.rows.first?.subtitle, "1 item"); XCTAssertEqual(list.rows.first?.trailing, "105.2 MB")
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(list)) as? [String: Any])
+        XCTAssertNil(encoded["subtitle"]); XCTAssertNil(encoded["trailing"], "List headings cannot serialize measurement fields")
+    }
+}
