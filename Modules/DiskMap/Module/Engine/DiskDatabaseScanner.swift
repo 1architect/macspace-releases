@@ -180,6 +180,8 @@ struct DiskDatabaseScanner {
         if cancelled() { throw CancellationError() }; try Task.checkCancellation()
         guard DiskDatabase.contains(path, below: db.root), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return }
         advanced(directory: true)
+        // Deleting a bundle must invalidate the catalog even though its metadata is already gone.
+        if path.hasSuffix(".app") || path.contains(".app/") { catalogChanged = true }
         guard let info = metadata(path) else {
             if errno == ENOENT || errno == ENOTDIR { try db.remove(path, markAffectedTotals: !refreshesWholeRoot) }
             else if var retained = try db.directory(path) { retained.readable = false; try db.put(retained) }
@@ -189,7 +191,6 @@ struct DiskDatabaseScanner {
             try db.remove(path, markAffectedTotals: !refreshesWholeRoot)
             return
         }
-        if path.hasSuffix(".app") || (path.range(of: ".app/", options: .literal) != nil) { catalogChanged = true }
         if !refreshesWholeRoot { try db.markTotals(path) }
         if info.st_flags & UInt32(SF_DATALESS) != 0 {
             var retained = try db.directory(path) ?? DiskDirectory(path: path, ownerUID: info.st_uid)

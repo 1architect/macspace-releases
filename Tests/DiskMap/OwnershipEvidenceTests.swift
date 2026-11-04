@@ -57,7 +57,8 @@ final class OwnershipEvidenceTests: XCTestCase {
             try file(home + "/Library/Caches/" + owner.identifier + "/payload")
             let resolver = OwnershipResolver(catalog: AppCatalog(owners: [owner], discoveryComplete: true))
             let claims = resolver.claims(for: owner, home: home, systemLibrary: home + "/SystemLibrary")
-            XCTAssertFalse(claims.flatMap(\.paths).contains { $0.contains("Vendor/Product") || $0.hasSuffix("Support/Example") })
+            XCTAssertTrue(claims.contains { $0.paths.contains(home + "/Library/Application Support/Vendor/Product") && $0.confidence == .inferred })
+            XCTAssertTrue(claims.contains { $0.paths.contains(home + "/Library/Application Support/Example") && $0.confidence == .inferred })
             XCTAssertEqual(claims.first { $0.source == "identifierConvention" }?.confidence, .inferred)
             XCTAssertEqual(resolver.plan(for: owner, home: home, systemLibrary: home + "/SystemLibrary").targets.map(\.path), [owner.path])
         }
@@ -250,12 +251,14 @@ final class OwnershipEvidenceTests: XCTestCase {
             var apps = DiskApplications(); apps.apps = [installed, protected]; apps.catalogReadAt = Date()
             let page = DiskMapScreenBuilder.appsPage(DiskIndex(root: home), apps: apps)
             guard case let .list(list) = page.widgets[0] else { return XCTFail() }
-            XCTAssertEqual(list.rows.count, 2)
+            XCTAssertEqual(list.rows.count, 1)
             XCTAssertEqual(list.rows[0].iconPath, owner.path)
             XCTAssertTrue(list.rows[0].children.isEmpty, "Host expansion must not replace the app row and its uninstall button")
-            XCTAssertEqual(list.rows[1].pageID, "other-apps")
             let action = try XCTUnwrap(list.rows[0].actions.first)
-            let encoded = try XCTUnwrap(action.parameters["plan"])
+            XCTAssertEqual(action.pageID, DiskMapScreenBuilder.uninstallReviewID(owner.path))
+            XCTAssertNil(action.confirmation, "Opening the review page does not mutate anything")
+            XCTAssertEqual(list.rows[0].actionPlacement, .afterFinder)
+            let encoded = try XCTUnwrap(DiskMapScreenBuilder.uninstallAction(installed)?.parameters["plan"])
             XCTAssertEqual(try JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)), plan)
             XCTAssertTrue(DiskMapScreenBuilder.appRow(protected).actions.isEmpty)
         }

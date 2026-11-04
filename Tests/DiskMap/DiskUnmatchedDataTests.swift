@@ -35,16 +35,16 @@ final class DiskUnmatchedDataTests: XCTestCase {
     func testIndexedInstalledComponentsAreNotOrphansAndRowsAreFlatAndSelectable() throws {
         try fixture { home, index in
             let candidates = DiskApplications.unmatchedData(index, apps: [], knownIdentifiers: ["org.example.installed.extension", "com.apple.system.extension"], home: home)
-            XCTAssertEqual(candidates.count, 1)
-            XCTAssertFalse(candidates.contains { $0.path.contains("/Caches/") })
+            XCTAssertEqual(candidates.count, 2)
+            XCTAssertTrue(candidates.contains { $0.path.contains("/Caches/") })
             XCTAssertTrue(candidates.allSatisfy { $0.identifier == "org.example.unknown" })
             var apps = DiskApplications(); apps.catalogReadAt = Date(); apps.reviewableLeftovers = candidates
             let screen = DiskMapScreenBuilder.leftoversPage(apps)
             guard case let .list(list)? = screen.widgets.last else { return XCTFail() }
-            XCTAssertEqual(list.rows.count, 1)
-            XCTAssertTrue(list.rows.allSatisfy { $0.children.isEmpty && $0.detail == nil && $0.subtitle == nil })
-            XCTAssertEqual(Set(list.rows.map(\.id)).count, 1)
-            XCTAssertEqual(screen.selection?.choices.count, 1)
+            XCTAssertEqual(list.rows.count, 2)
+            XCTAssertTrue(list.rows.allSatisfy { $0.children.isEmpty && $0.detail == nil && $0.subtitle?.contains("/Library/") == true })
+            XCTAssertEqual(Set(list.rows.map(\.id)).count, 2)
+            XCTAssertEqual(screen.selection?.choices.count, 2)
             XCTAssertEqual(screen.selection?.action.id, "freeUnmatchedData")
             XCTAssertTrue(screen.selection?.checked.isEmpty == true)
             XCTAssertFalse(screen.title.contains("removed"))
@@ -115,12 +115,14 @@ final class DiskUnmatchedDataTests: XCTestCase {
         }
     }
 
-    func testDirectoryPolicyOnlyAllowsImmediateChildrenOfRecognizedRoots() throws {
+    func testDirectoryPolicyAllowsReviewedAppDataButRejectsRootsAndTraversal() throws {
         try guardedFixture { home, path in
             XCTAssertTrue(ReviewedDirectoryRemoval.includes(path, home: home))
             XCTAssertTrue(ReviewedDirectoryRemoval.includes(home + "/Library/Application Support/org.example.data", home: home))
-            for invalid in [home + "/Library/Containers", path + "/nested", home + "/Library/Caches/org.example.data",
-                            home + "/Library/Group Containers/org.example.data", path + "/../other", path + "/", path + "\0suffix",
+            for allowed in [path + "/nested", home + "/Library/Caches/org.example.data", home + "/Library/Group Containers/org.example.data", home + "/Library/Application Support/Vendor/Product"] {
+                XCTAssertTrue(ReviewedDirectoryRemoval.includes(allowed, home: home), allowed)
+            }
+            for invalid in [home + "/Library/Containers", home + "/Library/Application Support/CloudDocs", path + "/../other", path + "/", path + "\0suffix",
                             home + "/Library/Containers//other", home + "/Library/Containers/."] {
                 XCTAssertFalse(ReviewedDirectoryRemoval.includes(invalid, home: home), invalid)
             }

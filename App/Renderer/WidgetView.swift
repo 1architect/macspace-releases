@@ -636,7 +636,7 @@ struct BannerRow: View {
 /// the module's symbols (`Row.symbol`): text alone, as Settings lists things.
 struct RowView: View {
     let row: Row
-    private var placement: RowFlagPlacement { .for(hasTrailingFigure: row.trailing != nil) }
+    private var placement: RowFlagPlacement { .for(hasTrailingFigure: row.trailing != nil, override: row.actionPlacement) }
     @Environment(\.rowActivity) private var activity
 
     /// The row's action flag is in the action color now (a result that asks something of the user): its pills step back
@@ -677,10 +677,11 @@ struct RowView: View {
             InfoButton(text: row.detail)
             RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             Spacer(minLength: 8)
-            RowActionFlags(row: row, handler: handler)
+            if placement != .afterFinder { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
             if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
         }
         .contentShape(Rectangle())
         .onTapGesture { openGroup(row.id) }
@@ -728,6 +729,7 @@ struct RowView: View {
             // No figure on the right: the flag takes the right edge (`RowFlagPlacement`).
             if placement == .trailing { RowActionFlags(row: row, handler: handler) }
             if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
         }
     }
 }

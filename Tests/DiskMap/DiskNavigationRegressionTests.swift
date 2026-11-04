@@ -75,7 +75,8 @@ final class DiskNavigationRegressionTests: XCTestCase {
         for path in [home.path, downloads.path, nested.path, home.path + "/Library"] {
             let page = await module.page(id: "folder:" + path, context: context())
             XCTAssertNotNil(page)
-            XCTAssertEqual(page?.hero?.id, DiskMapScreenBuilder.folderID(path))
+            if let hero = page?.hero { XCTAssertEqual(hero.id, DiskMapScreenBuilder.folderID(path)) }
+            else { XCTAssertEqual(page?.layout, .singleColumn, "Empty folder pages keep their list at the top") }
             if path.hasSuffix("/Library") { XCTAssertNil(page?.loadingFraction, "Managed folders do not launch hidden metadata work") }
         }
         XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)

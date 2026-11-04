@@ -66,6 +66,30 @@ public struct AppOwner: Codable, Equatable, Sendable {
 }
 
 public enum AppOwnership {
+    /// Installed launch services are additional exclusion evidence, never uninstall targets.
+    public static func serviceIdentifiers(home: String) -> Set<String> {
+        var result = Set<String>()
+        for root in ["/System/Library/LaunchAgents", "/System/Library/LaunchDaemons", "/Library/LaunchAgents", "/Library/LaunchDaemons", home + "/Library/LaunchAgents"] {
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: root)) ?? []
+            for name in names.prefix(8192) where name.hasSuffix(".plist") {
+                let path = root + "/" + name
+                var metadata = stat()
+                guard lstat(path, &metadata) == 0, metadata.st_mode & S_IFMT == S_IFREG,
+                      metadata.st_size <= 1_048_576, metadata.st_flags & UInt32(SF_DATALESS) == 0,
+                      let info = NSDictionary(contentsOfFile: path), let label = info["Label"] as? String, AppOwner.validIdentifier(label) else { continue }
+                let executable = info["Program"] as? String ?? (info["ProgramArguments"] as? [String])?.first
+                guard let executable, executable.hasPrefix("/"), FileManager.default.fileExists(atPath: executable) else { continue }
+                result.insert(label)
+                let binary = (executable as NSString).lastPathComponent
+                if !["sh", "bash", "zsh", "python", "python3", "node", "env"].contains(binary.lowercased()) { result.insert(binary) }
+            }
+        }
+        return result
+    }
+    public static func hasRegisteredApplication(_ identifier: String) -> Bool {
+        guard AppOwner.validIdentifier(identifier) else { return false }
+        return NSWorkspace.shared.urlsForApplications(withBundleIdentifier: identifier).contains { safeExisting($0.path) }
+    }
     public static func discover(home: String, candidates: [String] = [], progress: @Sendable (Double) -> Void = { _ in }) -> AppCatalog {
         var paths = Set<String>(), registered = Set<String>()
         for root in ["/Applications", home + "/Applications", "/System/Applications"] {
@@ -113,6 +137,9 @@ public enum AppOwnership {
             return (.protectedSystem, "Filesystem protection or immutable flags prevent ordinary removal.")
         }
         if !safeExisting(owner.path) { return (.extraCopy, "Unavailable or symbolic-link installation.") }
+        if owner.path.contains(".app/") || [home + "/Library/", "/Library/", "/private/var/", "/var/"].contains(where: owner.path.hasPrefix) {
+            return (.extraCopy, "Embedded helper or app-data copy; not a standalone application.")
+        }
         let inApplications = owner.path.hasPrefix("/Applications/") || owner.path.hasPrefix(home + "/Applications/")
         // A standalone menu-bar app in Applications has the same removal lifecycle as any installed app.
         if owner.isBackground { return (.background, "Background or agent application; lifecycle removal needs separate review.") }

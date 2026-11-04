@@ -704,7 +704,7 @@ struct ActionDock: View {
         let ids = handle.checked(group)
         guard selection.bulk?.unavailableReason == nil, selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty else { return nil }
         var action = selection.action
-        let total = selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +)
+        let total = (selection.includedBytes ?? 0) + (selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +))
         // While the boxes are what the module suggests, the button says so ("Free recommended").
         let suggested = Set(selection.suggested).intersection(selection.choices.keys)
         let title = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title

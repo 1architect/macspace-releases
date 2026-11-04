@@ -24,10 +24,11 @@ struct AppLeftover: Sendable {
     var path: String
     var bytes: UInt64
     var identity: AppFileIdentity?
+    var fileIdentity: FileReviewIdentity?
     var choiceID: String {
-        struct Target: Encodable { var path: String; var identity: AppFileIdentity? }
+        struct Target: Encodable { var path: String; var identity: AppFileIdentity?; var fileIdentity: FileReviewIdentity? }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-        return "app-data:" + ((try? encoder.encode(Target(path: path, identity: identity))) ?? Data()).base64EncodedString()
+        return "app-data:" + ((try? encoder.encode(Target(path: path, identity: identity, fileIdentity: fileIdentity))) ?? Data()).base64EncodedString()
     }
 }
 struct DiskApplications: Sendable {
@@ -90,7 +91,16 @@ struct DiskApplications: Sendable {
         } else {
             let candidates = (index.appPaths ?? index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }).map(livePath)
             let catalog = AppOwnership.discover(home: home, candidates: candidates, progress: { progress(0.25 * $0) })
-            let resolver = OwnershipResolver(catalog: catalog)
+            let byHost = home + "/Library/Preferences/ByHost"
+            let preferences = (try? FileManager.default.contentsOfDirectory(atPath: byHost)) ?? []
+            let dataPaths = [home + "/Library", "/Library"].flatMap { library in
+                ["Application Support", "Caches", "Logs"].flatMap { base -> [String] in
+                    let folder = library + "/" + base
+                    return ((try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? []).prefix(8192).map { folder + "/" + $0 }
+                }
+            }
+            let resolver = OwnershipResolver(catalog: catalog, byHostPreferences: preferences.prefix(8192).map { byHost + "/" + $0 },
+                embeddedIdentifiers: index.appBundleIdentifiers ?? [:], availableDataPaths: dataPaths)
             let receipts = AppReceiptReader.read(previous: previous?.receipts)
             progress(0.4)
             let receiptClaims = receipts.claims(owners: catalog.owners)
@@ -113,34 +123,100 @@ struct DiskApplications: Sendable {
         }
         result = result.remeasured(index, progress: { progress(0.9 + 0.06 * $0) })
         let measuredBases = reviewBases.map { measuredPath(home + "/Library/" + $0, index: index) }
-        result.measurementsComplete = measuredBases.allSatisfy { index.directories[$0]?.readable == true }
-        if result.measurementsComplete {
-            result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: index.knownBundleIdentifiers ?? [], home: home)
-        } else if let previous {
-            result.reviewableLeftovers = previous.reviewableLeftovers
+        result.measurementsComplete = measuredBases.allSatisfy {
+            if index.directories[$0]?.readable == true { return true }
+            var info = stat()
+            return lstat(Self.livePath($0), &info) != 0 && (errno == ENOENT || errno == ENOTDIR)
         }
+        // Refilter against today's installed catalog even if a different Library scope is unreadable.
+        // Retaining the previous candidate list can offer newly installed apps' data for removal.
+        var fileScopesComplete = true
+        let known = (index.knownBundleIdentifiers ?? []).union(AppOwnership.serviceIdentifiers(home: home))
+        result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: known, home: home, unreadable: { _ in fileScopesComplete = false })
+        result.measurementsComplete = result.measurementsComplete && fileScopesComplete
         progress(1)
         return result
     }
-    static let reviewBases = ["Containers", "Application Support"]
-    static func unmatchedData(_ index: DiskIndex, apps: [DiskApplication], knownIdentifiers: Set<String>, home: String) -> [AppLeftover] {
+    static let reviewBases = AppDataReviewPolicy.directoryBases
+    static func unmatchedData(_ index: DiskIndex, apps: [DiskApplication], knownIdentifiers: Set<String>, home: String, unreadable: ((String) -> Void)? = nil) -> [AppLeftover] {
         let ids = knownIdentifiers.union(apps.flatMap { Array($0.owner.identifiers) + $0.owner.groups + Array($0.owner.helpers.keys) })
+        var identifierPrefixes = ids
+        for identifier in ids {
+            var prefix = identifier
+            while let dot = prefix.lastIndex(of: ".") {
+                prefix = String(prefix[..<dot]); identifierPrefixes.insert(prefix)
+            }
+        }
+        let names = Set(apps.flatMap { OwnershipResolver.dataNames($0.owner) }.map(OwnershipResolver.dataNameKey))
+            .union(OwnershipResolver.componentDataNames(ids))
+        // Vendor roots and sibling helper IDs are not evidence of abandoned data while another
+        // product from that vendor is installed. This exclusion never authorizes a removal target.
+        let genericVendors: Set<String> = ["github", "gitlab", "sourceforge", "electron", "todesktop", "example"]
+        let vendorNamespaces = Set(apps.flatMap { $0.owner.identifiers }.compactMap { identifier -> String? in
+            let parts = identifier.lowercased().split(separator: ".")
+            guard parts.count >= 3, !genericVendors.contains(String(parts[1])) else { return nil }
+            return parts.prefix(2).joined(separator: ".")
+        })
+        let vendorNames = Set(vendorNamespaces.compactMap { $0.split(separator: ".").last.map(String.init) })
+        let installedTeams = Set(apps.compactMap { $0.owner.team })
         let claimed = Set(apps.flatMap(\.ownership).flatMap(\.paths))
         var rows: [AppLeftover] = []
+        func identifierMatch(_ value: String) -> Bool {
+            if identifierPrefixes.contains(value) { return true }
+            var prefix = value
+            while let dot = prefix.lastIndex(of: ".") {
+                prefix = String(prefix[..<dot])
+                if ids.contains(prefix) { return true }
+            }
+            return false
+        }
+        func matched(_ id: String, path: String) -> Bool {
+            id.lowercased().hasPrefix("com.apple.") || id.lowercased().contains(".com.apple.") || id.lowercased() == "apple"
+                || names.contains(OwnershipResolver.dataNameKey(id))
+                || vendorNames.contains(id.lowercased()) || vendorNamespaces.contains(id.lowercased().split(separator: ".").prefix(2).joined(separator: "."))
+                || installedTeams.contains(String(id.split(separator: ".").first ?? ""))
+                || identifierMatch(id)
+                || claimed.contains(where: { index.contains(path, below: $0) || index.contains($0, below: path) })
+        }
         for base in reviewBases {
             let folder = measuredPath(home + "/Library/" + base, index: index)
+            guard index.directories[folder]?.readable == true else { continue }
             for path in index.directories[folder]?.folders ?? [] {
                 var id = (path as NSString).lastPathComponent
                 if id.hasSuffix(".savedState") { id = String(id.dropLast(".savedState".count)) }
                 let live = livePath(path)
-                guard AppOwner.validIdentifier(id), !ids.contains(id), let node = index.directories[path], node.bytes > 0,
-                      !claimed.contains(where: { index.contains(live, below: $0) || index.contains($0, below: live) }) else { continue }
+                guard !id.hasPrefix("."), !matched(id, path: live), AppDataReviewPolicy.includesDirectory(live, home: home),
+                      let node = index.directories[path], node.readable, node.bytes > 0 else { continue }
                 // Container metadata may name an identity different from the directory's name.
-                if base == "Containers", let metadataID = NSDictionary(contentsOfFile: live + "/.com.apple.containermanagerd.metadata.plist")?["MCMMetadataIdentifier"] as? String,
-                   ids.contains(metadataID) { continue }
+                if base == "Containers", let metadataID = NSDictionary(contentsOfFile: live + "/.com.apple.containermanagerd.metadata.plist")?["MCMMetadataIdentifier"] as? String {
+                    if matched(metadataID, path: live) || AppOwnership.hasRegisteredApplication(metadataID) { continue }
+                    if AppOwner.validIdentifier(metadataID) { id = metadataID }
+                }
+                if AppOwner.validIdentifier(id), AppOwnership.hasRegisteredApplication(id) { continue }
                 let identity = DiskUnmatchedRemoval.eligible(live, home: home) ? AppFileIdentity(path: live) : nil
                 rows.append(AppLeftover(identifier: id, path: live, bytes: node.bytes, identity: identity))
             }
+        }
+        for base in AppDataReviewPolicy.fileBases {
+            let parent = home + "/Library/" + base
+            var info = stat()
+            if lstat(parent, &info) != 0 {
+                if errno != ENOENT && errno != ENOTDIR { unreadable?(parent) }
+                continue
+            }
+            guard info.st_mode & S_IFMT == S_IFDIR, info.st_flags & UInt32(SF_DATALESS) == 0 else { unreadable?(parent); continue }
+            let first = rows.count
+            let complete = DirectoryWalk.entries(at: parent) { name, entry in
+                guard entry.isRegularFile, !entry.isDataless, entry.ownerUID == getuid(), entry.allocatedBytes > 0 else { return }
+                let path = parent + "/" + name
+                guard AppDataReviewPolicy.includesFile(path, home: home) else { return }
+                var id = (name as NSString).deletingPathExtension
+                if base == "Preferences/ByHost", let dot = id.lastIndex(of: "."), UUID(uuidString: String(id[id.index(after: dot)...])) != nil { id = String(id[..<dot]) }
+                guard AppOwner.validIdentifier(id), !matched(id, path: path), !AppOwnership.hasRegisteredApplication(id),
+                      let target = DiskAppDataRemoval.target(path, home: home), target.fileIdentity != nil else { return }
+                rows.append(AppLeftover(identifier: id, path: path, bytes: entry.allocatedBytes, identity: target.identity, fileIdentity: target.fileIdentity))
+            }
+            if !complete { rows.removeSubrange(first...); unreadable?(parent) }
         }
         return rows.sorted { $0.bytes == $1.bytes ? $0.path < $1.path : $0.bytes > $1.bytes }
     }

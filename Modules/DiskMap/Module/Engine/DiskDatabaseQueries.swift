@@ -39,8 +39,16 @@ extension DiskDatabase {
         index.inventoryAuthoritative = inventory
         if inventory {
             var identities = Set<String>()
-            try query("SELECT DISTINCT bundle FROM dirs WHERE bundle<>''") { identities.insert(Self.text($0, 0)) }
+            var appIdentities: [String: Set<String>] = [:]
+            try query("SELECT path,bundle FROM dirs WHERE bundle<>''") {
+                let path = Self.text($0, 0), identifier = Self.text($0, 1)
+                identities.insert(identifier)
+                if let range = path.range(of: ".app/", options: .literal) {
+                    appIdentities[DiskApplications.livePath(String(path[..<path.index(before: range.upperBound)])), default: []].insert(identifier)
+                }
+            }
             index.knownBundleIdentifiers = identities
+            index.appBundleIdentifiers = appIdentities
             var appPaths: [String] = [], totals: [String: UInt64] = [:]
             try query("SELECT path,total FROM dirs WHERE substr(path,-4)='.app'") {
                 let path = Self.text($0, 0)
@@ -49,7 +57,7 @@ extension DiskDatabase {
             try query("SELECT d.path,d.total FROM dirs d WHERE d.path IN (SELECT path FROM ownership)") { totals[Self.text($0, 0)] = Self.number($0, 1) }
             index.appPaths = appPaths; index.measuredOwnershipBytes = totals
             let home = FileManager.default.homeDirectoryForCurrentUser.path
-            for name in ["Caches", "Containers", "Group Containers", "Application Support", "Saved Application State", "HTTPStorages", "WebKit"] {
+            for name in AppDataReviewPolicy.directoryBases {
                 let live = home + "/Library/" + name
                 let path = root == DataVolume.path ? DataVolume.path + live : live
                 if let node = try directory(path, contents: true) {

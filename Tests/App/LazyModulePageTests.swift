@@ -29,6 +29,24 @@ private struct LazyPageModule: MacSpaceModule {
 }
 @MainActor
 final class LazyModulePageTests: XCTestCase {
+    func testReviewActionOpensPageWithoutCallingModuleMutation() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
+        let model = LazyPageModel()
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
+        await handle.activate(); defer { handle.deactivate() }
+        let action = Action(id: "review", title: "Uninstall", pageID: "apps")
+        XCTAssertTrue(ModuleHandle.opensAtOnce(action))
+        let result = await handle.perform(action, rowID: "app")
+        XCTAssertNil(result)
+        for _ in 0..<100 where handle.pages["apps"] == nil { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(handle.groupPath, ["apps"])
+        XCTAssertNil(handle.runningAction)
+        XCTAssertTrue(handle.queuedRows.isEmpty)
+        let bytes = await model.bytes
+        XCTAssertEqual(bytes, 100, "Opening the review page never invokes perform")
+    }
     func testLazyFolderAndAppsPagesUseBackAndReconcileAfterRowActions() async throws {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)

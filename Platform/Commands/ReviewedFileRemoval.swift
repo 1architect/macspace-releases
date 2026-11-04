@@ -4,7 +4,13 @@ import Foundation
 /// Ordinary removal is unprivileged and rooted in no-follow directory descriptors.
 public enum ReviewedFileRemoval {
     public static func remove(_ path: String, expected: FileReviewIdentity, moveToTrash: Bool, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
-        guard getuid() != 0, geteuid() == getuid(), FileReviewPolicy.includes(path, home: home), expected.uid == getuid() else { throw CocoaError(.fileWriteNoPermission) }
+        try remove(path, expected: expected, moveToTrash: moveToTrash, permitted: FileReviewPolicy.includes(path, home: home))
+    }
+    public static func removeAppData(_ path: String, expected: FileReviewIdentity, moveToTrash: Bool, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
+        try remove(path, expected: expected, moveToTrash: moveToTrash, permitted: AppDataReviewPolicy.includesFile(path, home: home))
+    }
+    private static func remove(_ path: String, expected: FileReviewIdentity, moveToTrash: Bool, permitted: Bool) throws {
+        guard getuid() != 0, geteuid() == getuid(), permitted, expected.uid == getuid() else { throw CocoaError(.fileWriteNoPermission) }
         let canonical = FileReviewPolicy.livePath(path)
         let components = canonical.split(separator: "/").map(String.init)
         guard let leaf = components.last else { throw CocoaError(.fileWriteInvalidFileName) }

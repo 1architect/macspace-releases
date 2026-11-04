@@ -818,6 +818,15 @@
   "アプリが見つかりません",
   "앱을 찾을 수 없음"
  ],
+ "No associated app data found": [
+  "Nenhum dado associado ao app encontrado",
+  "Aucune donnée associée à l’app trouvée",
+  "No se encontraron datos asociados a la app",
+  "Keine zugehörigen App-Daten gefunden",
+  "未找到关联的 App 数据",
+  "関連するアプリデータが見つかりません",
+  "관련 앱 데이터를 찾을 수 없습니다"
+ ],
  "No files are selected.": [
   "Nenhum arquivo está selecionado.",
   "Aucun fichier n’est sélectionné.",
@@ -1169,6 +1178,15 @@
   "保持するコピー",
   "보존할 사본"
  ],
+ "Review app data": [
+  "Revisar dados do app",
+  "Vérifier les données de l’app",
+  "Revisar datos de la app",
+  "App-Daten prüfen",
+  "检查 App 数据",
+  "アプリデータを確認",
+  "앱 데이터 검토"
+ ],
  "Review before freeing": [
   "Revise antes de liberar",
   "Vérifier avant de supprimer",
@@ -1204,6 +1222,51 @@
   "已存储的应用状态",
   "保存されたアプリ状態",
   "저장된 앱 상태"
+ ],
+ "Select at most 32 app-data locations at a time.": [
+  "Selecione no máximo 32 locais de dados de apps por vez.",
+  "Sélectionnez au maximum 32 emplacements de données d’app à la fois.",
+  "Selecciona como máximo 32 ubicaciones de datos de apps a la vez.",
+  "Wähle höchstens 32 App-Datenorte gleichzeitig aus.",
+  "每次最多选择 32 个 App 数据位置。",
+  "アプリデータの場所は一度に32個まで選択できます。",
+  "앱 데이터 위치는 한 번에 최대 32개까지 선택하세요."
+ ],
+ "Selected app data is in use. Quit the app and try again.": [
+  "Os dados de app selecionados estão em uso. Encerre o app e tente novamente.",
+  "Les données d’app sélectionnées sont utilisées. Quittez l’app et réessayez.",
+  "Los datos de app seleccionados están en uso. Cierra la app y vuelve a intentarlo.",
+  "Die ausgewählten App-Daten werden verwendet. Beende die App und versuche es erneut.",
+  "选中的 App 数据正在使用中。请退出该 App 后重试。",
+  "選択したアプリデータは使用中です。アプリを終了してから再試行してください。",
+  "선택한 앱 데이터가 사용 중입니다. 앱을 종료하고 다시 시도하세요."
+ ],
+ "Selected app data will be moved to Trash.": [
+  "Os dados de app selecionados serão movidos para o Lixo.",
+  "Les données d’app sélectionnées seront placées dans la corbeille.",
+  "Los datos de app seleccionados se moverán a la Papelera.",
+  "Ausgewählte App-Daten werden in den Papierkorb verschoben.",
+  "选中的 App 数据将移至废纸篓。",
+  "選択したアプリデータをゴミ箱に移動します。",
+  "선택한 앱 데이터를 휴지통으로 이동합니다."
+ ],
+ "Selected app data will be permanently deleted.": [
+  "Os dados de app selecionados serão apagados permanentemente.",
+  "Les données d’app sélectionnées seront supprimées définitivement.",
+  "Los datos de app seleccionados se eliminarán permanentemente.",
+  "Ausgewählte App-Daten werden endgültig gelöscht.",
+  "选中的 App 数据将被永久删除。",
+  "選択したアプリデータを完全に削除します。",
+  "선택한 앱 데이터를 영구적으로 삭제합니다."
+ ],
+ "Selected app data: %@": [
+  "Dados de app selecionados: %@",
+  "Données d’app sélectionnées : %@",
+  "Datos de app seleccionados: %@",
+  "Ausgewählte App-Daten: %@",
+  "选中的 App 数据：%@",
+  "選択したアプリデータ：%@",
+  "선택한 앱 데이터: %@"
  ],
  "Selected files changed or are open. Review them again.": [
   "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.",
@@ -1340,6 +1403,24 @@
   "アプリとそのサポートファイル、設定、キャッシュ、ヘルパーを削除します。他のインストール済みアプリが使用する共有データは保持します。",
   "앱과 해당 지원 파일, 설정, 캐시 및 보조 프로그램이 제거됩니다. 다른 설치된 앱과 공유하는 데이터는 보존됩니다."
  ],
+ "The app and selected associated data will be removed. Unselected and shared data is preserved.": [
+  "O app e os dados associados selecionados serão removidos. Dados não selecionados e compartilhados serão preservados.",
+  "L’app et les données associées sélectionnées seront supprimées. Les données non sélectionnées et partagées seront conservées.",
+  "Se eliminarán la app y los datos asociados seleccionados. Se conservarán los datos no seleccionados y compartidos.",
+  "Die App und die ausgewählten zugehörigen Daten werden entfernt. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "将移除该 App 和选中的关联数据。未选中及共享的数据将予以保留。",
+  "アプリと選択した関連データを削除します。未選択のデータと共有データは保持されます。",
+  "앱과 선택한 관련 데이터를 제거합니다. 선택하지 않은 데이터와 공유 데이터는 유지됩니다."
+ ],
+ "The app is included. Select the associated data you also want to remove. Unselected and shared data is preserved.": [
+  "O app já está incluído. Selecione os dados associados que também deseja remover. Dados não selecionados e compartilhados serão preservados.",
+  "L’app est incluse. Sélectionnez les données associées à supprimer également. Les données non sélectionnées et partagées seront conservées.",
+  "La app está incluida. Selecciona los datos asociados que también quieras eliminar. Se conservarán los datos no seleccionados y compartidos.",
+  "Die App ist enthalten. Wähle die zugehörigen Daten aus, die ebenfalls entfernt werden sollen. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "已包含该 App。请选择还要移除的关联数据。未选中及共享的数据将予以保留。",
+  "アプリは削除対象に含まれています。一緒に削除する関連データを選択してください。未選択のデータと共有データは保持されます。",
+  "앱은 제거 대상에 포함되어 있습니다. 함께 제거할 관련 데이터를 선택하세요. 선택하지 않은 데이터와 공유 데이터는 유지됩니다."
+ ],
  "The completed disk map remains available while file metadata is indexed in the background.": [
   "O mapa de disco concluído continua disponível enquanto os metadados são indexados em segundo plano.",
   "La carte du disque reste disponible pendant l’indexation des métadonnées en arrière-plan.",
@@ -1456,6 +1537,15 @@
   "这只会永久删除所选的应用数据文件夹。",
   "選択したアプリデータのフォルダのみを完全に削除します。",
   "선택한 앱 데이터 폴더만 영구적으로 삭제합니다."
+ ],
+ "This permanently deletes only the selected app-data locations.": [
+  "Isso apaga permanentemente apenas os locais de dados de apps selecionados.",
+  "Seuls les emplacements de données d’app sélectionnés seront supprimés définitivement.",
+  "Esto elimina permanentemente solo las ubicaciones de datos de apps seleccionadas.",
+  "Dabei werden nur die ausgewählten App-Datenorte endgültig gelöscht.",
+  "这只会永久删除选中的 App 数据位置。",
+  "選択したアプリデータの場所のみを完全に削除します。",
+  "선택한 앱 데이터 위치만 영구적으로 삭제합니다."
  ],
  "This permanently deletes the file.": [
   "Isso apaga o arquivo permanentemente.",

@@ -1,4 +1,5 @@
 import XCTest
+import MacSpaceSdk
 @testable import MacSpaceApp
 
 final class RowFlagPlacementTests: XCTestCase {
@@ -6,5 +7,7 @@ final class RowFlagPlacementTests: XCTestCase {
     func testTheFlagMatchesPublicReleaseAfterTheTitleCluster() {
         XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: true), .afterTitle)
         XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: false), .trailing)
+        XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: true, override: .afterFinder), .afterFinder)
+        XCTAssertEqual(RowFlagPlacement.for(hasTrailingFigure: false, override: .afterFinder), .afterFinder)
     }
 }

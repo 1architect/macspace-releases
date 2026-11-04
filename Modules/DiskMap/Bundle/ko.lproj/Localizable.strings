@@ -91,6 +91,7 @@
 "Movies" = "동영상";
 "Music" = "음악";
 "No apps found" = "앱을 찾을 수 없음";
+"No associated app data found" = "관련 앱 데이터를 찾을 수 없습니다";
 "No files are selected." = "선택된 파일이 없습니다.";
 "No files in this group" = "이 그룹에 파일이 없음";
 "No files match this size and type scope." = "이 크기와 유형 범위에 일치하는 파일이 없습니다.";
@@ -130,10 +131,16 @@
 "Reopen the list and confirm deletion again." = "목록을 다시 열고 삭제를 확인하세요.";
 "Reopen the list and review your selection again." = "목록을 다시 열고 선택을 검토하세요.";
 "Retained copy" = "보존할 사본";
+"Review app data" = "앱 데이터 검토";
 "Review before freeing" = "정리 전 검토";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다.";
 "Reviewing selected files" = "선택한 파일 검토 중";
 "Saved app state" = "저장된 앱 상태";
+"Select at most 32 app-data locations at a time." = "앱 데이터 위치는 한 번에 최대 32개까지 선택하세요.";
+"Selected app data is in use. Quit the app and try again." = "선택한 앱 데이터가 사용 중입니다. 앱을 종료하고 다시 시도하세요.";
+"Selected app data will be moved to Trash." = "선택한 앱 데이터를 휴지통으로 이동합니다.";
+"Selected app data will be permanently deleted." = "선택한 앱 데이터를 영구적으로 삭제합니다.";
+"Selected app data: %@" = "선택한 앱 데이터: %@";
 "Selected files changed or are open. Review them again." = "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요.";
 "Selected files changed or are unavailable. Review your selection again." = "선택한 파일이 변경되었거나 사용할 수 없습니다. 선택 항목을 다시 검토하세요.";
 "Shared data" = "공유 데이터";
@@ -149,6 +156,8 @@
 "System components and other copies" = "시스템 구성 요소 및 다른 복사본";
 "Text documents" = "텍스트 문서";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "앱과 해당 지원 파일, 설정, 캐시 및 보조 프로그램이 제거됩니다. 다른 설치된 앱과 공유하는 데이터는 보존됩니다.";
+"The app and selected associated data will be removed. Unselected and shared data is preserved." = "앱과 선택한 관련 데이터를 제거합니다. 선택하지 않은 데이터와 공유 데이터는 유지됩니다.";
+"The app is included. Select the associated data you also want to remove. Unselected and shared data is preserved." = "앱은 제거 대상에 포함되어 있습니다. 함께 제거할 관련 데이터를 선택하세요. 선택하지 않은 데이터와 공유 데이터는 유지됩니다.";
 "The completed disk map remains available while file metadata is indexed in the background." = "백그라운드에서 파일 메타데이터를 색인하는 동안에도 완료된 디스크 맵을 사용할 수 있습니다.";
 "The identifier or location suggests an association, but does not prove ownership. It is preserved." = "식별자나 위치가 연관성을 암시하지만 소유를 증명하지 못하므로 보존합니다.";
 "The retained duplicate copy is selected. Review the files again." = "보존할 중복 사본이 선택되었습니다. 파일을 다시 검토하세요.";
@@ -162,6 +171,7 @@
 "This folder cannot be deleted here." = "이 폴더는 여기에서 삭제할 수 없습니다.";
 "This folder is empty." = "이 폴더는 비어 있습니다.";
 "This permanently deletes only the selected app-data folders." = "선택한 앱 데이터 폴더만 영구적으로 삭제합니다.";
+"This permanently deletes only the selected app-data locations." = "선택한 앱 데이터 위치만 영구적으로 삭제합니다.";
 "This permanently deletes the file." = "이 파일을 영구적으로 삭제합니다.";
 "This permanently deletes the folder and all its contents." = "이 폴더와 모든 내용이 영구적으로 삭제됩니다.";
 "This permanently deletes the selected files." = "선택한 파일이 영구적으로 삭제됩니다.";

@@ -199,9 +199,12 @@ struct RowFlagStyle: ButtonStyle {
 /// follows the title, information, Finder and fact badges, matching public release v1.1.5.
 /// Without one, the button takes the right edge itself.
 enum RowFlagPlacement: Equatable {
-    case afterTitle, trailing
+    case afterTitle, trailing, afterFinder
 
-    static func `for`(hasTrailingFigure: Bool) -> RowFlagPlacement { hasTrailingFigure ? .afterTitle : .trailing }
+    static func `for`(hasTrailingFigure: Bool, override: RowActionPlacement? = nil) -> RowFlagPlacement {
+        if override == .afterFinder { return .afterFinder }
+        return hasTrailingFigure ? .afterTitle : .trailing
+    }
 }
 
 /// Shared by the page action and row flags, so both use the same wave and measured progress animation.

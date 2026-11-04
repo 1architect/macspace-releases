@@ -54,7 +54,7 @@ public enum ReviewedDirectoryRemoval {
                 && !value.split(separator: "/").contains { $0 == "." || $0 == ".." }
         }
         guard getuid() != 0, geteuid() == getuid(), valid(home), valid(path) else { return false }
-        return ["Containers", "Application Support"].contains { (path as NSString).deletingLastPathComponent == home + "/Library/" + $0 }
+        return AppDataReviewPolicy.includesDirectory(path, home: home)
     }
 
     /// All targets must finish preflight before a Plan can mutate any of them.

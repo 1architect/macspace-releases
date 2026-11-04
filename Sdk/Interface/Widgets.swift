@@ -204,9 +204,11 @@ public struct Action: Codable, Equatable, Sendable {
     /// Representative future labels for the inline flag. The host reserves the widest label before work starts,
     /// so progress changes cannot resize the flag or push neighbouring controls. Unknown longer results truncate with help text.
     public var labelSamples: [String]?
+    /// Opens a module-owned review page instead of executing a mutation.
+    public var pageID: String?
 
     public init(id: String, title: String, symbol: String? = nil, role: ActionRole = .normal, parameters: [String: String] = [:],
-                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil, labelSamples: [String]? = nil) {
+                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil, labelSamples: [String]? = nil, pageID: String? = nil) {
         self.id = id
         self.title = title
         self.symbol = symbol
@@ -216,6 +218,7 @@ public struct Action: Codable, Equatable, Sendable {
         self.requires = requires
         self.workingTitle = workingTitle
         self.labelSamples = labelSamples
+        self.pageID = pageID
     }
 }
 
@@ -477,6 +480,8 @@ public struct BarChart: Codable, Equatable, Sendable {
 
 /// A list row. The interface rules (CONTRIBUTING.md) apply: each item is listed on one page only, short facts go in `badges`, not
 /// `subtitle`, and `detail` never repeats a badge.
+public enum RowActionPlacement: String, Codable, Equatable, Sendable { case afterFinder }
+
 public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var id: String
     public var title: String
@@ -514,6 +519,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var activity: ActionProgress?
     /// The row's buttons, attached to the right immediately before its `trailing` figure, else on the right edge.
     public var actions: [Action]
+    /// Overrides the default flag placement for rows whose action belongs after the Finder control.
+    public var actionPlacement: RowActionPlacement?
     /// A group: the row stands for these rows, says how many there are, and opens a page of its own that lists them all (each with
     /// its size and actions). Put the group's total in `trailing`.
     public var children: [Row]
@@ -531,7 +538,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil, actionPlacement: RowActionPlacement? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -547,13 +554,14 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.detail = detail
         self.steps = steps
         self.actions = actions
+        self.actionPlacement = actionPlacement
         self.children = children
         self.paths = paths
         self.selection = selection
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions, actionPlacement
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -575,6 +583,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
         actions = try container.decodeIfPresent([Action].self, forKey: .actions) ?? []
+        actionPlacement = try container.decodeIfPresent(RowActionPlacement.self, forKey: .actionPlacement)
         activity = try container.decodeIfPresent(ActionProgress.self, forKey: .activity)
         children = try container.decodeIfPresent([Row].self, forKey: .children) ?? []
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
@@ -598,6 +607,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)
+        try container.encodeIfPresent(actionPlacement, forKey: .actionPlacement)
         try container.encodeIfPresent(activity, forKey: .activity)
         try container.encode(children, forKey: .children)
         try container.encode(paths, forKey: .paths)
@@ -695,6 +705,8 @@ public struct Selection: Codable, Equatable, Sendable {
     /// The rows that can be chosen, by id, with the size each adds to the button's total. 0 is a row with no size of its own (a backup
     /// on a backup disk, whose blocks other backups share): while no checked row has a size, the button carries its title alone.
     public var choices: [String: UInt64]
+    /// Fixed work included in addition to the optional choices (for example, the app being uninstalled).
+    public var includedBytes: UInt64?
     /// The rows checked when the page opens: the saved choice, or what the module suggests.
     public var checked: [String]
     /// What the module suggests, for the button's title.
@@ -710,7 +722,7 @@ public struct Selection: Codable, Equatable, Sendable {
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil) {
         self.scope = scope
         self.partial = partial
         self.session = session
@@ -720,6 +732,7 @@ public struct Selection: Codable, Equatable, Sendable {
         self.bulkResolver = bulkResolver
         self.action = action
         self.choices = choices
+        self.includedBytes = includedBytes
         self.checked = checked
         self.suggested = suggested ?? checked
         self.suggestedTitle = suggestedTitle
@@ -729,7 +742,7 @@ public struct Selection: Codable, Equatable, Sendable {
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, checked, suggested, suggestedTitle, sections, save, noteNames, note }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, checked, suggested, suggestedTitle, sections, save, noteNames, note }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
@@ -743,6 +756,7 @@ public struct Selection: Codable, Equatable, Sendable {
         bulkResolver = try container.decodeIfPresent(String.self, forKey: .bulkResolver)
         action = try container.decode(Action.self, forKey: .action)
         choices = try container.decode([String: UInt64].self, forKey: .choices)
+        includedBytes = try container.decodeIfPresent(UInt64.self, forKey: .includedBytes)
         checked = try container.decodeIfPresent([String].self, forKey: .checked) ?? []
         suggested = try container.decodeIfPresent([String].self, forKey: .suggested) ?? checked
         suggestedTitle = try container.decodeIfPresent(String.self, forKey: .suggestedTitle)

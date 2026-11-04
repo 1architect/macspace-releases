@@ -6,6 +6,20 @@ import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
 final class DiskRevisionRegressionTests: XCTestCase {
+    func testRemovedApplicationInvalidatesCatalogAfterItsMetadataDisappears() async throws {
+        try await fixture { root, _, db in
+            let app = root.appendingPathComponent("Example.app"), contents = app.appendingPathComponent("Contents")
+            try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+            try (["CFBundleIdentifier": "org.example.app"] as NSDictionary).write(to: contents.appendingPathComponent("Info.plist"))
+            try self.scan(db)
+            let before = try XCTUnwrap(db.state()?.catalogRevision)
+            try FileManager.default.removeItem(at: app)
+            var scanner = DiskDatabaseScanner(db: db, excluded: [])
+            try scanner.scan(.init(recursive: [app.path]), cursor: 2, progress: nil)
+            XCTAssertGreaterThan(try XCTUnwrap(db.state()?.catalogRevision), before)
+            XCTAssertFalse(try db.snapshot().index.appPaths?.contains(app.path) == true)
+        }
+    }
     private func fixture(_ body: (URL, URL, DiskDatabase) async throws -> Void) async throws {
         let home = URL(fileURLWithPath: "/private/tmp/disk-revision-" + UUID().uuidString)
         let root = home.appendingPathComponent("Downloads"), source = home.appendingPathComponent("cache/index.sqlite")

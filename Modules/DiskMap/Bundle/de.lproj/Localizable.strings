@@ -91,6 +91,7 @@
 "Movies" = "Filme";
 "Music" = "Musik";
 "No apps found" = "Keine Apps gefunden";
+"No associated app data found" = "Keine zugehörigen App-Daten gefunden";
 "No files are selected." = "Keine Dateien ausgewählt.";
 "No files in this group" = "Keine Dateien in dieser Gruppe";
 "No files match this size and type scope." = "Keine Dateien entsprechen diesem Größen- und Typbereich.";
@@ -130,10 +131,16 @@
 "Reopen the list and confirm deletion again." = "Liste erneut öffnen und Löschung bestätigen.";
 "Reopen the list and review your selection again." = "Liste erneut öffnen und Auswahl prüfen.";
 "Retained copy" = "Beibehaltene Kopie";
+"Review app data" = "App-Daten prüfen";
 "Review before freeing" = "Vor dem Löschen prüfen";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "Wiederherstellbare Tool-Caches in Systemdaten prüfen. Quellprojekte und persönliche Dateien bleiben erhalten.";
 "Reviewing selected files" = "Ausgewählte Dateien werden geprüft";
 "Saved app state" = "Gesicherter App-Status";
+"Select at most 32 app-data locations at a time." = "Wähle höchstens 32 App-Datenorte gleichzeitig aus.";
+"Selected app data is in use. Quit the app and try again." = "Die ausgewählten App-Daten werden verwendet. Beende die App und versuche es erneut.";
+"Selected app data will be moved to Trash." = "Ausgewählte App-Daten werden in den Papierkorb verschoben.";
+"Selected app data will be permanently deleted." = "Ausgewählte App-Daten werden endgültig gelöscht.";
+"Selected app data: %@" = "Ausgewählte App-Daten: %@";
 "Selected files changed or are open. Review them again." = "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.";
 "Selected files changed or are unavailable. Review your selection again." = "Ausgewählte Dateien wurden geändert oder sind nicht verfügbar. Prüfe die Auswahl erneut.";
 "Shared data" = "Gemeinsame Daten";
@@ -149,6 +156,8 @@
 "System components and other copies" = "Systemkomponenten und weitere Kopien";
 "Text documents" = "Textdokumente";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "Die App und ihre Supportdateien, Einstellungen, Caches und Hilfsprogramme werden entfernt. Mit anderen installierten Apps geteilte Daten bleiben erhalten.";
+"The app and selected associated data will be removed. Unselected and shared data is preserved." = "Die App und die ausgewählten zugehörigen Daten werden entfernt. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.";
+"The app is included. Select the associated data you also want to remove. Unselected and shared data is preserved." = "Die App ist enthalten. Wähle die zugehörigen Daten aus, die ebenfalls entfernt werden sollen. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.";
 "The completed disk map remains available while file metadata is indexed in the background." = "Die fertige Datenträgerkarte bleibt während der Metadatenindexierung im Hintergrund verfügbar.";
 "The identifier or location suggests an association, but does not prove ownership. It is preserved." = "Kennung oder Speicherort deuten auf eine Zuordnung hin, belegen sie aber nicht. Die Daten bleiben erhalten.";
 "The retained duplicate copy is selected. Review the files again." = "Die beizubehaltende Kopie ist ausgewählt. Dateien erneut prüfen.";
@@ -162,6 +171,7 @@
 "This folder cannot be deleted here." = "Dieser Ordner kann hier nicht gelöscht werden.";
 "This folder is empty." = "Dieser Ordner ist leer.";
 "This permanently deletes only the selected app-data folders." = "Nur die ausgewählten Ordner mit App-Daten werden dauerhaft gelöscht.";
+"This permanently deletes only the selected app-data locations." = "Dabei werden nur die ausgewählten App-Datenorte endgültig gelöscht.";
 "This permanently deletes the file." = "Die Datei wird endgültig gelöscht.";
 "This permanently deletes the folder and all its contents." = "Dadurch werden der Ordner und sein gesamter Inhalt endgültig gelöscht.";
 "This permanently deletes the selected files." = "Die ausgewählten Dateien werden dauerhaft gelöscht.";

@@ -912,6 +912,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// left to do.
     @discardableResult
     public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false, rowID: String? = nil) async -> ActionResult? {
+        if let pageID = action.pageID {
+            guard state == .ready, !preparingForUninstall, !performing else { return nil }
+            requestPage(pageID)
+            return nil
+        }
         invalidatePendingSelections()
         // One action at a time, in the order asked: switches no longer wait for each other, and two changes running together could
         // both write the module's undo journal.
@@ -933,7 +938,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// never says Working. Marked working like a module's action, Open flashed "Working" over its pill as the pane opened, too
     /// quickly for the pill to take the word's width (2026-10-20). A button says something only when it has something to say.
     static func opensAtOnce(_ action: Action) -> Bool {
-        [Action.fullDiskAccessID, Action.openSettingsID, Action.restartID].contains(action.id)
+        action.pageID != nil || [Action.fullDiskAccessID, Action.openSettingsID, Action.restartID].contains(action.id)
     }
 
     /// How often a module is read again by itself, so its tile and page follow the Mac without Refresh; a tile that is changing

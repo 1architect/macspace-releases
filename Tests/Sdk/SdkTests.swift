@@ -5,7 +5,7 @@ final class SdkTests: XCTestCase {
     func testDashboardFreeAndFolderRowCapabilitiesRoundTripWithoutBecomingRequired() throws {
         let action = Action(id: "cleanup", title: "Free", confirmation: Confirmation(title: "Free?", message: "Reviewed targets", confirmTitle: "Free"))
         let tile = Tile(title: "Module", status: "Ready", freeAction: action)
-        let row = Row(id: "folder", title: "Folder", contextActions: GraphContextActions(paths: ["/fixture/folder"], delete: action))
+        let row = Row(id: "folder", title: "Folder", contextActions: GraphContextActions(paths: ["/fixture/folder"], delete: action), actionPlacement: .afterFinder)
         let encoder = JSONEncoder(), decoder = JSONDecoder()
         XCTAssertEqual(try decoder.decode(Tile.self, from: encoder.encode(tile)), tile)
         XCTAssertEqual(try decoder.decode(Row.self, from: encoder.encode(row)), row)
@@ -14,6 +14,7 @@ final class SdkTests: XCTestCase {
         XCTAssertNil(try decoder.decode(Tile.self, from: JSONSerialization.data(withJSONObject: object)).freeAction)
         object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(row)) as? [String: Any])
         object.removeValue(forKey: "contextActions")
+        object.removeValue(forKey: "actionPlacement")
         XCTAssertNil(try decoder.decode(Row.self, from: JSONSerialization.data(withJSONObject: object)).contextActions)
     }
 
@@ -49,7 +50,7 @@ final class SdkTests: XCTestCase {
         let selection = Selection(action: Action(id: "freeFiles", title: "Delete selected"), choices: ["file": 42],
             sections: [.init(id: "category", title: "Category", rows: ["file"], pageID: "select:category"),
                        .init(id: "blocked", title: "Unavailable", rows: [], unavailableReason: "Inventory incomplete")],
-            scope: "disk-files", partial: true, session: true, reviewed: ["file": "original-identity"], origins: ["file": "duplicate-proof"])
+            scope: "disk-files", partial: true, session: true, reviewed: ["file": "original-identity"], origins: ["file": "duplicate-proof"], includedBytes: 100)
         let screen = Screen(title: "Files", widgets: [.list(ListWidget(id: "folder", title: "Downloads", rows: [
             Row(id: "file", title: "File"), Row(id: "keeper", title: "Keeper", unavailableReason: "Retained copy")
         ], paths: ["/Users/test/Downloads"]))], selection: selection)
@@ -58,6 +59,10 @@ final class SdkTests: XCTestCase {
         XCTAssertFalse(oldSelection.session)
         XCTAssertTrue(oldSelection.reviewed.isEmpty)
         XCTAssertTrue(oldSelection.origins.isEmpty)
+        XCTAssertNil(oldSelection.includedBytes)
+        XCTAssertNil(oldSelection.action.pageID)
+        let review = Action(id: "review", title: "Uninstall", pageID: "review:app")
+        XCTAssertEqual(try JSONDecoder().decode(Action.self, from: JSONEncoder().encode(review)), review)
         let oldList = try JSONDecoder().decode(ListWidget.self, from: Data(#"{"id":"old","rows":[]}"#.utf8))
         XCTAssertTrue(oldList.paths.isEmpty)
         let oldSection = try JSONDecoder().decode(SelectionSection.self, from: Data(#"{"id":"old","title":"Old","rows":[],"all":false}"#.utf8))

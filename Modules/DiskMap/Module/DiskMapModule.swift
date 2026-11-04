@@ -202,8 +202,8 @@ public struct DiskMapModule: MacSpaceModule {
             return DiskMapScreenBuilder.screen(snapshot.index, apps: await inventory.passive(), folder: path, files: snapshot.files, direct: files)
         }
         let snapshot = await store.navigation(), index = snapshot.index
-        if id == "apps" || id == "other-apps" || id.hasPrefix("apps:") || id.hasPrefix("other-apps:") {
-            let other = id.hasPrefix("other-apps"), prefix = other ? "other-apps:" : "apps:"
+        if id == "apps" || id.hasPrefix("apps:") {
+            let prefix = "apps:"
             var folder: String?
             if id.hasPrefix(prefix) {
                 guard let data = Data(base64Encoded: String(id.dropFirst(prefix.count))), let path = String(data: data, encoding: .utf8),
@@ -211,10 +211,18 @@ public struct DiskMapModule: MacSpaceModule {
                 folder = path
             }
             let apps = await inventory.navigation(index)
-            return other ? DiskMapScreenBuilder.otherAppsPage(apps, folder: folder) : DiskMapScreenBuilder.appsPage(index, apps: apps, folder: folder)
+            return DiskMapScreenBuilder.appsPage(index, apps: apps, folder: folder)
         }
-        if id.hasPrefix("app:"), let data = Data(base64Encoded: String(id.dropFirst(4))), let path = String(data: data, encoding: .utf8),
-           let app = await browsing(index).apps.first(where: { $0.owner.path == path }) { return DiskMapScreenBuilder.appDataPage(app) }
+        if id.hasPrefix("uninstall-review:"), let data = Data(base64Encoded: String(id.dropFirst("uninstall-review:".count))), let path = String(data: data, encoding: .utf8) {
+            let apps = await inventory.navigation(index)
+            guard let app = apps.apps.first(where: { $0.owner.path == path && $0.classification == .installedUser && $0.removable }) else { return nil }
+            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps)
+        }
+        if id.hasPrefix("app:"), let data = Data(base64Encoded: String(id.dropFirst(4))), let path = String(data: data, encoding: .utf8) {
+            let apps = await browsing(index)
+            guard let app = apps.apps.first(where: { $0.owner.path == path && $0.classification == .installedUser && $0.removable }) else { return nil }
+            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps)
+        }
         if id == "app-data-review" { return DiskMapScreenBuilder.leftoversPage(await inventory.navigation(index)) }
         return nil
     }
@@ -322,7 +330,7 @@ public struct DiskMapModule: MacSpaceModule {
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         let moveToTrash = request.parameters["trash"] == "1"
-        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder"].contains(request.actionID),
+        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "uninstall"].contains(request.actionID),
            (!["0", "1"].contains(request.parameters["trash"] ?? "") || moveToTrash != FileRemovalSettings.movesToTrash()) {
             return .failed(loc("File removal settings changed. Reopen the list and confirm again."))
         }
@@ -390,15 +398,29 @@ public struct DiskMapModule: MacSpaceModule {
             guard let app = apps.apps.first(where: { $0.owner.path == request.parameters["app"] && $0.owner.identifier == request.parameters["identifier"] }), app.removable else { return .failed(loc("This app cannot be uninstalled.")) }
             guard let encoded = request.parameters["plan"], let reviewed = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)),
                   reviewed.owner == app.owner, let current = app.plan,
-                  reviewed.targets == current.targets else { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
+                  reviewed.targets == current.targets.filter({ $0.path == app.owner.path }) else { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
             guard !NSWorkspace.shared.runningApplications.contains(where: { $0.bundleIdentifier == app.owner.identifier }) else { return .failed(loc("Quit the app before uninstalling it.")) }
             guard let helper = context.privileged else { return .failed(loc("Install the helper in Settings")) }
+            if let failure = AppRemovalExecutor.validate(plan: reviewed, catalog: apps.catalog, home: FileManager.default.homeDirectoryForCurrentUser.path) {
+                return .failed(loc("App ownership changed. Reopen the app list and review it again."), details: [failure])
+            }
+            let selected = Set(Selection.ids(request.parameters["ids"]))
+            let dataRemoval: DiskAppDataRemoval.Result
+            do {
+                dataRemoval = try DiskAppDataRemoval.remove(ids: selected, candidates: DiskAppDataRemoval.candidates(app, apps: apps.apps), moveToTrash: moveToTrash,
+                    progress: { update in var mapped = update; mapped.fraction = (update.fraction ?? 0) * 0.8; progress(mapped) })
+            } catch { return .failed(loc("App data changed. Reopen the list and review your selection again."), details: [error.localizedDescription]) }
+            await store.mark(dataRemoval.removed.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
+            if !dataRemoval.failures.isEmpty {
+                result = ActionResult(outcome: .needsAttention, message: loc("Some app data could not be removed"), details: dataRemoval.failures)
+                break
+            }
             do {
                 progress(ActionProgress(message: loc("Uninstalling")))
                 let removal = try await helper.perform(AppRemovalResult.self, operation: DiskMapPrivilegedOperations.uninstall, arguments: request.parameters)
                 await store.mark((removal.removed + Array(removal.failures.keys)).map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
                 result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention, message: removal.failures.isEmpty ? loc("Uninstalled") : loc("Some app data could not be removed"), details: removal.failures.sorted { $0.key < $1.key }.map { $0.key + ": " + $0.value })
-            } catch { return .failed(loc("Couldn’t uninstall the app"), details: [error.localizedDescription]) }
+            } catch { result = ActionResult(outcome: .needsAttention, message: loc("Couldn’t uninstall the app"), details: [error.localizedDescription]) }
         default: return .failed(loc("Unknown action"))
         }
         if let before, let after = DataVolume.freeBytes() { result.freedBytes = after > before ? after - before : 0 }

@@ -38,6 +38,8 @@ struct DiskIndex: Codable, Sendable {
     var appPaths: [String]?
     /// Bundle identities encountered by the index, including system components and embedded extensions.
     var knownBundleIdentifiers: Set<String>?
+    /// Component identities grouped by their containing top-level application, used only for data association.
+    var appBundleIdentifiers: [String: Set<String>]?
     var measuredOwnershipBytes: [String: UInt64]?
     var browseVersion: Int?
     var storageRevision: Int?
