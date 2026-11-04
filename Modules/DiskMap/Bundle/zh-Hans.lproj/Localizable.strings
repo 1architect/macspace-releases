@@ -125,6 +125,7 @@
 "Protected and other disk usage" = "受保护数据及其他磁盘用量";
 "Protected system component; cannot be removed here." = "受保护的系统组件，无法在此移除。";
 "Quit the app before uninstalling it." = "请先退出应用再卸载。";
+"Quit the selected apps before uninstalling them." = "请先退出选中的 App，再卸载。";
 "Reading apps…" = "正在读取应用…";
 "Reading files…" = "正在读取文件…";
 "Recommended" = "建议检查";
@@ -134,6 +135,7 @@
 "Review app data" = "检查 App 数据";
 "Review before freeing" = "清理前请检查";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。";
+"Review selected apps" = "检查选中的 App";
 "Reviewing selected files" = "正在检查所选文件";
 "Saved app state" = "已存储的应用状态";
 "Select at most 32 app-data locations at a time." = "每次最多选择 32 个 App 数据位置。";
@@ -149,6 +151,7 @@
 "Sizes show allocated space." = "大小表示已分配的空间。";
 "SketchUp projects" = "SketchUp 项目";
 "Some app data could not be removed" = "部分应用数据无法移除";
+"Some apps could not be uninstalled" = "部分 App 无法卸载";
 "Some files could not be removed" = "部分文件无法移除";
 "Some files could not be verified. Refresh to retry." = "部分文件无法验证。请刷新重试。";
 "Some files not verified" = "部分文件未验证";
@@ -161,6 +164,8 @@
 "The completed disk map remains available while file metadata is indexed in the background." = "在后台索引文件元数据时，已完成的磁盘地图仍然可用。";
 "The identifier or location suggests an association, but does not prove ownership. It is preserved." = "标识符或位置表明可能存在关联，但不能证明归属，将保留数据。";
 "The retained duplicate copy is selected. Review the files again." = "要保留的重复副本已被选择。请重新检查文件。";
+"The selected apps and selected associated data will be removed. Unselected and shared data is preserved." = "将移除选中的 App 及关联数据。未选中及共享的数据将予以保留。";
+"The selected apps are included. Select the associated data you also want to remove. Unselected and shared data is preserved." = "已包含选中的 App。请选择还要移除的关联数据。未选中及共享的数据将予以保留。";
 "The selected files will be moved to Trash." = "所选文件将移到废纸篓。";
 "The selection changed. Review the files again." = "选择已更改。请重新检查文件。";
 "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review." = "这些标识符未匹配到已发现的应用。归属不确定，因此保留以供检查。";
@@ -179,6 +184,7 @@
 "Uninstall" = "卸载";
 "Uninstall %@?" = "卸载 %@？";
 "Uninstall apps" = "卸载应用";
+"Uninstall selected apps?" = "卸载选中的 App？";
 "Uninstalled" = "已卸载";
 "Uninstalling" = "正在卸载";
 "Unknown action" = "未知操作";

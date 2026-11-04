@@ -2,6 +2,13 @@ import XCTest
 import MacSpaceSdk
 
 final class SdkTests: XCTestCase {
+    func testActionPageSelectionEnvelopeRoundTripsAndRejectsMalformedOrOversizedRequests() {
+        let request = ActionPageRequest(destination: "review-apps", parameters: ["ids": "one\ntwo", "reviewed": "frozen"])
+        XCTAssertEqual(ActionPageRequest(pageID: request.pageID), request)
+        XCTAssertNil(ActionPageRequest(pageID: "action-page:invalid"))
+        XCTAssertNil(ActionPageRequest(pageID: ActionPageRequest(destination: "", parameters: [:]).pageID))
+        XCTAssertNil(ActionPageRequest(pageID: "action-page:" + String(repeating: "A", count: 1_500_001)))
+    }
     func testDashboardFreeAndFolderRowCapabilitiesRoundTripWithoutBecomingRequired() throws {
         let action = Action(id: "cleanup", title: "Free", confirmation: Confirmation(title: "Free?", message: "Reviewed targets", confirmTitle: "Free"))
         let tile = Tile(title: "Module", status: "Ready", freeAction: action)

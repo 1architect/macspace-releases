@@ -1124,6 +1124,15 @@
   "アンインストールする前にアプリを終了してください。",
   "제거하기 전에 앱을 종료하세요."
  ],
+ "Quit the selected apps before uninstalling them.": [
+  "Encerre os apps selecionados antes de desinstalá-los.",
+  "Quittez les apps sélectionnées avant de les désinstaller.",
+  "Cierra las apps seleccionadas antes de desinstalarlas.",
+  "Beende die ausgewählten Apps vor der Deinstallation.",
+  "请先退出选中的 App，再卸载。",
+  "選択したアプリを終了してからアンインストールしてください。",
+  "선택한 앱을 종료한 후 제거하세요."
+ ],
  "Reading apps…": [
   "Lendo apps…",
   "Lecture des apps…",
@@ -1204,6 +1213,15 @@
   "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。",
   "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。",
   "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다."
+ ],
+ "Review selected apps": [
+  "Revisar apps selecionados",
+  "Vérifier les apps sélectionnées",
+  "Revisar apps seleccionadas",
+  "Ausgewählte Apps prüfen",
+  "检查选中的 App",
+  "選択したアプリを確認",
+  "선택한 앱 검토"
  ],
  "Reviewing selected files": [
   "Revisando arquivos selecionados",
@@ -1340,6 +1358,15 @@
   "一部のアプリデータを削除できませんでした",
   "일부 앱 데이터를 제거하지 못함"
  ],
+ "Some apps could not be uninstalled": [
+  "Não foi possível desinstalar alguns apps",
+  "Certaines apps n’ont pas pu être désinstallées",
+  "No se pudieron desinstalar algunas apps",
+  "Einige Apps konnten nicht deinstalliert werden",
+  "部分 App 无法卸载",
+  "一部のアプリをアンインストールできませんでした",
+  "일부 앱을 제거하지 못했습니다"
+ ],
  "Some files could not be removed": [
   "Não foi possível remover alguns arquivos",
   "Certains fichiers n’ont pas pu être supprimés",
@@ -1447,6 +1474,24 @@
   "要保留的重复副本已被选择。请重新检查文件。",
   "保持するコピーが選択されています。ファイルを再確認してください。",
   "보존할 중복 사본이 선택되었습니다. 파일을 다시 검토하세요."
+ ],
+ "The selected apps and selected associated data will be removed. Unselected and shared data is preserved.": [
+  "Os apps e os dados associados selecionados serão removidos. Dados não selecionados e compartilhados serão preservados.",
+  "Les apps et les données associées sélectionnées seront supprimées. Les données non sélectionnées et partagées seront conservées.",
+  "Se eliminarán las apps y los datos asociados seleccionados. Se conservarán los datos no seleccionados y compartidos.",
+  "Die ausgewählten Apps und zugehörigen Daten werden entfernt. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "将移除选中的 App 及关联数据。未选中及共享的数据将予以保留。",
+  "選択したアプリと関連データを削除します。未選択のデータと共有データは保持されます。",
+  "선택한 앱과 관련 데이터를 제거합니다. 선택하지 않은 데이터와 공유 데이터는 유지됩니다."
+ ],
+ "The selected apps are included. Select the associated data you also want to remove. Unselected and shared data is preserved.": [
+  "Os apps selecionados já estão incluídos. Selecione os dados associados que também deseja remover. Dados não selecionados e compartilhados serão preservados.",
+  "Les apps sélectionnées sont incluses. Sélectionnez les données associées à supprimer également. Les données non sélectionnées et partagées seront conservées.",
+  "Las apps seleccionadas están incluidas. Selecciona los datos asociados que también quieras eliminar. Se conservarán los datos no seleccionados y compartidos.",
+  "Die ausgewählten Apps sind enthalten. Wähle die zugehörigen Daten aus, die ebenfalls entfernt werden sollen. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "已包含选中的 App。请选择还要移除的关联数据。未选中及共享的数据将予以保留。",
+  "選択したアプリは削除対象に含まれています。一緒に削除する関連データを選択してください。未選択のデータと共有データは保持されます。",
+  "선택한 앱은 제거 대상에 포함되어 있습니다. 함께 제거할 관련 데이터를 선택하세요. 선택하지 않은 데이터와 공유 데이터는 유지됩니다."
  ],
  "The selected files will be moved to Trash.": [
   "Os arquivos selecionados serão movidos para o Lixo.",
@@ -1609,6 +1654,15 @@
   "卸载应用",
   "アプリをアンインストール",
   "앱 제거"
+ ],
+ "Uninstall selected apps?": [
+  "Desinstalar os apps selecionados?",
+  "Désinstaller les apps sélectionnées ?",
+  "¿Desinstalar las apps seleccionadas?",
+  "Ausgewählte Apps deinstallieren?",
+  "卸载选中的 App？",
+  "選択したアプリをアンインストールしますか？",
+  "선택한 앱을 제거할까요?"
  ],
  "Uninstalled": [
   "Desinstalado",

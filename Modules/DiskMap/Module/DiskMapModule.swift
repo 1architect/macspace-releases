@@ -161,6 +161,19 @@ public struct DiskMapModule: MacSpaceModule {
     }
     public func page(id: String, context: ModuleContext) async -> Screen? { await page(id: id, context: context, progress: { _ in }) }
     public func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
+        if let request = ActionPageRequest(pageID: id) {
+            guard request.destination == DiskUninstallBatch.reviewDestination else { return nil }
+            let index = await store.navigation().index
+            // Review is navigation over the already presented catalog. Destructive execution below
+            // still forces a fresh inventory and validates every original app/data identity.
+            let apps = await inventory.passive()
+            guard let plans = DiskUninstallBatch.plans(parameters: request.parameters, apps: apps), let selected = DiskUninstallBatch.resolve(plans, apps: apps) else {
+                return Screen(title: loc("Review app data"), layout: .singleColumn, widgets: [.list(ListWidget(id: "uninstall-changed", emptyMessage: loc("App ownership changed. Reopen the app list and review it again."), rows: []))])
+            }
+            let page = DiskMapScreenBuilder.uninstallReview(index, selected: selected, apps: apps)
+            progress(1)
+            return page
+        }
         if let request = SelectionBulkRequest(pageID: id) {
             let bulk: SelectionBulk
             do { bulk = try await store.selection(request) }
@@ -330,7 +343,7 @@ public struct DiskMapModule: MacSpaceModule {
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         let moveToTrash = request.parameters["trash"] == "1"
-        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "uninstall"].contains(request.actionID),
+        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "uninstall", "uninstallSelected"].contains(request.actionID),
            (!["0", "1"].contains(request.parameters["trash"] ?? "") || moveToTrash != FileRemovalSettings.movesToTrash()) {
             return .failed(loc("File removal settings changed. Reopen the list and confirm again."))
         }
@@ -393,34 +406,53 @@ public struct DiskMapModule: MacSpaceModule {
             await store.mark(removal.targets.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention,
                                   message: removal.failures.isEmpty ? loc("Freed selected files") : loc("Some files could not be removed"), details: removal.failures)
-        case "uninstall":
+        case "uninstall", "uninstallSelected":
             let apps = await inventory.read(index, force: true)
-            guard let app = apps.apps.first(where: { $0.owner.path == request.parameters["app"] && $0.owner.identifier == request.parameters["identifier"] }), app.removable else { return .failed(loc("This app cannot be uninstalled.")) }
-            guard let encoded = request.parameters["plan"], let reviewed = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)),
-                  reviewed.owner == app.owner, let current = app.plan,
-                  reviewed.targets == current.targets.filter({ $0.path == app.owner.path }) else { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
-            guard !NSWorkspace.shared.runningApplications.contains(where: { $0.bundleIdentifier == app.owner.identifier }) else { return .failed(loc("Quit the app before uninstalling it.")) }
+            let plans: [AppRemovalPlan]
+            if request.actionID == "uninstall", let text = request.parameters["plan"], text.utf8.count <= 1_048_576,
+               let plan = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(text.utf8)),
+               plan.owner.path == request.parameters["app"], plan.owner.identifier == request.parameters["identifier"] { plans = [plan] }
+            else if request.actionID == "uninstallSelected", let text = request.parameters["plans"], text.utf8.count <= 1_048_576,
+                    let selected = try? JSONDecoder().decode([AppRemovalPlan].self, from: Data(text.utf8)) { plans = selected }
+            else { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
+            let selectedApps: [DiskApplication]
+            do {
+                selectedApps = try DiskUninstallBatch.validate(plans, apps: apps, home: FileManager.default.homeDirectoryForCurrentUser.path,
+                    running: Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)))
+            } catch DiskUninstallBatch.Failure.running { return .failed(loc("Quit the selected apps before uninstalling them.")) }
+            catch { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
             guard let helper = context.privileged else { return .failed(loc("Install the helper in Settings")) }
-            if let failure = AppRemovalExecutor.validate(plan: reviewed, catalog: apps.catalog, home: FileManager.default.homeDirectoryForCurrentUser.path) {
-                return .failed(loc("App ownership changed. Reopen the app list and review it again."), details: [failure])
-            }
             let selected = Set(Selection.ids(request.parameters["ids"]))
+            let dataShare = selected.isEmpty ? 0.0 : 0.7
+            let candidates = DiskUninstallBatch.dataCandidates(selectedApps, apps: apps)
             let dataRemoval: DiskAppDataRemoval.Result
             do {
-                dataRemoval = try DiskAppDataRemoval.remove(ids: selected, candidates: DiskAppDataRemoval.candidates(app, apps: apps.apps), moveToTrash: moveToTrash,
-                    progress: { update in var mapped = update; mapped.fraction = (update.fraction ?? 0) * 0.8; progress(mapped) })
+                dataRemoval = try DiskAppDataRemoval.remove(ids: selected, candidates: candidates, moveToTrash: moveToTrash,
+                    progress: { update in var mapped = update; mapped.fraction = (update.fraction ?? 0) * dataShare; progress(mapped) })
             } catch { return .failed(loc("App data changed. Reopen the list and review your selection again."), details: [error.localizedDescription]) }
             await store.mark(dataRemoval.removed.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             if !dataRemoval.failures.isEmpty {
                 result = ActionResult(outcome: .needsAttention, message: loc("Some app data could not be removed"), details: dataRemoval.failures)
                 break
             }
-            do {
-                progress(ActionProgress(message: loc("Uninstalling")))
-                let removal = try await helper.perform(AppRemovalResult.self, operation: DiskMapPrivilegedOperations.uninstall, arguments: request.parameters)
-                await store.mark((removal.removed + Array(removal.failures.keys)).map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
-                result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention, message: removal.failures.isEmpty ? loc("Uninstalled") : loc("Some app data could not be removed"), details: removal.failures.sorted { $0.key < $1.key }.map { $0.key + ": " + $0.value })
-            } catch { result = ActionResult(outcome: .needsAttention, message: loc("Couldn’t uninstall the app"), details: [error.localizedDescription]) }
+            var failures: [String] = [], finished = candidates.filter { selected.contains($0.id) }.map(\.id)
+            for (offset, plan) in plans.enumerated() {
+                do {
+                    // Every app was preflighted before data removal; the helper revalidates each frozen bundle again.
+                    let removal = try await helper.perform(AppRemovalResult.self, operation: DiskMapPrivilegedOperations.uninstall,
+                        arguments: ["app": plan.owner.path, "identifier": plan.owner.identifier, "plan": try plan.encoded()])
+                    await store.mark((removal.removed + Array(removal.failures.keys)).map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
+                    failures += removal.failures.sorted { $0.key < $1.key }.map { $0.key + ": " + $0.value }
+                    if !failures.isEmpty { break }
+                    finished.append(plan.owner.path)
+                    progress(.init(fraction: dataShare + (1 - dataShare) * Double(offset + 1) / Double(plans.count), message: loc("Uninstalling"), finished: finished))
+                } catch {
+                    failures.append(plan.owner.path + ": " + error.localizedDescription)
+                    break
+                }
+            }
+            result = ActionResult(outcome: failures.isEmpty ? .succeeded : .needsAttention,
+                message: failures.isEmpty ? loc("Uninstalled") : loc("Some apps could not be uninstalled"), details: failures)
         default: return .failed(loc("Unknown action"))
         }
         if let before, let after = DataVolume.freeBytes() { result.freedBytes = after > before ? after - before : 0 }

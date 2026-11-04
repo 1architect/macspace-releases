@@ -125,6 +125,7 @@
 "Protected and other disk usage" = "Données protégées et autres usages du disque";
 "Protected system component; cannot be removed here." = "Composant système protégé ; suppression impossible ici.";
 "Quit the app before uninstalling it." = "Quittez l’app avant de la désinstaller.";
+"Quit the selected apps before uninstalling them." = "Quittez les apps sélectionnées avant de les désinstaller.";
 "Reading apps…" = "Lecture des apps…";
 "Reading files…" = "Lecture des fichiers…";
 "Recommended" = "Recommandations";
@@ -134,6 +135,7 @@
 "Review app data" = "Vérifier les données de l’app";
 "Review before freeing" = "Vérifier avant de supprimer";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "Examinez les caches reconstructibles dans Données système. Les sources et fichiers personnels sont conservés.";
+"Review selected apps" = "Vérifier les apps sélectionnées";
 "Reviewing selected files" = "Vérification des fichiers sélectionnés";
 "Saved app state" = "État sauvegardé de l’app";
 "Select at most 32 app-data locations at a time." = "Sélectionnez au maximum 32 emplacements de données d’app à la fois.";
@@ -149,6 +151,7 @@
 "Sizes show allocated space." = "Les tailles indiquent l’espace alloué.";
 "SketchUp projects" = "Projets SketchUp";
 "Some app data could not be removed" = "Certaines données d’apps n’ont pas pu être supprimées";
+"Some apps could not be uninstalled" = "Certaines apps n’ont pas pu être désinstallées";
 "Some files could not be removed" = "Certains fichiers n’ont pas pu être supprimés";
 "Some files could not be verified. Refresh to retry." = "Certains fichiers n’ont pas pu être vérifiés. Actualisez pour réessayer.";
 "Some files not verified" = "Certains fichiers ne sont pas vérifiés";
@@ -161,6 +164,8 @@
 "The completed disk map remains available while file metadata is indexed in the background." = "La carte du disque reste disponible pendant l’indexation des métadonnées en arrière-plan.";
 "The identifier or location suggests an association, but does not prove ownership. It is preserved." = "L’identifiant ou l’emplacement suggère un lien sans prouver la propriété. Les données sont préservées.";
 "The retained duplicate copy is selected. Review the files again." = "La copie à conserver est sélectionnée. Vérifiez les fichiers à nouveau.";
+"The selected apps and selected associated data will be removed. Unselected and shared data is preserved." = "Les apps et les données associées sélectionnées seront supprimées. Les données non sélectionnées et partagées seront conservées.";
+"The selected apps are included. Select the associated data you also want to remove. Unselected and shared data is preserved." = "Les apps sélectionnées sont incluses. Sélectionnez les données associées à supprimer également. Les données non sélectionnées et partagées seront conservées.";
 "The selected files will be moved to Trash." = "Les fichiers sélectionnés seront placés dans la corbeille.";
 "The selection changed. Review the files again." = "La sélection a changé. Vérifiez les fichiers à nouveau.";
 "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review." = "Ces identifiants ne correspondent à aucune app découverte. La propriété est incertaine ; les données sont conservées pour vérification.";
@@ -179,6 +184,7 @@
 "Uninstall" = "Désinstaller";
 "Uninstall %@?" = "Désinstaller %@ ?";
 "Uninstall apps" = "Désinstaller des apps";
+"Uninstall selected apps?" = "Désinstaller les apps sélectionnées ?";
 "Uninstalled" = "Désinstallée";
 "Uninstalling" = "Désinstallation";
 "Unknown action" = "Action inconnue";

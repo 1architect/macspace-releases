@@ -6,6 +6,8 @@ import XCTest
 
 private actor LazyPageModel {
     var bytes: UInt64 = 100
+    var review: ActionPageRequest?
+    func record(_ request: ActionPageRequest) { review = request }
     func remove() { bytes = 50 }
 }
 private struct LazyPageModule: MacSpaceModule {
@@ -18,6 +20,10 @@ private struct LazyPageModule: MacSpaceModule {
                widgets: [.list(ListWidget(id: "apps", rows: [Row(id: "apps-entry", title: "Apps", pageID: "apps")]))])
     }
     func page(id: String, context: ModuleContext) async -> Screen? {
+        if let request = ActionPageRequest(pageID: id) {
+            await model.record(request)
+            return Screen(title: "Review", widgets: [])
+        }
         if id == "folder:A" { return Screen(title: "Folder", hero: UsageBar(id: "folder", title: "", segments: [UsageSegment(id: "file", label: "File", bytes: await model.bytes, tone: .series(0))]), widgets: [.list(ListWidget(id: "large", title: "Large files", rows: [Row(id: "file", title: "Large file", trailing: "100 MB", actions: [Action(id: "delete", title: "Delete")])]))]) }
         if id == "apps" { return Screen(title: "Apps", layout: .singleColumn, widgets: [.list(ListWidget(id: "apps", rows: [Row(id: "app", title: "Test App", trailing: "100 MB", actions: [Action(id: "uninstall", title: "Uninstall")], iconPath: "/System/Applications/Calculator.app")]))]) }
         return nil
@@ -29,6 +35,21 @@ private struct LazyPageModule: MacSpaceModule {
 }
 @MainActor
 final class LazyModulePageTests: XCTestCase {
+    func testSelectionReviewNavigationCarriesFrozenIDsWithoutExecutingAnAction() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
+        let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
+        let model = LazyPageModel()
+        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
+        await handle.activate(); defer { handle.deactivate() }
+        let parameters = ["ids": "app:A\napp:B", "reviewed": "original identities"]
+        _ = await handle.perform(Action(id: "review", title: "Review", parameters: parameters, pageID: "selected-apps"))
+        for _ in 0..<100 { if await model.review != nil { break }; try await Task.sleep(for: .milliseconds(5)) }
+        let review = await model.review, bytes = await model.bytes
+        XCTAssertEqual(review, ActionPageRequest(destination: "selected-apps", parameters: parameters))
+        XCTAssertEqual(bytes, 100)
+        XCTAssertFalse(handle.isCleaning)
+    }
     func testReviewActionOpensPageWithoutCallingModuleMutation() async throws {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)

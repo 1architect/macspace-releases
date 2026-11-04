@@ -11,20 +11,20 @@ final class ChartMotionTests: XCTestCase {
         return (GrowPlan(rects: rects, weights: weights), rects)
     }
 
-    func testReturningDashboardDoesNotReplayGrowthEvenDuringAnOngoingScanOrCleanup() {
+    func testMountedChartsKeepTheirOpeningAndActiveLoadingAnimations() {
         let segments = [UsageSegment(id: "data", label: "Data", bytes: 100, tone: .accent)]
-        let now = Date(), fill = LoadFill(started: Date().addingTimeInterval(-2), expected: 10)
-        for (reading, working) in [(false, false), (true, false), (false, true)] {
-            XCTAssertNil(BlocksView.initialGrowth(segments: segments, reading: reading, working: working, fill: fill,
-                look: .tile, resumes: true, now: now))
+        let now = Date(), fill = LoadFill(started: now.addingTimeInterval(-2), expected: 10)
+        for (reading, working) in [(true, false), (false, true)] {
+            let growth = BlocksView.initialGrowth(segments: segments, reading: reading, working: working, fill: fill,
+                look: .tile, now: now)
+            XCTAssertEqual(growth?.start, now)
+            XCTAssertEqual(growth?.closing, true)
         }
-        let fresh = BlocksView.initialGrowth(segments: segments, reading: true, working: false, fill: fill,
-            look: .tile, resumes: false, now: now)
-        XCTAssertEqual(fresh?.start, now)
-        XCTAssertEqual(fresh?.closing, true)
+        XCTAssertNil(BlocksView.initialGrowth(segments: segments, reading: false, working: false, fill: nil,
+            look: .tile, now: now), "Idle graphics use their normal appearance animation")
         let placeholder = BlocksView.initialGrowth(segments: LoadingWave.placeholderBlocks, reading: true, working: false,
-            fill: fill, look: .tile, resumes: true, now: now)
-        XCTAssertNotNil(placeholder, "Real first data still grows when it replaces placeholders")
+            fill: fill, look: .tile, now: now)
+        XCTAssertNotNil(placeholder)
         XCTAssertNil(placeholder?.start)
     }
 

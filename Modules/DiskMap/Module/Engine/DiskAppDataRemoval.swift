@@ -38,29 +38,72 @@ enum DiskAppDataRemoval {
         }
         return nil
     }
-    static func candidates(_ app: DiskApplication, apps: [DiskApplication], home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [Target] {
-        let foreign = Set(apps.filter { $0.owner.path != app.owner.path }.flatMap(\.ownership).flatMap(\.paths))
-        let orderedForeign = foreign.sorted()
-        func overlapsForeign(_ path: String) -> Bool {
-            if foreign.contains("/") { return true }
-            var ancestor = path
-            while !ancestor.isEmpty {
-                if foreign.contains(ancestor) { return true }
-                guard let slash = ancestor.lastIndex(of: "/"), slash != ancestor.startIndex else { break }
-                ancestor = String(ancestor[..<slash])
+    /// One sorted ownership index serves every selected app. Runs of the same sole owner let
+    /// descendant-range checks stay bounded even when receipt manifests contain many file paths.
+    struct Coverage {
+        private struct Owners {
+            var first: String
+            var shared = false
+            mutating func insert(_ owner: String) { if owner != first { shared = true } }
+            func excludes(_ owner: String) -> Bool { shared || first != owner }
+        }
+        private var exact: [String: Owners] = [:]
+        private var paths: [String] = []
+        private var owners: [Owners] = []
+        private var runEnd: [Int] = []
+        init(apps: [DiskApplication]) {
+            for app in apps {
+                for claim in app.ownership {
+                    for value in claim.paths {
+                        // Keep equivalent composed/decomposed paths in the same lexical form for range seeks.
+                        let path = value.precomposedStringWithCanonicalMapping
+                        if exact[path] == nil { exact[path] = Owners(first: app.owner.path) }
+                        else if exact[path]?.shared == false { exact[path]?.insert(app.owner.path) }
+                    }
+                }
             }
-            let prefix = path + "/"
-            var lower = 0, upper = orderedForeign.count
+            paths = exact.keys.sorted()
+            owners = paths.map { exact[$0]! }
+            runEnd = Array(repeating: 0, count: paths.count)
+            for n in paths.indices.reversed() {
+                runEnd[n] = n + 1
+                if n + 1 < paths.count, !owners[n].shared, !owners[n + 1].shared, owners[n].first == owners[n + 1].first {
+                    runEnd[n] = runEnd[n + 1]
+                }
+            }
+        }
+        private func lowerBound(_ value: String) -> Int {
+            var lower = 0, upper = paths.count
             while lower < upper {
                 let middle = (lower + upper) / 2
-                if orderedForeign[middle] < prefix { lower = middle + 1 } else { upper = middle }
+                if paths[middle] < value { lower = middle + 1 } else { upper = middle }
             }
-            return lower < orderedForeign.count && orderedForeign[lower].hasPrefix(prefix)
+            return lower
         }
+        func blocks(_ value: String, owner: String) -> Bool {
+            let path = value.precomposedStringWithCanonicalMapping
+            var ancestor = path
+            while !ancestor.isEmpty {
+                if exact[ancestor]?.excludes(owner) == true { return true }
+                if ancestor == "/" { break }
+                guard let slash = ancestor.lastIndex(of: "/") else { break }
+                ancestor = slash == ancestor.startIndex ? "/" : String(ancestor[..<slash])
+            }
+            let prefix = path == "/" ? "/" : path + "/", first = lowerBound(prefix)
+            guard first < paths.count, paths[first].hasPrefix(prefix) else { return false }
+            if owners[first].excludes(owner) { return true }
+            let end = path == "/" ? paths.count : lowerBound(path + "0")
+            return runEnd[first] < end
+        }
+    }
+    static func candidates(_ app: DiskApplication, apps: [DiskApplication], home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [Target] {
+        candidates(app, coverage: Coverage(apps: apps), home: home)
+    }
+    static func candidates(_ app: DiskApplication, coverage: Coverage, home: String) -> [Target] {
         let paths = app.ownership.filter {
             $0.source != "bundle" && !$0.source.hasPrefix("receiptManifest") && $0.confidence != .shared && $0.ownerPaths == [app.owner.path]
         }.flatMap(\.paths).filter { path in
-            path != app.owner.path && !path.hasPrefix(app.owner.path + "/") && !overlapsForeign(path)
+            path != app.owner.path && !path.hasPrefix(app.owner.path + "/") && !coverage.blocks(path, owner: app.owner.path)
         }
         return AppOwnership.normalizedPaths(paths).compactMap { target($0, home: home) }
     }

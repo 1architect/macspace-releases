@@ -914,7 +914,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false, rowID: String? = nil) async -> ActionResult? {
         if let pageID = action.pageID {
             guard state == .ready, !preparingForUninstall, !performing else { return nil }
-            requestPage(pageID)
+            let parameters = action.parameters.merging(extraParameters) { _, extra in extra }
+            requestPage(parameters.isEmpty ? pageID : ActionPageRequest(destination: pageID, parameters: parameters).pageID)
             return nil
         }
         invalidatePendingSelections()

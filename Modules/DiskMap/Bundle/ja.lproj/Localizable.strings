@@ -125,6 +125,7 @@
 "Protected and other disk usage" = "保護されたデータとその他のディスク使用量";
 "Protected system component; cannot be removed here." = "保護されたシステム構成要素のため、ここでは削除できません。";
 "Quit the app before uninstalling it." = "アンインストールする前にアプリを終了してください。";
+"Quit the selected apps before uninstalling them." = "選択したアプリを終了してからアンインストールしてください。";
 "Reading apps…" = "アプリを読み込み中…";
 "Reading files…" = "ファイルを読み取り中…";
 "Recommended" = "おすすめ";
@@ -134,6 +135,7 @@
 "Review app data" = "アプリデータを確認";
 "Review before freeing" = "削除前に確認";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。";
+"Review selected apps" = "選択したアプリを確認";
 "Reviewing selected files" = "選択したファイルを確認中";
 "Saved app state" = "保存されたアプリ状態";
 "Select at most 32 app-data locations at a time." = "アプリデータの場所は一度に32個まで選択できます。";
@@ -149,6 +151,7 @@
 "Sizes show allocated space." = "サイズは割り当てられた容量を示します。";
 "SketchUp projects" = "SketchUpプロジェクト";
 "Some app data could not be removed" = "一部のアプリデータを削除できませんでした";
+"Some apps could not be uninstalled" = "一部のアプリをアンインストールできませんでした";
 "Some files could not be removed" = "一部のファイルを削除できませんでした";
 "Some files could not be verified. Refresh to retry." = "一部のファイルを検証できませんでした。更新して再試行してください。";
 "Some files not verified" = "一部のファイルが未検証です";
@@ -161,6 +164,8 @@
 "The completed disk map remains available while file metadata is indexed in the background." = "バックグラウンドでメタデータを索引付けする間も、完了したディスクマップを利用できます。";
 "The identifier or location suggests an association, but does not prove ownership. It is preserved." = "識別子や場所から関連が推定されますが、所有関係は証明できないため保持します。";
 "The retained duplicate copy is selected. Review the files again." = "保持するコピーが選択されています。ファイルを再確認してください。";
+"The selected apps and selected associated data will be removed. Unselected and shared data is preserved." = "選択したアプリと関連データを削除します。未選択のデータと共有データは保持されます。";
+"The selected apps are included. Select the associated data you also want to remove. Unselected and shared data is preserved." = "選択したアプリは削除対象に含まれています。一緒に削除する関連データを選択してください。未選択のデータと共有データは保持されます。";
 "The selected files will be moved to Trash." = "選択したファイルをゴミ箱に移動します。";
 "The selection changed. Review the files again." = "選択内容が変更されました。ファイルを再確認してください。";
 "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review." = "見つかったアプリと識別子が一致しません。所有関係が不明なため、確認用に保持します。";
@@ -179,6 +184,7 @@
 "Uninstall" = "アンインストール";
 "Uninstall %@?" = "%@をアンインストールしますか？";
 "Uninstall apps" = "アプリをアンインストール";
+"Uninstall selected apps?" = "選択したアプリをアンインストールしますか？";
 "Uninstalled" = "アンインストール済み";
 "Uninstalling" = "アンインストール中";
 "Unknown action" = "不明な操作";

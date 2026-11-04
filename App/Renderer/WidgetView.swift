@@ -700,13 +700,13 @@ struct RowView: View {
 
     private var itemRow: some View {
         HStack(spacing: 10) {
-            appIcon
             // On a page that lets the user choose, a box first; the row's title is its label.
             if let choice = rowChoice, choice.choices.contains(row.id) {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
             }
+            appIcon
             // The title, information, badges and row actions precede the size; Finder is the final row control.
             // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
             // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
