@@ -44,6 +44,7 @@
 "Couldn’t delete the folder" = "Der Ordner konnte nicht gelöscht werden";
 "Couldn’t remove the selected files" = "Ausgewählte Dateien konnten nicht entfernt werden";
 "Couldn’t uninstall the app" = "App konnte nicht deinstalliert werden";
+"Data preserved" = "Daten bleiben erhalten";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Daten mit exakten Kennungen nicht gefundener Apps. Gemeinsam genutzte App-Gruppendaten bleiben erhalten.";
 "Delete" = "Löschen";
 "Delete %@?" = "%@ löschen?";
@@ -93,7 +94,7 @@
 "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved." = "MacSpace beendet die ausgewählten Apps vor der Deinstallation. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.";
 "Managed by Photos" = "Von Fotos verwaltet";
 "Managed by Photos; browse or reveal in Finder." = "Von Fotos verwaltet; durchsuchen oder im Finder anzeigen.";
-"Managed or protected files are excluded from personal cleanup." = "Verwaltete oder geschützte Dateien sind von der persönlichen Bereinigung ausgeschlossen.";
+"Managed or protected files are excluded from personal cleanup" = "Verwaltete oder geschützte Dateien sind von der persönlichen Bereinigung ausgeschlossen";
 "Measurements pending" = "Messungen ausstehend";
 "Media" = "Medien";
 "More items" = "Weitere Objekte";
@@ -126,6 +127,7 @@
 "Other files" = "Andere Dateien";
 "Other formats" = "Andere Formate";
 "Outside your user Library" = "Außerhalb deiner Benutzer-Library";
+"Outside your user Library · preserved" = "Außerhalb deiner Benutzer-Library · bleibt erhalten";
 "PDF documents" = "PDF-Dokumente";
 "Photo libraries" = "Fotomediatheken";
 "Photos & Video" = "Fotos & Videos";
@@ -137,6 +139,7 @@
 "Projects & Development" = "Projekte & Entwicklung";
 "Protected and other disk usage" = "Geschützte Daten und sonstige Belegung";
 "Protected or unreadable data" = "Geschützte oder nicht lesbare Daten";
+"Protected or unreadable data · preserved" = "Geschützte oder nicht lesbare Daten · bleiben erhalten";
 "Protected system component; cannot be removed here." = "Geschützte Systemkomponente; kann hier nicht entfernt werden.";
 "Quit the app before uninstalling it." = "Beenden Sie die App vor der Deinstallation.";
 "Quit the selected apps before uninstalling them." = "Beende die ausgewählten Apps vor der Deinstallation.";

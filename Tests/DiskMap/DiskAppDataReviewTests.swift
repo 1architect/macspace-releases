@@ -29,7 +29,7 @@ final class DiskAppDataReviewTests: XCTestCase {
             XCTAssertTrue(selectedData.isEmpty)
         }
     }
-    func testReadonlyCategoryHasADisabledCheckboxAndKeepsItsCompleteDetailInventory() throws {
+    func testReadonlyCategoryProvidesPreservationReasonAndKeepsItsCompleteDetailInventory() throws {
         try fixture { home, original in
             let external = home + "/SystemLibrary/Vendor"
             try FileManager.default.createDirectory(atPath: external, withIntermediateDirectories: true)
@@ -44,11 +44,84 @@ final class DiskAppDataReviewTests: XCTestCase {
             let other = try XCTUnwrap(rows.first { $0.title == "Other app data" })
             XCTAssertNotNil(other.selectionSectionID)
             let section = try XCTUnwrap(page.selection?.sections.first { $0.id == other.selectionSectionID })
-            XCTAssertEqual(section.unavailableReason, "Outside your user Library")
+            XCTAssertEqual(section.unavailableReason, "Outside your user Library · preserved")
             XCTAssertEqual(section.rows, other.children.map(\.id))
             XCTAssertEqual(other.children.flatMap(\.paths), [external])
             XCTAssertTrue(other.children.allSatisfy { page.selection?.choices[$0.id] == nil })
             XCTAssertEqual(DiskUninstallReview.Category.of("/Library/Application Support/Autodesk", home: home), .support)
+        }
+    }
+
+    func testSharedOnlyAndMixedCategoriesDistinguishPreservedAndRemovableData() throws {
+        try fixture { home, original in
+            var app = original
+            app.ownership = original.ownership.filter { claim in
+                claim.source == "bundle" || claim.paths.contains { $0.hasPrefix(home + "/Library/Application Support/") }
+            }.map { claim in
+                var claim = claim
+                if claim.source != "bundle" {
+                    claim.confidence = .shared
+                    claim.ownerPaths.append(home + "/Applications/Other.app")
+                }
+                return claim
+            }
+            var apps = DiskApplications(); apps.apps = [app]
+            var index = DiskIndex(root: home)
+            for path in app.ownership.filter({ $0.source != "bundle" }).flatMap(\.paths) {
+                index.directories[path] = DiskDirectory(path: path, bytes: 8192)
+            }
+            let shared = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            let categoryID = DiskUninstallReview.categoryID(app.owner.path, .support)
+            let headingID = DiskUninstallReview.dataSectionID(app.owner.path)
+            XCTAssertEqual(shared.selection?.sections.first { $0.id == categoryID }?.unavailableReason, "Used by other apps")
+            XCTAssertEqual(shared.selection?.sections.first { $0.id == headingID }?.unavailableReason, "Used by other apps")
+            XCTAssertTrue(shared.selection?.choices.isEmpty == true)
+            XCTAssertEqual(shared.selection?.includedBytes, app.bytes)
+            let sharedRows = shared.widgets.flatMap { if case let .list(list) = $0 { return list.rows.flatMap(\.children) }; return [] }
+            XCTAssertTrue(sharedRows.allSatisfy { $0.unavailableReason == "Used by other apps" })
+
+            let path = home + "/Library/Application Support/Exclusive"
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+            try Data([1]).write(to: URL(fileURLWithPath: path + "/data"))
+            app.ownership.append(.init(paths: [path], ownerPaths: [app.owner.path], confidence: .inferred, source: "fixture", reason: "App association"))
+            apps.apps = [app]
+            let mixed = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            XCTAssertNil(mixed.selection?.sections.first { $0.id == categoryID }?.unavailableReason)
+            XCTAssertNil(mixed.selection?.sections.first { $0.id == headingID }?.unavailableReason)
+            XCTAssertEqual(mixed.selection?.choices.count, 1)
+            let lists = mixed.widgets.compactMap { if case let .list(list) = $0 { return list }; return nil }
+            XCTAssertEqual(lists.count, 1)
+            XCTAssertEqual(lists[0].headingChoice, headingID)
+            XCTAssertEqual(lists[0].rows.count, 1)
+            XCTAssertEqual(lists[0].rows[0].children.count, sharedRows.count + 1)
+        }
+    }
+
+    func testPreparedPublisherFolderClaimsAreFilteredButExplicitSupportLinksRemain() throws {
+        try fixture { home, original in
+            let path = home + "/Library/Application Support/Apple"
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+            try Data([1]).write(to: URL(fileURLWithPath: path + "/data"))
+            var app = original
+            app.ownership = [.init(paths: [path], ownerPaths: [app.owner.path, "/Applications/Other.app"], confidence: .shared,
+                                  source: "displayNameConvention", reason: "Old broad name match")]
+            var index = DiskIndex(root: home)
+            index.directories[path] = DiskDirectory(path: path, bytes: 6_000_000)
+            var apps = DiskApplications(); apps.apps = [app]
+            let page = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            let lists = page.widgets.compactMap { if case let .list(list) = $0 { return list }; return nil }
+            XCTAssertEqual(lists.count, 1)
+            XCTAssertTrue(lists[0].rows.isEmpty)
+            XCTAssertEqual(lists[0].emptyMessage, "No app data to remove")
+            XCTAssertTrue(page.selection?.choices.isEmpty == true)
+
+            app.ownership.append(.init(paths: [path], ownerPaths: [app.owner.path, "/Applications/Other.app"], confidence: .shared,
+                                       source: "declaredSupportPath", reason: "Explicit app metadata"))
+            apps.apps = [app]
+            let explicit = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            let rows = explicit.widgets.flatMap { if case let .list(list) = $0 { return list.rows.flatMap(\.children) }; return [] }
+            XCTAssertEqual(rows.flatMap(\.paths), [path])
+            XCTAssertTrue(explicit.selection?.choices.isEmpty == true)
         }
     }
 

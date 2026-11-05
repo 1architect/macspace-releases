@@ -44,6 +44,7 @@
 "Couldn’t delete the folder" = "フォルダを削除できませんでした";
 "Couldn’t remove the selected files" = "選択したファイルを削除できませんでした";
 "Couldn’t uninstall the app" = "アプリをアンインストールできませんでした";
+"Data preserved" = "データを保持";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "対応するアプリが見つからない正確なアプリ識別子のデータです。共有アプリグループのデータは保持されます。";
 "Delete" = "削除";
 "Delete %@?" = "%@を削除しますか？";
@@ -93,7 +94,7 @@
 "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved." = "MacSpaceは選択したアプリを終了してからアンインストールします。未選択のデータと共有データは保持されます。";
 "Managed by Photos" = "写真で管理";
 "Managed by Photos; browse or reveal in Finder." = "写真で管理されています。閲覧するかFinderで表示してください。";
-"Managed or protected files are excluded from personal cleanup." = "管理対象または保護されたファイルは個人ファイルのクリーンアップに含まれません。";
+"Managed or protected files are excluded from personal cleanup" = "管理対象または保護されたファイルは個人ファイルのクリーンアップに含まれません";
 "Measurements pending" = "測定待ち";
 "Media" = "メディア";
 "More items" = "その他の項目";
@@ -126,6 +127,7 @@
 "Other files" = "その他のファイル";
 "Other formats" = "その他の形式";
 "Outside your user Library" = "ユーザーライブラリの外部";
+"Outside your user Library · preserved" = "ユーザーライブラリの外部 · 保持";
 "PDF documents" = "PDF書類";
 "Photo libraries" = "写真ライブラリ";
 "Photos & Video" = "写真とビデオ";
@@ -137,6 +139,7 @@
 "Projects & Development" = "プロジェクトと開発";
 "Protected and other disk usage" = "保護されたデータとその他のディスク使用量";
 "Protected or unreadable data" = "保護されているか読み取れないデータ";
+"Protected or unreadable data · preserved" = "保護されているか読み取れないデータ · 保持";
 "Protected system component; cannot be removed here." = "保護されたシステム構成要素のため、ここでは削除できません。";
 "Quit the app before uninstalling it." = "アンインストールする前にアプリを終了してください。";
 "Quit the selected apps before uninstalling them." = "選択したアプリを終了してからアンインストールしてください。";

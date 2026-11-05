@@ -82,7 +82,12 @@ public struct OwnershipResolver: Sendable {
             let ownerIDs = owner.identifiers.union(embedded[owner.path] ?? [])
             for id in ownerIDs { identifiers[id, default: []].insert(owner.path) }
             for group in owner.groups { groups[group, default: []].insert(owner.path) }
-            let dataNames = Self.dataNames(owner).union(Self.componentDataNames(embedded[owner.path] ?? [])); ownerNames[owner.path] = dataNames
+            // Bundle namespace/publisher components do not identify an app's support folder.
+            // Keep the broader componentDataNames behavior for unmatched-data exclusions.
+            let componentNames = Self.componentDataNames(Set((embedded[owner.path] ?? []).map {
+                $0.split(separator: ".").dropFirst(2).joined(separator: ".")
+            }))
+            let dataNames = Self.dataNames(owner).union(componentNames); ownerNames[owner.path] = dataNames
             for name in dataNames { names[Self.dataNameKey(name), default: []].insert(owner.path) }
             if let relative = Self.declaredSupportPath(owner) {
                 supportPaths[owner.path] = relative; supportOwners[relative, default: []].insert(owner.path)
@@ -93,6 +98,7 @@ public struct OwnershipResolver: Sendable {
         var result = [DiskOwnershipClaim(paths: [owner.path], ownerPaths: [owner.path], confidence: .verifiedExclusive, source: "bundle", reason: "This installation's bundle; other copies are separate installations.")]
         func append(_ path: String, id: String, owners: Set<String>, verified: Bool, source: String) {
             guard AppOwnership.safeExisting(path) else { return }
+            if source == "displayNameConvention", Self.isPublisherDataRoot(path, owner: owner, home: home, systemLibrary: systemLibrary) { return }
             let confidence: OwnershipConfidence = owners.count > 1 ? .shared : verified && catalog.discoveryComplete ? .verifiedExclusive : verified ? .unknown : .inferred
             result.append(DiskOwnershipClaim(paths: [path], ownerPaths: Array(owners), confidence: confidence, source: source,
                 reason: owners.count > 1 ? "Multiple known installations claim this data." : verified && !catalog.discoveryComplete ? "Metadata matches, but discovery cannot establish exclusive ownership." : verified ? "Exact metadata and complete catalog establish ownership." : "Conventional identifier path; ownership is not established."))
@@ -164,6 +170,25 @@ public struct OwnershipResolver: Sendable {
             }
         }
         return names
+    }
+    /// A publisher-wide folder name is too broad to associate through display names alone.
+    /// Explicit support-path declarations and signed metadata are evaluated independently.
+    public static func isPublisherDataRoot(_ path: String, owner: AppOwner, home: String, systemLibrary: String = "/Library") -> Bool {
+        let bases = [home + "/Library", systemLibrary].flatMap { library in
+            ["Application Support", "Caches", "Logs"].map { library + "/" + $0 }
+        }
+        guard bases.contains((path as NSString).deletingLastPathComponent) else { return false }
+        let publishers = Set(owner.identifiers.compactMap { identifier -> String? in
+            let parts = identifier.split(separator: ".")
+            guard parts.count >= 3 else { return nil }
+            return dataNameKey(String(parts[1]))
+        }).union(["apple"])
+        let name = dataNameKey((path as NSString).lastPathComponent)
+        guard publishers.contains(name) else { return false }
+        // An exact product name is evidence in its own right, even if its identifier
+        // repeats that word in the publisher namespace (for example org.example.product).
+        let productNames = Set(dataNames(owner).map(dataNameKey))
+        return name == "apple" || !productNames.contains(name)
     }
     private static func declaredSupportPath(_ owner: AppOwner) -> String? {
         guard let value = NSDictionary(contentsOfFile: owner.path + "/Contents/Info.plist")?["CrProductDirName"] as? String,

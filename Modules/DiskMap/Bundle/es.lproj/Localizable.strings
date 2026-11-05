@@ -44,6 +44,7 @@
 "Couldn’t delete the folder" = "No se pudo eliminar la carpeta";
 "Couldn’t remove the selected files" = "No se pudieron eliminar los archivos seleccionados";
 "Couldn’t uninstall the app" = "No se pudo desinstalar la app";
+"Data preserved" = "Datos conservados";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Datos con identificadores exactos de apps que no se encontraron instaladas. Se conservan los datos de grupos compartidos.";
 "Delete" = "Eliminar";
 "Delete %@?" = "¿Eliminar %@?";
@@ -93,7 +94,7 @@
 "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved." = "MacSpace cierra las apps seleccionadas antes de desinstalarlas. Los datos no seleccionados y compartidos se conservan.";
 "Managed by Photos" = "Administrado por Fotos";
 "Managed by Photos; browse or reveal in Finder." = "Administrado por Fotos; explora o muestra en Finder.";
-"Managed or protected files are excluded from personal cleanup." = "Los archivos administrados o protegidos se excluyen de la limpieza personal.";
+"Managed or protected files are excluded from personal cleanup" = "Los archivos administrados o protegidos se excluyen de la limpieza personal";
 "Measurements pending" = "Mediciones pendientes";
 "Media" = "Multimedia";
 "More items" = "Más elementos";
@@ -126,6 +127,7 @@
 "Other files" = "Otros archivos";
 "Other formats" = "Otros formatos";
 "Outside your user Library" = "Fuera de tu biblioteca de usuario";
+"Outside your user Library · preserved" = "Fuera de tu biblioteca de usuario · conservado";
 "PDF documents" = "Documentos PDF";
 "Photo libraries" = "Fototecas";
 "Photos & Video" = "Fotos y vídeos";
@@ -137,6 +139,7 @@
 "Projects & Development" = "Proyectos y desarrollo";
 "Protected and other disk usage" = "Datos protegidos y otros usos del disco";
 "Protected or unreadable data" = "Datos protegidos o ilegibles";
+"Protected or unreadable data · preserved" = "Datos protegidos o ilegibles · conservados";
 "Protected system component; cannot be removed here." = "Componente protegido del sistema; no se puede eliminar aquí.";
 "Quit the app before uninstalling it." = "Cierra la app antes de desinstalarla.";
 "Quit the selected apps before uninstalling them." = "Cierra las apps seleccionadas antes de desinstalarlas.";

@@ -115,7 +115,7 @@ enum DiskMapScreenBuilder {
     private static func emptyExplanation(_ index: DiskIndex, folder: String) -> String {
         guard let node = index.directories[folder], node.readable else { return loc("Contents could not be read.") }
         if node.bytes == 0 && node.folders.isEmpty { return loc("This folder is empty.") }
-        if !FileReviewPolicy.includes(folder + "/candidate") { return loc("Managed or protected files are excluded from personal cleanup.") }
+        if !FileReviewPolicy.includes(folder + "/candidate") { return loc("Managed or protected files are excluded from personal cleanup") }
         return loc("No reviewable personal files in this scope.")
     }
     static func segments(_ index: DiskIndex, folder: String, files catalog: [DiskFile]? = nil) -> [UsageSegment] {

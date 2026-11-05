@@ -2997,8 +2997,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:852",
-      "App\/Renderer\/WidgetView.swift:853"
+      "App\/Renderer\/WidgetView.swift:851",
+      "App\/Renderer\/WidgetView.swift:852"
     ],
     "table" : "App",
     "translations" : {
@@ -5985,8 +5985,8 @@
     "key" : "%@ app data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:131",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:151"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:139",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:159"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6835,6 +6835,25 @@
     }
   },
   {
+    "id" : "DiskMap|Data preserved",
+    "key" : "Data preserved",
+    "kind" : "Row detail",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:173"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Daten bleiben erhalten",
+      "en" : "Data preserved",
+      "es" : "Datos conservados",
+      "fr" : "Données conservées",
+      "ja" : "データを保持",
+      "ko" : "데이터 보존됨",
+      "pt-BR" : "Dados preservados",
+      "zh-Hans" : "数据已保留"
+    }
+  },
+  {
     "id" : "DiskMap|Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.",
     "key" : "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.",
     "kind" : "Other",
@@ -7525,7 +7544,7 @@
     "key" : "Included with the app",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:119"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:126"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7796,22 +7815,22 @@
     }
   },
   {
-    "id" : "DiskMap|Managed or protected files are excluded from personal cleanup.",
-    "key" : "Managed or protected files are excluded from personal cleanup.",
+    "id" : "DiskMap|Managed or protected files are excluded from personal cleanup",
+    "key" : "Managed or protected files are excluded from personal cleanup",
     "kind" : "Text",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:118"
     ],
     "table" : "DiskMap",
     "translations" : {
-      "de" : "Verwaltete oder geschützte Dateien sind von der persönlichen Bereinigung ausgeschlossen.",
-      "en" : "Managed or protected files are excluded from personal cleanup.",
-      "es" : "Los archivos administrados o protegidos se excluyen de la limpieza personal.",
-      "fr" : "Les fichiers gérés ou protégés sont exclus du nettoyage personnel.",
-      "ja" : "管理対象または保護されたファイルは個人ファイルのクリーンアップに含まれません。",
-      "ko" : "관리되거나 보호된 파일은 개인 파일 정리에서 제외됩니다.",
-      "pt-BR" : "Arquivos gerenciados ou protegidos não fazem parte da limpeza pessoal.",
-      "zh-Hans" : "个人清理不包括受管理或受保护的文件。"
+      "de" : "Verwaltete oder geschützte Dateien sind von der persönlichen Bereinigung ausgeschlossen",
+      "en" : "Managed or protected files are excluded from personal cleanup",
+      "es" : "Los archivos administrados o protegidos se excluyen de la limpieza personal",
+      "fr" : "Les fichiers gérés ou protégés sont exclus du nettoyage personnel",
+      "ja" : "管理対象または保護されたファイルは個人ファイルのクリーンアップに含まれません",
+      "ko" : "관리되거나 보호된 파일은 개인 파일 정리에서 제외됩니다",
+      "pt-BR" : "Arquivos gerenciados ou protegidos não fazem parte da limpeza pessoal",
+      "zh-Hans" : "个人清理不包括受管理或受保护的文件"
     }
   },
   {
@@ -7938,8 +7957,8 @@
     "key" : "No app data to remove",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:132",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:152"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:140",
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:160"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8417,9 +8436,9 @@
   {
     "id" : "DiskMap|Outside your user Library",
     "key" : "Outside your user Library",
-    "kind" : "Row title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:108"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8431,6 +8450,25 @@
       "ko" : "사용자 라이브러리 외부",
       "pt-BR" : "Fora da Biblioteca do seu usuário",
       "zh-Hans" : "位于用户资源库之外"
+    }
+  },
+  {
+    "id" : "DiskMap|Outside your user Library · preserved",
+    "key" : "Outside your user Library · preserved",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Außerhalb deiner Benutzer-Library · bleibt erhalten",
+      "en" : "Outside your user Library · preserved",
+      "es" : "Fuera de tu biblioteca de usuario · conservado",
+      "fr" : "Hors de votre bibliothèque utilisateur · conservé",
+      "ja" : "ユーザーライブラリの外部 · 保持",
+      "ko" : "사용자 라이브러리 외부 · 보존됨",
+      "pt-BR" : "Fora da Biblioteca do seu usuário · preservado",
+      "zh-Hans" : "用户资源库之外 · 已保留"
     }
   },
   {
@@ -8628,9 +8666,9 @@
   {
     "id" : "DiskMap|Protected or unreadable data",
     "key" : "Protected or unreadable data",
-    "kind" : "Row title",
+    "kind" : "Other",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:108"
+
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8642,6 +8680,25 @@
       "ko" : "보호되거나 읽을 수 없는 데이터",
       "pt-BR" : "Dados protegidos ou ilegíveis",
       "zh-Hans" : "受保护或无法读取的数据"
+    }
+  },
+  {
+    "id" : "DiskMap|Protected or unreadable data · preserved",
+    "key" : "Protected or unreadable data · preserved",
+    "kind" : "Row title",
+    "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Geschützte oder nicht lesbare Daten · bleiben erhalten",
+      "en" : "Protected or unreadable data · preserved",
+      "es" : "Datos protegidos o ilegibles · conservados",
+      "fr" : "Données protégées ou illisibles · conservées",
+      "ja" : "保護されているか読み取れないデータ · 保持",
+      "ko" : "보호되거나 읽을 수 없는 데이터 · 보존됨",
+      "pt-BR" : "Dados protegidos ou ilegíveis · preservados",
+      "zh-Hans" : "受保护或无法读取的数据 · 已保留"
     }
   },
   {
@@ -8827,7 +8884,7 @@
     "places" : [
       "Modules\/DiskMap\/Module\/DiskMapModule.swift:171",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:56",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:155"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:163"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9058,7 +9115,7 @@
     "kind" : "Confirmation message",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:271",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:135"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:143"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10066,7 +10123,7 @@
     "kind" : "Row detail",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:247",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:108"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
     ],
     "table" : "DiskMap",
     "translations" : {

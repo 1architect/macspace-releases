@@ -4,6 +4,41 @@ import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
 final class OwnershipEvidenceTests: XCTestCase {
+    func testEmbeddedIdentifiersDoNotAssociatePublisherRootsWithOneApp() throws {
+        try fixture { home in
+            let owner = try app(home, name: "Install macOS Tahoe", id: "com.apple.InstallAssistant")
+            let system = home + "/SystemLibrary"
+            for library in [home + "/Library", system] {
+                try file(library + "/Application Support/Apple/data")
+                try file(library + "/Application Support/InstallAssistant/data")
+            }
+            let resolver = OwnershipResolver(catalog: AppCatalog(owners: [owner]),
+                embeddedIdentifiers: [owner.path: ["com.apple.InstallAssistant.helper"]],
+                availableDataPaths: [system + "/Application Support/Apple", system + "/Application Support/InstallAssistant"])
+            let claims = resolver.claims(for: owner, home: home, systemLibrary: system)
+            XCTAssertFalse(claims.flatMap(\.paths).contains { $0.hasSuffix("/Application Support/Apple") })
+            XCTAssertTrue(claims.flatMap(\.paths).contains(system + "/Application Support/InstallAssistant"))
+            XCTAssertTrue(OwnershipResolver.componentDataNames(["com.apple.InstallAssistant"]).contains("apple"),
+                          "Broad unmatched-data protection must keep its existing exclusion evidence")
+        }
+    }
+
+    func testDisplayNameMatchingExcludesPublisherRootsButKeepsDeclaredSupportPaths() throws {
+        try fixture { home in
+            let owner = try app(home, name: "Example", id: "com.vendor.product")
+            let system = home + "/SystemLibrary"
+            try file(system + "/Application Support/Vendor/data")
+            try file(system + "/Application Support/Vendor/Product/data")
+            try file(system + "/Application Support/Engine/data")
+            let resolver = OwnershipResolver(catalog: AppCatalog(owners: [owner]),
+                embeddedIdentifiers: [owner.path: ["com.vendor.engine"]],
+                availableDataPaths: [system + "/Application Support/Vendor", system + "/Application Support/Engine"])
+            let claims = resolver.claims(for: owner, home: home, systemLibrary: system)
+            XCTAssertFalse(claims.flatMap(\.paths).contains(system + "/Application Support/Vendor"))
+            XCTAssertTrue(claims.contains { $0.paths == [system + "/Application Support/Vendor/Product"] && $0.source == "declaredSupportPath" })
+            XCTAssertTrue(claims.flatMap(\.paths).contains(system + "/Application Support/Engine"))
+        }
+    }
     private func fixture(_ body: (String) throws -> Void) throws {
         let root = URL(fileURLWithPath: "/private/tmp").appendingPathComponent("ownership-evidence-" + UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: root + "/Applications", withIntermediateDirectories: true)

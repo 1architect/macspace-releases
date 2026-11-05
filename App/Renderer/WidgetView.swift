@@ -199,11 +199,7 @@ struct WidgetForm<Top: View>: View {
                 HStack(spacing: 6) {
                     if let section = list?.headingChoice, let choice = sectionChoice,
                        choice.selection.sections.contains(where: { $0.id == section }) {
-                        HeaderCheckbox(on: choice.isOn(section), mixed: choice.isMixed(section)) { choice.toggle(section) }
-                            .frame(width: 14, height: 14).accessibilityLabel(text)
-                            .disabled(!choice.hasRows(section))
-                            .help(choice.unavailableReason(section) ?? text)
-                        Text(text).lineLimit(1)
+                        ModuleSectionHeader(title: text, help: title.help, part: section)
                     } else if let choiceID = list?.headingChoice, let choice = rowChoice {
                         Toggle(text, isOn: Binding(get: { choice.checked.contains(choiceID) }, set: { _ in choice.toggle(choiceID) }))
                             .toggleStyle(.checkbox).labelsHidden()
@@ -555,7 +551,7 @@ struct SectionChoice {
     /// Session headers affect eligible rows only. Legacy saved choices retain their all-on behavior.
     func hasRows(_ part: String) -> Bool {
         guard let section = selection.sections.first(where: { $0.id == part }), section.unavailableReason == nil else { return false }
-        return section.pageID != nil || (selection.session ? !choosable(part).isEmpty : !section.rows.isEmpty)
+        return section.pageID != nil || !choosable(part).isEmpty
     }
 
     func unavailableReason(_ part: String) -> String? { selection.sections.first { $0.id == part }?.unavailableReason }
@@ -730,18 +726,16 @@ struct RowView: View {
     /// items. Not a button: a button around the row would take the (i)'s click too.
     private var groupRow: some View {
         HStack(spacing: 10) {
-            if let section = row.selectionSectionID, let choice = sectionChoice {
+            if let section = row.selectionSectionID, let choice = sectionChoice, choice.hasRows(section) {
                 HeaderCheckbox(on: choice.isOn(section), mixed: choice.isMixed(section)) { choice.toggle(section) }
                     .frame(width: 14, height: 14).accessibilityLabel(row.title)
-                    .disabled(!choice.hasRows(section))
-                    .help(choice.unavailableReason(section) ?? row.title)
             }
             appIcon
             TitleLine(title: row.title, note: row.subtitle)
             // The (i) first, then the pills (`itemRow`).
             InfoButton(text: row.detail)
             if let path = row.iconPath { AppUseBadge(path: path, appeared: appeared) }
-            RowBadges(badges: row.badges, gap: 10, arrives: appeared)
+            RowBadges(badges: row.badges + (selectionUnavailableReason.map { [Badge($0, .info)] } ?? []), gap: 10, arrives: appeared)
             Spacer(minLength: 8)
             if placement != .afterFinder { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
@@ -762,6 +756,11 @@ struct RowView: View {
             AppFileIcon(path: path)
                 .id(path)
         }
+    }
+
+    private var selectionUnavailableReason: String? {
+        guard let section = row.selectionSectionID, let choice = sectionChoice, !choice.hasRows(section) else { return nil }
+        return choice.unavailableReason(section)
     }
 
     private var itemRow: some View {

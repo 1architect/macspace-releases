@@ -44,6 +44,7 @@
 "Couldn’t delete the folder" = "无法删除文件夹";
 "Couldn’t remove the selected files" = "无法移除所选文件";
 "Couldn’t uninstall the app" = "无法卸载应用";
+"Data preserved" = "数据已保留";
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "具有确切应用标识符但未找到已安装应用的数据。共享应用组数据将保留。";
 "Delete" = "删除";
 "Delete %@?" = "删除 %@？";
@@ -93,7 +94,7 @@
 "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved." = "MacSpace 会在卸载前退出所选 App。未选择及共享的数据将保留。";
 "Managed by Photos" = "由照片管理";
 "Managed by Photos; browse or reveal in Finder." = "由照片管理；可浏览或在访达中显示。";
-"Managed or protected files are excluded from personal cleanup." = "个人清理不包括受管理或受保护的文件。";
+"Managed or protected files are excluded from personal cleanup" = "个人清理不包括受管理或受保护的文件";
 "Measurements pending" = "等待测量";
 "Media" = "媒体";
 "More items" = "更多项目";
@@ -126,6 +127,7 @@
 "Other files" = "其他文件";
 "Other formats" = "其他格式";
 "Outside your user Library" = "位于用户资源库之外";
+"Outside your user Library · preserved" = "用户资源库之外 · 已保留";
 "PDF documents" = "PDF 文档";
 "Photo libraries" = "照片图库";
 "Photos & Video" = "照片与视频";
@@ -137,6 +139,7 @@
 "Projects & Development" = "项目与开发";
 "Protected and other disk usage" = "受保护数据及其他磁盘用量";
 "Protected or unreadable data" = "受保护或无法读取的数据";
+"Protected or unreadable data · preserved" = "受保护或无法读取的数据 · 已保留";
 "Protected system component; cannot be removed here." = "受保护的系统组件，无法在此移除。";
 "Quit the app before uninstalling it." = "请先退出应用再卸载。";
 "Quit the selected apps before uninstalling them." = "请先退出选中的 App，再卸载。";

@@ -27,6 +27,18 @@ private struct AppReviewModule: MacSpaceModule {
 
 @MainActor
 final class UninstallReviewSelectionTests: XCTestCase {
+    func testPreservedSectionsHaveReasonsWhileMixedSectionsAllowSelectingEligibleItems() {
+        let selection = Selection(action: Action(id: "uninstall", title: "Uninstall"), choices: ["cache": 100], sections: [
+            .init(id: "shared", title: "Shared", rows: ["shared-data"], unavailableReason: "Used by other apps"),
+            .init(id: "master", title: "App data", rows: ["cache", "shared-data"]),
+            .init(id: "unavailable", title: "Unavailable", rows: ["missing"])
+        ])
+        let choice = SectionChoice(selection: selection, checked: [], all: []) { _ in }
+        XCTAssertFalse(choice.hasRows("shared"))
+        XCTAssertEqual(choice.unavailableReason("shared"), "Used by other apps")
+        XCTAssertTrue(choice.hasRows("master"))
+        XCTAssertFalse(choice.hasRows("unavailable"), "An inventory row alone must not produce a nonfunctional checkbox")
+    }
     private func handle() async throws -> (ModuleHandle, URL) {
         let directory = try Fixtures.temporaryDirectory()
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Review", into: directory)

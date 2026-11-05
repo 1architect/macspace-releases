@@ -93,7 +93,14 @@ enum DiskUninstallReview {
             let owner = app.owner.path
             let mandatory = plan.targets.filter { $0.path != owner }.reduce(0) { $0 + bytes($1.path, live: true) }
             includedBytes += (app.bytes > 0 ? app.bytes : bytes(owner, live: true)) + mandatory
-            let claims = app.ownership.filter { $0.source != "bundle" && !$0.source.hasPrefix("receiptManifest") && $0.source != "startupItem" }
+            let claims = app.ownership.filter { $0.source != "bundle" && !$0.source.hasPrefix("receiptManifest") && $0.source != "startupItem" }.compactMap { claim -> DiskOwnershipClaim? in
+                var claim = claim
+                // Also filter prepared/cached claims made by earlier scanner versions.
+                if claim.source == "displayNameConvention" {
+                    claim.paths.removeAll { OwnershipResolver.isPublisherDataRoot($0, owner: app.owner, home: home) }
+                }
+                return claim.paths.isEmpty ? nil : claim
+            }
             let paths = AppOwnership.normalizedPaths(claims.flatMap(\.paths)).filter { $0 != owner && !$0.hasPrefix(owner + "/") }
             for path in paths {
                 let candidate = byPath[path], size = bytes(path, live: candidate != nil)
@@ -105,7 +112,7 @@ enum DiskUninstallReview {
                 let row = Row(id: id, title: (path as NSString).lastPathComponent,
                     subtitle: path.hasPrefix(home + "/Library/") ? String(path.dropFirst((home + "/Library/").count)) : path,
                     trailing: ByteFormat.string(size), paths: [path],
-                    unavailableReason: candidate == nil ? (shared ? loc("Used by other apps") : path.hasPrefix(home + "/Library/") ? loc("Protected or unreadable data") : loc("Outside your user Library")) : nil)
+                    unavailableReason: candidate == nil ? (shared ? loc("Used by other apps") : path.hasPrefix(home + "/Library/") ? loc("Protected or unreadable data · preserved") : loc("Outside your user Library · preserved")) : nil)
                 items[owner, default: []].append(Item(row: row, bytes: size, category: category, selectable: candidate != nil))
                 if candidate != nil {
                     choices[id] = size; names[id] = path
@@ -122,14 +129,15 @@ enum DiskUninstallReview {
             for category in Category.allCases {
                 let values = items[owner, default: []].filter { $0.category == category }
                 guard !values.isEmpty else { continue }
-                let reason = values.contains(where: \.selectable) ? nil : values.first?.row.unavailableReason
+                let reason = values.contains(where: \.selectable) ? nil : preservationReason(values)
                 // Sections also retain preserved rows so every category has a real detail inventory.
                 sections.append(.init(id: categoryID(owner, category), title: category.title, rows: values.map { $0.row.id },
                     all: category == .startup, unavailableReason: reason))
             }
             let optional = items[owner, default: []].filter(\.selectable).map { $0.row.id }
+            let preserved = items[owner, default: []]
             sections.append(.init(id: dataSectionID(owner), title: loc("\(app.owner.name) app data"), rows: optional,
-                                  unavailableReason: optional.isEmpty ? loc("No app data to remove") : nil))
+                                  unavailableReason: optional.isEmpty ? (preserved.isEmpty ? loc("No app data to remove") : preservationReason(preserved)) : nil))
         }
         let selection = Selection(action: action, choices: choices, checked: checked, sections: sections,
             noteNames: names, note: message.replacingOccurrences(of: "%", with: "%%") + "\n\n" + loc("Selected app data: %@"),
@@ -158,6 +166,12 @@ enum DiskUninstallReview {
 
     static func categoryID(_ owner: String, _ category: Category) -> String { "uninstall-category:" + owner + ":" + category.rawValue }
     static func dataSectionID(_ owner: String) -> String { "uninstall-all-data:" + owner }
+
+    private static func preservationReason(_ items: [Item]) -> String? {
+        let reasons = Set(items.compactMap { $0.row.unavailableReason })
+        if reasons.count == 1 { return reasons.first }
+        return loc("Data preserved")
+    }
 
     private static func isEmptyDirectory(_ path: String) -> Bool {
         guard let directory = opendir(path) else { return false }

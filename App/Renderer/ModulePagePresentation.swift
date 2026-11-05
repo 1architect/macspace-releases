@@ -157,10 +157,7 @@ struct ModuleSectionHeader: View {
                 InfoTitle(title: title, info: help)
             }
         } else {
-            HStack(spacing: 6) {
-                InfoTitle(title: title, info: help)
-                if let part, let reason = choice?.unavailableReason(part) { BadgeView(badge: Badge(reason, .info)) }
-            }
+            InfoTitle(title: title, info: help)
         }
     }
 }
