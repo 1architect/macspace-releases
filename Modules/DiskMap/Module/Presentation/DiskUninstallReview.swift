@@ -112,7 +112,7 @@ enum DiskUninstallReview {
                 let row = Row(id: id, title: (path as NSString).lastPathComponent,
                     subtitle: path.hasPrefix(home + "/Library/") ? String(path.dropFirst((home + "/Library/").count)) : path,
                     trailing: ByteFormat.string(size), paths: [path],
-                    unavailableReason: candidate == nil ? (shared ? loc("Used by other apps") : path.hasPrefix(home + "/Library/") ? loc("Protected or unreadable data · preserved") : loc("Outside your user Library · preserved")) : nil)
+                    unavailableReason: candidate == nil ? (shared ? loc("Used by other apps") : path.hasPrefix(home + "/Library/") ? loc("Protected or unreadable data") : loc("Outside your user Library")) : nil)
                 items[owner, default: []].append(Item(row: row, bytes: size, category: category, selectable: candidate != nil))
                 if candidate != nil {
                     choices[id] = size; names[id] = path

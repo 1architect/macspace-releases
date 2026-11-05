@@ -8436,9 +8436,9 @@
   {
     "id" : "DiskMap|Outside your user Library",
     "key" : "Outside your user Library",
-    "kind" : "Other",
+    "kind" : "Row title",
     "places" : [
-
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8450,25 +8450,6 @@
       "ko" : "사용자 라이브러리 외부",
       "pt-BR" : "Fora da Biblioteca do seu usuário",
       "zh-Hans" : "位于用户资源库之外"
-    }
-  },
-  {
-    "id" : "DiskMap|Outside your user Library · preserved",
-    "key" : "Outside your user Library · preserved",
-    "kind" : "Row title",
-    "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
-    ],
-    "table" : "DiskMap",
-    "translations" : {
-      "de" : "Außerhalb deiner Benutzer-Library · bleibt erhalten",
-      "en" : "Outside your user Library · preserved",
-      "es" : "Fuera de tu biblioteca de usuario · conservado",
-      "fr" : "Hors de votre bibliothèque utilisateur · conservé",
-      "ja" : "ユーザーライブラリの外部 · 保持",
-      "ko" : "사용자 라이브러리 외부 · 보존됨",
-      "pt-BR" : "Fora da Biblioteca do seu usuário · preservado",
-      "zh-Hans" : "用户资源库之外 · 已保留"
     }
   },
   {
@@ -8666,9 +8647,9 @@
   {
     "id" : "DiskMap|Protected or unreadable data",
     "key" : "Protected or unreadable data",
-    "kind" : "Other",
+    "kind" : "Row title",
     "places" : [
-
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8680,25 +8661,6 @@
       "ko" : "보호되거나 읽을 수 없는 데이터",
       "pt-BR" : "Dados protegidos ou ilegíveis",
       "zh-Hans" : "受保护或无法读取的数据"
-    }
-  },
-  {
-    "id" : "DiskMap|Protected or unreadable data · preserved",
-    "key" : "Protected or unreadable data · preserved",
-    "kind" : "Row title",
-    "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:115"
-    ],
-    "table" : "DiskMap",
-    "translations" : {
-      "de" : "Geschützte oder nicht lesbare Daten · bleiben erhalten",
-      "en" : "Protected or unreadable data · preserved",
-      "es" : "Datos protegidos o ilegibles · conservados",
-      "fr" : "Données protégées ou illisibles · conservées",
-      "ja" : "保護されているか読み取れないデータ · 保持",
-      "ko" : "보호되거나 읽을 수 없는 데이터 · 보존됨",
-      "pt-BR" : "Dados protegidos ou ilegíveis · preservados",
-      "zh-Hans" : "受保护或无法读取的数据 · 已保留"
     }
   },
   {

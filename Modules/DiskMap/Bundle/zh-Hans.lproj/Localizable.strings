@@ -127,7 +127,6 @@
 "Other files" = "其他文件";
 "Other formats" = "其他格式";
 "Outside your user Library" = "位于用户资源库之外";
-"Outside your user Library · preserved" = "用户资源库之外 · 已保留";
 "PDF documents" = "PDF 文档";
 "Photo libraries" = "照片图库";
 "Photos & Video" = "照片与视频";
@@ -139,7 +138,6 @@
 "Projects & Development" = "项目与开发";
 "Protected and other disk usage" = "受保护数据及其他磁盘用量";
 "Protected or unreadable data" = "受保护或无法读取的数据";
-"Protected or unreadable data · preserved" = "受保护或无法读取的数据 · 已保留";
 "Protected system component; cannot be removed here." = "受保护的系统组件，无法在此移除。";
 "Quit the app before uninstalling it." = "请先退出应用再卸载。";
 "Quit the selected apps before uninstalling them." = "请先退出选中的 App，再卸载。";

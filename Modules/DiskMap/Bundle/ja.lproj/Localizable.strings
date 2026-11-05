@@ -127,7 +127,6 @@
 "Other files" = "その他のファイル";
 "Other formats" = "その他の形式";
 "Outside your user Library" = "ユーザーライブラリの外部";
-"Outside your user Library · preserved" = "ユーザーライブラリの外部 · 保持";
 "PDF documents" = "PDF書類";
 "Photo libraries" = "写真ライブラリ";
 "Photos & Video" = "写真とビデオ";
@@ -139,7 +138,6 @@
 "Projects & Development" = "プロジェクトと開発";
 "Protected and other disk usage" = "保護されたデータとその他のディスク使用量";
 "Protected or unreadable data" = "保護されているか読み取れないデータ";
-"Protected or unreadable data · preserved" = "保護されているか読み取れないデータ · 保持";
 "Protected system component; cannot be removed here." = "保護されたシステム構成要素のため、ここでは削除できません。";
 "Quit the app before uninstalling it." = "アンインストールする前にアプリを終了してください。";
 "Quit the selected apps before uninstalling them." = "選択したアプリを終了してからアンインストールしてください。";

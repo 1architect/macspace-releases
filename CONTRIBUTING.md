@@ -92,7 +92,7 @@ What they do:
   drops a placeholder (`%@`, `%lld`, `%%`) from the English text, or if an entry does not have exactly seven translations.
 - `--check` does the same and then builds the whole package with the compiler's string extraction, in a temporary folder, so it
   takes a while. It lists every text the code shows that no table has, and it exits with an error when any is missing. It skips the
-  developer tools, the command-line tool and the helper, which stay in English. A format with no words to translate (`%@ · %@`)
+  developer tools, the command-line tool and the helper, which stay in English. A format with no words to translate (`%@, %@`)
   needs no entry.
 
 How a text reaches the screen:
@@ -221,7 +221,9 @@ Background continuation occupies the same action flag using `Row.activity`; keep
 second badge or successful completion flag for the same work. Matching background activity suppresses All done while preserving
 verified savings, history and failures. When no page action remains, the bottom button fades in place in a fixed-height dock;
 release footer space only after its departure completes, and scope footer layout animation to the scroll area.
-A progress fill replaces percentage text in action pills. No middle dots or ellipses in loading/cleaning labels.
+A progress fill replaces percentage text in action pills. Middle dots are forbidden in all user-facing app text, including labels,
+pills, tooltips, empty states and confirmations. Reuse existing wording. Loading/cleaning labels also omit ellipses.
+`Scripts/Localize.swift` rejects middle dots in English keys and translations; `--check` also checks source strings.
 
 **Targeted cleanup results.** Verify affected targets and reconcile their cached measurements, then return `ActionResult.presentation`
 with the updated tile and screen. Retain unrelated measurements. Do not deduct a volume free-space delta from an item's size:

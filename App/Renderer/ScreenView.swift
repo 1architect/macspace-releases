@@ -716,7 +716,7 @@ struct ActionDock: View {
             action.parameters["selectionToken"] = bulk.token
             if action.confirmation != nil {
                 let count = bulk.count == 1 ? String(localized: "1 selected file") : String(format: String(localized: "%lld selected files"), Int64(clamping: bulk.count))
-                action.confirmation?.message += "\n\n" + count + " · " + ByteFormat.string(bulk.bytes)
+                action.confirmation?.message += "\n\n" + count + "\n" + ByteFormat.string(bulk.bytes)
             }
         } else { action.parameters["ids"] = Selection.parameter(ids.sorted()) }
         if selection.bulk == nil, !selection.reviewed.isEmpty, let data = try? JSONEncoder().encode(selection.reviewed.filter { ids.contains($0.key) }) {

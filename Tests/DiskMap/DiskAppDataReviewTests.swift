@@ -44,7 +44,7 @@ final class DiskAppDataReviewTests: XCTestCase {
             let other = try XCTUnwrap(rows.first { $0.title == "Other app data" })
             XCTAssertNotNil(other.selectionSectionID)
             let section = try XCTUnwrap(page.selection?.sections.first { $0.id == other.selectionSectionID })
-            XCTAssertEqual(section.unavailableReason, "Outside your user Library · preserved")
+            XCTAssertEqual(section.unavailableReason, "Outside your user Library")
             XCTAssertEqual(section.rows, other.children.map(\.id))
             XCTAssertEqual(other.children.flatMap(\.paths), [external])
             XCTAssertTrue(other.children.allSatisfy { page.selection?.choices[$0.id] == nil })

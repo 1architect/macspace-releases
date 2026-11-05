@@ -118,7 +118,7 @@ public enum InfoText {
     public static func isList(_ text: String) -> Bool {
         text.split(separator: "\n").contains { line in
             let trimmed = line.drop { $0 == " " || $0 == "\t" }
-            if let first = trimmed.first, "•‣◦▪︎-–—*·".contains(first) { return true }
+            if let first = trimmed.first, "•‣◦▪︎-–—*\u{00B7}".contains(first) { return true }
             let digits = trimmed.prefix { $0.isNumber }
             guard !digits.isEmpty, let mark = trimmed.dropFirst(digits.count).first else { return false }
             return mark == "." || mark == ")"

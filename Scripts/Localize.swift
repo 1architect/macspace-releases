@@ -14,6 +14,7 @@ import Foundation
 let languages = ["pt-BR", "fr", "es", "de", "zh-Hans", "ja", "ko"]
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let source = root.appendingPathComponent("Localization")
+let middleDot = "\u{00B7}"
 
 func placeholders(_ text: String) -> [String] {
     let pattern = try! NSRegularExpression(pattern: "%(?:%|@|lld|llu|ld|d|lf|f)")
@@ -32,7 +33,11 @@ for file in tables.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
     let destination = name == "App" ? root.appendingPathComponent("App/Resources") : root.appendingPathComponent("Modules/\(name)/Bundle")
     guard FileManager.default.fileExists(atPath: destination.path) else { problems.append("\(name): no \(destination.path)"); continue }
     for (key, translations) in entries {
+        if key.contains(middleDot) { problems.append("\(name): \"\(key)\" contains a forbidden middle dot") }
         if translations.count != languages.count { problems.append("\(name): \"\(key)\" has \(translations.count) translations") }
+        for (language, translation) in zip(languages, translations) where translation.contains(middleDot) {
+            problems.append("\(name) \(language): \"\(translation)\" contains a forbidden middle dot")
+        }
         for (language, translation) in zip(languages, translations) where placeholders(translation) != placeholders(key) {
             problems.append("\(name) \(language): \"\(translation)\" does not keep the placeholders of \"\(key)\"")
         }
@@ -59,6 +64,22 @@ for file in tables.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
 // Every text the code shows, as the compiler extracts it (SwiftUI literals, String(localized:), the modules' loc(...)), must be in its
 // table. Developer-only views (the design tools, the debug remote), the CLI and the helper are not translated.
 if CommandLine.arguments.contains("--check") {
+    // Check plain runtime strings too, including separators built by concatenation,
+    // which the compiler's localized-string extraction may not report.
+    for directory in ["App", "Modules", "Platform", "Sdk"] {
+        guard let files = FileManager.default.enumerator(at: root.appendingPathComponent(directory), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let contents = try String(contentsOf: file, encoding: .utf8)
+            for (line, text) in contents.components(separatedBy: .newlines).enumerated()
+                where text.contains(middleDot) && text.contains("\"") && !text.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                problems.append("\(directory): \(file.lastPathComponent):\(line + 1) contains a forbidden middle dot in a source string")
+            }
+        }
+    }
+    if !problems.isEmpty {
+        FileHandle.standardError.write((problems.joined(separator: "\n") + "\n").data(using: .utf8)!)
+        exit(1)
+    }
     let output = FileManager.default.temporaryDirectory.appendingPathComponent("macspace-strings-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
     let build = Process()
@@ -84,7 +105,7 @@ if CommandLine.arguments.contains("--check") {
         for case let entries as [[String: Any]] in (data["tables"] as! [String: Any]).values {
             for entry in entries {
                 let key = entry["key"] as! String
-                // Formats with no words to translate ("%@ · %@") read the same in every language.
+                // Formats with no words to translate ("%@, %@") read the same in every language.
                 guard key.replacingOccurrences(of: "%@", with: "").replacingOccurrences(of: "%lld", with: "").range(of: "[A-Za-z]{2}", options: .regularExpression) != nil,
                       known[table]?.contains(key) != true else { continue }
                 problems.append("\(table): \"\(key)\" (\(path)) has no translation")
