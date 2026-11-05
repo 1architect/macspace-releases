@@ -27,7 +27,10 @@ final class DiskFileSelectionTests: XCTestCase {
         XCTAssertEqual(selection.bulkResolver, "selection:")
         XCTAssertEqual(selection.choices, [DiskMapScreenBuilder.fileID(owned.path): 4096])
         XCTAssertTrue(selection.checked.isEmpty)
-        XCTAssertEqual(selection.action.id, "freeFiles")
+        XCTAssertEqual(selection.action.id, "reviewFiles")
+        XCTAssertEqual(selection.action.pageID, DiskFileReview.destination)
+        XCTAssertNil(selection.action.confirmation)
+        XCTAssertTrue(selection.action.requires.isEmpty)
         XCTAssertEqual(Selection.ids(Selection.parameter(Array(selection.choices.keys))), Array(selection.choices.keys))
         for file in [owned, protected] {
             let row = DiskMapScreenBuilder.fileRow(file)

@@ -151,6 +151,7 @@
 "Review before freeing" = "清理前请检查";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "在系统数据中查看可重新生成的工具缓存。保留源项目和个人文件。";
 "Review selected apps" = "检查选中的 App";
+"Review selected files" = "检查所选文件";
 "Reviewing selected files" = "正在检查所选文件";
 "Saved app state" = "已存储的应用状态";
 "Saved application state" = "保存的应用状态";
@@ -161,6 +162,7 @@
 "Selected app data will be permanently deleted." = "选中的 App 数据将被永久删除。";
 "Selected app data: %@" = "选中的 App 数据：%@";
 "Selected apps: %@" = "所选 App：%@";
+"Selected files" = "所选文件";
 "Selected files changed or are open. Review them again." = "所选文件已更改或正在打开。请重新检查。";
 "Selected files changed or are unavailable. Review your selection again." = "所选文件已更改或不可用。请重新检查选择。";
 "Shared data" = "共享数据";

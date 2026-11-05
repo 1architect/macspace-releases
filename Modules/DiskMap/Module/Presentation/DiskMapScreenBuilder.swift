@@ -158,8 +158,6 @@ enum DiskMapScreenBuilder {
             action.parameters["id"] = id
             action.parameters["reviewed"] = reviewed
             action.parameters["origin"] = selection.origins[id]
-            // The shared confirmation retains the configured Trash/permanent-deletion semantics and names the target.
-            action.confirmation?.message += "\n\n" + FileReviewPolicy.livePath(file.path)
             deletion = action
         }
         return GraphContextActions(paths: [FileReviewPolicy.livePath(file.path)], delete: deletion)
@@ -288,10 +286,7 @@ enum DiskMapScreenBuilder {
             guard let proof = file.duplicateVerification, let data = try? JSONEncoder().encode(proof) else { return nil }
             return (fileID(file.path), String(decoding: data, as: UTF8.self))
         }, uniquingKeysWith: { first, _ in first })
-        let trash = FileRemovalSettings.movesToTrash()
-        return Selection(action: Action(id: "freeFiles", title: loc("Free selected"), parameters: ["trash": trash ? "1" : "0"],
-            confirmation: Confirmation(title: loc("Free the selected files?"), message: trash ? loc("The selected files will be moved to Trash.") : loc("This permanently deletes the selected files."), confirmTitle: trash ? loc("Move to Trash") : loc("Delete")),
-            requires: [.fullDiskAccess], workingTitle: loc("Freeing space")),
+        return Selection(action: Action(id: "reviewFiles", title: loc("Review selected files"), pageID: DiskFileReview.destination),
             choices: Dictionary(candidates.filter { reviewed[fileID($0.path)] != nil }.map { (fileID($0.path), $0.bytes) }, uniquingKeysWith: { first, _ in first }),
             scope: "disk-files", partial: true, session: true, reviewed: reviewed, origins: origins, bulkResolver: "selection:")
     }

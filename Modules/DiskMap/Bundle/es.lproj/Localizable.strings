@@ -151,6 +151,7 @@
 "Review before freeing" = "Revisar antes de liberar";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "Revisa las cachés regenerables en Datos del sistema. Se conservan los proyectos y archivos personales.";
 "Review selected apps" = "Revisar apps seleccionadas";
+"Review selected files" = "Revisar archivos seleccionados";
 "Reviewing selected files" = "Revisando archivos seleccionados";
 "Saved app state" = "Estado guardado de la app";
 "Saved application state" = "Estado guardado de aplicaciones";
@@ -161,6 +162,7 @@
 "Selected app data will be permanently deleted." = "Los datos de app seleccionados se eliminarán permanentemente.";
 "Selected app data: %@" = "Datos de app seleccionados: %@";
 "Selected apps: %@" = "Apps seleccionadas: %@";
+"Selected files" = "Archivos seleccionados";
 "Selected files changed or are open. Review them again." = "Los archivos seleccionados cambiaron o están abiertos. Revísalos de nuevo.";
 "Selected files changed or are unavailable. Review your selection again." = "Los archivos seleccionados cambiaron o no están disponibles. Revisa tu selección de nuevo.";
 "Shared data" = "Datos compartidos";

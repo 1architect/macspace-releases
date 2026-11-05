@@ -21,13 +21,13 @@ extension EnvironmentValues {
     @Entry var graphContextMenusEnabled = true
 }
 
-/// Modules may omit confirmation metadata, but can never omit confirmation for a graph's Delete command.
+/// Navigation actions review the item before asking for destructive confirmation.
 enum GraphMenuPolicy {
     static func deletion(_ action: Action?, label: String) -> Action? {
         guard var action else { return nil }
         action.title = String(localized: "Delete")
         action.role = .destructive
-        if action.confirmation == nil {
+        if action.pageID == nil, action.confirmation == nil {
             action.confirmation = Confirmation(title: String(localized: "Delete \(label)?"),
                 message: String(localized: "Confirm deletion of this item."), confirmTitle: String(localized: "Delete"))
         }

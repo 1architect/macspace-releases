@@ -257,6 +257,7 @@ actor DiskStore {
     func pinSelection(token: String) async throws { try await selections.pin(token: token) }
     func unpinSelection(token: String) async { await selections.unpin(token: token) }
     func selectionSummary(token: String) async throws -> SelectionBulk { try await selections.summary(token: token) }
+    func retainSelectionReview(token: String) async throws { try await selections.retainReview(token: token) }
     func selectionFiles(token: String, after: String = "", limit: Int = 200) async throws -> [DiskFile] { try await selections.files(token: token, after: after, limit: limit) }
     func selectionContains(token: String, path: String) async throws -> Bool { try await selections.contains(token: token, path: path) }
     func resolveSelection(_ files: [DiskFile], token: String) async throws -> [DiskFile] {

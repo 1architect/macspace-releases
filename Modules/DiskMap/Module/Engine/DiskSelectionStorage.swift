@@ -21,6 +21,7 @@ actor DiskSelectionStorage {
     private var storage: DiskDatabase?
     private var pinned = Set<String>()
     private var accepted: String?
+    private var reviewTokens: [String] = []
     init(url: URL, root: String, home: String) { self.url = url; self.root = root; self.home = home }
     private func database() throws -> DiskDatabase {
         if let storage { return storage }
@@ -61,6 +62,14 @@ actor DiskSelectionStorage {
         return result
     }
     func contains(token: String, path: String) throws -> Bool { let db = try database(); return try selected(path, at: version(token, db: db), db: db) }
+    /// Review pagination keeps its original inventory while checkbox edits publish new versions.
+    /// Bound retained reviews just like the host's page cache; they do not lock selection edits.
+    func retainReview(token: String) throws {
+        _ = try version(token, db: database())
+        reviewTokens.removeAll { $0 == token }
+        reviewTokens.append(token)
+        if reviewTokens.count > 12 { reviewTokens.removeFirst(reviewTokens.count - 12) }
+    }
     func summary(token: String, visible: [String] = [], sections: [String] = []) throws -> SelectionBulk {
         let db = try database(), revision = try version(token, db: db)
         var count: UInt64 = 0, bytes: UInt64 = 0, checked: [String] = [], all: [String] = [], partial: [String] = []
@@ -184,7 +193,7 @@ actor DiskSelectionStorage {
         var expired: [String] = []
         try db.query("SELECT token FROM selected_versions ORDER BY version DESC LIMIT -1 OFFSET 2") {
             let token = DiskDatabase.text($0, 0)
-            if token != accepted && !pinned.contains(token) { expired.append(token) }
+            if token != accepted && !pinned.contains(token) && !reviewTokens.contains(token) { expired.append(token) }
         }
         for token in expired { try db.query("DELETE FROM selected_versions WHERE token=?", [.text(token)]) }
         try db.execute("DELETE FROM selected_rows WHERE last IS NOT NULL AND last<=(SELECT MIN(version) FROM selected_versions)")

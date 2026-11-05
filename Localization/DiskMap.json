@@ -1960,5 +1960,23 @@
   "数据已保留",
   "データを保持",
   "데이터 보존됨"
+ ],
+ "Review selected files": [
+  "Revisar arquivos selecionados",
+  "Vérifier les fichiers sélectionnés",
+  "Revisar archivos seleccionados",
+  "Ausgewählte Dateien prüfen",
+  "检查所选文件",
+  "選択したファイルを確認",
+  "선택한 파일 검토"
+ ],
+ "Selected files": [
+  "Arquivos selecionados",
+  "Fichiers sélectionnés",
+  "Archivos seleccionados",
+  "Ausgewählte Dateien",
+  "所选文件",
+  "選択したファイル",
+  "선택한 파일"
  ]
 }

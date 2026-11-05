@@ -162,6 +162,11 @@ public struct DiskMapModule: MacSpaceModule {
     public func page(id: String, context: ModuleContext) async -> Screen? { await page(id: id, context: context, progress: { _ in }) }
     public func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
         if let request = ActionPageRequest(pageID: id) {
+            if request.destination == DiskFileReview.destination {
+                let page = await fileReview(parameters: request.parameters)
+                progress(1)
+                return page
+            }
             guard request.destination == DiskUninstallBatch.reviewDestination else { return nil }
             let index = await store.navigation().index
             // Review is navigation over the already presented catalog. Destructive execution below
@@ -238,6 +243,40 @@ public struct DiskMapModule: MacSpaceModule {
         }
         if id == "app-data-review" { return DiskMapScreenBuilder.leftoversPage(await inventory.navigation(index)) }
         return nil
+    }
+
+    private func fileReview(parameters: [String: String]) async -> Screen {
+        do {
+            if let id = parameters["id"], let reviewed = parameters["reviewed"] {
+                let index = await store.navigation().index
+                guard let files = await store.selectedFiles([id], folder: index.root, reviewed: [id: reviewed],
+                    origins: parameters["origin"].map { [id: $0] } ?? [:]), let file = files.first, files.count == 1 else {
+                    return DiskFileReview.unavailable(loc("Selected files changed or are unavailable. Review your selection again."))
+                }
+                return DiskFileReview.single(file, parameters: parameters)
+            }
+            let token: String
+            if let existing = parameters["selectionToken"] { token = existing }
+            else {
+                let ids = Selection.ids(parameters["ids"])
+                guard !ids.isEmpty,
+                      let encoded = parameters["reviewed"],
+                      let reviewed = try? JSONDecoder().decode([String: String].self, from: Data(encoded.utf8)) else {
+                    return DiskFileReview.unavailable(loc("No files are selected."))
+                }
+                let origins = parameters["origins"].flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) } ?? [:]
+                token = try await store.selection(.init(ids: ids, reviewed: reviewed, origins: origins)).token
+            }
+            try await store.retainSelectionReview(token: token)
+            let files = try await store.selectionFiles(token: token, after: parameters["after"] ?? "")
+            let bulk = try await store.selection(.init(token: token, operation: "membership", visible: files.map { DiskFileRemoval.id($0.path) }))
+            var next: String?
+            if let last = files.last, try await !store.selectionFiles(token: token, after: last.path, limit: 1).isEmpty {
+                next = ActionPageRequest(destination: DiskFileReview.destination,
+                    parameters: ["selectionToken": token, "after": last.path]).pageID
+            }
+            return DiskFileReview.screen(files: files, bulk: bulk, next: next)
+        } catch { return DiskFileReview.unavailable(error.localizedDescription) }
     }
     /// Fresh metadata establishes eligibility; every removal keeps the frozen selection's original identity and proof.
     static func reviewedSelection(_ current: [DiskFile], original: [DiskFile]) -> [DiskFile]? {

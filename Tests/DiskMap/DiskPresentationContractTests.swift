@@ -36,8 +36,9 @@ final class DiskPresentationContractTests: XCTestCase {
         XCTAssertEqual(deletion.id, "deleteGraphFile")
         XCTAssertEqual(deletion.parameters["id"], DiskMapScreenBuilder.fileID(eligible.path))
         XCTAssertEqual(deletion.parameters["reviewed"], selection.reviewed[DiskMapScreenBuilder.fileID(eligible.path)])
-        XCTAssertTrue(deletion.confirmation?.message.contains(eligible.path) == true)
-        XCTAssertEqual(deletion.requires, [.fullDiskAccess])
+        XCTAssertEqual(deletion.pageID, DiskFileReview.destination)
+        XCTAssertNil(deletion.confirmation)
+        XCTAssertTrue(deletion.requires.isEmpty)
         let managed = file("Pictures/Photos.photoslibrary/data")
         XCTAssertNil(DiskMapScreenBuilder.fileContextActions(managed, selection: DiskMapScreenBuilder.fileSelection([managed], open: [:])).delete)
         var changed = eligible; changed.identity = nil

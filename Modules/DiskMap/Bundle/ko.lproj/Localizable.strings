@@ -151,6 +151,7 @@
 "Review before freeing" = "정리 전 검토";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "시스템 데이터에서 다시 생성 가능한 도구 캐시를 검토하세요. 소스 프로젝트와 개인 파일은 보존됩니다.";
 "Review selected apps" = "선택한 앱 검토";
+"Review selected files" = "선택한 파일 검토";
 "Reviewing selected files" = "선택한 파일 검토 중";
 "Saved app state" = "저장된 앱 상태";
 "Saved application state" = "저장된 응용 프로그램 상태";
@@ -161,6 +162,7 @@
 "Selected app data will be permanently deleted." = "선택한 앱 데이터를 영구적으로 삭제합니다.";
 "Selected app data: %@" = "선택한 앱 데이터: %@";
 "Selected apps: %@" = "선택한 앱: %@";
+"Selected files" = "선택한 파일";
 "Selected files changed or are open. Review them again." = "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요.";
 "Selected files changed or are unavailable. Review your selection again." = "선택한 파일이 변경되었거나 사용할 수 없습니다. 선택 항목을 다시 검토하세요.";
 "Shared data" = "공유 데이터";

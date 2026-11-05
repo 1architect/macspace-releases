@@ -151,6 +151,7 @@
 "Review before freeing" = "削除前に確認";
 "Review rebuildable tool caches in System Data. Source projects and personal files are preserved." = "システムデータで再生成できるツールキャッシュを確認します。ソースと個人ファイルは保持されます。";
 "Review selected apps" = "選択したアプリを確認";
+"Review selected files" = "選択したファイルを確認";
 "Reviewing selected files" = "選択したファイルを確認中";
 "Saved app state" = "保存されたアプリ状態";
 "Saved application state" = "保存されたアプリの状態";
@@ -161,6 +162,7 @@
 "Selected app data will be permanently deleted." = "選択したアプリデータを完全に削除します。";
 "Selected app data: %@" = "選択したアプリデータ：%@";
 "Selected apps: %@" = "選択したアプリ：%@";
+"Selected files" = "選択したファイル";
 "Selected files changed or are open. Review them again." = "選択したファイルが変更されたか開かれています。再確認してください。";
 "Selected files changed or are unavailable. Review your selection again." = "選択したファイルが変更されたか利用できません。選択内容を再確認してください。";
 "Shared data" = "共有データ";

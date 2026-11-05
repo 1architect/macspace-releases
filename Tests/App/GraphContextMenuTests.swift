@@ -3,6 +3,14 @@ import MacSpaceSdk
 @testable import MacSpaceApp
 
 final class GraphContextMenuTests: XCTestCase {
+    func testReviewNavigationDoesNotAskForConfirmationBeforeOpeningThePage() throws {
+        let action = Action(id: "reviewFile", title: "Review", parameters: ["reviewed": "original"], pageID: "review")
+        let deletion = try XCTUnwrap(GraphMenuPolicy.deletion(action, label: "File.zip"))
+        XCTAssertEqual(deletion.pageID, "review")
+        XCTAssertEqual(deletion.parameters, action.parameters)
+        XCTAssertNil(deletion.confirmation)
+    }
+
     func testDeletionAlwaysHasADestructiveConfirmationAndKeepsItsReviewedTargetAndPermissions() throws {
         let original = Action(id: "deleteFile", title: "Remove", parameters: ["target": "reviewed"], requires: [.fullDiskAccess])
         let deletion = try XCTUnwrap(GraphMenuPolicy.deletion(original, label: "File.zip"))
