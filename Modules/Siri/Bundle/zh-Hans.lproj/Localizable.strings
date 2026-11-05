@@ -59,6 +59,7 @@
 "Free" = "释放";
 "Free %@" = "释放 %@";
 "Free %@?" = "释放 %@？";
+"Free now" = "立即释放";
 "Free switched-off features' models automatically" = "自动释放已关闭功能的模型";
 "Free up to %@" = "最多释放 %@";
 "Free up to %@?" = "最多释放 %@？";

@@ -156,16 +156,8 @@ public struct SiriModule: MacSpaceModule {
     /// Automatic cleanup: released Apple Intelligence models and other system assets macOS no longer needs.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
         let snapshot = await store.snapshot()
-        let offerable = (snapshot.purgeableAssetsBytes ?? 0) >= SiriScreenBuilder.purgeThreshold && !snapshot.assetsRetrying
-        guard !snapshot.isVirtualMachine, offerable || Self.releasedModelsOnDisk(snapshot), !(await ModelPurger.shared.isRunning) else { return nil }
-        let store = self.store
-        let outcome = PurgeRun(service: CacheDeleteService.mobileAsset).run { freed in
-            Self.recordBackground(freed, summary: loc("Released Apple Intelligence models"))
-            await store.invalidate()
-        }
-        await store.invalidate()
-        guard outcome.error == nil else { return nil }
-        return CleanupReport(freedBytes: outcome.freed, summary: loc("Released Apple Intelligence models and unused system assets"), details: PurgeRun.details(outcome))
+        guard !snapshot.isVirtualMachine, !(await ModelPurger.shared.isRunning) else { return nil }
+        return await CleanupBatch.automatic(screen: SiriScreenBuilder.screen(snapshot), context: context, perform: perform)
     }
 
     /// Off and not being released by `ModelAutoReleaser` (which purges itself), with models still on disk.

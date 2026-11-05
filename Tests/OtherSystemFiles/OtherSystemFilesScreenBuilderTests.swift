@@ -17,8 +17,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
 
     func testDashboardFreeUsesThePageCleanupAndDisappearsWhenUnavailableOrRetrying() {
         var available = snapshot(measured)
-        XCTAssertEqual(OtherSystemFilesScreenBuilder.tile(available).freeAction, OtherSystemFilesScreenBuilder.freeAction(available, prominent: true))
-        XCTAssertNotNil(OtherSystemFilesScreenBuilder.tile(available).freeAction)
+        XCTAssertNil(OtherSystemFilesScreenBuilder.tile(available).freeAction)
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.screen(available).cleanupTargets.first?.action.id, "purgeFiles")
         available.retrying = true
         XCTAssertNil(OtherSystemFilesScreenBuilder.tile(available).freeAction)
         XCTAssertNil(OtherSystemFilesScreenBuilder.tile(snapshot(nil)).freeAction)
@@ -139,11 +139,12 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         let snap = snapshot(measured)
         XCTAssertEqual(snap.freeableBytes, 4_888_453_120)
         let screen = OtherSystemFilesScreenBuilder.screen(snap)
-        XCTAssertEqual(screen.primary?.id, "purgeFiles")
-        XCTAssertNotNil(screen.primary?.confirmation, "freeing asks first")
+        XCTAssertNil(screen.primary)
+        XCTAssertNotNil(screen.cleanupTargets.first?.action.confirmation, "Selected cleanup retains confirmation metadata")
         guard case let .section(free)? = screen.widgets.first, case let .list(list) = free.widgets[0] else { return XCTFail() }
         XCTAssertEqual(list.rows.map(\.id), [CacheDeleteService.fsPurgeableData], "what can be freed has its own section, row by row")
-        XCTAssertEqual(list.rows[0].actions.map(\.id), ["purgeFiles"])
+        XCTAssertTrue(list.rows[0].actions.isEmpty)
+        XCTAssertEqual(list.rows[0].cleanup?.action.id, "purgeFiles")
         guard case let .list(kept)? = screen.widgets.last else { return XCTFail() }
         XCTAssertEqual(kept.rows.map(\.id), [CacheDeleteService.appContainerCaches, CacheDeleteService.fsPurgeableDocument,
                                              CacheDeleteService.quickLookThumbnails], "what macOS keeps is listed row by row, not in a group")
@@ -246,8 +247,8 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         let cloud = rows.filter { $0.id.hasPrefix("documents:") }
         guard case let .section(free)? = OtherSystemFilesScreenBuilder.freeNow(snap), case let .list(freeList) = free.widgets[0] else { return XCTFail() }
         XCTAssertEqual(freeList.rows.filter { $0.id.hasPrefix("documents:") }.count, 2, "each cloud service's downloads can be removed now")
-        XCTAssertEqual(cloud.map { $0.actions.first?.parameters["path"] }, snap.documents.map(\.path), "each row removes its own service's downloads")
-        XCTAssertNotNil(cloud.first?.actions.first?.confirmation)
+        XCTAssertEqual(cloud.map { $0.cleanup?.action.parameters["path"] }, snap.documents.map(\.path), "each row removes its own service's downloads")
+        XCTAssertNotNil(cloud.first?.cleanup?.action.confirmation)
         XCTAssertEqual(cloud.map(\.title), ["Dropbox files on this Mac", "GoogleDrive (me@example.com) files on this Mac"])
         XCTAssertTrue(cloud.allSatisfy { $0.children.isEmpty }, "no page inside a page")
         XCTAssertFalse(cloud.first?.detail?.contains("GB") == true, "no sizes or counts in its (i)")
@@ -273,7 +274,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         let tile = OtherSystemFilesScreenBuilder.tile(snap)
         XCTAssertEqual(tile.refreshAfter, 2)
         XCTAssertEqual(tile.status, "removing downloads 25%")
-        XCTAssertNotNil(OtherSystemFilesScreenBuilder.screen(snap).primary, "the app files can still be freed meanwhile")
+        XCTAssertTrue(OtherSystemFilesScreenBuilder.screen(snap).cleanupTargets.contains { $0.action.id == "purgeFiles" })
         snap.removing = [:]
         XCTAssertNil(OtherSystemFilesScreenBuilder.tile(snap).refreshAfter)
         XCTAssertEqual(OtherSystemFilesScreenBuilder.cloudRows(snap).first?.actions.first?.id, "removeDownloads")
@@ -336,7 +337,7 @@ final class OtherSystemFilesScreenBuilderTests: XCTestCase {
         XCTAssertTrue(OtherSystemFilesScreenBuilder.segments(snap).allSatisfy(\.items.isEmpty))
         guard case let .blocks(tile)? = OtherSystemFilesScreenBuilder.tile(snap).graphic else { return XCTFail() }
         XCTAssertTrue(tile.allSatisfy(\.items.isEmpty))
-        XCTAssertEqual(OtherSystemFilesScreenBuilder.screen(snap).hero?.segments, blocks)
+        XCTAssertEqual(OtherSystemFilesScreenBuilder.screen(snap).hero?.segments.map(\.id), blocks.map(\.id))
     }
 
     /// macOS's purge of app container caches is one figure here. The caches of third-party apps' containers are listed, and freed, on

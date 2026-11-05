@@ -519,3 +519,18 @@ final class AppCacheTests: XCTestCase {
         try fm.setAttributes([.creationDate: date], ofItemAtPath: url.path)
     }
 }
+
+extension AppCacheTests {
+    func testHostCacheDecisionsOverrideLegacyChoicesAndPreserveSectionIntent() {
+        var original = CacheChoices(chosen: ["old", "off"], all: ["recommended"])
+        let preferences = [CleanupTarget.preferenceKey(scope: "app-caches", id: "off"): false,
+                           CleanupTarget.preferenceKey(scope: "app-caches", id: "on"): true,
+                           CleanupTarget.preferenceKey(scope: "app-caches:sections", id: "recommended"): false,
+                           CleanupTarget.preferenceKey(scope: "app-caches:sections", id: "apps"): true,
+                           CleanupTarget.preferenceKey(id: "system-log"): true]
+        original = original.applying(preferences)
+        XCTAssertEqual(original.chosen, ["old", "on"])
+        XCTAssertEqual(original.all, ["apps"])
+        XCTAssertEqual(original.applying(preferences), original)
+    }
+}

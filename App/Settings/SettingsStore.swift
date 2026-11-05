@@ -11,6 +11,16 @@ public final class SettingsStore: @unchecked Sendable {
         self.defaults = defaults
     }
 
+    /// Store explicit true and false decisions. Temporarily missing rows retain their preferences.
+    public func cleanupChoices(module id: String) -> [String: Bool] {
+        defaults.dictionary(forKey: Self.key(id, "cleanupChoices")) as? [String: Bool] ?? [:]
+    }
+    public func saveCleanupChoices(module id: String, scope: String, visible: Set<String>, selected: Set<String>) {
+        var choices = cleanupChoices(module: id)
+        for target in visible { choices[CleanupTarget.preferenceKey(scope: scope, id: target)] = selected.contains(target) }
+        defaults.set(choices, forKey: Self.key(id, "cleanupChoices"))
+    }
+
     // MARK: Modules
 
     public func isEnabled(module id: String) -> Bool {

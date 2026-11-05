@@ -59,6 +59,7 @@
 "Free" = "확보";
 "Free %@" = "%@ 확보";
 "Free %@?" = "%@ 확보할까요?";
+"Free now" = "지금 확보";
 "Free switched-off features' models automatically" = "끈 기능의 모델 자동 정리";
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@?" = "최대 %@ 확보할까요?";

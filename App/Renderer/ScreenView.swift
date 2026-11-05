@@ -192,6 +192,7 @@ struct ScreenView: View {
         }
         .animation(Theme.push, value: groups.map(\.id))
         .environment(\.graphInteraction, GraphInteraction(handle: handle))
+        .environment(\.cleanupPreferences, handle.context().cleanupChoices)
         .environment(\.rowActivity, RowActivity(rowID: handle.runningRowID, action: handle.runningAction, progress: handle.progress, queued: handle.queuedRows, results: handle.rowResults, dismiss: handle.dismissRowResult))
         .environment(\.openGroup, GroupOpener(module: handle.id) { [handle] id in handle.pushGroup(id) })
         .modifier(ZoomReveal(index: 1, reveal: reveal))
@@ -704,7 +705,7 @@ struct ActionDock: View {
         let ids = handle.checked(group)
         guard selection.bulk?.unavailableReason == nil,
               selection.includedBytes != nil || (selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty) else { return nil }
-        var action = selection.action
+        var action = selection.action.id == CleanupBatch.actionID ? handle.cleanupAction(ids: ids) : selection.action
         let total = (selection.includedBytes ?? 0) + (selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +))
         // While the boxes are what the module suggests, the button says so ("Free recommended").
         let suggested = Set(selection.suggested).intersection(selection.choices.keys)

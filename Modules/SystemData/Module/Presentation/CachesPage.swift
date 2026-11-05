@@ -271,7 +271,7 @@ enum CachesPage {
             sections: sections,
             save: Action(id: "saveCacheChoice", title: loc("Free selected")),
             noteNames: Dictionary(choosable.filter(\.open).map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first }),
-            note: loc("Quits %@."))
+            note: loc("Quits %@."), persistenceKey: "app-caches")
         return group
     }
 

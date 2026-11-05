@@ -1339,5 +1339,14 @@
   "重新启动以释放 %@ 模型",
   "再起動して%@のモデルを解放",
   "재시동하여 모델 %@ 정리"
+ ],
+ "Free now": [
+  "Liberar agora",
+  "À libérer",
+  "Liberar ahora",
+  "Jetzt freigeben",
+  "立即释放",
+  "今すぐ解放",
+  "지금 확보"
  ]
 }

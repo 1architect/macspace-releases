@@ -95,6 +95,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The group page on top, if any.
     public var openGroup: String? { groupPath.last }
 
+    private var durableChoiceScopes: Set<String> = []
     @Published public private(set) var pages: [String: Screen] = [:]
     private var openingPage: Task<Void, Never>?
     private var pageIDs: [String: String] = [:]
@@ -327,7 +328,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     /// A page-wide selection and a legacy choosing group share one renderer and action dock.
     public func pageSelection(_ page: Screen, id: String) -> Row? {
-        guard var selection = page.selection else { return nil }
+        guard var selection = page.selection ?? cleanupSelection(page.cleanupTargets) else { return nil }
         func addHeaders(_ widgets: [ScreenWidget]) {
             for widget in widgets {
                 if case let .list(list) = widget, list.title != nil,
@@ -349,8 +350,16 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         return selectionGroup(Row(id: id, title: page.title, children: rows(page.widgets), selection: selection))
     }
     public func selectionGroup(_ group: Row) -> Row {
-        guard var selection = group.selection, let scope = selection.scope else { return group }
-        var group = group; group.id = scope
+        var group = group
+        if group.selection == nil { group.selection = cleanupSelection(cleanupTargets(in: group.children)) }
+        guard var selection = group.selection else { return group }
+        if let key = selection.persistenceKey {
+            selection.scope = selection.scope ?? "persistent:" + id + ":" + key
+            group.selection = selection
+        }
+        if selection.save != nil || selection.persistenceKey != nil { durableChoiceScopes.insert(selection.scope ?? group.id) }
+        guard let scope = selection.scope else { return group }
+        group.id = scope
         if selection.partial || selection.session {
             let visible = Set(group.children.map(\.id))
             let retained = (scopedChoices[scope] ?? [:]).filter { !visible.contains($0.key) || selection.choices[$0.key] != nil }
@@ -381,7 +390,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public var activeSelection: Row? {
         if let id = groupPath.last {
             if let page = pages[id], let selection = pageSelection(page, id: id) { return selection }
-            if let group = navigationRow(id), group.selection != nil { return selectionGroup(group) }
+            if let group = navigationRow(id), group.selection != nil || !cleanupTargets(in: group.children).isEmpty { return selectionGroup(group) }
         } else if let screen, let selection = pageSelection(screen, id: "screen:root") { return selection }
         return sessionGroup.map { group in
             var group = group
@@ -408,6 +417,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The rows checked on a group's page: the user's choice, or the module's suggestion, among the rows that can still be chosen.
     public func checked(_ group: Row) -> Set<String> {
         guard let selection = group.selection else { return [] }
+        if let key = selection.persistenceKey {
+            let preferences = settings.cleanupChoices(module: id)
+            return Set(selection.choices.keys.filter { preferences[CleanupTarget.preferenceKey(scope: key, id: $0)] ?? selection.checked.contains($0) })
+        }
         if let bulk = selection.bulk { return Set(bulk.checked).intersection(selection.choices.keys) }
         return selection.effectiveIDs(storedChecked(group))
     }
@@ -606,6 +619,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Keeps the choice for the page and, when the module keeps it (`Selection.save`), sends it, quietly.
     private func choose(_ ids: Set<String>, all: Set<String>, in group: Row) {
         invalidatePendingSelections()
+        if let selection = group.selection, let key = selection.persistenceKey {
+            settings.saveCleanupChoices(module: id, scope: key, visible: Set(selection.choices.keys), selected: ids)
+            settings.saveCleanupChoices(module: id, scope: key + ":sections", visible: Set(selection.sections.map(\.id)), selected: all)
+            durableChoiceScopes.insert(group.id)
+            chosen[group.id] = ids; chosenAll[group.id] = all
+            if selection.save == nil { return }
+        }
         if let selection = group.selection, selection.scope != nil, selection.save == nil {
             if selection.session {
                 sessionScopes.insert(group.id)
@@ -665,7 +685,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         for scope in Array(scopedChoices.keys) {
             scopedChoices[scope] = scopedChoices[scope]?.filter { !ids.contains($0.key) }
         }
-        for scope in Array(chosen.keys) {
+        for scope in Array(chosen.keys) where !durableChoiceScopes.contains(scope) {
             chosen[scope]?.subtract(ids)
         }
         for scope in Array(scopedReviewed.keys) { scopedReviewed[scope] = scopedReviewed[scope]?.filter { !ids.contains($0.key) } }
@@ -728,7 +748,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var refreshGeneration = 0
     /// Bumped by each action: a progress message that arrives after its action finished must not show again.
     private var actionGeneration = 0
-    private let settings: SettingsStore
+    let settings: SettingsStore
     private let permissions: any PermissionChecker
     private let privileged: (any PrivilegedChannel)?
     private let loader: Loader
@@ -757,7 +777,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     public func context() -> ModuleContext {
         ModuleContext(manifest: manifest, options: settings.optionStore(for: manifest), permissions: permissions, privileged: privileged,
-                      services: AppModuleServices(module: id, openPane: openPane))
+                      services: AppModuleServices(module: id, openPane: openPane), cleanupChoices: settings.cleanupChoices(module: id))
     }
 
     public func missingPermissions() -> [Permission] {
@@ -1119,7 +1139,20 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new }, rowID: rowID)
         let visibleIDs = activeSelection.map { Set($0.selection?.choices.keys.map { $0 } ?? []) } ?? []
         let completed = FinishedChoiceProgress(allowed: request.parameters["selectionToken"] == nil ? nil : visibleIDs)
-        let result = await module.perform(request, context: context()) { [weak self] update in
+        let operation: @Sendable (ActionRequest, ModuleContext, @escaping ProgressSink) async -> ActionResult
+        if request.actionID == CleanupBatch.actionID {
+            let ids = Set(Selection.ids(request.parameters["ids"]))
+            let current = currentCleanupTargets.filter { ids.contains($0.id) && $0.available }
+            let frozen = request.parameters["targets"].flatMap { try? JSONDecoder().decode([CleanupTarget].self, from: Data($0.utf8)) }
+            operation = { _, context, progress in
+                guard let targets = frozen, Set(targets.map(\.id)) == ids, Set(current.map(\.id)) == ids, !ids.isEmpty,
+                      targets.allSatisfy({ target in current.contains { $0.id == target.id && $0.action == target.action } }) else {
+                    return .failed(String(localized: "Selected cleanup items changed. Review your selection again."))
+                }
+                return await CleanupBatch.run(targets, automatic: false, context: context, progress: progress, perform: module.perform)
+            }
+        } else { operation = module.perform }
+        let result = await operation(request, context()) { [weak self] update in
             guard !quiet else { return }
             completed.record(update.finished)
             Task { @MainActor in
@@ -1142,7 +1175,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         // A success the user started is "All done" on the page (`ActionResult`), once its figures are in; anything else is the
         // button's text.
-        let continuesInRow = result.outcome == .succeeded && !result.restartRequired && result.presentation?.screen.activeRow(for: request) != nil
+        let batchContinues = request.actionID == CleanupBatch.actionID && result.message.isEmpty && result.presentation?.screen.cleanupTargets.contains(where: { !$0.available }) == true
+        let continuesInRow = result.outcome == .succeeded && !result.restartRequired && (batchContinues || result.presentation?.screen.activeRow(for: request) != nil)
         let celebrates = !quiet && rowID == nil && !continuesInRow && result.outcome == .succeeded && !result.restartRequired && (result.freedBytes != nil || result.removedBytes != nil || !result.message.isEmpty)
         if let rowID, !quiet {
             setRowResult(result.message.isEmpty || continuesInRow ? nil : result, for: rowID)

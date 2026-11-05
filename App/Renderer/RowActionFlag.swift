@@ -55,6 +55,9 @@ struct RowActionFlags: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            if row.cleanup != nil, let progress = row.activity {
+                StatusFlag(text: progress.message, tone: .neutral)
+            }
             ForEach(actions, id: \.id) { action in
                 RowActionFlag(action: action,
                               progress: needsAttention ? nil : row.activity ?? progress(action),

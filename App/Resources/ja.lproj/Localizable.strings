@@ -42,6 +42,8 @@
 "Check for Updates…" = "アップデートを確認…";
 "Check for updates automatically" = "アップデートを自動確認";
 "Clean automatically" = "自動的にクリーンアップ";
+"Cleaned selected items" = "選択した項目をクリーンアップしました";
+"Cleans the selected cleanup items in each module." = "各モジュールで選択したクリーンアップ項目を処理します。";
 "Cleanup" = "クリーンアップ";
 "Close" = "閉じる";
 "Close Window" = "ウインドウを閉じる";
@@ -65,6 +67,8 @@
 "Follow System" = "システムに合わせる";
 "Free" = "解放";
 "Free %@ of %@ downloads?" = "%@分の%@のダウンロードを解放しますか？";
+"Free selected" = "選択項目を解放";
+"Free the selected items?" = "選択した項目を解放しますか？";
 "Freed %@" = "%@を解放しました";
 "Freed in total" = "解放した合計";
 "Freeing in the background" = "バックグラウンドで解放中";
@@ -109,6 +113,7 @@
 "Needs %@" = "%@が必要";
 "Needs attention" = "確認が必要";
 "Needs macOS %@ or later." = "macOS %@以降が必要です。";
+"Needs permission for the selected cleanup." = "選択したクリーンアップには権限が必要です。";
 "Night" = "夜";
 "No module needs a permission." = "権限が必要なモジュールはありません。";
 "No modules are on" = "有効なモジュールはありません";
@@ -150,6 +155,7 @@
 "Restore" = "元に戻す";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。";
 "Restoring settings" = "設定を復元中";
+"Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
 "Selected files need review" = "選択したファイルの確認が必要です";
 "Settings" = "設定";
 "Settings › Permissions" = "設定 › 権限";
@@ -157,6 +163,7 @@
 "Settings…" = "設定…";
 "Shader Studio" = "シェーダースタジオ";
 "Show in Finder" = "Finderに表示";
+"Some selected items could not be cleaned." = "一部の選択項目をクリーンアップできませんでした。";
 "System" = "システム";
 "That cloud folder is no longer on this Mac" = "このクラウドフォルダはこのMacにありません";
 "The files stay in %@ and download again when you open them." = "ファイルは%@に残り、開くと再ダウンロードされます。";

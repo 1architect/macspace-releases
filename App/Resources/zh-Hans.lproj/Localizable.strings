@@ -42,6 +42,8 @@
 "Check for Updates…" = "检查更新…";
 "Check for updates automatically" = "自动检查更新";
 "Clean automatically" = "自动清理";
+"Cleaned selected items" = "已清理所选项目";
+"Cleans the selected cleanup items in each module." = "清理各模块中选定的清理项目。";
 "Cleanup" = "清理";
 "Close" = "关闭";
 "Close Window" = "关闭窗口";
@@ -65,6 +67,8 @@
 "Follow System" = "跟随系统";
 "Free" = "释放";
 "Free %@ of %@ downloads?" = "释放 %@ 的 %@ 下载？";
+"Free selected" = "释放所选内容";
+"Free the selected items?" = "释放所选项目？";
 "Freed %@" = "已释放 %@";
 "Freed in total" = "累计释放";
 "Freeing in the background" = "正在后台释放";
@@ -109,6 +113,7 @@
 "Needs %@" = "需要 %@";
 "Needs attention" = "需要处理";
 "Needs macOS %@ or later." = "需要 macOS %@ 或更高版本。";
+"Needs permission for the selected cleanup." = "所选清理需要权限。";
 "Night" = "夜间";
 "No module needs a permission." = "没有模块需要权限。";
 "No modules are on" = "没有已开启的模块";
@@ -150,6 +155,7 @@
 "Restore" = "还原";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。";
 "Restoring settings" = "正在还原设置";
+"Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Selected files need review" = "所选文件需要检查";
 "Settings" = "设置";
 "Settings › Permissions" = "设置 › 权限";
@@ -157,6 +163,7 @@
 "Settings…" = "设置…";
 "Shader Studio" = "着色器工作室";
 "Show in Finder" = "在访达中显示";
+"Some selected items could not be cleaned." = "部分所选项目无法清理。";
 "System" = "系统";
 "That cloud folder is no longer on this Mac" = "此云端文件夹已不在此 Mac 上";
 "The files stay in %@ and download again when you open them." = "文件保留在 %@，打开时会重新下载。";

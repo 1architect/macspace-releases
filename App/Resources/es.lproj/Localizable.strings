@@ -42,6 +42,8 @@
 "Check for Updates…" = "Buscar actualizaciones…";
 "Check for updates automatically" = "Buscar actualizaciones automáticamente";
 "Clean automatically" = "Limpiar automáticamente";
+"Cleaned selected items" = "Elementos seleccionados limpiados";
+"Cleans the selected cleanup items in each module." = "Limpia los elementos seleccionados para limpieza en cada módulo.";
 "Cleanup" = "Limpieza";
 "Close" = "Cerrar";
 "Close Window" = "Cerrar ventana";
@@ -65,6 +67,8 @@
 "Follow System" = "Seguir al sistema";
 "Free" = "Liberar";
 "Free %@ of %@ downloads?" = "¿Liberar %@ de descargas de %@?";
+"Free selected" = "Liberar seleccionados";
+"Free the selected items?" = "¿Liberar los elementos seleccionados?";
 "Freed %@" = "%@ liberados";
 "Freed in total" = "Liberado en total";
 "Freeing in the background" = "Liberando en segundo plano";
@@ -109,6 +113,7 @@
 "Needs %@" = "Requiere %@";
 "Needs attention" = "Requiere atención";
 "Needs macOS %@ or later." = "Requiere macOS %@ o posterior.";
+"Needs permission for the selected cleanup." = "La limpieza seleccionada necesita permiso.";
 "Night" = "Noche";
 "No module needs a permission." = "Ningún módulo necesita permisos.";
 "No modules are on" = "No hay módulos activados";
@@ -150,6 +155,7 @@
 "Restore" = "Restaurar";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.";
 "Restoring settings" = "Restaurando ajustes";
+"Selected cleanup items changed. Review your selection again." = "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.";
 "Selected files need review" = "Los archivos seleccionados necesitan revisión";
 "Settings" = "Ajustes";
 "Settings › Permissions" = "Ajustes › Permisos";
@@ -157,6 +163,7 @@
 "Settings…" = "Ajustes…";
 "Shader Studio" = "Shader Studio";
 "Show in Finder" = "Mostrar en el Finder";
+"Some selected items could not be cleaned." = "No se pudieron limpiar algunos elementos seleccionados.";
 "System" = "Sistema";
 "That cloud folder is no longer on this Mac" = "Esa carpeta de la nube ya no está en este Mac";
 "The files stay in %@ and download again when you open them." = "Los archivos se quedan en %@ y se vuelven a descargar al abrirlos.";

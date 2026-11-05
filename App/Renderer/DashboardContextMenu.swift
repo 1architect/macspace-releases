@@ -25,14 +25,6 @@ private struct DashboardMenu: View {
             }
         } label: { Label(String(localized: "Refresh"), systemImage: "arrow.clockwise") }
         .disabled(handle.isReloading || handle.isCleaning)
-        if let action = handle.tile?.freeAction {
-            Button {
-                Task { @MainActor in
-                    guard ConfirmationAlert.ask(action) else { return }
-                    _ = await handle.perform(action)
-                }
-            } label: { Label(String(localized: "Free"), systemImage: "sparkles") }
-            .disabled(handle.isReloading || handle.isCleaning)
-        }
+
     }
 }

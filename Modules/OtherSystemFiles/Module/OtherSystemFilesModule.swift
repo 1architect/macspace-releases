@@ -66,7 +66,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             await store.beginRemoval()
             let snapshot = await snapshot()
             guard let source = snapshot.documents.first(where: { $0.path == request.parameters["path"] }) else { return .failed(loc("That cloud folder is no longer on this Mac")) }
-            return CloudFileRows.start(source, moduleID: "com.macspace.other-system-files", moduleName: "Other System Files")
+            return CloudFileRows.start(source, moduleID: "com.macspace.other-system-files", moduleName: "Other System Files", automatic: request.parameters["automatic"] == "1")
         case "freeSnapshots":
             progress(ActionProgress(message: loc("Freeing space")))
             let estimate = await store.currentRawSnapshotsEstimate()
@@ -82,13 +82,10 @@ public struct OtherSystemFilesModule: MacSpaceModule {
         }
     }
 
-    /// Automatic cleanup: the purgeable app files, unless MacSpace is already asking macOS for them again.
+    /// Automatic cleanup uses the saved choices, current availability and the same guarded handlers as manual cleanup.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
-        let snapshot = await store.snapshot(maxAge: 0)
-        guard snapshot.freeableBytes >= OtherSystemFilesScreenBuilder.threshold, !snapshot.retrying else { return nil }
-        let purge = await purgeAndKeepAsking(progress: { _ in })
-        await store.invalidate()
-        return CleanupReport(freedBytes: purge.freed, summary: loc("Purgeable app files"), details: purge.result.details)
+        let snapshot = await snapshot(maxAge: 0)
+        return await CleanupBatch.automatic(screen: OtherSystemFilesScreenBuilder.screen(snapshot), context: context, perform: perform)
     }
 
     /// Purges, and when macOS keeps all or much of the files, asks it again in the background at the urgency of a critically full

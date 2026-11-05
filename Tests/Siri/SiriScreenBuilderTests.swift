@@ -215,7 +215,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.featureSettings = [.spatialPhotos: .init(state: .off, managedOff: true, requestedOff: true)]
         snap.phoneFeatures = .init(state: .off, managedOff: true, effective: [:], requestedOff: true)
         snap.featureModelBytes = [.phone: 371_400_000, .spatialPhotos: 100_000_000]
-        let free = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
+        let free = try XCTUnwrap(SiriScreenBuilder.screen(snap).cleanupTargets.first?.action)
         XCTAssertEqual(free.id, "freeFeatureModels")
         XCTAssertEqual(free.title, "Free \(ByteFormat.string(471_400_000))")
         snap.featureCleanupWaiting = [.phone, .spatialPhotos]
@@ -229,10 +229,10 @@ final class SiriScreenBuilderTests: XCTestCase {
         snap.cleaningFeatures = false
         snap.featureSettings[.siri] = nil
         snap.featureDownloading = [.phone, .spatialPhotos]
-        XCTAssertEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets", "being downloaded again: nothing to delete yet")
+        XCTAssertEqual(SiriScreenBuilder.screen(snap).cleanupTargets.first?.action.id, "purgeAssets", "being downloaded again: nothing to delete yet")
         snap.featureDownloading = []
         snap.featureModelBytes = [.phone: 16_000_000]
-        XCTAssertEqual(SiriScreenBuilder.screen(snap).primary?.id, "purgeAssets", "freed: the purge of unused assets comes back")
+        XCTAssertEqual(SiriScreenBuilder.screen(snap).cleanupTargets.first?.action.id, "purgeAssets", "freed: the purge of unused assets comes back")
     }
 
     /// A download comes in pieces: the switch keeps saying Downloading between them.
@@ -306,7 +306,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         let enable = try XCTUnwrap(SiriScreenBuilder.screen(snap).primary)
         XCTAssertEqual(enable.id, "enableAll")
         XCTAssertEqual(enable.parameters["ids"], "ai,siri,spatialPhotos")
-        XCTAssertEqual(SiriScreenBuilder.screen(self.snapshot(.protected, purgeable: 12_000_000_000)).primary?.id, "purgeAssets", "freeing comes first")
+        XCTAssertEqual(SiriScreenBuilder.screen(self.snapshot(.protected, purgeable: 12_000_000_000)).cleanupTargets.first?.action.id, "purgeAssets", "freeing comes first")
     }
 
     func testFeatureCleanupUsesTheStandardBadgeAndFastStatusPolling() {
@@ -454,7 +454,7 @@ final class SiriScreenBuilderTests: XCTestCase {
 
     func testPurgeIsTheMainActionAndModelsReleaseThemselves() throws {
         let ready = snapshot(.protected, purgeable: 12_000_000_000)
-        let purge = try XCTUnwrap(SiriScreenBuilder.screen(ready).primary)
+        let purge = try XCTUnwrap(SiriScreenBuilder.screen(ready).cleanupTargets.first?.action)
         XCTAssertEqual(purge.id, "purgeAssets")
         XCTAssertNotNil(purge.confirmation)
         XCTAssertNotEqual(SiriScreenBuilder.screen(snapshot(.protected, purgeable: 1_000)).primary?.id, "purgeAssets", "a few KB is not worth a button")
@@ -516,7 +516,7 @@ final class SiriScreenBuilderTests: XCTestCase {
         var snap = snapshot(.protected, accounts: [other("tester")], purgeable: 1_000_000_000)
         snap.releasingAutomatically = true
         let screen = SiriScreenBuilder.screen(snap)
-        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts"])
+        XCTAssertEqual(screen.widgets.map(\.id), ["status", "switch", "icloud", "accounts", "cleanup"])
     }
 }
 

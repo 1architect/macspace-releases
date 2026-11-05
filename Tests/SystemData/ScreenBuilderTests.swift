@@ -7,8 +7,8 @@ import MacSpaceSystemDataPrivileged
 final class SystemDataScreenBuilderTests: XCTestCase {
     func testDashboardFreeUsesTheSameReviewedCleanupAsThePage() {
         let available = snapshot(items: [], reports: 100_000_000)
-        XCTAssertEqual(SystemDataScreenBuilder.tile(available).freeAction, SystemDataScreenBuilder.cleanAll(available))
-        XCTAssertNotNil(SystemDataScreenBuilder.tile(available).freeAction?.confirmation)
+        XCTAssertNil(SystemDataScreenBuilder.tile(available).freeAction)
+        XCTAssertEqual(SystemDataScreenBuilder.screen(available).cleanupTargets.first?.action.id, "cleanReports")
         XCTAssertNil(SystemDataScreenBuilder.tile(snapshot(items: [])).freeAction)
     }
 
@@ -112,7 +112,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertNotNil(list.rows[0].actions[0].confirmation)
         XCTAssertNotNil(list.rows[2].actions[0].confirmation, "freeing reports asks first")
         XCTAssertEqual(list.rows[2].actions[0].title, "Free", "one verb")
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).primary?.id, "cleanAll")
+        XCTAssertNil(SystemDataScreenBuilder.screen(snap).primary)
+        XCTAssertEqual(Set(SystemDataScreenBuilder.screen(snap).cleanupTargets.map(\.id)), ["assets", "caches", "reports"])
         XCTAssertEqual(InfoText.violations(in: SystemDataScreenBuilder.screen(snap)), [])
         XCTAssertFalse(list.rows[2].detail?.contains(SystemDataScreenBuilder.reportCount(snap)) ?? false, "the count is the subtitle, not the (i)")
         XCTAssertEqual(SystemDataScreenBuilder.freeableBytes(snap), 1_000_000_000 + 12_000_000_000 + 4_000_000, "the open app's cache is not counted")
@@ -226,7 +227,8 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(blocks.first { $0.id == "macos" }?.items.map(\.paths), [["/x/logs"]])
         XCTAssertNil(blocks.first { $0.id == "unidentified" }?.group, "nothing to list")
         XCTAssertTrue(SystemDataScreenBuilder.blocks(snap).allSatisfy(\.items.isEmpty))
-        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).hero?.segments, blocks)
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).hero?.segments.map(\.id), blocks.map(\.id))
+        XCTAssertEqual(SystemDataScreenBuilder.screen(snap).cleanupTargets.first?.action.id, "freeCaches")
     }
 
     /// With System Settings' reading, the total is its System Data, and what no listed folder accounts for is a block of its own, so

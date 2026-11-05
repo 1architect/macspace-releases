@@ -37,7 +37,7 @@ public struct SystemDataModule: MacSpaceModule {
 
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
         guard var snapshot = await store.liveCloudSnapshot() else { return nil }
-        snapshot.choices = CacheChoices.load()
+        snapshot.choices = CacheChoices.load().applying(context.cleanupChoices)
         snapshot.logFloor = SystemLogFloor.load()
         snapshot.cleaner = CacheCleaner.read(context)
         return (SystemDataScreenBuilder.tile(snapshot), SystemDataScreenBuilder.screen(snapshot))
@@ -47,7 +47,7 @@ public struct SystemDataModule: MacSpaceModule {
     private func snapshot(maxAge: TimeInterval = SystemDataStore.defaultMaxAge, context: ModuleContext,
                           progress: LoadProgressSink? = nil) async -> SystemDataSnapshot {
         var snapshot = await store.snapshot(maxAge: maxAge, privileged: context.privileged, progress: progress)
-        snapshot.choices = CacheChoices.load()
+        snapshot.choices = CacheChoices.load().applying(context.cleanupChoices)
         snapshot.logFloor = SystemLogFloor.load()
         snapshot.cleaner = CacheCleaner.read(context)
         return snapshot
@@ -61,7 +61,7 @@ public struct SystemDataModule: MacSpaceModule {
         let original = await snapshot(maxAge: 600, context: context)
         await store.beginMutation()
         var result = await handle(request, snapshot: original, context: context, progress: progress)
-        if let updated = await store.reconcile(request, privileged: context.privileged, choices: CacheChoices.load(), cleaner: CacheCleaner.read(context)) {
+        if let updated = await store.reconcile(request, privileged: context.privileged, choices: CacheChoices.load().applying(context.cleanupChoices), cleaner: CacheCleaner.read(context)) {
             result.presentation = ModulePresentation(tile: SystemDataScreenBuilder.tile(updated), screen: SystemDataScreenBuilder.screen(updated))
         }
         return result
@@ -71,7 +71,7 @@ public struct SystemDataModule: MacSpaceModule {
         switch request.actionID {
         case "removeDownloads":
             guard let source = snapshot.cloudSources.first(where: { $0.path == request.parameters["path"] }) else { return .failed(loc("Already gone")) }
-            return CloudFileRows.start(source, moduleID: Self.moduleID, moduleName: "System Data")
+            return CloudFileRows.start(source, moduleID: Self.moduleID, moduleName: "System Data", automatic: request.parameters["automatic"] == "1")
         case "clean":
             guard let id = request.parameters["id"], let item = snapshot.report.items.first(where: { $0.id == id }) else {
                 return .failed(loc("Already gone"))
@@ -99,7 +99,7 @@ public struct SystemDataModule: MacSpaceModule {
         case "freeCaches":
             // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
             let ids = Set(Selection.ids(request.parameters["ids"]))
-            return await Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot, quitApps: true, progress: progress)
+            return await Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot, quitApps: request.parameters["automatic"] != "1", progress: progress)
         case "openCleaner":
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -129,16 +129,10 @@ public struct SystemDataModule: MacSpaceModule {
         }
     }
 
-    /// Automatic cleanup: what the main Free button frees (the caches chosen on the caches page, old reports, unused system assets).
-    /// Never the version history or anything else that cannot be undone.
+    /// Resolve the saved category and cache choices against the new reading; automatic cache work never quits apps.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
         let snapshot = await snapshot(maxAge: 0, context: context)
-        guard SystemDataScreenBuilder.cleanBytes(snapshot) >= SystemDataScreenBuilder.worthARow else { return nil }
-        // It quits no app: the open apps' caches wait for a Free the user confirms.
-        await store.beginMutation()
-        let cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: false, progress: { _ in })
-        _ = await store.reconcile(ActionRequest(actionID: "autoClean"), privileged: context.privileged, choices: snapshot.choices, cleaner: snapshot.cleaner)
-        return CleanupReport(freedBytes: cleaned.freed, summary: snapshot.cleaner == .macSpace ? loc("Caches, old reports and unused system assets") : loc("Old reports and unused system assets"), details: cleaned.details)
+        return await CleanupBatch.automatic(screen: SystemDataScreenBuilder.screen(snapshot), context: context, perform: perform)
     }
 
     /// Everything Free frees, measured on the volume over the whole run. The chosen caches of open apps go only when `quitApps` (the

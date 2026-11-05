@@ -24,7 +24,7 @@ enum OtherSystemFilesScreenBuilder {
                     reclaimableBytes: freeable >= threshold ? freeable : nil,
                     purgeableByService: [CacheDeleteService.fsPurgeableData: freeable],
                     // Read again every few seconds while downloads are being removed, so the row and the tile follow it.
-                    refreshAfter: snapshot.removing.isEmpty ? nil : 2, freeAction: freeAction(snapshot, prominent: true))
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
     }
 
     /// What is outside System Data, largest first: what macOS counts as purgeable (what MacSpace frees in the caution tone) and a
@@ -87,7 +87,7 @@ enum OtherSystemFilesScreenBuilder {
         }
         let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: blocksWithItems(snapshot),
                             footnote: loc("Files macOS deletes on its own when the disk runs low. System Settings counts this space as available."))
-        return Screen(title: loc("Other System Files"), hero: hero, primary: freeAction(snapshot, prominent: true), widgets: widgets)
+        return cleanupChoices(Screen(title: loc("Other System Files"), hero: hero, widgets: widgets), snapshot)
     }
 
     /// "Up to": the size is macOS's estimate, which can count more than macOS then deletes. No button while MacSpace is already
@@ -200,7 +200,7 @@ enum OtherSystemFilesScreenBuilder {
                                                           message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
                                                           confirmTitle: loc("Free")),
                                requires: [.privilegedHelper], workingTitle: loc("Freeing space")),
-                choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }))
+                choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }), persistenceKey: "backups:" + destination.id)
         }
         return group
     }

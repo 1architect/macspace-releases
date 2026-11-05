@@ -1,4 +1,5 @@
 import Foundation
+import MacSpaceSdk
 
 /// What the user chose on the caches page, kept between launches: the checked caches (nil until a box is clicked, when MacSpace's
 /// recommendation stands) and the sections whose header box is on (caches that join them later are checked too). The page's main
@@ -13,6 +14,24 @@ struct CacheChoices: Equatable, Sendable {
     static func load(_ defaults: UserDefaults = .standard) -> CacheChoices {
         CacheChoices(chosen: (defaults.array(forKey: chosenKey) as? [String]).map(Set.init),
                      all: Set(defaults.stringArray(forKey: allKey) ?? []))
+    }
+
+    /// Host preferences are written synchronously when a checkbox changes; the module save remains compatible with the CLI.
+    func applying(_ preferences: [String: Bool]) -> CacheChoices {
+        var result = self
+        var cacheValues: [String: Bool] = [:], sectionValues: [String: Bool] = [:]
+        for (key, value) in preferences {
+            guard let data = Data(base64Encoded: key), let identity = try? JSONDecoder().decode([String].self, from: data), identity.count == 2 else { continue }
+            if identity[0] == "app-caches" { cacheValues[identity[1]] = value }
+            if identity[0] == "app-caches:sections" { sectionValues[identity[1]] = value }
+        }
+        if !cacheValues.isEmpty {
+            var chosen = result.chosen ?? []
+            for (id, value) in cacheValues { if value { chosen.insert(id) } else { chosen.remove(id) } }
+            result.chosen = chosen
+        }
+        for (id, value) in sectionValues { if value { result.all.insert(id) } else { result.all.remove(id) } }
+        return result
     }
 
     func save(_ defaults: UserDefaults = .standard) {

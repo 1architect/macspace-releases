@@ -53,7 +53,7 @@ enum SiriScreenBuilder {
     static func tile(_ snapshot: SiriSnapshot) -> Tile {
         var tile = baseTile(snapshot)
         tile.refreshAfter = refreshAfter(snapshot)
-        tile.freeAction = snapshot.isVirtualMachine || freeingFeatures(snapshot) ? nil : freeFeatures(snapshot) ?? purge(snapshot)
+        tile.freeAction = nil
         // One switch for them all: on while any of the page's switches is on; flipped, it switches every one that can be flipped to
         // its position (`tileSwitch`).
         if !snapshot.isVirtualMachine, let action = tileSwitch(snapshot) {
@@ -192,7 +192,16 @@ enum SiriScreenBuilder {
         widgets.append(.toggles(switchList(snapshot)))
         widgets.append(.list(ListWidget(id: "icloud", title: loc("Sync to other devices"), rows: [cloudSyncRow(enabled: snapshot.cloudSyncEnabled)])))
         if let accounts = accountsSection(snapshot) { widgets.append(accounts) }
-        return Screen(title: loc("Siri & Apple Intelligence"), primary: primary(snapshot), layout: .singleColumn, widgets: widgets)
+        var action = primary(snapshot)
+        if let cleanup = freeFeatures(snapshot) ?? purge(snapshot), !freeingFeatures(snapshot) {
+            let features = featuresToFree(snapshot)
+            let bytes = cleanup.id == "freeFeatureModels" ? features.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +) : snapshot.purgeableAssetsBytes ?? 0
+            let row = Row(id: cleanup.id, title: cleanup.id == "freeFeatureModels" ? loc("Released Apple Intelligence models") : loc("Unused system assets"), trailing: ByteFormat.string(bytes))
+                .selectingCleanup(cleanup, bytes: bytes, defaultSelected: true)
+            widgets.append(.list(ListWidget(id: "cleanup", title: loc("Free now"), rows: [row])))
+            if action?.id == cleanup.id { action = nil }
+        }
+        return Screen(title: loc("Siri & Apple Intelligence"), primary: action, layout: .singleColumn, widgets: widgets)
     }
 
     /// The page's main button, as Debloat's: free the models of the features switched off when they are still on disk, else the

@@ -184,7 +184,7 @@ enum SystemDataScreenBuilder {
                     needsAttention: partialBanner(snapshot) != nil, graphic: .blocks(blocks(snapshot)),
                     reclaimableBytes: freeable >= worthARow ? freeable : nil,
                     purgeableByService: [CacheDeleteService.mobileAsset: snapshot.purgeableAssetsBytes ?? 0],
-                    refreshAfter: snapshot.removing.isEmpty ? nil : 2, freeAction: cleanAll(snapshot))
+                    refreshAfter: snapshot.removing.isEmpty ? nil : 2)
     }
 
     /// What fills System Data as blocks, largest first, with what can be freed split out as its own block in the caution tone (every
@@ -299,7 +299,7 @@ enum SystemDataScreenBuilder {
         if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let blocks = blocksWithItems(snapshot)
         let hero = UsageBar(id: "usage", title: loc("What fills System Data"), totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
-        return Screen(title: loc("System Data"), hero: hero, primary: cleanAll(snapshot), widgets: widgets)
+        return cleanupChoices(Screen(title: loc("System Data"), hero: hero, widgets: widgets), snapshot)
     }
 
     /// A section of rows as one group row (named after the section, its description behind the (i)), or its only row.

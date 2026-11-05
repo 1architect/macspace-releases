@@ -211,6 +211,8 @@ public struct NoModuleServices: ModuleServices {
 }
 
 public struct ModuleContext: Sendable {
+    public var cleanupChoices: [String: Bool]
+
     public var manifest: ModuleManifest
     public var options: any OptionStore
     public var permissions: any PermissionChecker
@@ -220,12 +222,13 @@ public struct ModuleContext: Sendable {
     public var services: any ModuleServices
 
     public init(manifest: ModuleManifest, options: any OptionStore, permissions: any PermissionChecker,
-                privileged: (any PrivilegedChannel)? = nil, services: any ModuleServices = NoModuleServices()) {
+                privileged: (any PrivilegedChannel)? = nil, services: any ModuleServices = NoModuleServices(), cleanupChoices: [String: Bool] = [:]) {
         self.manifest = manifest
         self.options = options
         self.permissions = permissions
         self.privileged = privileged
         self.services = services
+        self.cleanupChoices = cleanupChoices
     }
 }
 
@@ -275,9 +278,9 @@ public protocol MacSpaceModule: Sendable {
     /// Refresh only the visible lazy inventory when supported; existing modules retain their normal refresh.
     func invalidate(pageID: String?, context: ModuleContext) async
 
-    /// Automatic cleanup, run in the background from time to time when the user turned it on in Settings: free what is safe to free
-    /// without asking (what the page's main Clean action frees, never anything that cannot be undone or needs a decision). nil
-    /// when there was nothing to do. A module that takes part declares `autoClean` in its manifest.
+    /// Automatic cleanup resolves current cleanup targets against `context.cleanupChoices`. Only selected,
+    /// available targets declared for automatic execution run; handlers retain their normal preflight checks.
+    /// Ordinary file and uninstall selections are outside this contract. App-cache cleanup never quits apps automatically.
     func autoClean(context: ModuleContext) async -> CleanupReport?
 }
 

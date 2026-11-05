@@ -521,6 +521,7 @@ extension EnvironmentValues {
     @Entry var openGroup = GroupOpener(module: nil) { _ in }
     /// On the page of a group that lets the user choose (`Row.selection`): which rows have a box and which are checked.
     @Entry var rowChoice: RowChoice? = nil
+    @Entry var cleanupPreferences: [String: Bool] = [:]
     /// On a choosing page in parts (`Selection.sections`): the header boxes.
     @Entry var sectionChoice: SectionChoice? = nil
 }
@@ -701,6 +702,7 @@ struct RowView: View {
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
+    @Environment(\.cleanupPreferences) private var cleanupPreferences
     @Environment(\.sectionChoice) private var sectionChoice
 
     /// Drawn on the page already: a pill that comes now arrives with its motion (`RowBadges.arrives`).
@@ -726,7 +728,13 @@ struct RowView: View {
     /// items. Not a button: a button around the row would take the (i)'s click too.
     private var groupRow: some View {
         HStack(spacing: 10) {
-            if let section = row.selectionSectionID, let choice = sectionChoice, choice.hasRows(section) {
+            if let choice = rowChoice, choice.choices.contains(row.id) {
+                HeaderCheckbox(on: choice.checked.contains(row.id), mixed: false) { choice.toggle(row.id) }
+                    .frame(width: 14, height: 14).accessibilityLabel(row.title)
+            } else if let target = row.cleanup, !target.available {
+                HeaderCheckbox(on: target.isSelected(cleanupPreferences), mixed: false) { }
+                    .frame(width: 14, height: 14).disabled(true).accessibilityLabel(row.title)
+            } else if let section = row.selectionSectionID, let choice = sectionChoice, choice.hasRows(section) {
                 HeaderCheckbox(on: choice.isOn(section), mixed: choice.isMixed(section)) { choice.toggle(section) }
                     .frame(width: 14, height: 14).accessibilityLabel(row.title)
             }
@@ -770,6 +778,9 @@ struct RowView: View {
                 Toggle(row.title, isOn: Binding(get: { choice.checked.contains(row.id) }, set: { _ in choice.toggle(row.id) }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
+            } else if let target = row.cleanup, !target.available {
+                HeaderCheckbox(on: target.isSelected(cleanupPreferences), mixed: false) { }
+                    .frame(width: 14, height: 14).disabled(true).accessibilityLabel(row.title)
             }
             appIcon
             // Finder follows the size at the right edge throughout the app.

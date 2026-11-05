@@ -28,12 +28,12 @@ public enum CloudFileRows {
     }
 
     /// Validate the provider again; individual file eligibility is rechecked by the existing eviction mechanism.
-    public static func start(_ source: PurgeableDocuments.Source, moduleID: String, moduleName: String) -> ActionResult {
+    public static func start(_ source: PurgeableDocuments.Source, moduleID: String, moduleName: String, automatic: Bool = false) -> ActionResult {
         guard PurgeableDocuments.isCloudFolder(source.path) else { return .failed(String(localized: "That cloud folder is no longer on this Mac")) }
         CloudDownloadRemovals.shared.start(URL(fileURLWithPath: source.path)) { removal, freed in
             var summary = "\(source.name) downloads: \(removal.files) file(s) now only in the cloud"
             if removal.kept > 0 { summary += ", \(removal.kept) kept (not uploaded yet, in conflict, or refused)" }
-            CleanupHistory.shared.record(moduleID: moduleID, moduleName: moduleName, freedBytes: freed, trigger: .manual, summary: summary)
+            CleanupHistory.shared.record(moduleID: moduleID, moduleName: moduleName, freedBytes: freed, trigger: automatic ? .automatic : .manual, summary: summary)
         }
         return ActionResult(outcome: .succeeded, message: "", refresh: true)
     }

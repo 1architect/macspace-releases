@@ -12,7 +12,7 @@ struct CleanupSection: View {
     var body: some View {
         PageSection("Cleanup") {
             Toggle(isOn: $cleaner.isEnabled.animation(Theme.layout)) {
-                InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Frees caches, old reports and other files that are safe to delete."))
+                InfoTitle(title: String(localized: "Clean automatically"), info: String(localized: "Cleans the selected cleanup items in each module."))
             }
             if cleaner.isEnabled {
                 PagePicker("How often", selection: $cleaner.frequency) {

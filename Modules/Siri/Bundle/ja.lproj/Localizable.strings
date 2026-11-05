@@ -59,6 +59,7 @@
 "Free" = "解放";
 "Free %@" = "%@を解放";
 "Free %@?" = "%@を解放しますか？";
+"Free now" = "今すぐ解放";
 "Free switched-off features' models automatically" = "オフにした機能のモデルを自動で解放";
 "Free up to %@" = "最大%@を解放";
 "Free up to %@?" = "最大%@を解放しますか？";

@@ -483,6 +483,8 @@ public struct BarChart: Codable, Equatable, Sendable {
 public enum RowActionPlacement: String, Codable, Equatable, Sendable { case afterFinder }
 
 public struct Row: Codable, Equatable, Sendable, Identifiable {
+    public var cleanup: CleanupTarget?
+
     public var id: String
     public var title: String
     /// A count the title needs ("12 items"). A fact about the row (its state, its kind, why it is checked) is a badge.
@@ -540,7 +542,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil, actionPlacement: RowActionPlacement? = nil, selectionSectionID: String? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil, actionPlacement: RowActionPlacement? = nil, selectionSectionID: String? = nil, cleanup: CleanupTarget? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -552,6 +554,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.replacesPage = replacesPage
         self.sectionID = sectionID
         self.selectionSectionID = selectionSectionID
+        self.cleanup = cleanup
         self.contextActions = contextActions
         self.symbol = symbol
         self.detail = detail
@@ -564,7 +567,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions, actionPlacement, selectionSectionID
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions, actionPlacement, selectionSectionID, cleanup
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -583,6 +586,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         replacesPage = try container.decodeIfPresent(Bool.self, forKey: .replacesPage) ?? false
         sectionID = try container.decodeIfPresent(String.self, forKey: .sectionID)
         selectionSectionID = try container.decodeIfPresent(String.self, forKey: .selectionSectionID)
+        cleanup = try container.decodeIfPresent(CleanupTarget.self, forKey: .cleanup)
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
@@ -609,6 +613,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         if replacesPage { try container.encode(true, forKey: .replacesPage) }
         try container.encodeIfPresent(sectionID, forKey: .sectionID)
         try container.encodeIfPresent(selectionSectionID, forKey: .selectionSectionID)
+        try container.encodeIfPresent(cleanup, forKey: .cleanup)
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)
@@ -693,6 +698,9 @@ public struct SelectionBulkRequest: Codable, Equatable, Sendable {
 /// choice: it then decides what its other buttons and automatic cleaning free, and sends it back in `checked` and `SelectionSection.all`.
 /// Without `save`, a choice is the user's until the group's page closes.
 public struct Selection: Codable, Equatable, Sendable {
+    /// A durable cleanup preference scope. File/uninstall selections deliberately omit this.
+    public var persistenceKey: String?
+
     /// Stable scope shared by overview and More items pages of the same folder.
     public var scope: String?
     /// This page supplies only part of a scoped inventory. Retain metadata for explicitly selected off-page rows.
@@ -729,7 +737,7 @@ public struct Selection: Codable, Equatable, Sendable {
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:]) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:], persistenceKey: String? = nil) {
         self.scope = scope
         self.partial = partial
         self.session = session
@@ -741,6 +749,7 @@ public struct Selection: Codable, Equatable, Sendable {
         self.choices = choices
         self.includedBytes = includedBytes
         self.parents = parents
+        self.persistenceKey = persistenceKey
         self.checked = checked
         self.suggested = suggested ?? checked
         self.suggestedTitle = suggestedTitle
@@ -750,11 +759,12 @@ public struct Selection: Codable, Equatable, Sendable {
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteNames, note }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteNames, note, persistenceKey }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        persistenceKey = try container.decodeIfPresent(String.self, forKey: .persistenceKey)
         scope = try container.decodeIfPresent(String.self, forKey: .scope)
         partial = try container.decodeIfPresent(Bool.self, forKey: .partial) ?? false
         session = try container.decodeIfPresent(Bool.self, forKey: .session) ?? false
