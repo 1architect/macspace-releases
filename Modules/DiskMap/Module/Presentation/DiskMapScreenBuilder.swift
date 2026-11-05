@@ -79,7 +79,7 @@ enum DiskMapScreenBuilder {
         let hero = parts.contains { $0.bytes > 0 } ? UsageBar(id: folderID(folder), title: title,
             totalBytes: folder == index.root ? index.volumeUsed ?? node?.bytes : node?.bytes, segments: parts,
             footnote: loc("Local allocated space. Cloud-only files are not downloaded. Protected or unreadable locations may be incomplete; APFS clones and snapshots can make this differ from disk usage.")) : nil
-        return Screen(title: title, hero: hero, primary: DiskDirectoryRemoval.action(folder, node: node), layout: hero == nil ? .singleColumn : .adaptive,
+        return Screen(title: title, hero: hero, layout: hero == nil ? .singleColumn : .adaptive,
             widgets: widgets, selection: directContent?.selection ?? fileSelection([]), loadingFraction: direct?.loadingFraction ?? index.categoryLoadingFraction)
     }
     static func categorySummaries(_ types: [DiskTypeSummary]) -> [DiskCategorySummary] {

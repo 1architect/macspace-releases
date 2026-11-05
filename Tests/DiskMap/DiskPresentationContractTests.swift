@@ -46,6 +46,7 @@ final class DiskPresentationContractTests: XCTestCase {
         var index = DiskIndex(root: "/")
         index.directories["/"] = DiskDirectory(path: "/", folders: [home + "/Downloads"])
         index.directories[home + "/Downloads"] = DiskDirectory(path: home + "/Downloads", bytes: 8192)
+        XCTAssertNil(DiskMapScreenBuilder.screen(index, apps: DiskApplications(), folder: home + "/Downloads").primary)
         let folder = try XCTUnwrap(DiskMapScreenBuilder.segments(index, folder: "/").first)
         XCTAssertEqual(folder.contextActions?.paths, [home + "/Downloads"])
         XCTAssertEqual(folder.contextActions?.delete, DiskDirectoryRemoval.action(home + "/Downloads", node: index.directories[home + "/Downloads"]))
