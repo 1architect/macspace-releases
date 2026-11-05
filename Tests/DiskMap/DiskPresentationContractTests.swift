@@ -138,23 +138,24 @@ final class DiskPresentationContractTests: XCTestCase {
         XCTAssertNotEqual(DiskMapScreenBuilder.selectionPageID(request), DiskMapScreenBuilder.selectionPageID(other))
     }
 
-    func testShowAllFilesUsesNewListOnlyPageAndDoesNotPreselect() throws {
+    func testShowSmallerFilesUsesNewListOnlyPageAndDoesNotPreselect() throws {
         let request = DiskBrowseRequest(folder: home + "/Downloads", kind: .category, category: .archives)
         let screen = DiskMapScreenBuilder.browsePage(.init(request: request, files: [], ownership: [:]))
         let row = try XCTUnwrap(lists(screen).last?.rows.last)
-        XCTAssertEqual(row.title, "Show all files")
+        XCTAssertEqual(row.title, "Show files smaller than 100 MB")
         XCTAssertFalse(row.replacesPage)
         var smaller = try XCTUnwrap(DiskBrowseRequest(id: XCTUnwrap(row.pageID)))
         XCTAssertEqual(smaller.folder, request.folder)
         XCTAssertEqual(smaller.category, request.category)
         XCTAssertTrue(smaller.includeSmaller)
+        XCTAssertTrue(smaller.smallerOnly)
         XCTAssertFalse(smaller.inFolder)
         let expanded = DiskMapScreenBuilder.browsePage(.init(request: smaller, files: [file("Downloads/small.zip")], ownership: [:]))
         XCTAssertTrue(expanded.selection?.checked.isEmpty == true)
         XCTAssertNil(expanded.hero)
         XCTAssertEqual(expanded.layout, .singleColumn)
         XCTAssertNotEqual(expanded.selection?.sections.first?.id, screen.selection?.sections.first?.id)
-        XCTAssertFalse(lists(expanded).flatMap(\.rows).contains { $0.title == "Show all files" })
+        XCTAssertFalse(lists(expanded).flatMap(\.rows).contains { $0.title == "Show files smaller than 100 MB" })
         smaller.afterPath = home + "/Downloads/small.zip"; smaller.afterSize = 1
         XCTAssertEqual(DiskMapScreenBuilder.selectionPageID({ var value = smaller; value.fileType = "ext:zip"; return value }()), expanded.selection?.sections.first?.pageID)
     }

@@ -182,11 +182,11 @@ public struct DiskMapModule: MacSpaceModule {
                 if let token = request.token { selection.bulk = try? await store.selectionSummary(token: token) }
                 if selection.bulk == nil { selection.bulk = .init(token: "", count: 0, bytes: 0, checked: []) }
                 selection.bulk?.unavailableReason = error.localizedDescription
-                return Screen(title: loc("Files"), widgets: [], selection: selection)
+                return Screen(title: loc("Large files"), widgets: [], selection: selection)
             }
             var selection = DiskMapScreenBuilder.fileSelection([])
             selection.bulk = bulk
-            return Screen(title: loc("Files"), widgets: [], selection: selection)
+            return Screen(title: loc("Large files"), widgets: [], selection: selection)
         }
         if id.hasPrefix("focus:"), let request = DiskBrowseRequest(id: String(id.dropFirst(6))) {
             let snapshot = await store.navigation(folder: request.folder)
@@ -319,7 +319,7 @@ public struct DiskMapModule: MacSpaceModule {
                 }
                 processed += UInt64(files.count); after = last.path
             }
-            if failures > UInt64(details.count) { details.append(loc("\(Int(clamping: failures)) files could not be removed.")) }
+            if failures > UInt64(details.count) { details.append(failures == 1 ? loc("1 file could not be removed.") : loc("\(Int(clamping: failures)) files could not be removed.")) }
             result = ActionResult(outcome: failures == 0 ? .succeeded : .needsAttention,
                 message: failures == 0 ? loc("Freed selected files") : loc("Some files could not be removed"), details: details)
         } catch {
@@ -438,6 +438,7 @@ public struct DiskMapModule: MacSpaceModule {
             var failures: [String] = [], finished = candidates.filter { selected.contains($0.id) }.map(\.id)
             for (offset, plan) in plans.enumerated() {
                 do {
+                    try await DiskLoginItems.remove(for: plan.owner)
                     // Every app was preflighted before data removal; the helper revalidates each frozen bundle again.
                     let removal = try await helper.perform(AppRemovalResult.self, operation: DiskMapPrivilegedOperations.uninstall,
                         arguments: ["app": plan.owner.path, "identifier": plan.owner.identifier, "plan": try plan.encoded()])

@@ -47,6 +47,11 @@ final class DiskBrowseTests: XCTestCase {
             XCTAssertNotEqual(smaller.selectionScope, category.selectionScope)
             let all = try collect(smaller, db: db)
             XCTAssertEqual(all.count, 452)
+            smaller.smallerOnly = true
+            XCTAssertEqual(try collect(smaller, db: db).map(\.path), [root.path + "/A/small.zip"])
+            let smallPage = try XCTUnwrap(db.browse(smaller))
+            XCTAssertEqual(smallPage.files.map(\.path), [root.path + "/A/small.zip"])
+            XCTAssertEqual(DiskBrowseRequest(id: smaller.pageID)?.smallerOnly, true)
             XCTAssertEqual(try collect(category, db: db).count, 451, "Showing smaller files never broadens the original category selection")
             XCTAssertFalse(all.contains { $0.path.contains("/AB/") })
             var stored: UInt64 = 0

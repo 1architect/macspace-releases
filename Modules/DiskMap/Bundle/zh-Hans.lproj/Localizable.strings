@@ -4,6 +4,8 @@
 "%lld files could not be removed." = "无法移除%lld个文件。";
 "%lld identical copies" = "%lld 个相同副本";
 "%lld items" = "%lld 项";
+"1 file could not be removed." = "有 1 个文件无法移除。";
+"1 item" = "1 项";
 "Additional or unconfirmed app copy; kept separate from installed apps." = "额外或未确认的应用副本，与已安装应用分开显示。";
 "All locations" = "所有位置";
 "App Data" = "应用数据";
@@ -56,7 +58,6 @@
 "File changed since selection. Review it again." = "文件自选择后已更改。请重新查看。";
 "File removal settings changed. Reopen the list and confirm again." = "文件移除设置已更改。请重新打开列表并确认。";
 "File types" = "文件类型";
-"Files" = "文件";
 "Files changed. Reopen the list and review your selection again." = "文件已更改。请重新打开列表并检查所选项目。";
 "Files of 100 MB or larger" = "100 MB 及以上的文件";
 "Folders" = "文件夹";
@@ -111,7 +112,6 @@
 "Open in %@" = "在%@中打开";
 "Open now" = "当前已打开";
 "Other" = "其他";
-"Other app installations also claim this data. It is preserved." = "其他应用安装也关联此数据，将予以保留。";
 "Other files" = "其他文件";
 "Other formats" = "其他格式";
 "PDF documents" = "PDF 文档";
@@ -146,7 +146,7 @@
 "Selected files changed or are open. Review them again." = "所选文件已更改或正在打开。请重新检查。";
 "Selected files changed or are unavailable. Review your selection again." = "所选文件已更改或不可用。请重新检查选择。";
 "Shared data" = "共享数据";
-"Show all files" = "显示所有文件";
+"Show files smaller than 100 MB" = "显示小于 100 MB 的文件";
 "Show smaller files" = "显示较小文件";
 "Sizes show allocated space." = "大小表示已分配的空间。";
 "SketchUp projects" = "SketchUp 项目";
@@ -156,6 +156,7 @@
 "Some files could not be verified. Refresh to retry." = "部分文件无法验证。请刷新重试。";
 "Some files not verified" = "部分文件未验证";
 "Spreadsheets" = "电子表格";
+"Startup items" = "启动项";
 "System components and other copies" = "系统组件和其他副本";
 "Text documents" = "文本文档";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "应用及其所属的支持文件、设置、缓存和辅助程序将被移除。其他已安装应用使用的共享数据将保留。";
@@ -191,6 +192,7 @@
 "Unmatched app data" = "未匹配的应用数据";
 "Up to %@ can be removed while keeping one copy of each set." = "每组保留一个副本时，最多可移除 %@。";
 "Use MacSpace’s uninstall option in Settings." = "请使用设置中的 MacSpace 卸载选项。";
+"Used by other apps" = "其他 App 正在使用";
 "Verification incomplete" = "验证未完成";
 "Verified app data" = "已验证的应用数据";
 "Videos" = "视频";

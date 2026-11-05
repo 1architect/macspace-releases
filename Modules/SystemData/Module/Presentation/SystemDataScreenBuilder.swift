@@ -245,7 +245,7 @@ enum SystemDataScreenBuilder {
                     // The families macOS keeps closed are in the same folder but in no figure of this row: say where they are.
                     let closed = protectedAssetFamilies(snapshot)
                     if entry.item.id == "assets:system", isProtected(snapshot), !closed.isEmpty {
-                        let note = loc("\(closed.count) more, including Apple Intelligence models, are under Protected by macOS.")
+                        let note = closed.count == 1 ? loc("1 more item is under Protected by macOS.") : loc("\(closed.count) more, including Apple Intelligence models, are under Protected by macOS.")
                         row.detail = row.detail.map { $0 + " " + note } ?? note
                     }
                     return (row, entry.bytes)
@@ -674,16 +674,16 @@ enum SystemDataScreenBuilder {
         let actionable = actionableUnreadable(snapshot)
         if !actionable.fullDiskAccess.isEmpty {
             return .banner(Banner(id: "partial", severity: .info, title: loc("Allow Full Disk Access to see everything"),
-                                  message: loc("\(actionable.fullDiskAccess.count) places couldn't be measured."),
+                                  message: actionable.fullDiskAccess.count == 1 ? loc("1 place couldn't be measured.") : loc("\(actionable.fullDiskAccess.count) places couldn't be measured."),
                                   action: .allowFullDiskAccess(title: loc("Allow"))))
         }
         if !actionable.helper.isEmpty {
             return .banner(Banner(id: "partial", severity: .warning, title: loc("Turn on the helper to see everything"),
-                                  message: loc("\(actionable.helper.count) places only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings.")))
+                                  message: actionable.helper.count == 1 ? loc("1 place only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings.") : loc("\(actionable.helper.count) places only the helper can measure: \(unreadableList(actionable.helper)). Turn it on in Settings.")))
         }
         if !actionable.helperUnreachable.isEmpty {
             return .banner(Banner(id: "partial", severity: .warning, title: loc("The helper did not answer"),
-                                  message: loc("\(actionable.helperUnreachable.count) places weren't measured. Reopen MacSpace.")))
+                                  message: actionable.helperUnreachable.count == 1 ? loc("1 place wasn't measured. Reopen MacSpace.") : loc("\(actionable.helperUnreachable.count) places weren't measured. Reopen MacSpace.")))
         }
         return nil
     }

@@ -503,15 +503,6 @@
   "ファイルの種類",
   "파일 유형"
  ],
- "Files": [
-  "Arquivos",
-  "Fichiers",
-  "Archivos",
-  "Dateien",
-  "文件",
-  "ファイル",
-  "파일"
- ],
  "Files changed. Reopen the list and review your selection again.": [
   "Os arquivos mudaram. Reabra a lista e revise a seleção novamente.",
   "Les fichiers ont changé. Rouvrez la liste et vérifiez votre sélection.",
@@ -998,15 +989,6 @@
   "その他",
   "기타"
  ],
- "Other app installations also claim this data. It is preserved.": [
-  "Outras instalações também usam estes dados. Eles serão preservados.",
-  "D’autres installations utilisent aussi ces données. Elles sont préservées.",
-  "Otras instalaciones también usan estos datos. Se conservan.",
-  "Weitere Installationen beanspruchen diese Daten. Sie bleiben erhalten.",
-  "其他应用安装也关联此数据，将予以保留。",
-  "他のインストールもこのデータを使用するため、保持します。",
-  "다른 설치본도 이 데이터를 사용하므로 보존합니다."
- ],
  "Other files": [
   "Outros arquivos",
   "Autres fichiers",
@@ -1312,15 +1294,6 @@
   "共享数据",
   "共有データ",
   "공유 데이터"
- ],
- "Show all files": [
-  "Mostrar todos os arquivos",
-  "Afficher tous les fichiers",
-  "Mostrar todos los archivos",
-  "Alle Dateien anzeigen",
-  "显示所有文件",
-  "すべてのファイルを表示",
-  "모든 파일 보기"
  ],
  "Show smaller files": [
   "Mostrar arquivos menores",
@@ -1762,5 +1735,50 @@
   "值得检查",
   "確認を推奨",
   "검토 권장"
+ ],
+ "1 file could not be removed.": [
+  "1 arquivo não pôde ser removido.",
+  "1 fichier n’a pas pu être supprimé.",
+  "No se pudo eliminar 1 archivo.",
+  "1 Datei konnte nicht entfernt werden.",
+  "有 1 个文件无法移除。",
+  "1個のファイルを削除できませんでした。",
+  "파일 1개를 제거할 수 없습니다."
+ ],
+ "1 item": [
+  "1 item",
+  "1 élément",
+  "1 elemento",
+  "1 Objekt",
+  "1 项",
+  "1項目",
+  "항목 1개"
+ ],
+ "Show files smaller than 100 MB": [
+  "Mostrar arquivos menores que 100 MB",
+  "Afficher les fichiers de moins de 100 Mo",
+  "Mostrar archivos de menos de 100 MB",
+  "Dateien kleiner als 100 MB anzeigen",
+  "显示小于 100 MB 的文件",
+  "100 MB未満のファイルを表示",
+  "100 MB 미만 파일 표시"
+ ],
+ "Startup items": [
+  "Itens de inicialização",
+  "Éléments de démarrage",
+  "Elementos de inicio",
+  "Startobjekte",
+  "启动项",
+  "起動項目",
+  "시작 항목"
+ ],
+ "Used by other apps": [
+  "Usado por outros apps",
+  "Utilisé par d’autres apps",
+  "Usado por otras apps",
+  "Von anderen Apps verwendet",
+  "其他 App 正在使用",
+  "ほかのアプリで使用中",
+  "다른 앱에서 사용 중"
  ]
 }

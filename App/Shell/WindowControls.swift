@@ -120,6 +120,23 @@ final class WindowBox {
     weak var window: NSWindow?
 }
 
+/// A native title band gets both clicks of a double click while preserving window dragging.
+/// The corner controls and breadcrumb buttons sit above it and keep their own clicks.
+struct WindowTitlebar: NSViewRepresentable {
+    final class TitlebarView: NSView {
+        override var mouseDownCanMoveWindow: Bool { false }
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+        override func mouseDown(with event: NSEvent) {
+            guard let window else { return }
+            if event.clickCount == 2 { WindowControls.toggleZoom(window) }
+            else { window.performDrag(with: event) }
+        }
+    }
+
+    func makeNSView(context: Context) -> TitlebarView { TitlebarView() }
+    func updateNSView(_ view: TitlebarView, context: Context) {}
+}
+
 /// Tells `box` which window it is in.
 struct WindowReader: NSViewRepresentable {
     let box: WindowBox

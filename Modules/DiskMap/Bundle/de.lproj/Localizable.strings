@@ -4,6 +4,8 @@
 "%lld files could not be removed." = "%lld Dateien konnten nicht entfernt werden.";
 "%lld identical copies" = "%lld identische Kopien";
 "%lld items" = "%lld Objekte";
+"1 file could not be removed." = "1 Datei konnte nicht entfernt werden.";
+"1 item" = "1 Objekt";
 "Additional or unconfirmed app copy; kept separate from installed apps." = "Zusätzliche oder unbestätigte Kopie; getrennt von installierten Apps.";
 "All locations" = "Alle Speicherorte";
 "App Data" = "App-Daten";
@@ -56,7 +58,6 @@
 "File changed since selection. Review it again." = "Die Datei wurde seit der Auswahl geändert. Erneut prüfen.";
 "File removal settings changed. Reopen the list and confirm again." = "Die Löscheinstellung wurde geändert. Liste erneut öffnen und bestätigen.";
 "File types" = "Dateitypen";
-"Files" = "Dateien";
 "Files changed. Reopen the list and review your selection again." = "Dateien wurden geändert. Liste erneut öffnen und Auswahl prüfen.";
 "Files of 100 MB or larger" = "Dateien ab 100 MB";
 "Folders" = "Ordner";
@@ -111,7 +112,6 @@
 "Open in %@" = "Geöffnet in %@";
 "Open now" = "Jetzt geöffnet";
 "Other" = "Sonstige";
-"Other app installations also claim this data. It is preserved." = "Weitere Installationen beanspruchen diese Daten. Sie bleiben erhalten.";
 "Other files" = "Andere Dateien";
 "Other formats" = "Andere Formate";
 "PDF documents" = "PDF-Dokumente";
@@ -146,7 +146,7 @@
 "Selected files changed or are open. Review them again." = "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.";
 "Selected files changed or are unavailable. Review your selection again." = "Ausgewählte Dateien wurden geändert oder sind nicht verfügbar. Prüfe die Auswahl erneut.";
 "Shared data" = "Gemeinsame Daten";
-"Show all files" = "Alle Dateien anzeigen";
+"Show files smaller than 100 MB" = "Dateien kleiner als 100 MB anzeigen";
 "Show smaller files" = "Kleinere Dateien anzeigen";
 "Sizes show allocated space." = "Die Größen zeigen den zugewiesenen Speicherplatz.";
 "SketchUp projects" = "SketchUp-Projekte";
@@ -156,6 +156,7 @@
 "Some files could not be verified. Refresh to retry." = "Einige Dateien konnten nicht überprüft werden. Zum Wiederholen aktualisieren.";
 "Some files not verified" = "Einige Dateien wurden nicht überprüft";
 "Spreadsheets" = "Tabellen";
+"Startup items" = "Startobjekte";
 "System components and other copies" = "Systemkomponenten und weitere Kopien";
 "Text documents" = "Textdokumente";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "Die App und ihre Supportdateien, Einstellungen, Caches und Hilfsprogramme werden entfernt. Mit anderen installierten Apps geteilte Daten bleiben erhalten.";
@@ -191,6 +192,7 @@
 "Unmatched app data" = "Nicht zugeordnete App-Daten";
 "Up to %@ can be removed while keeping one copy of each set." = "Bis zu %@ können entfernt werden, wenn eine Kopie jeder Gruppe erhalten bleibt.";
 "Use MacSpace’s uninstall option in Settings." = "Verwende die MacSpace-Deinstallation in den Einstellungen.";
+"Used by other apps" = "Von anderen Apps verwendet";
 "Verification incomplete" = "Überprüfung unvollständig";
 "Verified app data" = "Bestätigte App-Daten";
 "Videos" = "Videos";

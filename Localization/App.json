@@ -1726,5 +1726,23 @@
   "正在处理",
   "処理中",
   "작업 중"
+ ],
+ "1 selected file": [
+  "1 arquivo selecionado",
+  "1 fichier sélectionné",
+  "1 archivo seleccionado",
+  "1 ausgewählte Datei",
+  "已选择1个文件",
+  "1個の選択したファイル",
+  "선택한 파일 1개"
+ ],
+ "1 smaller": [
+  "1 menor",
+  "1 plus petit",
+  "1 más pequeño",
+  "1 kleineres",
+  "另外 1 个较小项",
+  "ほか1個の小さい項目",
+  "작은 항목 1개"
  ]
 }

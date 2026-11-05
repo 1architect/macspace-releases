@@ -2194,5 +2194,41 @@
   "已完成",
   "完了",
   "완료"
+ ],
+ "1 more item is under Protected by macOS.": [
+  "Mais 1 item está em Protegido pelo macOS.",
+  "1 autre élément se trouve dans Protégé par macOS.",
+  "Hay 1 elemento más en Protegido por macOS.",
+  "1 weiteres Objekt befindet sich unter Von macOS geschützt.",
+  "还有 1 个项目位于“受 macOS 保护”中。",
+  "ほか1項目は「macOSで保護」にあります。",
+  "추가 항목 1개는 macOS에서 보호됨에 있습니다."
+ ],
+ "1 place couldn't be measured.": [
+  "1 local não pôde ser medido.",
+  "1 emplacement n’a pas pu être mesuré.",
+  "No se pudo medir 1 ubicación.",
+  "1 Ort konnte nicht gemessen werden.",
+  "有 1 个位置无法测量。",
+  "1か所を測定できませんでした。",
+  "위치 1곳을 측정할 수 없습니다."
+ ],
+ "1 place only the helper can measure: %@. Turn it on in Settings.": [
+  "1 local que só o auxiliar pode medir: %@. Ative-o nos Ajustes.",
+  "1 emplacement que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.",
+  "1 ubicación que solo el asistente puede medir: %@. Actívalo en Ajustes.",
+  "1 Ort, den nur der Helfer messen kann: %@. Aktiviere ihn in den Einstellungen.",
+  "有 1 个位置只有辅助工具才能测量：%@。请在设置中启用。",
+  "ヘルパーのみが測定できる場所が1か所あります：%@。「設定」で有効にしてください。",
+  "도우미만 측정할 수 있는 위치 1곳: %@. 설정에서 켜세요."
+ ],
+ "1 place wasn't measured. Reopen MacSpace.": [
+  "1 local não foi medido. Abra o MacSpace novamente.",
+  "1 emplacement n’a pas été mesuré. Rouvrez MacSpace.",
+  "No se midió 1 ubicación. Vuelve a abrir MacSpace.",
+  "1 Ort wurde nicht gemessen. Öffne MacSpace erneut.",
+  "有 1 个位置未测量。请重新打开 MacSpace。",
+  "1か所が測定されませんでした。MacSpaceを開き直してください。",
+  "위치 1곳이 측정되지 않았습니다. MacSpace를 다시 여세요."
  ]
 }

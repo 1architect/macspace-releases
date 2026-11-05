@@ -123,6 +123,9 @@ public struct MainView: View {
             .onDisappear { host.setVisibleDestination(nil, for: refreshCanvas) }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { container = $0 }
             .padding(Theme.frame)
+            WindowTitlebar()
+                .frame(height: PageInsets.top - 8)
+                .frame(maxHeight: .infinity, alignment: .top)
             cornerControls
                 .padding(Theme.frame + GlassCircleButton.margin)
         }
@@ -231,14 +234,6 @@ public struct MainView: View {
                         // One page swapped for another (Command-comma over a module's page, and Back to it) slides across.
                         .transition(.asymmetric(insertion: .move(edge: swapForward ? .trailing : .leading).combined(with: .opacity),
                                                 removal: .move(edge: swapForward ? .leading : .trailing).combined(with: .opacity)))
-                        .overlay(alignment: .top) {
-                            // The band behind the corner buttons and the title moves the window, like a title bar.
-                            Color.clear
-                                .frame(height: PageInsets.top - 8)
-                                .contentShape(Rectangle())
-                                .gesture(WindowDragGesture())
-                                .allowsWindowActivationEvents(true)
-                        }
                         .clipShape(RoundedRectangle(cornerRadius: corners.windowRadius, style: .continuous))
                         .offset(x: full.minX, y: full.minY)
                         .allowsHitTesting(isOpen)
@@ -291,7 +286,6 @@ public struct MainView: View {
                     .padding(.leading, 4)
                     .lineLimit(1)
                     .transition(.opacity.combined(with: .offset(x: -10)))
-                    .allowsHitTesting(false)
             }
             Spacer(minLength: 8)
             if isOpen, let id = layer?.destination.moduleID, let handle = host.handle(for: id) {
@@ -438,7 +432,18 @@ private struct PageTitle: View {
 
     var body: some View {
         if let handle = destination.moduleID.flatMap { host.handle(for: $0) } {
-            ModulePageTitle(handle: handle) { title(destination) }
+            ModulePageTitle(handle: handle, usesScreenTitle: destination == .storage)
+        } else if destination == .settings {
+            let parts = title(destination).components(separatedBy: " › ")
+            HStack(spacing: 6) {
+                ForEach(parts.indices, id: \.self) { index in
+                    if index > 0 { Text("›").foregroundStyle(.secondary) }
+                    Button(parts[index]) {
+                        if index == 0 { withAnimation(Theme.push) { host.settingsPage = nil } }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         } else {
             Text(title(destination))
         }
@@ -447,12 +452,23 @@ private struct PageTitle: View {
 
 private struct ModulePageTitle: View {
     @ObservedObject var handle: ModuleHandle
-    let text: () -> String
+    let usesScreenTitle: Bool
 
     var body: some View {
-        Text(text())
-            .contentTransition(.opacity)
-            .animation(Theme.push, value: handle.groupPath)
+        HStack(spacing: 6) {
+            Button(usesScreenTitle ? handle.screen?.title ?? handle.manifest.name : handle.manifest.name) {
+                handle.navigateToAncestor(depth: 0)
+            }
+            .buttonStyle(.plain)
+            ForEach(Array(handle.groupPath.enumerated()), id: \.offset) { index, id in
+                if let row = handle.navigationRow(id) {
+                    Text("›").foregroundStyle(.secondary)
+                    Button(row.title) { handle.navigateToAncestor(depth: index + 1) }
+                        .buttonStyle(.plain)
+                }
+            }
+        }
+        .animation(Theme.push, value: handle.groupPath)
     }
 }
 

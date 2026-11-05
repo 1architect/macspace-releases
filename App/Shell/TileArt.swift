@@ -291,7 +291,7 @@ enum BlockLayout {
             selection?.suggested = Array(Set(selections.flatMap(\.suggested)).intersection(ids)).sorted()
         }
         return UsageSegment(id: folders ? foldersID : smallerID,
-                            label: folders ? String(localized: "Other folders") : String(localized: "\(parts.count) smaller"),
+                            label: folders ? String(localized: "Other folders") : (parts.count == 1 ? String(localized: "1 smaller") : String(localized: "\(parts.count) smaller")),
                             bytes: parts.reduce(0) { $0 + $1.bytes }, tone: .series(parts.count), items: rows, selection: selection)
     }
 

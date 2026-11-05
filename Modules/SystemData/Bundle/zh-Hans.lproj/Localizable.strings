@@ -11,6 +11,10 @@
 "%lld reports" = "%lld 份报告";
 "/System/Library/%@" = "/System/Library/%@";
 "1 item" = "1 项";
+"1 more item is under Protected by macOS." = "还有 1 个项目位于“受 macOS 保护”中。";
+"1 place couldn't be measured." = "有 1 个位置无法测量。";
+"1 place only the helper can measure: %@. Turn it on in Settings." = "有 1 个位置只有辅助工具才能测量：%@。请在设置中启用。";
+"1 place wasn't measured. Reopen MacSpace." = "有 1 个位置未测量。请重新打开 MacSpace。";
 "1 report" = "1 份报告";
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "macOS 检查应用时创建的副本。它与应用共享空间，因此只释放旧版本留下的部分。";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "macOS 恢复映像。用于设置 Mac、设备或虚拟机后即可删除。";

@@ -220,7 +220,7 @@ extension DiskNavigationRegressionTests {
 }
 
 extension DiskNavigationRegressionTests {
-    func testShowAllFilesOpensAListOnlyPageWithExpandedFolderInventory() async throws {
+    func testShowSmallerFilesOpensAListOnlyPageWithOnlySmallerFiles() async throws {
         let home = URL(fileURLWithPath: "/private/tmp/smaller-expansion-" + UUID().uuidString)
         let root = home.appendingPathComponent("Downloads"), cache = home.appendingPathComponent("cache/index.sqlite")
         defer { try? FileManager.default.removeItem(at: home) }
@@ -236,7 +236,7 @@ extension DiskNavigationRegressionTests {
         let initial = try XCTUnwrap(initialValue)
         let expansion = try XCTUnwrap(initial.widgets.compactMap { widget -> Row? in
             guard case let .list(list) = widget else { return nil }
-            return list.rows.first { $0.title == "Show all files" }
+            return list.rows.first { $0.title == "Show files smaller than 100 MB" }
         }.first)
         XCTAssertFalse(expansion.replacesPage)
         let id = try XCTUnwrap(expansion.pageID)
@@ -251,8 +251,8 @@ extension DiskNavigationRegressionTests {
         XCTAssertEqual(result.layout, .singleColumn)
         let rows = result.widgets.flatMap { if case let .list(list) = $0 { return list.rows }; return [] }
         XCTAssertTrue(rows.contains { $0.id == DiskFileRemoval.id(small.path) })
-        XCTAssertTrue(rows.contains { $0.id == DiskFileRemoval.id(large.path) })
-        XCTAssertFalse(result.widgets.contains { if case let .list(list) = $0 { return list.rows.contains { $0.title == "Show all files" } }; return false })
+        XCTAssertFalse(rows.contains { $0.id == DiskFileRemoval.id(large.path) })
+        XCTAssertFalse(result.widgets.contains { if case let .list(list) = $0 { return list.rows.contains { $0.title == "Show files smaller than 100 MB" } }; return false })
         await module.setActive(false)
     }
 }

@@ -187,9 +187,9 @@ enum DebloatScreenBuilder {
     static func tile(_ snapshot: DebloatSnapshot) -> Tile {
         let counts = counts(snapshot)
         let graphic = TileGraphic.dots(dots(snapshot))
-        if !counts.drifted.isEmpty { return Tile(title: loc("debloat"), status: loc("\(counts.drifted.count) undone by macOS"), needsAttention: true, graphic: graphic) }
+        if !counts.drifted.isEmpty { return Tile(title: loc("debloat"), status: counts.drifted.count == 1 ? loc("1 undone by macOS") : loc("\(counts.drifted.count) undone by macOS"), needsAttention: true, graphic: graphic) }
         if !counts.awaiting.isEmpty { return Tile(title: loc("debloat"), status: loc("\(counts.awaiting.count) awaiting approval"), needsAttention: true, graphic: graphic) }
-        return Tile(title: loc("debloat"), status: loc("\(counts.on)/\(counts.total) disabled"), graphic: graphic)
+        return Tile(title: loc("debloat"), status: counts.on == 1 ? loc("1/\(counts.total) disabled") : loc("\(counts.on)/\(counts.total) disabled"), graphic: graphic)
     }
 
     /// One dot per control that can take effect here, in page order: done when switched off, attention when macOS undid it.
@@ -256,7 +256,7 @@ enum DebloatScreenBuilder {
         guard !controls.isEmpty else { return nil }
         return Action(id: "restoreAll", title: loc("Enable all"), symbol: "arrow.uturn.backward", role: .prominent,
                       parameters: ["ids": controls.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: loc("Enable all \(controls.count) features again?"),
+                      confirmation: Confirmation(title: controls.count == 1 ? loc("Enable 1 feature again?") : loc("Enable all \(controls.count) features again?"),
                                                  message: loc("MacSpace restores the settings it saved before disabling them."),
                                                  confirmTitle: loc("Enable")),
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
@@ -272,7 +272,7 @@ enum DebloatScreenBuilder {
         if recommended.contains(where: { !$0.tested }) { message += " " + loc("Some are not tested yet.") }
         return Action(id: "applyRecommended", title: loc("Disable all"), symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: loc("Disable \(recommended.count) features?"), message: message, confirmTitle: loc("Disable")),
+                      confirmation: Confirmation(title: recommended.count == 1 ? loc("Disable 1 feature?") : loc("Disable \(recommended.count) features?"), message: message, confirmTitle: loc("Disable")),
                       requires: [.privilegedHelper])
     }
 

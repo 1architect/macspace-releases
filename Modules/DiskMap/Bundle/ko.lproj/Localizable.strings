@@ -4,6 +4,8 @@
 "%lld files could not be removed." = "%lld개 파일을 제거하지 못했습니다.";
 "%lld identical copies" = "동일한 복사본 %lld개";
 "%lld items" = "%lld개 항목";
+"1 file could not be removed." = "파일 1개를 제거할 수 없습니다.";
+"1 item" = "항목 1개";
 "Additional or unconfirmed app copy; kept separate from installed apps." = "추가 또는 미확인 복사본으로, 설치된 앱과 구분합니다.";
 "All locations" = "모든 위치";
 "App Data" = "앱 데이터";
@@ -56,7 +58,6 @@
 "File changed since selection. Review it again." = "선택 이후 파일이 변경되었습니다. 다시 검토하세요.";
 "File removal settings changed. Reopen the list and confirm again." = "파일 제거 설정이 변경되었습니다. 목록을 다시 열고 확인하세요.";
 "File types" = "파일 유형";
-"Files" = "파일";
 "Files changed. Reopen the list and review your selection again." = "파일이 변경되었습니다. 목록을 다시 열고 선택을 검토하세요.";
 "Files of 100 MB or larger" = "100 MB 이상 파일";
 "Folders" = "폴더";
@@ -111,7 +112,6 @@
 "Open in %@" = "%@에서 열려 있음";
 "Open now" = "현재 열려 있음";
 "Other" = "기타";
-"Other app installations also claim this data. It is preserved." = "다른 설치본도 이 데이터를 사용하므로 보존합니다.";
 "Other files" = "기타 파일";
 "Other formats" = "기타 형식";
 "PDF documents" = "PDF 문서";
@@ -146,7 +146,7 @@
 "Selected files changed or are open. Review them again." = "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요.";
 "Selected files changed or are unavailable. Review your selection again." = "선택한 파일이 변경되었거나 사용할 수 없습니다. 선택 항목을 다시 검토하세요.";
 "Shared data" = "공유 데이터";
-"Show all files" = "모든 파일 보기";
+"Show files smaller than 100 MB" = "100 MB 미만 파일 표시";
 "Show smaller files" = "작은 파일 표시";
 "Sizes show allocated space." = "크기는 할당된 공간을 표시합니다.";
 "SketchUp projects" = "SketchUp 프로젝트";
@@ -156,6 +156,7 @@
 "Some files could not be verified. Refresh to retry." = "일부 파일을 검증하지 못했습니다. 새로고침하여 다시 시도하세요.";
 "Some files not verified" = "일부 파일이 검증되지 않았습니다";
 "Spreadsheets" = "스프레드시트";
+"Startup items" = "시작 항목";
 "System components and other copies" = "시스템 구성 요소 및 다른 복사본";
 "Text documents" = "텍스트 문서";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "앱과 해당 지원 파일, 설정, 캐시 및 보조 프로그램이 제거됩니다. 다른 설치된 앱과 공유하는 데이터는 보존됩니다.";
@@ -191,6 +192,7 @@
 "Unmatched app data" = "연결되지 않은 앱 데이터";
 "Up to %@ can be removed while keeping one copy of each set." = "각 그룹의 복사본 하나를 남기면서 최대 %@를 삭제할 수 있습니다.";
 "Use MacSpace’s uninstall option in Settings." = "설정에서 MacSpace 제거 옵션을 사용하세요.";
+"Used by other apps" = "다른 앱에서 사용 중";
 "Verification incomplete" = "검증 미완료";
 "Verified app data" = "확인된 앱 데이터";
 "Videos" = "비디오";

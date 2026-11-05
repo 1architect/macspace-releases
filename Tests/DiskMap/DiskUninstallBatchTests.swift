@@ -44,15 +44,32 @@ final class DiskUninstallBatchTests: XCTestCase {
             } else { XCTFail("Expected app list") }
             let plans = try XCTUnwrap(DiskUninstallBatch.plans(parameters: parameters(apps.apps), apps: apps))
             let selected = try XCTUnwrap(DiskUninstallBatch.resolve(plans, apps: apps))
-            let review = DiskMapScreenBuilder.uninstallReview(DiskIndex(root: home), selected: selected, apps: apps, home: home)
+            var index = DiskIndex(root: home)
+            let pending = home + "/Library/Application Support/One"
+            index.directories[pending] = DiskDirectory(path: pending, bytes: 0)
+            let review = DiskMapScreenBuilder.uninstallReview(index, selected: selected, apps: apps, home: home)
             XCTAssertEqual(review.primary?.id, "uninstallSelected")
             XCTAssertEqual(review.selection?.includedBytes, 16384)
             XCTAssertEqual(review.selection?.choices.count, 2)
             XCTAssertTrue(review.selection?.checked.isEmpty == true)
+            XCTAssertTrue(review.selection?.choices.values.allSatisfy { $0 > 0 } == true, "Data outside the snapshot must be measured for the selection total")
             let encoded = try XCTUnwrap(review.primary?.parameters["plans"])
             XCTAssertEqual(try JSONDecoder().decode([AppRemovalPlan].self, from: Data(encoded.utf8)).map { $0.owner.path }, selected.map { $0.owner.path })
             XCTAssertTrue(review.primary?.confirmation?.message.contains(selected[0].owner.path) == true)
             XCTAssertTrue(review.primary?.confirmation?.message.contains(selected[1].owner.path) == true)
+        }
+    }
+    func testAppsAreSortedByDescendingSizeWithStableTies() throws {
+        try fixture { home, original in
+            var apps = original
+            apps.apps[0].bytes = 1
+            apps.apps[1].bytes = 8192
+            let page = DiskMapScreenBuilder.appsPage(DiskIndex(root: home), apps: apps)
+            guard case let .list(list) = page.widgets[0] else { return XCTFail("Expected app list") }
+            XCTAssertEqual(list.rows.map(\.id), [apps.apps[1].owner.path, apps.apps[0].owner.path])
+            XCTAssertEqual(DiskMapScreenBuilder.itemCount(1), loc("1 item"))
+            XCTAssertEqual(DiskMapScreenBuilder.itemCount(0), loc("0 items"))
+            XCTAssertEqual(DiskMapScreenBuilder.itemCount(2), loc("2 items"))
         }
     }
     func testStaleDuplicateAndForgedAppSelectionsRejectTheWholeBatchBeforeRemoval() throws {

@@ -11,6 +11,10 @@
 "%lld reports" = "보고서 %lld개";
 "/System/Library/%@" = "/System/Library/%@";
 "1 item" = "항목 1개";
+"1 more item is under Protected by macOS." = "추가 항목 1개는 macOS에서 보호됨에 있습니다.";
+"1 place couldn't be measured." = "위치 1곳을 측정할 수 없습니다.";
+"1 place only the helper can measure: %@. Turn it on in Settings." = "도우미만 측정할 수 있는 위치 1곳: %@. 설정에서 켜세요.";
+"1 place wasn't measured. Reopen MacSpace." = "위치 1곳이 측정되지 않았습니다. MacSpace를 다시 여세요.";
 "1 report" = "보고서 1개";
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "macOS가 앱을 검증할 때 만든 사본입니다. 앱과 공간을 공유하므로 이전 버전이 남긴 부분만 확보됩니다.";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "macOS 복원 이미지입니다. Mac, 기기 또는 가상 머신 설정이 완료되면 삭제할 수 있습니다.";

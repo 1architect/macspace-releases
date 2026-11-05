@@ -11,6 +11,10 @@
 "%lld reports" = "%lld件のレポート";
 "/System/Library/%@" = "/System/Library/%@";
 "1 item" = "1項目";
+"1 more item is under Protected by macOS." = "ほか1項目は「macOSで保護」にあります。";
+"1 place couldn't be measured." = "1か所を測定できませんでした。";
+"1 place only the helper can measure: %@. Turn it on in Settings." = "ヘルパーのみが測定できる場所が1か所あります：%@。「設定」で有効にしてください。";
+"1 place wasn't measured. Reopen MacSpace." = "1か所が測定されませんでした。MacSpaceを開き直してください。";
 "1 report" = "1件のレポート";
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "macOSがアプリの検証時に作ったコピーです。アプリと領域を共有するため、旧バージョンの残りだけが解放されます。";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "macOSの復元イメージです。Mac、デバイス、仮想マシンの設定が完了したら削除できます。";

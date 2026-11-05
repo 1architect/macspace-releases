@@ -997,5 +997,41 @@
   "关闭 Siri AI 搜索应用；Spotlight 恢复为经典搜索。要关闭 Siri 本身，请使用“Siri 与 Apple 智能”页面。",
   "Siri AI 検索アプリをオフにします。Spotlightは従来の検索に戻ります。Siri自体をオフにするには「SiriとApple Intelligence」ページを使います。",
   "Siri AI 검색 앱을 끕니다. Spotlight는 기존 검색으로 돌아갑니다. Siri 자체를 끄려면 Siri 및 Apple Intelligence 페이지를 사용하세요."
+ ],
+ "Disable 1 feature?": [
+  "Desativar 1 recurso?",
+  "Désactiver 1 fonctionnalité ?",
+  "¿Desactivar 1 función?",
+  "1 Funktion deaktivieren?",
+  "停用 1 项功能？",
+  "1個の機能を無効にしますか？",
+  "기능 1개를 끌까요?"
+ ],
+ "Enable 1 feature again?": [
+  "Ativar 1 recurso novamente?",
+  "Réactiver 1 fonctionnalité ?",
+  "¿Volver a activar 1 función?",
+  "1 Funktion wieder aktivieren?",
+  "重新启用 1 项功能？",
+  "1個の機能を再び有効にしますか？",
+  "기능 1개를 다시 켤까요?"
+ ],
+ "1 undone by macOS": [
+  "1 desfeito pelo macOS",
+  "1 annulé par macOS",
+  "1 revertido por macOS",
+  "1 von macOS rückgängig gemacht",
+  "1 项被 macOS 还原",
+  "1個がmacOSによって元に戻されました",
+  "macOS가 1개를 되돌림"
+ ],
+ "1/%lld disabled": [
+  "1/%lld desativado",
+  "1/%lld désactivée",
+  "1/%lld desactivada",
+  "1/%lld deaktiviert",
+  "1/%lld 项已停用",
+  "1/%lld件が無効",
+  "1/%lld개 꺼짐"
  ]
 }

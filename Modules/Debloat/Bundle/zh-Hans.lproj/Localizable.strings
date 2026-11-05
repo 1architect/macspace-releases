@@ -7,6 +7,8 @@
 "%lld features were turned back on by macOS" = "macOS 重新开启了 %lld 项功能";
 "%lld undone by macOS" = "macOS 还原了 %lld 项";
 "%lld/%lld disabled" = "已停用 %lld/%lld 项";
+"1 undone by macOS" = "1 项被 macOS 还原";
+"1/%lld disabled" = "1/%lld 项已停用";
 "A process covered by this setting is still running after the change." = "此次更改后，受此设置控制的进程仍在运行。";
 "Advertising" = "广告";
 "Advertising identifier" = "广告标识符";
@@ -40,6 +42,7 @@
 "Disable %@ again" = "再次停用 %@";
 "Disable %lld features again" = "再次停用 %lld 项功能";
 "Disable %lld features?" = "停用 %lld 项功能？";
+"Disable 1 feature?" = "停用 1 项功能？";
 "Disable all" = "全部停用";
 "Disable automatically if changed" = "如有更改，自动停用";
 "Disabled" = "已停用";
@@ -47,6 +50,7 @@
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "停用功能时，会要求你在“系统设置 > 通用 > 设备管理”中批准描述文件。";
 "Each one can be enabled again." = "每项功能都可以重新启用。";
 "Enable" = "启用";
+"Enable 1 feature again?" = "重新启用 1 项功能？";
 "Enable all" = "全部启用";
 "Enable all %lld features again?" = "重新启用全部 %lld 项功能？";
 "Enabled" = "已启用";

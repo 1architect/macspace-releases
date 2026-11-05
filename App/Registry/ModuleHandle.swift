@@ -283,6 +283,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if !groupPath.isEmpty { groupPath.removeLast() }
     }
 
+    /// A breadcrumb names an ancestor already in the stack; retain its page and choices.
+    public func navigateToAncestor(depth: Int) {
+        guard depth >= 0, depth < groupPath.count else { return }
+        cancelRequestedPage()
+        openingPage?.cancel()
+        withAnimation(Theme.push) { groupPath = Array(groupPath.prefix(depth)) }
+    }
+
     /// What the user checked on group pages that let them choose (`Row.selection`), by group id; nil until a box is clicked, when
     /// the module's suggestion (`Selection.checked`) stands.
     @Published public private(set) var chosen: [String: Set<String>] = [:]

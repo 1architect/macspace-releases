@@ -207,6 +207,7 @@ extension DiskDatabase {
             conditions.append("parent=?"); values.append(.text(parent))
         }
         if request.kind == .direct || request.kind == .managed { conditions += ["parent=?"]; values += [.text(request.folder)] }
+        if request.smallerOnly { conditions.append("logical<100000000") }
         if !request.includeSmaller && request.kind != .direct && request.kind != .managed && request.category != .installers && request.largeType != "installers" { conditions += ["logical>=100000000"] }
         if let category = request.category, category != .largeFiles { conditions += ["category=?"]; values += [.text(category.rawValue)] }
         if let type = request.largeType {

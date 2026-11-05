@@ -271,7 +271,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         snap.assetsHeld = true
         let blocks = SystemDataScreenBuilder.blocksWithItems(snap)
         let assets = try XCTUnwrap(blocks.first { $0.id == "macos" }?.items.first { $0.id == "assets:system" })
-        XCTAssertTrue(assets.detail?.contains("1 more, including Apple Intelligence models") == true)
+        XCTAssertTrue(assets.detail?.contains("1 more item is under Protected by macOS.") == true)
         XCTAssertEqual(blocks.first { $0.id == "unidentified" }?.items.first?.badge?.text, "Kept while Apple Intelligence is on")
         snap.report.fullDiskAccess = false
         let unmeasured = try XCTUnwrap(SystemDataScreenBuilder.blocksWithItems(snap).first { $0.id == "unidentified" })

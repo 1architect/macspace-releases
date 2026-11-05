@@ -6,6 +6,7 @@ import MacSpaceDiskMapPrivileged
 
 /// The same Screen, UsageBar and row contracts as the other storage modules. No custom page styling.
 enum DiskMapScreenBuilder {
+    static func itemCount(_ count: UInt64) -> String { count == 1 ? loc("1 item") : loc("\(Int(clamping: count)) items") }
     static func fileID(_ path: String) -> String { DiskFileRemoval.id(path) }
     static func folderID(_ path: String) -> String { "folder:" + path }
     static func tile(_ index: DiskIndex, files: [DiskFile]? = nil) -> Tile {
@@ -19,9 +20,9 @@ enum DiskMapScreenBuilder {
         if folder == index.root || FileReviewPolicy.applicationsFolder(folder) {
             let appFolder = folder == index.root ? nil : folder
             let installed = applications(apps, folder: appFolder).filter { $0.classification == .installedUser }
-            var rows = [Row(id: "apps", title: loc("Uninstall apps"), subtitle: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : loc("\(installed.count) items"), trailing: installed.allSatisfy(\.measurementComplete) && apps.catalogReadAt != .distantPast ? ByteFormat.string(installed.reduce(0) { $0 + $1.bytes }) : nil, pageID: appsPageID(folder: appFolder))]
+            var rows = [Row(id: "apps", title: loc("Uninstall apps"), subtitle: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : itemCount(UInt64(installed.count)), trailing: installed.allSatisfy(\.measurementComplete) && apps.catalogReadAt != .distantPast ? ByteFormat.string(installed.reduce(0) { $0 + $1.bytes }) : nil, pageID: appsPageID(folder: appFolder))]
             rows.append(Row(id: "leftovers", title: loc("Unmatched app data"),
-                subtitle: apps.measurementsComplete ? loc("\(apps.reviewableLeftovers.count) items") : loc("Measurements pending"),
+                subtitle: apps.measurementsComplete ? itemCount(UInt64(apps.reviewableLeftovers.count)) : loc("Measurements pending"),
                 trailing: apps.measurementsComplete || !apps.reviewableLeftovers.isEmpty ? ByteFormat.string(apps.reviewableLeftovers.reduce(0) { $0 + $1.bytes }) : nil,
                 badges: appFolder == nil ? [] : [Badge(loc("All locations"), .info)], detail: unmatchedExplanation, pageID: "app-data-review"))
             if folder == index.root, let summary = index.categories?.first(where: { $0.category == .installers && $0.count > 0 }) {
@@ -38,7 +39,7 @@ enum DiskMapScreenBuilder {
         let duplicates = DiskBrowseRequest(folder: folder, kind: .duplicates)
         var summaries: [Row] = []
         if let count = index.duplicateCount, count > 0 {
-            summaries.append(Row(id: duplicates.pageID, title: loc("Duplicate files"), subtitle: loc("\(Int(clamping: count)) items"),
+            summaries.append(Row(id: duplicates.pageID, title: loc("Duplicate files"), subtitle: itemCount(count),
                 trailing: index.duplicateBytes.map(ByteFormat.string), detail: loc("Choose the copies to remove. At least one verified copy must remain unselected."), pageID: duplicates.pageID))
         }
         let libraries = (index.directories[folder]?.folders ?? []).filter { DiskManagedLibrary.isLibraryName(($0 as NSString).lastPathComponent) }
@@ -57,7 +58,7 @@ enum DiskMapScreenBuilder {
             widgets += directContent?.widgets ?? []
             if !summaries.isEmpty { widgets.append(.list(ListWidget(id: "duplicates", rows: summaries))) }
         } else {
-            widgets.append(.list(ListWidget(id: "large-files", title: loc("Files"),
+            widgets.append(.list(ListWidget(id: "large-files", title: loc("Large files"),
                 emptyMessage: summaries.isEmpty && categories.isEmpty ? (direct?.loadingFraction != nil || index.categoryLoadingFraction != nil ? loc("Reading files…") : emptyExplanation(index, folder: folder)) : nil,
                 rows: summaries + categories)))
         }
@@ -93,7 +94,7 @@ enum DiskMapScreenBuilder {
     }
     static func categoryRow(_ summary: DiskCategorySummary, folder: String, smaller: Bool) -> Row {
         var request = DiskBrowseRequest(folder: folder, kind: .category, category: summary.category); request.includeSmaller = smaller
-        return Row(id: request.pageID, title: summary.category.title, subtitle: loc("\(Int(clamping: summary.count)) items"), trailing: ByteFormat.string(summary.bytes), pageID: request.pageID)
+        return Row(id: request.pageID, title: summary.category.title, subtitle: itemCount(summary.count), trailing: ByteFormat.string(summary.bytes), pageID: request.pageID)
     }
     static func folderName(_ path: String) -> String {
         let live = FileReviewPolicy.livePath(path), home = FileManager.default.homeDirectoryForCurrentUser.path
@@ -143,7 +144,7 @@ enum DiskMapScreenBuilder {
     static func folderRow(_ path: String, index: DiskIndex, id: String? = nil, directory: DiskDirectory? = nil) -> Row {
         let node = directory ?? index.directories[path]
         let paths = [FileReviewPolicy.livePath(path)]
-        return Row(id: id ?? folderID(path), title: folderName(path), subtitle: node?.itemCount.map { loc("\(Int(clamping: $0)) items") },
+        return Row(id: id ?? folderID(path), title: folderName(path), subtitle: node?.itemCount.map { itemCount($0) },
             trailing: node.map { ByteFormat.string($0.bytes) }, paths: paths, pageID: folderID(path),
             contextActions: GraphContextActions(paths: paths))
     }
@@ -172,7 +173,11 @@ enum DiskMapScreenBuilder {
     }
     static func appsPage(_ index: DiskIndex, apps: DiskApplications, folder: String? = nil) -> Screen {
         let scoped = applications(apps, folder: folder)
-        let installed = scoped.filter { $0.classification == .installedUser }
+        let installed = scoped.filter { $0.classification == .installedUser }.sorted {
+            if $0.bytes != $1.bytes { return $0.bytes > $1.bytes }
+            let order = $0.owner.name.localizedStandardCompare($1.owner.name)
+            return order == .orderedSame ? $0.owner.path < $1.owner.path : order == .orderedAscending
+        }
         let rows = installed.map(appRow)
         return Screen(title: loc("Uninstall apps"), layout: .singleColumn, widgets: [.list(ListWidget(id: "installed-apps", title: loc("Apps"), emptyMessage: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : loc("No apps found"), rows: rows))], selection: uninstallSelection(installed, folder: folder))
     }
@@ -217,10 +222,16 @@ enum DiskMapScreenBuilder {
                 requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
         } : nil)
         let candidates = DiskUninstallBatch.dataCandidates(selected, apps: apps, home: home)
+        let measurable = Set(candidates.map(\.path)).union(plans.flatMap(\.targets).map(\.path))
         var measurements: [String: UInt64] = [:]
         func bytes(_ path: String) -> UInt64 {
             if let measured = measurements[path] { return measured }
-            let measured = DiskApplications.measuredBytes([path], index: index)
+            // Optional data can live outside the current navigation snapshot. Measure that tree
+            // once when opening review, so its checkbox contributes its contents to the total.
+            let cached = DiskApplications.measuredBytes([path], index: index)
+            let measured = !measurable.contains(path) || cached > 0
+                ? cached
+                : FileTreeSizer(refusesLinks: true).size(at: URL(fileURLWithPath: path))?.bytes ?? 0
             measurements[path] = measured
             return measured
         }
@@ -232,6 +243,12 @@ enum DiskMapScreenBuilder {
                 Row(id: $0.owner.path, title: $0.owner.name, trailing: ByteFormat.string($0.bytes), paths: [$0.owner.path], iconPath: $0.owner.path)
             }))
         ]
+        let startup = plans.flatMap { $0.startupItems ?? [] }
+        if !startup.isEmpty {
+            widgets.append(.list(ListWidget(id: "uninstall-startup", title: loc("Startup items"), rows: startup.map {
+                Row(id: $0.path, title: $0.label, paths: [$0.path])
+            })))
+        }
         for app in selected {
             let claims = app.ownership.filter { $0.source != "bundle" && !$0.source.hasPrefix("receiptManifest") }
             let paths = AppOwnership.normalizedPaths(claims.flatMap(\.paths)).filter { $0 != app.owner.path && !$0.hasPrefix(app.owner.path + "/") }
@@ -246,10 +263,11 @@ enum DiskMapScreenBuilder {
             widgets.append(.list(ListWidget(id: "uninstall-data:" + Data(app.owner.path.utf8).base64EncodedString(), title: selected.count == 1 ? loc("App Data") : app.owner.name,
                 emptyMessage: loc("No associated app data found"), rows: rows)))
         }
+        let includedBytes = selected.reduce(0) { $0 + $1.bytes } + plans.flatMap(\.targets).filter { $0.evidence.source == "startupItem" }.reduce(0) { $0 + bytes($1.path) }
         let selection = action.map { Selection(action: $0, choices: choices,
             noteNames: Dictionary(uniqueKeysWithValues: candidates.map { ($0.id, $0.path) }),
             note: ($0.confirmation?.message ?? "") + "\n\n" + loc("Selected app data: %@"),
-            scope: "uninstall-data:" + selected.map { $0.owner.path }.sorted().joined(separator: "\n"), includedBytes: selected.reduce(0) { $0 + $1.bytes }) }
+            scope: "uninstall-data:" + selected.map { $0.owner.path }.sorted().joined(separator: "\n"), includedBytes: includedBytes) }
         return Screen(title: selected.count == 1 ? selected[0].owner.name : loc("Review app data"), primary: action, layout: .singleColumn, widgets: widgets, selection: selection)
     }
     static func appDataPage(_ app: DiskApplication) -> Screen {
@@ -282,7 +300,7 @@ enum DiskMapScreenBuilder {
     static func ownershipExplanation(_ confidence: OwnershipConfidence) -> String {
         switch confidence {
         case .verifiedExclusive: loc("Evidence identifies this installation as the exclusive owner.")
-        case .shared: loc("Other app installations also claim this data. It is preserved.")
+        case .shared: loc("Used by other apps")
         case .inferred: loc("The identifier or location suggests an association, but does not prove ownership. It is preserved.")
         case .unknown: loc("Available metadata cannot establish exclusive ownership. It is preserved.")
         }

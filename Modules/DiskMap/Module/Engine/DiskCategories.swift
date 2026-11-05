@@ -40,6 +40,7 @@ struct DiskBrowseRequest: Codable, Sendable {
     var category: DiskCategory? = nil
     var largeType: String? = nil
     var includeSmaller: Bool = false
+    var smallerOnly: Bool = false
     var inFolder: Bool = false
     var selectionParent: String? = nil
     var fileType: String? = nil
@@ -61,7 +62,7 @@ struct DiskBrowseRequest: Codable, Sendable {
     init(folder: String, kind: Kind, category: DiskCategory? = nil) {
         self.folder = folder; self.kind = kind; self.category = category
     }
-    private enum CodingKeys: String, CodingKey { case folder, kind, category, largeType, includeSmaller, inFolder, selectionParent, fileType, focusPath, afterSize, afterPath }
+    private enum CodingKeys: String, CodingKey { case folder, kind, category, largeType, includeSmaller, smallerOnly, inFolder, selectionParent, fileType, focusPath, afterSize, afterPath }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         folder = try values.decode(String.self, forKey: .folder)
@@ -69,6 +70,7 @@ struct DiskBrowseRequest: Codable, Sendable {
         category = try values.decodeIfPresent(DiskCategory.self, forKey: .category)
         largeType = try values.decodeIfPresent(String.self, forKey: .largeType)
         includeSmaller = try values.decodeIfPresent(Bool.self, forKey: .includeSmaller) ?? false
+        smallerOnly = try values.decodeIfPresent(Bool.self, forKey: .smallerOnly) ?? false
         inFolder = try values.decodeIfPresent(Bool.self, forKey: .inFolder) ?? false
         selectionParent = try values.decodeIfPresent(String.self, forKey: .selectionParent)
         fileType = try values.decodeIfPresent(String.self, forKey: .fileType)

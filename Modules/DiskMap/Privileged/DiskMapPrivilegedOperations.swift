@@ -32,7 +32,7 @@ public struct DiskMapPrivilegedOperations: PrivilegedOperationHandler {
             throw PrivilegedOperationError("Invalid reviewed catalog candidates.")
         }
         let catalog = AppOwnership.discover(home: home, candidates: plan.catalogCandidates + [plan.owner.path])
-        let result = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: home)
+        let result = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: home, uid: caller.uid)
         return try JSONEncoder().encode(result)
     }
 }
@@ -51,6 +51,9 @@ public enum AppRemovalExecutor {
         }
         // Never trust caller-supplied completeness, classifications, confidence or paths.
         let current = OwnershipResolver(catalog: catalog).plan(for: owner, home: home, systemLibrary: systemLibrary)
+        guard plan.startupItems == current.startupItems else { return "Startup items changed. Review a new plan." }
+        let startupPaths = Set(current.targets.filter { $0.evidence.source == "startupItem" }.map(\.path))
+        guard startupPaths.isSubset(of: Set(plan.targets.map(\.path))) else { return "Reviewed startup items must be removed with the app." }
         guard !plan.targets.isEmpty, plan.targets.count <= 4096,
               Set(plan.targets.map(\.path)).count == plan.targets.count,
               plan.targets.contains(where: { $0.path == owner.path }),
@@ -64,12 +67,17 @@ public enum AppRemovalExecutor {
         }
         return nil
     }
-    public static func execute(plan: AppRemovalPlan, catalog: AppCatalog, home: String, systemLibrary: String = "/Library",
+    public static func execute(plan: AppRemovalPlan, catalog: AppCatalog, home: String, systemLibrary: String = "/Library", uid: uid_t = getuid(),
+                               stopStartup: (([AppStartupItem]) throws -> Void)? = nil,
                                remove: (String) throws -> Void = { try FileManager.default.removeItem(atPath: $0) }) -> AppRemovalResult {
         if let error = validate(plan: plan, catalog: catalog, home: home, systemLibrary: systemLibrary) {
             return AppRemovalResult(removed: [], failures: [plan.owner.path: error])
         }
         var result = AppRemovalResult(removed: [], failures: [:])
+        do {
+            if let stopStartup { try stopStartup(plan.startupItems ?? []) }
+            else { try AppStartupItems.stop(plan.startupItems ?? [], uid: uid) }
+        } catch { return AppRemovalResult(removed: [], failures: [plan.owner.path: error.localizedDescription]) }
         // Data first, bundle last. Preflight verified every target before any side effect.
         let targets = plan.targets.filter { $0.path != plan.owner.path } + plan.targets.filter { $0.path == plan.owner.path }
         for target in targets {

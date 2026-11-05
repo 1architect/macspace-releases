@@ -11,6 +11,10 @@
 "%lld reports" = "%lld rapports";
 "/System/Library/%@" = "/System/Library/%@";
 "1 item" = "1 élément";
+"1 more item is under Protected by macOS." = "1 autre élément se trouve dans Protégé par macOS.";
+"1 place couldn't be measured." = "1 emplacement n’a pas pu être mesuré.";
+"1 place only the helper can measure: %@. Turn it on in Settings." = "1 emplacement que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.";
+"1 place wasn't measured. Reopen MacSpace." = "1 emplacement n’a pas été mesuré. Rouvrez MacSpace.";
 "1 report" = "1 rapport";
 "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed." = "Une copie de l’app que macOS a faite en la vérifiant. Elle partage l’espace avec l’app : seul ce qu’une version précédente a laissé est libéré.";
 "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted." = "Une image de restauration de macOS. Une fois le Mac, l’appareil ou la machine virtuelle configuré, elle peut être supprimée.";

@@ -10,9 +10,9 @@ extension DiskMapScreenBuilder {
         }
         return switch request.kind {
         case .direct: loc("Other files")
-        case .managed: loc("Files")
+        case .managed: loc("Large files")
         case .duplicates: loc("Duplicate files")
-        case .category: request.category == .largeFiles ? loc("Files") : request.category?.title ?? loc("Other")
+        case .category: request.category == .largeFiles ? loc("Large files") : request.category?.title ?? loc("Other")
         }
     }
 
@@ -74,8 +74,8 @@ extension DiskMapScreenBuilder {
         }
         if let next = page.next { widgets.append(.list(ListWidget(id: "next", rows: [Row(id: next.pageID, title: loc("More items"), pageID: next.pageID, replacesPage: true)]))) }
         if page.request.kind == .category, page.request.category != .installers, !page.request.includeSmaller {
-            var smaller = page.request; smaller.includeSmaller = true; smaller.inFolder = false; smaller.focusPath = nil; smaller.afterSize = nil; smaller.afterPath = nil
-            widgets.append(.list(ListWidget(id: "smaller-files", rows: [Row(id: smaller.pageID, title: loc("Show all files"), pageID: smaller.pageID)])))
+            var smaller = page.request; smaller.includeSmaller = true; smaller.smallerOnly = true; smaller.inFolder = false; smaller.focusPath = nil; smaller.afterSize = nil; smaller.afterPath = nil
+            widgets.append(.list(ListWidget(id: "smaller-files", rows: [Row(id: smaller.pageID, title: loc("Show files smaller than 100 MB"), pageID: smaller.pageID)])))
         }
         return Screen(title: title, subtitle: page.request.kind == .duplicates ? loc("Sizes show allocated space.") + " " + loc("Up to \(ByteFormat.string(page.eligibleBytes)) can be removed while keeping one copy of each set.") : page.request.kind == .category && page.request.category != .installers && !page.request.includeSmaller ? loc("Files of 100 MB or larger") : nil,
             layout: .singleColumn, widgets: widgets, selection: page.request.kind == .managed ? nil : selection, loadingFraction: page.loadingFraction)

@@ -38,6 +38,7 @@ public struct AppRemovalPlan: Codable, Equatable, Sendable {
     public var discoveryComplete: Bool
     /// Discovery hints only: the helper rereads these installations and never trusts supplied completeness.
     public var catalogCandidates: [String] = []
+    public var startupItems: [AppStartupItem]? = nil
     public func encoded() throws -> String { String(decoding: try JSONEncoder().encode(self), as: UTF8.self) }
 }
 /// A bounded discovery result is not proof that no other installation exists.
@@ -171,12 +172,16 @@ public struct OwnershipResolver: Sendable {
         return value
     }
     public func plan(for owner: AppOwner, home: String, systemLibrary: String = "/Library") -> AppRemovalPlan {
+        let startup = AppStartupItems.discover(owner: owner, catalog: catalog, home: home, systemLibrary: systemLibrary)
         let claims = claims(for: owner, home: home, systemLibrary: systemLibrary).filter { $0.confidence == .verifiedExclusive }
+            + startup.filter { !$0.path.hasPrefix(owner.path + "/") }.map {
+                DiskOwnershipClaim(paths: [$0.path], ownerPaths: [owner.path], confidence: .verifiedExclusive, source: "startupItem", reason: "Startup executable belongs to this installation.")
+            }
         let byPath = Dictionary(claims.flatMap { claim in claim.paths.map { ($0, claim) } }, uniquingKeysWith: { first, _ in first })
         let targets = AppOwnership.normalizedPaths(Array(byPath.keys)).compactMap { path -> AppRemovalTarget? in
             guard let identity = AppFileIdentity(path: path), let evidence = byPath[path] else { return nil }
             return AppRemovalTarget(path: path, identity: identity, evidence: evidence)
         }
-        return AppRemovalPlan(owner: owner, targets: targets, discoveryComplete: catalog.discoveryComplete, catalogCandidates: Array(Set(catalog.owners.map(\.path) + [owner.path])).sorted())
+        return AppRemovalPlan(owner: owner, targets: targets, discoveryComplete: catalog.discoveryComplete, catalogCandidates: Array(Set(catalog.owners.map(\.path) + [owner.path])).sorted(), startupItems: startup.isEmpty ? nil : startup)
     }
 }

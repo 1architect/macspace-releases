@@ -4,6 +4,8 @@
 "%lld files could not be removed." = "Impossible de supprimer %lld fichiers.";
 "%lld identical copies" = "%lld copies identiques";
 "%lld items" = "%lld éléments";
+"1 file could not be removed." = "1 fichier n’a pas pu être supprimé.";
+"1 item" = "1 élément";
 "Additional or unconfirmed app copy; kept separate from installed apps." = "Copie supplémentaire ou non confirmée ; séparée des apps installées.";
 "All locations" = "Tous les emplacements";
 "App Data" = "Données des apps";
@@ -56,7 +58,6 @@
 "File changed since selection. Review it again." = "Le fichier a changé depuis la sélection. Vérifiez-le à nouveau.";
 "File removal settings changed. Reopen the list and confirm again." = "Le réglage de suppression a changé. Rouvrez la liste et confirmez à nouveau.";
 "File types" = "Types de fichiers";
-"Files" = "Fichiers";
 "Files changed. Reopen the list and review your selection again." = "Les fichiers ont changé. Rouvrez la liste et vérifiez votre sélection.";
 "Files of 100 MB or larger" = "Fichiers de 100 Mo ou plus";
 "Folders" = "Dossiers";
@@ -111,7 +112,6 @@
 "Open in %@" = "Ouvert dans %@";
 "Open now" = "Ouvert actuellement";
 "Other" = "Autres";
-"Other app installations also claim this data. It is preserved." = "D’autres installations utilisent aussi ces données. Elles sont préservées.";
 "Other files" = "Autres fichiers";
 "Other formats" = "Autres formats";
 "PDF documents" = "Documents PDF";
@@ -146,7 +146,7 @@
 "Selected files changed or are open. Review them again." = "Les fichiers sélectionnés ont changé ou sont ouverts. Vérifiez-les à nouveau.";
 "Selected files changed or are unavailable. Review your selection again." = "Les fichiers sélectionnés ont changé ou sont indisponibles. Vérifiez à nouveau votre sélection.";
 "Shared data" = "Données partagées";
-"Show all files" = "Afficher tous les fichiers";
+"Show files smaller than 100 MB" = "Afficher les fichiers de moins de 100 Mo";
 "Show smaller files" = "Afficher les fichiers plus petits";
 "Sizes show allocated space." = "Les tailles indiquent l’espace alloué.";
 "SketchUp projects" = "Projets SketchUp";
@@ -156,6 +156,7 @@
 "Some files could not be verified. Refresh to retry." = "Certains fichiers n’ont pas pu être vérifiés. Actualisez pour réessayer.";
 "Some files not verified" = "Certains fichiers ne sont pas vérifiés";
 "Spreadsheets" = "Feuilles de calcul";
+"Startup items" = "Éléments de démarrage";
 "System components and other copies" = "Composants système et autres copies";
 "Text documents" = "Documents texte";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "L’app, ses fichiers de support, réglages, caches et assistants seront supprimés. Les données partagées avec d’autres apps installées sont conservées.";
@@ -191,6 +192,7 @@
 "Unmatched app data" = "Données d’apps non associées";
 "Up to %@ can be removed while keeping one copy of each set." = "Vous pouvez supprimer jusqu’à %@ en conservant une copie de chaque groupe.";
 "Use MacSpace’s uninstall option in Settings." = "Utilisez l’option de désinstallation de MacSpace dans les Réglages.";
+"Used by other apps" = "Utilisé par d’autres apps";
 "Verification incomplete" = "Vérification incomplète";
 "Verified app data" = "Données d’app vérifiées";
 "Videos" = "Vidéos";

@@ -4,6 +4,8 @@
 "%lld files could not be removed." = "%lld個のファイルを削除できませんでした。";
 "%lld identical copies" = "%lld個の同一コピー";
 "%lld items" = "%lld項目";
+"1 file could not be removed." = "1個のファイルを削除できませんでした。";
+"1 item" = "1項目";
 "Additional or unconfirmed app copy; kept separate from installed apps." = "追加または未確認のコピーです。インストール済みアプリと分けて表示します。";
 "All locations" = "すべての場所";
 "App Data" = "アプリデータ";
@@ -56,7 +58,6 @@
 "File changed since selection. Review it again." = "選択後にファイルが変更されました。再確認してください。";
 "File removal settings changed. Reopen the list and confirm again." = "ファイル削除の設定が変更されました。リストを開き直して確認してください。";
 "File types" = "ファイルの種類";
-"Files" = "ファイル";
 "Files changed. Reopen the list and review your selection again." = "ファイルが変更されました。リストを開き直して選択内容を確認してください。";
 "Files of 100 MB or larger" = "100 MB以上のファイル";
 "Folders" = "フォルダ";
@@ -111,7 +112,6 @@
 "Open in %@" = "%@で開いています";
 "Open now" = "現在開いています";
 "Other" = "その他";
-"Other app installations also claim this data. It is preserved." = "他のインストールもこのデータを使用するため、保持します。";
 "Other files" = "その他のファイル";
 "Other formats" = "その他の形式";
 "PDF documents" = "PDF書類";
@@ -146,7 +146,7 @@
 "Selected files changed or are open. Review them again." = "選択したファイルが変更されたか開かれています。再確認してください。";
 "Selected files changed or are unavailable. Review your selection again." = "選択したファイルが変更されたか利用できません。選択内容を再確認してください。";
 "Shared data" = "共有データ";
-"Show all files" = "すべてのファイルを表示";
+"Show files smaller than 100 MB" = "100 MB未満のファイルを表示";
 "Show smaller files" = "小さいファイルを表示";
 "Sizes show allocated space." = "サイズは割り当てられた容量を示します。";
 "SketchUp projects" = "SketchUpプロジェクト";
@@ -156,6 +156,7 @@
 "Some files could not be verified. Refresh to retry." = "一部のファイルを検証できませんでした。更新して再試行してください。";
 "Some files not verified" = "一部のファイルが未検証です";
 "Spreadsheets" = "スプレッドシート";
+"Startup items" = "起動項目";
 "System components and other copies" = "システム構成要素とその他のコピー";
 "Text documents" = "テキスト書類";
 "The app and its owned support files, settings, caches and helpers will be removed. Shared data used by other installed apps is preserved." = "アプリとそのサポートファイル、設定、キャッシュ、ヘルパーを削除します。他のインストール済みアプリが使用する共有データは保持します。";
@@ -191,6 +192,7 @@
 "Unmatched app data" = "対応するアプリが不明なデータ";
 "Up to %@ can be removed while keeping one copy of each set." = "各グループのコピーを1つ残して、最大%@を削除できます。";
 "Use MacSpace’s uninstall option in Settings." = "設定にある MacSpace のアンインストールを使用してください。";
+"Used by other apps" = "ほかのアプリで使用中";
 "Verification incomplete" = "検証が不完全です";
 "Verified app data" = "確認済みのアプリデータ";
 "Videos" = "ビデオ";

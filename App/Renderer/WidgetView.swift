@@ -678,9 +678,9 @@ struct RowView: View {
             RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             Spacer(minLength: 8)
             if placement != .afterFinder { RowActionFlags(row: row, handler: handler) }
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
-            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
         }
         .contentShape(Rectangle())
@@ -693,8 +693,8 @@ struct RowView: View {
     @ViewBuilder
     private var appIcon: some View {
         if let path = row.iconPath {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                .resizable().scaledToFit().frame(width: 28, height: 28).accessibilityHidden(true)
+            AppFileIcon(path: path)
+                .id(path)
         }
     }
 
@@ -707,7 +707,7 @@ struct RowView: View {
                     .labelsHidden()
             }
             appIcon
-            // The title, information, badges and row actions precede the size; Finder is the final row control.
+            // The Finder control immediately precedes the size throughout the app.
             // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
             // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
             // half of what was left while room stood empty after it: its warning pill truncated to "Não…" and came back, and the size
@@ -723,13 +723,40 @@ struct RowView: View {
                 // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing {
                 ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
             }
             // No figure on the right: the flag takes the right edge (`RowFlagPlacement`).
             if placement == .trailing { RowActionFlags(row: row, handler: handler) }
-            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
-            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
+        }
+    }
+}
+
+/// Load the icon with the row's model so the first frame always has an image. Keep that
+/// NSImage while selection redraws the row, avoiding checkbox-driven image crossfades.
+private struct AppFileIcon: View {
+    @StateObject private var model: Model
+
+    init(path: String) {
+        _model = StateObject(wrappedValue: Model(path: path))
+    }
+
+    var body: some View {
+        Image(nsImage: model.icon)
+            .resizable().scaledToFit()
+            .frame(width: 28, height: 28)
+            .accessibilityHidden(true)
+            .transaction { $0.animation = nil }
+    }
+
+    @MainActor
+    private final class Model: ObservableObject {
+        let icon: NSImage
+
+        init(path: String) {
+            icon = NSWorkspace.shared.icon(forFile: path)
         }
     }
 }

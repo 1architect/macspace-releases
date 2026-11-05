@@ -8,9 +8,9 @@ enum DiskUninstallBatch {
     static let reviewDestination = "uninstall-selected"
     static func plan(_ app: DiskApplication) -> AppRemovalPlan? {
         guard app.classification == .installedUser, app.removable, var plan = app.plan else { return nil }
-        plan.targets = plan.targets.filter { $0.path == app.owner.path }
-        guard plan.targets.count == 1 else { return nil }
-        // Only the bundle is privileged work; the helper discovers current ownership independently.
+        plan.targets = plan.targets.filter { $0.path == app.owner.path || $0.evidence.source == "startupItem" }
+        guard plan.targets.filter({ $0.path == app.owner.path }).count == 1 else { return nil }
+        // Startup plists are mandatory lifecycle work; app data remains optional.
         plan.catalogCandidates = [app.owner.path]
         return plan
     }
@@ -20,7 +20,7 @@ enum DiskUninstallBatch {
         for reviewed in plans {
             guard reviewed.version == 1,
                   let app = apps.apps.first(where: { $0.owner.path == reviewed.owner.path }), let current = plan(app),
-                  reviewed.owner == current.owner, reviewed.targets == current.targets,
+                  reviewed.owner == current.owner, reviewed.targets == current.targets, reviewed.startupItems == current.startupItems,
                   reviewed.targets.allSatisfy({ AppFileIdentity(path: $0.path) == $0.identity }) else { return nil }
             result.append(app)
         }

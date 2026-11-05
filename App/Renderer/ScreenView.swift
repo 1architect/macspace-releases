@@ -702,7 +702,8 @@ struct ActionDock: View {
     private var choiceAction: Action? {
         guard let group = choosingGroup, let selection = group.selection else { return nil }
         let ids = handle.checked(group)
-        guard selection.bulk?.unavailableReason == nil, selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty else { return nil }
+        guard selection.bulk?.unavailableReason == nil,
+              selection.includedBytes != nil || (selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty) else { return nil }
         var action = selection.action
         let total = (selection.includedBytes ?? 0) + (selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +))
         // While the boxes are what the module suggests, the button says so ("Free recommended").
@@ -714,7 +715,7 @@ struct ActionDock: View {
             action.parameters["ids"] = nil; action.parameters["reviewed"] = nil; action.parameters["origins"] = nil
             action.parameters["selectionToken"] = bulk.token
             if action.confirmation != nil {
-                let count = String(format: String(localized: "%lld selected files"), Int64(clamping: bulk.count))
+                let count = bulk.count == 1 ? String(localized: "1 selected file") : String(format: String(localized: "%lld selected files"), Int64(clamping: bulk.count))
                 action.confirmation?.message += "\n\n" + count + " · " + ByteFormat.string(bulk.bytes)
             }
         } else { action.parameters["ids"] = Selection.parameter(ids.sorted()) }

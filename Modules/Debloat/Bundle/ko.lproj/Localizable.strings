@@ -7,6 +7,8 @@
 "%lld features were turned back on by macOS" = "macOS가 기능 %lld개 다시 켬";
 "%lld undone by macOS" = "macOS가 %lld개 되돌림";
 "%lld/%lld disabled" = "%lld/%lld개 꺼짐";
+"1 undone by macOS" = "macOS가 1개를 되돌림";
+"1/%lld disabled" = "1/%lld개 꺼짐";
 "A process covered by this setting is still running after the change." = "변경 후에도 이 설정이 제어하는 프로세스가 계속 실행 중입니다.";
 "Advertising" = "광고";
 "Advertising identifier" = "광고 식별자";
@@ -40,6 +42,7 @@
 "Disable %@ again" = "%@ 다시 끄기";
 "Disable %lld features again" = "기능 %lld개 다시 끄기";
 "Disable %lld features?" = "기능 %lld개를 끌까요?";
+"Disable 1 feature?" = "기능 1개를 끌까요?";
 "Disable all" = "모두 끄기";
 "Disable automatically if changed" = "변경되면 자동으로 끄기";
 "Disabled" = "꺼짐";
@@ -47,6 +50,7 @@
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "기능을 끄면 시스템 설정 > 일반 > 기기 관리에서 프로파일 승인을 요청합니다.";
 "Each one can be enabled again." = "각 기능은 다시 켤 수 있습니다.";
 "Enable" = "켜기";
+"Enable 1 feature again?" = "기능 1개를 다시 켤까요?";
 "Enable all" = "모두 켜기";
 "Enable all %lld features again?" = "기능 %lld개를 모두 다시 켤까요?";
 "Enabled" = "켜짐";

@@ -7,6 +7,8 @@
 "%lld features were turned back on by macOS" = "%lld recursos foram reativados pelo macOS";
 "%lld undone by macOS" = "%lld desfeitos pelo macOS";
 "%lld/%lld disabled" = "%lld/%lld desativados";
+"1 undone by macOS" = "1 desfeito pelo macOS";
+"1/%lld disabled" = "1/%lld desativado";
 "A process covered by this setting is still running after the change." = "Um processo controlado por este ajuste ainda está em execução após a alteração.";
 "Advertising" = "Publicidade";
 "Advertising identifier" = "Identificador de publicidade";
@@ -40,6 +42,7 @@
 "Disable %@ again" = "Desativar %@ de novo";
 "Disable %lld features again" = "Desativar %lld recursos de novo";
 "Disable %lld features?" = "Desativar %lld recursos?";
+"Disable 1 feature?" = "Desativar 1 recurso?";
 "Disable all" = "Desativar tudo";
 "Disable automatically if changed" = "Desativar automaticamente se houver alteração";
 "Disabled" = "Desativado";
@@ -47,6 +50,7 @@
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "Desativar uma delas pede que você aprove um perfil em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.";
 "Each one can be enabled again." = "Cada um pode ser reativado.";
 "Enable" = "Ativar";
+"Enable 1 feature again?" = "Ativar 1 recurso novamente?";
 "Enable all" = "Ativar tudo";
 "Enable all %lld features again?" = "Reativar todos os %lld recursos?";
 "Enabled" = "Ativado";
