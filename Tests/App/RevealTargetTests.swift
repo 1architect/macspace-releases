@@ -4,6 +4,22 @@ import XCTest
 final class RevealTargetTests: XCTestCase {
     private func url(_ path: String) -> URL { URL(fileURLWithPath: path) }
 
+    func testApplicationBundleIsSelectedInFinderRatherThanOpenedAsADirectory() throws {
+        let app = FileManager.default.temporaryDirectory.appendingPathComponent("Reveal-\(UUID().uuidString).app", isDirectory: true)
+        try FileManager.default.createDirectory(at: app.appendingPathComponent("Contents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: app) }
+        XCTAssertEqual(try app.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, true)
+        XCTAssertEqual(RevealTarget.of([app]), .select([app.standardizedFileURL]))
+        XCTAssertEqual(RevealTarget.of([url("/Applications/Example.APP")]), .select([url("/Applications/Example.APP")]))
+    }
+
+    func testOrdinaryFolderStillOpensItsContents() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Reveal-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        XCTAssertEqual(RevealTarget.of([folder]), .open(folder.standardizedFileURL))
+    }
+
     func testFilesInOneFolderAreSelectedThere() {
         let files = [url("/Users/me/Library/Logs/DiagnosticReports/a.ips"), url("/Users/me/Library/Logs/DiagnosticReports/b.ips")]
         XCTAssertEqual(RevealTarget.of(files), .select(files))

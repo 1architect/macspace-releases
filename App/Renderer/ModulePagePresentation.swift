@@ -2,6 +2,16 @@ import MacSpaceSdk
 
 /// The same source rows drive the overview and drill-down; actions, counts and selection IDs never get copied or rewritten.
 enum ModulePagePresentation {
+    static func visibleWidgets(_ widgets: [ScreenWidget], checked: Set<String>) -> [ScreenWidget] {
+        widgets.compactMap { widget in
+            if case let .list(list) = widget, list.headingChoice == nil, let parent = list.visibleWhenSelected, !checked.contains(parent) { return nil }
+            if case var .section(section) = widget {
+                section.widgets = visibleWidgets(section.widgets, checked: checked)
+                return section.widgets.isEmpty ? nil : .section(section)
+            }
+            return widget
+        }
+    }
     struct Item: Identifiable {
         let id: String
         let widgets: [ScreenWidget]
@@ -48,7 +58,8 @@ enum ModulePagePresentation {
 
     private static func split(_ widgets: [ScreenWidget], title: String?, help: String?, id: String, width: Double) -> [Item] {
         if widgets.count == 1, case let .list(list) = widgets[0],
-           list.fillsRemainingSpace == true || !list.paths.isEmpty || (help == nil && title == list.title && list.rows.allSatisfy({ $0.children.isEmpty })) {
+           list.fillsRemainingSpace == true || !list.paths.isEmpty || list.headingChoice != nil || list.visibleWhenSelected != nil
+            || list.cascadesOnAppear == true || (help == nil && title == list.title && list.rows.allSatisfy({ $0.children.isEmpty })) {
             return [Item(id: list.id, widgets: widgets)]
         }
         // A section containing other widget types retains their original presentation and help.
@@ -88,11 +99,23 @@ enum ModulePagePresentation {
     static func groupWidgets(_ group: Row) -> [ScreenWidget] {
         if let selection = group.selection, !selection.sections.isEmpty {
             let byID = Dictionary(group.children.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            return selection.sections.compactMap { section in
-                let rows = section.rows.compactMap { byID[$0] }
+            var shown = Set<String>()
+            var widgets: [ScreenWidget] = selection.sections.compactMap { section in
+                let rows = section.rows.compactMap { id -> Row? in
+                    guard let row = byID[id], shown.insert(id).inserted else { return nil }
+                    return row
+                }
                 guard !rows.isEmpty else { return nil }
-                return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows))
+                return .list(ListWidget(id: "group-section:\(section.id)", title: section.title, rows: rows, cascadesOnAppear: true))
             }
+            // Sections describe selectable subsets, not the complete inventory. Never discard
+            // read-only, shared, protected or newly added rows when building a detail page.
+            let remaining = group.children.filter { shown.insert($0.id).inserted }
+            if !remaining.isEmpty {
+                widgets.append(.list(ListWidget(id: "group-unsectioned:" + group.id, title: widgets.isEmpty ? group.title : String(localized: "Other items"),
+                    rows: remaining, cascadesOnAppear: true)))
+            }
+            if !widgets.isEmpty { return widgets }
         }
         return [.section(SectionWidget(id: "group-items:\(group.id)", title: group.title, subtitle: group.detail,
                                       widgets: [.list(ListWidget(id: "group-items-list:\(group.id)", rows: group.children))]))]
@@ -143,7 +166,7 @@ struct ModuleSectionHeader: View {
 }
 
 /// The same native checkbox as file rows, including macOS's mixed state for partial selections.
-private struct HeaderCheckbox: NSViewRepresentable {
+struct HeaderCheckbox: NSViewRepresentable {
     var on: Bool
     var mixed: Bool
     var toggle: @MainActor () -> Void
@@ -160,6 +183,7 @@ private struct HeaderCheckbox: NSViewRepresentable {
     }
     func updateNSView(_ button: NSButton, context: Context) {
         context.coordinator.toggle = toggle
+        button.isEnabled = context.environment.isEnabled
         button.state = mixed ? .mixed : on ? .on : .off
     }
 }

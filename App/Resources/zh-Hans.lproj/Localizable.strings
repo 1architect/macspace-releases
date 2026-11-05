@@ -79,6 +79,7 @@
 "Helper approved" = "辅助程序已获批准";
 "How often" = "频率";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "在后台运行时，MacSpace 不显示菜单栏或程序坞图标。可从“应用程序”重新打开。";
+"In use" = "使用中";
 "Install helper" = "安装辅助程序";
 "It does the few tasks that need an administrator." = "它负责少量需要管理员权限的任务。";
 "Keep running in the background" = "在后台继续运行";
@@ -93,6 +94,7 @@
 "MacSpace has not been tested on this release yet." = "此 macOS 版本尚未经过 MacSpace 测试。";
 "MacSpace keeps an eye on your disk." = "MacSpace 会关注磁盘状态。";
 "MacSpace needs it to see everything in System Data." = "MacSpace 需要此权限才能查看所有系统数据。";
+"MacSpace quits this app before uninstalling it." = "MacSpace 会在卸载前退出此 App。";
 "Maximize" = "最大化";
 "Minimize" = "最小化";
 "Modules" = "模块";
@@ -127,6 +129,7 @@
 "Open at login" = "登录时打开";
 "Open in Finder" = "在访达中打开";
 "Other folders" = "其他文件夹";
+"Other items" = "其他项目";
 "Permissions" = "权限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "点击“安装辅助程序”。如果 macOS 仍无法识别，请在终端运行：/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register，并发送输出的信息。";
 "Privileged helper" = "特权辅助程序";

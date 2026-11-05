@@ -34,13 +34,13 @@ final class DiskUninstallBatchTests: XCTestCase {
         return ["ids": Selection.parameter(apps.map { $0.owner.path }),
             "reviewed": String(decoding: try JSONEncoder().encode(selection.reviewed), as: UTF8.self)]
     }
-    func testCheckboxSelectionOpensCombinedReviewWithMandatoryAppsAndOptionalData() throws {
+    func testCheckboxSelectionOpensPerAppReviewWithAppDataSelectAllHeadings() throws {
         try fixture { home, apps in
             let first = DiskMapScreenBuilder.appsPage(DiskIndex(root: home), apps: apps)
             XCTAssertEqual(first.selection?.choices.count, 2)
             XCTAssertTrue(first.selection?.checked.isEmpty == true)
             if case let .list(list) = first.widgets[0] {
-                XCTAssertTrue(list.rows.allSatisfy { $0.actions.isEmpty && $0.pageID == nil })
+                XCTAssertTrue(list.rows.allSatisfy { $0.actions.isEmpty && $0.pageID == nil && $0.detail == nil })
             } else { XCTFail("Expected app list") }
             let plans = try XCTUnwrap(DiskUninstallBatch.plans(parameters: parameters(apps.apps), apps: apps))
             let selected = try XCTUnwrap(DiskUninstallBatch.resolve(plans, apps: apps))
@@ -48,15 +48,56 @@ final class DiskUninstallBatchTests: XCTestCase {
             let pending = home + "/Library/Application Support/One"
             index.directories[pending] = DiskDirectory(path: pending, bytes: 0)
             let review = DiskMapScreenBuilder.uninstallReview(index, selected: selected, apps: apps, home: home)
-            XCTAssertEqual(review.primary?.id, "uninstallSelected")
+            XCTAssertNil(review.primary)
+            XCTAssertEqual(review.selection?.action.id, "uninstallSelected")
             XCTAssertEqual(review.selection?.includedBytes, 16384)
             XCTAssertEqual(review.selection?.choices.count, 2)
             XCTAssertTrue(review.selection?.checked.isEmpty == true)
+            XCTAssertNil(review.selection?.action.parameters["selectApps"])
             XCTAssertTrue(review.selection?.choices.values.allSatisfy { $0 > 0 } == true, "Data outside the snapshot must be measured for the selection total")
-            let encoded = try XCTUnwrap(review.primary?.parameters["plans"])
+            let encoded = try XCTUnwrap(review.selection?.action.parameters["plans"])
+            XCTAssertEqual(DiskUninstallBatch.selectedPlans(plans, parameters: ["ids": ""])?.count, 2,
+                           "Clearing all optional data still uninstalls both apps selected on the preceding page")
             XCTAssertEqual(try JSONDecoder().decode([AppRemovalPlan].self, from: Data(encoded.utf8)).map { $0.owner.path }, selected.map { $0.owner.path })
-            XCTAssertTrue(review.primary?.confirmation?.message.contains(selected[0].owner.path) == true)
-            XCTAssertTrue(review.primary?.confirmation?.message.contains(selected[1].owner.path) == true)
+            let lists = review.widgets.compactMap { if case let .list(list) = $0 { return list }; return nil }
+            XCTAssertEqual(lists.count, 2)
+            for (n, app) in selected.enumerated() {
+                XCTAssertEqual(lists[n].headingChoice, DiskUninstallReview.dataSectionID(app.owner.path))
+                let allData = try XCTUnwrap(review.selection?.sections.first { $0.id == lists[n].headingChoice })
+                XCTAssertEqual(allData.rows.count, 1)
+                XCTAssertTrue(allData.rows.allSatisfy { review.selection?.choices[$0] != nil })
+                XCTAssertEqual(lists[n].headingIconPath, app.owner.path)
+                XCTAssertNil(lists[n].visibleWhenSelected)
+                XCTAssertEqual(lists[n].cascadesOnAppear, true)
+                XCTAssertEqual(lists[n].rows.count, 1)
+                XCTAssertEqual(lists[n].rows[0].title, "Application support")
+                XCTAssertNotNil(lists[n].rows[0].selectionSectionID)
+                XCTAssertEqual(lists[n].rows[0].selection?.scope, review.selection?.scope)
+            }
+        }
+    }
+    func testUncheckedAppsCannotAuthorizeRemovalOrSupplyTheirData() throws {
+        try fixture { home, apps in
+            let plans = apps.apps.compactMap(DiskUninstallBatch.plan)
+            let data = try XCTUnwrap(DiskUninstallBatch.dataCandidates([apps.apps[1]], apps: apps, home: home).first)
+            let chosen = try XCTUnwrap(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": plans[0].owner.path]))
+            XCTAssertEqual(chosen.map { $0.owner.path }, [plans[0].owner.path])
+            XCTAssertNil(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": data.id]))
+            XCTAssertNil(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": ""]))
+            let candidates = DiskUninstallBatch.dataCandidates([apps.apps[0]], apps: apps, home: home)
+            XCTAssertFalse(Set(candidates.map(\.id)).contains(data.id))
+        }
+    }
+    func testMandatoryAppNamesRemainLiteralWhenFormattingOptionalDataConfirmation() throws {
+        try fixture { home, original in
+            var apps = original
+            apps.apps[0].owner.name = "100% %@ App"
+            let page = DiskMapScreenBuilder.uninstallReview(DiskIndex(root: home), selected: apps.apps, apps: apps, home: home)
+            let note = try XCTUnwrap(page.selection?.note)
+            let formatted = String(format: note, "Selected location")
+            XCTAssertTrue(formatted.contains("100% %@ App"))
+            XCTAssertTrue(formatted.contains("Selected location"))
+            XCTAssertTrue(page.selection?.action.confirmation?.message.contains("100% %@ App") == true)
         }
     }
     func testAppsAreSortedByDescendingSizeWithStableTies() throws {

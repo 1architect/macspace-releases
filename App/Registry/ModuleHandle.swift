@@ -409,6 +409,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public func checked(_ group: Row) -> Set<String> {
         guard let selection = group.selection else { return [] }
         if let bulk = selection.bulk { return Set(bulk.checked).intersection(selection.choices.keys) }
+        return selection.effectiveIDs(storedChecked(group))
+    }
+
+    private func storedChecked(_ group: Row) -> Set<String> {
+        guard let selection = group.selection else { return [] }
         return (chosen[group.id] ?? (selection.session ? [] : Set(selection.checked))).intersection(selection.choices.keys)
     }
 
@@ -418,7 +423,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if let bulk = selection.bulk {
             return Set(selection.sections.filter { $0.pageID.map(Set(bulk.all).contains) == true }.map(\.id))
         }
-        guard selection.session else { return chosenAll[group.id] ?? Set(selection.sections.filter(\.all).map(\.id)) }
+        guard selection.session else {
+            let all = chosenAll[group.id] ?? Set(selection.sections.filter(\.all).map(\.id))
+            guard !selection.parents.isEmpty else { return all }
+            let checked = checked(group)
+            return Set(selection.sections.filter { all.contains($0.id) && Set($0.rows).intersection(selection.choices.keys).isSubset(of: checked) }.map(\.id))
+        }
         let ids = checked(group)
         return Set(selection.sections.compactMap { section in
             guard let pageID = section.pageID,
@@ -435,7 +445,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             queueBulkChange("toggle", in: group, toggledID: id)
             return
         }
-        var ids = checked(group)
+        var ids = storedChecked(group)
         var all = allChecked(group)
         if ids.contains(id) {
             ids.remove(id)
@@ -485,15 +495,22 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
             return
         }
-        var ids = checked(group)
+        var ids = storedChecked(group)
         var all = allChecked(group)
         let rows = Set(section.rows).intersection(selection.choices.keys)
+        let previous = ids
         if (!selection.session && all.contains(sectionID)) || (!rows.isEmpty && rows.isSubset(of: ids)) {
             ids.subtract(rows)
             all.remove(sectionID)
         } else {
             ids.formUnion(rows)
             all.insert(sectionID)
+        }
+        // Clearing a nested category also clears overlapping select-all flags.
+        // Otherwise its app heading stays checked and the next click cannot select all.
+        let removed = previous.subtracting(ids)
+        if !removed.isEmpty {
+            for section in selection.sections where !Set(section.rows).isDisjoint(with: removed) { all.remove(section.id) }
         }
         choose(ids, all: all, in: group)
     }

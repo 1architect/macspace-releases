@@ -49,7 +49,7 @@ final class DiskReviewLatencyTests: XCTestCase {
         _ = await store.view()
         let start = Date()
         let page = await module.page(id: try reviewID(selection, paths: [path]), context: context())
-        XCTAssertEqual(page?.primary?.id, "uninstallSelected")
+        XCTAssertEqual(page?.selection?.action.id, "uninstallSelected")
         XCTAssertEqual(reads.count, 1, "Opening review cannot redo receipts, signatures, service discovery or unrelated app ownership")
         XCTAssertLessThan(Date().timeIntervalSince(start), 0.5)
         // A removed app is rejected even though review uses the prepared catalog.
@@ -75,7 +75,7 @@ final class DiskReviewLatencyTests: XCTestCase {
             let id = try reviewID(selection, paths: chosen), start = Date()
             let page = await module.page(id: id, context: context())
             let elapsed = Date().timeIntervalSince(start)
-            XCTAssertNotNil(page?.primary)
+            XCTAssertNotNil(page?.selection?.action)
             print("UNINSTALL_REVIEW_LATENCY mode=\(name) apps=\(chosen.count) seconds=\(elapsed)")
             if let limit = ProcessInfo.processInfo.environment["MACSPACE_REVIEW_MAX_SECONDS"].flatMap(Double.init) { XCTAssertLessThan(elapsed, limit) }
         }

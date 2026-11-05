@@ -23,6 +23,7 @@ struct WidgetForm<Top: View>: View {
     @Environment(\.pageScrollTop) private var scrollTop
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.sectionChoice) private var sectionChoice
+    @Environment(\.rowChoice) private var rowChoice
     @State private var flipped: Set<String> = []
     @State private var previousStructure: PageCascade.Structure?
     @State private var firstListHeaderHeight: CGFloat = 0
@@ -92,7 +93,8 @@ struct WidgetForm<Top: View>: View {
             let listReady = graph == nil || (!expanded && loadingGraph.phase == .ready)
             let columns = graph == nil ? layout.columns : 1
             let listWidth = graph?.listWidth ?? layout.columnWidth
-            let items = ModulePagePresentation.items(widgets, width: listWidth, expandsGroups: expandsGroups)
+            let visibleWidgets = ModulePagePresentation.visibleWidgets(widgets, checked: rowChoice?.checked ?? [])
+            let items = ModulePagePresentation.items(visibleWidgets, width: listWidth, expandsGroups: expandsGroups)
             let ids = Self.itemIDs(items.flatMap(\.widgets).map(fitted))
             // In separate panes the list starts its own cascade as soon as the graph arrives.
             // Stacked pages still reveal the legend first, followed by the rows below it.
@@ -188,12 +190,28 @@ struct WidgetForm<Top: View>: View {
     private func widgetSection(_ widget: ScreenWidget, positions: Positions, alignsGraph: Bool = false) -> some View {
         let title = Self.title(widget)
         let rows = entries(fitted(widget))
+        let list: ListWidget? = { if case let .list(list) = widget { return list }; return nil }()
+        let localCascade = list?.cascadesOnAppear == true || list?.visibleWhenSelected != nil
         return VStack(alignment: .leading, spacing: 8) {
             if let text = title.text, !text.isEmpty {
                 // The grouped-list title of macOS's System Settings, as the app's own Settings draw it (`Form`, `.grouped`):
                 // semibold, in the text's color. Module pages had grey regular titles and Settings bold ones.
                 HStack(spacing: 6) {
-                    header(text, help: title.help, part: Self.part(widget) ?? (sectionChoice?.selection.sections.contains(where: { $0.id == widget.id }) == true ? widget.id : nil))
+                    if let section = list?.headingChoice, let choice = sectionChoice,
+                       choice.selection.sections.contains(where: { $0.id == section }) {
+                        HeaderCheckbox(on: choice.isOn(section), mixed: choice.isMixed(section)) { choice.toggle(section) }
+                            .frame(width: 14, height: 14).accessibilityLabel(text)
+                            .disabled(!choice.hasRows(section))
+                            .help(choice.unavailableReason(section) ?? text)
+                        Text(text).lineLimit(1)
+                    } else if let choiceID = list?.headingChoice, let choice = rowChoice {
+                        Toggle(text, isOn: Binding(get: { choice.checked.contains(choiceID) }, set: { _ in choice.toggle(choiceID) }))
+                            .toggleStyle(.checkbox).labelsHidden()
+                        Text(text).lineLimit(1)
+                    } else {
+                        header(text, help: title.help, part: Self.part(widget) ?? (sectionChoice?.selection.sections.contains(where: { $0.id == widget.id }) == true ? widget.id : nil))
+                    }
+                    if let path = list?.headingIconPath { AppFileIcon(path: path).id(path) }
                     if case let .list(list) = widget, !list.paths.isEmpty {
                         Spacer(minLength: 8)
                         RevealButton(paths: list.paths)
@@ -209,34 +227,69 @@ struct WidgetForm<Top: View>: View {
                     .geometryGroup()
                     .modifier(positions.item(widget.id + ":header"))
             }
-            // Lazy: only the rows on screen are made. Every row of a long list was built and kept, 263 rows took the
-            // page from 13 to 186 MB (**measured**, `MemoryBenchmarkTests`, 2026-10-20).
+            Group {
+                if localCascade {
+                    CascadingRows(rows: rows, shown: positions.visible && (list?.visibleWhenSelected.map { rowChoice?.checked.contains($0) == true } ?? true),
+                                  focusedID: handle?.focusedRowID)
+                } else { Rows(rows: rows, positions: positions, focusedID: handle?.focusedRowID) }
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(listCanvas)).minY } action: { top in
+                if case let .list(list) = widget, list.fillsRemainingSpace == true { overviewRowsTop[list.id] = top }
+            }
+        }
+        .geometryGroup()
+        // Local lists retain their header and animate individual rows/shade. A second
+        // whole-section transition would fade everything together and add another delay.
+        .transition(localCascade ? .identity : positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
+    }
+
+    private struct Rows: View {
+        let rows: [Entry]
+        let positions: Positions
+        let focusedID: String?
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        var body: some View {
             LazyVStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                    row.view
-                        .id(row.id)
-                        .background(handle?.focusedRowID == row.id ? Color.accentColor.opacity(0.12) : Color.clear)
+                    row.view.id(row.id)
+                        .background(focusedID == row.id ? Color.accentColor.opacity(0.12) : Color.clear)
                         .modifier(PageRowCell(index: index))
-                        // Resolve parent placement once for the whole cell, before the cascade. Text's own content
-                        // transactions must not animate/cancel its position separately from the shade and controls.
                         .geometryGroup()
                         .modifier(positions.item(row.id))
                         .transition(positions.transition(row.id, reduceMotion: reduceMotion))
                 }
             }
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(listCanvas)).minY } action: { top in
-                if case let .list(list) = widget, list.fillsRemainingSpace == true { overviewRowsTop[list.id] = top }
-            }
             .background {
                 if let first = rows.first, let last = rows.last {
-                    Color.clear
-                        .modifier(positions.shade(first: first.id, last: last.id))
-                        .modifier(positions.item(first.id))
+                    Color.clear.modifier(positions.shade(first: first.id, last: last.id)).modifier(positions.item(first.id))
                 }
             }
         }
-        .geometryGroup()
-        .transition(positions.transition(widget.id + ":header", reduceMotion: reduceMotion))
+    }
+
+    private struct CascadingRows: View {
+        let rows: [Entry]
+        let shown: Bool
+        let focusedID: String?
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @StateObject private var visibility = ListVisibility()
+        private struct Input: Equatable { var shown: Bool; var count: Int; var reduceMotion: Bool }
+
+        var body: some View {
+            let timing = PageCascade.listStructure(rows.map(\.id))
+            let positions = Positions(timing.ids, offset: timing.offset, cascadeCount: timing.count, visible: visibility.visible)
+            ListHeightLayout(fraction: visibility.expanded ? 1 : 0) {
+                Rows(rows: rows, positions: positions, focusedID: focusedID)
+            }
+            .clipped()
+            .disabled(!shown)
+            .accessibilityHidden(!shown)
+            .onChange(of: Input(shown: shown, count: rows.count, reduceMotion: reduceMotion), initial: true) { _, input in
+                visibility.update(shown: input.shown, rowCount: input.count, reduceMotion: input.reduceMotion)
+            }
+            .onDisappear { visibility.cancel() }
+        }
     }
 
 
@@ -389,6 +442,11 @@ extension ContainerValues {
 
 enum PageCascade {
     static let duration = 0.22
+
+    static func listStructure(_ rows: [String]) -> Structure { Structure(ids: rows) }
+    static func listSpan(rowCount: Int) -> Double {
+        delay(index: 0, count: rowCount, visible: false) + duration
+    }
 
     struct Structure: Equatable {
         let ids: [String]
@@ -647,6 +705,7 @@ struct RowView: View {
     let handler: ActionHandler
     @Environment(\.openGroup) private var openGroup
     @Environment(\.rowChoice) private var rowChoice
+    @Environment(\.sectionChoice) private var sectionChoice
 
     /// Drawn on the page already: a pill that comes now arrives with its motion (`RowBadges.arrives`).
     @State private var appeared = false
@@ -671,16 +730,23 @@ struct RowView: View {
     /// items. Not a button: a button around the row would take the (i)'s click too.
     private var groupRow: some View {
         HStack(spacing: 10) {
+            if let section = row.selectionSectionID, let choice = sectionChoice {
+                HeaderCheckbox(on: choice.isOn(section), mixed: choice.isMixed(section)) { choice.toggle(section) }
+                    .frame(width: 14, height: 14).accessibilityLabel(row.title)
+                    .disabled(!choice.hasRows(section))
+                    .help(choice.unavailableReason(section) ?? row.title)
+            }
             appIcon
             TitleLine(title: row.title, note: row.subtitle)
             // The (i) first, then the pills (`itemRow`).
             InfoButton(text: row.detail)
+            if let path = row.iconPath { AppUseBadge(path: path, appeared: appeared) }
             RowBadges(badges: row.badges, gap: 10, arrives: appeared)
             Spacer(minLength: 8)
             if placement != .afterFinder { RowActionFlags(row: row, handler: handler) }
-            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             if let trailing = row.trailing { ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary) }
             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tertiary)
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
             if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
         }
         .contentShape(Rectangle())
@@ -707,7 +773,7 @@ struct RowView: View {
                     .labelsHidden()
             }
             appIcon
-            // The Finder control immediately precedes the size throughout the app.
+            // Finder follows the size at the right edge throughout the app.
             // Widths are handed out in a fixed order, not the stack's even shares: the size on the right first (never wrapped), then
             // the title, then the cluster gets all the rest, the empty room after it last. With even shares the cluster was offered
             // half of what was left while room stood empty after it: its warning pill truncated to "Não…" and came back, and the size
@@ -716,6 +782,7 @@ struct RowView: View {
                 TitleLine(title: row.title, note: row.subtitle).layoutPriority(1)
                 HStack(spacing: 6) {
                     InfoButton(text: row.detail, steps: row.steps)
+                    if let path = row.iconPath { AppUseBadge(path: path, appeared: appeared) }
                     RowBadges(badges: row.badges + (row.unavailableReason.map { [Badge($0, .info)] } ?? []), quiet: flagIsActive, gap: 6, arrives: appeared)
                     if placement == .afterTitle { RowActionFlags(row: row, handler: handler) }
                 }
@@ -723,13 +790,13 @@ struct RowView: View {
                 // same width again, making the flag and neighbouring controls wobble and repeatedly compress the preceding badge.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
-            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
             if let trailing = row.trailing {
                 ChangingText(text: trailing, alignment: .trailing).monospacedDigit().foregroundStyle(.secondary).fixedSize()
             }
             // No figure on the right: the flag takes the right edge (`RowFlagPlacement`).
             if placement == .trailing { RowActionFlags(row: row, handler: handler) }
+            if !row.paths.isEmpty { RevealButton(paths: row.paths) }
+            if placement == .afterFinder { RowActionFlags(row: row, handler: handler) }
         }
     }
 }
@@ -746,7 +813,7 @@ private struct AppFileIcon: View {
     var body: some View {
         Image(nsImage: model.icon)
             .resizable().scaledToFit()
-            .frame(width: 28, height: 28)
+            .frame(width: 18, height: 18)
             .accessibilityHidden(true)
             .transaction { $0.animation = nil }
     }
@@ -804,8 +871,11 @@ enum RevealTarget: Equatable {
     static func of(_ urls: [URL]) -> RevealTarget? {
         let urls = urls.map(\.standardizedFileURL)
         guard let first = urls.first else { return nil }
-        // A folder control opens its contents directly, including hidden folders such as the Trash.
-        if urls.count == 1, (try? first.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+        // Packages must be selected in their parent. Opening an app's directory can launch it.
+        let values = try? first.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+        if urls.count == 1, first.pathExtension.lowercased() == "app" || values?.isPackage == true { return .select(urls) }
+        // Ordinary folders, including hidden folders such as the Trash, open their contents.
+        if urls.count == 1, values?.isDirectory == true {
             return .open(first)
         }
         let parents = Set(urls.map { $0.deletingLastPathComponent().path })

@@ -1780,5 +1780,176 @@
   "其他 App 正在使用",
   "ほかのアプリで使用中",
   "다른 앱에서 사용 중"
+ ],
+ "Caches": [
+  "Caches",
+  "Caches",
+  "Cachés",
+  "Caches",
+  "缓存",
+  "キャッシュ",
+  "캐시"
+ ],
+ "Application support": [
+  "Suporte de aplicativos",
+  "Support des applications",
+  "Soporte de aplicaciones",
+  "Anwendungsunterstützung",
+  "应用支持",
+  "アプリケーションサポート",
+  "응용 프로그램 지원"
+ ],
+ "Preferences": [
+  "Preferências",
+  "Préférences",
+  "Preferencias",
+  "Einstellungen",
+  "偏好设置",
+  "環境設定",
+  "환경설정"
+ ],
+ "App containers": [
+  "Contêineres de apps",
+  "Conteneurs des apps",
+  "Contenedores de apps",
+  "App-Container",
+  "App 容器",
+  "アプリのコンテナ",
+  "앱 컨테이너"
+ ],
+ "Application scripts": [
+  "Scripts de aplicativos",
+  "Scripts des applications",
+  "Scripts de aplicaciones",
+  "Anwendungsskripte",
+  "应用脚本",
+  "アプリケーションスクリプト",
+  "응용 프로그램 스크립트"
+ ],
+ "Cookies": [
+  "Cookies",
+  "Cookies",
+  "Cookies",
+  "Cookies",
+  "Cookie",
+  "Cookie",
+  "쿠키"
+ ],
+ "Web data": [
+  "Dados da web",
+  "Données web",
+  "Datos web",
+  "Webdaten",
+  "网页数据",
+  "Webデータ",
+  "웹 데이터"
+ ],
+ "Logs": [
+  "Registros",
+  "Journaux",
+  "Registros",
+  "Protokolle",
+  "日志",
+  "ログ",
+  "로그"
+ ],
+ "Saved application state": [
+  "Estado salvo de aplicativos",
+  "État enregistré des applications",
+  "Estado guardado de aplicaciones",
+  "Gesicherter Anwendungszustand",
+  "保存的应用状态",
+  "保存されたアプリの状態",
+  "저장된 응용 프로그램 상태"
+ ],
+ "Other app data": [
+  "Outros dados de apps",
+  "Autres données des apps",
+  "Otros datos de apps",
+  "Weitere App-Daten",
+  "其他 App 数据",
+  "ほかのアプリデータ",
+  "기타 앱 데이터"
+ ],
+ "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved.": [
+  "O MacSpace fecha os apps selecionados antes de desinstalá-los. Dados não selecionados e compartilhados são preservados.",
+  "MacSpace quitte les apps sélectionnées avant de les désinstaller. Les données non sélectionnées et partagées sont conservées.",
+  "MacSpace cierra las apps seleccionadas antes de desinstalarlas. Los datos no seleccionados y compartidos se conservan.",
+  "MacSpace beendet die ausgewählten Apps vor der Deinstallation. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "MacSpace 会在卸载前退出所选 App。未选择及共享的数据将保留。",
+  "MacSpaceは選択したアプリを終了してからアンインストールします。未選択のデータと共有データは保持されます。",
+  "MacSpace가 선택한 앱을 종료한 후 제거합니다. 선택하지 않은 데이터와 공유 데이터는 보존됩니다."
+ ],
+ "Included with the app": [
+  "Incluído com o app",
+  "Inclus avec l’app",
+  "Incluido con la app",
+  "In der App enthalten",
+  "随 App 一同移除",
+  "アプリと一緒に削除",
+  "앱과 함께 제거됨"
+ ],
+ "Selected apps: %@": [
+  "Apps selecionados: %@",
+  "Apps sélectionnées : %@",
+  "Apps seleccionadas: %@",
+  "Ausgewählte Apps: %@",
+  "所选 App：%@",
+  "選択したアプリ：%@",
+  "선택한 앱: %@"
+ ],
+ "%@ app data": [
+  "Dados do app %@",
+  "Données de l’app %@",
+  "Datos de la app %@",
+  "App-Daten von %@",
+  "%@ 的 App 数据",
+  "%@のアプリデータ",
+  "%@ 앱 데이터"
+ ],
+ "No app data to remove": [
+  "Nenhum dado do app para remover",
+  "Aucune donnée d’app à supprimer",
+  "No hay datos de la app para eliminar",
+  "Keine App-Daten zum Entfernen",
+  "没有可移除的 App 数据",
+  "削除するアプリデータはありません",
+  "제거할 앱 데이터 없음"
+ ],
+ "Select an app to uninstall.": [
+  "Selecione um app para desinstalar.",
+  "Sélectionnez une app à désinstaller.",
+  "Selecciona una app para desinstalar.",
+  "Wähle eine App zum Deinstallieren aus.",
+  "请选择要卸载的 App。",
+  "アンインストールするアプリを選択してください。",
+  "제거할 앱을 선택하세요."
+ ],
+ "The selected apps are still in use. Finish saving or close them, then try again.": [
+  "Os apps selecionados ainda estão em uso. Termine de salvar ou feche-os e tente novamente.",
+  "Les apps sélectionnées sont encore utilisées. Terminez l’enregistrement ou fermez-les, puis réessayez.",
+  "Las apps seleccionadas siguen en uso. Termina de guardar o ciérralas y vuelve a intentarlo.",
+  "Die ausgewählten Apps werden noch verwendet. Schließe das Sichern ab oder beende sie und versuche es erneut.",
+  "所选 App 仍在使用中。请完成保存或退出后重试。",
+  "選択したアプリはまだ使用中です。保存を完了するかアプリを終了してから、もう一度お試しください。",
+  "선택한 앱이 아직 사용 중입니다. 저장을 마치거나 앱을 종료한 후 다시 시도하세요."
+ ],
+ "Protected or unreadable data": [
+  "Dados protegidos ou ilegíveis",
+  "Données protégées ou illisibles",
+  "Datos protegidos o ilegibles",
+  "Geschützte oder nicht lesbare Daten",
+  "受保护或无法读取的数据",
+  "保護されているか読み取れないデータ",
+  "보호되거나 읽을 수 없는 데이터"
+ ],
+ "Outside your user Library": [
+  "Fora da Biblioteca do seu usuário",
+  "En dehors de votre bibliothèque utilisateur",
+  "Fuera de tu biblioteca de usuario",
+  "Außerhalb deiner Benutzer-Library",
+  "位于用户资源库之外",
+  "ユーザーライブラリの外部",
+  "사용자 라이브러리 외부"
  ]
 }

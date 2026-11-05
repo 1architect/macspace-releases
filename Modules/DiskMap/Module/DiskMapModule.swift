@@ -408,27 +408,50 @@ public struct DiskMapModule: MacSpaceModule {
                                   message: removal.failures.isEmpty ? loc("Freed selected files") : loc("Some files could not be removed"), details: removal.failures)
         case "uninstall", "uninstallSelected":
             let apps = await inventory.read(index, force: true)
-            let plans: [AppRemovalPlan]
+            let reviewedPlans: [AppRemovalPlan]
             if request.actionID == "uninstall", let text = request.parameters["plan"], text.utf8.count <= 1_048_576,
                let plan = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(text.utf8)),
-               plan.owner.path == request.parameters["app"], plan.owner.identifier == request.parameters["identifier"] { plans = [plan] }
+               plan.owner.path == request.parameters["app"], plan.owner.identifier == request.parameters["identifier"] { reviewedPlans = [plan] }
             else if request.actionID == "uninstallSelected", let text = request.parameters["plans"], text.utf8.count <= 1_048_576,
-                    let selected = try? JSONDecoder().decode([AppRemovalPlan].self, from: Data(text.utf8)) { plans = selected }
+                    let selected = try? JSONDecoder().decode([AppRemovalPlan].self, from: Data(text.utf8)) { reviewedPlans = selected }
             else { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
+            guard let plans = DiskUninstallBatch.selectedPlans(reviewedPlans, parameters: request.parameters) else {
+                return .failed(loc("Select an app to uninstall."))
+            }
             let selectedApps: [DiskApplication]
             do {
                 selectedApps = try DiskUninstallBatch.validate(plans, apps: apps, home: FileManager.default.homeDirectoryForCurrentUser.path,
-                    running: Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)))
-            } catch DiskUninstallBatch.Failure.running { return .failed(loc("Quit the selected apps before uninstalling them.")) }
+                    running: [])
+            }
             catch { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
             guard let helper = context.privileged else { return .failed(loc("Install the helper in Settings")) }
-            let selected = Set(Selection.ids(request.parameters["ids"]))
+            var selected = Set(Selection.ids(request.parameters["ids"]))
+            if request.parameters["selectApps"] == "1" { selected.subtract(reviewedPlans.map { $0.owner.path }) }
+            guard selected.count <= 32 else { return .failed(DiskAppDataRemoval.Failure.tooMany.localizedDescription) }
             let dataShare = selected.isEmpty ? 0.0 : 0.7
             let candidates = DiskUninstallBatch.dataCandidates(selectedApps, apps: apps)
+            guard selected.isSubset(of: Set(candidates.map(\.id))) else {
+                return .failed(loc("App data changed. Reopen the list and review your selection again."))
+            }
+            guard await DiskAppLifecycle.quit(selectedApps.map { $0.owner.path }) else {
+                return .failed(loc("The selected apps are still in use. Finish saving or close them, then try again."))
+            }
+            // Quitting can run an updater or rewrite startup metadata. Recheck the frozen
+            // bundle/lifecycle plans before any optional user data is touched.
+            do {
+                _ = try DiskUninstallBatch.validate(plans, apps: apps, home: FileManager.default.homeDirectoryForCurrentUser.path, running: [])
+            } catch { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
             let dataRemoval: DiskAppDataRemoval.Result
             do {
-                dataRemoval = try DiskAppDataRemoval.remove(ids: selected, candidates: candidates, moveToTrash: moveToTrash,
-                    progress: { update in var mapped = update; mapped.fraction = (update.fraction ?? 0) * dataShare; progress(mapped) })
+                let original = candidates.filter { selected.contains($0.id) }
+                let current = try DiskAppDataRemoval.refreshedAfterQuitting(original, home: FileManager.default.homeDirectoryForCurrentUser.path)
+                let originalIDs = Dictionary(uniqueKeysWithValues: zip(current, original).map { ($0.id, $1.id) })
+                dataRemoval = try DiskAppDataRemoval.remove(ids: Set(current.map(\.id)), candidates: current, moveToTrash: moveToTrash,
+                    progress: { update in
+                        var mapped = update; mapped.fraction = (update.fraction ?? 0) * dataShare
+                        mapped.finished = update.finished.compactMap { originalIDs[$0] }
+                        progress(mapped)
+                    })
             } catch { return .failed(loc("App data changed. Reopen the list and review your selection again."), details: [error.localizedDescription]) }
             await store.mark(dataRemoval.removed.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             if !dataRemoval.failures.isEmpty {

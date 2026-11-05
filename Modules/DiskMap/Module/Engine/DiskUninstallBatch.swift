@@ -44,6 +44,15 @@ enum DiskUninstallBatch {
         let unique = Dictionary(candidates.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
         return AppOwnership.normalizedPaths(Array(unique.keys)).compactMap { unique[$0] }
     }
+    /// Review keeps every original plan so rechecking an app never invents new targets.
+    /// Only the app checkboxes included in this action may authorize bundle removal.
+    static func selectedPlans(_ plans: [AppRemovalPlan], parameters: [String: String]) -> [AppRemovalPlan]? {
+        guard !plans.isEmpty, plans.count <= 512, Set(plans.map { $0.owner.path }).count == plans.count else { return nil }
+        guard parameters["selectApps"] == "1" else { return plans }
+        let ids = Set(Selection.ids(parameters["ids"]))
+        let selected = plans.filter { ids.contains($0.owner.path) }
+        return selected.isEmpty ? nil : selected
+    }
     static func validate(_ plans: [AppRemovalPlan], apps: DiskApplications, home: String, running: Set<String>) throws -> [DiskApplication] {
         guard let selected = resolve(plans, apps: apps) else { throw Failure.ownership }
         guard selected.allSatisfy({ !running.contains($0.owner.identifier) }) else { throw Failure.running }

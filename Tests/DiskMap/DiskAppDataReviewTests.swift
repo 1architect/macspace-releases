@@ -7,6 +7,74 @@ import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
 final class DiskAppDataReviewTests: XCTestCase {
+    func testDefaultsDoNotSelectNamedVendorCachesSharedDataOrUserDocuments() throws {
+        try fixture { home, app in
+            let cache = home + "/Library/Caches/" + app.owner.identifier
+            let vendor = home + "/Library/Caches/Vendor"
+            try FileManager.default.createDirectory(atPath: vendor, withIntermediateDirectories: true)
+            try Data([1]).write(to: URL(fileURLWithPath: vendor + "/data"))
+            var selected = app
+            selected.ownership.append(.init(paths: [vendor], ownerPaths: [app.owner.path], confidence: .inferred, source: "displayNameConvention", reason: "Inferred"))
+            XCTAssertFalse(DiskUninstallReview.disposableCache(vendor, app: selected, home: home))
+            XCTAssertFalse(DiskUninstallReview.disposableCache(home + "/Library/Application Support/Example", app: selected, home: home))
+            var other = app
+            other.owner.path = home + "/Applications/Other.app"
+            other.ownership = [.init(paths: [cache], ownerPaths: [other.owner.path], confidence: .inferred, source: "identifierConvention", reason: "Competing installation")]
+            var apps = DiskApplications(); apps.apps = [selected, other]
+            var index = DiskIndex(root: home)
+            index.directories[cache] = DiskDirectory(path: cache, bytes: 8192)
+            let page = DiskMapScreenBuilder.uninstallReview(index, app: selected, apps: apps, home: home)
+            XCTAssertTrue(page.selection?.checked.isEmpty == true)
+            let selectedData = Set(page.selection?.checked ?? []).subtracting([app.owner.path])
+            XCTAssertTrue(selectedData.isEmpty)
+        }
+    }
+    func testReadonlyCategoryHasADisabledCheckboxAndKeepsItsCompleteDetailInventory() throws {
+        try fixture { home, original in
+            let external = home + "/SystemLibrary/Vendor"
+            try FileManager.default.createDirectory(atPath: external, withIntermediateDirectories: true)
+            try Data([1]).write(to: URL(fileURLWithPath: external + "/data"))
+            var app = original
+            app.ownership.append(.init(paths: [external], ownerPaths: [app.owner.path], confidence: .unknown, source: "fixture", reason: "Preserved"))
+            var apps = DiskApplications(); apps.apps = [app]
+            var index = DiskIndex(root: home)
+            index.directories[external] = DiskDirectory(path: external, bytes: 6_000_000)
+            let page = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            let rows = page.widgets.flatMap { if case let .list(list) = $0 { return list.rows }; return [] }
+            let other = try XCTUnwrap(rows.first { $0.title == "Other app data" })
+            XCTAssertNotNil(other.selectionSectionID)
+            let section = try XCTUnwrap(page.selection?.sections.first { $0.id == other.selectionSectionID })
+            XCTAssertEqual(section.unavailableReason, "Outside your user Library")
+            XCTAssertEqual(section.rows, other.children.map(\.id))
+            XCTAssertEqual(other.children.flatMap(\.paths), [external])
+            XCTAssertTrue(other.children.allSatisfy { page.selection?.choices[$0.id] == nil })
+            XCTAssertEqual(DiskUninstallReview.Category.of("/Library/Application Support/Autodesk", home: home), .support)
+        }
+    }
+
+    func testLiveEmptyDataIsOmittedEvenWhenTheSnapshotHasAnOldSizeAndUnmatchedRowsHaveNoPills() throws {
+        try fixture { home, app in
+            let cache = home + "/Library/Caches/" + app.owner.identifier
+            let preference = home + "/Library/Preferences/" + app.owner.identifier + ".plist"
+            try FileManager.default.removeItem(atPath: cache + "/cache")
+            try Data().write(to: URL(fileURLWithPath: preference))
+            var index = DiskIndex(root: home)
+            index.directories[cache] = DiskDirectory(path: cache, bytes: 8192)
+            index.measuredOwnershipBytes = [preference: 8192]
+            var apps = DiskApplications(); apps.apps = [app]
+            let page = DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, home: home)
+            let children = page.widgets.flatMap { if case let .list(list) = $0 { return list.rows.flatMap(\.children) }; return [] }
+            XCTAssertFalse(children.flatMap(\.paths).contains(cache))
+            XCTAssertFalse(children.flatMap(\.paths).contains(preference))
+            let path = home + "/Library/Application Support/Example"
+            apps.reviewableLeftovers = [.init(identifier: "Empty", path: cache, bytes: 0), .init(identifier: "Example", path: path, bytes: 8192, identity: AppFileIdentity(path: path))]
+            let unmatched = DiskMapScreenBuilder.leftoversPage(apps)
+            let rows = unmatched.widgets.flatMap { if case let .list(list) = $0 { return list.rows }; return [] }
+            XCTAssertEqual(rows.map(\.title), ["Example"])
+            XCTAssertTrue(rows.allSatisfy { $0.badges.isEmpty })
+            XCTAssertEqual(unmatched.selection?.choices.count, 1)
+        }
+    }
     private func fixture(_ body: (String, DiskApplication) throws -> Void) throws {
         guard getuid() != 0, geteuid() == getuid() else { throw XCTSkip("Requires ordinary user execution") }
         let home = "/private/tmp/app-data-review-" + UUID().uuidString
@@ -32,11 +100,16 @@ final class DiskAppDataReviewTests: XCTestCase {
             XCTAssertEqual(candidates.count, 4)
             XCTAssertTrue(candidates.contains { $0.fileIdentity != nil })
             let page = DiskMapScreenBuilder.uninstallReview(DiskIndex(root: home), app: app, apps: apps, home: home)
-            XCTAssertEqual(page.primary?.id, "uninstall")
+            XCTAssertNil(page.primary)
+            XCTAssertEqual(page.selection?.action.id, "uninstallSelected")
             XCTAssertEqual(page.selection?.choices.count, 4)
-            XCTAssertTrue(page.selection?.checked.isEmpty == true)
+            let cache = try XCTUnwrap(candidates.first { $0.path.hasPrefix(home + "/Library/Caches/") })
+            XCTAssertEqual(Set(page.selection?.checked ?? []), [cache.id])
+            XCTAssertEqual(app.ownership.first { $0.paths.contains(cache.path) }?.confidence, .inferred,
+                           "Defaults must work with the ordinary scanner output, without fabricated exclusive confidence")
+            XCTAssertNil(page.selection?.choices[app.owner.path])
             XCTAssertEqual(page.selection?.includedBytes, app.bytes)
-            XCTAssertTrue(page.selection?.note?.contains("Selected app data") == true)
+            XCTAssertTrue(page.selection?.note?.contains("Selected apps") == true)
             XCTAssertEqual(app.plan?.targets.map(\.path), [app.owner.path], "Inferred paths are never silently added to the privileged plan")
             var withDataPlan = app
             let optional = try XCTUnwrap(candidates.first)
@@ -50,6 +123,31 @@ final class DiskAppDataReviewTests: XCTestCase {
             var other = app; other.owner.path = home + "/Applications/Copy.app"
             other.ownership = app.ownership.map { var claim = $0; claim.ownerPaths = [other.owner.path]; return claim }
             XCTAssertTrue(DiskAppDataRemoval.candidates(app, apps: [app, other], home: home).isEmpty)
+        }
+    }
+    func testOnlyVerifiedDisposableCachesAreSuggestedAndZeroByteDataIsOmitted() throws {
+        try fixture { home, original in
+            var app = original
+            for n in app.ownership.indices {
+                // Verified support/settings are still user data and must stay unchecked.
+                app.ownership[n].confidence = .verifiedExclusive
+            }
+            let empty = home + "/Library/Caches/empty.fixture"
+            try FileManager.default.createDirectory(atPath: empty, withIntermediateDirectories: true)
+            app.ownership.append(.init(paths: [empty], ownerPaths: [app.owner.path], confidence: .verifiedExclusive, source: "fixture", reason: "Fixture"))
+            var apps = DiskApplications(); apps.apps = [app]
+            let candidates = DiskAppDataRemoval.candidates(app, apps: [app], home: home)
+            let cache = try XCTUnwrap(candidates.first { $0.path.hasPrefix(home + "/Library/Caches/") && $0.path != empty })
+            let page = DiskMapScreenBuilder.uninstallReview(DiskIndex(root: home), app: app, apps: apps, home: home)
+            XCTAssertEqual(Set(page.selection?.checked ?? []), [cache.id])
+            XCTAssertNil(page.selection?.choices[candidates.first { $0.path == empty }!.id])
+            let rows = page.widgets.flatMap { if case let .list(list) = $0 { return list.rows }; return [] }
+            XCTAssertFalse(rows.flatMap(\.children).contains { $0.paths.contains(empty) })
+            XCTAssertTrue(page.selection?.parents.isEmpty == true)
+            let effective = page.selection?.effectiveIDs(Set(page.selection?.checked ?? []).subtracting([app.owner.path]))
+            XCTAssertEqual(effective, [cache.id])
+            let categories = Set(rows.filter { !$0.children.isEmpty }.map(\.title))
+            XCTAssertEqual(categories, ["Caches", "Application support", "Preferences"])
         }
     }
     func testExplicitSelectionRemovesOnlyChosenDataAndPreservesBundleAndOtherData() throws {
@@ -76,6 +174,23 @@ final class DiskAppDataReviewTests: XCTestCase {
             XCTAssertTrue(candidates.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
             XCTAssertNil(DiskAppDataRemoval.target(home + "/Library/Application Support", home: home))
             XCTAssertNil(DiskAppDataRemoval.target(home + "/Documents/important.plist", home: home))
+        }
+    }
+    func testNormalQuitCanWriteInsideTheSameReviewedCacheButCannotReplaceItsRootOrSettings() throws {
+        try fixture { home, app in
+            let candidates = DiskAppDataRemoval.candidates(app, apps: [app], home: home)
+            let cache = try XCTUnwrap(candidates.first { $0.path.hasPrefix(home + "/Library/Caches/") })
+            try Data([1, 2, 3]).write(to: URL(fileURLWithPath: cache.path + "/written-on-quit"))
+            let refreshed = try DiskAppDataRemoval.refreshedAfterQuitting([cache], home: home)
+            XCTAssertEqual(refreshed[0].identity.inode, cache.identity.inode)
+            XCTAssertEqual(refreshed[0].path, cache.path)
+            // Retain the original inode elsewhere to ensure a replacement cannot reuse it.
+            try FileManager.default.moveItem(atPath: cache.path, toPath: cache.path + ".old")
+            try FileManager.default.createDirectory(atPath: cache.path, withIntermediateDirectories: true)
+            XCTAssertThrowsError(try DiskAppDataRemoval.refreshedAfterQuitting([cache], home: home))
+            let settings = try XCTUnwrap(candidates.first { $0.fileIdentity != nil })
+            try Data(repeating: 3, count: 16384).write(to: URL(fileURLWithPath: settings.path))
+            XCTAssertThrowsError(try DiskAppDataRemoval.refreshedAfterQuitting([settings], home: home))
         }
     }
     func testInstalledAppNamesVendorPathsIdentifiersAndUnreadableScopesAreNotUnmatched() throws {

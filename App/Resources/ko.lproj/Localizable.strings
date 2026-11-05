@@ -79,6 +79,7 @@
 "Helper approved" = "보조 프로그램 승인됨";
 "How often" = "주기";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "백그라운드에서는 메뉴 막대나 Dock 아이콘이 표시되지 않습니다. 응용 프로그램에서 다시 여세요.";
+"In use" = "사용 중";
 "Install helper" = "보조 프로그램 설치";
 "It does the few tasks that need an administrator." = "관리자 권한이 필요한 일부 작업을 수행합니다.";
 "Keep running in the background" = "백그라운드에서 계속 실행";
@@ -93,6 +94,7 @@
 "MacSpace has not been tested on this release yet." = "이 macOS 버전에서는 아직 MacSpace를 테스트하지 않았습니다.";
 "MacSpace keeps an eye on your disk." = "MacSpace가 디스크 상태를 확인합니다.";
 "MacSpace needs it to see everything in System Data." = "모든 시스템 데이터를 보려면 이 권한이 필요합니다.";
+"MacSpace quits this app before uninstalling it." = "MacSpace가 이 앱을 제거하기 전에 종료합니다.";
 "Maximize" = "최대화";
 "Minimize" = "최소화";
 "Modules" = "모듈";
@@ -127,6 +129,7 @@
 "Open at login" = "로그인 시 열기";
 "Open in Finder" = "Finder에서 열기";
 "Other folders" = "기타 폴더";
+"Other items" = "기타 항목";
 "Permissions" = "권한";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "보조 프로그램 설치를 누르세요. macOS가 인식하지 못하면 터미널에서 /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register 를 실행하고 출력 메시지를 보내주세요.";
 "Privileged helper" = "권한 보조 프로그램";

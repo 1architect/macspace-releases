@@ -79,6 +79,7 @@
 "Helper approved" = "Auxiliar aprovado";
 "How often" = "Frequência";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "Em segundo plano, o MacSpace não tem ícone na barra de menus nem no Dock. Abra-o de novo pela pasta Aplicativos.";
+"In use" = "Em uso";
 "Install helper" = "Instalar auxiliar";
 "It does the few tasks that need an administrator." = "Ele faz as poucas tarefas que exigem um administrador.";
 "Keep running in the background" = "Continuar em segundo plano";
@@ -93,6 +94,7 @@
 "MacSpace has not been tested on this release yet." = "O MacSpace ainda não foi testado nesta versão.";
 "MacSpace keeps an eye on your disk." = "O MacSpace fica de olho no seu disco.";
 "MacSpace needs it to see everything in System Data." = "O MacSpace precisa dele para ver tudo em Dados do Sistema.";
+"MacSpace quits this app before uninstalling it." = "O MacSpace fecha este app antes de desinstalá-lo.";
 "Maximize" = "Maximizar";
 "Minimize" = "Minimizar";
 "Modules" = "Módulos";
@@ -127,6 +129,7 @@
 "Open at login" = "Abrir ao iniciar sessão";
 "Open in Finder" = "Abrir no Finder";
 "Other folders" = "Outras pastas";
+"Other items" = "Outros itens";
 "Permissions" = "Permissões";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "Clique em Instalar auxiliar. Se o macOS ainda não o reconhecer, execute no Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register e envie a mensagem exibida.";
 "Privileged helper" = "Auxiliar privilegiado";

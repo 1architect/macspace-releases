@@ -1744,5 +1744,32 @@
   "另外 1 个较小项",
   "ほか1個の小さい項目",
   "작은 항목 1개"
+ ],
+ "MacSpace quits this app before uninstalling it.": [
+  "O MacSpace fecha este app antes de desinstalá-lo.",
+  "MacSpace quitte cette app avant de la désinstaller.",
+  "MacSpace cierra esta app antes de desinstalarla.",
+  "MacSpace beendet diese App vor der Deinstallation.",
+  "MacSpace 会在卸载前退出此 App。",
+  "MacSpaceはアンインストールする前にこのアプリを終了します。",
+  "MacSpace가 이 앱을 제거하기 전에 종료합니다."
+ ],
+ "In use": [
+  "Em uso",
+  "En cours d’utilisation",
+  "En uso",
+  "In Verwendung",
+  "使用中",
+  "使用中",
+  "사용 중"
+ ],
+ "Other items": [
+  "Outros itens",
+  "Autres éléments",
+  "Otros elementos",
+  "Andere Objekte",
+  "其他项目",
+  "ほかの項目",
+  "기타 항목"
  ]
 }

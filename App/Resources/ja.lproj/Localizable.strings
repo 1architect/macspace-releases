@@ -79,6 +79,7 @@
 "Helper approved" = "ヘルパーは承認済みです";
 "How often" = "頻度";
 "In the background, MacSpace has no menu bar or Dock icon. Open it again from Applications." = "バックグラウンドではメニューバーやDockにアイコンを表示しません。「アプリケーション」から再度開けます。";
+"In use" = "使用中";
 "Install helper" = "ヘルパーをインストール";
 "It does the few tasks that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Keep running in the background" = "バックグラウンドで実行を続ける";
@@ -93,6 +94,7 @@
 "MacSpace has not been tested on this release yet." = "このmacOSではまだMacSpaceをテストしていません。";
 "MacSpace keeps an eye on your disk." = "MacSpaceがディスクの状態を見守ります。";
 "MacSpace needs it to see everything in System Data." = "すべてのシステムデータを確認するために必要です。";
+"MacSpace quits this app before uninstalling it." = "MacSpaceはアンインストールする前にこのアプリを終了します。";
 "Maximize" = "最大化";
 "Minimize" = "最小化";
 "Modules" = "モジュール";
@@ -127,6 +129,7 @@
 "Open at login" = "ログイン時に開く";
 "Open in Finder" = "Finderで開く";
 "Other folders" = "その他のフォルダ";
+"Other items" = "ほかの項目";
 "Permissions" = "権限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "「ヘルパーをインストール」を押してください。認識されない場合はターミナルで /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register を実行し、表示されたメッセージを送ってください。";
 "Privileged helper" = "特権ヘルパー";

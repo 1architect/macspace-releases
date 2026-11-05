@@ -107,6 +107,23 @@ enum DiskAppDataRemoval {
         }
         return AppOwnership.normalizedPaths(paths).compactMap { target($0, home: home) }
     }
+    /// The pre-quit choices already matched the frozen review. A normal quit can write
+    /// inside a chosen directory; keep that same directory identity and freeze its latest
+    /// contents for removal. Replaced roots and changed individual settings files need review.
+    static func refreshedAfterQuitting(_ selected: [Target], home: String) throws -> [Target] {
+        try selected.map { original in
+            guard let current = target(original.path, home: home) else { throw CocoaError(.fileReadUnknown) }
+            if original.fileIdentity != nil {
+                guard current == original else { throw CocoaError(.fileReadUnknown) }
+            } else {
+                guard current.fileIdentity == nil, current.identity.device == original.identity.device,
+                      current.identity.inode == original.identity.inode, current.identity.uid == original.identity.uid else {
+                    throw CocoaError(.fileReadUnknown)
+                }
+            }
+            return current
+        }
+    }
     /// Re-resolve every frozen choice and preflight the whole batch before touching user data.
     static func remove(ids: Set<String>, candidates: [Target], moveToTrash: Bool,
                        home: String = FileManager.default.homeDirectoryForCurrentUser.path,

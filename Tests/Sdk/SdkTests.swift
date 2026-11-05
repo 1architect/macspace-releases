@@ -2,6 +2,18 @@ import XCTest
 import MacSpaceSdk
 
 final class SdkTests: XCTestCase {
+    func testDependentSelectionsRoundTripAndRejectOrphanedOrCyclicDataChoices() throws {
+        let selection = Selection(action: Action(id: "uninstall", title: "Uninstall"), choices: ["app": 100, "data": 50],
+                                  checked: ["app", "data"], parents: ["data": "app"])
+        let restored = try JSONDecoder().decode(Selection.self, from: JSONEncoder().encode(selection))
+        XCTAssertEqual(restored.effectiveIDs(["app", "data"]), ["app", "data"])
+        XCTAssertEqual(restored.effectiveIDs(["data"]), [])
+        var cycle = restored; cycle.parents["app"] = "data"
+        XCTAssertTrue(cycle.effectiveIDs(["app", "data"]).isEmpty)
+        let row = Row(id: "category", title: "Data", selectionSectionID: "data")
+        let list = ListWidget(id: "data", rows: [row], visibleWhenSelected: "app", headingChoice: "app", headingIconPath: "/App.app", cascadesOnAppear: true)
+        XCTAssertEqual(try JSONDecoder().decode(ListWidget.self, from: JSONEncoder().encode(list)), list)
+    }
     func testActionPageSelectionEnvelopeRoundTripsAndRejectsMalformedOrOversizedRequests() {
         let request = ActionPageRequest(destination: "review-apps", parameters: ["ids": "one\ntwo", "reviewed": "frozen"])
         XCTAssertEqual(ActionPageRequest(pageID: request.pageID), request)

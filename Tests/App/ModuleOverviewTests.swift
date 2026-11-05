@@ -4,6 +4,34 @@ import XCTest
 @testable import MacSpaceApp
 
 final class ModuleOverviewTests: XCTestCase {
+    func testReflowPreservesControlledListHeadingAndCascadeMetadataAtEveryWidth() {
+        let group = Row(id: "category", title: "Other app data", children: [Row(id: "data", title: "Data")])
+        let list = ListWidget(id: "app-data", title: "AutoCAD app data", rows: [group], visibleWhenSelected: "app",
+                              headingChoice: "app", headingIconPath: "/Applications/AutoCAD.app", cascadesOnAppear: true)
+        for width in [350.0, 520, 820] {
+            let source = [ScreenWidget.list(list)]
+            let reflowed = ModulePagePresentation.items(source, width: width, expandsGroups: true).flatMap(\.widgets)
+            XCTAssertEqual(reflowed, source)
+            XCTAssertEqual(ModulePagePresentation.visibleWidgets(source, checked: []), source,
+                           "The app heading must stay mounted when its body is untoggled")
+        }
+    }
+
+    func testDetailNeverLosesUnsectionedOrPreservedRowsOrDuplicatesSectionRows() {
+        let eligible = Row(id: "cache", title: "Cache", paths: ["/cache"])
+        let preserved = Row(id: "external", title: "Other app data", paths: ["/Library/Support"], unavailableReason: "Preserved")
+        let selection = Selection(action: Action(id: "uninstall", title: "Uninstall"), choices: ["cache": 100],
+            sections: [.init(id: "unrelated", title: "Other app", rows: ["different"]),
+                       .init(id: "caches", title: "Caches", rows: ["cache", "cache"])])
+        func detailRows(_ group: Row) -> [Row] {
+            ModulePagePresentation.groupWidgets(group).flatMap { widget in
+                if case let .list(list) = widget { return list.rows }; return []
+            }
+        }
+        XCTAssertEqual(detailRows(Row(id: "g", title: "Data", children: [eligible, preserved], selection: selection)), [eligible, preserved])
+        XCTAssertEqual(detailRows(Row(id: "read-only", title: "Other app data", children: [preserved], selection: selection)), [preserved],
+                       "A category with only preserved data must still show its inventory")
+    }
     func testOverviewExpandsSmallGroupsWithoutLosingActionsOrPaths() {
         let leaf = Row(id: "a", title: "A", trailing: "1 GB", badges: [Badge("Open now", .info)],
                        actions: [Action(id: "free", title: "Free")], paths: ["/tmp/a"])

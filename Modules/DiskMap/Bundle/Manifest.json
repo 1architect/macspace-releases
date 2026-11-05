@@ -3,7 +3,7 @@
   "name": "Apps and files",
   "summary": "Explore disk usage, uninstall apps and remove large files.",
   "version": "0.1.0",
-  "sdkVersion": 17,
+  "sdkVersion": 19,
   "symbol": "internaldrive",
   "minimumMacOS": "27.0",
   "order": 0,

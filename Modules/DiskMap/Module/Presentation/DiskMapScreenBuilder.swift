@@ -20,10 +20,11 @@ enum DiskMapScreenBuilder {
         if folder == index.root || FileReviewPolicy.applicationsFolder(folder) {
             let appFolder = folder == index.root ? nil : folder
             let installed = applications(apps, folder: appFolder).filter { $0.classification == .installedUser }
+            let leftovers = apps.reviewableLeftovers.filter { $0.bytes > 0 }
             var rows = [Row(id: "apps", title: loc("Uninstall apps"), subtitle: apps.catalogReadAt == .distantPast ? loc("Reading apps…") : itemCount(UInt64(installed.count)), trailing: installed.allSatisfy(\.measurementComplete) && apps.catalogReadAt != .distantPast ? ByteFormat.string(installed.reduce(0) { $0 + $1.bytes }) : nil, pageID: appsPageID(folder: appFolder))]
             rows.append(Row(id: "leftovers", title: loc("Unmatched app data"),
-                subtitle: apps.measurementsComplete ? itemCount(UInt64(apps.reviewableLeftovers.count)) : loc("Measurements pending"),
-                trailing: apps.measurementsComplete || !apps.reviewableLeftovers.isEmpty ? ByteFormat.string(apps.reviewableLeftovers.reduce(0) { $0 + $1.bytes }) : nil,
+                subtitle: apps.measurementsComplete ? itemCount(UInt64(leftovers.count)) : loc("Measurements pending"),
+                trailing: apps.measurementsComplete || !leftovers.isEmpty ? ByteFormat.string(leftovers.reduce(0) { $0 + $1.bytes }) : nil,
                 badges: appFolder == nil ? [] : [Badge(loc("All locations"), .info)], detail: unmatchedExplanation, pageID: "app-data-review"))
             if folder == index.root, let summary = index.categories?.first(where: { $0.category == .installers && $0.count > 0 }) {
                 rows.append(categoryRow(summary, folder: folder, smaller: true))
@@ -192,7 +193,7 @@ enum DiskMapScreenBuilder {
     }
     static func appRow(_ app: DiskApplication) -> Row {
         Row(id: app.owner.path, title: app.owner.name, trailing: app.measurementComplete ? ByteFormat.string(app.bytes) : loc("Measurements pending"),
-            detail: app.owner.identifier + "\n" + eligibilityReason(app.classification), paths: [app.owner.path], iconPath: app.owner.path,
+            paths: [app.owner.path], iconPath: app.owner.path,
             unavailableReason: DiskUninstallBatch.plan(app) == nil ? loc("This app cannot be uninstalled.") : nil)
     }
     static func uninstallReviewID(_ path: String) -> String { "uninstall-review:" + Data(path.utf8).base64EncodedString() }
@@ -207,68 +208,11 @@ enum DiskMapScreenBuilder {
         }
     }
     static func uninstallReview(_ index: DiskIndex, app: DiskApplication, apps: DiskApplications, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Screen {
-        uninstallReview(index, selected: [app], apps: apps, home: home, action: uninstallAction(app))
+        uninstallReview(index, selected: [app], apps: apps, home: home)
     }
     static func uninstallReview(_ index: DiskIndex, selected: [DiskApplication], apps: DiskApplications,
-                                home: String = FileManager.default.homeDirectoryForCurrentUser.path, action override: Action? = nil) -> Screen {
-        let plans = selected.compactMap(DiskUninstallBatch.plan)
-        let message = loc("The selected apps and selected associated data will be removed. Unselected and shared data is preserved.") + "\n\n" + selected.map { $0.owner.path }.joined(separator: "\n")
-            + "\n\n" + (FileRemovalSettings.movesToTrash() ? loc("Selected app data will be moved to Trash.") : loc("Selected app data will be permanently deleted."))
-        let encoded = (try? JSONEncoder().encode(plans)).map { String(decoding: $0, as: UTF8.self) }
-        let action: Action? = override ?? (plans.count == selected.count && !plans.isEmpty ? encoded.map {
-            Action(id: "uninstallSelected", title: loc("Uninstall"), role: .destructive,
-                parameters: ["plans": $0, "trash": FileRemovalSettings.movesToTrash() ? "1" : "0"],
-                confirmation: Confirmation(title: loc("Uninstall selected apps?"), message: message, confirmTitle: loc("Uninstall")),
-                requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
-        } : nil)
-        let candidates = DiskUninstallBatch.dataCandidates(selected, apps: apps, home: home)
-        let measurable = Set(candidates.map(\.path)).union(plans.flatMap(\.targets).map(\.path))
-        var measurements: [String: UInt64] = [:]
-        func bytes(_ path: String) -> UInt64 {
-            if let measured = measurements[path] { return measured }
-            // Optional data can live outside the current navigation snapshot. Measure that tree
-            // once when opening review, so its checkbox contributes its contents to the total.
-            let cached = DiskApplications.measuredBytes([path], index: index)
-            let measured = !measurable.contains(path) || cached > 0
-                ? cached
-                : FileTreeSizer(refusesLinks: true).size(at: URL(fileURLWithPath: path))?.bytes ?? 0
-            measurements[path] = measured
-            return measured
-        }
-        let choices = Dictionary(uniqueKeysWithValues: candidates.map { ($0.id, bytes($0.path)) })
-        let byPath = Dictionary(uniqueKeysWithValues: candidates.map { ($0.path, $0) })
-        var widgets: [ScreenWidget] = [
-            .banner(Banner(id: "uninstall-review", severity: .info, title: loc("Review app data"), message: loc("The selected apps are included. Select the associated data you also want to remove. Unselected and shared data is preserved."))),
-            .list(ListWidget(id: "uninstall-app", title: loc("Apps"), rows: selected.map {
-                Row(id: $0.owner.path, title: $0.owner.name, trailing: ByteFormat.string($0.bytes), paths: [$0.owner.path], iconPath: $0.owner.path)
-            }))
-        ]
-        let startup = plans.flatMap { $0.startupItems ?? [] }
-        if !startup.isEmpty {
-            widgets.append(.list(ListWidget(id: "uninstall-startup", title: loc("Startup items"), rows: startup.map {
-                Row(id: $0.path, title: $0.label, paths: [$0.path])
-            })))
-        }
-        for app in selected {
-            let claims = app.ownership.filter { $0.source != "bundle" && !$0.source.hasPrefix("receiptManifest") }
-            let paths = AppOwnership.normalizedPaths(claims.flatMap(\.paths)).filter { $0 != app.owner.path && !$0.hasPrefix(app.owner.path + "/") }
-            let rows = paths.map { path in
-                let candidate = byPath[path]
-                let shared = claims.contains { $0.paths.contains(path) && $0.confidence == .shared }
-                return Row(id: candidate?.id ?? path, title: (path as NSString).lastPathComponent,
-                    subtitle: path.hasPrefix(home + "/Library/") ? String(path.dropFirst((home + "/Library/").count)) : path,
-                    trailing: ByteFormat.string(bytes(path)), paths: [path],
-                    unavailableReason: candidate == nil ? ownershipExplanation(shared ? .shared : .unknown) : nil)
-            }
-            widgets.append(.list(ListWidget(id: "uninstall-data:" + Data(app.owner.path.utf8).base64EncodedString(), title: selected.count == 1 ? loc("App Data") : app.owner.name,
-                emptyMessage: loc("No associated app data found"), rows: rows)))
-        }
-        let includedBytes = selected.reduce(0) { $0 + $1.bytes } + plans.flatMap(\.targets).filter { $0.evidence.source == "startupItem" }.reduce(0) { $0 + bytes($1.path) }
-        let selection = action.map { Selection(action: $0, choices: choices,
-            noteNames: Dictionary(uniqueKeysWithValues: candidates.map { ($0.id, $0.path) }),
-            note: ($0.confirmation?.message ?? "") + "\n\n" + loc("Selected app data: %@"),
-            scope: "uninstall-data:" + selected.map { $0.owner.path }.sorted().joined(separator: "\n"), includedBytes: includedBytes) }
-        return Screen(title: selected.count == 1 ? selected[0].owner.name : loc("Review app data"), primary: action, layout: .singleColumn, widgets: widgets, selection: selection)
+                                home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Screen {
+        DiskUninstallReview.screen(index, selected: selected, apps: apps, home: home)
     }
     static func appDataPage(_ app: DiskApplication) -> Screen {
         let groups = [OwnershipConfidence.verifiedExclusive, .shared, .inferred, .unknown].compactMap { confidence -> Row? in
@@ -313,17 +257,18 @@ enum DiskMapScreenBuilder {
     }
 
     static func leftoversPage(_ apps: DiskApplications) -> Screen {
-        let rows = apps.reviewableLeftovers.map { leftover in
+        let leftovers = apps.reviewableLeftovers.filter { $0.bytes > 0 }
+        let rows = leftovers.map { leftover in
             Row(id: leftover.choiceID, title: leftover.identifier, subtitle: (leftover.path as NSString).deletingLastPathComponent, trailing: ByteFormat.string(leftover.bytes),
-                badges: [Badge(appDataKind(leftover.path), .info)], paths: [leftover.path])
+                paths: [leftover.path])
         }
-        let choices = Dictionary(apps.reviewableLeftovers.filter { $0.identity != nil }.map { ($0.choiceID, $0.bytes) }, uniquingKeysWith: { first, _ in first })
+        let choices = Dictionary(leftovers.filter { $0.identity != nil }.map { ($0.choiceID, $0.bytes) }, uniquingKeysWith: { first, _ in first })
         let message = unmatchedExplanation + "\n\n" + loc("This permanently deletes only the selected app-data locations.")
         let selection = Selection(action: Action(id: "freeUnmatchedData", title: loc("Free selected"),
             parameters: ["trash": "0"],
             confirmation: Confirmation(title: loc("Free the selected app data?"), message: message, confirmTitle: loc("Delete")),
             requires: [.fullDiskAccess], workingTitle: loc("Freeing space")), choices: choices,
-            noteNames: Dictionary(uniqueKeysWithValues: apps.reviewableLeftovers.map { ($0.choiceID, $0.path) }), note: message + "\n\n" + loc("Selected app data: %@"), scope: "unmatched-app-data")
+            noteNames: Dictionary(uniqueKeysWithValues: leftovers.map { ($0.choiceID, $0.path) }), note: message + "\n\n" + loc("Selected app data: %@"), scope: "unmatched-app-data")
         return Screen(title: loc("Unmatched app data"), layout: .singleColumn,
             widgets: [.banner(Banner(id: "unmatched-explanation", severity: .warning, title: loc("Review before freeing"), message: unmatchedExplanation)),
                       .list(ListWidget(id: "reviewable-app-data", title: loc("Unmatched app data"), emptyMessage: apps.measurementsComplete ? loc("No unmatched app data found") : loc("App-data measurements are unavailable or incomplete."), rows: rows))], selection: selection)

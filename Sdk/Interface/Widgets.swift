@@ -506,6 +506,8 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     public var replacesPage: Bool
     /// A lightweight folder or duplicate-set heading within one list surface.
     public var sectionID: String?
+    /// A category row can toggle this section while its title opens the detail page.
+    public var selectionSectionID: String?
     /// What the row is, behind its (i): static, at most `InfoText.maximumLines` lines (`InfoText`).
     public var detail: String?
     /// What the user can do about the row, shown after `detail` in its (i), each step a sentence of its own (for example a manual
@@ -538,7 +540,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
 
     public init(id: String, title: String, subtitle: String? = nil, trailing: String? = nil, badge: Badge? = nil, badges: [Badge] = [],
                 symbol: String? = nil, detail: String? = nil, steps: [String] = [], actions: [Action] = [], children: [Row] = [],
-                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil, actionPlacement: RowActionPlacement? = nil) {
+                paths: [String] = [], selection: Selection? = nil, iconPath: String? = nil, pageID: String? = nil, unavailableReason: String? = nil, replacesPage: Bool = false, sectionID: String? = nil, contextActions: GraphContextActions? = nil, actionPlacement: RowActionPlacement? = nil, selectionSectionID: String? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -549,6 +551,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         self.pageID = pageID
         self.replacesPage = replacesPage
         self.sectionID = sectionID
+        self.selectionSectionID = selectionSectionID
         self.contextActions = contextActions
         self.symbol = symbol
         self.detail = detail
@@ -561,7 +564,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions, actionPlacement
+        case id, title, subtitle, trailing, badge, badges, symbol, detail, steps, actions, activity, children, paths, selection, iconPath, pageID, unavailableReason, replacesPage, sectionID, contextActions, actionPlacement, selectionSectionID
     }
 
     /// `children`, `paths`, `selection` and `badges` may be missing (a screen written before they existed), and a screen
@@ -579,6 +582,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         pageID = try container.decodeIfPresent(String.self, forKey: .pageID)
         replacesPage = try container.decodeIfPresent(Bool.self, forKey: .replacesPage) ?? false
         sectionID = try container.decodeIfPresent(String.self, forKey: .sectionID)
+        selectionSectionID = try container.decodeIfPresent(String.self, forKey: .selectionSectionID)
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         steps = try container.decodeIfPresent([String].self, forKey: .steps) ?? []
@@ -604,6 +608,7 @@ public struct Row: Codable, Equatable, Sendable, Identifiable {
         try container.encodeIfPresent(pageID, forKey: .pageID)
         if replacesPage { try container.encode(true, forKey: .replacesPage) }
         try container.encodeIfPresent(sectionID, forKey: .sectionID)
+        try container.encodeIfPresent(selectionSectionID, forKey: .selectionSectionID)
         try container.encodeIfPresent(detail, forKey: .detail)
         try container.encode(steps, forKey: .steps)
         try container.encode(actions, forKey: .actions)
@@ -707,6 +712,8 @@ public struct Selection: Codable, Equatable, Sendable {
     public var choices: [String: UInt64]
     /// Fixed work included in addition to the optional choices (for example, the app being uninstalled).
     public var includedBytes: UInt64?
+    /// Child choices contribute only while their parent is selected. Stored child preferences survive hiding the parent.
+    public var parents: [String: String]
     /// The rows checked when the page opens: the saved choice, or what the module suggests.
     public var checked: [String]
     /// What the module suggests, for the button's title.
@@ -722,7 +729,7 @@ public struct Selection: Codable, Equatable, Sendable {
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:]) {
         self.scope = scope
         self.partial = partial
         self.session = session
@@ -733,6 +740,7 @@ public struct Selection: Codable, Equatable, Sendable {
         self.action = action
         self.choices = choices
         self.includedBytes = includedBytes
+        self.parents = parents
         self.checked = checked
         self.suggested = suggested ?? checked
         self.suggestedTitle = suggestedTitle
@@ -742,7 +750,7 @@ public struct Selection: Codable, Equatable, Sendable {
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, checked, suggested, suggestedTitle, sections, save, noteNames, note }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteNames, note }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
@@ -757,6 +765,7 @@ public struct Selection: Codable, Equatable, Sendable {
         action = try container.decode(Action.self, forKey: .action)
         choices = try container.decode([String: UInt64].self, forKey: .choices)
         includedBytes = try container.decodeIfPresent(UInt64.self, forKey: .includedBytes)
+        parents = try container.decodeIfPresent([String: String].self, forKey: .parents) ?? [:]
         checked = try container.decodeIfPresent([String].self, forKey: .checked) ?? []
         suggested = try container.decodeIfPresent([String].self, forKey: .suggested) ?? checked
         suggestedTitle = try container.decodeIfPresent(String.self, forKey: .suggestedTitle)
@@ -770,6 +779,18 @@ public struct Selection: Codable, Equatable, Sendable {
     public static func parameter(_ ids: [String]) -> String { ids.joined(separator: "\n") }
     public static func ids(_ parameter: String?) -> [String] {
         (parameter ?? "").split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+    }
+
+    public func effectiveIDs(_ selected: Set<String>) -> Set<String> {
+        let selected = selected.intersection(choices.keys)
+        return selected.filter { id in
+            var ancestor = id, visited = Set<String>()
+            while let parent = parents[ancestor] {
+                guard visited.insert(ancestor).inserted, selected.contains(parent) else { return false }
+                ancestor = parent
+            }
+            return true
+        }
     }
 }
 
@@ -806,18 +827,29 @@ public struct ListWidget: Codable, Equatable, Sendable {
     public var paths: [String]
     /// The overview shows as many rows as fit before the action dock, retaining its last navigation row.
     public var fillsRemainingSpace: Bool?
+    /// Keep the standard list and its cascade visible only while this choice is selected.
+    public var visibleWhenSelected: String?
+    /// A SelectionSection ID provides a mixed-state select-all heading; a choice ID controls one choice.
+    public var headingChoice: String?
+    public var headingIconPath: String?
+    /// Use the shared row cascade and growing shade when this prepared list first appears.
+    public var cascadesOnAppear: Bool?
     public var rows: [Row]
 
-    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = []) {
+    public init(id: String, title: String? = nil, emptyMessage: String? = nil, rows: [Row], fillsRemainingSpace: Bool = false, paths: [String] = [], visibleWhenSelected: String? = nil, headingChoice: String? = nil, headingIconPath: String? = nil, cascadesOnAppear: Bool = false) {
         self.id = id
         self.title = title
         self.emptyMessage = emptyMessage
         self.paths = paths
         self.fillsRemainingSpace = fillsRemainingSpace ? true : nil
+        self.visibleWhenSelected = visibleWhenSelected
+        self.headingChoice = headingChoice
+        self.headingIconPath = headingIconPath
+        self.cascadesOnAppear = cascadesOnAppear ? true : nil
         self.rows = rows
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, emptyMessage, paths, fillsRemainingSpace, rows }
+    private enum CodingKeys: String, CodingKey { case id, title, emptyMessage, paths, fillsRemainingSpace, rows, visibleWhenSelected, headingChoice, headingIconPath, cascadesOnAppear }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -826,6 +858,10 @@ public struct ListWidget: Codable, Equatable, Sendable {
         emptyMessage = try container.decodeIfPresent(String.self, forKey: .emptyMessage)
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
         fillsRemainingSpace = try container.decodeIfPresent(Bool.self, forKey: .fillsRemainingSpace)
+        visibleWhenSelected = try container.decodeIfPresent(String.self, forKey: .visibleWhenSelected)
+        headingChoice = try container.decodeIfPresent(String.self, forKey: .headingChoice)
+        headingIconPath = try container.decodeIfPresent(String.self, forKey: .headingIconPath)
+        cascadesOnAppear = try container.decodeIfPresent(Bool.self, forKey: .cascadesOnAppear)
         rows = try container.decode([Row].self, forKey: .rows)
     }
 }
