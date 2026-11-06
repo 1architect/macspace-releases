@@ -7,6 +7,10 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+
+- Opening MacSpace from the menu bar reuses its window on the first click, without repeated Dock icons.
+
 ## [1.1.5] - 2026-10-21
 
 ### Changed

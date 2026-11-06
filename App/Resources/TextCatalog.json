@@ -424,8 +424,8 @@
     "key" : "About MacSpace",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:154",
-      "App\/Main\/MacSpaceMain.swift:84"
+      "App\/Shell\/MenuBarContent.swift:209",
+      "App\/Main\/MacSpaceMain.swift:85"
     ],
     "table" : "App",
     "translations" : {
@@ -577,8 +577,8 @@
     "key" : "Apps and files",
     "kind" : "Text",
     "places" : [
+      "App\/Shell\/MainView.swift:262",
       "App\/Shell\/MainView.swift:263",
-      "App\/Shell\/MainView.swift:264",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "App",
@@ -655,8 +655,8 @@
     "key" : "Back",
     "kind" : "Tooltip",
     "places" : [
-      "App\/Shell\/MainView.swift:278",
-      "App\/Shell\/MainView.swift:302"
+      "App\/Shell\/MainView.swift:277",
+      "App\/Shell\/MainView.swift:301"
     ],
     "table" : "App",
     "translations" : {
@@ -752,7 +752,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:87"
+      "App\/Main\/MacSpaceMain.swift:88"
     ],
     "table" : "App",
     "translations" : {
@@ -885,7 +885,7 @@
     "key" : "Close Window",
     "kind" : "Button",
     "places" : [
-      "App\/Shell\/MainView.swift:304"
+      "App\/Shell\/MainView.swift:303"
     ],
     "table" : "App",
     "translations" : {
@@ -1214,7 +1214,7 @@
     "key" : "Finishing in the background",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:201"
+      "App\/Shell\/MainView.swift:200"
     ],
     "table" : "App",
     "translations" : {
@@ -1386,7 +1386,7 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "App\/Shell\/MainView.swift:199",
+      "App\/Shell\/MainView.swift:198",
       "App\/Registry\/CleanupSelection.swift:10",
       "App\/Registry\/CleanupSelection.swift:37"
     ],
@@ -1753,7 +1753,7 @@
     "places" : [
       "App\/Settings\/AboutMacSpace.swift:15",
       "App\/Shell\/HomeView.swift:25",
-      "App\/Shell\/MenuBarContent.swift:104",
+      "App\/Shell\/MenuBarContent.swift:159",
       "App\/Updates\/UpdateController.swift:67",
       "App\/Main\/MacSpaceMain.swift:69"
     ],
@@ -2231,7 +2231,7 @@
     "key" : "No modules are on",
     "kind" : "Title",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:149"
+      "App\/Shell\/MenuBarContent.swift:204"
     ],
     "table" : "App",
     "translations" : {
@@ -2479,7 +2479,7 @@
     "key" : "Open Panel",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:155"
+      "App\/Shell\/MenuBarContent.swift:210"
     ],
     "table" : "App",
     "translations" : {
@@ -2671,7 +2671,7 @@
     "kind" : "Title",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:22",
-      "App\/Shell\/MenuBarContent.swift:156"
+      "App\/Shell\/MenuBarContent.swift:211"
     ],
     "table" : "App",
     "translations" : {
@@ -3019,8 +3019,8 @@
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:93",
       "App\/Settings\/ScreenshotToolView.swift:93",
-      "App\/Shell\/MainView.swift:260",
-      "App\/Shell\/MainView.swift:303"
+      "App\/Shell\/MainView.swift:259",
+      "App\/Shell\/MainView.swift:302"
     ],
     "table" : "App",
     "translations" : {
@@ -3039,7 +3039,7 @@
     "key" : "Settings › Permissions",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:259"
+      "App\/Shell\/MainView.swift:258"
     ],
     "table" : "App",
     "translations" : {
@@ -3058,7 +3058,7 @@
     "key" : "Settings › Recent cleanups",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MainView.swift:258"
+      "App\/Shell\/MainView.swift:257"
     ],
     "table" : "App",
     "translations" : {
@@ -3077,7 +3077,7 @@
     "key" : "Settings…",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/MenuBarContent.swift:152"
+      "App\/Shell\/MenuBarContent.swift:207"
     ],
     "table" : "App",
     "translations" : {
@@ -3096,7 +3096,7 @@
     "key" : "Shader Studio",
     "kind" : "Message",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:96"
+      "App\/Main\/MacSpaceMain.swift:97"
     ],
     "table" : "App",
     "translations" : {
@@ -3908,7 +3908,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:61",
-      "App\/Shell\/MainView.swift:199"
+      "App\/Shell\/MainView.swift:198"
     ],
     "table" : "App",
     "translations" : {
@@ -6496,8 +6496,8 @@
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:13",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:77",
+      "App\/Shell\/MainView.swift:262",
       "App\/Shell\/MainView.swift:263",
-      "App\/Shell\/MainView.swift:264",
       "App\/Shell\/StorageOverview.swift:24"
     ],
     "table" : "DiskMap",
@@ -10792,7 +10792,7 @@
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:140",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:155",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:160",
-      "App\/Shell\/MainView.swift:202"
+      "App\/Shell\/MainView.swift:201"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -12998,7 +12998,7 @@
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:113",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:246",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:315",
-      "App\/Shell\/MainView.swift:199"
+      "App\/Shell\/MainView.swift:198"
     ],
     "table" : "Siri",
     "translations" : {

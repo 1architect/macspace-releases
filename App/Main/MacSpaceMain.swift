@@ -71,7 +71,7 @@ struct MacSpaceMain: App {
         }
         .defaultLaunchBehavior(.presented)
         .restorationBehavior(.disabled)
-        // Opened by `macspace://main` when no window has been open yet (`AppRouter.open`).
+        // External links may still target the main scene; internal opens use `WindowRoutingCommands`.
         .handlesExternalEvents(matching: [MacSpaceWindow.glass])
         .windowStyle(.plain)
         .windowBackgroundDragBehavior(.enabled)
@@ -79,6 +79,7 @@ struct MacSpaceMain: App {
         .defaultSize(width: 700, height: 490)
         .windowResizability(.contentMinSize)
         .commands {
+            WindowRoutingCommands()
             DesignCommands()
             CommandGroup(replacing: .appInfo) {
                 Button("About MacSpace") { AboutMacSpace.show(host: host) }

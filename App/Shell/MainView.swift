@@ -166,7 +166,6 @@ public struct MainView: View {
             close()
         }
         .onChange(of: remote.command?.id) { _, _ in handleRemote() }
-        .onAppear { AppRouter.shared.openWindow = { [openWindow] id in openWindow(id: id) } }
         // A page asked for from the menu bar; a window that has just opened waits for its tiles first.
         .onChange(of: router.request?.id, initial: true) { _, _ in
             guard let destination = router.take() else { return }

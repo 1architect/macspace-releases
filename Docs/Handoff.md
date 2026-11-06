@@ -125,8 +125,10 @@ About MacSpace is the app menu’s About command (also in the status menu), usin
 9. **Menu bar.** An `NSStatusItem` (`StatusItemController`): a click opens the app, a right click opens its menu (each module with
    its tile's status, opening its page; then Settings…; then Open Panel and Quit). `AppRouter` opens the window from outside it and
    brings it in front of the app in front: from the icon, the cooperative `NSApp.activate()` was refused and the window stayed
-   behind (2026-10-07), so it uses `activate(ignoringOtherApps:)` and orders the window front regardless; when no window has been open since launch it
-   opens `macspace://<window id>`, which the window scenes claim. Closing the window quits MacSpace, keeps it in the menu bar, or
+   behind (2026-10-07), so it uses `activate(ignoringOtherApps:)` and orders the window front regardless. It reuses the retained
+   scene window, including after its content is released. `WindowRoutingCommands` registers SwiftUI's scene opener at launch for
+   requests made before any window exists; concurrent clicks share one presentation. Internal opens never use Launch Services.
+   `BackgroundPresence` waits for a pending presentation before removing foreground presence. Closing the window quits MacSpace, keeps it in the menu bar, or
    keeps it running in the background (`GeneralSettings.ClosedWindow`): with no menu bar item, and out of the Dock and the app
    switcher (an accessory app) until a window opens again (`BackgroundPresence`); opening MacSpace again shows the window.
    The old "Show in the menu bar" switch is read as menu bar (on) or quit (off) until a choice is made.

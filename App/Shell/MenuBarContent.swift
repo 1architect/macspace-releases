@@ -3,8 +3,8 @@ import Combine
 import MacSpaceSdk
 import SwiftUI
 
-/// Opens the window, or a page in it, from outside the window (the menu bar). The window registers how to open itself
-/// (`openWindow`) when it appears; a page asked for before the window is there waits in `pending` until the window takes it.
+/// Opens the window, or a page in it, from outside the window (the menu bar). The scene registers how to open itself
+/// (`WindowRoutingCommands`) at launch; a page asked for before the window is there waits in `pending` until the window takes it.
 @MainActor
 public final class AppRouter: ObservableObject {
     public static let shared = AppRouter()
@@ -19,37 +19,66 @@ public final class AppRouter: ObservableObject {
     private var pendingPage: String?
     func takePage() -> String? { defer { pendingPage = nil }; return pendingPage }
     private var counter = 0
-    /// SwiftUI's `openWindow`, handed over by the window when it appears: AppKit code has no other way to open a SwiftUI window.
-    var openWindow: ((String) -> Void)?
+    /// One presentation at a time, including requests made before SwiftUI has registered its scene opener.
+    private(set) var isOpeningWindow = false
+    private var sceneOpenRequested = false
+    private var openWindow: ((String) -> Void)?
+    private let findWindow: () -> NSWindow?
+    private let prepareForOpening: () -> Void
+    private let presentWindow: (NSWindow) -> Void
+
+    init(findWindow: @escaping () -> NSWindow? = { AppRouter.retainedMainWindow },
+         prepareForOpening: @escaping () -> Void = { BackgroundPresence.shared.show() },
+         presentWindow: @escaping (NSWindow) -> Void = { AppRouter.present($0) }) {
+        self.findWindow = findWindow
+        self.prepareForOpening = prepareForOpening
+        self.presentWindow = presentWindow
+    }
+
+    /// Registered by the scene's commands, which exist even before any window content appears.
+    func registerWindowOpener(_ opener: @escaping (String) -> Void) {
+        openWindow = opener
+        openSceneIfNeeded()
+    }
 
     /// Brings MacSpace forward, opening its window if it is closed, and then the page for `destination`, if any.
     public func open(_ destination: Destination? = nil, page: String? = nil) {
         pendingPage = page
-        // Running unseen in the background, MacSpace has no Dock icon: it comes back with the window.
-        BackgroundPresence.shared.show()
-        Self.bringForward()
-        if let window = Self.mainWindow {
-            if window.isMiniaturized { window.deminiaturize(nil) }
-            window.orderFrontRegardless()
-            window.makeKeyAndOrderFront(nil)
-        } else if let openWindow {
-            openWindow(MacSpaceWindow.glass)
-            // SwiftUI opens the window a moment later, behind the app in front if MacSpace was not let forward.
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(300))
-                Self.mainWindow?.orderFrontRegardless()
-            }
-        } else {
-            // No window has been open since launch (MacSpace started in the menu bar), so none could hand over `openWindow`. The
-            // window's scene claims `macspace://<window id>` (`handlesExternalEvents`); opening it with this very app opens the window.
-            if let url = URL(string: "macspace://\(MacSpaceWindow.glass)") {
-                NSWorkspace.shared.open([url], withApplicationAt: Bundle.main.bundleURL, configuration: NSWorkspace.OpenConfiguration())
-            }
+        if let destination {
+            pending = destination
+            counter += 1
+            request = Request(id: counter, destination: destination)
         }
-        guard let destination else { return }
-        pending = destination
-        counter += 1
-        request = Request(id: counter, destination: destination)
+        guard !isOpeningWindow else { return }
+        isOpeningWindow = true
+        // Keep foreground presence throughout the accessory-to-regular transition, before the window is visible.
+        prepareForOpening()
+        if let window = findWindow() {
+            presentWindow(window)
+            windowDidAppear()
+        } else {
+            openSceneIfNeeded()
+        }
+    }
+
+    private func openSceneIfNeeded() {
+        guard isOpeningWindow, !sceneOpenRequested, let openWindow else { return }
+        sceneOpenRequested = true
+        openWindow(MacSpaceWindow.glass)
+    }
+
+    func windowDidAppear(_ window: NSWindow? = nil) {
+        if isOpeningWindow, let window { presentWindow(window) }
+        isOpeningWindow = false
+        sceneOpenRequested = false
+    }
+
+    private static func present(_ window: NSWindow) {
+        if window.isMiniaturized { window.deminiaturize(nil) }
+        // Put the window on screen before activating: the resign-active observer must see an open app window.
+        window.orderFrontRegardless()
+        bringForward()
+        window.makeKeyAndOrderFront(nil)
     }
 
     /// From a click on the menu bar icon, the cooperative `NSApp.activate()` is refused while another app is in front: the window
@@ -68,7 +97,33 @@ public final class AppRouter: ObservableObject {
 
     /// The window, if it is open.
     public static var mainWindow: NSWindow? {
-        NSApp.windows.first { $0.identifier?.rawValue.hasPrefix(MacSpaceWindow.glass) == true && ($0.isVisible || $0.isMiniaturized) }
+        NSApp.windows.first { isMainWindow($0) && ($0.isVisible || $0.isMiniaturized) }
+    }
+
+    /// SwiftUI keeps closed scene windows ordered out. Reuse that window even after its pages have been released.
+    static var retainedMainWindow: NSWindow? {
+        mainWindow ?? NSApp.windows.first(where: isMainWindow)
+    }
+
+    static func isMainWindow(_ window: NSWindow) -> Bool {
+        window.identifier?.rawValue.hasPrefix(MacSpaceWindow.glass) == true
+    }
+}
+
+/// Commands have the scene's environment at launch, including when no window has appeared. Register the opener here rather
+/// than in releasable window content; opening our own URL through Launch Services could launch another app process per click.
+public struct WindowRoutingCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    public init() {}
+
+    public var body: some Commands {
+        let action = openWindow
+        // Defer registration out of SwiftUI's body evaluation; a waiting request can then present the scene safely.
+        let _ = Task { @MainActor in
+            AppRouter.shared.registerWindowOpener { id in action(id: id) }
+        }
+        EmptyCommands()
     }
 }
 
@@ -223,7 +278,7 @@ public final class BackgroundPresence {
     }
 
     private func hideIfUnseen(closing: NSWindow?) {
-        guard GeneralSettings.keepsRunning(), !Self.hasOpenWindow(besides: closing) else { return }
+        guard !AppRouter.shared.isOpeningWindow, GeneralSettings.keepsRunning(), !Self.hasOpenWindow(besides: closing) else { return }
         guard NSApp.activationPolicy() != .accessory else { return }
         // Let AppKit hand the menu bar back once, then remove our Dock presence. Changing policy while still active rebuilt
         // the menu bar during the last window's close transition. The resign-active observer finishes this handoff.

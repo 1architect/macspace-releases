@@ -93,6 +93,7 @@ struct GlassWindowConfigurator: View, @preconcurrency Animatable {
                 guard let window else { return }
                 NSApp.activate()
                 window.makeKeyAndOrderFront(nil)
+                AppRouter.shared.windowDidAppear(window)
             }
 
             let shadow = ShadowWindow()
