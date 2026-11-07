@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskAppDataReviewTests: XCTestCase {
+final class DiskAppDataReviewTests: DiskSecurityFixtureCase {
     func testDefaultsDoNotSelectNamedVendorCachesSharedDataOrUserDocuments() throws {
         try fixture { home, app in
             let cache = home + "/Library/Caches/" + app.owner.identifier

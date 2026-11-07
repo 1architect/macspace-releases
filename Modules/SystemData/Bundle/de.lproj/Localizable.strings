@@ -45,6 +45,7 @@
 "Apps' temporary files; macOS clears them at restart." = "Temporäre Dateien von Apps; macOS löscht sie beim Neustart.";
 "Assorted macOS features and the OS itself." = "Verschiedene macOS-Funktionen und das System selbst.";
 "Audio plug-ins and sounds" = "Audio-Plug-ins und Töne";
+"Automatic cleanup is off for items that cannot be recovered." = "Die automatische Bereinigung ist für nicht wiederherstellbare Elemente deaktiviert.";
 "Battery and energy history used by System Settings > Battery." = "Batterie- und Energieverlauf für Systemeinstellungen > Batterie.";
 "Cache cleaner" = "Cache-Reiniger";
 "Caches for all users" = "Caches für alle Benutzer";
@@ -54,6 +55,7 @@
 "Can't run" = "Startet nicht mehr";
 "Cannot be undone" = "Nicht widerrufbar";
 "Check Software Update in System Settings." = "Sieh unter „Softwareupdate“ in den Systemeinstellungen nach.";
+"Clean non recoverable items automatically" = "Nicht wiederherstellbare Elemente automatisch bereinigen";
 "Cloud files on this Mac" = "Cloud-Dateien auf diesem Mac";
 "Cloud storage" = "Cloud-Speicher";
 "Cloud storage: %@" = "Cloud-Speicher: %@";
@@ -171,6 +173,7 @@
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "Kann gefahrlos gelöscht werden, solange %@ geschlossen ist. Wird bei Bedarf neu erstellt.";
 "Saved home folder of a deleted account: %@" = "Gesicherter Benutzerordner eines gelöschten Accounts: %@";
 "See what fills System Data and free what is safe to remove." = "Sieh, was „Systemdaten“ füllt, und gib frei, was gefahrlos entfernt werden kann.";
+"Selected cleanup items changed. Review your selection again." = "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.";
 "Shared app files" = "Gemeinsame App-Dateien";
 "Shared frameworks" = "Gemeinsame Frameworks";
 "Shared temporary files" = "Gemeinsame temporäre Dateien";

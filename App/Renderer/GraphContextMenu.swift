@@ -11,7 +11,6 @@ struct GraphInteraction {
     func refresh() async { await handle.refresh(reload: true) }
 
     func delete(_ action: Action) async {
-        guard ConfirmationAlert.ask(action) else { return }
         _ = await handle.perform(action)
     }
 }

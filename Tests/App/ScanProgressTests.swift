@@ -41,7 +41,7 @@ final class ScanProgressTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let module = ScanningModule(control: control, refreshAfter: refreshAfter)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         return handle
     }

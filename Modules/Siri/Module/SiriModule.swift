@@ -39,8 +39,8 @@ public struct SiriModule: MacSpaceModule {
             catch { return .failed(loc("Couldn't restore Call transcription."), details: [error.localizedDescription]) }
         }
         let environment = LiveSiriLanguageEnvironment()
-        guard let saved = environment.loadSavedSettings() else { return .succeeded("") }
         do {
+            guard let saved = try environment.loadSavedSettings() else { return .succeeded("") }
             try environment.write(siriLanguage: saved.siriLanguage, outputVoice: saved.outputVoice)
             guard environment.context().siriLanguage.map(AppleIntelligenceLanguageGuard.normalize)
                     == AppleIntelligenceLanguageGuard.normalize(saved.siriLanguage) else {

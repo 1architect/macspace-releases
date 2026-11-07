@@ -1033,6 +1033,15 @@ public struct SystemDataCleaner {
                 }
                 paths.append(standardized)
             }
+            let plan: ReviewedDirectoryRemoval.Plan
+            do {
+                let targets = try paths.map { path -> ReviewedDirectoryRemoval.Target in
+                    guard let identity = ReviewedDirectoryRemoval.cleanupIdentity(path) else { throw PrivateFile.Refusal() }
+                    return .init(path: path, expected: identity)
+                }
+                // Existing allowlists were applied above; pin exactly those authorized targets.
+                plan = try ReviewedDirectoryRemoval.prepareCleanup(targets, within: Array(Set(paths.map { ($0 as NSString).deletingLastPathComponent })))
+            } catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription) }
             // Read again for each item: an app or a build can start while earlier items are deleted.
             guard let processes = processCheck.processes() else {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Nothing was freed: MacSpace couldn't check which apps are open."))
@@ -1056,17 +1065,9 @@ public struct SystemDataCleaner {
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Nothing was freed: MacSpace couldn't check which files are in use."))
             }
             var removed: [String] = []
-            for path in paths {
-                // Renamed first, in one step, then deleted: an app that starts meanwhile finds no cache rather than half of one, and a
-                // folder that cannot be renamed is left as it was. What cannot be deleted goes back under its own name.
-                let doomed = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(".macspace-deleting-\(UUID().uuidString)")
-                do { try fileManager.moveItem(atPath: path, toPath: doomed) } catch {
-                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription, removedPaths: removed)
-                }
-                do { try fileManager.removeItem(atPath: doomed) } catch {
-                    if !fileManager.fileExists(atPath: path) { try? fileManager.moveItem(atPath: doomed, toPath: path) }
-                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: (error as NSError).localizedDescription, removedPaths: removed)
-                }
+            for (index, path) in paths.enumerated() {
+                do { try plan.remove(at: index) }
+                catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription, removedPaths: removed) }
                 removed.append(path)
             }
             return SystemDataCleanupResult(itemID: item.id, deleted: true, detail: loc("Deleted \(item.paths.joined(separator: ", "))."), removedPaths: removed)

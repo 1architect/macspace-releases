@@ -3,7 +3,7 @@
   "name": "System Data",
   "summary": "See what fills System Data and free what is safe to remove.",
   "version": "0.1.0",
-  "sdkVersion": 20,
+  "sdkVersion": 22,
   "symbol": "externaldrive.badge.checkmark",
   "minimumMacOS": "27.0",
   "order": 10,
@@ -78,6 +78,15 @@
             }
           ],
           "defaultValue": "macspace"
+        }
+      }
+    },
+    {
+      "id": "cleanNonRecoverableAutomatically",
+      "title": "Clean non recoverable items automatically",
+      "kind": {
+        "toggle": {
+          "defaultValue": false
         }
       }
     }

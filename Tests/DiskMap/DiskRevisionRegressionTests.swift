@@ -5,7 +5,7 @@ import MacSpacePlatform
 import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
-final class DiskRevisionRegressionTests: XCTestCase {
+final class DiskRevisionRegressionTests: DiskSecurityFixtureCase {
     func testRemovedApplicationInvalidatesCatalogAfterItsMetadataDisappears() async throws {
         try await fixture { root, _, db in
             let app = root.appendingPathComponent("Example.app"), contents = app.appendingPathComponent("Contents")

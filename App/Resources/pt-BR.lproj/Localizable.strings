@@ -27,6 +27,7 @@
 "Allow Full Disk Access" = "Permitir Acesso Total ao Disco";
 "Allow Notifications" = "Permitir Notificações";
 "Appearance" = "Aparência";
+"Apple Intelligence availability could not be verified. No system assets were purged." = "Não foi possível verificar a disponibilidade do Apple Intelligence. Nenhum recurso do sistema foi apagado.";
 "Applies the Debloat policies you turn on." = "Aplica as políticas do Debloat que você ativar.";
 "Approve in Settings" = "Aprovar nos Ajustes";
 "Approve the helper" = "Aprove o auxiliar";
@@ -138,6 +139,7 @@
 "Permissions" = "Permissões";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "Clique em Instalar auxiliar. Se o macOS ainda não o reconhecer, execute no Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register e envie a mensagem exibida.";
 "Privileged helper" = "Auxiliar privilegiado";
+"Protected metadata is unavailable." = "Os metadados protegidos estão indisponíveis.";
 "Quit" = "Encerrar";
 "Quit MacSpace" = "Encerrar o MacSpace";
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "Encerre o MacSpace e copie-o de novo. As permissões dadas a esta cópia seriam perdidas na próxima atualização.";

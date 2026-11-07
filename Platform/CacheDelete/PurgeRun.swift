@@ -198,9 +198,10 @@ public struct PurgeRun: Sendable {
             retrier.cancel(service)
             return Outcome(estimate: nil, reported: 0, freed: 0, error: reason, skipped: true, held: true)
         }
-        if SystemAssetGuard.refusal([service], featureCleanup: featureCleanup) != nil {
+        if let reason = SystemAssetGuard.refusal([service], featureCleanup: featureCleanup) {
             retrier.cancel(service)
-            return Outcome(estimate: nil, reported: 0, freed: 0, error: nil, skipped: true, held: true)
+            return Outcome(estimate: nil, reported: 0, freed: 0,
+                           error: reason == SystemAssetGuard.heldMessage ? nil : reason, skipped: true, held: true)
         }
         retrier.cancel(service)
         let result = Self.purgeOnce(service: service, urgency: urgency, featureCleanup: featureCleanup)

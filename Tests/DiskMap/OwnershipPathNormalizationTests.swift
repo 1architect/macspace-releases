@@ -1,7 +1,7 @@
 import XCTest
 import MacSpaceDiskMapPrivileged
 
-final class OwnershipPathNormalizationTests: XCTestCase {
+final class OwnershipPathNormalizationTests: DiskSecurityFixtureCase {
     private func reference(_ paths: [String]) -> [String] {
         func parent(_ path: String) -> String {
             guard let slash = path.lastIndex(of: "/"), slash != path.startIndex else { return "/" }

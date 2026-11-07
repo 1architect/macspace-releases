@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskUninstallBatchTests: XCTestCase {
+final class DiskUninstallBatchTests: DiskSecurityFixtureCase {
     private func fixture(_ work: (String, DiskApplications) throws -> Void) throws {
         let home = "/private/tmp/uninstall-batch-" + UUID().uuidString
         defer { try? FileManager.default.removeItem(atPath: home) }
@@ -80,9 +80,9 @@ final class DiskUninstallBatchTests: XCTestCase {
         try fixture { home, apps in
             let plans = apps.apps.compactMap(DiskUninstallBatch.plan)
             let data = try XCTUnwrap(DiskUninstallBatch.dataCandidates([apps.apps[1]], apps: apps, home: home).first)
-            let chosen = try XCTUnwrap(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": plans[0].owner.path]))
+            let chosen = try XCTUnwrap(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": Selection.parameter([plans[0].owner.path])]))
             XCTAssertEqual(chosen.map { $0.owner.path }, [plans[0].owner.path])
-            XCTAssertNil(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": data.id]))
+            XCTAssertNil(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": Selection.parameter([data.id])]))
             XCTAssertNil(DiskUninstallBatch.selectedPlans(plans, parameters: ["selectApps": "1", "ids": ""]))
             let candidates = DiskUninstallBatch.dataCandidates([apps.apps[0]], apps: apps, home: home)
             XCTAssertFalse(Set(candidates.map(\.id)).contains(data.id))

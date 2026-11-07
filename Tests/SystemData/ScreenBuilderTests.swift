@@ -5,6 +5,35 @@ import MacSpacePlatform
 import MacSpaceSystemDataPrivileged
 
 final class SystemDataScreenBuilderTests: XCTestCase {
+    func testNonRecoverableCleanupIsManualByDefaultAndOptInPreselectsOnlyThoseOperations() {
+        let snap = snapshot(items: [item("trash:user", kind: .trash, bytes: 200_000_000),
+            item("logs:unified", kind: .logs, bytes: 500_000_000),
+            item("versions:documents", kind: .documentVersions, bytes: 1_000_000_000)], reports: 100_000_000)
+        let irreversible: Set<String> = ["emptyTrash", "eraseUnifiedLog", "deleteVersions"]
+        for optIn in [false, true] {
+            let targets = SystemDataScreenBuilder.screen(snap, cleanNonRecoverable: optIn).cleanupTargets
+            let protected = targets.filter { irreversible.contains($0.action.id) }
+            XCTAssertEqual(Set(protected.map { $0.action.id }), irreversible)
+            XCTAssertTrue(protected.allSatisfy { $0.automatic == optIn && $0.defaultSelected == optIn && !$0.remembersSelection })
+            XCTAssertTrue(protected.allSatisfy { $0.action.confirmation != nil })
+            XCTAssertTrue(protected.allSatisfy { $0.isSelected([CleanupTarget.preferenceKey(id: $0.id): !optIn]) == optIn })
+            let reports = targets.first { $0.action.id == "cleanReports" }
+            XCTAssertEqual(reports?.automatic, true, "Preserve v1.1.5's old-report policy")
+            XCTAssertEqual(reports?.defaultSelected, true)
+        }
+    }
+
+    func testAutomaticNonRecoverableRequestsRefuseBeforeScanningOrMutationWithoutOptIn() async {
+        let context = ModuleContext(manifest: ModuleManifest(id: "test", name: "Test", summary: "", version: "1", symbol: ""),
+            options: NonRecoverableOptions(), permissions: NonRecoverablePermissions())
+        for action in ["emptyTrash", "eraseUnifiedLog", "deleteVersions", "cleanAll"] {
+            let result = await SystemDataModule().perform(.init(actionID: action, parameters: ["automatic": "1"]), context: context, progress: { _ in XCTFail("Must refuse before work") })
+            XCTAssertEqual(result.outcome, .failed)
+            XCTAssertFalse(result.refresh)
+            XCTAssertNil(result.presentation)
+        }
+    }
+
     func testDashboardFreeUsesTheSameReviewedCleanupAsThePage() {
         let available = snapshot(items: [], reports: 100_000_000)
         XCTAssertNil(SystemDataScreenBuilder.tile(available).freeAction)
@@ -329,6 +358,15 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertFalse(RootMeasuredLocations.isAllowedOnDisk(folder + "/link/Documents"))
         XCTAssertNil(FileTreeSizer(refusesLinks: true).size(at: URL(fileURLWithPath: folder + "/link/Library")).flatMap(\.allocatedBytesEstimate))
     }
+}
+
+private struct NonRecoverableOptions: OptionStore {
+    func bool(_ id: String) -> Bool { false }
+    func string(_ id: String) -> String { "" }
+    func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
+}
+private struct NonRecoverablePermissions: PermissionChecker {
+    func status(of permission: Permission) -> PermissionStatus { .missing }
 }
 
 final class SystemDataStoreTests: XCTestCase {

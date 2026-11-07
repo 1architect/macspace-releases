@@ -38,7 +38,7 @@ final class FileReviewNavigationTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Files", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let calls = Calls()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
             permissions: FakePermissions(), loader: { _ in FileReviewNavigationModule(calls: calls) })
         await handle.activate(); defer { handle.deactivate() }
         func action() throws -> Action {
@@ -67,6 +67,6 @@ final class FileReviewNavigationTests: XCTestCase {
         handle.toggle("one", in: try XCTUnwrap(handle.activeSelection))
         XCTAssertEqual(Selection.ids(try action().parameters["ids"]), ["two"])
         _ = await handle.perform(try action())
-        XCTAssertEqual(calls.all.last, "perform:freeFiles:two")
+        XCTAssertEqual(calls.all.last, "perform:freeFiles:" + Selection.parameter(["two"]))
     }
 }

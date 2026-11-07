@@ -9,14 +9,30 @@ private final class Opened: @unchecked Sendable {
     func add(_ url: URL) { lock.withLock { stored.append(url) } }
 }
 
+private struct ServicesFixture: MacSpaceModule {
+    var calls = Calls()
+    init() {}
+    init(calls: Calls) { self.calls = calls }
+    func tile(context: ModuleContext) async -> Tile { Tile(title: "Services", status: "Ready") }
+    func screen(context: ModuleContext) async -> Screen {
+        let pane = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension")!
+        let actions = [Action.openSettings(title: "Open", url: pane), .allowFullDiskAccess(title: "Allow"),
+                       Action(id: Action.openSettingsID, title: "Open", parameters: ["url": "https://example.com"])]
+        return Screen(title: "Services", widgets: actions.enumerated().map { .button(ButtonWidget(id: String($0.offset), action: $0.element)) })
+    }
+    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        calls.add("unexpected:" + request.actionID); return .succeeded("Inert")
+    }
+}
+
 /// What the app does for every module (`ModuleServices`, `Action.openSettings`): the module is never called for it.
 @MainActor
 final class ModuleServicesTests: XCTestCase {
     private func handle(calls: Calls, opened: Opened, directory: URL) throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        return ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
-                            loader: { _ in FakeModule(calls: calls) }, openPane: { opened.add($0) })
+        return ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
+                            loader: { _ in ServicesFixture(calls: calls) }, openPane: { opened.add($0) })
     }
 
     func testTheAppOpensSystemSettingsPanesAndNothingElse() async throws {

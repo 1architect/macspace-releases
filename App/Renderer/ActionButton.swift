@@ -15,7 +15,6 @@ struct ActionButton: View {
         Button(role: action.role == .destructive ? .destructive : nil) {
             // Asked once the button has finished handling the click, not from inside it.
             Task { @MainActor in
-                guard ConfirmationAlert.ask(action) else { return }
                 _ = await handler(action, [:], false, nil)
             }
         } label: {
@@ -30,7 +29,7 @@ struct ActionButton: View {
 @MainActor
 public enum ConfirmationAlert {
     /// Whether the user confirmed the action; true when it asks nothing.
-    static func ask(_ action: Action) -> Bool {
+    public static func ask(_ action: Action) -> Bool {
         guard let confirmation = action.confirmation else { return true }
         let alert = AppAlert()
         alert.messageText = confirmation.title

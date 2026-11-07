@@ -25,7 +25,12 @@ struct FakeModule: MacSpaceModule {
     }
 
     func screen(context: ModuleContext) async -> Screen {
-        Screen(title: "Fake", widgets: [.text(TextWidget(id: "t", text: "flag=\(context.options.bool("flag"))"))])
+        Screen(title: "Fake", widgets: [.text(TextWidget(id: "t", text: "flag=\(context.options.bool("flag"))")),
+            .toggles(ToggleList(id: "switches", rows: [ToggleRow(id: "toggle", title: "T", isOn: false,
+                action: Action(id: "toggle", title: "T", parameters: ["id": "x"]))])),
+            .button(ButtonWidget(id: "fail", action: Action(id: "fail", title: "F"))),
+            .button(ButtonWidget(id: "clean", action: Action(id: "clean", title: "Clean", requires: [.fullDiskAccess]))),
+            .button(ButtonWidget(id: "other", action: Action(id: "other", title: "Other")))])
     }
 
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {

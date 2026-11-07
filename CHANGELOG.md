@@ -7,8 +7,24 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Changed
+
+- Nonrecoverable cleanup requires a fresh selection by default. System Data and Other System Files each offer an off-by-default "Clean non recoverable items automatically" setting that also preselects those items for manual cleanup. Backup disks remain manual.
+
+### Security
+
+- Disk metadata, receipts and recovery records use authenticated encrypted storage. Protected work defers when restricted keys cannot be accessed silently.
+- Dashboard actions require fresh module contracts. Cleanup uses structured selection IDs, explicit permission grants and guarded filesystem boundaries.
+- Cleanup command output and execution time are bounded, and interrupted owner operations retain authenticated recovery state.
+- App removal pins reviewed files and folders before deleting them. File selections and their review evidence stay in encrypted, process-owned manifests.
+- MacSpace stops startup when its integrity check fails and keeps system assets when their eligibility cannot be verified.
+- Disk inventory caches reject linked database paths and are cleared when MacSpace uninstalls itself. Temporary speech owners are withdrawn after setup failures.
+
 ### Fixed
 
+- Apps and files no longer sends a WindowServer session request for every inventory database statement.
+- Busy disk indexes are preserved, protected Disk reads resume after temporary key failures, and graph deletion actions and queued-row indicators follow current live state.
+- Existing Siri restoration settings migrate their file permissions safely; unavailable recovery state prevents a false successful restore.
 - Opening MacSpace from the menu bar reuses its window on the first click, without repeated Dock icons.
 
 ## [1.1.5] - 2026-10-21

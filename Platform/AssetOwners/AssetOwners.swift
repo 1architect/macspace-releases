@@ -31,18 +31,12 @@ enum AssetOwners {
                 try inspect(into: &result)
             } else {
                 let folder = AssetModelCleanup.journal(scope).deletingLastPathComponent()
-                try attempt("Cannot create owner journal folder") {
-                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-                }
-                var info = stat()
-                try require(lstat(folder.path, &info) == 0 && info.st_mode & S_IFMT == S_IFDIR && info.st_uid == getuid() && info.st_mode & 0o022 == 0,
-                            "Unsafe owner journal folder")
-                let lock = open(folder.appendingPathComponent("operation.lock").path, O_CREAT | O_RDWR | O_NOFOLLOW, 0o600)
-                defer { if lock >= 0 { flock(lock, LOCK_UN); close(lock) } }
-                try require(lock >= 0 && flock(lock, LOCK_EX | LOCK_NB) == 0, "Another model owner operation is running")
+                let operationLock = try PrivateFile(folder.appendingPathComponent("operation.lock"), createDirectories: true).exclusiveLock()
+                defer { withExtendedLifetime(operationLock) {} }
                 let journal = try Journal(scope)
                 let user = try userGUID()
                 let owner = try manager()
+                try reconcileTemporary(owner: owner, user: user)
                 if mode == "restore" {
                     try restore(journal, owner: owner, user: user, details: &details)
                 } else {
@@ -150,11 +144,23 @@ enum AssetOwners {
     /// Waits for one asynchronous reply; `fail` (an XPC error) or silence means no answer.
     final class Reply<Value>: @unchecked Sendable {
         private let semaphore = DispatchSemaphore(value: 0)
-        private(set) var value: Value?
+        private let lock = NSLock()
+        private var stored: Value?
+        private var finished = false
         private var answered = false
-        func send(_ value: Value) { self.value = value; answered = true; semaphore.signal() }
-        func fail() { semaphore.signal() }
-        func wait(_ seconds: Double) -> Bool { semaphore.wait(timeout: .now() + seconds) == .success && answered }
+        var value: Value? { lock.withLock { stored } }
+        func send(_ value: Value) {
+            let signal = lock.withLock { guard !finished else { return false }; stored = value; finished = true; answered = true; return true }
+            if signal { semaphore.signal() }
+        }
+        func fail() {
+            let signal = lock.withLock { guard !finished else { return false }; finished = true; return true }
+            if signal { semaphore.signal() }
+        }
+        func wait(_ seconds: Double) -> Bool {
+            let result = semaphore.wait(timeout: .now() + seconds) == .success
+            return lock.withLock { if !result { finished = true }; return result && answered }
+        }
     }
     static func retry(_ times: Int, every seconds: Double, until done: () throws -> Bool) rethrows -> Bool {
         for attempt in 0..<times {
@@ -178,8 +184,9 @@ enum AssetOwners {
     }
     /// The rollback record for one scope, saved and synced before each owner request.
     final class Journal {
-        struct Stored: Codable { var version = 1; var scope: String; var uid: UInt32; var entries: [Entry]; var cycleRemoved: Int? }
+        struct Stored: Codable { var version = 2; var scope: String; var uid: UInt32; var entries: [Entry]; var cycleRemoved: Int? }
         let scope: AssetModelCleanup.Scope
+        private let protected: ProtectedJournal
         var entries: [Entry] = []
         /// Owners removed in this run only, not every earlier journal entry.
         private(set) var removed = 0
@@ -187,31 +194,21 @@ enum AssetOwners {
 
         init(_ scope: AssetModelCleanup.Scope) throws {
             self.scope = scope
-            guard FileManager.default.fileExists(atPath: url.path) else { return }
-            var info = stat()
-            try require(lstat(url.path, &info) == 0 && info.st_mode & S_IFMT == S_IFREG && info.st_uid == getuid() && info.st_mode & 0o077 == 0,
-                        "Unsafe owner journal")
-            entries = try Self.entries(try attempt("Invalid owner journal") { try Data(contentsOf: url) }, scope: scope)
+            let existing = AssetModelCleanup.hasRecoveryRecords
+            protected = try ProtectedJournal(url: AssetModelCleanup.journal(scope), purpose: "owners." + scope.rawValue, allowKeyCreation: !existing)
+            if let data = try protected.read() { entries = try Self.entries(data, scope: scope) }
         }
-        /// Also reads the journals the earlier Objective-C bridge saved, which use the same keys.
+        /// This decoder accepts already-authenticated payloads only. Legacy files are never replayed.
         static func entries(_ data: Data, scope: AssetModelCleanup.Scope) throws -> [Entry] {
             let stored = try attempt("Invalid owner journal") { try PropertyListDecoder().decode(Stored.self, from: data) }
-            try require(stored.version == 1 && stored.scope == scope.rawValue && stored.uid == getuid(), "Invalid owner journal")
+            try require(stored.version == 2 && stored.scope == scope.rawValue && stored.uid == getuid()
+                        && stored.entries.count <= 512, "Invalid owner journal")
             return stored.entries
         }
         func save() throws {
-            let encoder = PropertyListEncoder()
-            encoder.outputFormat = .binary
+            let encoder = PropertyListEncoder(); encoder.outputFormat = .binary
             let stored = Stored(scope: scope.rawValue, uid: getuid(), entries: entries, cycleRemoved: removed)
-            try attempt("Cannot save owner rollback journal") { try encoder.encode(stored).write(to: url, options: .atomic) }
-            try require(chmod(url.path, 0o600) == 0, "Cannot protect owner journal")
-            for (path, flags) in [(url.path, O_RDONLY | O_NOFOLLOW), (url.deletingLastPathComponent().path, O_RDONLY)] {
-                let descriptor = open(path, flags)
-                try require(descriptor >= 0, "Cannot open saved owner journal")
-                let synced = fsync(descriptor) == 0
-                close(descriptor)
-                try require(synced, "Cannot sync owner journal")
-            }
+            try protected.write(encoder.encode(stored))
         }
         /// The first record keeps the original owner; a disable after a completed restore starts a fresh ownership cycle.
         func record(_ kind: String, client: String, name: String, archive: Data, user: String? = nil, expiry: Double? = nil) throws -> Int {
@@ -462,6 +459,71 @@ enum AssetOwners {
     /// it back, holds it a moment and lets it go as unreferenced, which the purge that follows removes at once. Then the owner is
     /// withdrawn. Measured on 26B5112a: lock seen at about 30 s, gone by 50 s, no download, 683 MB purged in 0.14 s, still gone at
     /// five minutes. A language with any owner is left to the release above; nothing runs while Siri or Dictation is on.
+    /// Register before submitting: a missing reply does not prove the remote side did nothing.
+    /// Cleanup runs on preparation, submission and body failures, as well as success.
+    static func withTemporaryOwners<Configuration>(
+        withdraw: ([Configuration]) throws -> Void,
+        body: (_ register: (Configuration) -> Void) throws -> Void
+    ) throws {
+        var submitted: [Configuration] = []
+        var failure: Error?
+        do { try body { submitted.append($0) } }
+        catch { failure = error }
+        if !submitted.isEmpty { try withdraw(submitted) }
+        if let failure { throw failure }
+    }
+
+    struct TemporaryRequest: Codable {
+        var operation = UUID()
+        var client: String
+        var name: String
+        var user: String
+        var archive: Data
+        var expiry: Date
+        var phase: String
+    }
+    final class TemporaryJournal {
+        private let file: ProtectedJournal
+        var requests: [TemporaryRequest]
+        init() throws {
+            let url = AssetModelCleanup.journal(.siri).deletingLastPathComponent().appendingPathComponent("temporary-v2.sealed")
+            let existing = AssetModelCleanup.hasRecoveryRecords
+            file = try ProtectedJournal(url: url, purpose: "temporary-owners", allowKeyCreation: !existing)
+            requests = try file.read().map { try JSONDecoder().decode([TemporaryRequest].self, from: $0) } ?? []
+            try require(requests.count <= 128, "Too many temporary owner records")
+        }
+        func save() throws { try file.write(JSONEncoder().encode(requests)) }
+    }
+    static func reconcileTemporary(owner: UAFManager, user: String) throws {
+        let journal = try TemporaryJournal()
+        for request in journal.requests {
+            try require(request.user.caseInsensitiveCompare(user) == .orderedSame && request.client == "com.apple.siri.embeddedspeech"
+                        && request.name.hasPrefix("assistant.") && request.archive.count <= 4 * 1024 * 1024
+                        && ["submitted", "confirmed", "withdrawing"].contains(request.phase), "Invalid temporary owner record")
+            let language = String(request.name.dropFirst("assistant.".count))
+            let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+            try require(!language.isEmpty && language.count < 40 && language.unicodeScalars.allSatisfy(allowed.contains), "Invalid temporary language")
+            let original = try decode(request.archive)
+            guard let expiration = try value(original, "expiration") as? Date else { throw Refusal("Temporary owner has no bounded expiry") }
+            try require(abs(expiration.timeIntervalSince(request.expiry)) < 0.001, "Temporary owner expiry changed")
+            try require(equal(try value(original, "name"), request.name), "Temporary owner identity changed")
+            if let current = try subscription(owner, client: request.client, name: request.name) {
+                try require(facts(original).isEqual(try facts(current)), "Temporary owner changed outside MacSpace; it was kept")
+                guard let index = journal.requests.firstIndex(where: { $0.operation == request.operation }) else { throw Refusal("Temporary operation changed") }
+                journal.requests[index].phase = "withdrawing"; try journal.save()
+                let reply = Reply<Void>()
+                owner.unsubscribe(request.client, subscriptionNames: [request.name], user: user, userInitiated: true, queue: nil) { reply.send(()) }
+                try require(reply.wait(30) && retry(5, every: 1) {
+                    try subscription(owner, client: request.client, name: request.name) == nil && row(rows(), client: request.client, name: request.name, user: user) == nil
+                }, "Temporary owner withdrawal is not verified")
+            } else {
+                try require(try row(rows(), client: request.client, name: request.name, user: user) == nil, "Temporary owner state disagrees")
+                try require(request.phase != "submitted" || request.expiry.timeIntervalSinceNow <= 0, "Temporary owner submission is still ambiguous")
+            }
+            journal.requests.removeAll { $0.operation == request.operation }; try journal.save()
+        }
+    }
+
     static func readoptLeftovers(owner: UAFManager, user: String, details: inout [String]) throws {
         guard try speechOff() else { return }
         let client = "com.apple.siri.embeddedspeech"
@@ -480,27 +542,33 @@ enum AssetOwners {
         try check(entitled, "unsubscribeFromAssetsWithConfigs:subscriberId:completionHandler:", "v40@0:8@16@24@?32", classMethod: true)
         try check(configType, "initWithLanguage:assetType:", "@32@0:8@16Q24")
         let assets = messaging(entitled, as: EntitledAssets.self)
-        var configs: [AnyObject] = []
         var names: [String] = []
-        for language in languages {
-            let config = try makeConfig(configType, language: language, assetType: 3)
-            let name = "assistant." + language
-            try require(equal(assets.subscriptionName(for: config), name)
-                        && equal(assets.assetSetUsage(for: config), ["asr.language": language] as NSDictionary), "Speech config does not match its model")
-            guard let subscription = assets.subscription(with: config, expiration: nil) else { continue }
-            let reply = Reply<Void>()
-            owner.subscribe(client, subscriptions: [subscription], user: user, userInitiated: true, queue: nil) { reply.send(()) }
-            try require(reply.wait(30), "Model adoption did not answer")
-            configs.append(config)
-            names.append(name)
-        }
-        guard !configs.isEmpty else { return }
-        // Withdrawn whatever happens next: an adopted owner is never left behind.
-        defer {
-            let reply = Reply<AnyObject?>()
-            assets.unsubscribe(configs: configs, subscriberId: client) { reply.send($0) }
-            _ = reply.wait(30)
-        }
+        let journal = try TemporaryJournal()
+        try require(journal.requests.isEmpty, "An earlier temporary operation needs reconciliation")
+        var submissionFailure: Error?
+        do {
+            for language in languages {
+                let config = try makeConfig(configType, language: language, assetType: 3)
+                let name = "assistant." + language
+                try require(equal(assets.subscriptionName(for: config), name)
+                            && equal(assets.assetSetUsage(for: config), ["asr.language": language] as NSDictionary), "Speech config does not match its model")
+                let expiry = Date().addingTimeInterval(600)
+                guard let subscription = assets.subscription(with: config, expiration: expiry as NSDate) else { continue }
+                let saved = try archive(subscription)
+                let record = TemporaryRequest(client: client, name: name, user: user, archive: saved, expiry: expiry, phase: "submitted")
+                journal.requests.append(record); try journal.save()
+                let reply = Reply<Void>()
+                owner.subscribe(client, subscriptions: [subscription], user: user, userInitiated: true, queue: nil) { reply.send(()) }
+                try require(reply.wait(30), "Model adoption did not answer")
+                guard let index = journal.requests.firstIndex(where: { $0.operation == record.operation }),
+                      let current = try Self.subscription(owner, client: client, name: name),
+                      try facts(subscription).isEqual(try facts(current)) else { throw Refusal("Temporary model identity could not be verified") }
+                journal.requests[index].phase = "confirmed"; try journal.save()
+                names.append(name)
+            }
+        } catch { submissionFailure = error }
+        if let submissionFailure { try reconcileTemporary(owner: owner, user: user); throw submissionFailure }
+        guard !names.isEmpty else { return }
         // MobileAsset takes the models back and lets them go: wait for its hold on them to come and go, at most a minute. A download
         // (a newer version in the catalog) ends the wait at once; the purge then finds nothing new to keep.
         let prefix = "AutoAssetLocker_Entry_com.apple.MobileAsset.UAF.Siri.Understanding_"
@@ -512,6 +580,8 @@ enum AssetOwners {
             if locked { held = true }
             return held && !locked
         }
+        try reconcileTemporary(owner: owner, user: user)
+        guard !names.isEmpty else { return }
         let gone = retry(5, every: 1) { (try? rows())?.contains { $0.client == client && names.contains($0.name) } == false }
         details.append(gone ? "Released \(names.count) Siri speech models that had no owner." : "Siri speech models were adopted; their release is being checked.")
     }
@@ -765,9 +835,42 @@ enum AssetOwners {
     // MARK: Restore
 
     /// Explicit enablement or uninstall: restores only MacSpace's saved owners. An owner changed elsewhere is kept, never overwritten.
+    static func validateRestore(_ entry: Entry, scope: AssetModelCleanup.Scope, user: String) throws {
+        try require(!entry.client.isEmpty && entry.client.utf8.count <= 256 && !entry.name.isEmpty && entry.name.utf8.count <= 1024
+                    && entry.archive.count <= 4 * 1024 * 1024, "Invalid saved owner identity")
+        let object = try decode(entry.archive)
+        switch entry.kind {
+        case "uaf":
+            try require(entry.user?.caseInsensitiveCompare(user) == .orderedSame, "Rollback belongs to another account")
+            let speech = speechAssetType(scope: scope, client: entry.client, name: entry.name) != nil
+            let row = OwnerRow(client: entry.client, name: entry.name, archive: entry.archive, expiry: entry.expiry ?? 0, user: user)
+            let alias = try scope == .siri && allowedAlias(row, object)
+            let voice = try scope == .siri && allowedVoice(row, object, active: [])
+            try require(speech || alias || voice, "Saved owner is outside its scope")
+            try require(equal(try value(object, "name"), entry.name), "Saved owner name changed")
+            _ = try facts(object)
+        case "tts":
+            try require((scope == .phone && entry.client == "com.apple.TelephonyUtilities") || (scope == .siri && entry.client == "com.apple.AssistantServices"), "Saved voice owner is outside its scope")
+            try require(entry.name == "voices", "Invalid saved voice operation")
+            guard let saved = object as? NSArray, saved.count <= 512 else { throw Refusal("Invalid saved voices") }
+            _ = try voiceViews(saved.map { $0 as AnyObject })
+            for request in saved {
+                try require(equal(try value(request, "clientId"), entry.client) && value(request, "accessoryId") == nil
+                            && value(request, "voice") != nil, "Invalid saved voice owner")
+            }
+        case "dds":
+            try require(scope == .released && ["com.apple.DataDeliveryServices.AssetService", "com.apple.DictionaryServices", "com.apple.ProofReader.LinguisticData"].contains(entry.client), "Saved language owner is outside its scope")
+            guard let saved = object as? NSDictionary, saved["query"] != nil, saved["policy"] != nil else { throw Refusal("Invalid saved language owner") }
+            try require(equal(saved["client"], entry.client) && equal(try value(saved["query"], "assetType"), languageDataType)
+                        && sameLanguageData(saved, saved), "Invalid saved language scope")
+        default: throw Refusal("Unknown saved owner kind")
+        }
+    }
+
     static func restore(_ journal: Journal, owner: UAFManager, user: String, details: inout [String]) throws {
         for index in journal.entries.indices where journal.entries[index].phase != .restored {
             let entry = journal.entries[index]
+            try validateRestore(entry, scope: journal.scope, user: user)
             switch entry.kind {
             case "uaf":
                 try require(entry.user?.caseInsensitiveCompare(user) == .orderedSame, "Rollback belongs to another account")

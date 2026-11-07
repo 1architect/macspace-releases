@@ -13,9 +13,12 @@
 "Already gone" = "이미 삭제됨";
 "App container caches" = "앱 컨테이너 캐시";
 "Apps download them again if they need them." = "필요할 때 앱이 다시 다운로드합니다.";
+"Automatic cleanup is off for items that cannot be recovered." = "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다.";
 "Backing up now" = "백업 중";
+"Backup disks require manual selection." = "백업 디스크는 수동으로 선택해야 합니다.";
 "Backups not readable" = "백업을 읽을 수 없음";
 "Cannot be undone" = "실행 취소 불가";
+"Clean non recoverable items automatically" = "복구할 수 없는 항목 자동 정리";
 "Cloud files on this Mac" = "이 Mac의 클라우드 파일";
 "Connect it to see its backups and free old ones." = "연결하면 백업을 확인하고 오래된 백업을 정리할 수 있습니다.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다.";
@@ -53,6 +56,7 @@
 "Removing %@" = "%@ 제거 중";
 "Removing %lld%%, %@" = "제거 중 %lld%%, %@";
 "Removing downloads" = "다운로드 제거 중";
+"Selected cleanup items changed. Review your selection again." = "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.";
 "Spotlight index" = "Spotlight 인덱스";
 "System assets" = "시스템 에셋";
 "That cloud folder is no longer on this Mac" = "이 클라우드 폴더가 더 이상 이 Mac에 없음";

@@ -4,7 +4,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskStartupItemsTests: XCTestCase {
+final class DiskStartupItemsTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (String, AppOwner, AppCatalog) throws -> Void) throws {
         let home = "/private/tmp/startup-items-" + UUID().uuidString
         defer { try? FileManager.default.removeItem(atPath: home) }

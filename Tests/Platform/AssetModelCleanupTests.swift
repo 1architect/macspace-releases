@@ -193,10 +193,7 @@ final class AssetModelCleanupTests: XCTestCase {
              "user": "2A106008-EC1C-41AD-B02F-950839090C0A", "expiry": NSNumber(value: 0.0)],
             ["kind": "tts", "client": "com.apple.TelephonyUtilities", "name": "voices", "archive": Data([2]), "phase": "submitted"]]]
         let data = try PropertyListSerialization.data(fromPropertyList: saved, format: .binary, options: 0)
-        let entries = try AssetOwners.Journal.entries(data, scope: .phone)
-        XCTAssertEqual(entries.map(\.phase), [.removed, .submitted])
-        XCTAssertEqual(entries[0].expiry, 0)
-        XCTAssertNil(entries[1].user)
+        XCTAssertThrowsError(try AssetOwners.Journal.entries(data, scope: .phone), "Unauthenticated legacy journals must be preserved without replay")
         XCTAssertThrowsError(try AssetOwners.Journal.entries(data, scope: .siri), "a journal is never read for another scope")
     }
 

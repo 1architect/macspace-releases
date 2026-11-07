@@ -3,7 +3,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class ReviewedFileRemovalTests: XCTestCase {
+final class ReviewedFileRemovalTests: DiskSecurityFixtureCase {
     func testKeeperChangedAfterBatchVerificationBlocksLaterCopy() throws {
         let root = URL(fileURLWithPath: "/private/tmp/keeper-test-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

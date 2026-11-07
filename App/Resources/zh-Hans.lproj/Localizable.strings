@@ -27,6 +27,7 @@
 "Allow Full Disk Access" = "允许完全磁盘访问";
 "Allow Notifications" = "允许通知";
 "Appearance" = "外观";
+"Apple Intelligence availability could not be verified. No system assets were purged." = "无法验证 Apple Intelligence 是否可用。未清除任何系统资源。";
 "Applies the Debloat policies you turn on." = "应用你启用的 Debloat 策略。";
 "Approve in Settings" = "在设置中批准";
 "Approve the helper" = "批准辅助程序";
@@ -138,6 +139,7 @@
 "Permissions" = "权限";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "点击“安装辅助程序”。如果 macOS 仍无法识别，请在终端运行：/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register，并发送输出的信息。";
 "Privileged helper" = "特权辅助程序";
+"Protected metadata is unavailable." = "受保护的元数据不可用。";
 "Quit" = "退出";
 "Quit MacSpace" = "退出 MacSpace";
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "退出 MacSpace 并重新拷贝。授予此副本的权限会在下次更新时丢失。";

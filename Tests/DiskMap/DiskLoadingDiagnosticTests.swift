@@ -1,11 +1,10 @@
 import Foundation
 import XCTest
 import MacSpaceSdk
-import SQLite3
 @testable import MacSpaceDiskMap
 
 /// Opt-in backend measurement. Never launches MacSpace or modifies scanned files.
-final class DiskLoadingDiagnosticTests: XCTestCase {
+final class DiskLoadingDiagnosticTests: DiskSecurityFixtureCase {
     func testCompleteNativeLoadAndCachedReopen() async throws {
         guard let root = ProcessInfo.processInfo.environment["MACSPACE_DIAGNOSTIC_ROOT"] else {
             throw XCTSkip("Set MACSPACE_DIAGNOSTIC_ROOT to opt into a read-only filesystem scan")
@@ -65,13 +64,8 @@ extension DiskLoadingDiagnosticTests {
         }
     }
     private func cachedState(_ path: String) throws -> DiskIndex {
-        var db: OpaquePointer?, statement: OpaquePointer?
-        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK else { throw NSError(domain: "Replay", code: 1) }
-        defer { sqlite3_finalize(statement); sqlite3_close(db) }
-        guard sqlite3_prepare_v2(db, "SELECT data FROM state WHERE id=1", -1, &statement, nil) == SQLITE_OK,
-              sqlite3_step(statement) == SQLITE_ROW else { throw NSError(domain: "Replay", code: 2, userInfo: [NSLocalizedDescriptionKey: String(cString: sqlite3_errmsg(db))]) }
-        let data = Data(bytes: sqlite3_column_blob(statement, 0), count: Int(sqlite3_column_bytes(statement, 0)))
-        return try JSONDecoder().decode(DiskIndex.self, from: data)
+        let db = try DiskDatabase(url: URL(fileURLWithPath: path), root: "/")
+        return try XCTUnwrap(db.state())
     }
     /// The input is a SQLite backup, never the live app cache. The store works on its own second copy.
     func testForegroundCachedModuleReadCompletesFromIsolatedIndex() async throws {

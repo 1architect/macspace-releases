@@ -5,7 +5,7 @@ import MacSpaceSdk
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskNavigationRegressionTests: XCTestCase {
+final class DiskNavigationRegressionTests: DiskSecurityFixtureCase {
     private final class Reads: @unchecked Sendable {
         private let lock = NSLock()
         private var value = 0
@@ -53,6 +53,7 @@ final class DiskNavigationRegressionTests: XCTestCase {
         try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: base) }
         let db = try DiskDatabase(url: source, root: home.path, home: home.path)
+        try trustFixtureCache(source)
         try db.put(DiskDirectory(path: home.path))
         try db.put(DiskDirectory(path: downloads.path))
         try db.put(DiskDirectory(path: nested.path))
@@ -106,6 +107,7 @@ extension DiskNavigationRegressionTests {
             return info.ri_phys_footprint
         }
         let db = try DiskDatabase(url: URL(fileURLWithPath: path), root: "/")
+        try trustFixtureCache(URL(fileURLWithPath: path))
         var count: UInt64 = 0
         try db.query("SELECT COUNT(*) FROM dirs") { count = DiskDatabase.number($0, 0) }
         _ = try db.snapshot()
@@ -142,6 +144,7 @@ extension DiskNavigationRegressionTests {
         defer { try? FileManager.default.removeItem(at: home) }
         let url = root.appendingPathComponent("small.pkg"); try Data(repeating: 3, count: 4096).write(to: url)
         let db = try DiskDatabase(url: cache, root: root.path, home: home.path)
+        try trustFixtureCache(cache)
         var scanner = DiskDatabaseScanner(db: db, excluded: [])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         let store = DiskStore(root: root.path, cache: cache.deletingPathExtension(), home: home.path)
@@ -167,6 +170,7 @@ extension DiskNavigationRegressionTests {
         let ini = root.appendingPathComponent("desktop.ini"), image = nested.appendingPathComponent("photo.jpg"), managed = library.appendingPathComponent("managed.jpg")
         for url in [ini, image, managed] { try Data(repeating: 7, count: 4096).write(to: url) }
         let db = try DiskDatabase(url: cache, root: root.path, home: home.path)
+        try trustFixtureCache(cache)
         var scanner = DiskDatabaseScanner(db: db, excluded: [])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         let store = DiskStore(root: root.path, cache: cache.deletingPathExtension(), home: home.path)
@@ -203,6 +207,7 @@ extension DiskNavigationRegressionTests {
         for name in ["small.txt", "photo.jpg"] { try Data([1]).write(to: root.appendingPathComponent(name)) }
         let cache = home.appendingPathComponent("cache/index.sqlite")
         let db = try DiskDatabase(url: cache, root: root.path, home: home.path)
+        try trustFixtureCache(cache)
         var scanner = DiskDatabaseScanner(db: db, excluded: [])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         XCTAssertEqual(try db.directory(root.path)?.itemCount, 3)
@@ -229,6 +234,7 @@ extension DiskNavigationRegressionTests {
         for file in [large, small] { try Data([1]).write(to: file) }
         let writer = try FileHandle(forWritingTo: large); try writer.truncate(atOffset: 100_000_000); try writer.close()
         let db = try DiskDatabase(url: cache, root: home.path, home: home.path)
+        try trustFixtureCache(cache)
         var scanner = DiskDatabaseScanner(db: db, excluded: [home.path + "/cache"])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         let module = DiskMapModule(store: DiskStore(root: home.path, cache: cache.deletingPathExtension(), home: home.path))
@@ -265,6 +271,7 @@ extension DiskNavigationRegressionTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         for n in 0..<451 { try Data([1]).write(to: root.appendingPathComponent("file-\(n).txt")) }
         let db = try DiskDatabase(url: cache, root: root.path, home: home.path)
+        try trustFixtureCache(cache)
         var scanner = DiskDatabaseScanner(db: db, excluded: [])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         XCTAssertEqual(try db.state()?.personalInventoryVersion, DiskIndex.personalInventorySchemaVersion)
@@ -287,6 +294,7 @@ extension DiskNavigationRegressionTests {
         try Data([1]).write(to: root.appendingPathComponent("small.txt"))
         try Data([1]).write(to: managed.appendingPathComponent("managed.txt"))
         let db = try DiskDatabase(url: home.appendingPathComponent("cache/index.sqlite"), root: home.path, home: home.path)
+        try trustFixtureCache(home.appendingPathComponent("cache/index.sqlite"))
         try db.put(DiskDirectory(path: home.path)); try db.put(DiskDirectory(path: root.path)); try db.put(DiskDirectory(path: managed.path))
         var old = DiskIndex(root: home.path); old.storageRevision = 4; old.summaryVersion = DiskIndex.summarySchemaVersion
         try db.saveState(old)

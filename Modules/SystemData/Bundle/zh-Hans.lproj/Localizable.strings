@@ -45,6 +45,7 @@
 "Apps' temporary files; macOS clears them at restart." = "应用的临时文件，macOS 在重新启动时清除。";
 "Assorted macOS features and the OS itself." = "各种 macOS 功能和系统本身使用的资源。";
 "Audio plug-ins and sounds" = "音频插件和声音";
+"Automatic cleanup is off for items that cannot be recovered." = "无法恢复的项目已禁用自动清理。";
 "Battery and energy history used by System Settings > Battery." = "“系统设置 > 电池”使用的电池和能耗历史。";
 "Cache cleaner" = "缓存清理工具";
 "Caches for all users" = "所有用户的缓存";
@@ -54,6 +55,7 @@
 "Can't run" = "无法运行";
 "Cannot be undone" = "无法撤销";
 "Check Software Update in System Settings." = "在系统设置中检查软件更新。";
+"Clean non recoverable items automatically" = "自动清理无法恢复的项目";
 "Cloud files on this Mac" = "此 Mac 上的云端文件";
 "Cloud storage" = "云存储";
 "Cloud storage: %@" = "云存储：%@";
@@ -171,6 +173,7 @@
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@ 关闭时可安全删除，需要时会重建。";
 "Saved home folder of a deleted account: %@" = "已删除账户保存的个人文件夹：%@";
 "See what fills System Data and free what is safe to remove." = "查看系统数据的内容并释放可安全移除的部分。";
+"Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Shared app files" = "共享应用文件";
 "Shared frameworks" = "共享框架";
 "Shared temporary files" = "共享临时文件";

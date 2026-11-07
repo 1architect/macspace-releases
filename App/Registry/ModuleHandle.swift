@@ -29,8 +29,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public var manifest: ModuleManifest { descriptor.manifest }
 
     @Published public private(set) var state: State
-    @Published public private(set) var screen: Screen?
-    @Published public private(set) var tile: Tile?
+    @Published public private(set) var screen: Screen? { didSet { if oldValue != screen { contractRevision &+= 1 } } }
+    @Published public private(set) var tile: Tile? { didSet { if oldValue != tile { contractRevision &+= 1 } } }
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
@@ -54,6 +54,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var runningRowID: String?
     /// Rows whose action waits for the one running: actions run one at a time, and a row clicked meanwhile shows it is taken.
     @Published public private(set) var queuedRows: [String: Action] = [:]
+    private var queuedRequestIDs: [String: UUID] = [:]
     /// Each row's result until it is dismissed: another row's action starting no longer clears it.
     @Published public private(set) var rowResults: [String: ActionResult] = [:]
     /// The row given a result last, and that result.
@@ -96,7 +97,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public var openGroup: String? { groupPath.last }
 
     private var durableChoiceScopes: Set<String> = []
-    @Published public private(set) var pages: [String: Screen] = [:]
+    @Published public private(set) var pages: [String: Screen] = [:] { didSet { if oldValue != pages { contractRevision &+= 1 } } }
+    private var contractRevision: UInt64 = 0
+    private var moduleEpoch = UUID()
     private var openingPage: Task<Void, Never>?
     private var pageIDs: [String: String] = [:]
     private var pageUse: [String] = []
@@ -299,6 +302,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @Published public private(set) var chosenAll: [String: Set<String>] = [:]
     private var scopedChoices: [String: [String: UInt64]] = [:]
     private var ephemeralScopes = Set<String>()
+    /// Per-visit overrides for cleanup operations whose consent is never stored in preferences.
+    var transientCleanupChoices: [String: (selected: Bool, defaultSelected: Bool)] = [:]
     private var sessionScopes = Set<String>()
     private var scopedReviewed: [String: [String: String]] = [:]
     private var scopedOrigins: [String: [String: String]] = [:]
@@ -402,6 +407,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
     }
     public func clearPageSelections() {
+        transientCleanupChoices.removeAll()
         for scope in ephemeralScopes where !sessionScopes.contains(scope) {
             chosen.removeValue(forKey: scope); chosenAll.removeValue(forKey: scope); scopedChoices.removeValue(forKey: scope)
         }
@@ -419,6 +425,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard let selection = group.selection else { return [] }
         if let key = selection.persistenceKey {
             let preferences = settings.cleanupChoices(module: id)
+            if key == "cleanup" {
+                let targets = currentCleanupTargets
+                return Set(targets.filter { selection.choices[$0.id] != nil && cleanupIsSelected($0, preferences: preferences) }.map(\.id))
+            }
             return Set(selection.choices.keys.filter { preferences[CleanupTarget.preferenceKey(scope: key, id: $0)] ?? selection.checked.contains($0) })
         }
         if let bulk = selection.bulk { return Set(bulk.checked).intersection(selection.choices.keys) }
@@ -427,6 +437,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     private func storedChecked(_ group: Row) -> Set<String> {
         guard let selection = group.selection else { return [] }
+        if selection.persistenceKey != nil { return checked(group) }
         return (chosen[group.id] ?? (selection.session ? [] : Set(selection.checked))).intersection(selection.choices.keys)
     }
 
@@ -620,7 +631,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private func choose(_ ids: Set<String>, all: Set<String>, in group: Row) {
         invalidatePendingSelections()
         if let selection = group.selection, let key = selection.persistenceKey {
-            settings.saveCleanupChoices(module: id, scope: key, visible: Set(selection.choices.keys), selected: ids)
+            var visible = Set(selection.choices.keys)
+            if key == "cleanup" {
+                for target in currentCleanupTargets where visible.contains(target.id) && !target.remembersSelection {
+                    transientCleanupChoices[target.id] = (ids.contains(target.id), target.defaultSelected)
+                    visible.remove(target.id)
+                }
+            }
+            settings.saveCleanupChoices(module: id, scope: key, visible: visible, selected: ids)
             settings.saveCleanupChoices(module: id, scope: key + ":sections", visible: Set(selection.sections.map(\.id)), selected: all)
             durableChoiceScopes.insert(group.id)
             chosen[group.id] = ids; chosenAll[group.id] = all
@@ -676,6 +694,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private func forgetFinishedChoices(_ ids: Set<String>) {
+        for target in currentCleanupTargets where ids.contains(target.id) && !target.remembersSelection {
+            transientCleanupChoices[target.id] = (target.defaultSelected, target.defaultSelected)
+        }
         if !ids.isEmpty {
             bulkMembershipRevision += 1
             for scope in sessionBulk.keys {
@@ -709,7 +730,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var appliedModuleActivity: Bool?
     private var hasCurrentRefresh: Bool { refreshRequests.contains(refreshGeneration) }
     private var needsModuleActivity: Bool {
-        state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
+        !preparingForUninstall && state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
             (isWatched && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
     }
 
@@ -754,10 +775,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private let loader: Loader
     /// Opens a System Settings pane; the tests keep System Settings closed.
     private let openPane: @Sendable (URL) -> Void
+    private let confirm: @MainActor (Action) -> Bool
 
-    public init(descriptor: ModuleDescriptor, settings: SettingsStore, permissions: any PermissionChecker,
+    public init(confirm: @escaping @MainActor (Action) -> Bool = ConfirmationAlert.ask, descriptor: ModuleDescriptor, settings: SettingsStore, permissions: any PermissionChecker,
                 privileged: (any PrivilegedChannel)? = nil, loader: @escaping Loader = ModuleLoader.load,
                 openPane: @escaping @Sendable (URL) -> Void = SettingsPane.open) {
+        self.confirm = confirm
         self.descriptor = descriptor
         self.settings = settings
         self.permissions = permissions
@@ -781,7 +804,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     public func missingPermissions() -> [Permission] {
-        manifest.permissions.filter { permissions.status(of: $0) == .missing }
+        manifest.permissions.filter { permissions.status(of: $0) != .granted }
     }
 
     /// Loads the module (once) when it is enabled and compatible, then fetches its tile and screen.
@@ -790,7 +813,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if case .incompatible = state { return }
         guard isEnabled else { deactivate(); return }
         if module == nil {
-            do { module = try loader(descriptor) } catch {
+            do { module = try loader(descriptor); moduleEpoch = UUID() } catch {
                 state = .failed(error.localizedDescription)
                 // Last session's tile stays, but nothing will refresh it: it must not show as loading (and animate) forever.
                 tileIsStale = false
@@ -810,6 +833,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         pageLoadGeneration += 1; pageLoading = nil
         refreshGeneration += 1; clearRefreshPresentation()
         state = .off
+        queuedRows.removeAll(); queuedRequestIDs.removeAll()
         autoRefresh?.cancel()
         autoRefresh = nil
         screen = nil
@@ -825,6 +849,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         sessionScopes = []; sessionGroup = nil; scopedReviewed = [:]; scopedOrigins = [:]; sessionSections = [:]; sessionSectionPages = [:]
         sessionBulk = [:]; bulkVisible = [:]; bulkSections = [:]; bulkEdit = nil
         chosen = [:]; chosenAll = [:]; scopedChoices = [:]; ephemeralScopes = []
+        transientCleanupChoices = [:]
     }
 
     /// `reload` asks the module to forget what it cached first (the Refresh button); after an action the module already did.
@@ -957,7 +982,15 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// left to do.
     @discardableResult
     public func perform(_ action: Action, extraParameters: [String: String] = [:], quiet: Bool = false, rowID: String? = nil) async -> ActionResult? {
-        if let pageID = action.pageID {
+        guard !preparingForUninstall, state == .ready, module != nil else { return nil }
+        guard let live = trustedAction(action) else {
+            return .failed(String(localized: "Selected cleanup items changed. Review your selection again."))
+        }
+        let revision = contractRevision
+        let instance = moduleEpoch
+        guard extrasAreTrusted(extraParameters, for: live), confirm(live),
+              contractRevision == revision, moduleEpoch == instance, trustedAction(live) != nil else { return nil }
+        if let pageID = live.pageID {
             guard state == .ready, !preparingForUninstall, !performing else { return nil }
             let parameters = action.parameters.merging(extraParameters) { _, extra in extra }
             requestPage(parameters.isEmpty ? pageID : ActionPageRequest(destination: pageID, parameters: parameters).pageID)
@@ -969,13 +1002,30 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let previous = lastAction
         // Working at once, also while the action ahead (and the reading after it) finishes; its own turn takes it out. Not the app's
         // own actions, which open something at once and have nothing to say.
-        if let rowID, !quiet, !Self.opensAtOnce(action) { queuedRows[rowID] = action }
+        let requestID = UUID()
+        if let rowID, !quiet, !Self.opensAtOnce(action) { queuedRows[rowID] = action; queuedRequestIDs[rowID] = requestID }
         let task = Task { @MainActor [weak self] () -> ActionResult? in
             _ = await previous?.value
-            return await self?.performNow(action, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
+            guard let self else { return nil }
+            defer { self.clearQueuedRequest(rowID, requestID: requestID) }
+            guard self.contractRevision == revision,
+                  self.moduleEpoch == instance,
+                  let current = self.trustedAction(live) else { return nil }
+            self.clearQueuedRequest(rowID, requestID: requestID)
+            return await self.performNow(current, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
         }
         lastAction = task
         return await task.value
+    }
+
+    private func clearQueuedRequest(_ rowID: String?, requestID: UUID) {
+        guard let rowID, queuedRequestIDs[rowID] == requestID else { return }
+        queuedRequestIDs[rowID] = nil; queuedRows[rowID] = nil
+    }
+
+    public func performTileSwitch(_ action: Action, value: Bool) async -> ActionResult? {
+        guard !tileIsStale, tile?.switchAction == action else { return nil }
+        return await perform(action, extraParameters: ["value": value ? "true" : "false"], quiet: true)
     }
 
     private var lastAction: Task<ActionResult?, Never>?
@@ -1077,8 +1127,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?) async -> ActionResult? {
-        if let rowID, !quiet { queuedRows[rowID] = nil }
         guard !preparingForUninstall, state == .ready, let module else { return nil }
+        let performingContract = contractRevision
         // The app's own actions (`Action.allowFullDiskAccess`, `openSettings`, `restart`): the module is not called.
         if action.id == Action.fullDiskAccessID {
             openPane(LivePermissionChecker.fullDiskAccessSettingsURL)
@@ -1098,7 +1148,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
             return nil
         }
-        let missing = action.requires.filter { permissions.status(of: $0) == .missing }
+        let missing = action.requires.filter { permissions.status(of: $0) != .granted }
         if !missing.isEmpty {
             // For a switch it counts as failed: nothing changed, so the switch goes back.
             let result = ActionResult(outcome: quiet ? .failed : .needsAttention,
@@ -1132,6 +1182,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             scheduleAutoRefresh()
         }
         await syncModuleActivity()
+        guard contractRevision == performingContract, trustedAction(action) != nil, extrasAreTrusted(extraParameters, for: action) else { return nil }
         lastResult = nil
         invalidatePendingSelections()
         actionGeneration += 1
@@ -1221,6 +1272,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Disabled modules may still own settings from an earlier session.
     func prepareForUninstall() async -> ActionResult {
         guard !isBusy else { return .failed(String(localized: "Working")) }
+        await syncModuleActivity()
         do {
             if module == nil { module = try loader(descriptor) }
             guard let module else { return .failed(manifest.name) }

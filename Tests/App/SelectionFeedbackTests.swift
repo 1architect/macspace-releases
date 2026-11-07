@@ -68,7 +68,7 @@ final class SelectionFeedbackTests: XCTestCase {
     private func makeHandle(_ control: SelectionFeedbackControl, directory: URL) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in SelectionFeedbackModule(control) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in SelectionFeedbackModule(control) })
         await handle.activate()
         return handle
     }
@@ -127,8 +127,9 @@ final class SelectionFeedbackTests: XCTestCase {
         handle.toggle("two", in: try XCTUnwrap(handle.activeSelection))
         for _ in 0..<100 where handle.isEditingSelection { await Task.yield() }
         let group = try XCTUnwrap(handle.activeSelection), token = try XCTUnwrap(group.selection?.bulk?.token)
-        let action = try XCTUnwrap(group.selection?.action)
-        let task = Task { await handle.perform(action, extraParameters: ["selectionToken": token]) }
+        let action = try XCTUnwrap(handle.selectedAction)
+        XCTAssertEqual(action.parameters["selectionToken"], token)
+        let task = Task { await handle.perform(action) }
         for _ in 0..<100 { if await control.removing { break }; await Task.yield() }
         XCTAssertTrue(handle.isCleaning); XCTAssertTrue(handle.bulkMembershipKey.isEmpty)
         await handle.refreshBulkMembership()

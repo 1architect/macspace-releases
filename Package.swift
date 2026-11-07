@@ -14,10 +14,10 @@ let package = Package(
         .executable(name: "MacSpaceCli", targets: ["MacSpaceCli"]),
         .executable(name: "MacSpaceHelper", targets: ["MacSpaceHelper"]),
     ],
-    dependencies: [.package(path: "Sdk"), .package(path: "Platform"), .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0")],
+    dependencies: [.package(path: "Vendor/SQLCipher"), .package(path: "Sdk"), .package(path: "Platform"), .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0")],
     targets: [
         .target(name: "MacSpaceDiskMapPrivileged", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/DiskMap/Privileged"),
-        .target(name: "MacSpaceDiskMap", dependencies: ["MacSpaceDiskMapPrivileged",.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/DiskMap/Module"),
+        .target(name: "MacSpaceDiskMap", dependencies: [.product(name: "MacSpaceCipher", package: "SQLCipher"),"MacSpaceDiskMapPrivileged",.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/DiskMap/Module"),
         .testTarget(name: "DiskMapTests", dependencies: ["MacSpaceDiskMap", "MacSpaceDiskMapPrivileged", .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/DiskMap"),
         // Modules: each builds as a dynamic library and ships as a bundle in the app's PlugIns folder.
         .target(name: "MacSpaceSystemDataPrivileged", dependencies: [.product(name: "MacSpacePlatform", package: "Platform")], path: "Modules/SystemData/Privileged"),

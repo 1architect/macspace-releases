@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskMapTests: XCTestCase {
+final class DiskMapTests: DiskSecurityFixtureCase {
     private func fixture() throws -> URL {
         let root = URL(fileURLWithPath: "/private/tmp").appendingPathComponent("disk-map-tests-" + UUID().uuidString).appendingPathComponent("Downloads")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -92,7 +92,7 @@ final class DiskMapTests: XCTestCase {
         XCTAssertFalse(failed.failures.isEmpty)
         XCTAssertTrue(FileManager.default.fileExists(atPath: path))
         let removed = AppRemovalExecutor.execute(plan: plan, catalog: catalog, home: root.path, systemLibrary: root.path + "/system-library")
-        XCTAssertTrue(removed.failures.isEmpty)
+        XCTAssertTrue(removed.failures.isEmpty, String(describing: removed.failures))
         XCTAssertEqual(removed.removed, [path])
         XCTAssertFalse(FileManager.default.fileExists(atPath: path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: cache))

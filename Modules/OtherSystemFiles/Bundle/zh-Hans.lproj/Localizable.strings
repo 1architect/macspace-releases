@@ -13,9 +13,12 @@
 "Already gone" = "已不存在";
 "App container caches" = "应用容器缓存";
 "Apps download them again if they need them." = "应用需要时会重新下载。";
+"Automatic cleanup is off for items that cannot be recovered." = "无法恢复的项目已禁用自动清理。";
 "Backing up now" = "正在备份";
+"Backup disks require manual selection." = "备份磁盘需要手动选择。";
 "Backups not readable" = "无法读取备份";
 "Cannot be undone" = "无法撤销";
+"Clean non recoverable items automatically" = "自动清理无法恢复的项目";
 "Cloud files on this Mac" = "此 Mac 上的云端文件";
 "Connect it to see its backups and free old ones." = "连接磁盘以查看备份并释放旧备份。";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。";
@@ -53,6 +56,7 @@
 "Removing %@" = "正在移除 %@";
 "Removing %lld%%, %@" = "正在移除 %lld%%，%@";
 "Removing downloads" = "正在移除下载";
+"Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Spotlight index" = "Spotlight 索引";
 "System assets" = "系统资源";
 "That cloud folder is no longer on this Mac" = "此云端文件夹已不在此 Mac 上";

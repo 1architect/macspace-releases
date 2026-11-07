@@ -3,7 +3,7 @@ import XCTest
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class OwnershipEvidenceTests: XCTestCase {
+final class OwnershipEvidenceTests: DiskSecurityFixtureCase {
     func testEmbeddedIdentifiersDoNotAssociatePublisherRootsWithOneApp() throws {
         try fixture { home in
             let owner = try app(home, name: "Install macOS Tahoe", id: "com.apple.InstallAssistant")

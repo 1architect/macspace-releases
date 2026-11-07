@@ -3,7 +3,7 @@ import XCTest
 @testable import MacSpaceDiskMap
 
 @MainActor
-final class DiskAppLifecycleTests: XCTestCase {
+final class DiskAppLifecycleTests: DiskSecurityFixtureCase {
     func testNormalQuitWaitsForMainAndEmbeddedAppsAndPreservesOtherInstallations() async {
         let path = "/Applications/Example.app"
         var running = [DiskAppLifecycle.Running(pid: 1, bundlePath: path, executablePath: path + "/Contents/MacOS/App"),

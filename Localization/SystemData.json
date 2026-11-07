@@ -98,6 +98,42 @@
   "1項目",
   "항목 1개"
  ],
+ "1 more item is under Protected by macOS.": [
+  "Mais 1 item está em Protegido pelo macOS.",
+  "1 autre élément se trouve dans Protégé par macOS.",
+  "Hay 1 elemento más en Protegido por macOS.",
+  "1 weiteres Objekt befindet sich unter Von macOS geschützt.",
+  "还有 1 个项目位于“受 macOS 保护”中。",
+  "ほか1項目は「macOSで保護」にあります。",
+  "추가 항목 1개는 macOS에서 보호됨에 있습니다."
+ ],
+ "1 place couldn't be measured.": [
+  "1 local não pôde ser medido.",
+  "1 emplacement n’a pas pu être mesuré.",
+  "No se pudo medir 1 ubicación.",
+  "1 Ort konnte nicht gemessen werden.",
+  "有 1 个位置无法测量。",
+  "1か所を測定できませんでした。",
+  "위치 1곳을 측정할 수 없습니다."
+ ],
+ "1 place only the helper can measure: %@. Turn it on in Settings.": [
+  "1 local que só o auxiliar pode medir: %@. Ative-o nos Ajustes.",
+  "1 emplacement que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.",
+  "1 ubicación que solo el asistente puede medir: %@. Actívalo en Ajustes.",
+  "1 Ort, den nur der Helfer messen kann: %@. Aktiviere ihn in den Einstellungen.",
+  "有 1 个位置只有辅助工具才能测量：%@。请在设置中启用。",
+  "ヘルパーのみが測定できる場所が1か所あります：%@。「設定」で有効にしてください。",
+  "도우미만 측정할 수 있는 위치 1곳: %@. 설정에서 켜세요."
+ ],
+ "1 place wasn't measured. Reopen MacSpace.": [
+  "1 local não foi medido. Abra o MacSpace novamente.",
+  "1 emplacement n’a pas été mesuré. Rouvrez MacSpace.",
+  "No se midió 1 ubicación. Vuelve a abrir MacSpace.",
+  "1 Ort wurde nicht gemessen. Öffne MacSpace erneut.",
+  "有 1 个位置未测量。请重新打开 MacSpace。",
+  "1か所が測定されませんでした。MacSpaceを開き直してください。",
+  "위치 1곳이 측정되지 않았습니다. MacSpace를 다시 여세요."
+ ],
  "1 report": [
   "1 relatório",
   "1 rapport",
@@ -133,6 +169,15 @@
   "虚拟机的磁盘和状态。请在虚拟化应用中删除不再使用的虚拟机。",
   "仮想マシンのディスクと状態です。不要なマシンは仮想化アプリで削除してください。",
   "가상 머신의 디스크와 상태입니다. 사용하지 않는 가상 머신은 가상화 앱에서 삭제하세요."
+ ],
+ "All done": [
+  "Concluído",
+  "Terminé",
+  "Completado",
+  "Fertig",
+  "已完成",
+  "完了",
+  "완료"
  ],
  "All users": [
   "Todos os usuários",
@@ -359,6 +404,15 @@
   "オーディオプラグインとサウンド",
   "오디오 플러그인 및 사운드"
  ],
+ "Automatic cleanup is off for items that cannot be recovered.": [
+  "A limpeza automática está desativada para itens que não podem ser recuperados.",
+  "Le nettoyage automatique est désactivé pour les éléments irrécupérables.",
+  "La limpieza automática está desactivada para los elementos que no se pueden recuperar.",
+  "Die automatische Bereinigung ist für nicht wiederherstellbare Elemente deaktiviert.",
+  "无法恢复的项目已禁用自动清理。",
+  "復元できない項目の自動クリーンアップはオフです。",
+  "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다."
+ ],
  "Battery and energy history used by System Settings > Battery.": [
   "Histórico de bateria e energia usado em Ajustes do Sistema > Bateria.",
   "Historique de batterie et d’énergie utilisé par Réglages Système > Batterie.",
@@ -439,6 +493,15 @@
   "在系统设置中检查软件更新。",
   "システム設定でソフトウェアアップデートを確認してください。",
   "시스템 설정에서 소프트웨어 업데이트를 확인하세요."
+ ],
+ "Clean non recoverable items automatically": [
+  "Limpar itens irrecuperáveis automaticamente",
+  "Nettoyer automatiquement les éléments irrécupérables",
+  "Limpiar automáticamente los elementos irrecuperables",
+  "Nicht wiederherstellbare Elemente automatisch bereinigen",
+  "自动清理无法恢复的项目",
+  "復元できない項目を自動的にクリーンアップ",
+  "복구할 수 없는 항목 자동 정리"
  ],
  "Cloud files on this Mac": [
   "Arquivos da nuvem neste Mac",
@@ -1421,6 +1484,15 @@
   "作成元のツールで削除してください。",
   "생성한 도구에서 제거하세요."
  ],
+ "Reports older than %lld days. macOS writes new ones as needed.": [
+  "Relatórios com mais de %lld dias. O macOS cria novos quando precisa.",
+  "Rapports de plus de %lld jours. macOS en crée de nouveaux au besoin.",
+  "Informes de más de %lld días. macOS crea otros nuevos cuando hace falta.",
+  "Berichte, die älter als %lld Tage sind. macOS schreibt bei Bedarf neue.",
+  "超过 %lld 天的报告。macOS 会在需要时写入新报告。",
+  "%lld日より古いレポート。macOSは必要に応じて新しく作成します。",
+  "%lld일보다 오래된 보고서입니다. macOS는 필요할 때 새로 작성합니다."
+ ],
  "Requested by the system for each language it has seen text in, and refreshed daily. It is not a Settings choice: the Spelling language can be set to a single language and the list stays the same (checked on 26B5091g).": [
   "Solicitados pelo sistema para cada idioma em que viu texto e atualizados diariamente. Não é uma opção dos Ajustes: mesmo com um único idioma de ortografia, a lista continua igual.",
   "Demandées par le système pour chaque langue rencontrée dans du texte, et actualisées chaque jour. Ce n’est pas un choix des Réglages : même avec une seule langue d’orthographe, la liste reste la même.",
@@ -1483,6 +1555,15 @@
   "查看系统数据的内容并释放可安全移除的部分。",
   "システムデータの内容を確認し、安全に削除できるものを解放します。",
   "시스템 데이터의 구성을 확인하고 안전하게 제거할 수 있는 항목을 정리합니다."
+ ],
+ "Selected cleanup items changed. Review your selection again.": [
+  "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+  "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+  "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+  "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+  "所选清理项目已更改。请重新检查选择。",
+  "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+  "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
  ],
  "Shared app files": [
   "Arquivos compartilhados de apps",
@@ -1826,6 +1907,15 @@
   "Homebrewでインストールしたツールとライブラリです。削除できる旧バージョンとダウンロードは、解放できるキャッシュに表示されます。インストール済みパッケージは保持されます。",
   "Homebrew로 설치한 도구와 라이브러리입니다. 삭제 가능한 이전 버전과 다운로드는 공간을 확보할 수 있는 캐시에 표시됩니다. 설치된 패키지는 유지됩니다."
  ],
+ "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.": [
+  "Ferramentas instaladas fora do Homebrew, como Node.js e Python. Remova cada uma com o próprio instalador: apagar a pasta pode quebrá-las.",
+  "Outils installés hors de Homebrew, comme Node.js et Python. Supprimez-les avec leur propre programme d’installation : supprimer le dossier peut les casser.",
+  "Herramientas instaladas fuera de Homebrew, como Node.js y Python. Elimina cada una con su instalador: borrar la carpeta puede romperlas.",
+  "Außerhalb von Homebrew installierte Tools wie Node.js und Python. Entferne jedes mit seinem eigenen Installer: den Ordner zu löschen, kann sie beschädigen.",
+  "在 Homebrew 之外安装的工具，例如 Node.js 和 Python。请用各自的安装程序移除：删除整个文件夹可能会损坏它们。",
+  "Homebrew以外でインストールしたツール（Node.jsやPythonなど）。それぞれのインストーラで削除してください。フォルダごと削除すると動かなくなることがあります。",
+  "Homebrew 밖에서 설치한 Node.js, Python 같은 도구입니다. 각 설치 프로그램으로 제거하세요. 폴더를 지우면 도구가 망가질 수 있습니다."
+ ],
  "Trash": [
   "Lixo",
   "Corbeille",
@@ -2167,68 +2257,5 @@
   "下载该内容的应用",
   "ダウンロード元のアプリ",
   "다운로드 중인 앱"
- ],
- "Reports older than %lld days. macOS writes new ones as needed.": [
-  "Relatórios com mais de %lld dias. O macOS cria novos quando precisa.",
-  "Rapports de plus de %lld jours. macOS en crée de nouveaux au besoin.",
-  "Informes de más de %lld días. macOS crea otros nuevos cuando hace falta.",
-  "Berichte, die älter als %lld Tage sind. macOS schreibt bei Bedarf neue.",
-  "超过 %lld 天的报告。macOS 会在需要时写入新报告。",
-  "%lld日より古いレポート。macOSは必要に応じて新しく作成します。",
-  "%lld일보다 오래된 보고서입니다. macOS는 필요할 때 새로 작성합니다."
- ],
- "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.": [
-  "Ferramentas instaladas fora do Homebrew, como Node.js e Python. Remova cada uma com o próprio instalador: apagar a pasta pode quebrá-las.",
-  "Outils installés hors de Homebrew, comme Node.js et Python. Supprimez-les avec leur propre programme d’installation : supprimer le dossier peut les casser.",
-  "Herramientas instaladas fuera de Homebrew, como Node.js y Python. Elimina cada una con su instalador: borrar la carpeta puede romperlas.",
-  "Außerhalb von Homebrew installierte Tools wie Node.js und Python. Entferne jedes mit seinem eigenen Installer: den Ordner zu löschen, kann sie beschädigen.",
-  "在 Homebrew 之外安装的工具，例如 Node.js 和 Python。请用各自的安装程序移除：删除整个文件夹可能会损坏它们。",
-  "Homebrew以外でインストールしたツール（Node.jsやPythonなど）。それぞれのインストーラで削除してください。フォルダごと削除すると動かなくなることがあります。",
-  "Homebrew 밖에서 설치한 Node.js, Python 같은 도구입니다. 각 설치 프로그램으로 제거하세요. 폴더를 지우면 도구가 망가질 수 있습니다."
- ],
- "All done": [
-  "Concluído",
-  "Terminé",
-  "Completado",
-  "Fertig",
-  "已完成",
-  "完了",
-  "완료"
- ],
- "1 more item is under Protected by macOS.": [
-  "Mais 1 item está em Protegido pelo macOS.",
-  "1 autre élément se trouve dans Protégé par macOS.",
-  "Hay 1 elemento más en Protegido por macOS.",
-  "1 weiteres Objekt befindet sich unter Von macOS geschützt.",
-  "还有 1 个项目位于“受 macOS 保护”中。",
-  "ほか1項目は「macOSで保護」にあります。",
-  "추가 항목 1개는 macOS에서 보호됨에 있습니다."
- ],
- "1 place couldn't be measured.": [
-  "1 local não pôde ser medido.",
-  "1 emplacement n’a pas pu être mesuré.",
-  "No se pudo medir 1 ubicación.",
-  "1 Ort konnte nicht gemessen werden.",
-  "有 1 个位置无法测量。",
-  "1か所を測定できませんでした。",
-  "위치 1곳을 측정할 수 없습니다."
- ],
- "1 place only the helper can measure: %@. Turn it on in Settings.": [
-  "1 local que só o auxiliar pode medir: %@. Ative-o nos Ajustes.",
-  "1 emplacement que seul l’assistant peut mesurer : %@. Activez-le dans Réglages.",
-  "1 ubicación que solo el asistente puede medir: %@. Actívalo en Ajustes.",
-  "1 Ort, den nur der Helfer messen kann: %@. Aktiviere ihn in den Einstellungen.",
-  "有 1 个位置只有辅助工具才能测量：%@。请在设置中启用。",
-  "ヘルパーのみが測定できる場所が1か所あります：%@。「設定」で有効にしてください。",
-  "도우미만 측정할 수 있는 위치 1곳: %@. 설정에서 켜세요."
- ],
- "1 place wasn't measured. Reopen MacSpace.": [
-  "1 local não foi medido. Abra o MacSpace novamente.",
-  "1 emplacement n’a pas été mesuré. Rouvrez MacSpace.",
-  "No se midió 1 ubicación. Vuelve a abrir MacSpace.",
-  "1 Ort wurde nicht gemessen. Öffne MacSpace erneut.",
-  "有 1 个位置未测量。请重新打开 MacSpace。",
-  "1か所が測定されませんでした。MacSpaceを開き直してください。",
-  "위치 1곳이 측정되지 않았습니다. MacSpace를 다시 여세요."
  ]
 }

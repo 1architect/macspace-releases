@@ -25,7 +25,7 @@ final class ModuleOverviewRenderTests: XCTestCase {
                                             SelectionSection(id: "apps", title: "Come back with use 4 items 1 GB", rows: Array(caches[1...4]).map(\.id)),
                                             SelectionSection(id: "developer", title: "Developer 5 items 800 MB", rows: Array(caches[5...]).map(\.id))],
                                          save: Action(id: "save", title: "Save"))
-        let handle = ModuleHandle(descriptor: ModuleDescriptor(manifest: Fixtures.manifest(), bundleURL: URL(fileURLWithPath: "/tmp"), compatibility: .compatible),
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: ModuleDescriptor(manifest: Fixtures.manifest(), bundleURL: URL(fileURLWithPath: "/tmp"), compatibility: .compatible),
                                   settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FakeModule() })
         let widgets: [ScreenWidget] = [.list(ListWidget(id: "groups", rows: [
             .group(id: "appdata", title: "App data", totalBytes: 1_420_000_000, rows: appRows),

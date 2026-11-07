@@ -22,44 +22,52 @@ actor DiskSelectionStorage {
     private var pinned = Set<String>()
     private var accepted: String?
     private var reviewTokens: [String] = []
+    private struct Frozen {
+        let revision: UInt64
+        let files: DiskSelectionSnapshot
+    }
+    private var frozen: [String: Frozen] = [:]
+    private var preflight: [String: DiskSelectionSnapshot] = [:]
     init(url: URL, root: String, home: String) { self.url = url; self.root = root; self.home = home }
+    func close() {
+        frozen.removeAll(); preflight.removeAll(); pinned.removeAll(); reviewTokens.removeAll()
+        storage = nil; accepted = nil
+    }
     private func database() throws -> DiskDatabase {
         if let storage { return storage }
         let db = try DiskDatabase(url: url, root: root, home: home)
-        try db.execute("CREATE TABLE IF NOT EXISTS selected_versions(token TEXT PRIMARY KEY,version INTEGER UNIQUE,count INTEGER,bytes INTEGER,created REAL) WITHOUT ROWID")
-        try db.execute("CREATE TABLE IF NOT EXISTS selected_rows(path TEXT,first INTEGER,last INTEGER,bytes INTEGER,data BLOB,PRIMARY KEY(path,first)) WITHOUT ROWID")
-        try db.execute("CREATE INDEX IF NOT EXISTS selected_end ON selected_rows(last)")
-        try db.execute("CREATE INDEX IF NOT EXISTS selected_start ON selected_rows(first)")
-        try db.execute("CREATE TABLE IF NOT EXISTS removed_selection(token TEXT,path TEXT,PRIMARY KEY(token,path)) WITHOUT ROWID")
-        try db.execute("DELETE FROM selected_versions; DELETE FROM selected_rows; DELETE FROM removed_selection")
-        try db.execute("CREATE TABLE IF NOT EXISTS selected_scopes(scope TEXT,path TEXT,PRIMARY KEY(scope,path)) WITHOUT ROWID")
+        // Editing relations are connection-private too. They are never reopened from a named cache.
+        for table in ["selected_versions", "selected_rows", "removed_selection", "selected_scopes", "preflight_files"] {
+            try db.execute("DROP TABLE IF EXISTS main." + table)
+        }
+        try db.execute("CREATE TEMP TABLE selected_versions(token TEXT PRIMARY KEY,version INTEGER UNIQUE,count INTEGER,bytes INTEGER,created REAL) WITHOUT ROWID")
+        try db.execute("CREATE TEMP TABLE selected_rows(path TEXT,first INTEGER,last INTEGER,bytes INTEGER,data BLOB,PRIMARY KEY(path,first)) WITHOUT ROWID")
+        try db.execute("CREATE INDEX temp.selected_end ON selected_rows(last)")
+        try db.execute("CREATE INDEX temp.selected_start ON selected_rows(first)")
+        try db.execute("CREATE TEMP TABLE removed_selection(token TEXT,path TEXT,PRIMARY KEY(token,path)) WITHOUT ROWID")
+        try db.execute("CREATE TEMP TABLE selected_scopes(scope TEXT,path TEXT,PRIMARY KEY(scope,path)) WITHOUT ROWID")
         try db.execute("CREATE TEMP TABLE IF NOT EXISTS scope_stamps(scope TEXT PRIMARY KEY,revision INTEGER,created REAL) WITHOUT ROWID")
         try db.execute("CREATE TEMP TABLE IF NOT EXISTS candidates(path TEXT PRIMARY KEY,bytes INTEGER,data BLOB,link TEXT UNIQUE,digest BLOB) WITHOUT ROWID")
         try db.execute("CREATE INDEX IF NOT EXISTS temp.candidate_digest ON candidates(digest,path)")
-        try db.execute("DELETE FROM selected_scopes")
         try db.execute("CREATE TEMP TABLE IF NOT EXISTS scope_conflicts(scope TEXT PRIMARY KEY) WITHOUT ROWID")
-        try db.execute("CREATE TABLE IF NOT EXISTS preflight_files(token TEXT,path TEXT,data BLOB,PRIMARY KEY(token,path)) WITHOUT ROWID; DELETE FROM preflight_files")
         storage = db; return db
     }
     private func version(_ token: String, db: DiskDatabase) throws -> UInt64 {
-        var result: UInt64?
-        try db.query("SELECT version FROM selected_versions WHERE token=?", [.text(token)]) { result = DiskDatabase.number($0, 0) }
-        guard let result else { throw DiskDatabase.Failure(message: "This selection expired. Review the files again.") }; return result
+        guard let result = frozen[token] else { throw DiskDatabase.Failure(message: "This selection expired. Review the files again.") }
+        return result.revision
     }
     private func selected(_ path: String, at version: UInt64, db: DiskDatabase) throws -> Bool {
-        try db.query("SELECT 1 FROM selected_rows WHERE path=? AND first<=? AND (last IS NULL OR last>?)", [.text(path), .number(version), .number(version)]) > 0
+        if let snapshot = frozen.values.first(where: { $0.revision == version }) {
+            return try snapshot.files.file(at: path) != nil
+        }
+        return try db.query("SELECT 1 FROM selected_rows WHERE path=? AND first<=? AND (last IS NULL OR last>?)", [.text(path), .number(version), .number(version)]) > 0
     }
     private func path(_ id: String) throws -> String {
         guard id.hasPrefix("file:"), let data = Data(base64Encoded: String(id.dropFirst(5))), let path = String(data: data, encoding: .utf8), DiskDatabase.contains(path, below: root) else { throw DiskDatabase.Failure(message: "Invalid selection.") }; return path
     }
     func files(token: String, after: String, limit: Int) throws -> [DiskFile] {
-        let db = try database(), revision = try version(token, db: db)
-        var result: [DiskFile] = []
-        let boundedLimit = UInt64(max(1, min(limit, 200)))
-        try db.query("SELECT data FROM selected_rows WHERE path>? AND first<=? AND (last IS NULL OR last>?) ORDER BY path LIMIT ?", [.text(after), .number(revision), .number(revision), .number(boundedLimit)]) {
-            result.append(try JSONDecoder().decode(DiskFile.self, from: DiskDatabase.data($0, 0)))
-        }
-        return result
+        _ = try version(token, db: database())
+        return try frozen[token]!.files.page(after: after, limit: limit)
     }
     func contains(token: String, path: String) throws -> Bool { let db = try database(); return try selected(path, at: version(token, db: db), db: db) }
     /// Review pagination keeps its original inventory while checkbox edits publish new versions.
@@ -73,7 +81,7 @@ actor DiskSelectionStorage {
     func summary(token: String, visible: [String] = [], sections: [String] = []) throws -> SelectionBulk {
         let db = try database(), revision = try version(token, db: db)
         var count: UInt64 = 0, bytes: UInt64 = 0, checked: [String] = [], all: [String] = [], partial: [String] = []
-        try db.query("SELECT count,bytes FROM selected_versions WHERE token=?", [.text(token)]) { count = DiskDatabase.number($0, 0); bytes = DiskDatabase.number($0, 1) }
+        count = frozen[token]!.files.count; bytes = frozen[token]!.files.bytes
         for id in visible { if try selected(path(id), at: revision, db: db) { checked.append(id) } }
         for scope in sections {
             var missing = false, known = false
@@ -153,27 +161,31 @@ actor DiskSelectionStorage {
             return file
         }
     }
-    func pin(token: String) throws { _ = try version(token, db: database()); pinned.insert(token) }
+    func pin(token: String) throws {
+        _ = try version(token, db: database())
+        preflight[token] = try DiskSelectionSnapshot()
+        pinned.insert(token)
+    }
     func unpin(token: String) {
         pinned.remove(token)
-        if let storage { try? storage.query("DELETE FROM preflight_files WHERE token=?", [.text(token)]) }
+        preflight.removeValue(forKey: token)
     }
     func recordPreflight(_ files: [DiskFile], token: String) throws {
-        let db = try database(); _ = try version(token, db: db)
-        guard pinned.contains(token) else { throw DiskDatabase.Failure(message: "Selection is not locked for removal.") }
-        try db.transaction {
-            for file in files { try db.query("INSERT OR REPLACE INTO preflight_files VALUES(?,?,?)", [.text(token), .text(file.path), .data(try JSONEncoder().encode(file))]) }
+        _ = try version(token, db: database())
+        guard pinned.contains(token), let evidence = preflight[token], let original = frozen[token] else { throw DiskDatabase.Failure(message: "Selection is not locked for removal.") }
+        for file in files {
+            guard let selected = try original.files.file(at: file.path), selected.identity == file.identity else {
+                throw DiskDatabase.Failure(message: "Selected files changed. Review them again.")
+            }
+            try evidence.append(file)
         }
     }
     func executionFiles(_ files: [DiskFile], token: String) throws -> [DiskFile] {
         let policy = DiskDuplicateEligibility(home: home)
-        let db = try database(); _ = try version(token, db: db)
-        guard pinned.contains(token) else { throw DiskDatabase.Failure(message: "Selection is not locked for removal.") }
+        _ = try version(token, db: database())
+        guard pinned.contains(token), let evidence = preflight[token], evidence.count == frozen[token]!.files.count else { throw DiskDatabase.Failure(message: "Selection is not locked for removal.") }
         return try files.map { original in
-            var reviewed: DiskFile?
-            try db.query("SELECT data FROM preflight_files WHERE token=? AND path=?", [.text(token), .text(original.path)]) {
-                reviewed = try JSONDecoder().decode(DiskFile.self, from: DiskDatabase.data($0, 0))
-            }
+            let reviewed = try evidence.file(at: original.path)
             guard let reviewed, reviewed.identity == original.identity else { throw DiskDatabase.Failure(message: "Selected files changed. Review them again.") }
             if let proof = reviewed.duplicateVerification {
                 guard policy.allows(reviewed.path), policy.allows(proof.keeper) else { throw DiskDatabase.Failure(message: loc("Project resources are excluded from duplicate cleanup.")) }
@@ -195,7 +207,20 @@ actor DiskSelectionStorage {
             let token = DiskDatabase.text($0, 0)
             if token != accepted && !pinned.contains(token) && !reviewTokens.contains(token) { expired.append(token) }
         }
-        for token in expired { try db.query("DELETE FROM selected_versions WHERE token=?", [.text(token)]) }
+        let snapshot = try DiskSelectionSnapshot()
+        try db.query("SELECT path,data FROM selected_rows WHERE first<=? AND (last IS NULL OR last>?) ORDER BY path", [.number(version), .number(version)]) {
+            let file = try JSONDecoder().decode(DiskFile.self, from: DiskDatabase.data($0, 1))
+            guard file.path.utf8.elementsEqual(DiskDatabase.text($0, 0).utf8) else { throw DiskDatabase.Failure(message: "Selected files changed. Review them again.") }
+            try snapshot.append(file)
+        }
+        guard snapshot.count == count + added - removed, snapshot.bytes == bytes + addedBytes - removedBytes else {
+            throw DiskDatabase.Failure(message: "Selection totals are inconsistent. Review the files again.")
+        }
+        frozen[token] = Frozen(revision: version, files: snapshot)
+        for token in expired {
+            try db.query("DELETE FROM selected_versions WHERE token=?", [.text(token)])
+            frozen.removeValue(forKey: token); preflight.removeValue(forKey: token)
+        }
         try db.execute("DELETE FROM selected_rows WHERE last IS NOT NULL AND last<=(SELECT MIN(version) FROM selected_versions)")
         return token
     }

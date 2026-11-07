@@ -33,7 +33,7 @@ struct TileInfo: Equatable {
             self.init(title: tile.title, figure: tile.figure,
                       status: reading ? Self.loadingStatus(handle.loading?.reported) : (handle.isCleaning ? Self.cleaningStatus(handle.progress) : tile.status),
                       needsAttention: tile.needsAttention, graphic: tile.graphic,
-                      loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: tile.switchAction)
+                      loading: handle.tileIsStale || handle.isRefreshing || handle.isCleaning, switchAction: handle.tileIsStale || handle.state != .ready ? nil : tile.switchAction)
             // Any visible scan uses ChartMotion, including an automatic quiet refresh once the module reports real progress.
             // `following` reads never enter `isRefreshing`, so rapidly-following tiles still update without replaying the chart.
             self.reading = (handle.tileIsStale || handle.isRefreshing) && !handle.isCleaning
@@ -835,8 +835,7 @@ private struct TileSwitch: View {
         if case let .state(on, _, detail, meter, actionable)? = info.graphic {
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading, part: .switchOnly,
                       flip: info.switchAction.map { action in { [handle] value in
-                          // Quiet, as the page's switch: it has already moved.
-                          let result = await handle.perform(action, extraParameters: ["value": value ? "true" : "false"], quiet: true)
+                          let result = await handle.performTileSwitch(action, value: value)
                           return result.map { $0.outcome != .failed } ?? false
                       } },
                       disabled: info.switchAction == nil)

@@ -41,7 +41,7 @@ final class DiskPageLoadingTests: XCTestCase {
     private func handle(_ control: PageReadControl, directory: URL) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in CachedDiskPageModule(control) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in CachedDiskPageModule(control) })
         await handle.activate()
         return handle
     }

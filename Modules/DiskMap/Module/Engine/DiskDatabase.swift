@@ -1,6 +1,7 @@
 import Foundation
+import CryptoKit
 import Darwin
-import SQLite3
+import MacSpaceCipher
 import MacSpaceSdk
 import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
@@ -8,6 +9,7 @@ import MacSpaceDiskMapPrivileged
 /// Directory measurements and reviewable personal-file metadata persist; Swift retains bounded page projections.
 final class DiskDatabase: @unchecked Sendable {
     private var db: OpaquePointer?
+    private var boundary: OpaquePointer?
     var inventoryIncludes: (String) -> Bool
     let duplicateEligibility: DiskDuplicateEligibility
     private(set) var compact = false
@@ -30,21 +32,36 @@ final class DiskDatabase: @unchecked Sendable {
     /// Mutation statements in the current unflushed batch, available to backend performance diagnostics.
     var batchWriteCount: Int { writes }
     var unpublished = false
-    private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-    struct Failure: LocalizedError { var message: String; var errorDescription: String? { message } }
+    private let transient = unsafeBitCast(-1, to: msc_sqlite3_destructor_type.self)
+    struct Failure: LocalizedError {
+        var message: String
+        var code: Int32? = nil
+        var errorDescription: String? { message }
+        var isCorrupt: Bool { code == SQLITE_CORRUPT || code == SQLITE_NOTADB }
+    }
     init(url: URL, root: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
         self.root = root; self.home = home
         self.duplicateEligibility = DiskDuplicateEligibility(home: home)
         self.inventoryIncludes = { FileReviewPolicy.includes($0, home: home) }
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else { throw Failure(message: "Cannot open disk index") }
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-        sqlite3_busy_timeout(db, 3000)
+        let material = try MetadataKeys.key(.inventory, create: true)
+        let purpose = url.lastPathComponent.hasSuffix(".selection") ? "selection" : "inventory"
+        let derived = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: material), salt: Data("MacSpace.inventory.v1".utf8),
+            info: Data((String(getuid()) + ":" + purpose + ":" + root).utf8), outputByteCount: 32)
+        let key = derived.withUnsafeBytes { Data($0) }
+        let access = try DiskCacheAccess(url)
+        guard let boundary = msc_boundary_create(access.path) else { throw Failure(message: "Cannot pin disk index") }
+        self.boundary = boundary
+        var initialized = false
+        defer { if !initialized { for value in prepared.values { msc_sqlite3_finalize(value) }; msc_sqlite3_close(db); db = nil; msc_boundary_destroy(self.boundary); self.boundary = nil } }
+        guard msc_sqlite3_open_v2(access.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_NOFOLLOW, msc_boundary_name(boundary)) == SQLITE_OK else { throw error() }
+        guard key.withUnsafeBytes({ msc_cipher_key(db, $0.baseAddress, Int32($0.count)) }) == SQLITE_OK else { throw MetadataUnavailable() }
+        try access.validate()
+        msc_sqlite3_busy_timeout(db, 3000)
         try execute("PRAGMA journal_mode=WAL")
         try execute("PRAGMA synchronous=NORMAL")
         try execute("PRAGMA cache_size=-2048")
         try execute("PRAGMA mmap_size=0")
-        try execute("PRAGMA temp_store=FILE")
+        try execute("PRAGMA temp_store=MEMORY")
         try execute("PRAGMA journal_size_limit=1048576")
         try execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), data BLOB NOT NULL)")
         compact = try query("SELECT 1 FROM sqlite_master WHERE name='file_details' AND type='table'") == 0
@@ -78,6 +95,8 @@ final class DiskDatabase: @unchecked Sendable {
                 DiskScanMetrics.write("DISK_PHASE phase=\(name) seconds=\(seconds) directories=\(directories)")
             }
         }
+        try access.validate()
+        initialized = true
     }
     private static let indexes: [(String, String)] = [
         ("dirs_parent", "dirs(parent)"), ("dirs_depth", "dirs(length(path) DESC,id)"),
@@ -107,50 +126,59 @@ final class DiskDatabase: @unchecked Sendable {
             progress?(Double(n + 1) / Double(Self.indexes.count))
         }
     }
-    deinit { for value in prepared.values { sqlite3_finalize(value) }; sqlite3_close(db) }
+    deinit { for value in prepared.values { msc_sqlite3_finalize(value) }; msc_sqlite3_close(db); msc_boundary_destroy(boundary) }
     func execute(_ sql: String) throws {
-        guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw error() }
+        try MetadataKeys.requireAvailable()
+        guard msc_boundary_validate(boundary) != 0 else { throw Failure(message: "Disk index boundary changed") }
+        guard msc_sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw error() }
     }
-    private func error() -> Failure { Failure(message: db.map { String(cString: sqlite3_errmsg($0)) } ?? "Closed index") }
+    private func error() -> Failure {
+        Failure(message: db.map { String(cString: msc_sqlite3_errmsg($0)) } ?? "Closed index",
+                code: db.map { msc_sqlite3_extended_errcode($0) & 0xff })
+    }
     enum Value { case text(String), number(UInt64), optional(UInt32?), data(Data), date(Date?) }
     @discardableResult
     func query(_ sql: String, _ values: [Value] = [], row: (OpaquePointer) throws -> Void = { _ in }) throws -> Int {
+        try MetadataKeys.requireAvailable()
+        if msc_sqlite3_get_autocommit(db) != 0 {
+            guard msc_boundary_validate(boundary) != 0 else { throw Failure(message: "Disk index boundary changed") }
+        }
         let stmt: OpaquePointer
         if let cached = prepared[sql] { stmt = cached }
         else {
             var value: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &value, nil) == SQLITE_OK, let value else { throw error() }
+            guard msc_sqlite3_prepare_v2(db, sql, -1, &value, nil) == SQLITE_OK, let value else { throw error() }
             stmt = value; prepared[sql] = value
         }
-        sqlite3_reset(stmt); sqlite3_clear_bindings(stmt)
-        defer { sqlite3_reset(stmt); sqlite3_clear_bindings(stmt) }
+        msc_sqlite3_reset(stmt); msc_sqlite3_clear_bindings(stmt)
+        defer { msc_sqlite3_reset(stmt); msc_sqlite3_clear_bindings(stmt) }
         for (n, value) in values.enumerated() {
             let position = Int32(n + 1)
             switch value {
-            case let .text(value): sqlite3_bind_text(stmt, position, value, -1, transient)
-            case let .number(value): sqlite3_bind_int64(stmt, position, Int64(clamping: value))
-            case let .optional(value): if let value { sqlite3_bind_int64(stmt, position, Int64(value)) } else { sqlite3_bind_null(stmt, position) }
-            case let .data(value): _ = value.withUnsafeBytes { sqlite3_bind_blob(stmt, position, $0.baseAddress, Int32($0.count), transient) }
+            case let .text(value): msc_sqlite3_bind_text(stmt, position, value, -1, transient)
+            case let .number(value): msc_sqlite3_bind_int64(stmt, position, Int64(clamping: value))
+            case let .optional(value): if let value { msc_sqlite3_bind_int64(stmt, position, Int64(value)) } else { msc_sqlite3_bind_null(stmt, position) }
+            case let .data(value): _ = value.withUnsafeBytes { msc_sqlite3_bind_blob(stmt, position, $0.baseAddress, Int32($0.count), transient) }
             case let .date(value):
-                if let value { sqlite3_bind_double(stmt, position, value.timeIntervalSince1970) }
-                else { sqlite3_bind_null(stmt, position) }
+                if let value { msc_sqlite3_bind_double(stmt, position, value.timeIntervalSince1970) }
+                else { msc_sqlite3_bind_null(stmt, position) }
             }
         }
         var count = 0
         while true {
-            let result = sqlite3_step(stmt)
+            let result = msc_sqlite3_step(stmt)
             if result == SQLITE_DONE {
-                if sqlite3_stmt_readonly(stmt) == 0 { writes += 1 }
+                if msc_sqlite3_stmt_readonly(stmt) == 0 { writes += 1 }
                 return count
             }
             guard result == SQLITE_ROW else { throw error() }
             try row(stmt); count += 1
         }
     }
-    static func text(_ stmt: OpaquePointer, _ column: Int32) -> String { sqlite3_column_text(stmt, column).map { String(cString: $0) } ?? "" }
-    static func number(_ stmt: OpaquePointer, _ column: Int32) -> UInt64 { UInt64(max(0, sqlite3_column_int64(stmt, column))) }
-    static func uid(_ stmt: OpaquePointer, _ column: Int32) -> UInt32? { sqlite3_column_type(stmt, column) == SQLITE_NULL ? nil : UInt32(clamping: sqlite3_column_int64(stmt, column)) }
-    static func data(_ stmt: OpaquePointer, _ column: Int32) -> Data { sqlite3_column_blob(stmt, column).map { Data(bytes: $0, count: Int(sqlite3_column_bytes(stmt, column))) } ?? Data() }
+    static func text(_ stmt: OpaquePointer, _ column: Int32) -> String { msc_sqlite3_column_text(stmt, column).map { String(cString: $0) } ?? "" }
+    static func number(_ stmt: OpaquePointer, _ column: Int32) -> UInt64 { UInt64(max(0, msc_sqlite3_column_int64(stmt, column))) }
+    static func uid(_ stmt: OpaquePointer, _ column: Int32) -> UInt32? { msc_sqlite3_column_type(stmt, column) == SQLITE_NULL ? nil : UInt32(clamping: msc_sqlite3_column_int64(stmt, column)) }
+    static func data(_ stmt: OpaquePointer, _ column: Int32) -> Data { msc_sqlite3_column_blob(stmt, column).map { Data(bytes: $0, count: Int(msc_sqlite3_column_bytes(stmt, column))) } ?? Data() }
     static func parent(_ path: String) -> String {
         guard let slash = path.lastIndex(of: "/"), slash != path.startIndex else { return "/" }
         return String(path[..<slash])
@@ -219,7 +247,7 @@ final class DiskDatabase: @unchecked Sendable {
     func directory(_ path: String, contents: Bool = false) throws -> DiskDirectory? {
         var node: DiskDirectory?
         try query("SELECT path,direct,total,readable,uid,bundle,items FROM dirs WHERE path=?", [.text(path)]) {
-            node = DiskDirectory(path: Self.text($0, 0), itemCount: sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.number($0, 6), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
+            node = DiskDirectory(path: Self.text($0, 0), itemCount: msc_sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.number($0, 6), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
         }
         if contents, node != nil {
             try query("SELECT path FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) { node?.folders.append(Self.text($0, 0)) }
@@ -263,7 +291,7 @@ final class DiskDatabase: @unchecked Sendable {
             try query("INSERT OR IGNORE INTO dirty VALUES(?)", [.text(current)])
             // A successful mark already includes its ancestor chain in this transaction. Stop at the first
             // shared parent instead of validating/reinserting that same chain for every folder and hard-link alias.
-            if sqlite3_changes(db) == 0 || current == root { break }
+            if msc_sqlite3_changes(db) == 0 || current == root { break }
             current = Self.parent(current)
         }
     }
@@ -385,7 +413,7 @@ final class DiskDatabase: @unchecked Sendable {
                 try execute("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) SELECT path,0,direct,total,readable,uid,bundle FROM legacy_dirs")
                 try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM legacy_dirs l JOIN dirs p ON p.path=l.parent WHERE l.path=dirs.path),0)")
                 try query("SELECT path,bytes,logical,uid,link,modified FROM legacy_details WHERE logical>=100000000 OR link<>''") {
-                    let file = DiskFile(path: Self.text($0, 0), bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3), modifiedAt: sqlite3_column_type($0, 5) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double($0, 5)))
+                    let file = DiskFile(path: Self.text($0, 0), bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3), modifiedAt: msc_sqlite3_column_type($0, 5) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: msc_sqlite3_column_double($0, 5)))
                     try put(file, link: Self.text($0, 4))
                 }
                 // Some legacy hardlinks lacked detail rows; they still contribute to full-map physical totals.
@@ -427,6 +455,17 @@ final class DiskDatabase: @unchecked Sendable {
         try execute("DROP INDEX IF EXISTS dirs_depth; CREATE INDEX dirs_depth ON dirs(length(path) DESC,id)")
         try execute("VACUUM")
         try prepareBrowseMetadata()
+    }
+    func copied(to destination: URL) throws -> DiskDatabase {
+        let next = try DiskDatabase(url: destination, root: root, home: home)
+        guard let backup = msc_sqlite3_backup_init(next.db, "main", db, "main") else { throw Failure(message: "Cannot copy encrypted index") }
+        var didFinish = false
+        defer { if !didFinish { _ = msc_sqlite3_backup_finish(backup) } }
+        var status: Int32
+        repeat { try Task.checkCancellation(); status = msc_sqlite3_backup_step(backup, 256) } while status == SQLITE_OK
+        let finished = msc_sqlite3_backup_finish(backup); didFinish = true
+        guard status == SQLITE_DONE, finished == SQLITE_OK else { throw Failure(message: "Cannot finish encrypted index copy") }
+        return next
     }
     func seal() throws { try execute("PRAGMA wal_checkpoint(TRUNCATE)") }
     func checkpoint() throws { try execute("PRAGMA wal_checkpoint(PASSIVE)"); try execute("PRAGMA shrink_memory") }

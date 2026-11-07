@@ -1,5 +1,6 @@
 import Foundation
 import CoreServices
+import CryptoKit
 import Darwin
 import MacSpacePlatform
 import MacSpaceSdk
@@ -16,20 +17,39 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
     private var database: DiskDatabase?
     private let url: URL
     private var active: URL?
-    private var retired: [URL] = []
+    private var retired: [(url: URL, identity: ReviewedDirectoryRemoval.Identity)] = []
     private var pointer: URL { url.appendingPathExtension("current") }
+    private var checkpoint: String { "inventory.current." + SHA256.hash(data: Data(url.path.utf8)).map { String(format: "%02x", $0) }.joined() }
     private let root: String
     private let excluded: [String]
     private let home: String
     init(url: URL, root: String, excluded: [String], home: String) { self.url = url; self.root = root; self.excluded = excluded; self.home = home }
     func boot() throws -> DiskIndex {
         if let database { return try database.state() ?? DiskIndex(root: root) }
-        let name = (try? String(contentsOf: pointer, encoding: .utf8)) ?? ""
+        _ = try MetadataKeys.key(.inventory, create: true)
+        _ = try DiskCacheAccess(url)
+        let expected = try MetadataKeys.checkpoint(checkpoint)
+        let raw = try? PrivateFile(pointer).read(maximum: 1024)
+        let name = raw.flatMap { String(data: $0, encoding: .utf8) } ?? url.lastPathComponent
         let suffix = name.hasPrefix(url.lastPathComponent + ".") ? String(name.dropFirst(url.lastPathComponent.count + 1)) : ""
-        let destination = UUID(uuidString: suffix) != nil ? url.deletingLastPathComponent().appendingPathComponent(name) : url
+        let recognized = name == url.lastPathComponent || UUID(uuidString: suffix) != nil
+        let trusted = recognized && expected == Data(name.utf8)
+        if !trusted { try DiskCacheRetention.removeOwnedArtifacts(base: url, home: home) }
+        let destination = trusted && name != url.lastPathComponent ? url.deletingLastPathComponent().appendingPathComponent(name) : url
         active = destination
         try DiskCacheRetention.prune(base: url, keeping: [destination])
-        let db = try DiskDatabase(url: destination, root: root, home: home); database = db
+        let db: DiskDatabase
+        do { db = try DiskDatabase(url: destination, root: root, home: home) }
+        catch let failure as DiskDatabase.Failure where failure.isCorrupt {
+            // Only confirmed unreadable ciphertext/corruption permits a disposable rebuild.
+            // Busy, permission, boundary and other I/O failures must preserve the existing cache.
+            _ = try MetadataKeys.key(.inventory, create: false)
+            try DiskCacheRetention.removeOwnedArtifacts(base: url, home: home)
+            active = url
+            db = try DiskDatabase(url: url, root: root, home: home)
+        }
+        database = db
+        try MetadataKeys.checkpoint(checkpoint, value: Data((active ?? url).lastPathComponent.utf8))
         if try db.state() == nil, db.compact { try db.clearIncomplete() }
         return try db.state() ?? DiskIndex(root: root)
     }
@@ -37,18 +57,14 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
     private func generation(_ work: (DiskDatabase) throws -> Void) throws -> URL {
         guard let database, let active else { throw DiskDatabase.Failure(message: "Disk index is unavailable") }
         let destination = url.appendingPathExtension(UUID().uuidString)
-        defer {
-            if self.active != destination {
-                for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: destination.path + suffix) }
-            }
-        }
         try database.seal()
-        if clonefile(active.path, destination.path, 0) != 0 { try FileManager.default.copyItem(at: active, to: destination) }
-        let next = try DiskDatabase(url: destination, root: root, home: home); next.unpublished = true
+        let next = try database.copied(to: destination); next.unpublished = true
         try work(next)
         try next.seal(); next.unpublished = false
-        try destination.lastPathComponent.write(to: pointer, atomically: true, encoding: .utf8)
-        self.database = next; self.active = destination; retired.append(active)
+        try MetadataKeys.checkpoint(checkpoint, value: Data(destination.lastPathComponent.utf8))
+        try PrivateFile(pointer, createDirectories: true).write(Data(destination.lastPathComponent.utf8))
+        if let identity = ReviewedDirectoryRemoval.cleanupIdentity(active.path) { retired.append((active, identity)) }
+        self.database = next; self.active = destination
         return destination
     }
     func load(_ changes: DiskEvents.Changes, cursor: UInt64, progress: LoadProgressRelay, cancellation: DiskScanCancellation) throws -> URL {
@@ -81,7 +97,14 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
         return active ?? url
     }
     func retireReaders() {
-        for old in retired { for suffix in ["", "-wal", "-shm"] { try? FileManager.default.removeItem(atPath: old.path + suffix) } }
+        for old in retired {
+            guard let current = ReviewedDirectoryRemoval.cleanupIdentity(old.url.path), current.device == old.identity.device,
+                  current.inode == old.identity.inode, current.uid == old.identity.uid else { continue }
+            if let removal = try? ReviewedDirectoryRemoval.prepareCleanup([.init(path: old.url.path, expected: current)], within: [old.url.deletingLastPathComponent().path]) {
+                try? removal.remove(at: 0)
+            }
+            // Closed-connection sidecars are retired by the VFS using their pinned identities.
+        }
         retired.removeAll()
     }
     func beginDuplicatePass(folder: String, minimumSize: UInt64) throws { try database?.beginDuplicatePass(folder: folder, minimumSize: minimumSize) }
@@ -93,10 +116,12 @@ private actor DiskDatabaseWriter: DiskDuplicateStorage {
     func finishDuplicatePass() throws { try database?.finishDuplicatePass() }
     func ownership(_ catalog: DiskApplications) throws { try database?.recordOwnership(catalog) }
     func flush() { try? database?.checkpoint() }
+    func close() { database = nil; active = nil; retired.removeAll() }
 }
 
 actor DiskStore {
     nonisolated let receiptCacheURL: URL
+    private let cacheURL: URL
     private let root: String
     private let excluded: [String]
     private let writer: DiskDatabaseWriter
@@ -128,13 +153,22 @@ actor DiskStore {
         self.root = root; self.home = home
         let destination = cache?.appendingPathExtension("sqlite") ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/com.macspace.disk-map/Index-v3.sqlite")
         receiptCacheURL = destination.appendingPathExtension("receipts.json")
+        cacheURL = destination
         excluded = [destination.deletingLastPathComponent().path] + (root == "/" ? ["/System/Volumes", "/Volumes", "/dev", "/Network"] : [])
         writer = DiskDatabaseWriter(url: destination, root: root, excluded: excluded, home: home)
         selections = DiskSelectionStorage(url: destination.appendingPathExtension("selection"), root: root, home: home)
     }
     private var scanCancellation = DiskScanCancellation()
     private var active = true
-    func setActive(_ value: Bool) {
+    private var desiredActive = true
+    private var protectedStorageSuspended = false
+    private var protectionDrain: Task<Void, Never>?
+    func setActive(_ value: Bool) async {
+        desiredActive = value
+        if value { await resumeProtectedStorageIfAvailable() }
+        await applyActivity(desiredActive && !protectedStorageSuspended)
+    }
+    private func applyActivity(_ value: Bool) async {
         active = value
         if value, reader != nil, watcher == nil { watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: excluded); historyValidated = false }
         if !value {
@@ -142,7 +176,48 @@ actor DiskStore {
             scanCancellation.cancel(); duplicateFlight?.cancel(); flight?.cancel()
             for reading in browseReadings.values where !reading.done { reading.task.cancel() }
             browseReadings = browseReadings.filter { $0.value.done }
+            let workers = Array(browseWorkers.values)
+            for worker in workers { worker.cancel() }
+            await bootFlight?.value
+            await flight?.value
+            _ = try? await duplicateFlight?.value
+            await ownershipFlight?.value
+            for worker in workers { _ = await worker.value }
+            if !active { watcher = nil }
         }
+    }
+    func suspendProtectedStorage() async {
+        if let protectionDrain { await protectionDrain.value; return }
+        protectedStorageSuspended = true
+        // Drain once without changing the host's desired activity. Readers cannot reopen
+        // storage until every old worker/connection has finished closing.
+        let task = Task {
+            await applyActivity(false)
+            reader = nil; readerLocation = nil; published = nil
+            folderViews.removeAll(); folderUse.removeAll(); browseReadings.removeAll(); browseUse.removeAll()
+            await selections.close(); await writer.close()
+            protectionDrain = nil
+        }
+        protectionDrain = task
+        await task.value
+    }
+    func resumeProtectedStorageIfAvailable() async {
+        guard protectedStorageSuspended, desiredActive else { return }
+        if let protectionDrain { await protectionDrain.value }
+        guard protectedStorageSuspended, desiredActive else { return }
+        do { try MetadataKeys.requireAvailable(); _ = try MetadataKeys.key(.inventory, create: false) }
+        catch { return }
+        protectedStorageSuspended = false
+        await applyActivity(true)
+    }
+    func prepareForUninstall() async throws {
+        await setActive(false)
+        reader = nil; readerLocation = nil
+        published = nil; folderViews.removeAll(); folderUse.removeAll()
+        browseReadings.removeAll(); browseUse.removeAll()
+        await selections.close()
+        await writer.close()
+        try DiskCacheRetention.removeOwnedArtifacts(base: cacheURL, home: home)
     }
     func invalidate() {
         folderViews.removeAll(); folderUse.removeAll()
@@ -206,8 +281,10 @@ actor DiskStore {
         var done = false
     }
     private var browseReadings: [String: BrowseReading] = [:]
+    private var browseWorkers: [UUID: Task<DiskBrowsePage?, Never>] = [:]
     private var browseUse: [String] = []
     private func finishBrowse(_ key: String, id: UUID, result: DiskBrowsePage?) {
+        browseWorkers.removeValue(forKey: id)
         guard var reading = browseReadings[key], reading.id == id else { return }
         var failed = reading.preview; failed.loadingFraction = nil
         failed.unavailableReason = loc("Contents could not be read. Refresh to retry.")
@@ -241,6 +318,7 @@ actor DiskStore {
             return result
         }
         browseReadings[key] = .init(id: id, task: task, progress: reports, preview: preview)
+        browseWorkers[id] = task
         browseUse.removeAll { $0 == key }; browseUse.append(key)
         while browseUse.count > 4 {
             let oldest = browseUse.removeFirst(); browseReadings.removeValue(forKey: oldest)?.task.cancel()
@@ -323,6 +401,7 @@ actor DiskStore {
     }
     private func failureSnapshot() -> DiskSnapshot { var index = DiskIndex(root: root); index.loadError = true; return DiskSnapshot(index) }
     private func openCache() async {
+        await resumeProtectedStorageIfAvailable()
         guard active, reader == nil else { return }
         if let bootFlight { await bootFlight.value }
         else { let task = Task { await boot() }; bootFlight = task; await task.value; bootFlight = nil }
@@ -336,11 +415,12 @@ actor DiskStore {
             reader = try DiskDatabase(url: location, root: root, home: home); readerLocation = location
             if try reader?.state() != nil { published = try reader?.snapshot() }
             DiskScanMetrics.phase("cached-snapshot", since: snapshotStarted)
-            watcher = DiskEvents(root: root, since: metadata.eventID, excluded: excluded)
+            if active { watcher = DiskEvents(root: root, since: metadata.eventID, excluded: excluded) }
             historyValidated = false
         } catch { loadFailed = true; published = failureSnapshot() }
     }
     func view(progress: LoadProgressSink? = nil) async -> DiskSnapshot {
+        await resumeProtectedStorageIfAvailable()
         guard active else { return published ?? failureSnapshot() }
         await openCache()
         if let flight {

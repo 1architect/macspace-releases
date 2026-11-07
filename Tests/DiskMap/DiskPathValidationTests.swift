@@ -2,7 +2,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskPathValidationTests: XCTestCase {
+final class DiskPathValidationTests: DiskSecurityFixtureCase {
     func testByteValidationRetainsPathBoundarySemanticsForUnicodeAndInvalidComponents() {
         let roots = ["/", "/Users/example", "/Users/João/文档"]
         let endings = ["file", "a.b", ".hidden", "...", "é", "e\u{301}", "雪/👩🏽‍💻", "a/", "./file", "../file", "a/./file", "a/../file", "a//file", "a\0/file", ".", ".."]

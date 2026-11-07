@@ -43,7 +43,14 @@ actor DiskInventory {
         return result
     }
     private var active = true
-    func setActive(_ value: Bool) { active = value; if !value { flight?.task.cancel(); flight = nil } }
+    func setActive(_ value: Bool) async {
+        active = value
+        if !value {
+            let pending = flight
+            pending?.task.cancel(); flight = nil
+            _ = await pending?.task.value
+        }
+    }
     func invalidate() { revision = nil; apps?.catalogRevision = nil }
     func passive() -> DiskApplications { apps ?? DiskApplications() }
     func navigation(_ index: DiskIndex) async -> DiskApplications { await read(index) }
@@ -100,11 +107,13 @@ actor DiskInventory {
     }
 }
 public struct DiskMapModule: MacSpaceModule {
+    private var sessionObserver: MetadataSession.Observation?
     private let store: DiskStore
     private let inventory: DiskInventory
     public init() {
         let store = DiskStore()
         self.store = store; inventory = DiskInventory(receiptCache: store.receiptCacheURL)
+        sessionObserver = MetadataSession.shared.onLock { Task { await store.suspendProtectedStorage() } }
     }
     init(store: DiskStore, inventory: DiskInventory? = nil) {
         self.store = store
@@ -124,6 +133,11 @@ public struct DiskMapModule: MacSpaceModule {
         return measured
     }
     public func setActive(_ active: Bool) async { await store.setActive(active); await inventory.setActive(active) }
+    public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
+        await inventory.setActive(false)
+        do { try await store.prepareForUninstall(); return .succeeded("") }
+        catch { return .failed(error.localizedDescription) }
+    }
     public func invalidate() async { await inventory.invalidate(); await store.invalidate() }
     public func invalidate(pageID: String?, context: ModuleContext) async {
         if let id = pageID, let request = DiskBrowseRequest(id: id.hasPrefix("focus:") ? String(id.dropFirst(6)) : id) {
@@ -381,6 +395,13 @@ public struct DiskMapModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        do { try MetadataKeys.requireAvailable(); _ = try MetadataKeys.key(.inventory, create: false) }
+        catch { await store.suspendProtectedStorage(); return .failed(error.localizedDescription) }
+        await store.resumeProtectedStorageIfAvailable()
+
+        do { for key in ["ids", "all"] { _ = try Selection.decodeIDs(request.parameters[key]) } }
+        catch { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
+
         let moveToTrash = request.parameters["trash"] == "1"
         if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "uninstall", "uninstallSelected"].contains(request.actionID),
            (!["0", "1"].contains(request.parameters["trash"] ?? "") || moveToTrash != FileRemovalSettings.movesToTrash()) {

@@ -284,7 +284,7 @@ enum SystemDataScreenBuilder {
     /// Under the bar: what can be cleaned, in its own section and item by item (Free now, then leftover update files); then one row
     /// per list of what MacSpace leaves alone (downloads, app data, everything else) with how many items it holds and their total,
     /// opening a page of its own with every item. A list of one is that item's row.
-    static func screen(_ snapshot: SystemDataSnapshot) -> Screen {
+    static func screen(_ snapshot: SystemDataSnapshot, cleanNonRecoverable: Bool = false) -> Screen {
         var widgets: [ScreenWidget] = []
         if let banner = partialBanner(snapshot) { widgets.append(banner) }
         if let free = freeNow(snapshot) { widgets.append(free) }
@@ -299,7 +299,7 @@ enum SystemDataScreenBuilder {
         if let leftover = leftoverUpdateSection(snapshot) { widgets.append(leftover) }
         let blocks = blocksWithItems(snapshot)
         let hero = UsageBar(id: "usage", title: loc("What fills System Data"), totalBytes: snapshot.settings.map { _ in total(snapshot) }, segments: blocks)
-        return cleanupChoices(Screen(title: loc("System Data"), hero: hero, widgets: widgets), snapshot)
+        return cleanupChoices(Screen(title: loc("System Data"), hero: hero, widgets: widgets), snapshot, cleanNonRecoverable: cleanNonRecoverable)
     }
 
     /// A section of rows as one group row (named after the section, its description behind the (i)), or its only row.

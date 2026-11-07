@@ -1,4 +1,5 @@
 import Foundation
+import MacSpacePlatform
 
 public struct CleanupCandidate: Codable, Equatable, Sendable {
     public let path: String
@@ -6,6 +7,7 @@ public struct CleanupCandidate: Codable, Equatable, Sendable {
     public let kind: String
     public let bytes: UInt64
     public let modifiedAt: Date
+    public var identity: ReviewedDirectoryRemoval.Identity? = nil
 }
 
 public struct CleanupPlan: Codable, Equatable, Sendable {
@@ -66,7 +68,7 @@ public struct DiagnosticReportCleaner {
                       attributes[.type] as? FileAttributeType == .typeRegular,
                       let modified = attributes[.modificationDate] as? Date, modified < cutoff else { continue }
                 candidates.append(CleanupCandidate(path: path, kind: kind, bytes: (attributes[.size] as? NSNumber)?.uint64Value ?? 0,
-                                                   modifiedAt: modified))
+                                                   modifiedAt: modified, identity: ReviewedDirectoryRemoval.cleanupIdentity(path)))
             }
         }
         candidates.sort { $0.bytes > $1.bytes }
@@ -87,7 +89,9 @@ public struct DiagnosticReportCleaner {
                 continue
             }
             do {
-                try fileManager.removeItem(atPath: candidate.path)
+                guard let identity = candidate.identity else { throw PrivateFile.Refusal() }
+                let removal = try ReviewedDirectoryRemoval.prepareCleanup([.init(path: candidate.path, expected: identity)], within: directories)
+                try removal.remove(at: 0)
                 deleted.append(candidate.path)
                 freed += candidate.bytes
             } catch {

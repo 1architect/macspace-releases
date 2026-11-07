@@ -3,7 +3,7 @@ import Foundation
 import XCTest
 @testable import MacSpaceDiskMap
 
-final class DiskEventReplayTests: XCTestCase {
+final class DiskEventReplayTests: DiskSecurityFixtureCase {
     private let root = "/fixture"
     private var file: FSEventStreamEventFlags { FSEventStreamEventFlags(kFSEventStreamEventFlagItemIsFile) }
     private var recursive: FSEventStreamEventFlags { FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs) }

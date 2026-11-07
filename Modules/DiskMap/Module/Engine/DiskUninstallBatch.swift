@@ -27,7 +27,7 @@ enum DiskUninstallBatch {
         return result
     }
     static func plans(parameters: [String: String], apps: DiskApplications) -> [AppRemovalPlan]? {
-        let ids = Selection.ids(parameters["ids"])
+        guard let ids = try? Selection.decodeIDs(parameters["ids"]) else { return nil }
         guard !ids.isEmpty, ids.count <= 512, Set(ids).count == ids.count,
               let text = parameters["reviewed"], text.utf8.count <= 1_048_576,
               let metadata = try? JSONDecoder().decode([String: String].self, from: Data(text.utf8)) else { return nil }
@@ -49,7 +49,8 @@ enum DiskUninstallBatch {
     static func selectedPlans(_ plans: [AppRemovalPlan], parameters: [String: String]) -> [AppRemovalPlan]? {
         guard !plans.isEmpty, plans.count <= 512, Set(plans.map { $0.owner.path }).count == plans.count else { return nil }
         guard parameters["selectApps"] == "1" else { return plans }
-        let ids = Set(Selection.ids(parameters["ids"]))
+        guard let decoded = try? Selection.decodeIDs(parameters["ids"]) else { return nil }
+        let ids = Set(decoded)
         let selected = plans.filter { ids.contains($0.owner.path) }
         return selected.isEmpty ? nil : selected
     }

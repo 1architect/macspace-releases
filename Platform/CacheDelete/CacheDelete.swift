@@ -250,6 +250,10 @@ public struct CacheDeleteClient {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         if let result = decodeResult(output.data, decoder: decoder) { return result }
+        if output.status == -2 || output.status == -3 {
+            return CacheDeletePurgeResult(services: [service], purgedBytes: nil, freeBytesBefore: before, freeBytesAfter: freeSpace(), elapsedSeconds: nil,
+                error: output.status == -2 ? "The purge process timed out." : "The purge process output exceeded its limit.")
+        }
         // No answer to read, but the purge may still have run: what the volume gained is still the truth for the user.
         let after = DataVolume.settledFreeBytes(read: freeSpace)
         let gained = (before.flatMap { b in after.map { $0 > b ? $0 - b : 0 } }) ?? 0
@@ -269,29 +273,8 @@ public struct CacheDeleteClient {
     }
 
     static func runSubprocess(_ executable: URL, _ arguments: [String], timeout: TimeInterval = 660) -> (status: Int32, signal: Int32?, data: Data) {
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        do { try process.run() } catch { return (-1, nil, Data()) }
-        let deadline = DispatchTime.now() + timeout
-        let box = DataBox()
-        let done = DispatchSemaphore(value: 0)
-        let handle = output.fileHandleForReading
-        DispatchQueue.global().async {
-            box.value = handle.readDataToEndOfFile()
-            done.signal()
-        }
-        if done.wait(timeout: deadline) == .timedOut { process.terminate(); _ = done.wait(timeout: .now() + 5) }
-        process.waitUntilExit()
-        let signal = process.terminationReason == .uncaughtSignal ? process.terminationStatus : nil
-        return (process.terminationStatus, signal, box.value)
-    }
-
-    private final class DataBox: @unchecked Sendable {
-        var value = Data()
+        let result = BoundedCommand.run(executable.path, arguments: arguments, environment: ProcessInfo.processInfo.environment, timeout: timeout)
+        return (result.status, result.signal, result.timedOut || result.truncated ? Data() : result.stdout)
     }
 
     private final class ResultBox: @unchecked Sendable {

@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskFileSelectionTests: XCTestCase {
+final class DiskFileSelectionTests: DiskSecurityFixtureCase {
     func testSelectionUsesAllocatedSizesAndScopeWithoutIndividualInfoOrActions() throws {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         var index = DiskIndex(root: home)

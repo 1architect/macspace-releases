@@ -1,8 +1,9 @@
 import XCTest
+import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskReceiptCacheTests: XCTestCase {
+final class DiskReceiptCacheTests: DiskSecurityFixtureCase {
     func testHistoricalReceiptsRoundTripWithoutSerializingAnyAppRemovalPlan() throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }
@@ -11,7 +12,11 @@ final class DiskReceiptCacheTests: XCTestCase {
         receipts.manifests = [.init(identifier: "fixture", paths: ["/Applications/Fixture.app/Contents/file"], complete: false, reason: "Historical evidence")]
         DiskReceiptCache.save(receipts, to: url)
         XCTAssertEqual(DiskReceiptCache.read(url), receipts)
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let encrypted = try Data(contentsOf: url)
+        XCTAssertNil(encrypted.range(of: Data("/Applications/Fixture.app".utf8)))
+        let key = try MetadataKeys.key(.inventory, create: false)
+        let data = try EncryptedMetadata.open(encrypted, key: key, context: "receipt:v2:" + String(getuid()) + ":" + url.lastPathComponent)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(Set(object.keys), ["version", "receipts"])
         XCTAssertNil(object["apps"]); XCTAssertNil(object["plan"])
         try Data("invalid".utf8).write(to: url)

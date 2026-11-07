@@ -3,7 +3,7 @@ import XCTest
 import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
-final class DiskRefreshPerformanceTests: XCTestCase {
+final class DiskRefreshPerformanceTests: DiskSecurityFixtureCase {
     private struct Options: OptionStore {
         func bool(_ id: String) -> Bool { false }
         func string(_ id: String) -> String { "" }

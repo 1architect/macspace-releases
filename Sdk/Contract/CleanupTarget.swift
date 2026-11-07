@@ -10,25 +10,43 @@ public struct CleanupTarget: Codable, Equatable, Sendable, Identifiable {
     public var automatic: Bool
     public var available: Bool
     public var defaultSelected: Bool
-    public init(id: String, title: String, bytes: UInt64, action: Action, automatic: Bool = true, defaultSelected: Bool = false, available: Bool = true) {
+    /// False for choices that need fresh consent on each visit. Saved checkbox preferences are ignored.
+    public var remembersSelection: Bool
+    public init(id: String, title: String, bytes: UInt64, action: Action, automatic: Bool = true, defaultSelected: Bool = false, available: Bool = true, remembersSelection: Bool = true) {
         self.id = id; self.title = title; self.bytes = bytes; self.action = action
         self.automatic = automatic; self.defaultSelected = defaultSelected; self.available = available
+        self.remembersSelection = remembersSelection
+    }
+    private enum CodingKeys: String, CodingKey {
+        case id, title, bytes, action, automatic, available, defaultSelected, remembersSelection
+    }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        title = try values.decode(String.self, forKey: .title)
+        bytes = try values.decode(UInt64.self, forKey: .bytes)
+        action = try values.decode(Action.self, forKey: .action)
+        automatic = try values.decode(Bool.self, forKey: .automatic)
+        available = try values.decode(Bool.self, forKey: .available)
+        defaultSelected = try values.decode(Bool.self, forKey: .defaultSelected)
+        remembersSelection = try values.decodeIfPresent(Bool.self, forKey: .remembersSelection) ?? true
     }
     public static func preferenceKey(scope: String = "cleanup", id: String) -> String {
         ((try? JSONEncoder().encode([scope, id])) ?? Data()).base64EncodedString()
     }
     public func isSelected(_ preferences: [String: Bool]) -> Bool {
-        preferences[Self.preferenceKey(id: id)] ?? defaultSelected
+        remembersSelection ? preferences[Self.preferenceKey(id: id)] ?? defaultSelected : defaultSelected
     }
 }
 
 public extension Row {
     /// Convert a declared cleanup operation to a choice; utility actions remain attached to the row.
-    func selectingCleanup(_ action: Action, bytes: UInt64, automatic: Bool = true, defaultSelected: Bool = false) -> Row {
+    func selectingCleanup(_ action: Action, bytes: UInt64, automatic: Bool = true, defaultSelected: Bool = false, remembersSelection: Bool = true) -> Row {
         var row = self
         row.actions.removeAll { $0.id == action.id && $0.parameters == action.parameters }
         row.cleanup = CleanupTarget(id: row.id, title: row.title, bytes: bytes, action: action,
-            automatic: automatic, defaultSelected: defaultSelected, available: row.activity == nil && !row.isFreeingInBackground)
+            automatic: automatic, defaultSelected: defaultSelected, available: row.activity == nil && !row.isFreeingInBackground,
+            remembersSelection: remembersSelection)
         return row
     }
 }
@@ -81,6 +99,7 @@ public extension Screen {
 
 public enum CleanupBatch {
     public static let actionID = "macspace.cleanupSelected"
+    public static let nonRecoverableOptionID = "cleanNonRecoverableAutomatically"
 
     /// One guarded handler per selected operation. No newly discovered target is added to a frozen request.
     public static func run(_ targets: [CleanupTarget], automatic: Bool, context: ModuleContext,

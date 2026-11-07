@@ -40,7 +40,7 @@ final class LazyModulePageTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let model = LazyPageModel()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
         await handle.activate(); defer { handle.deactivate() }
         let parameters = ["ids": "app:A\napp:B", "reviewed": "original identities"]
         _ = await handle.perform(Action(id: "review", title: "Review", parameters: parameters, pageID: "selected-apps"))
@@ -55,7 +55,7 @@ final class LazyModulePageTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let model = LazyPageModel()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
         await handle.activate(); defer { handle.deactivate() }
         let action = Action(id: "review", title: "Uninstall", pageID: "apps")
         XCTAssertTrue(ModuleHandle.opensAtOnce(action))
@@ -73,7 +73,7 @@ final class LazyModulePageTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let model = LazyPageModel()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
         await handle.activate(); defer { handle.deactivate() }
         handle.pushGroup("folder:A")
         for _ in 0..<100 where handle.groupPath.isEmpty { try await Task.sleep(for: .milliseconds(5)) }

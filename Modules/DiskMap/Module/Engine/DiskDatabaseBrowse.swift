@@ -1,6 +1,6 @@
 import Darwin
 import Foundation
-import SQLite3
+import MacSpaceCipher
 import MacSpacePlatform
 import MacSpaceSdk
 import MacSpaceDiskMapPrivileged
@@ -49,7 +49,7 @@ extension DiskDatabase {
         return file
     }
     func decodeDetail(_ row: OpaquePointer) throws -> DiskFile {
-        let file = DiskFile(path: Self.text(row, 0), bytes: Self.number(row, 1), logicalBytes: Self.number(row, 2), ownerUID: Self.uid(row, 3), modifiedAt: sqlite3_column_type(row, 4) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double(row, 4)))
+        let file = DiskFile(path: Self.text(row, 0), bytes: Self.number(row, 1), logicalBytes: Self.number(row, 2), ownerUID: Self.uid(row, 3), modifiedAt: msc_sqlite3_column_type(row, 4) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: msc_sqlite3_column_double(row, 4)))
         return try reviewedFile(file, duplicateEvidence: false)
     }
     func preparePersonalInventory(progress: LoadProgressSink? = nil, cancelled: @Sendable () -> Bool = { false }) throws {

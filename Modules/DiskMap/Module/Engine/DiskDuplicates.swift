@@ -1,6 +1,6 @@
 import Darwin
 import Foundation
-import SQLite3
+import MacSpaceCipher
 import MacSpacePlatform
 
 extension DiskDatabase {
@@ -60,8 +60,8 @@ extension DiskDatabase {
         try query("SELECT path,bytes,logical,uid,identity,sample,digest FROM duplicate_candidates c WHERE failed=0 AND path>? AND EXISTS (SELECT 1 FROM duplicate_candidates g WHERE " + match + " AND g.path<>c.path AND g.failed=0) ORDER BY path LIMIT 32", [.text(after)]) {
             let file = DiskFile(path: Self.text($0, 0), bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3))
             result.append(.init(file: file, identity: try JSONDecoder().decode(FileReviewIdentity.self, from: Self.data($0, 4)),
-                                sample: sqlite3_column_type($0, 5) == SQLITE_NULL ? nil : Self.data($0, 5),
-                                digest: sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.data($0, 6)))
+                                sample: msc_sqlite3_column_type($0, 5) == SQLITE_NULL ? nil : Self.data($0, 5),
+                                digest: msc_sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.data($0, 6)))
         }
         return result
     }

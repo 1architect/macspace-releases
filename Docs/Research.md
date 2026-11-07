@@ -1230,6 +1230,22 @@ checkpoint-specific commands, the launchd controls SIP resets, and the controls 
 - **Say "observing" until a gate is passed**, not "protected" or "cleaned".
 - Reading a log line is not proving causation: several chains were strongly supported but never proved.
 
+## Session probing during inventory writes (2026-11-07)
+
+**Measured — macOS 27.2 (26B123).** The encrypted inventory's SQL guard queried
+`CGSessionCopyCurrentDictionary` for every statement. A standalone read-only benchmark of 10,000 session queries took
+0.583 seconds. The same number of calls through the production session gate took 0.000189 seconds and issued one system probe.
+This measures the session-check component, not an end-to-end app load.
+
+**Inferred.** A filesystem inventory can issue hundreds of thousands of statements, so the repeated WindowServer requests can
+add substantial latency. The existing database fixtures injected a memory key store and bypassed this production-only guard;
+their passing timings did not establish production scan latency.
+
+The guard now responds immediately to lock notifications and polls at most once per 100 ms as a fallback for missed notifications.
+Keychain lifecycle operations still require a fresh session check and retain their explicit noninteractive authentication context.
+Tests cover bounded probe frequency, immediate lock refusal, unlock revalidation and missed-notification detection. App/UI loading
+and whole-filesystem performance after this correction remain for user verification.
+
 ## Superseded readings
 
 Earlier notes that later measurements corrected, so nobody rebuilds on them.

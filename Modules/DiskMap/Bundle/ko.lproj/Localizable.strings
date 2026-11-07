@@ -162,6 +162,7 @@
 "Selected app data will be permanently deleted." = "선택한 앱 데이터를 영구적으로 삭제합니다.";
 "Selected app data: %@" = "선택한 앱 데이터: %@";
 "Selected apps: %@" = "선택한 앱: %@";
+"Selected cleanup items changed. Review your selection again." = "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.";
 "Selected files" = "선택한 파일";
 "Selected files changed or are open. Review them again." = "선택한 파일이 변경되었거나 열려 있습니다. 다시 검토하세요.";
 "Selected files changed or are unavailable. Review your selection again." = "선택한 파일이 변경되었거나 사용할 수 없습니다. 선택 항목을 다시 검토하세요.";

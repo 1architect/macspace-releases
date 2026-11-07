@@ -41,7 +41,7 @@ final class RefreshPolicyTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let module = PresentationModule(reads: reads)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         return handle
     }
@@ -132,7 +132,7 @@ final class RefreshPolicyTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Fixture", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first), reads = PresentationReads()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in PresentationModule(reads: reads) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in PresentationModule(reads: reads) })
         handle.setWatched(true, screenVisible: false)
         await handle.activate(); defer { handle.deactivate() }
         XCTAssertNil(handle.screen)

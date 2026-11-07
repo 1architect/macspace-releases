@@ -48,7 +48,7 @@ public final class ModuleHost: ObservableObject {
         #if MACSPACE_DEV
         if let override = ProcessInfo.processInfo.environment["MACSPACE_MODULES_DIR"] { return URL(fileURLWithPath: override, isDirectory: true) }
         #endif
-        return URL(fileURLWithPath: "/Applications/MacSpace.app/Contents/PlugIns", isDirectory: true)
+        return ToolLocator.appBundle()?.builtInPlugInsURL ?? URL(fileURLWithPath: "/Applications/MacSpace.app/Contents/PlugIns", isDirectory: true)
     }
 
     public init(modulesDirectory: URL? = ModuleHost.defaultModulesDirectory(), settings: SettingsStore = SettingsStore(),

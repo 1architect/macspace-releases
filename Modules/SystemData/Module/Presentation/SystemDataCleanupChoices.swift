@@ -2,7 +2,7 @@ import Foundation
 import MacSpaceSdk
 
 extension SystemDataScreenBuilder {
-    static func cleanupChoices(_ screen: Screen, _ snapshot: SystemDataSnapshot) -> Screen {
+    static func cleanupChoices(_ screen: Screen, _ snapshot: SystemDataSnapshot, cleanNonRecoverable: Bool = false) -> Screen {
         let sizes: [String: UInt64] = [
             "reports": snapshot.reports.totalBytes, "assets": snapshot.purgeableAssetsBytes ?? 0,
             "system-log": unifiedLogBytes(snapshot), "symbols": symbolsBytes(snapshot),
@@ -12,6 +12,7 @@ extension SystemDataScreenBuilder {
             "wallpaper-downloads": snapshot.report.items.filter { $0.id.hasPrefix(wallpaperDownloadsPrefix) }.compactMap(\.bytes).reduce(0, +)
         ]
         let operations: Set<String> = ["clean", "cleanReports", "purgeAssets", "emptyTrash", "eraseUnifiedLog", "deleteSymbolicationCache", "deleteStagedUpdate", "deleteWallpaperDownloads", "deleteVersions", "removeDownloads"]
+        let nonRecoverable: Set<String> = ["emptyTrash", "eraseUnifiedLog", "deleteVersions"]
         return screen.mappingCleanup { original in
             var row = original
             if row.id == CachesPage.groupID, row.selection != nil {
@@ -25,6 +26,10 @@ extension SystemDataScreenBuilder {
             guard let action = row.actions.first(where: { operations.contains($0.id) }) else { return row }
             let bytes = sizes[row.id] ?? snapshot.cloudSources.first { $0.path == action.parameters["path"] }?.bytes
                 ?? snapshot.report.items.first { $0.id == action.parameters["id"] }?.bytes ?? 0
+            if nonRecoverable.contains(action.id) {
+                return row.selectingCleanup(action, bytes: bytes, automatic: cleanNonRecoverable,
+                    defaultSelected: cleanNonRecoverable, remembersSelection: false)
+            }
             row = row.selectingCleanup(action, bytes: bytes, defaultSelected: ["cleanReports", "purgeAssets"].contains(action.id))
             return row
         }

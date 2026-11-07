@@ -5,7 +5,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskSafetyTests: XCTestCase {
+final class DiskSafetyTests: DiskSecurityFixtureCase {
     func testCurrentOpenReaderIsAttributedAndPreventsRemoval() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         defer { try? FileManager.default.removeItem(at: url) }

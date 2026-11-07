@@ -17,6 +17,15 @@
   "このMac上の%@のファイル",
   "이 Mac의 %@ 파일"
  ],
+ "%@ free": [
+  "%@ livres",
+  "%@ libres",
+  "%@ libres",
+  "%@ frei",
+  "%@ 可用",
+  "%@空き",
+  "%@ 사용 가능"
+ ],
  "%@, ready to install": [
   "%@, pronto para instalar",
   "%@, prêt à installer",
@@ -25,6 +34,15 @@
   "%@，可安装",
   "%@、インストール準備完了",
   "%@, 설치 준비됨"
+ ],
+ "%lld backups": [
+  "%lld backups",
+  "%lld sauvegardes",
+  "%lld copias",
+  "%lld Backups",
+  "%lld 个备份",
+  "%lld個のバックアップ",
+  "백업 %lld개"
  ],
  "%lld files": [
   "%lld arquivos",
@@ -35,6 +53,24 @@
   "%lld個のファイル",
   "파일 %lld개"
  ],
+ "%lld snapshots": [
+  "%lld instantâneos",
+  "%lld instantanés",
+  "%lld instantáneas",
+  "%lld Schnappschüsse",
+  "%lld 个快照",
+  "%lld個のスナップショット",
+  "스냅샷 %lld개"
+ ],
+ "1 backup": [
+  "1 backup",
+  "1 sauvegarde",
+  "1 copia",
+  "1 Backup",
+  "1 个备份",
+  "1個のバックアップ",
+  "백업 1개"
+ ],
  "1 file": [
   "1 arquivo",
   "1 fichier",
@@ -43,6 +79,24 @@
   "1 个文件",
   "1個のファイル",
   "파일 1개"
+ ],
+ "1 snapshot": [
+  "1 instantâneo",
+  "1 instantané",
+  "1 instantánea",
+  "1 Schnappschuss",
+  "1 个快照",
+  "1個のスナップショット",
+  "스냅샷 1개"
+ ],
+ "Already gone": [
+  "Já apagado",
+  "Déjà supprimé",
+  "Ya borrado",
+  "Bereits gelöscht",
+  "已不存在",
+  "すでにありません",
+  "이미 삭제됨"
  ],
  "App container caches": [
   "Caches de contêineres de apps",
@@ -62,6 +116,60 @@
   "必要に応じてアプリが再ダウンロードします。",
   "필요할 때 앱이 다시 다운로드합니다."
  ],
+ "Automatic cleanup is off for items that cannot be recovered.": [
+  "A limpeza automática está desativada para itens que não podem ser recuperados.",
+  "Le nettoyage automatique est désactivé pour les éléments irrécupérables.",
+  "La limpieza automática está desactivada para los elementos que no se pueden recuperar.",
+  "Die automatische Bereinigung ist für nicht wiederherstellbare Elemente deaktiviert.",
+  "无法恢复的项目已禁用自动清理。",
+  "復元できない項目の自動クリーンアップはオフです。",
+  "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다."
+ ],
+ "Backing up now": [
+  "Fazendo backup agora",
+  "Sauvegarde en cours",
+  "Haciendo copia ahora",
+  "Backup läuft",
+  "正在备份",
+  "バックアップ中",
+  "백업 중"
+ ],
+ "Backup disks require manual selection.": [
+  "Os discos de backup exigem seleção manual.",
+  "Les disques de sauvegarde nécessitent une sélection manuelle.",
+  "Los discos de copia de seguridad requieren una selección manual.",
+  "Sicherungsfestplatten erfordern eine manuelle Auswahl.",
+  "备份磁盘需要手动选择。",
+  "バックアップディスクでは手動で選択する必要があります。",
+  "백업 디스크는 수동으로 선택해야 합니다."
+ ],
+ "Backups not readable": [
+  "Backups ilegíveis",
+  "Sauvegardes illisibles",
+  "Copias ilegibles",
+  "Backups nicht lesbar",
+  "无法读取备份",
+  "バックアップを読み取れません",
+  "백업을 읽을 수 없음"
+ ],
+ "Cannot be undone": [
+  "Não pode ser desfeito",
+  "Irréversible",
+  "No se puede deshacer",
+  "Nicht widerrufbar",
+  "无法撤销",
+  "取り消せません",
+  "실행 취소 불가"
+ ],
+ "Clean non recoverable items automatically": [
+  "Limpar itens irrecuperáveis automaticamente",
+  "Nettoyer automatiquement les éléments irrécupérables",
+  "Limpiar automáticamente los elementos irrecuperables",
+  "Nicht wiederherstellbare Elemente automatisch bereinigen",
+  "自动清理无法恢复的项目",
+  "復元できない項目を自動的にクリーンアップ",
+  "복구할 수 없는 항목 자동 정리"
+ ],
  "Cloud files on this Mac": [
   "Arquivos da nuvem neste Mac",
   "Fichiers du cloud sur ce Mac",
@@ -70,6 +178,15 @@
   "此 Mac 上的云端文件",
   "このMac上のクラウドファイル",
   "이 Mac의 클라우드 파일"
+ ],
+ "Connect it to see its backups and free old ones.": [
+  "Conecte-o para ver os backups e liberar os antigos.",
+  "Connectez-le pour voir ses sauvegardes et libérer les anciennes.",
+  "Conéctalo para ver sus copias y liberar las antiguas.",
+  "Schließe es an, um seine Backups zu sehen und alte freizugeben.",
+  "连接磁盘以查看备份并释放旧备份。",
+  "接続するとバックアップを確認し、古いものを解放できます。",
+  "연결하면 백업을 확인하고 오래된 백업을 정리할 수 있습니다."
  ],
  "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud.": [
   "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.",
@@ -80,6 +197,24 @@
   "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。",
   "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다."
  ],
+ "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.": [
+  "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.",
+  "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.",
+  "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar conserva la más reciente y la que necesita la próxima copia.",
+  "Kopien dieses Macs, die Time Machine einen Tag behält, um Dateien ohne Backup-Volume wiederherzustellen. Freigeben behält die neueste und die für das nächste Backup.",
+  "Time Machine 保留一天的此 Mac 副本，用于在没有备份磁盘时恢复文件。释放会保留最新的一份和下次备份需要的一份。",
+  "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。",
+  "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다."
+ ],
+ "Couldn't free it": [
+  "Não foi possível liberar",
+  "Impossible de libérer",
+  "No se pudo liberar",
+  "Konnte nicht freigegeben werden",
+  "无法释放",
+  "解放できませんでした",
+  "정리하지 못함"
+ ],
  "Deleted by macOS when the disk is full": [
   "Apagado pelo macOS quando o disco estiver cheio",
   "Supprimé par macOS quand le disque est plein",
@@ -88,6 +223,24 @@
   "磁盘满时由 macOS 删除",
   "ディスクが満杯になるとmacOSが削除",
   "디스크가 가득 차면 macOS가 삭제"
+ ],
+ "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.": [
+  "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.",
+  "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.",
+  "Archivos que las apps marcaron como seguros de borrar. macOS los libera cuando el disco está casi lleno; MacSpace insiste si no lo hace.",
+  "Dateien, die Apps als löschbar markiert haben. macOS gibt sie frei, wenn das Volume fast voll ist; sonst fragt MacSpace erneut.",
+  "应用标记为可安全删除的文件。磁盘快满时 macOS 会释放它们；若未释放，MacSpace 会继续请求。",
+  "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。",
+  "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다."
+ ],
+ "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.": [
+  "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem.",
+  "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.",
+  "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.",
+  "Dateien aus diesen Stunden lassen sich auf diesem Mac nicht mehr wiederherstellen. Die Backups auf dem Backup-Volume bleiben.",
+  "无法再从这些时间点在此 Mac 上恢复文件。备份磁盘上的备份不受影响。",
+  "このMac上のその時刻からは復元できなくなります。バックアップディスクのバックアップは残ります。",
+  "이 Mac에서 해당 시점의 파일을 복원할 수 없게 됩니다. 백업 디스크의 백업은 유지됩니다."
  ],
  "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available.": [
   "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.",
@@ -107,6 +260,33 @@
   "解放",
   "확보"
  ],
+ "Free %@ of %@ downloads?": [
+  "Liberar %@ de downloads do %@?",
+  "Libérer %@ de téléchargements de %@ ?",
+  "¿Liberar %@ de descargas de %@?",
+  "%@ an Downloads von %@ freigeben?",
+  "释放 %@ 的 %@ 下载？",
+  "%@分の%@のダウンロードを解放しますか？",
+  "%@의 %@ 다운로드를 정리할까요?"
+ ],
+ "Free %lld Time Machine snapshots?": [
+  "Liberar %lld instantâneos do Time Machine?",
+  "Libérer %lld instantanés Time Machine ?",
+  "¿Liberar %lld instantáneas de Time Machine?",
+  "%lld Time Machine-Schnappschüsse freigeben?",
+  "释放 %lld 个 Time Machine 快照？",
+  "Time Machineのスナップショットを%lld個解放しますか？",
+  "Time Machine 스냅샷 %lld개를 정리할까요?"
+ ],
+ "Free 1 Time Machine snapshot?": [
+  "Liberar 1 instantâneo do Time Machine?",
+  "Libérer 1 instantané Time Machine ?",
+  "¿Liberar 1 instantánea de Time Machine?",
+  "1 Time Machine-Schnappschuss freigeben?",
+  "释放 1 个 Time Machine 快照？",
+  "Time Machineのスナップショットを1個解放しますか？",
+  "Time Machine 스냅샷 1개를 정리할까요?"
+ ],
  "Free now": [
   "Liberar agora",
   "À libérer",
@@ -116,6 +296,15 @@
   "今すぐ解放",
   "지금 확보"
  ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar selección",
+  "Auswahl freigeben",
+  "释放所选内容",
+  "選択項目を解放",
+  "선택 항목 정리"
+ ],
  "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full.": [
   "Libere os arquivos que os apps marcaram como removíveis, que o macOS só apagaria com o disco quase cheio.",
   "Libérez les fichiers que les apps ont marqués comme purgeables, que macOS ne supprime sinon que lorsque le disque est presque plein.",
@@ -124,6 +313,15 @@
   "释放应用标记为可清除的文件，否则 macOS 仅在磁盘空间即将用尽时删除。",
   "アプリが消去可能としたファイルを今すぐ解放します。通常macOSはディスクがほぼ満杯のときだけ削除します。",
   "앱이 제거 가능하다고 표시한 파일을 정리합니다. macOS는 보통 디스크가 거의 찼을 때만 삭제합니다."
+ ],
+ "Free the selected backups?": [
+  "Liberar os backups selecionados?",
+  "Libérer les sauvegardes sélectionnées ?",
+  "¿Liberar las copias seleccionadas?",
+  "Ausgewählte Backups freigeben?",
+  "释放所选备份？",
+  "選択したバックアップを解放しますか？",
+  "선택한 백업을 정리할까요?"
  ],
  "Free up to %@": [
   "Liberar até %@",
@@ -143,6 +341,15 @@
   "消去可能なアプリファイルを最大%@解放しますか？",
   "제거 가능한 앱 파일을 최대 %@ 확보할까요?"
  ],
+ "Freed %@ on %@": [
+  "%@ liberados em %@",
+  "%@ libérés sur %@",
+  "%@ liberados en %@",
+  "%@ auf %@ freigegeben",
+  "已释放 %@（%@）",
+  "%@を%@で解放しました",
+  "%@ 확보됨: %@"
+ ],
  "Freeing space": [
   "Liberando espaço",
   "Libération d’espace",
@@ -151,6 +358,33 @@
   "正在释放空间",
   "空き容量を増やしています",
   "공간 확보 중"
+ ],
+ "Install the helper in Settings": [
+  "Instale o assistente nos Ajustes",
+  "Installez l’assistant dans les Réglages",
+  "Instala el asistente en Ajustes",
+  "Installiere den Helfer in den Einstellungen",
+  "在设置中安装辅助程序",
+  "設定でヘルパーをインストール",
+  "설정에서 보조 프로그램 설치"
+ ],
+ "Installs at the next restart": [
+  "Instala ao reiniciar",
+  "S’installe au prochain redémarrage",
+  "Se instala al reiniciar",
+  "Wird beim nächsten Neustart installiert",
+  "下次重新启动时安装",
+  "次回の再起動時にインストール",
+  "다음 재시동 시 설치"
+ ],
+ "Latest": [
+  "Mais recente",
+  "La plus récente",
+  "La más reciente",
+  "Neuestes",
+  "最新",
+  "最新",
+  "최신"
  ],
  "Left alone": [
   "Mantido como está",
@@ -169,6 +403,15 @@
   "MacSpace 暂时无法测量，请点击刷新按钮重试。",
   "今は測定できません。更新ボタンをお試しください。",
   "지금은 측정할 수 없습니다. 새로 고침 버튼을 눌러보세요."
+ ],
+ "Not connected": [
+  "Não conectado",
+  "Non connecté",
+  "No conectado",
+  "Nicht verbunden",
+  "未连接",
+  "未接続",
+  "연결되지 않음"
  ],
  "Open": [
   "Abrir",
@@ -242,6 +485,15 @@
   "%@を削除中",
   "%@ 제거 중"
  ],
+ "Removing %lld%%, %@": [
+  "Removendo %lld%%, %@",
+  "Suppression %lld %%, %@",
+  "Eliminando %lld %%, %@",
+  "Wird entfernt %lld %%, %@",
+  "正在移除 %lld%%，%@",
+  "削除中 %lld%%、%@",
+  "제거 중 %lld%%, %@"
+ ],
  "Removing downloads": [
   "Removendo downloads",
   "Suppression des téléchargements",
@@ -251,14 +503,14 @@
   "ダウンロードを削除中",
   "다운로드 제거 중"
  ],
- "Removing %lld%%, %@": [
-  "Removendo %lld%%, %@",
-  "Suppression %lld %%, %@",
-  "Eliminando %lld %%, %@",
-  "Wird entfernt %lld %%, %@",
-  "正在移除 %lld%%，%@",
-  "削除中 %lld%%、%@",
-  "제거 중 %lld%%, %@"
+ "Selected cleanup items changed. Review your selection again.": [
+  "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+  "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+  "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+  "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+  "所选清理项目已更改。请重新检查选择。",
+  "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+  "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
  ],
  "Spotlight index": [
   "Índice do Spotlight",
@@ -295,6 +547,42 @@
   "文件保留在 %@，打开时会重新下载。",
   "ファイルは%@に残り、開くと再ダウンロードされます。",
   "파일은 %@에 유지되며 열 때 다시 다운로드됩니다."
+ ],
+ "They are deleted from %@ for good. Files that are only in them can't be restored.": [
+  "Eles são apagados de %@ de vez. Arquivos que só estão neles não poderão ser restaurados.",
+  "Elles sont supprimées définitivement de %@. Les fichiers qui ne sont que dans celles-ci ne pourront plus être restaurés.",
+  "Se borran de %@ para siempre. Los archivos que solo están en ellas no se podrán restaurar.",
+  "Sie werden endgültig von %@ gelöscht. Dateien, die nur darin sind, lassen sich nicht wiederherstellen.",
+  "它们将从 %@ 永久删除。仅存在于这些备份中的文件无法恢复。",
+  "%@から完全に削除します。そこだけにあるファイルは復元できません。",
+  "%@에서 영구적으로 삭제됩니다. 해당 백업에만 있는 파일은 복원할 수 없습니다."
+ ],
+ "Time Machine backup disks": [
+  "Discos de backup do Time Machine",
+  "Disques de sauvegarde Time Machine",
+  "Discos de copia de Time Machine",
+  "Time Machine-Backup-Volumes",
+  "Time Machine 备份磁盘",
+  "Time Machineのバックアップディスク",
+  "Time Machine 백업 디스크"
+ ],
+ "Time Machine is backing up. Try again when it's done.": [
+  "O Time Machine está fazendo backup. Tente de novo quando terminar.",
+  "Time Machine sauvegarde. Réessayez quand ce sera fini.",
+  "Time Machine está haciendo una copia. Inténtalo cuando termine.",
+  "Time Machine sichert gerade. Versuche es, wenn das Backup fertig ist.",
+  "Time Machine 正在备份，请完成后重试。",
+  "Time Machineでバックアップ中です。完了後に再度お試しください。",
+  "Time Machine이 백업 중입니다. 완료되면 다시 시도하세요."
+ ],
+ "Time Machine snapshots": [
+  "Instantâneos do Time Machine",
+  "Instantanés Time Machine",
+  "Instantáneas de Time Machine",
+  "Time Machine-Schnappschüsse",
+  "Time Machine 快照",
+  "Time Machineのスナップショット",
+  "Time Machine 스냅샷"
  ],
  "Unknown action %@.": [
   "Ação desconhecida %@.",
@@ -385,257 +673,5 @@
   "不可用",
   "利用不可",
   "사용할 수 없음"
- ],
- "Free %@ of %@ downloads?": [
-  "Liberar %@ de downloads do %@?",
-  "Libérer %@ de téléchargements de %@ ?",
-  "¿Liberar %@ de descargas de %@?",
-  "%@ an Downloads von %@ freigeben?",
-  "释放 %@ 的 %@ 下载？",
-  "%@分の%@のダウンロードを解放しますか？",
-  "%@의 %@ 다운로드를 정리할까요?"
- ],
- "Installs at the next restart": [
-  "Instala ao reiniciar",
-  "S’installe au prochain redémarrage",
-  "Se instala al reiniciar",
-  "Wird beim nächsten Neustart installiert",
-  "下次重新启动时安装",
-  "次回の再起動時にインストール",
-  "다음 재시동 시 설치"
- ],
- "%@ free": [
-  "%@ livres",
-  "%@ libres",
-  "%@ libres",
-  "%@ frei",
-  "%@ 可用",
-  "%@空き",
-  "%@ 사용 가능"
- ],
- "%lld backups": [
-  "%lld backups",
-  "%lld sauvegardes",
-  "%lld copias",
-  "%lld Backups",
-  "%lld 个备份",
-  "%lld個のバックアップ",
-  "백업 %lld개"
- ],
- "%lld snapshots": [
-  "%lld instantâneos",
-  "%lld instantanés",
-  "%lld instantáneas",
-  "%lld Schnappschüsse",
-  "%lld 个快照",
-  "%lld個のスナップショット",
-  "스냅샷 %lld개"
- ],
- "1 backup": [
-  "1 backup",
-  "1 sauvegarde",
-  "1 copia",
-  "1 Backup",
-  "1 个备份",
-  "1個のバックアップ",
-  "백업 1개"
- ],
- "1 snapshot": [
-  "1 instantâneo",
-  "1 instantané",
-  "1 instantánea",
-  "1 Schnappschuss",
-  "1 个快照",
-  "1個のスナップショット",
-  "스냅샷 1개"
- ],
- "Already gone": [
-  "Já apagado",
-  "Déjà supprimé",
-  "Ya borrado",
-  "Bereits gelöscht",
-  "已不存在",
-  "すでにありません",
-  "이미 삭제됨"
- ],
- "Backing up now": [
-  "Fazendo backup agora",
-  "Sauvegarde en cours",
-  "Haciendo copia ahora",
-  "Backup läuft",
-  "正在备份",
-  "バックアップ中",
-  "백업 중"
- ],
- "Backups not readable": [
-  "Backups ilegíveis",
-  "Sauvegardes illisibles",
-  "Copias ilegibles",
-  "Backups nicht lesbar",
-  "无法读取备份",
-  "バックアップを読み取れません",
-  "백업을 읽을 수 없음"
- ],
- "Cannot be undone": [
-  "Não pode ser desfeito",
-  "Irréversible",
-  "No se puede deshacer",
-  "Nicht widerrufbar",
-  "无法撤销",
-  "取り消せません",
-  "실행 취소 불가"
- ],
- "Connect it to see its backups and free old ones.": [
-  "Conecte-o para ver os backups e liberar os antigos.",
-  "Connectez-le pour voir ses sauvegardes et libérer les anciennes.",
-  "Conéctalo para ver sus copias y liberar las antiguas.",
-  "Schließe es an, um seine Backups zu sehen und alte freizugeben.",
-  "连接磁盘以查看备份并释放旧备份。",
-  "接続するとバックアップを確認し、古いものを解放できます。",
-  "연결하면 백업을 확인하고 오래된 백업을 정리할 수 있습니다."
- ],
- "Couldn't free it": [
-  "Não foi possível liberar",
-  "Impossible de libérer",
-  "No se pudo liberar",
-  "Konnte nicht freigegeben werden",
-  "无法释放",
-  "解放できませんでした",
-  "정리하지 못함"
- ],
- "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay.": [
-  "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem.",
-  "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.",
-  "Ya no se podrán restaurar archivos de esas horas en este Mac. Las copias del disco de copia se quedan.",
-  "Dateien aus diesen Stunden lassen sich auf diesem Mac nicht mehr wiederherstellen. Die Backups auf dem Backup-Volume bleiben.",
-  "无法再从这些时间点在此 Mac 上恢复文件。备份磁盘上的备份不受影响。",
-  "このMac上のその時刻からは復元できなくなります。バックアップディスクのバックアップは残ります。",
-  "이 Mac에서 해당 시점의 파일을 복원할 수 없게 됩니다. 백업 디스크의 백업은 유지됩니다."
- ],
- "Free %lld Time Machine snapshots?": [
-  "Liberar %lld instantâneos do Time Machine?",
-  "Libérer %lld instantanés Time Machine ?",
-  "¿Liberar %lld instantáneas de Time Machine?",
-  "%lld Time Machine-Schnappschüsse freigeben?",
-  "释放 %lld 个 Time Machine 快照？",
-  "Time Machineのスナップショットを%lld個解放しますか？",
-  "Time Machine 스냅샷 %lld개를 정리할까요?"
- ],
- "Free 1 Time Machine snapshot?": [
-  "Liberar 1 instantâneo do Time Machine?",
-  "Libérer 1 instantané Time Machine ?",
-  "¿Liberar 1 instantánea de Time Machine?",
-  "1 Time Machine-Schnappschuss freigeben?",
-  "释放 1 个 Time Machine 快照？",
-  "Time Machineのスナップショットを1個解放しますか？",
-  "Time Machine 스냅샷 1개를 정리할까요?"
- ],
- "Free selected": [
-  "Liberar selecionados",
-  "Libérer la sélection",
-  "Liberar selección",
-  "Auswahl freigeben",
-  "释放所选内容",
-  "選択項目を解放",
-  "선택 항목 정리"
- ],
- "Free the selected backups?": [
-  "Liberar os backups selecionados?",
-  "Libérer les sauvegardes sélectionnées ?",
-  "¿Liberar las copias seleccionadas?",
-  "Ausgewählte Backups freigeben?",
-  "释放所选备份？",
-  "選択したバックアップを解放しますか？",
-  "선택한 백업을 정리할까요?"
- ],
- "Freed %@ on %@": [
-  "%@ liberados em %@",
-  "%@ libérés sur %@",
-  "%@ liberados en %@",
-  "%@ auf %@ freigegeben",
-  "已释放 %@（%@）",
-  "%@を%@で解放しました",
-  "%@ 확보됨: %@"
- ],
- "Install the helper in Settings": [
-  "Instale o assistente nos Ajustes",
-  "Installez l’assistant dans les Réglages",
-  "Instala el asistente en Ajustes",
-  "Installiere den Helfer in den Einstellungen",
-  "在设置中安装辅助程序",
-  "設定でヘルパーをインストール",
-  "설정에서 보조 프로그램 설치"
- ],
- "Latest": [
-  "Mais recente",
-  "La plus récente",
-  "La más reciente",
-  "Neuestes",
-  "最新",
-  "最新",
-  "최신"
- ],
- "Not connected": [
-  "Não conectado",
-  "Non connecté",
-  "No conectado",
-  "Nicht verbunden",
-  "未连接",
-  "未接続",
-  "연결되지 않음"
- ],
- "They are deleted from %@ for good. Files that are only in them can't be restored.": [
-  "Eles são apagados de %@ de vez. Arquivos que só estão neles não poderão ser restaurados.",
-  "Elles sont supprimées définitivement de %@. Les fichiers qui ne sont que dans celles-ci ne pourront plus être restaurés.",
-  "Se borran de %@ para siempre. Los archivos que solo están en ellas no se podrán restaurar.",
-  "Sie werden endgültig von %@ gelöscht. Dateien, die nur darin sind, lassen sich nicht wiederherstellen.",
-  "它们将从 %@ 永久删除。仅存在于这些备份中的文件无法恢复。",
-  "%@から完全に削除します。そこだけにあるファイルは復元できません。",
-  "%@에서 영구적으로 삭제됩니다. 해당 백업에만 있는 파일은 복원할 수 없습니다."
- ],
- "Time Machine backup disks": [
-  "Discos de backup do Time Machine",
-  "Disques de sauvegarde Time Machine",
-  "Discos de copia de Time Machine",
-  "Time Machine-Backup-Volumes",
-  "Time Machine 备份磁盘",
-  "Time Machineのバックアップディスク",
-  "Time Machine 백업 디스크"
- ],
- "Time Machine is backing up. Try again when it's done.": [
-  "O Time Machine está fazendo backup. Tente de novo quando terminar.",
-  "Time Machine sauvegarde. Réessayez quand ce sera fini.",
-  "Time Machine está haciendo una copia. Inténtalo cuando termine.",
-  "Time Machine sichert gerade. Versuche es, wenn das Backup fertig ist.",
-  "Time Machine 正在备份，请完成后重试。",
-  "Time Machineでバックアップ中です。完了後に再度お試しください。",
-  "Time Machine이 백업 중입니다. 완료되면 다시 시도하세요."
- ],
- "Time Machine snapshots": [
-  "Instantâneos do Time Machine",
-  "Instantanés Time Machine",
-  "Instantáneas de Time Machine",
-  "Time Machine-Schnappschüsse",
-  "Time Machine 快照",
-  "Time Machineのスナップショット",
-  "Time Machine 스냅샷"
- ],
- "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't.": [
-  "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.",
-  "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.",
-  "Archivos que las apps marcaron como seguros de borrar. macOS los libera cuando el disco está casi lleno; MacSpace insiste si no lo hace.",
-  "Dateien, die Apps als löschbar markiert haben. macOS gibt sie frei, wenn das Volume fast voll ist; sonst fragt MacSpace erneut.",
-  "应用标记为可安全删除的文件。磁盘快满时 macOS 会释放它们；若未释放，MacSpace 会继续请求。",
-  "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。",
-  "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다."
- ],
- "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.": [
-  "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.",
-  "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.",
-  "Copias de este Mac que Time Machine guarda un día, para restaurar archivos sin el disco de copia. Liberar conserva la más reciente y la que necesita la próxima copia.",
-  "Kopien dieses Macs, die Time Machine einen Tag behält, um Dateien ohne Backup-Volume wiederherzustellen. Freigeben behält die neueste und die für das nächste Backup.",
-  "Time Machine 保留一天的此 Mac 副本，用于在没有备份磁盘时恢复文件。释放会保留最新的一份和下次备份需要的一份。",
-  "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。",
-  "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다."
  ]
 }

@@ -1,5 +1,6 @@
 import Foundation
 import MacSpacePlatform
+import MacSpacePlatform
 
 /// Homebrew's own cleanup (`brew cleanup`), run as the user, the way they would run it in Terminal, with three of Homebrew's settings
 /// changed for the run: no autoremove (plain `brew cleanup` also uninstalls formulae installed only as dependencies, which a cleanup
@@ -91,55 +92,20 @@ public enum HomebrewCleanup {
         var status: Int32
         var stdout: String
         var stderr: String
+        var timedOut = false
+        var truncated = false
     }
 
     /// Runs `brew` as the user, from `/`, with only what it needs in its environment (Homebrew rebuilds it anyway) and the three
     /// settings above. Killed after `timeout` seconds.
     static func run(_ brew: String, _ arguments: [String], timeout: TimeInterval) -> Run {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: brew)
-        process.arguments = arguments
-        process.currentDirectoryURL = URL(fileURLWithPath: "/")
         var environment = ["HOME": FileManager.default.homeDirectoryForCurrentUser.path, "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
                            "HOMEBREW_NO_AUTOREMOVE": "1", "HOMEBREW_NO_AUTO_UPDATE": "1", "HOMEBREW_NO_ANALYTICS": "1",
                            "HOMEBREW_NO_ENV_HINTS": "1", "HOMEBREW_NO_COLOR": "1"]
         for key in ["USER", "LOGNAME", "SHELL", "TMPDIR", "LANG"] { environment[key] = ProcessInfo.processInfo.environment[key] }
-        process.environment = environment
-        let out = Pipe(), err = Pipe()
-        process.standardOutput = out
-        process.standardError = err
-        process.standardInput = FileHandle.nullDevice
-        // Read while it runs: a full pipe would stop it.
-        let output = Collected()
-        let reading = DispatchGroup()
-        for (pipe, isOut) in [(out, true), (err, false)] {
-            reading.enter()
-            DispatchQueue.global().async {
-                output.set(pipe.fileHandleForReading.readDataToEndOfFile(), out: isOut)
-                reading.leave()
-            }
-        }
-        let finished = DispatchSemaphore(value: 0)
-        process.terminationHandler = { _ in finished.signal() }
-        do { try process.run() } catch {
-            try? out.fileHandleForWriting.close()
-            try? err.fileHandleForWriting.close()
-            return Run(status: -1, stdout: "", stderr: "Error: \(error.localizedDescription)")
-        }
-        if finished.wait(timeout: .now() + timeout) == .timedOut {
-            process.terminate()
-            _ = finished.wait(timeout: .now() + 5)
-        }
-        reading.wait()
-        let (stdout, stderr) = output.get()
-        return Run(status: process.terminationStatus, stdout: String(decoding: stdout, as: UTF8.self), stderr: String(decoding: stderr, as: UTF8.self))
-    }
-
-    /// What `brew` printed, filled by the two readers.
-    private final class Collected: @unchecked Sendable {
-        private let lock = NSLock()
-        private var stdout = Data(), stderr = Data()
-        func set(_ data: Data, out: Bool) { lock.lock(); if out { stdout = data } else { stderr = data }; lock.unlock() }
-        func get() -> (Data, Data) { lock.lock(); defer { lock.unlock() }; return (stdout, stderr) }
+        let result = BoundedCommand.run(brew, arguments: arguments, environment: environment, timeout: timeout)
+        return Run(status: result.status, stdout: String(decoding: result.stdout, as: UTF8.self),
+                   stderr: result.timedOut ? "Error: Cleanup command timed out" : (result.truncated ? "Error: Cleanup command output exceeded its limit" : String(decoding: result.stderr, as: UTF8.self)),
+                   timedOut: result.timedOut, truncated: result.truncated)
     }
 }

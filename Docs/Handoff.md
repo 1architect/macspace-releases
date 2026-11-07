@@ -72,6 +72,20 @@ release), `DEV=0` without them (a release); `OUT_DIR` builds somewhere else than
 build apart from the app that gets installed); notarization is on by default with a Developer ID identity, and `NOTARY_PROFILE=`
 turns it off.
 
+Provisioned signing profiles now live outside the repository at
+`~/Library/Application Support/MacSpace/Signing/Profiles`. Run `Scripts/StoreMetadataProfiles.py` once with the two downloaded
+profiles; subsequent assembly/release builds discover them automatically and choose an authorized signing certificate.
+`METADATA_PROFILES_DIR` and the individual `METADATA_APP_PROFILE` / `METADATA_CLI_PROFILE` variables override discovery.
+The profile-bearing CLI worker has its own nested app bundle; the legacy CLI path remains for helper registration. See
+[Releasing.md](Releasing.md#local-signing-and-provisioning-setup) for setup and CI requirements and
+[CONTRIBUTING.md](../CONTRIBUTING.md#build-and-test) for unprovisioned contributor builds and their protected-feature limitations.
+
+Production inventory loading no longer probes WindowServer once per SQL statement. Lock notifications still suspend immediately;
+a 100 ms fallback covers missed notifications, and actual Keychain operations force a fresh session check. The earlier fixture
+key store bypassed the slow production path. See [Research.md](Research.md#session-probing-during-inventory-writes-2026-11-07)
+for the component benchmark; full app loading remains a user verification task.
+
+
 Useful CLI commands (from `Build/MacSpace.app/Contents/MacOS/MacSpaceCli`):
 
 | Command | Use |
@@ -293,6 +307,7 @@ released on 2026-10-07: GitHub release `v1.0.0`, the update feed, and the cask `
 
 ## Open work
 
+- Security fixes and implementation backlog: maintain the [single security handoff](Disk-Final-Security-Review.md), including database encryption, the no-Keychain-popup requirement, cleanup consent and verification. Do not create separate security task documents.
 - Siri screen: a button for "remove orphan subscriptions" through the helper (today it points to a command that needs `sudo`).
 - Debloat in a virtual machine still shows controls that cannot take effect there.
 - Per-document breakdown of the version history, so users can choose what to delete.

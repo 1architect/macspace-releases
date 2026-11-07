@@ -5,7 +5,7 @@ import MacSpaceSdk
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskFileReviewTests: XCTestCase {
+final class DiskFileReviewTests: DiskSecurityFixtureCase {
     private struct Options: OptionStore {
         func bool(_ id: String) -> Bool { false }
         func string(_ id: String) -> String { "" }

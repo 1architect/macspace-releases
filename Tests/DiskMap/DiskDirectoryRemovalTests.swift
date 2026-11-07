@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskDirectoryRemovalTests: XCTestCase {
+final class DiskDirectoryRemovalTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (String, String) throws -> Void) throws {
         guard getuid() != 0, geteuid() == getuid() else { throw XCTSkip("Requires ordinary user execution") }
         let home = "/private/tmp/personal-directory-" + UUID().uuidString

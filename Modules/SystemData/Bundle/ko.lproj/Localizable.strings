@@ -45,6 +45,7 @@
 "Apps' temporary files; macOS clears them at restart." = "앱의 임시 파일입니다. macOS가 재시동 시 지웁니다.";
 "Assorted macOS features and the OS itself." = "여러 macOS 기능과 운영체제 자체의 파일입니다.";
 "Audio plug-ins and sounds" = "오디오 플러그인 및 사운드";
+"Automatic cleanup is off for items that cannot be recovered." = "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다.";
 "Battery and energy history used by System Settings > Battery." = "시스템 설정 > 배터리에서 사용하는 배터리 및 에너지 기록입니다.";
 "Cache cleaner" = "캐시 정리 도구";
 "Caches for all users" = "모든 사용자의 캐시";
@@ -54,6 +55,7 @@
 "Can't run" = "실행할 수 없음";
 "Cannot be undone" = "실행 취소 불가";
 "Check Software Update in System Settings." = "시스템 설정에서 소프트웨어 업데이트를 확인하세요.";
+"Clean non recoverable items automatically" = "복구할 수 없는 항목 자동 정리";
 "Cloud files on this Mac" = "이 Mac의 클라우드 파일";
 "Cloud storage" = "클라우드 저장 공간";
 "Cloud storage: %@" = "클라우드 저장 공간: %@";
@@ -171,6 +173,7 @@
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@이(가) 종료된 상태에서 안전하게 삭제할 수 있습니다. 필요하면 다시 생성됩니다.";
 "Saved home folder of a deleted account: %@" = "삭제된 계정의 저장된 홈 폴더: %@";
 "See what fills System Data and free what is safe to remove." = "시스템 데이터의 구성을 확인하고 안전하게 제거할 수 있는 항목을 정리합니다.";
+"Selected cleanup items changed. Review your selection again." = "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.";
 "Shared app files" = "공유 앱 파일";
 "Shared frameworks" = "공유 프레임워크";
 "Shared temporary files" = "공유 임시 파일";

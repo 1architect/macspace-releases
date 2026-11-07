@@ -8,10 +8,12 @@ private struct CleanupSelectionModule: MacSpaceModule {
     init(calls: Calls) { self.calls = calls }
     func tile(context: ModuleContext) async -> Tile { Tile(title: "Cleanup", status: "") }
     func screen(context: ModuleContext) async -> Screen {
-        let rows = ["safe", "optional"].map { id in
+        let optedIn = context.options.bool(CleanupBatch.nonRecoverableOptionID)
+        let rows = ["safe", "optional", "irreversible"].map { id in
             Row(id: id, title: id).selectingCleanup(Action(id: "clean", title: "Free", parameters: ["id": id, "variant": context.options.bool("flag") ? "one" : "two"],
                 confirmation: Confirmation(title: "Free " + id + "?", message: "Details for " + id, confirmTitle: "Free")),
-                bytes: 100, defaultSelected: id == "safe")
+                bytes: 100, automatic: id != "irreversible" || optedIn,
+                defaultSelected: id == "safe" || (id == "irreversible" && optedIn), remembersSelection: id != "irreversible")
         }
         return Screen(title: "Cleanup", hero: UsageBar(id: "usage", title: "Cleanup", segments: [UsageSegment(id: "all", label: "All", bytes: 200, tone: .caution, items: rows)]),
             widgets: [.list(ListWidget(id: "cleanups", rows: rows))])
@@ -32,9 +34,10 @@ final class CleanupSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         var manifest = Fixtures.manifest(); manifest.autoClean = true
+        manifest.options.append(OptionDefinition(id: CleanupBatch.nonRecoverableOptionID, title: "Non recoverable", kind: .toggle(defaultValue: false)))
         try Fixtures.writeBundle(manifest, name: "Cleanup", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: settings, permissions: FakePermissions(), loader: { _ in CleanupSelectionModule(calls: calls) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: settings, permissions: FakePermissions(), loader: { _ in CleanupSelectionModule(calls: calls) })
         await handle.activate()
         return handle
     }
@@ -101,5 +104,68 @@ final class CleanupSelectionTests: XCTestCase {
         XCTAssertEqual(fresh[CleanupTarget.preferenceKey(scope: "backups:disk", id: "old")], true)
         XCTAssertEqual(fresh[CleanupTarget.preferenceKey(scope: "backups:disk", id: "latest")], false)
         XCTAssertNil(fresh[CleanupTarget.preferenceKey(id: "old")], "Manual identities and renewable cleanup operations have separate preference scopes")
+    }
+
+    func testBackupReviewIgnoresOldPreferencesAndClearsChoicesWhenLeavingTheModule() async throws {
+        let settings = SettingsStore(defaults: Fixtures.defaults())
+        let handle = try await handle(settings, Calls())
+        defer { handle.deactivate() }
+        settings.saveCleanupChoices(module: handle.id, scope: "backups:disk", visible: ["backup:old"], selected: ["backup:old"])
+        let page = Screen(title: "Backups", widgets: [], selection: Selection(action: Action(id: "deleteBackups", title: "Free"),
+            choices: ["backup:old": 0], scope: "backups:disk"))
+        let first = try XCTUnwrap(handle.pageSelection(page, id: "backups"))
+        XCTAssertTrue(handle.checked(first).isEmpty)
+        handle.toggle("backup:old", in: first)
+        XCTAssertEqual(handle.checked(first), ["backup:old"])
+        handle.clearPageSelections()
+        XCTAssertTrue(handle.checked(try XCTUnwrap(handle.pageSelection(page, id: "backups"))).isEmpty)
+    }
+
+    func testNonRecoverableChoicesIgnoreSavedConsentAndResetAfterCompletionAndEachVisit() async throws {
+        let defaults = Fixtures.defaults(), settings = SettingsStore(defaults: defaults), calls = Calls()
+        settings.saveCleanupChoices(module: "com.test.fake", scope: "cleanup", visible: ["irreversible"], selected: ["irreversible"])
+        let first = try await handle(settings, calls)
+        defer { first.deactivate() }
+        XCTAssertEqual(first.checked(try XCTUnwrap(first.activeSelection)), ["safe"])
+        handleToggle("irreversible", first)
+        XCTAssertEqual(first.checked(try XCTUnwrap(first.activeSelection)), ["safe", "irreversible"])
+        _ = await first.autoClean()
+        XCTAssertEqual(calls.all, ["auto:safe"], "A manual checkbox never grants scheduled destructive cleanup")
+        _ = await first.perform(try action(first))
+        XCTAssertTrue(calls.all.contains("manual:irreversible"))
+        XCTAssertEqual(first.checked(try XCTUnwrap(first.activeSelection)), ["safe"], "Completed destructive work requires a new selection")
+        handleToggle("irreversible", first)
+        first.clearPageSelections()
+        XCTAssertEqual(first.checked(try XCTUnwrap(first.activeSelection)), ["safe"])
+        let fresh = try await handle(SettingsStore(defaults: defaults), Calls())
+        defer { fresh.deactivate() }
+        XCTAssertEqual(fresh.checked(try XCTUnwrap(fresh.activeSelection)), ["safe"])
+    }
+
+    func testOptInSelectsNonRecoverableItemsAndTransientEditsDoNotOverrideTheSetting() async throws {
+        let settings = SettingsStore(defaults: Fixtures.defaults()), calls = Calls()
+        settings.saveCleanupChoices(module: "com.test.fake", scope: "cleanup", visible: ["irreversible"], selected: [])
+        settings.setOption(.bool(true), CleanupBatch.nonRecoverableOptionID, module: "com.test.fake")
+        let handle = try await handle(settings, calls)
+        defer { handle.deactivate() }
+        XCTAssertEqual(handle.checked(try XCTUnwrap(handle.activeSelection)), ["safe", "irreversible"])
+        handleToggle("irreversible", handle)
+        XCTAssertEqual(handle.checked(try XCTUnwrap(handle.activeSelection)), ["safe"])
+        handle.clearPageSelections()
+        XCTAssertEqual(handle.checked(try XCTUnwrap(handle.activeSelection)), ["safe", "irreversible"])
+        _ = await handle.autoClean()
+        XCTAssertEqual(calls.all, ["auto:safe", "auto:irreversible"])
+        settings.setOption(.bool(false), CleanupBatch.nonRecoverableOptionID, module: handle.id)
+        await handle.refresh(quiet: true)
+        XCTAssertEqual(handle.checked(try XCTUnwrap(handle.activeSelection)), ["safe"])
+        _ = await handle.autoClean()
+        XCTAssertEqual(calls.all, ["auto:safe", "auto:irreversible", "auto:safe"])
+        handleToggle("irreversible", handle)
+        settings.setOption(.bool(true), CleanupBatch.nonRecoverableOptionID, module: handle.id)
+        await handle.refresh(quiet: true)
+        XCTAssertTrue(handle.checked(try XCTUnwrap(handle.activeSelection)).contains("irreversible"))
+        settings.setOption(.bool(false), CleanupBatch.nonRecoverableOptionID, module: handle.id)
+        await handle.refresh(quiet: true)
+        XCTAssertFalse(handle.checked(try XCTUnwrap(handle.activeSelection)).contains("irreversible"), "A mode change retires the earlier visit override")
     }
 }

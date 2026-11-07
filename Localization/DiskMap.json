@@ -1,4 +1,13 @@
 {
+ "%@ app data": [
+  "Dados do app %@",
+  "Données de l’app %@",
+  "Datos de la app %@",
+  "App-Daten von %@",
+  "%@ 的 App 数据",
+  "%@のアプリデータ",
+  "%@ 앱 데이터"
+ ],
  "%@ files": [
   "Arquivos %@",
   "Fichiers %@",
@@ -34,6 +43,24 @@
   "%lld 项",
   "%lld項目",
   "%lld개 항목"
+ ],
+ "1 file could not be removed.": [
+  "1 arquivo não pôde ser removido.",
+  "1 fichier n’a pas pu être supprimé.",
+  "No se pudo eliminar 1 archivo.",
+  "1 Datei konnte nicht entfernt werden.",
+  "有 1 个文件无法移除。",
+  "1個のファイルを削除できませんでした。",
+  "파일 1개를 제거할 수 없습니다."
+ ],
+ "1 item": [
+  "1 item",
+  "1 élément",
+  "1 elemento",
+  "1 Objekt",
+  "1 项",
+  "1項目",
+  "항목 1개"
  ],
  "Additional or unconfirmed app copy; kept separate from installed apps.": [
   "Cópia adicional ou não confirmada; separada dos apps instalados.",
@@ -71,6 +98,15 @@
   "アプリコンテナ",
   "앱 컨테이너"
  ],
+ "App containers": [
+  "Contêineres de apps",
+  "Conteneurs des apps",
+  "Contenedores de apps",
+  "App-Container",
+  "App 容器",
+  "アプリのコンテナ",
+  "앱 컨테이너"
+ ],
  "App data changed. Reopen the list and review your selection again.": [
   "Os dados de apps mudaram. Reabra a lista e revise a seleção novamente.",
   "Les données d’apps ont changé. Rouvrez la liste et vérifiez votre sélection.",
@@ -97,6 +133,24 @@
   "应用数据测量不可用或不完整。",
   "アプリデータの測定が利用できないか不完全です。",
   "앱 데이터 측정값을 사용할 수 없거나 불완전합니다."
+ ],
+ "Application scripts": [
+  "Scripts de aplicativos",
+  "Scripts des applications",
+  "Scripts de aplicaciones",
+  "Anwendungsskripte",
+  "应用脚本",
+  "アプリケーションスクリプト",
+  "응용 프로그램 스크립트"
+ ],
+ "Application support": [
+  "Suporte de aplicativos",
+  "Support des applications",
+  "Soporte de aplicaciones",
+  "Anwendungsunterstützung",
+  "应用支持",
+  "アプリケーションサポート",
+  "응용 프로그램 지원"
  ],
  "Applications": [
   "Aplicativos",
@@ -178,6 +232,15 @@
   "一年多未修改的构建输出和依赖文件。删除前请确认项目是否需要它们；这并不代表它们未被使用。",
   "1年以上変更されていないビルド出力と依存ファイルです。削除前にプロジェクトで必要か確認してください。未使用の証拠ではありません。",
   "1년 넘게 수정되지 않은 빌드 출력 및 종속성 파일입니다. 삭제 전 프로젝트에 필요한지 확인하세요. 사용되지 않는다는 증거는 아닙니다."
+ ],
+ "Caches": [
+  "Caches",
+  "Caches",
+  "Cachés",
+  "Caches",
+  "缓存",
+  "キャッシュ",
+  "캐시"
  ],
  "Caches & Temporary": [
   "Caches e temporários",
@@ -278,6 +341,15 @@
   "内容を読み取れませんでした。更新して再試行してください。",
   "내용을 읽을 수 없습니다. 새로고침하여 다시 시도하세요."
  ],
+ "Cookies": [
+  "Cookies",
+  "Cookies",
+  "Cookies",
+  "Cookies",
+  "Cookie",
+  "Cookie",
+  "쿠키"
+ ],
  "Couldn’t compare files": [
   "Não foi possível comparar os arquivos",
   "Impossible de comparer les fichiers",
@@ -322,6 +394,15 @@
   "无法卸载应用",
   "アプリをアンインストールできませんでした",
   "앱을 제거하지 못함"
+ ],
+ "Data preserved": [
+  "Dados preservados",
+  "Données conservées",
+  "Datos conservados",
+  "Daten bleiben erhalten",
+  "数据已保留",
+  "データを保持",
+  "데이터 보존됨"
  ],
  "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved.": [
   "Dados com identificadores exatos de apps que não foram encontrados instalados. Dados de grupos compartilhados são preservados.",
@@ -638,6 +719,15 @@
   "画像",
   "이미지"
  ],
+ "Included with the app": [
+  "Incluído com o app",
+  "Inclus avec l’app",
+  "Incluido con la app",
+  "In der App enthalten",
+  "随 App 一同移除",
+  "アプリと一緒に削除",
+  "앱과 함께 제거됨"
+ ],
  "Install the helper in Settings": [
   "Instale o auxiliar nos Ajustes",
   "Installez l’assistant dans Réglages",
@@ -719,6 +809,24 @@
   "ローカルに割り当てられた容量です。クラウドのみのファイルはダウンロードしません。保護された場所や読み取れない場所は不完全な場合があり、APFSのクローンやスナップショットにより使用量に差が出ることがあります。",
   "로컬에 할당된 공간입니다. 클라우드에만 있는 파일은 다운로드하지 않습니다. 보호되거나 읽을 수 없는 위치는 불완전할 수 있으며 APFS 복제본과 스냅샷으로 인해 디스크 사용량과 다를 수 있습니다."
  ],
+ "Logs": [
+  "Registros",
+  "Journaux",
+  "Registros",
+  "Protokolle",
+  "日志",
+  "ログ",
+  "로그"
+ ],
+ "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved.": [
+  "O MacSpace fecha os apps selecionados antes de desinstalá-los. Dados não selecionados e compartilhados são preservados.",
+  "MacSpace quitte les apps sélectionnées avant de les désinstaller. Les données non sélectionnées et partagées sont conservées.",
+  "MacSpace cierra las apps seleccionadas antes de desinstalarlas. Los datos no seleccionados y compartidos se conservan.",
+  "MacSpace beendet die ausgewählten Apps vor der Deinstallation. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
+  "MacSpace 会在卸载前退出所选 App。未选择及共享的数据将保留。",
+  "MacSpaceは選択したアプリを終了してからアンインストールします。未選択のデータと共有データは保持されます。",
+  "MacSpace가 선택한 앱을 종료한 후 제거합니다. 선택하지 않은 데이터와 공유 데이터는 보존됩니다."
+ ],
  "Managed by Photos": [
   "Gerenciado pelo Fotos",
   "Géré par Photos",
@@ -799,6 +907,15 @@
   "音乐",
   "ミュージック",
   "음악"
+ ],
+ "No app data to remove": [
+  "Nenhum dado do app para remover",
+  "Aucune donnée d’app à supprimer",
+  "No hay datos de la app para eliminar",
+  "Keine App-Daten zum Entfernen",
+  "没有可移除的 App 数据",
+  "削除するアプリデータはありません",
+  "제거할 앱 데이터 없음"
  ],
  "No apps found": [
   "Nenhum app encontrado",
@@ -989,6 +1106,15 @@
   "その他",
   "기타"
  ],
+ "Other app data": [
+  "Outros dados de apps",
+  "Autres données des apps",
+  "Otros datos de apps",
+  "Weitere App-Daten",
+  "其他 App 数据",
+  "ほかのアプリデータ",
+  "기타 앱 데이터"
+ ],
  "Other files": [
   "Outros arquivos",
   "Autres fichiers",
@@ -1006,6 +1132,15 @@
   "其他格式",
   "その他の形式",
   "기타 형식"
+ ],
+ "Outside your user Library": [
+  "Fora da Biblioteca do seu usuário",
+  "En dehors de votre bibliothèque utilisateur",
+  "Fuera de tu biblioteca de usuario",
+  "Außerhalb deiner Benutzer-Library",
+  "位于用户资源库之外",
+  "ユーザーライブラリの外部",
+  "사용자 라이브러리 외부"
  ],
  "PDF documents": [
   "Documentos PDF",
@@ -1052,6 +1187,15 @@
   "関連する可能性があるデータ",
   "관련 가능성이 있는 앱 데이터"
  ],
+ "Preferences": [
+  "Preferências",
+  "Préférences",
+  "Preferencias",
+  "Einstellungen",
+  "偏好设置",
+  "環境設定",
+  "환경설정"
+ ],
  "Presentations": [
   "Apresentações",
   "Présentations",
@@ -1087,6 +1231,15 @@
   "受保护数据及其他磁盘用量",
   "保護されたデータとその他のディスク使用量",
   "보호된 데이터 및 기타 디스크 사용량"
+ ],
+ "Protected or unreadable data": [
+  "Dados protegidos ou ilegíveis",
+  "Données protégées ou illisibles",
+  "Datos protegidos o ilegibles",
+  "Geschützte oder nicht lesbare Daten",
+  "受保护或无法读取的数据",
+  "保護されているか読み取れないデータ",
+  "보호되거나 읽을 수 없는 데이터"
  ],
  "Protected system component; cannot be removed here.": [
   "Componente protegido do sistema; não pode ser removido aqui.",
@@ -1205,6 +1358,15 @@
   "選択したアプリを確認",
   "선택한 앱 검토"
  ],
+ "Review selected files": [
+  "Revisar arquivos selecionados",
+  "Vérifier les fichiers sélectionnés",
+  "Revisar archivos seleccionados",
+  "Ausgewählte Dateien prüfen",
+  "检查所选文件",
+  "選択したファイルを確認",
+  "선택한 파일 검토"
+ ],
  "Reviewing selected files": [
   "Revisando arquivos selecionados",
   "Vérification des fichiers sélectionnés",
@@ -1222,6 +1384,24 @@
   "已存储的应用状态",
   "保存されたアプリ状態",
   "저장된 앱 상태"
+ ],
+ "Saved application state": [
+  "Estado salvo de aplicativos",
+  "État enregistré des applications",
+  "Estado guardado de aplicaciones",
+  "Gesicherter Anwendungszustand",
+  "保存的应用状态",
+  "保存されたアプリの状態",
+  "저장된 응용 프로그램 상태"
+ ],
+ "Select an app to uninstall.": [
+  "Selecione um app para desinstalar.",
+  "Sélectionnez une app à désinstaller.",
+  "Selecciona una app para desinstalar.",
+  "Wähle eine App zum Deinstallieren aus.",
+  "请选择要卸载的 App。",
+  "アンインストールするアプリを選択してください。",
+  "제거할 앱을 선택하세요."
  ],
  "Select at most 32 app-data locations at a time.": [
   "Selecione no máximo 32 locais de dados de apps por vez.",
@@ -1268,6 +1448,33 @@
   "選択したアプリデータ：%@",
   "선택한 앱 데이터: %@"
  ],
+ "Selected apps: %@": [
+  "Apps selecionados: %@",
+  "Apps sélectionnées : %@",
+  "Apps seleccionadas: %@",
+  "Ausgewählte Apps: %@",
+  "所选 App：%@",
+  "選択したアプリ：%@",
+  "선택한 앱: %@"
+ ],
+ "Selected cleanup items changed. Review your selection again.": [
+  "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+  "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+  "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+  "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+  "所选清理项目已更改。请重新检查选择。",
+  "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+  "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
+ ],
+ "Selected files": [
+  "Arquivos selecionados",
+  "Fichiers sélectionnés",
+  "Archivos seleccionados",
+  "Ausgewählte Dateien",
+  "所选文件",
+  "選択したファイル",
+  "선택한 파일"
+ ],
  "Selected files changed or are open. Review them again.": [
   "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.",
   "Les fichiers sélectionnés ont changé ou sont ouverts. Vérifiez-les à nouveau.",
@@ -1294,6 +1501,15 @@
   "共享数据",
   "共有データ",
   "공유 데이터"
+ ],
+ "Show files smaller than 100 MB": [
+  "Mostrar arquivos menores que 100 MB",
+  "Afficher les fichiers de moins de 100 Mo",
+  "Mostrar archivos de menos de 100 MB",
+  "Dateien kleiner als 100 MB anzeigen",
+  "显示小于 100 MB 的文件",
+  "100 MB未満のファイルを表示",
+  "100 MB 미만 파일 표시"
  ],
  "Show smaller files": [
   "Mostrar arquivos menores",
@@ -1375,6 +1591,15 @@
   "电子表格",
   "スプレッドシート",
   "스프레드시트"
+ ],
+ "Startup items": [
+  "Itens de inicialização",
+  "Éléments de démarrage",
+  "Elementos de inicio",
+  "Startobjekte",
+  "启动项",
+  "起動項目",
+  "시작 항목"
  ],
  "System components and other copies": [
   "Componentes do sistema e outras cópias",
@@ -1465,6 +1690,15 @@
   "已包含选中的 App。请选择还要移除的关联数据。未选中及共享的数据将予以保留。",
   "選択したアプリは削除対象に含まれています。一緒に削除する関連データを選択してください。未選択のデータと共有データは保持されます。",
   "선택한 앱은 제거 대상에 포함되어 있습니다. 함께 제거할 관련 데이터를 선택하세요. 선택하지 않은 데이터와 공유 데이터는 유지됩니다."
+ ],
+ "The selected apps are still in use. Finish saving or close them, then try again.": [
+  "Os apps selecionados ainda estão em uso. Termine de salvar ou feche-os e tente novamente.",
+  "Les apps sélectionnées sont encore utilisées. Terminez l’enregistrement ou fermez-les, puis réessayez.",
+  "Las apps seleccionadas siguen en uso. Termina de guardar o ciérralas y vuelve a intentarlo.",
+  "Die ausgewählten Apps werden noch verwendet. Schließe das Sichern ab oder beende sie und versuche es erneut.",
+  "所选 App 仍在使用中。请完成保存或退出后重试。",
+  "選択したアプリはまだ使用中です。保存を完了するかアプリを終了してから、もう一度お試しください。",
+  "선택한 앱이 아직 사용 중입니다. 저장을 마치거나 앱을 종료한 후 다시 시도하세요."
  ],
  "The selected files will be moved to Trash.": [
   "Os arquivos selecionados serão movidos para o Lixo.",
@@ -1691,6 +1925,15 @@
   "設定にある MacSpace のアンインストールを使用してください。",
   "설정에서 MacSpace 제거 옵션을 사용하세요."
  ],
+ "Used by other apps": [
+  "Usado por outros apps",
+  "Utilisé par d’autres apps",
+  "Usado por otras apps",
+  "Von anderen Apps verwendet",
+  "其他 App 正在使用",
+  "ほかのアプリで使用中",
+  "다른 앱에서 사용 중"
+ ],
  "Verification incomplete": [
   "Verificação incompleta",
   "Vérification incomplète",
@@ -1718,6 +1961,15 @@
   "ビデオ",
   "비디오"
  ],
+ "Web data": [
+  "Dados da web",
+  "Données web",
+  "Datos web",
+  "Webdaten",
+  "网页数据",
+  "Webデータ",
+  "웹 데이터"
+ ],
  "Website data": [
   "Dados de sites",
   "Données de sites web",
@@ -1735,248 +1987,5 @@
   "值得检查",
   "確認を推奨",
   "검토 권장"
- ],
- "1 file could not be removed.": [
-  "1 arquivo não pôde ser removido.",
-  "1 fichier n’a pas pu être supprimé.",
-  "No se pudo eliminar 1 archivo.",
-  "1 Datei konnte nicht entfernt werden.",
-  "有 1 个文件无法移除。",
-  "1個のファイルを削除できませんでした。",
-  "파일 1개를 제거할 수 없습니다."
- ],
- "1 item": [
-  "1 item",
-  "1 élément",
-  "1 elemento",
-  "1 Objekt",
-  "1 项",
-  "1項目",
-  "항목 1개"
- ],
- "Show files smaller than 100 MB": [
-  "Mostrar arquivos menores que 100 MB",
-  "Afficher les fichiers de moins de 100 Mo",
-  "Mostrar archivos de menos de 100 MB",
-  "Dateien kleiner als 100 MB anzeigen",
-  "显示小于 100 MB 的文件",
-  "100 MB未満のファイルを表示",
-  "100 MB 미만 파일 표시"
- ],
- "Startup items": [
-  "Itens de inicialização",
-  "Éléments de démarrage",
-  "Elementos de inicio",
-  "Startobjekte",
-  "启动项",
-  "起動項目",
-  "시작 항목"
- ],
- "Used by other apps": [
-  "Usado por outros apps",
-  "Utilisé par d’autres apps",
-  "Usado por otras apps",
-  "Von anderen Apps verwendet",
-  "其他 App 正在使用",
-  "ほかのアプリで使用中",
-  "다른 앱에서 사용 중"
- ],
- "Caches": [
-  "Caches",
-  "Caches",
-  "Cachés",
-  "Caches",
-  "缓存",
-  "キャッシュ",
-  "캐시"
- ],
- "Application support": [
-  "Suporte de aplicativos",
-  "Support des applications",
-  "Soporte de aplicaciones",
-  "Anwendungsunterstützung",
-  "应用支持",
-  "アプリケーションサポート",
-  "응용 프로그램 지원"
- ],
- "Preferences": [
-  "Preferências",
-  "Préférences",
-  "Preferencias",
-  "Einstellungen",
-  "偏好设置",
-  "環境設定",
-  "환경설정"
- ],
- "App containers": [
-  "Contêineres de apps",
-  "Conteneurs des apps",
-  "Contenedores de apps",
-  "App-Container",
-  "App 容器",
-  "アプリのコンテナ",
-  "앱 컨테이너"
- ],
- "Application scripts": [
-  "Scripts de aplicativos",
-  "Scripts des applications",
-  "Scripts de aplicaciones",
-  "Anwendungsskripte",
-  "应用脚本",
-  "アプリケーションスクリプト",
-  "응용 프로그램 스크립트"
- ],
- "Cookies": [
-  "Cookies",
-  "Cookies",
-  "Cookies",
-  "Cookies",
-  "Cookie",
-  "Cookie",
-  "쿠키"
- ],
- "Web data": [
-  "Dados da web",
-  "Données web",
-  "Datos web",
-  "Webdaten",
-  "网页数据",
-  "Webデータ",
-  "웹 데이터"
- ],
- "Logs": [
-  "Registros",
-  "Journaux",
-  "Registros",
-  "Protokolle",
-  "日志",
-  "ログ",
-  "로그"
- ],
- "Saved application state": [
-  "Estado salvo de aplicativos",
-  "État enregistré des applications",
-  "Estado guardado de aplicaciones",
-  "Gesicherter Anwendungszustand",
-  "保存的应用状态",
-  "保存されたアプリの状態",
-  "저장된 응용 프로그램 상태"
- ],
- "Other app data": [
-  "Outros dados de apps",
-  "Autres données des apps",
-  "Otros datos de apps",
-  "Weitere App-Daten",
-  "其他 App 数据",
-  "ほかのアプリデータ",
-  "기타 앱 데이터"
- ],
- "MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved.": [
-  "O MacSpace fecha os apps selecionados antes de desinstalá-los. Dados não selecionados e compartilhados são preservados.",
-  "MacSpace quitte les apps sélectionnées avant de les désinstaller. Les données non sélectionnées et partagées sont conservées.",
-  "MacSpace cierra las apps seleccionadas antes de desinstalarlas. Los datos no seleccionados y compartidos se conservan.",
-  "MacSpace beendet die ausgewählten Apps vor der Deinstallation. Nicht ausgewählte und gemeinsam genutzte Daten bleiben erhalten.",
-  "MacSpace 会在卸载前退出所选 App。未选择及共享的数据将保留。",
-  "MacSpaceは選択したアプリを終了してからアンインストールします。未選択のデータと共有データは保持されます。",
-  "MacSpace가 선택한 앱을 종료한 후 제거합니다. 선택하지 않은 데이터와 공유 데이터는 보존됩니다."
- ],
- "Included with the app": [
-  "Incluído com o app",
-  "Inclus avec l’app",
-  "Incluido con la app",
-  "In der App enthalten",
-  "随 App 一同移除",
-  "アプリと一緒に削除",
-  "앱과 함께 제거됨"
- ],
- "Selected apps: %@": [
-  "Apps selecionados: %@",
-  "Apps sélectionnées : %@",
-  "Apps seleccionadas: %@",
-  "Ausgewählte Apps: %@",
-  "所选 App：%@",
-  "選択したアプリ：%@",
-  "선택한 앱: %@"
- ],
- "%@ app data": [
-  "Dados do app %@",
-  "Données de l’app %@",
-  "Datos de la app %@",
-  "App-Daten von %@",
-  "%@ 的 App 数据",
-  "%@のアプリデータ",
-  "%@ 앱 데이터"
- ],
- "No app data to remove": [
-  "Nenhum dado do app para remover",
-  "Aucune donnée d’app à supprimer",
-  "No hay datos de la app para eliminar",
-  "Keine App-Daten zum Entfernen",
-  "没有可移除的 App 数据",
-  "削除するアプリデータはありません",
-  "제거할 앱 데이터 없음"
- ],
- "Select an app to uninstall.": [
-  "Selecione um app para desinstalar.",
-  "Sélectionnez une app à désinstaller.",
-  "Selecciona una app para desinstalar.",
-  "Wähle eine App zum Deinstallieren aus.",
-  "请选择要卸载的 App。",
-  "アンインストールするアプリを選択してください。",
-  "제거할 앱을 선택하세요."
- ],
- "The selected apps are still in use. Finish saving or close them, then try again.": [
-  "Os apps selecionados ainda estão em uso. Termine de salvar ou feche-os e tente novamente.",
-  "Les apps sélectionnées sont encore utilisées. Terminez l’enregistrement ou fermez-les, puis réessayez.",
-  "Las apps seleccionadas siguen en uso. Termina de guardar o ciérralas y vuelve a intentarlo.",
-  "Die ausgewählten Apps werden noch verwendet. Schließe das Sichern ab oder beende sie und versuche es erneut.",
-  "所选 App 仍在使用中。请完成保存或退出后重试。",
-  "選択したアプリはまだ使用中です。保存を完了するかアプリを終了してから、もう一度お試しください。",
-  "선택한 앱이 아직 사용 중입니다. 저장을 마치거나 앱을 종료한 후 다시 시도하세요."
- ],
- "Protected or unreadable data": [
-  "Dados protegidos ou ilegíveis",
-  "Données protégées ou illisibles",
-  "Datos protegidos o ilegibles",
-  "Geschützte oder nicht lesbare Daten",
-  "受保护或无法读取的数据",
-  "保護されているか読み取れないデータ",
-  "보호되거나 읽을 수 없는 데이터"
- ],
- "Outside your user Library": [
-  "Fora da Biblioteca do seu usuário",
-  "En dehors de votre bibliothèque utilisateur",
-  "Fuera de tu biblioteca de usuario",
-  "Außerhalb deiner Benutzer-Library",
-  "位于用户资源库之外",
-  "ユーザーライブラリの外部",
-  "사용자 라이브러리 외부"
- ],
- "Data preserved": [
-  "Dados preservados",
-  "Données conservées",
-  "Datos conservados",
-  "Daten bleiben erhalten",
-  "数据已保留",
-  "データを保持",
-  "데이터 보존됨"
- ],
- "Review selected files": [
-  "Revisar arquivos selecionados",
-  "Vérifier les fichiers sélectionnés",
-  "Revisar archivos seleccionados",
-  "Ausgewählte Dateien prüfen",
-  "检查所选文件",
-  "選択したファイルを確認",
-  "선택한 파일 검토"
- ],
- "Selected files": [
-  "Arquivos selecionados",
-  "Fichiers sélectionnés",
-  "Archivos seleccionados",
-  "Ausgewählte Dateien",
-  "所选文件",
-  "選択したファイル",
-  "선택한 파일"
  ]
 }

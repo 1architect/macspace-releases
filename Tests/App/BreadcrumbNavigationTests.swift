@@ -21,7 +21,7 @@ final class BreadcrumbNavigationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Navigation", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BreadcrumbModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BreadcrumbModule() })
         await handle.activate(); defer { handle.deactivate() }
         handle.pushGroup("first")
         for _ in 0..<100 where handle.groupPath.count < 1 { try await Task.sleep(for: .milliseconds(5)) }

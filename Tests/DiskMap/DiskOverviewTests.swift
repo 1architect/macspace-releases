@@ -4,7 +4,7 @@ import XCTest
 import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
-final class DiskOverviewTests: XCTestCase {
+final class DiskOverviewTests: DiskSecurityFixtureCase {
     func testLegacyTablesMigrateWithoutRescanningOrLosingMapIdentityAndEvidence() throws {
         let home = "/fixture", root = home + "/Downloads"
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -23,6 +23,7 @@ final class DiskOverviewTests: XCTestCase {
             try legacy.saveState(state); try legacy.seal()
         }
         let db = try DiskDatabase(url: url, root: root, home: home)
+        try trustFixtureCache(url)
         XCTAssertFalse(db.compact)
         try db.compactReviewIndex()
         XCTAssertTrue(db.compact); XCTAssertTrue(db.directoryParentIDs)
@@ -42,6 +43,7 @@ final class DiskOverviewTests: XCTestCase {
         let cache = base.appendingPathComponent("index"), root = "/missing-fixture/Downloads"
         do {
             let db = try DiskDatabase(url: cache.appendingPathExtension("sqlite"), root: root, home: "/missing-fixture")
+        try trustFixtureCache(cache.appendingPathExtension("sqlite"))
             try db.put(DiskDirectory(path: root, directBytes: 123456, bytes: 123456, readable: false))
             var metadata = DiskIndex(root: root); metadata.storageRevision = 4; metadata.browseVersion = DiskIndex.browseSchemaVersion; metadata.summaryVersion = DiskIndex.summarySchemaVersion
             try db.saveState(metadata); try db.seal()

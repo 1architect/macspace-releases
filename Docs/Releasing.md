@@ -1,8 +1,8 @@
 # Releasing
 
 How a MacSpace version gets from macspace-releases to people's Macs, and how installed copies update.
-Signing, notarization, update keys and publishing also stay private;
-credentials never belong in macspace-releases.
+Signing assets, notarization credentials, private update keys and publishing stay private.
+Assembly/profile-validation helpers are public; credentials never belong in macspace-releases.
 
 ## Versions and tags
 
@@ -30,6 +30,54 @@ Three channels deliver it, and all three move together:
    never offered to anyone.
 3. **Homebrew**: the cask `macspace` in [1architect/homebrew-macspace](https://github.com/1architect/homebrew-macspace)
    (`brew install --cask 1architect/macspace/macspace`). It is marked `auto_updates`, so Homebrew leaves updating to Sparkle.
+
+## Local signing and provisioning setup
+
+The encrypted metadata implementation uses macOS Data Protection Keychain access groups. Both the GUI and the profile-bearing CLI
+worker need authorizing profiles. This is a one-time setup per build Mac, repeated when a profile expires or its authorized
+certificate/App ID changes; ordinary builds do not require downloading them again.
+
+After obtaining the two Developer ID profiles, store validated copies with:
+
+```bash
+python3 Scripts/StoreMetadataProfiles.py /path/to/MacSpace.provisionprofile /path/to/MacSpaceCli.provisionprofile
+```
+
+The default persistent location is:
+
+```text
+~/Library/Application Support/MacSpace/Signing/Profiles/
+    MacSpace.provisionprofile
+    MacSpaceCli.provisionprofile
+```
+
+The directory is private (0700) and files are 0600, outside all repositories. The setup command validates both profiles and their
+common local signing identity before storing them; it does not copy certificate private keys or notarization credentials. Keep
+these files with the machine's private signing assets, and exclude them from source control.
+
+`Scripts/Assemble.sh` discovers this location automatically and selects a local certificate authorized by both profiles. Explicit
+`SIGN_IDENTITY` choices are respected and validated, and duplicate certificate display names are disambiguated by authorization.
+A missing, expired or mismatched profile stops the build before existing output is replaced.
+
+Overrides for another local directory or CI are:
+
+- `METADATA_PROFILES_DIR`: directory containing the two stable filenames above.
+- `METADATA_APP_PROFILE` / `METADATA_CLI_PROFILE`: individual profile paths, taking precedence over the directory.
+
+The private `Release/Scripts/Release.sh` can use the default store on the signing Mac when it invokes `Scripts/Assemble.sh`. An
+isolated CI runner must restore both files from private release assets and pass the two path variables (or the directory variable).
+Never add these profiles or signing credentials to the public source checkout.
+
+The app and nested `Contents/Helpers/MacSpaceCli.app` worker embed separate profiles and request only the exact metadata group.
+The compatibility `Contents/MacOS/MacSpaceCli` remains unentitled for helper registration and forwards other packaged commands to
+the worker. Notarization includes both bundles; both tickets are stapled and both bundles receive static distribution checks.
+Notarization alone is not evidence that restricted entitlements are provisioned correctly or that runtime Keychain behavior has
+passed the no-popup matrix.
+
+For contributors without a Developer ID, `swift build` and `swift test` need no signing assets. An app can be assembled with
+`SIGN_IDENTITY=- NOTARY_PROFILE= Scripts/Assemble.sh`. This is an unprovisioned local build, with the protected persistent-key
+features described in [CONTRIBUTING.md](../CONTRIBUTING.md#build-and-test) unavailable. A different persistent-key backend for
+unprovisioned apps would require independent no-dialog and access-control validation; it is not enabled as a fallback.
 
 ## Making a release
 

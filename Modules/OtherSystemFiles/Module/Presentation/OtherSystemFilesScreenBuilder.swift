@@ -72,7 +72,7 @@ enum OtherSystemFilesScreenBuilder {
     }
 
     /// The bar, then what MacSpace frees, on its own and row by row, then everything else macOS counts as purgeable, row by row.
-    static func screen(_ snapshot: PurgeableSnapshot) -> Screen {
+    static func screen(_ snapshot: PurgeableSnapshot, cleanNonRecoverable: Bool = false) -> Screen {
         guard snapshot.services != nil || !snapshot.updates.isEmpty || !snapshot.documents.isEmpty else {
             return Screen(title: loc("Other System Files"), widgets: [.banner(Banner(id: "unavailable", severity: .warning,
                 title: loc("macOS's purge service did not answer"),
@@ -87,7 +87,7 @@ enum OtherSystemFilesScreenBuilder {
         }
         let hero = UsageBar(id: "purgeable", title: loc("Outside System Data"), totalBytes: snapshot.totalBytes + snapshot.updateBytes, segments: blocksWithItems(snapshot),
                             footnote: loc("Files macOS deletes on its own when the disk runs low. System Settings counts this space as available."))
-        return cleanupChoices(Screen(title: loc("Other System Files"), hero: hero, widgets: widgets), snapshot)
+        return cleanupChoices(Screen(title: loc("Other System Files"), hero: hero, widgets: widgets), snapshot, cleanNonRecoverable: cleanNonRecoverable)
     }
 
     /// "Up to": the size is macOS's estimate, which can count more than macOS then deletes. No button while MacSpace is already
@@ -200,7 +200,8 @@ enum OtherSystemFilesScreenBuilder {
                                                           message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
                                                           confirmTitle: loc("Free")),
                                requires: [.privilegedHelper], workingTitle: loc("Freeing space")),
-                choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }), persistenceKey: "backups:" + destination.id)
+                choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }),
+                scope: "backups:" + destination.id)
         }
         return group
     }

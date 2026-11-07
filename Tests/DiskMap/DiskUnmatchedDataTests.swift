@@ -6,7 +6,7 @@ import MacSpaceDiskMapPrivileged
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskUnmatchedDataTests: XCTestCase {
+final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
     private final class Progress: @unchecked Sendable {
         private let lock = NSLock()
         private var value: [String] = []

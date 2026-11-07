@@ -4,7 +4,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskBrowseTests: XCTestCase {
+final class DiskBrowseTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (URL, DiskDatabase) throws -> Void) throws {
         let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         let root = home.appendingPathComponent("Downloads")

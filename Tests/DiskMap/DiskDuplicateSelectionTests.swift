@@ -5,7 +5,7 @@ import MacSpaceSdk
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskDuplicateSelectionTests: XCTestCase {
+final class DiskDuplicateSelectionTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (URL, URL, DiskDatabase, DiskSelectionStorage) async throws -> Void) async throws {
         let home = URL(fileURLWithPath: "/private/tmp/duplicate-selection-" + UUID().uuidString)
         let root = home.appendingPathComponent("Downloads"), source = home.appendingPathComponent("cache/source.sqlite")

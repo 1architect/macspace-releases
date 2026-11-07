@@ -27,6 +27,7 @@
 "Allow Full Disk Access" = "전체 디스크 접근 허용";
 "Allow Notifications" = "알림 허용";
 "Appearance" = "모양";
+"Apple Intelligence availability could not be verified. No system assets were purged." = "Apple Intelligence의 사용 가능 여부를 확인할 수 없습니다. 시스템 리소스는 삭제되지 않았습니다.";
 "Applies the Debloat policies you turn on." = "활성화한 Debloat 정책을 적용합니다.";
 "Approve in Settings" = "설정에서 승인";
 "Approve the helper" = "보조 프로그램 승인";
@@ -138,6 +139,7 @@
 "Permissions" = "권한";
 "Press Install helper. If macOS still does not recognise it, run in Terminal: /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register and send the message it prints." = "보조 프로그램 설치를 누르세요. macOS가 인식하지 못하면 터미널에서 /Applications/MacSpace.app/Contents/MacOS/MacSpaceCli helper --register 를 실행하고 출력 메시지를 보내주세요.";
 "Privileged helper" = "권한 보조 프로그램";
+"Protected metadata is unavailable." = "보호된 메타데이터를 사용할 수 없습니다.";
 "Quit" = "종료";
 "Quit MacSpace" = "MacSpace 종료";
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "MacSpace를 종료하고 다시 복사하세요. 이 사본에 부여한 권한은 다음 업데이트 시 사라집니다.";

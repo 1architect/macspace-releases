@@ -30,15 +30,15 @@ public struct OtherSystemFilesModule: MacSpaceModule {
 
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
         guard let snapshot = await store.status(removing: CloudDownloadRemovals.shared.current()) else { return nil }
-        return (OtherSystemFilesScreenBuilder.tile(snapshot), OtherSystemFilesScreenBuilder.screen(snapshot))
+        return (OtherSystemFilesScreenBuilder.tile(snapshot), OtherSystemFilesScreenBuilder.screen(snapshot, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        OtherSystemFilesScreenBuilder.screen(await snapshot())
+        OtherSystemFilesScreenBuilder.screen(await snapshot(), cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID))
     }
 
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        OtherSystemFilesScreenBuilder.screen(await snapshot(progress: progress))
+        OtherSystemFilesScreenBuilder.screen(await snapshot(progress: progress), cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID))
     }
 
     /// The last reading, with how far the removals of cloud downloads running now are: read live, not cached with the figures.
@@ -49,11 +49,20 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     }
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        do { for key in ["ids", "all"] { _ = try Selection.decodeIDs(request.parameters[key]) } }
+        catch { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
+
+        if request.parameters["automatic"] == "1" {
+            if request.actionID == "deleteBackups" { return .failed(loc("Backup disks require manual selection.")) }
+            if request.actionID == "freeSnapshots", !context.options.bool(CleanupBatch.nonRecoverableOptionID) {
+                return .failed(loc("Automatic cleanup is off for items that cannot be recovered."))
+            }
+        }
         var result = await handle(request, context: context, progress: progress)
         if result.refresh {
             await store.reconcile(request)
             let snapshot = await snapshot(maxAge: .infinity)
-            result.presentation = ModulePresentation(tile: OtherSystemFilesScreenBuilder.tile(snapshot), screen: OtherSystemFilesScreenBuilder.screen(snapshot))
+            result.presentation = ModulePresentation(tile: OtherSystemFilesScreenBuilder.tile(snapshot), screen: OtherSystemFilesScreenBuilder.screen(snapshot, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
         }
         return result
     }
@@ -75,8 +84,15 @@ public struct OtherSystemFilesModule: MacSpaceModule {
             return result
         case "deleteBackups":
             progress(ActionProgress(message: loc("Freeing space")))
-            let stamps = Selection.ids(request.parameters["ids"]).compactMap { $0.hasPrefix("backup:") ? String($0.dropFirst("backup:".count)) : nil }
-            return await Self.deleteBackups(stamps, from: request.parameters["mountPoint"] ?? "", channel: context.privileged)
+            let ids = Selection.ids(request.parameters["ids"])
+            guard !ids.isEmpty, ids.allSatisfy({ $0.hasPrefix("backup:") }) else { return .failed(loc("Already gone")) }
+            let stamps = ids.map { String($0.dropFirst("backup:".count)) }
+            let current = await snapshot(maxAge: 0)
+            let mount = request.parameters["mountPoint"] ?? ""
+            guard current.timeMachine.backingUp == false,
+                  let disk = current.timeMachine.disks.first(where: { $0.destination.mountPoint == mount }),
+                  let backups = disk.backups, Set(stamps).isSubset(of: Set(backups.dropLast().map(\.stamp))) else { return .failed(loc("Already gone")) }
+            return await Self.deleteBackups(stamps, from: mount, channel: context.privileged)
         default:
             return .failed(loc("Unknown action \(request.actionID)."))
         }
@@ -85,7 +101,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// Automatic cleanup uses the saved choices, current availability and the same guarded handlers as manual cleanup.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
         let snapshot = await snapshot(maxAge: 0)
-        return await CleanupBatch.automatic(screen: OtherSystemFilesScreenBuilder.screen(snapshot), context: context, perform: perform)
+        return await CleanupBatch.automatic(screen: OtherSystemFilesScreenBuilder.screen(snapshot, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)), context: context, perform: perform)
     }
 
     /// Purges, and when macOS keeps all or much of the files, asks it again in the background at the urgency of a critically full
@@ -122,7 +138,7 @@ public struct OtherSystemFilesModule: MacSpaceModule {
     /// found (`PurgeableDocuments.isCloudFolder` checks it again). What it freed, measured on the volume, goes to the history.
     /// Deletes Time Machine's local snapshots except the two it still needs (`TimeMachine.LocalSnapshots`), read again first, one by
     /// one with `tmutil`, as the user (no helper needed, measured on 26B5101f). Never while a backup runs or while that is unknown, and
-    /// never in automatic cleaning. The space freed is measured on the volume; what was deleted is read back from the list.
+    /// automatic only with the nonrecoverable opt-in. Space freed is measured on the volume; deletion is read back from the list.
     static func freeSnapshots() -> ActionResult {
         guard let snapshots = TimeMachine.localSnapshots() else { return .failed(loc("Couldn't free it"), details: ["tmutil listlocalsnapshots did not answer."]) }
         let removable = snapshots.removable

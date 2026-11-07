@@ -5,7 +5,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskDuplicatePipelineTests: XCTestCase {
+final class DiskDuplicatePipelineTests: DiskSecurityFixtureCase {
     private actor Storage: DiskDuplicateStorage {
         let database: DiskDatabase
         var removeBeforeSample: String?

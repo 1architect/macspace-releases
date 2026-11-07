@@ -1,5 +1,5 @@
 import Foundation
-import SQLite3
+import MacSpaceCipher
 
 /// Disk-backed staging for a complete native refresh. Only completely enumerated directories replace file rows;
 /// unreadable/dataless branches retain their prior measurements and memberships.
@@ -35,7 +35,7 @@ extension DiskDatabase {
             var changed: [(String, DiskFile)] = []
             try query("SELECT s.link,s.bytes,s.logical,s.uid,s.modified FROM refresh_entries s JOIN refresh_dirs r ON r.id=s.parent AND r.complete=1 JOIN entries e ON e.link=s.link AND e.link<>'' WHERE s.link<>'' AND s.link>? AND e.parent NOT IN (SELECT id FROM refresh_dirs WHERE complete=1) AND (e.bytes IS NOT s.bytes OR e.logical IS NOT s.logical OR e.uid IS NOT s.uid OR e.modified IS NOT s.modified) GROUP BY s.link ORDER BY s.link LIMIT 256", [.text(after)]) {
                 let file = DiskFile(path: "", bytes: Self.number($0, 1), logicalBytes: Self.number($0, 2), ownerUID: Self.uid($0, 3),
-                    modifiedAt: sqlite3_column_type($0, 4) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double($0, 4)))
+                    modifiedAt: msc_sqlite3_column_type($0, 4) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: msc_sqlite3_column_double($0, 4)))
                 changed.append((Self.text($0, 0), file))
             }
             if changed.isEmpty { break }

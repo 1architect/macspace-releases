@@ -42,21 +42,31 @@ Run the tests:
 swift test
 ```
 
-Build the app and install it in `/Applications`:
+Build without a Developer ID or Apple account:
 
 ```bash
-INSTALL=1 Scripts/Assemble.sh
+SIGN_IDENTITY=- NOTARY_PROFILE= Scripts/Assemble.sh
 ```
 
-`Scripts/Assemble.sh` builds `Build/MacSpace.app` and signs it. `INSTALL=1` also quits a running copy and copies the app to
-`/Applications`. It asks for an administrator password if that folder is not writable. The header of the script lists every setting
-(`CONFIG`, `VERSION`, `BUILD`, `SIGN_IDENTITY`, `OUT_DIR` and more). To force an ad hoc signature, use `SIGN_IDENTITY=-`.
+This creates an ad-hoc `Build/MacSpace.app`. It does not install or open it. Add `INSTALL=1` if you want the script to quit a running
+copy and install into `/Applications`; macOS may request administrator approval for that explicit installation. An ad-hoc signature
+changes on rebuilding, so Full Disk Access may need granting again.
 
-**Run the app from `/Applications`.** The privileged helper registers only from an Applications folder. A copy that runs from
-anywhere else cannot install it.
+Compilation and fixture tests do not require the maintainer's certificates, profiles, notarization credentials or update keys.
+Ad-hoc builds omit restricted Keychain entitlements, so they launch without provisioning profiles. The current persistent encrypted
+Apps and files inventory and owner operations requiring authenticated durable recovery remain unavailable in these builds; they
+refuse safely instead of creating a plaintext cache or requesting Keychain interaction. Other source-build functionality remains
+subject to its normal permissions and signing requirements. The privileged helper requires a signing identity trusted by its caller
+checks. An unprovisioned persistent-key backend is not currently implemented.
 
-A build without `SPARKLE_PUBLIC_KEY` never checks for updates. The signing identity, the notarization profile and the update keys
-belong to the maintainer and are not in this repository. You do not need them to build, run or test MacSpace.
+For a fully provisioned signed build, use your authorized signing identity and matching profiles; see
+[Releasing.md](Docs/Releasing.md#local-signing-and-provisioning-setup). Do not reuse the maintainer's private signing material.
+`METADATA_PROFILES_DIR` chooses your local profile store; `METADATA_APP_PROFILE` and `METADATA_CLI_PROFILE` override individual
+files. The script validates profile scope, expiry and certificate authorization before building and selects the certificate common
+to both profiles, including when certificates have identical display names.
+
+**Run the app from `/Applications` when installing the privileged helper.** A copy elsewhere cannot register it.
+A build without `SPARKLE_PUBLIC_KEY` never checks for updates.
 
 `Scripts/SelfTest.sh` checks the installed app on your own Mac. It switches Debloat settings off and puts them back, and it writes
 its report to `results/`, which Git ignores. Read it before you run it. It is optional.

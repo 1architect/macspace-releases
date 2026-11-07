@@ -4,7 +4,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskDatabaseTests: XCTestCase {
+final class DiskDatabaseTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (URL, DiskDatabase) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("disk-db-" + UUID().uuidString).appendingPathComponent("Downloads").resolvingSymlinksInPath()
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -4,7 +4,7 @@ import MacSpaceSdk
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskReviewLatencyTests: XCTestCase {
+final class DiskReviewLatencyTests: DiskSecurityFixtureCase {
     private struct Options: OptionStore {
         func bool(_ id: String) -> Bool { false }
         func string(_ id: String) -> String { "" }

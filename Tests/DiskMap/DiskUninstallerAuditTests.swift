@@ -4,7 +4,7 @@ import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
 /// Read-only catalog audit using an isolated index backup; never executes an uninstall or opens an app.
-final class DiskUninstallerAuditTests: XCTestCase {
+final class DiskUninstallerAuditTests: DiskSecurityFixtureCase {
     func testLocalUninstallerAndUnmatchedDataAudit() throws {
         guard let source = ProcessInfo.processInfo.environment["MACSPACE_UNINSTALLER_AUDIT_CACHE"] else {
             throw XCTSkip("Set MACSPACE_UNINSTALLER_AUDIT_CACHE to an isolated SQLite backup")

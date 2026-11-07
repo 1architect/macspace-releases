@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>com.macspace.cli</string>
+<key>CFBundleExecutable</key><string>MacSpaceCli</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleName</key><string>MacSpace CLI Worker</string>
+<key>CFBundleShortVersionString</key><string>__VERSION__</string>
+<key>CFBundleVersion</key><string>__BUILD__</string>
+<key>LSBackgroundOnly</key><true/>
+</dict></plist>

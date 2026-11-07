@@ -13,9 +13,12 @@
 "Already gone" = "Ya borrado";
 "App container caches" = "Cachés de contenedores de apps";
 "Apps download them again if they need them." = "Las apps los vuelven a descargar si los necesitan.";
+"Automatic cleanup is off for items that cannot be recovered." = "La limpieza automática está desactivada para los elementos que no se pueden recuperar.";
 "Backing up now" = "Haciendo copia ahora";
+"Backup disks require manual selection." = "Los discos de copia de seguridad requieren una selección manual.";
 "Backups not readable" = "Copias ilegibles";
 "Cannot be undone" = "No se puede deshacer";
+"Clean non recoverable items automatically" = "Limpiar automáticamente los elementos irrecuperables";
 "Cloud files on this Mac" = "Archivos de la nube en este Mac";
 "Connect it to see its backups and free old ones." = "Conéctalo para ver sus copias y liberar las antiguas.";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Copias de archivos de la nube guardadas en este Mac. Eliminarlas deja los archivos en la nube.";
@@ -53,6 +56,7 @@
 "Removing %@" = "Eliminando %@";
 "Removing %lld%%, %@" = "Eliminando %lld %%, %@";
 "Removing downloads" = "Eliminando descargas";
+"Selected cleanup items changed. Review your selection again." = "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.";
 "Spotlight index" = "Índice de Spotlight";
 "System assets" = "Recursos del sistema";
 "That cloud folder is no longer on this Mac" = "Esa carpeta de la nube ya no está en este Mac";

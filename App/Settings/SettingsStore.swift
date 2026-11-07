@@ -38,11 +38,12 @@ public final class SettingsStore: @unchecked Sendable {
     /// counts as English).
     public func lastTile(module id: String, language: String = SettingsStore.language) -> Tile? {
         guard (defaults.string(forKey: Self.key(id, "lastTileLanguage")) ?? "en") == language else { return nil }
-        return defaults.data(forKey: Self.key(id, "lastTile")).flatMap { try? JSONDecoder().decode(Tile.self, from: $0) }
+        guard let data = defaults.data(forKey: Self.key(id, "lastTile")), data.count <= 1_048_576 else { return nil }
+        return try? JSONDecoder().decode(CachedTile.self, from: data).tile
     }
 
     public func setLastTile(_ tile: Tile, module id: String, language: String = SettingsStore.language) {
-        guard let data = try? JSONEncoder().encode(tile) else { return }
+        guard let data = try? JSONEncoder().encode(CachedTile(tile)), data.count <= 1_048_576 else { return }
         defaults.set(data, forKey: Self.key(id, "lastTile"))
         defaults.set(language, forKey: Self.key(id, "lastTileLanguage"))
     }
@@ -120,5 +121,49 @@ public final class SettingsStore: @unchecked Sendable {
     struct UserDefaultsBox: @unchecked Sendable {
         let value: UserDefaults
         init(_ value: UserDefaults) { self.value = value }
+    }
+}
+
+/// Only display fields are decoded, including when reading a legacy full Tile object.
+private struct CachedTile: Codable {
+    var title: String
+    var figure: String?
+    var status: String
+    var needsAttention: Bool?
+    var graphic: CachedGraphic?
+    var reclaimableBytes: UInt64?
+    init(_ tile: Tile) {
+        title = tile.title; figure = tile.figure; status = tile.status
+        needsAttention = tile.needsAttention; graphic = tile.graphic.map(CachedGraphic.init); reclaimableBytes = tile.reclaimableBytes
+    }
+    var tile: Tile { Tile(title: title, figure: figure, status: status, needsAttention: needsAttention ?? false,
+                          graphic: graphic?.value, reclaimableBytes: reclaimableBytes) }
+}
+
+private struct CachedSegment: Codable {
+    var id: String; var label: String; var bytes: UInt64; var tone: Tone
+    init(_ value: UsageSegment) { id = value.id; label = value.label; bytes = value.bytes; tone = value.tone }
+    var value: UsageSegment { UsageSegment(id: id, label: label, bytes: bytes, tone: tone) }
+}
+private enum CachedGraphic: Codable {
+    case blocks([CachedSegment])
+    case dots([TileDot])
+    case state(on: Bool, alarming: Bool, detail: String, meter: Double?, meterIsActionable: Bool)
+    case gauge(value: Double, label: String, sublabel: String)
+    init(_ value: TileGraphic) {
+        switch value {
+        case let .blocks(parts): self = .blocks(parts.map(CachedSegment.init))
+        case let .dots(parts): self = .dots(parts)
+        case let .state(on, alarming, detail, meter, actionable): self = .state(on: on, alarming: alarming, detail: detail, meter: meter, meterIsActionable: actionable)
+        case let .gauge(value, label, sublabel): self = .gauge(value: value, label: label, sublabel: sublabel)
+        }
+    }
+    var value: TileGraphic {
+        switch self {
+        case let .blocks(parts): return .blocks(parts.map(\.value))
+        case let .dots(parts): return .dots(parts)
+        case let .state(on, alarming, detail, meter, actionable): return .state(on: on, alarming: alarming, detail: detail, meter: meter, meterIsActionable: actionable)
+        case let .gauge(value, label, sublabel): return .gauge(value: value, label: label, sublabel: sublabel)
+        }
     }
 }

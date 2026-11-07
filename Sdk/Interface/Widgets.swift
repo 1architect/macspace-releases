@@ -785,11 +785,26 @@ public struct Selection: Codable, Equatable, Sendable {
         note = try container.decodeIfPresent(String.self, forKey: .note)
     }
 
-    /// The `ids` parameter for these ids, and back.
-    public static func parameter(_ ids: [String]) -> String { ids.joined(separator: "\n") }
-    public static func ids(_ parameter: String?) -> [String] {
-        (parameter ?? "").split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+    /// Opaque IDs have no separator semantics. Legacy delimiter payloads never authorize work.
+    public static let maximumIDs = 100_000
+    public static let maximumParameterBytes = 8 * 1024 * 1024
+    public enum InvalidIDs: Error { case malformed }
+    public static func parameter(_ ids: [String]) -> String {
+        guard ids.count <= maximumIDs, ids.allSatisfy({ !$0.isEmpty && $0.utf8.count <= 16_384 }),
+              Set(ids).count == ids.count, let data = try? JSONEncoder().encode(ids),
+              data.count <= maximumParameterBytes else { return "ids:v1:invalid" }
+        return "ids:v1:" + data.base64EncodedString()
     }
+    public static func decodeIDs(_ parameter: String?) throws -> [String] {
+        guard let parameter else { return [] }
+        guard parameter.utf8.count <= maximumParameterBytes * 4 / 3 + 16, parameter.hasPrefix("ids:v1:"),
+              let data = Data(base64Encoded: String(parameter.dropFirst(7))), data.count <= maximumParameterBytes,
+              let ids = try? JSONDecoder().decode([String].self, from: data), ids.count <= maximumIDs,
+              ids.allSatisfy({ !$0.isEmpty && $0.utf8.count <= 16_384 }), Set(ids).count == ids.count else { throw InvalidIDs.malformed }
+        return ids
+    }
+    /// Display/reconciliation convenience. Mutation entry points must use the fallible decoder.
+    public static func ids(_ parameter: String?) -> [String] { (try? decodeIDs(parameter)) ?? [] }
 
     public func effectiveIDs(_ selected: Set<String>) -> Set<String> {
         let selected = selected.intersection(choices.keys)

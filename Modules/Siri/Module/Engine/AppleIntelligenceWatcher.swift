@@ -118,35 +118,33 @@ public struct AppleIntelligenceWatchStore {
     }()
 
     public func load() -> AppleIntelligenceWatchRecord? {
-        guard let data = try? Data(contentsOf: stateURL) else { return nil }
+        guard let boundary = try? PrivateFile(stateURL), let data = try? boundary.readMigratingLegacyPermissions(maximum: Self.maximumLogBytes) else { return nil }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try? decoder.decode(AppleIntelligenceWatchRecord.self, from: data)
     }
 
     public func save(_ record: AppleIntelligenceWatchRecord) throws {
-        try fileManager.createDirectory(at: stateURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Self.encoder.encode(record).write(to: stateURL, options: .atomic)
+        let boundary = try PrivateFile(stateURL, createDirectories: true)
+        _ = try boundary.readMigratingLegacyPermissions(maximum: Self.maximumLogBytes)
+        try boundary.write(Self.encoder.encode(record))
     }
 
     /// Appends one JSON line per transition or alert; the log is rotated to a single `.1` file past the size limit.
     public func append(_ outcome: AppleIntelligenceWatchOutcome, status: AppleIntelligenceGuardStatus) throws {
         struct Event: Encodable { let at: Date; let state: AppleIntelligenceGuardState; let previous: AppleIntelligenceGuardState?; let alert: AppleIntelligenceWatchAlert?; let reasons: [String] }
-        try fileManager.createDirectory(at: eventLogURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let size = (try? fileManager.attributesOfItem(atPath: eventLogURL.path)[.size] as? NSNumber)?.intValue, size > Self.maximumLogBytes {
-            let rotated = eventLogURL.appendingPathExtension("1")
-            try? fileManager.removeItem(at: rotated)
-            try fileManager.moveItem(at: eventLogURL, to: rotated)
+        let boundary = try PrivateFile(eventLogURL, createDirectories: true)
+        var previous = try boundary.readMigratingLegacyPermissions(maximum: Self.maximumLogBytes * 2) ?? Data()
+        if previous.count > Self.maximumLogBytes {
+            let rotated = try PrivateFile(eventLogURL.appendingPathExtension("1"), createDirectories: true)
+            _ = try rotated.readMigratingLegacyPermissions(maximum: Self.maximumLogBytes * 2)
+            try rotated.write(previous)
+            previous = Data()
         }
-        var line = try Self.encoder.encode(Event(at: status.generatedAt, state: status.state, previous: outcome.previous?.state,
+        let line = try Self.encoder.encode(Event(at: status.generatedAt, state: status.state, previous: outcome.previous?.state,
                                                  alert: outcome.alert, reasons: status.reasons))
-        line.append(0x0A)
-        if let handle = try? FileHandle(forWritingTo: eventLogURL) {
-            defer { try? handle.close() }
-            try handle.seekToEnd()
-            try handle.write(contentsOf: line)
-        } else {
-            try line.write(to: eventLogURL, options: .atomic)
-        }
+        guard line.count <= Self.maximumLogBytes else { throw PrivateFile.Refusal() }
+        previous.append(line); previous.append(0x0A)
+        try boundary.write(previous)
     }
 }

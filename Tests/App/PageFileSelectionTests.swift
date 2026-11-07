@@ -136,7 +136,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
         await handle.activate(); defer { handle.deactivate() }
         func page(_ id: String, bytes: UInt64) -> Screen {
             Screen(title: "Files", widgets: [.list(ListWidget(id: "files", rows: [Row(id: id, title: id)]))],
@@ -158,7 +158,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
         await handle.activate(); defer { handle.deactivate() }
         var screen = Screen(title: "Files", widgets: [.list(ListWidget(id: "files", rows: [Row(id: "one", title: "One")]))],
                             selection: Selection(action: Action(id: "freeFiles", title: "Free"), choices: ["one": 4096], scope: "files", partial: true))
@@ -171,7 +171,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in GraphSelectionModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in GraphSelectionModule() })
         await handle.activate(); defer { handle.deactivate() }
         XCTAssertNil(handle.activeSelection)
         handle.pushGroup("segment:files")
@@ -190,7 +190,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
         await handle.activate(); defer { handle.deactivate() }
         let page = Screen(title: "Partial", widgets: [.list(ListWidget(id: "files", rows: [Row(id: "file", title: "File")]))],
                           selection: Selection(action: Action(id: "freeFiles", title: "Free"), choices: ["file": 4096], scope: "partial", partial: true))
@@ -204,7 +204,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first), reads = SelectionPageReads()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule(reads: reads) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule(reads: reads) })
         await handle.activate(); defer { handle.deactivate() }
         let root = try XCTUnwrap(handle.activeSelection)
         handle.toggle("file:0", in: root)
@@ -236,7 +236,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in SessionSelectionModule(gate: gate) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in SessionSelectionModule(gate: gate) })
         await handle.activate()
         return handle
     }
@@ -334,7 +334,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first), snapshots = BulkSelectionSnapshots()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BulkSelectionModule(snapshots: snapshots) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BulkSelectionModule(snapshots: snapshots) })
         await handle.activate(); defer { handle.deactivate() }
         handle.toggle("one", in: try XCTUnwrap(handle.activeSelection))
         await handle.refresh(quiet: true)
@@ -352,7 +352,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first), snapshots = BulkSelectionSnapshots()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BulkSelectionModule(snapshots: snapshots) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in BulkSelectionModule(snapshots: snapshots) })
         await handle.activate(); defer { handle.deactivate() }
         handle.toggleAll("category", in: try XCTUnwrap(handle.activeSelection))
         for _ in 0..<100 where handle.activeSelection?.selection?.bulk == nil { await Task.yield() }
@@ -460,7 +460,7 @@ final class PageFileSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule(reads: SelectionPageReads()) })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule(reads: SelectionPageReads()) })
         await handle.activate(); defer { handle.deactivate() }
         handle.toggle("file:0", in: try XCTUnwrap(handle.activeSelection))
         for (name, size) in [("wide", CGSize(width: 1448, height: 900)), ("compact", CGSize(width: 700, height: 490))] {

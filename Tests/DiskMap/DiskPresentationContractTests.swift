@@ -6,7 +6,7 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
-final class DiskPresentationContractTests: XCTestCase {
+final class DiskPresentationContractTests: DiskSecurityFixtureCase {
     private let home = FileManager.default.homeDirectoryForCurrentUser.path
 
     private func identity(_ inode: UInt64 = 1) -> FileReviewIdentity {

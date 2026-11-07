@@ -27,12 +27,12 @@ public struct SystemDataModule: MacSpaceModule {
     }
 
     public func screen(context: ModuleContext) async -> Screen {
-        SystemDataScreenBuilder.screen(await snapshot(context: context))
+        SystemDataScreenBuilder.screen(await snapshot(context: context), cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID))
     }
 
     /// The page, with the scan's progress: the paths measured, then the helper's measuring (`SystemDataStore`).
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
-        SystemDataScreenBuilder.screen(await snapshot(context: context, progress: progress))
+        SystemDataScreenBuilder.screen(await snapshot(context: context, progress: progress), cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID))
     }
 
     public func status(context: ModuleContext) async -> (tile: Tile, screen: Screen)? {
@@ -40,7 +40,7 @@ public struct SystemDataModule: MacSpaceModule {
         snapshot.choices = CacheChoices.load().applying(context.cleanupChoices)
         snapshot.logFloor = SystemLogFloor.load()
         snapshot.cleaner = CacheCleaner.read(context)
-        return (SystemDataScreenBuilder.tile(snapshot), SystemDataScreenBuilder.screen(snapshot))
+        return (SystemDataScreenBuilder.tile(snapshot), SystemDataScreenBuilder.screen(snapshot, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
     }
 
     /// The scan, with what the user chose on the caches page and in Settings, which changes without the Mac changing.
@@ -57,12 +57,19 @@ public struct SystemDataModule: MacSpaceModule {
     static let choiceActions: Set<String> = ["saveCacheChoice"]
 
     public func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        do { for key in ["ids", "all"] { _ = try Selection.decodeIDs(request.parameters[key]) } }
+        catch { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
+
+        if request.parameters["automatic"] == "1", ["emptyTrash", "eraseUnifiedLog", "deleteVersions", "cleanAll"].contains(request.actionID),
+           !context.options.bool(CleanupBatch.nonRecoverableOptionID) {
+            return .failed(loc("Automatic cleanup is off for items that cannot be recovered."))
+        }
         if Self.choiceActions.contains(request.actionID) { return Self.choose(request) }
         let original = await snapshot(maxAge: 600, context: context)
         await store.beginMutation()
         var result = await handle(request, snapshot: original, context: context, progress: progress)
         if let updated = await store.reconcile(request, privileged: context.privileged, choices: CacheChoices.load().applying(context.cleanupChoices), cleaner: CacheCleaner.read(context)) {
-            result.presentation = ModulePresentation(tile: SystemDataScreenBuilder.tile(updated), screen: SystemDataScreenBuilder.screen(updated))
+            result.presentation = ModulePresentation(tile: SystemDataScreenBuilder.tile(updated), screen: SystemDataScreenBuilder.screen(updated, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
         }
         return result
     }
@@ -99,7 +106,10 @@ public struct SystemDataModule: MacSpaceModule {
         case "freeCaches":
             // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
             let ids = Set(Selection.ids(request.parameters["ids"]))
-            return await Self.freeCaches(CachesPage.entries(snapshot).filter { ids.contains($0.id) }, in: snapshot, quitApps: request.parameters["automatic"] != "1", progress: progress)
+            let available = CachesPage.entries(snapshot)
+            let selected = available.filter { ids.contains($0.id) }
+            guard selected.count == ids.count, Set(selected.map(\.id)) == ids else { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
+            return await Self.freeCaches(selected, in: snapshot, quitApps: request.parameters["automatic"] != "1", progress: progress)
         case "openCleaner":
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -115,7 +125,7 @@ public struct SystemDataModule: MacSpaceModule {
         case "cleanAll":
             let log = SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil
             var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, progress: progress, span: log ? 0...0.8 : 0...1)
-            // The system log too, which only this button and its own row erase: automatic cleaning never does (it cannot be undone).
+            // The legacy manual aggregate also erases the log. Scheduled log cleanup requires the explicit nonrecoverable opt-in.
             if log {
                 progress(ActionProgress(fraction: 0.85, message: loc("Freeing space")))
                 let erased = await Self.eraseUnifiedLog(context.privileged)
@@ -132,7 +142,7 @@ public struct SystemDataModule: MacSpaceModule {
     /// Resolve the saved category and cache choices against the new reading; automatic cache work never quits apps.
     public func autoClean(context: ModuleContext) async -> CleanupReport? {
         let snapshot = await snapshot(maxAge: 0, context: context)
-        return await CleanupBatch.automatic(screen: SystemDataScreenBuilder.screen(snapshot), context: context, perform: perform)
+        return await CleanupBatch.automatic(screen: SystemDataScreenBuilder.screen(snapshot, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)), context: context, perform: perform)
     }
 
     /// Everything Free frees, measured on the volume over the whole run. The chosen caches of open apps go only when `quitApps` (the
@@ -161,6 +171,8 @@ public struct SystemDataModule: MacSpaceModule {
     /// Keeps what the user chose on the caches page (`CacheChoices`): the checked caches and header boxes. The page is built again
     /// from the scan already made.
     static func choose(_ request: ActionRequest) -> ActionResult {
+        guard (try? Selection.decodeIDs(request.parameters["ids"])) != nil,
+              (try? Selection.decodeIDs(request.parameters["all"])) != nil else { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
         var choices = CacheChoices.load()
         choices.chosen = Set(Selection.ids(request.parameters["ids"]))
         choices.all = Set(Selection.ids(request.parameters["all"]))
@@ -358,8 +370,8 @@ public struct SystemDataModule: MacSpaceModule {
                             details: result.summary + (result.error.map { [$0] } ?? []), freedBytes: measured)
     }
 
-    /// The unified log, with Apple's own `log erase` (`UnifiedLogCleaner`). Never part of Clean or automatic cleaning: the history
-    /// macOS keeps for troubleshooting goes for good. What is left after it is no erase's to free (`SystemLogFloor`).
+    /// The unified log, with Apple's own `log erase` (`UnifiedLogCleaner`). Scheduled erasure requires the nonrecoverable opt-in;
+    /// troubleshooting history goes for good. What is left after it is no erase's to free (`SystemLogFloor`).
     static func eraseUnifiedLog(_ channel: (any PrivilegedChannel)?) async -> ActionResult {
         await viaHelper(SystemDataPrivilegedOperations.eraseUnifiedLog, channel, as: UnifiedLogResult.self) { result in
             if let after = result.bytesAfter { SystemLogFloor.save(after) }
@@ -371,16 +383,20 @@ public struct SystemDataModule: MacSpaceModule {
     /// stays, and the result says how many.
     static func emptyTrash(trash: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"),
                            fileManager: FileManager = .default) -> ActionResult {
-        guard let names = try? fileManager.contentsOfDirectory(atPath: trash.path) else {
-            return .failed(loc("Couldn't free it"), details: ["The Trash could not be read."])
-        }
-        guard !names.isEmpty else { return .failed(loc("Already gone")) }
+        let root: ReviewedDirectoryRemoval.CleanupRoot
+        let targets: [ReviewedDirectoryRemoval.Target]
+        do { root = try .init(trash.path); targets = try root.targets() }
+        catch { return .failed(loc("Couldn't free it"), details: ["The Trash could not be safely read."]) }
+        guard !targets.isEmpty else { return .failed(loc("Already gone")) }
         let before = DataVolume.freeBytes()
         var removed = 0
         var kept: [String] = []
-        for name in names {
-            do { try fileManager.removeItem(at: trash.appendingPathComponent(name)); removed += 1 }
-            catch { kept.append("\(name): \((error as NSError).localizedDescription)") }
+        for target in targets {
+            do {
+                try root.validate()
+                let plan = try ReviewedDirectoryRemoval.prepareCleanup([target], within: [trash.path])
+                try root.validate(); try plan.remove(at: 0); removed += 1
+            } catch { kept.append("\(target.path): \(error.localizedDescription)") }
         }
         let freed = measuredFreed(before, DataVolume.freeBytes())
         var details = ["Deleted \(removed) item(s) from the Trash."]

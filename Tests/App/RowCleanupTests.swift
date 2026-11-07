@@ -19,7 +19,7 @@ private struct RowCleanupModule: MacSpaceModule {
     init() { control = RowCleanupControl() }
     init(control: RowCleanupControl) { self.control = control }
     func tile(context: ModuleContext) async -> Tile { await control.read(); return Tile(title: "Before", status: "measured") }
-    func screen(context: ModuleContext) async -> Screen { await control.read(); return Screen(title: "Before", widgets: []) }
+    func screen(context: ModuleContext) async -> Screen { await control.read(); return Screen(title: "Before", primary: Action(id: "clean", title: "Free"), widgets: [.list(ListWidget(id: "items", rows: [Row(id: "item", title: "Item", actions: [Action(id: "clean", title: "Free")])]))]) }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
         progress(ActionProgress(fraction: 0.5, message: "Freeing"))
         await control.wait(request)
@@ -35,11 +35,11 @@ final class RowCleanupTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
                                   permissions: FakePermissions(states: [.fullDiskAccess: .missing]), loader: { _ in FakeModule() })
         await handle.activate()
         defer { handle.deactivate() }
-        _ = await handle.perform(Action(id: "clean", title: "Free", requires: [.fullDiskAccess]), rowID: "item")
+        _ = await handle.perform(Action(id: "clean", title: "Clean", requires: [.fullDiskAccess]), rowID: "item")
         XCTAssertEqual(handle.resultRowID, "item")
         XCTAssertEqual(handle.rowResult?.outcome, .needsAttention)
         XCTAssertNil(handle.lastResult)
@@ -52,7 +52,7 @@ final class RowCleanupTests: XCTestCase {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let control = RowCleanupControl()
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(),
                                   loader: { _ in RowCleanupModule(control: control) })
         await handle.activate()
         defer { handle.deactivate() }
@@ -81,7 +81,7 @@ final class RowCleanupTests: XCTestCase {
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let control = RowCleanupControl()
         let module = RowCleanupModule(control: control)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         defer { handle.deactivate() }
         let reads = await control.reads
@@ -149,7 +149,7 @@ final class CleanupHandoffTests: XCTestCase {
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let control = RowCleanupControl()
         let module = ContinuingCleanupModule(control: control, outcome: outcome, backgroundPath: backgroundPath)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         let before = await control.reads
         let action = Task { await handle.perform(Action(id: "clean", title: "Free", parameters: ["path": "/target"]), rowID: rowID) }

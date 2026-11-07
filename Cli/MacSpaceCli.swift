@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import MacSpaceApp
 import MacSpacePlatform
 import MacSpaceSdk
@@ -8,6 +9,16 @@ import MacSpaceSdk
 struct MacSpaceCli {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
+        // ServiceManagement helper registration keeps the original app-bundle context.
+        // All other packaged CLI work executes inside the profile-bearing worker.
+        if arguments.first != "helper", let worker = ToolLocator.cli(),
+           worker.resolvingSymlinksInPath() != Bundle.main.executableURL?.resolvingSymlinksInPath() {
+            var pointers = ([worker.path] + arguments).map { strdup($0) } + [nil]
+            worker.path.withCString { _ = execv($0, &pointers) }
+            pointers.forEach { free($0) }
+            FileHandle.standardError.write(Data("MacSpace's provisioned CLI worker could not be started.\n".utf8))
+            exit(1)
+        }
         if arguments.first == "asset-owners" {
             guard arguments.count == 3 else { exit(64) }
             let result = AssetModelCleanup.runInChild(scope: arguments[1], mode: arguments[2])

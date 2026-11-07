@@ -43,7 +43,7 @@ final class UninstallReviewSelectionTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory()
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Review", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in AppReviewModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in AppReviewModule() })
         await handle.activate()
         return (handle, directory)
     }

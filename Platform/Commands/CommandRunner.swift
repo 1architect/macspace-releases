@@ -43,9 +43,7 @@ public extension CommandRunning {
     }
 }
 
-/// Synchronous process runner that redirects output to temporary files instead of pipes.
-/// This avoids the classic deadlock where a verbose child fills the pipe while the parent
-/// waits for the child to exit. Optional per-command timeouts keep diagnostic probes bounded.
+/// Synchronous adapter over the bounded process-group runner; no plaintext output spool files.
 public struct ProcessCommandRunner: CommandRunning {
     public let defaultTimeout: TimeInterval?
     public let terminationGracePeriod: TimeInterval
@@ -60,91 +58,13 @@ public struct ProcessCommandRunner: CommandRunning {
     }
 
     public func run(_ executable: String, _ arguments: [String], timeout: TimeInterval?) throws -> CommandResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-
-        let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("macspace-command-\(UUID().uuidString)", isDirectory: true)
-        let stdoutURL = temporaryDirectory.appendingPathComponent("stdout")
-        let stderrURL = temporaryDirectory.appendingPathComponent("stderr")
-
-        do {
-            try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
-        } catch {
-            throw CommandRunnerError.launchFailed("Could not create command-output directory: \(error.localizedDescription)")
-        }
-        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
-
-        _ = FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
-        _ = FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
-
-        let stdoutHandle: FileHandle
-        let stderrHandle: FileHandle
-        do {
-            stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
-            stderrHandle = try FileHandle(forWritingTo: stderrURL)
-        } catch {
-            throw CommandRunnerError.launchFailed("Could not open command-output files: \(error.localizedDescription)")
-        }
-        defer {
-            try? stdoutHandle.close()
-            try? stderrHandle.close()
-        }
-
-        process.standardOutput = stdoutHandle
-        process.standardError = stderrHandle
-
-        let terminated = DispatchSemaphore(value: 0)
-        process.terminationHandler = { _ in terminated.signal() }
-
-        do {
-            try process.run()
-        } catch {
-            throw CommandRunnerError.launchFailed(error.localizedDescription)
-        }
-
-        let didTimeOut: Bool
-        if let timeout, timeout > 0 {
-            didTimeOut = terminated.wait(timeout: .now() + timeout) == .timedOut
-        } else {
-            terminated.wait()
-            didTimeOut = false
-        }
-
-        if didTimeOut {
-            process.terminate()
-            if terminated.wait(timeout: .now() + terminationGracePeriod) == .timedOut {
-                _ = kill(process.processIdentifier, SIGKILL)
-                _ = terminated.wait(timeout: .now() + 1.0)
-            }
-            try? stdoutHandle.synchronize()
-            try? stderrHandle.synchronize()
-            throw CommandRunnerError.timedOut(
-                executable: executable,
-                arguments: arguments,
-                seconds: timeout ?? 0
-            )
-        }
-
-        try? stdoutHandle.synchronize()
-        try? stderrHandle.synchronize()
-
-        let stdoutData = (try? Data(contentsOf: stdoutURL)) ?? Data()
-        let stderrData = (try? Data(contentsOf: stderrURL)) ?? Data()
-        let result = CommandResult(
-            stdout: stdoutData,
-            stderr: stderrData,
-            exitCode: process.terminationStatus
-        )
-
+        let limit = timeout ?? defaultTimeout ?? 60
+        let output = BoundedCommand.run(executable, arguments: arguments, environment: ProcessInfo.processInfo.environment, timeout: limit)
+        if output.timedOut { throw CommandRunnerError.timedOut(executable: executable, arguments: arguments, seconds: limit) }
+        guard !output.truncated else { throw CommandRunnerError.launchFailed("Command output exceeded its limit") }
+        let result = CommandResult(stdout: output.stdout, stderr: output.stderr, exitCode: output.status)
         guard result.exitCode == 0 else {
-            throw CommandRunnerError.nonZeroExit(
-                executable: executable,
-                arguments: arguments,
-                code: result.exitCode,
-                stderr: String(decoding: result.stderr, as: UTF8.self)
-            )
+            throw CommandRunnerError.nonZeroExit(executable: executable, arguments: arguments, code: result.exitCode, stderr: String(decoding: result.stderr, as: UTF8.self))
         }
         return result
     }

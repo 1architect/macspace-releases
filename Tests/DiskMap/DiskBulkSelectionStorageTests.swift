@@ -4,7 +4,7 @@ import XCTest
 import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
-final class DiskBulkSelectionStorageTests: XCTestCase {
+final class DiskBulkSelectionStorageTests: DiskSecurityFixtureCase {
     func testRealCategoryBeyondTenThousandUsesFrozenPagedSelectionAndDeltaRemoval() async throws {
         let home = URL(fileURLWithPath: "/private/tmp/bulk-selection-" + UUID().uuidString)
         let root = home.appendingPathComponent("Downloads")

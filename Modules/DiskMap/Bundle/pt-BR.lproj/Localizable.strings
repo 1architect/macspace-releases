@@ -162,6 +162,7 @@
 "Selected app data will be permanently deleted." = "Os dados de app selecionados serão apagados permanentemente.";
 "Selected app data: %@" = "Dados de app selecionados: %@";
 "Selected apps: %@" = "Apps selecionados: %@";
+"Selected cleanup items changed. Review your selection again." = "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.";
 "Selected files" = "Arquivos selecionados";
 "Selected files changed or are open. Review them again." = "Os arquivos selecionados mudaram ou estão abertos. Revise novamente.";
 "Selected files changed or are unavailable. Review your selection again." = "Os arquivos selecionados mudaram ou estão indisponíveis. Revise a seleção novamente.";

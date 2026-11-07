@@ -3,7 +3,7 @@ import Darwin
 import XCTest
 @testable import MacSpaceDiskMap
 
-final class DiskDatabaseMemoryTests: XCTestCase {
+final class DiskDatabaseMemoryTests: DiskSecurityFixtureCase {
     private static func footprint() -> (current: UInt64, peak: UInt64) {
         var info = rusage_info_v6()
         _ = withUnsafeMutablePointer(to: &info) { $0.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { proc_pid_rusage(getpid(), RUSAGE_INFO_V6, $0) } }

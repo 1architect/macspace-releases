@@ -162,6 +162,7 @@
 "Selected app data will be permanently deleted." = "选中的 App 数据将被永久删除。";
 "Selected app data: %@" = "选中的 App 数据：%@";
 "Selected apps: %@" = "所选 App：%@";
+"Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Selected files" = "所选文件";
 "Selected files changed or are open. Review them again." = "所选文件已更改或正在打开。请重新检查。";
 "Selected files changed or are unavailable. Review your selection again." = "所选文件已更改或不可用。请重新检查选择。";

@@ -50,7 +50,7 @@ private struct FocusScanModule: MacSpaceModule {
     func screen(context: ModuleContext) async -> Screen { await screen(context: context, progress: { _ in }) }
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         let value = await control.read(progress)
-        return Screen(title: String(value), widgets: [.list(.init(id: "folders", rows: [Row(id: "folder", title: "Folder", pageID: "folder")]))])
+        return Screen(title: String(value), primary: Action(id: "work", title: "Work"), widgets: [.list(.init(id: "folders", rows: [Row(id: "folder", title: "Folder", pageID: "folder")]))])
     }
     func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
         let value = await control.read(progress)
@@ -68,7 +68,7 @@ final class FocusScanLifetimeTests: XCTestCase {
     private func handle(_ directory: URL, control: FocusScanControl) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Focus", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()),
             permissions: FakePermissions(), loader: { _ in FocusScanModule(control) })
         await handle.activate()
         return handle

@@ -200,3 +200,10 @@ Bootstrap and event-preparation stages report work as they finish (2% and 4% of 
 The final opt-in release-mode cold-start replay starts timing before cache bootstrap and does not pre-open or force a root invalidation. Against the same stale cache, first positive module progress arrived at 0.39 seconds, the full history catch-up and module presentation completed in 27.6 seconds, and a new store/module reopened in 2.7 seconds. The preceding full refresh was approximately 54 seconds. A separate forced-root run completed in 23.4 seconds. Cold replay includes an explicit maximum-first-progress and total-load validation. Synthetic parallel/sequential comparisons verify the final directory/file measurements, new nested parents, removals, symlink exclusion, changed hard-link aliases, unreadable/dataless branches, partial enumeration and cancellation/retry.
 
 Loading progress now gives metadata scanning 4–92% of the storage read, followed by personal-inventory migration through 94% and duplicate verification through completion. This replaces the old 65% scan endpoint and large reserved tail for often-empty stages. The module maps storage to its first 90%; app discovery, registration lookup, ownership review and allocation reconciliation report their measured work through 99%. Shared inventory callers join the same progress relay. Full totals reconciliation reports actual completed directory counts, including within small batches, rather than starting one quarter complete. The module reports 100% only after navigation and screen construction finish. Percentages remain work estimates; a skipped or very fast stage may still advance immediately.
+
+## Protected-storage session checks (2026-11-07)
+
+Inventory statements use a lock-notification gate with a 100 ms fallback session probe. They no longer issue one WindowServer
+session request per SQL statement. Keychain reads/writes still force a current session check. This preserves immediate
+notification-driven suspension while avoiding per-row OS round trips. The isolated measurement and its end-to-end limits are in
+[Research.md](Research.md#session-probing-during-inventory-writes-2026-11-07).

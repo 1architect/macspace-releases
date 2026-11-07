@@ -63,8 +63,7 @@ struct RowActionFlags: View {
                               progress: needsAttention ? nil : row.activity ?? progress(action),
                               result: result,
                               dismiss: { activity.dismiss(row.id) }) {
-                    guard ConfirmationAlert.ask(action) else { return }
-                    _ = await handler(action, [:], false, row.id)
+                        _ = await handler(action, [:], false, row.id)
                 }
                 .transition(PageCascade.transition(index: actions.firstIndex(where: { $0.id == action.id }) ?? 0, count: actions.count))
             }

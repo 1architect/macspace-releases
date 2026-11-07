@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 /// Shared owner withdrawal and physical reclaim. The UI never receives private objects or arbitrary mutation parameters.
@@ -46,15 +47,22 @@ public enum AssetModelCleanup {
                        settings: Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, features.status($0)) }),
                        phone: PhoneFeatureFlags().status())
     }
-    public static func hasSavedOwners(_ scope: Scope) -> Bool { FileManager.default.fileExists(atPath: journal(scope).path) }
+    public static func hasSavedOwners(_ scope: Scope) -> Bool { recoveryArtifactExists(journal(scope)) }
+    private static func recoveryArtifactExists(_ url: URL) -> Bool {
+        var info = stat()
+        return lstat(url.path, &info) == 0 || errno != ENOENT
+    }
+    static var hasRecoveryRecords: Bool {
+        Scope.allCases.contains(where: hasSavedOwners) || recoveryArtifactExists(journal(.siri).deletingLastPathComponent().appendingPathComponent("temporary-v2.sealed"))
+    }
     /// MacSpace's withdrawal of the scope's owners is in effect: its journal has owners removed and not given back. The feature's
     /// shared families (speech recognition, voices) count while it is, not only in the run that withdrew them (`families`): counted
     /// only then, every recheck after the first found nothing to delete, said it was freeing, and never purged again (2026-10-19).
     static func hasWithdrawnOwners(_ scope: Scope) -> Bool {
-        guard let data = try? Data(contentsOf: journal(scope)),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              let entries = plist["entries"] as? [[String: Any]] else { return false }
-        return entries.contains { $0["phase"] as? String == "removed" }
+        guard let protected = try? ProtectedJournal(url: journal(scope), purpose: "owners." + scope.rawValue, allowKeyCreation: false),
+              let data = try? protected.read(), let entries = try? AssetOwners.Journal.entries(data, scope: scope) else { return false }
+        return entries.contains { $0.phase == .removed }
+
     }
     /// A feature with less than this left on disk, as its switch measures it (`modelBytes`), is done: the switch shows no size, and
     /// what is left (catalogs, the models Dictation keeps in the shared families) is not purged for again and again.

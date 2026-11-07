@@ -66,6 +66,19 @@ final class CleanupContractTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(Selection.self, from: JSONEncoder().encode(selection)), selection)
         XCTAssertNotEqual(CleanupTarget.preferenceKey(scope: "a:b", id: "c"), CleanupTarget.preferenceKey(scope: "a", id: "b:c"))
     }
+
+    func testTransientCleanupPolicyRoundTripsAndIgnoresOldCheckboxPreferences() throws {
+        var target = CleanupTarget(id: "trash", title: "Trash", bytes: 1, action: Action(id: "emptyTrash", title: "Free"),
+            automatic: false, remembersSelection: false)
+        let saved = [CleanupTarget.preferenceKey(id: target.id): true]
+        XCTAssertFalse(target.isSelected(saved))
+        XCTAssertEqual(try JSONDecoder().decode(CleanupTarget.self, from: JSONEncoder().encode(target)), target)
+        target.defaultSelected = true; target.automatic = true
+        XCTAssertTrue(target.isSelected([CleanupTarget.preferenceKey(id: target.id): false]))
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(target)) as? [String: Any])
+        legacy.removeValue(forKey: "remembersSelection")
+        XCTAssertTrue(try JSONDecoder().decode(CleanupTarget.self, from: JSONSerialization.data(withJSONObject: legacy)).remembersSelection)
+    }
 }
 
 extension CleanupContractTests {

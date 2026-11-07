@@ -234,7 +234,7 @@
     "key" : "%lld selected files",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:719"
+      "App\/Registry\/LiveActionContract.swift:23"
     ],
     "table" : "App",
     "translations" : {
@@ -367,7 +367,7 @@
     "key" : "1 selected file",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:719"
+      "App\/Registry\/LiveActionContract.swift:23"
     ],
     "table" : "App",
     "translations" : {
@@ -425,7 +425,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/MenuBarContent.swift:209",
-      "App\/Main\/MacSpaceMain.swift:85"
+      "App\/Main\/MacSpaceMain.swift:86"
     ],
     "table" : "App",
     "translations" : {
@@ -513,6 +513,25 @@
       "ko" : "모양",
       "pt-BR" : "Aparência",
       "zh-Hans" : "外观"
+    }
+  },
+  {
+    "id" : "App|Apple Intelligence availability could not be verified. No system assets were purged.",
+    "key" : "Apple Intelligence availability could not be verified. No system assets were purged.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Die Verfügbarkeit von Apple Intelligence konnte nicht geprüft werden. Es wurden keine Systemressourcen gelöscht.",
+      "en" : "Apple Intelligence availability could not be verified. No system assets were purged.",
+      "es" : "No se pudo verificar la disponibilidad de Apple Intelligence. No se eliminó ningún recurso del sistema.",
+      "fr" : "La disponibilité d’Apple Intelligence n’a pas pu être vérifiée. Aucune ressource système n’a été effacée.",
+      "ja" : "Apple Intelligenceが利用可能か確認できませんでした。システムリソースは削除されていません。",
+      "ko" : "Apple Intelligence의 사용 가능 여부를 확인할 수 없습니다. 시스템 리소스는 삭제되지 않았습니다.",
+      "pt-BR" : "Não foi possível verificar a disponibilidade do Apple Intelligence. Nenhum recurso do sistema foi apagado.",
+      "zh-Hans" : "无法验证 Apple Intelligence 是否可用。未清除任何系统资源。"
     }
   },
   {
@@ -714,7 +733,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Settings\/AboutMacSpace.swift:40",
-      "App\/Renderer\/ActionButton.swift:39"
+      "App\/Renderer\/ActionButton.swift:38"
     ],
     "table" : "App",
     "translations" : {
@@ -752,7 +771,7 @@
     "key" : "Check for Updates…",
     "kind" : "Button",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:88"
+      "App\/Main\/MacSpaceMain.swift:89"
     ],
     "table" : "App",
     "translations" : {
@@ -809,7 +828,7 @@
     "key" : "Cleaned selected items",
     "kind" : "Message",
     "places" : [
-      "Sdk\/Contract\/CleanupTarget.swift:125"
+      "Sdk\/Contract\/CleanupTarget.swift:144"
     ],
     "table" : "App",
     "translations" : {
@@ -923,7 +942,7 @@
     "key" : "Confirm deletion of this item.",
     "kind" : "Confirmation message",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:32"
+      "App\/Renderer\/GraphContextMenu.swift:31"
     ],
     "table" : "App",
     "translations" : {
@@ -944,8 +963,7 @@
     "places" : [
       "App\/Shell\/Onboarding.swift:245",
       "App\/Shell\/Onboarding.swift:263",
-      "App\/Shell\/Onboarding.swift:274",
-      "App\/Main\/MacSpaceMain.swift:28"
+      "App\/Shell\/Onboarding.swift:274"
     ],
     "table" : "App",
     "translations" : {
@@ -1060,9 +1078,9 @@
     "key" : "Delete",
     "kind" : "Title",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:28",
-      "App\/Renderer\/GraphContextMenu.swift:32",
-      "App\/Renderer\/GraphContextMenu.swift:58"
+      "App\/Renderer\/GraphContextMenu.swift:27",
+      "App\/Renderer\/GraphContextMenu.swift:31",
+      "App\/Renderer\/GraphContextMenu.swift:57"
     ],
     "table" : "App",
     "translations" : {
@@ -1081,7 +1099,7 @@
     "key" : "Delete %@?",
     "kind" : "Confirmation title",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:31"
+      "App\/Renderer\/GraphContextMenu.swift:30"
     ],
     "table" : "App",
     "translations" : {
@@ -1252,7 +1270,7 @@
     "key" : "Free",
     "kind" : "Confirmation button",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:36"
+      "App\/Registry\/CleanupSelection.swift:45"
     ],
     "table" : "App",
     "translations" : {
@@ -1290,8 +1308,8 @@
     "key" : "Free selected",
     "kind" : "Button",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:9",
-      "App\/Registry\/CleanupSelection.swift:34"
+      "App\/Registry\/CleanupSelection.swift:17",
+      "App\/Registry\/CleanupSelection.swift:43"
     ],
     "table" : "App",
     "translations" : {
@@ -1310,7 +1328,7 @@
     "key" : "Free the selected items?",
     "kind" : "Confirmation title",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:36"
+      "App\/Registry\/CleanupSelection.swift:45"
     ],
     "table" : "App",
     "translations" : {
@@ -1387,8 +1405,8 @@
     "kind" : "Result message",
     "places" : [
       "App\/Shell\/MainView.swift:198",
-      "App\/Registry\/CleanupSelection.swift:10",
-      "App\/Registry\/CleanupSelection.swift:37"
+      "App\/Registry\/CleanupSelection.swift:18",
+      "App\/Registry\/CleanupSelection.swift:46"
     ],
     "table" : "App",
     "translations" : {
@@ -1731,8 +1749,8 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:264",
-      "App\/Renderer\/ScreenView.swift:844",
-      "App\/Renderer\/ScreenView.swift:845"
+      "App\/Renderer\/ScreenView.swift:810",
+      "App\/Renderer\/ScreenView.swift:811"
     ],
     "table" : "App",
     "translations" : {
@@ -1755,7 +1773,7 @@
       "App\/Shell\/HomeView.swift:25",
       "App\/Shell\/MenuBarContent.swift:159",
       "App\/Updates\/UpdateController.swift:67",
-      "App\/Main\/MacSpaceMain.swift:69"
+      "App\/Main\/MacSpaceMain.swift:70"
     ],
     "table" : "App",
     "translations" : {
@@ -2116,7 +2134,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:1105"
+      "App\/Registry\/ModuleHandle.swift:1155"
     ],
     "table" : "App",
     "translations" : {
@@ -2173,8 +2191,8 @@
     "key" : "Needs permission for the selected cleanup.",
     "kind" : "Result message",
     "places" : [
-      "Sdk\/Contract\/CleanupTarget.swift:94",
-      "Sdk\/Contract\/CleanupTarget.swift:104"
+      "Sdk\/Contract\/CleanupTarget.swift:113",
+      "Sdk\/Contract\/CleanupTarget.swift:123"
     ],
     "table" : "App",
     "translations" : {
@@ -2537,7 +2555,7 @@
     "key" : "Open in Finder",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:53"
+      "App\/Renderer\/GraphContextMenu.swift:52"
     ],
     "table" : "App",
     "translations" : {
@@ -2647,6 +2665,25 @@
     }
   },
   {
+    "id" : "App|Protected metadata is unavailable.",
+    "key" : "Protected metadata is unavailable.",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Geschützte Metadaten sind nicht verfügbar.",
+      "en" : "Protected metadata is unavailable.",
+      "es" : "Los metadatos protegidos no están disponibles.",
+      "fr" : "Les métadonnées protégées sont indisponibles.",
+      "ja" : "保護されたメタデータを利用できません。",
+      "ko" : "보호된 메타데이터를 사용할 수 없습니다.",
+      "pt-BR" : "Os metadados protegidos estão indisponíveis.",
+      "zh-Hans" : "受保护的元数据不可用。"
+    }
+  },
+  {
     "id" : "App|Quit",
     "key" : "Quit",
     "kind" : "Text",
@@ -2728,7 +2765,7 @@
     "key" : "Refresh",
     "kind" : "Label",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:63",
+      "App\/Renderer\/GraphContextMenu.swift:62",
       "App\/Renderer\/DashboardContextMenu.swift:26",
       "App\/Shell\/MainView.swift:59"
     ],
@@ -2863,7 +2900,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:846",
+      "App\/Renderer\/ScreenView.swift:812",
       "Sdk\/Interface\/Widgets.swift:242"
     ],
     "table" : "App",
@@ -2883,7 +2920,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:1095"
+      "App\/Registry\/ModuleHandle.swift:1145"
     ],
     "table" : "App",
     "translations" : {
@@ -2978,8 +3015,9 @@
     "key" : "Selected cleanup items changed. Review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:1150",
-      "Sdk\/Contract\/CleanupTarget.swift:91"
+      "App\/Registry\/ModuleHandle.swift:987",
+      "App\/Registry\/ModuleHandle.swift:1201",
+      "Sdk\/Contract\/CleanupTarget.swift:110"
     ],
     "table" : "App",
     "translations" : {
@@ -2998,7 +3036,7 @@
     "key" : "Selected files need review",
     "kind" : "Title",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:256"
+      "App\/Registry\/ModuleHandle.swift:259"
     ],
     "table" : "App",
     "translations" : {
@@ -3096,7 +3134,7 @@
     "key" : "Shader Studio",
     "kind" : "Message",
     "places" : [
-      "App\/Main\/MacSpaceMain.swift:97"
+      "App\/Main\/MacSpaceMain.swift:98"
     ],
     "table" : "App",
     "translations" : {
@@ -3136,7 +3174,7 @@
     "key" : "Some selected items could not be cleaned.",
     "kind" : "Message",
     "places" : [
-      "Sdk\/Contract\/CleanupTarget.swift:125"
+      "Sdk\/Contract\/CleanupTarget.swift:144"
     ],
     "table" : "App",
     "translations" : {
@@ -3288,9 +3326,9 @@
     "key" : "This selection is unavailable. Refresh and try again.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:494",
-      "App\/Registry\/ModuleHandle.swift:556",
-      "App\/Registry\/ModuleHandle.swift:602"
+      "App\/Registry\/ModuleHandle.swift:505",
+      "App\/Registry\/ModuleHandle.swift:567",
+      "App\/Registry\/ModuleHandle.swift:613"
     ],
     "table" : "App",
     "translations" : {
@@ -3615,10 +3653,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:842",
-      "App\/Renderer\/RowActionFlag.swift:107",
-      "App\/Renderer\/RowActionFlag.swift:114",
-      "App\/Registry\/ModuleHandle.swift:1223"
+      "App\/Renderer\/ScreenView.swift:808",
+      "App\/Renderer\/RowActionFlag.swift:106",
+      "App\/Renderer\/RowActionFlag.swift:113",
+      "App\/Registry\/ModuleHandle.swift:1274"
     ],
     "table" : "App",
     "translations" : {
@@ -6162,7 +6200,7 @@
     "key" : "%lld files could not be removed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:361"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:375"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6220,7 +6258,7 @@
     "key" : "1 file could not be removed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:361"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:375"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6354,9 +6392,9 @@
     "key" : "App data changed. Reopen the list and review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:443",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:473",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:494"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:464",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:494",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:515"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6375,10 +6413,10 @@
     "key" : "App ownership changed. Reopen the app list and review it again.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:176",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:456",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:465",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:482"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:190",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:477",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:486",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:503"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6843,7 +6881,7 @@
     "key" : "Contents could not be read. Refresh to retry.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskStore.swift:213"
+      "Modules\/DiskMap\/Module\/Engine\/DiskStore.swift:290"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6920,7 +6958,7 @@
     "key" : "Couldn’t delete the folder",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:411"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:432"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6939,7 +6977,7 @@
     "key" : "Couldn’t remove the selected files",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:366"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:380"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7020,7 +7058,7 @@
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:267",
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:10",
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:14",
-      "App\/Renderer\/GraphContextMenu.swift:28"
+      "App\/Renderer\/GraphContextMenu.swift:27"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7040,7 +7078,7 @@
     "kind" : "Confirmation title",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskDirectoryRemoval.swift:18",
-      "App\/Renderer\/GraphContextMenu.swift:31"
+      "App\/Renderer\/GraphContextMenu.swift:30"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7078,7 +7116,7 @@
     "key" : "Deleted folder",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:408"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:429"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7350,7 +7388,7 @@
     "key" : "File removal settings changed. Reopen the list and confirm again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:387"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:408"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7388,7 +7426,7 @@
     "key" : "Files changed. Reopen the list and review your selection again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:318"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:332"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7446,7 +7484,7 @@
     "key" : "Free",
     "kind" : "Confirmation button",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:36"
+      "App\/Registry\/CleanupSelection.swift:45"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7485,8 +7523,8 @@
     "kind" : "Button",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:265",
-      "App\/Registry\/CleanupSelection.swift:9",
-      "App\/Registry\/CleanupSelection.swift:34"
+      "App\/Registry\/CleanupSelection.swift:17",
+      "App\/Registry\/CleanupSelection.swift:43"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7562,9 +7600,9 @@
     "key" : "Freed selected files",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:363",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:433",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:447"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:377",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:454",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:468"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7586,8 +7624,8 @@
       "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:63",
       "Modules\/DiskMap\/Module\/Engine\/DiskUnmatchedRemoval.swift:30",
       "Modules\/DiskMap\/Module\/Engine\/DiskDirectoryRemoval.swift:20",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:404",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:407",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:425",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:428",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:268"
     ],
     "table" : "DiskMap",
@@ -7702,7 +7740,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:466"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:487"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7780,8 +7818,8 @@
     "kind" : "Title",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:15",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:190",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:194",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:204",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:208",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62",
       "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9",
       "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:13"
@@ -7822,8 +7860,8 @@
     "key" : "Leave at least one verified copy of each duplicate set unselected.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:127",
-      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:149"
+      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:135",
+      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:157"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8156,8 +8194,8 @@
     "key" : "No files are selected.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:265",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:308",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:279",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:322",
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:23"
     ],
     "table" : "DiskMap",
@@ -8462,7 +8500,7 @@
     "key" : "Open in %@",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:111",
+      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:119",
       "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:87"
     ],
     "table" : "DiskMap",
@@ -8735,7 +8773,7 @@
     "key" : "Project resources are excluded from duplicate cleanup.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:179"
+      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:191"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8928,7 +8966,7 @@
     "key" : "Reopen the list and confirm deletion again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:439"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:460"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8947,9 +8985,9 @@
     "key" : "Reopen the list and review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:398",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:415",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:436"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:419",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:436",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:457"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8987,7 +9025,7 @@
     "key" : "Review app data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:176",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:190",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:56",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:163"
     ],
@@ -9087,7 +9125,7 @@
     "key" : "Reviewing selected files",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:329"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:343"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9144,7 +9182,7 @@
     "key" : "Select an app to uninstall.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:458"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:479"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9276,6 +9314,28 @@
     }
   },
   {
+    "id" : "DiskMap|Selected cleanup items changed. Review your selection again.",
+    "key" : "Selected cleanup items changed. Review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:403",
+      "App\/Registry\/ModuleHandle.swift:987",
+      "App\/Registry\/ModuleHandle.swift:1201",
+      "Sdk\/Contract\/CleanupTarget.swift:110"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+      "en" : "Selected cleanup items changed. Review your selection again.",
+      "es" : "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+      "fr" : "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+      "ja" : "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+      "ko" : "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.",
+      "pt-BR" : "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+      "zh-Hans" : "所选清理项目已更改。请重新检查选择。"
+    }
+  },
+  {
     "id" : "DiskMap|Selected files",
     "key" : "Selected files",
     "kind" : "Title",
@@ -9300,7 +9360,7 @@
     "key" : "Selected files changed or are open. Review them again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:326"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:340"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9319,11 +9379,11 @@
     "key" : "Selected files changed or are unavailable. Review your selection again.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:117",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:254",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:341",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:420",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:424"
+      "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:125",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:268",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:355",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:441",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:445"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9437,7 +9497,7 @@
     "key" : "Some app data could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:497"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:518"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9456,7 +9516,7 @@
     "key" : "Some apps could not be uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:518"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:539"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9475,10 +9535,10 @@
     "key" : "Some files could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:363",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:366",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:433",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:447"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:377",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:380",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:454",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:468"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9763,7 +9823,7 @@
     "key" : "The selected apps are still in use. Finish saving or close them, then try again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:476"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:497"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9802,7 +9862,7 @@
     "key" : "The selection changed. Review the files again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:331"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:345"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9879,8 +9939,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:44",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:348",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:429",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:362",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:450",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:295"
     ],
     "table" : "DiskMap",
@@ -9919,7 +9979,7 @@
     "key" : "This folder cannot be deleted here.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:402"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:423"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10153,7 +10213,7 @@
     "key" : "Uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:518"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:539"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10173,7 +10233,7 @@
     "kind" : "Message",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskAppDataRemoval.swift:156",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:511",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:532",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:205",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:64"
     ],
@@ -10194,7 +10254,7 @@
     "key" : "Unknown action",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:519"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:540"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10425,7 +10485,7 @@
     "key" : "%@ files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:222"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:223"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -10596,8 +10656,10 @@
     "key" : "Already gone",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:129",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:149"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:88",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:94",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:145",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:165"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -10650,6 +10712,25 @@
     }
   },
   {
+    "id" : "OtherSystemFiles|Automatic cleanup is off for items that cannot be recovered.",
+    "key" : "Automatic cleanup is off for items that cannot be recovered.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:58"
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "Die automatische Bereinigung ist für nicht wiederherstellbare Elemente deaktiviert.",
+      "en" : "Automatic cleanup is off for items that cannot be recovered.",
+      "es" : "La limpieza automática está desactivada para los elementos que no se pueden recuperar.",
+      "fr" : "Le nettoyage automatique est désactivé pour les éléments irrécupérables.",
+      "ja" : "復元できない項目の自動クリーンアップはオフです。",
+      "ko" : "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다.",
+      "pt-BR" : "A limpeza automática está desativada para itens que não podem ser recuperados.",
+      "zh-Hans" : "无法恢复的项目已禁用自动清理。"
+    }
+  },
+  {
     "id" : "OtherSystemFiles|Backing up now",
     "key" : "Backing up now",
     "kind" : "Pill",
@@ -10667,6 +10748,25 @@
       "ko" : "백업 중",
       "pt-BR" : "Fazendo backup agora",
       "zh-Hans" : "正在备份"
+    }
+  },
+  {
+    "id" : "OtherSystemFiles|Backup disks require manual selection.",
+    "key" : "Backup disks require manual selection.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:56"
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "Sicherungsfestplatten erfordern eine manuelle Auswahl.",
+      "en" : "Backup disks require manual selection.",
+      "es" : "Los discos de copia de seguridad requieren una selección manual.",
+      "fr" : "Les disques de sauvegarde nécessitent une sélection manuelle.",
+      "ja" : "バックアップディスクでは手動で選択する必要があります。",
+      "ko" : "백업 디스크는 수동으로 선택해야 합니다.",
+      "pt-BR" : "Os discos de backup exigem seleção manual.",
+      "zh-Hans" : "备份磁盘需要手动选择。"
     }
   },
   {
@@ -10708,11 +10808,30 @@
     }
   },
   {
+    "id" : "OtherSystemFiles|Clean non recoverable items automatically",
+    "key" : "Clean non recoverable items automatically",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "Nicht wiederherstellbare Elemente automatisch bereinigen",
+      "en" : "Clean non recoverable items automatically",
+      "es" : "Limpiar automáticamente los elementos irrecuperables",
+      "fr" : "Nettoyer automatiquement les éléments irrécupérables",
+      "ja" : "復元できない項目を自動的にクリーンアップ",
+      "ko" : "복구할 수 없는 항목 자동 정리",
+      "pt-BR" : "Limpar itens irrecuperáveis automaticamente",
+      "zh-Hans" : "自动清理无法恢复的项目"
+    }
+  },
+  {
     "id" : "OtherSystemFiles|Cloud files on this Mac",
     "key" : "Cloud files on this Mac",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:222"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:223"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -10788,10 +10907,10 @@
     "key" : "Couldn't free it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:127",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:140",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:155",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:160",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:156",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:171",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:176",
       "App\/Shell\/MainView.swift:201"
     ],
     "table" : "OtherSystemFiles",
@@ -10892,7 +11011,7 @@
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:151",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:201",
-      "App\/Registry\/CleanupSelection.swift:36"
+      "App\/Registry\/CleanupSelection.swift:45"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -10988,8 +11107,8 @@
     "kind" : "Button",
     "places" : [
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:198",
-      "App\/Registry\/CleanupSelection.swift:9",
-      "App\/Registry\/CleanupSelection.swift:34"
+      "App\/Registry\/CleanupSelection.swift:17",
+      "App\/Registry\/CleanupSelection.swift:43"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11084,7 +11203,7 @@
     "key" : "Freed %@ on %@",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:164"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:180"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11103,10 +11222,10 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:71",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:77",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:182",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:183",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:80",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:86",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:198",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:199",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:103",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
     ],
@@ -11127,7 +11246,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:148"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:164"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11184,7 +11303,7 @@
     "key" : "Left alone",
     "kind" : "Title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:263"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:264"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11260,8 +11379,8 @@
     "key" : "Other System Files",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:69",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:111",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:78",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:127",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:77",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:90",
       "App\/Settings\/ScreenshotToolView.swift:90"
@@ -11283,7 +11402,7 @@
     "key" : "Other purgeable documents",
     "kind" : "Row title",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:236"
+      "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:237"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11321,7 +11440,7 @@
     "key" : "Purgeable app files",
     "kind" : "Message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:112",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:128",
       "Modules\/OtherSystemFiles\/Module\/Support\/PurgeableSnapshot.swift:83"
     ],
     "table" : "OtherSystemFiles",
@@ -11432,6 +11551,28 @@
     }
   },
   {
+    "id" : "OtherSystemFiles|Selected cleanup items changed. Review your selection again.",
+    "key" : "Selected cleanup items changed. Review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:53",
+      "App\/Registry\/ModuleHandle.swift:987",
+      "App\/Registry\/ModuleHandle.swift:1201",
+      "Sdk\/Contract\/CleanupTarget.swift:110"
+    ],
+    "table" : "OtherSystemFiles",
+    "translations" : {
+      "de" : "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+      "en" : "Selected cleanup items changed. Review your selection again.",
+      "es" : "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+      "fr" : "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+      "ja" : "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+      "ko" : "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.",
+      "pt-BR" : "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+      "zh-Hans" : "所选清理项目已更改。请重新检查选择。"
+    }
+  },
+  {
     "id" : "OtherSystemFiles|Spotlight index",
     "key" : "Spotlight index",
     "kind" : "Title",
@@ -11474,7 +11615,7 @@
     "key" : "That cloud folder is no longer on this Mac",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:68"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:77"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11550,7 +11691,7 @@
     "key" : "Time Machine is backing up. Try again when it's done.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:131"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:147"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11588,7 +11729,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:81"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:97"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11780,7 +11921,7 @@
     "key" : "%@ is not a supported Siri language.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:147"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:148"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12860,7 +13001,7 @@
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:245",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:315",
-      "App\/Registry\/CleanupSelection.swift:36"
+      "App\/Registry\/CleanupSelection.swift:45"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13285,7 +13426,7 @@
     "key" : "No supported Siri language with a base language different from %@ is available.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:146"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:147"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13555,7 +13696,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:846",
+      "App\/Renderer\/ScreenView.swift:812",
       "Sdk\/Interface\/Widgets.swift:242"
     ],
     "table" : "Siri",
@@ -13870,7 +14011,7 @@
     "key" : "The current Siri language could not be read.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:145"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:146"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13889,7 +14030,7 @@
     "key" : "The system language could not be read.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:144"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:145"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14232,7 +14373,7 @@
     "key" : "Writing the Siri language preference failed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:148",
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:149",
       "Modules\/Siri\/Module\/SiriModule.swift:47"
     ],
     "table" : "Siri",
@@ -14715,8 +14856,8 @@
     "key" : "%@ is running; quit it first.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1044",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1049"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1053",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1058"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15043,7 +15184,7 @@
     "key" : "All done",
     "kind" : "Message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:423",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:439",
       "App\/Renderer\/ScreenView.swift:585"
     ],
     "table" : "SystemData",
@@ -15120,10 +15261,10 @@
     "key" : "Already gone",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:73",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:77",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:180",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:377"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:80",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:84",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:192",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:390"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15161,7 +15302,7 @@
     "key" : "An app is using these files. Try again later.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1054"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1063"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15539,6 +15680,25 @@
     }
   },
   {
+    "id" : "SystemData|Automatic cleanup is off for items that cannot be recovered.",
+    "key" : "Automatic cleanup is off for items that cannot be recovered.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:65"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Die automatische Bereinigung ist für nicht wiederherstellbare Elemente deaktiviert.",
+      "en" : "Automatic cleanup is off for items that cannot be recovered.",
+      "es" : "La limpieza automática está desactivada para los elementos que no se pueden recuperar.",
+      "fr" : "Le nettoyage automatique est désactivé pour les éléments irrécupérables.",
+      "ja" : "復元できない項目の自動クリーンアップはオフです。",
+      "ko" : "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다.",
+      "pt-BR" : "A limpeza automática está desativada para itens que não podem ser recuperados.",
+      "zh-Hans" : "无法恢复的项目已禁用自动清理。"
+    }
+  },
+  {
     "id" : "SystemData|Battery and energy history used by System Settings > Battery.",
     "key" : "Battery and energy history used by System Settings > Battery.",
     "kind" : "Text",
@@ -15713,6 +15873,25 @@
     }
   },
   {
+    "id" : "SystemData|Clean non recoverable items automatically",
+    "key" : "Clean non recoverable items automatically",
+    "kind" : "Other",
+    "places" : [
+
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Nicht wiederherstellbare Elemente automatisch bereinigen",
+      "en" : "Clean non recoverable items automatically",
+      "es" : "Limpiar automáticamente los elementos irrecuperables",
+      "fr" : "Nettoyer automatiquement les éléments irrécupérables",
+      "ja" : "復元できない項目を自動的にクリーンアップ",
+      "ko" : "복구할 수 없는 항목 자동 정리",
+      "pt-BR" : "Limpar itens irrecuperáveis automaticamente",
+      "zh-Hans" : "自动清理无法恢复的项目"
+    }
+  },
+  {
     "id" : "SystemData|Cloud files on this Mac",
     "key" : "Cloud files on this Mac",
     "kind" : "Section header",
@@ -15850,12 +16029,12 @@
     "key" : "Couldn't free it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:220",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:341",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:232",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:353",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:354",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:375",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:388"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:365",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:366",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:389",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:404"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15950,9 +16129,9 @@
     "key" : "Delete",
     "kind" : "Title",
     "places" : [
-      "App\/Renderer\/GraphContextMenu.swift:28",
-      "App\/Renderer\/GraphContextMenu.swift:32",
-      "App\/Renderer\/GraphContextMenu.swift:58"
+      "App\/Renderer\/GraphContextMenu.swift:27",
+      "App\/Renderer\/GraphContextMenu.swift:31",
+      "App\/Renderer\/GraphContextMenu.swift:57"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16497,8 +16676,8 @@
     "places" : [
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:265",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:272",
-      "App\/Registry\/CleanupSelection.swift:9",
-      "App\/Registry\/CleanupSelection.swift:34"
+      "App\/Registry\/CleanupSelection.swift:17",
+      "App\/Registry\/CleanupSelection.swift:43"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16650,12 +16829,12 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:79",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:82",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:85",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:88",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:91",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:94"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:86",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:89",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:92",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:95",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:98",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:101"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16847,7 +17026,7 @@
     "key" : "Homebrew is busy. Try again when it's done.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:324"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:336"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16885,7 +17064,7 @@
     "key" : "Homebrew's cleanup failed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:332"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:344"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17019,7 +17198,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:349"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:361"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17382,8 +17561,8 @@
     "key" : "Nothing was freed: MacSpace couldn't check which apps are open.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:323",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1038"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:335",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1047"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17402,7 +17581,7 @@
     "key" : "Nothing was freed: MacSpace couldn't check which files are in use.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1056"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1065"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17971,6 +18150,30 @@
     }
   },
   {
+    "id" : "SystemData|Selected cleanup items changed. Review your selection again.",
+    "key" : "Selected cleanup items changed. Review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:61",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:111",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:175",
+      "App\/Registry\/ModuleHandle.swift:987",
+      "App\/Registry\/ModuleHandle.swift:1201",
+      "Sdk\/Contract\/CleanupTarget.swift:110"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+      "en" : "Selected cleanup items changed. Review your selection again.",
+      "es" : "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+      "fr" : "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+      "ja" : "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+      "ko" : "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.",
+      "pt-BR" : "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+      "zh-Hans" : "所选清理项目已更改。请重新检查选择。"
+    }
+  },
+  {
     "id" : "SystemData|Shared app files",
     "key" : "Shared app files",
     "kind" : "Section header",
@@ -18300,9 +18503,9 @@
     "key" : "System Data",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:74",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:397",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:406",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:81",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:413",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:422",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:302",
       "App\/Settings\/ScreenshotToolView.swift:89"
     ],
@@ -18822,7 +19025,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:128"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:138"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18860,8 +19063,8 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:398",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:407",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:414",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:423",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:360"
     ],
     "table" : "SystemData",

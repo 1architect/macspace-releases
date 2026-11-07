@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import MacSpacePlatform
 
@@ -157,7 +158,7 @@ public protocol SiriLanguageEnvironment {
     func outputVoice() -> Data?
     func eligibilityAnswer() -> Int?
     func write(siriLanguage: String, outputVoice: Data?) throws
-    func loadSavedSettings() -> SavedSiriSettings?
+    func loadSavedSettings() throws -> SavedSiriSettings?
     func saveSettings(_ settings: SavedSiriSettings?) throws
     func sleep(seconds: Double)
 }
@@ -326,7 +327,7 @@ public struct AppleIntelligenceLanguageGuard {
         }
         let previousLanguage = environment.context().siriLanguage
         let previousVoice = environment.outputVoice()
-        if plan.action == .disable, environment.loadSavedSettings() == nil {
+        if plan.action == .disable, try environment.loadSavedSettings() == nil {
             guard let previousLanguage else { throw AppleIntelligenceGuardError.siriLanguageUnavailable }
             try environment.saveSettings(SavedSiriSettings(siriLanguage: previousLanguage, outputVoice: previousVoice, savedAt: now))
         }
@@ -459,23 +460,28 @@ public struct LiveSiriLanguageEnvironment: SiriLanguageEnvironment {
         }
     }
 
-    public func loadSavedSettings() -> SavedSiriSettings? {
-        guard let data = try? Data(contentsOf: savedURL) else { return nil }
+    public func loadSavedSettings() throws -> SavedSiriSettings? {
+        var info = stat()
+        if lstat(savedURL.path, &info) != 0 {
+            if errno == ENOENT { return nil }
+            throw CocoaError(.fileReadNoPermission)
+        }
+        guard let data = try PrivateFile(savedURL).readMigratingLegacyPermissions(maximum: 1024 * 1024) else { return nil }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode(SavedSiriSettings.self, from: data)
+        return try decoder.decode(SavedSiriSettings.self, from: data)
     }
 
     public func saveSettings(_ settings: SavedSiriSettings?) throws {
         guard let settings else {
-            if fileManager.fileExists(atPath: savedURL.path) { try fileManager.removeItem(at: savedURL) }
+            if fileManager.fileExists(atPath: savedURL.path) { try PrivateFile(savedURL).remove() }
             return
         }
         try fileManager.createDirectory(at: savedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(settings).write(to: savedURL, options: .atomic)
+        try PrivateFile(savedURL, createDirectories: true).write(encoder.encode(settings))
     }
 
     public func sleep(seconds: Double) { Thread.sleep(forTimeInterval: seconds) }

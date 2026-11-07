@@ -20,7 +20,7 @@ final class UninstallReviewActionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Review", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in ReviewActionModule() })
+        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in ReviewActionModule() })
         await handle.activate(); defer { handle.deactivate() }
         func action() throws -> Action {
             guard case let .idle(action)? = ActionDock(handle: handle, isVisible: .constant(false)).phase else {

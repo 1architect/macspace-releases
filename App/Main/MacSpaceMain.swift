@@ -25,9 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             alert.informativeText = String(localized: "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update.")
             alert.alertStyle = .critical
             alert.addButton(withTitle: String(localized: "Quit"))
-            alert.addButton(withTitle: String(localized: "Continue"))
             ConfirmationAlert.standardize(alert)
-            if alert.runModal() == .alertFirstButtonReturn { NSApp.terminate(nil) }
+            alert.runModal()
+            NSApp.terminate(nil)
+            return
         }
         #if MACSPACE_DEV
         ScreenshotLaunch.runIfRequested()

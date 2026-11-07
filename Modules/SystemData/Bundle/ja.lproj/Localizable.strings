@@ -45,6 +45,7 @@
 "Apps' temporary files; macOS clears them at restart." = "アプリの一時ファイルです。再起動時にmacOSが削除します。";
 "Assorted macOS features and the OS itself." = "macOSの各種機能とOS自体のファイルです。";
 "Audio plug-ins and sounds" = "オーディオプラグインとサウンド";
+"Automatic cleanup is off for items that cannot be recovered." = "復元できない項目の自動クリーンアップはオフです。";
 "Battery and energy history used by System Settings > Battery." = "「システム設定 > バッテリー」で使うバッテリーと電力の履歴です。";
 "Cache cleaner" = "キャッシュクリーナー";
 "Caches for all users" = "全ユーザのキャッシュ";
@@ -54,6 +55,7 @@
 "Can't run" = "実行不可";
 "Cannot be undone" = "取り消せません";
 "Check Software Update in System Settings." = "システム設定でソフトウェアアップデートを確認してください。";
+"Clean non recoverable items automatically" = "復元できない項目を自動的にクリーンアップ";
 "Cloud files on this Mac" = "このMac上のクラウドファイル";
 "Cloud storage" = "クラウドストレージ";
 "Cloud storage: %@" = "クラウドストレージ：%@";
@@ -171,6 +173,7 @@
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@の終了中は安全に削除でき、必要時に再作成されます。";
 "Saved home folder of a deleted account: %@" = "削除済みアカウントの保存されたホーム：%@";
 "See what fills System Data and free what is safe to remove." = "システムデータの内容を確認し、安全に削除できるものを解放します。";
+"Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
 "Shared app files" = "共有アプリファイル";
 "Shared frameworks" = "共有フレームワーク";
 "Shared temporary files" = "共有一時ファイル";

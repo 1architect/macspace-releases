@@ -4,7 +4,7 @@ import XCTest
 import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
-final class DiskNativeRefreshTests: XCTestCase {
+final class DiskNativeRefreshTests: DiskSecurityFixtureCase {
     private func fixture(_ body: (URL, DiskDatabase, DiskDatabase) throws -> Void) throws {
         let home = URL(fileURLWithPath: "/private/tmp/native-refresh-" + UUID().uuidString)
         let root = home.appendingPathComponent("Downloads")

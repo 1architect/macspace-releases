@@ -13,9 +13,12 @@
 "Already gone" = "すでにありません";
 "App container caches" = "アプリコンテナのキャッシュ";
 "Apps download them again if they need them." = "必要に応じてアプリが再ダウンロードします。";
+"Automatic cleanup is off for items that cannot be recovered." = "復元できない項目の自動クリーンアップはオフです。";
 "Backing up now" = "バックアップ中";
+"Backup disks require manual selection." = "バックアップディスクでは手動で選択する必要があります。";
 "Backups not readable" = "バックアップを読み取れません";
 "Cannot be undone" = "取り消せません";
+"Clean non recoverable items automatically" = "復元できない項目を自動的にクリーンアップ";
 "Cloud files on this Mac" = "このMac上のクラウドファイル";
 "Connect it to see its backups and free old ones." = "接続するとバックアップを確認し、古いものを解放できます。";
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。";
@@ -53,6 +56,7 @@
 "Removing %@" = "%@を削除中";
 "Removing %lld%%, %@" = "削除中 %lld%%、%@";
 "Removing downloads" = "ダウンロードを削除中";
+"Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
 "Spotlight index" = "Spotlightインデックス";
 "System assets" = "システムアセット";
 "That cloud folder is no longer on this Mac" = "このクラウドフォルダはこのMacにありません";

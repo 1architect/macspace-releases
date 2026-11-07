@@ -170,6 +170,24 @@
   "1件必要",
   "1개 필요"
  ],
+ "1 selected file": [
+  "1 arquivo selecionado",
+  "1 fichier sélectionné",
+  "1 archivo seleccionado",
+  "1 ausgewählte Datei",
+  "已选择1个文件",
+  "1個の選択したファイル",
+  "선택한 파일 1개"
+ ],
+ "1 smaller": [
+  "1 menor",
+  "1 plus petit",
+  "1 más pequeño",
+  "1 kleineres",
+  "另外 1 个较小项",
+  "ほか1個の小さい項目",
+  "작은 항목 1개"
+ ],
  "About": [
   "Sobre",
   "À propos",
@@ -223,6 +241,15 @@
   "外观",
   "外観",
   "모양"
+ ],
+ "Apple Intelligence availability could not be verified. No system assets were purged.": [
+  "Não foi possível verificar a disponibilidade do Apple Intelligence. Nenhum recurso do sistema foi apagado.",
+  "La disponibilité d’Apple Intelligence n’a pas pu être vérifiée. Aucune ressource système n’a été effacée.",
+  "No se pudo verificar la disponibilidad de Apple Intelligence. No se eliminó ningún recurso del sistema.",
+  "Die Verfügbarkeit von Apple Intelligence konnte nicht geprüft werden. Es wurden keine Systemressourcen gelöscht.",
+  "无法验证 Apple Intelligence 是否可用。未清除任何系统资源。",
+  "Apple Intelligenceが利用可能か確認できませんでした。システムリソースは削除されていません。",
+  "Apple Intelligence의 사용 가능 여부를 확인할 수 없습니다. 시스템 리소스는 삭제되지 않았습니다."
  ],
  "Applies the Debloat policies you turn on.": [
   "Aplica as políticas do Debloat que você ativar.",
@@ -358,6 +385,24 @@
   "自动清理",
   "自動的にクリーンアップ",
   "자동으로 정리"
+ ],
+ "Cleaned selected items": [
+  "Itens selecionados limpos",
+  "Éléments sélectionnés nettoyés",
+  "Elementos seleccionados limpiados",
+  "Ausgewählte Objekte bereinigt",
+  "已清理所选项目",
+  "選択した項目をクリーンアップしました",
+  "선택한 항목 정리 완료"
+ ],
+ "Cleans the selected cleanup items in each module.": [
+  "Limpa os itens selecionados para limpeza em cada módulo.",
+  "Nettoie les éléments de nettoyage sélectionnés dans chaque module.",
+  "Limpia los elementos seleccionados para limpieza en cada módulo.",
+  "Bereinigt die ausgewählten Objekte in jedem Modul.",
+  "清理各模块中选定的清理项目。",
+  "各モジュールで選択したクリーンアップ項目を処理します。",
+  "각 모듈에서 선택한 정리 항목을 정리합니다."
  ],
  "Cleanup": [
   "Limpeza",
@@ -566,6 +611,24 @@
   "%@分の%@のダウンロードを解放しますか？",
   "%@의 %@ 다운로드를 정리할까요?"
  ],
+ "Free selected": [
+  "Liberar selecionados",
+  "Libérer la sélection",
+  "Liberar seleccionados",
+  "Auswahl freigeben",
+  "释放所选内容",
+  "選択項目を解放",
+  "선택 항목 정리"
+ ],
+ "Free the selected items?": [
+  "Liberar os itens selecionados?",
+  "Libérer les éléments sélectionnés ?",
+  "¿Liberar los elementos seleccionados?",
+  "Ausgewählte Objekte freigeben?",
+  "释放所选项目？",
+  "選択した項目を解放しますか？",
+  "선택한 항목을 비우시겠습니까?"
+ ],
  "Freed %@": [
   "%@ liberados",
   "%@ libérés",
@@ -691,6 +754,15 @@
   "在后台运行时，MacSpace 不显示菜单栏或程序坞图标。可从“应用程序”重新打开。",
   "バックグラウンドではメニューバーやDockにアイコンを表示しません。「アプリケーション」から再度開けます。",
   "백그라운드에서는 메뉴 막대나 Dock 아이콘이 표시되지 않습니다. 응용 프로그램에서 다시 여세요."
+ ],
+ "In use": [
+  "Em uso",
+  "En cours d’utilisation",
+  "En uso",
+  "In Verwendung",
+  "使用中",
+  "使用中",
+  "사용 중"
  ],
  "Install helper": [
   "Instalar auxiliar",
@@ -818,6 +890,15 @@
   "すべてのシステムデータを確認するために必要です。",
   "모든 시스템 데이터를 보려면 이 권한이 필요합니다."
  ],
+ "MacSpace quits this app before uninstalling it.": [
+  "O MacSpace fecha este app antes de desinstalá-lo.",
+  "MacSpace quitte cette app avant de la désinstaller.",
+  "MacSpace cierra esta app antes de desinstalarla.",
+  "MacSpace beendet diese App vor der Deinstallation.",
+  "MacSpace 会在卸载前退出此 App。",
+  "MacSpaceはアンインストールする前にこのアプリを終了します。",
+  "MacSpace가 이 앱을 제거하기 전에 종료합니다."
+ ],
  "Maximize": [
   "Maximizar",
   "Agrandir",
@@ -943,6 +1024,15 @@
   "需要 macOS %@ 或更高版本。",
   "macOS %@以降が必要です。",
   "macOS %@ 이상이 필요합니다."
+ ],
+ "Needs permission for the selected cleanup.": [
+  "A limpeza selecionada precisa de permissão.",
+  "Le nettoyage sélectionné nécessite une autorisation.",
+  "La limpieza seleccionada necesita permiso.",
+  "Die ausgewählte Bereinigung benötigt eine Berechtigung.",
+  "所选清理需要权限。",
+  "選択したクリーンアップには権限が必要です。",
+  "선택한 정리 작업에 권한이 필요합니다."
  ],
  "Night": [
   "Noite",
@@ -1124,6 +1214,15 @@
   "その他のフォルダ",
   "기타 폴더"
  ],
+ "Other items": [
+  "Outros itens",
+  "Autres éléments",
+  "Otros elementos",
+  "Andere Objekte",
+  "其他项目",
+  "ほかの項目",
+  "기타 항목"
+ ],
  "Permissions": [
   "Permissões",
   "Autorisations",
@@ -1150,6 +1249,15 @@
   "特权辅助程序",
   "特権ヘルパー",
   "권한 보조 프로그램"
+ ],
+ "Protected metadata is unavailable.": [
+  "Os metadados protegidos estão indisponíveis.",
+  "Les métadonnées protégées sont indisponibles.",
+  "Los metadatos protegidos no están disponibles.",
+  "Geschützte Metadaten sind nicht verfügbar.",
+  "受保护的元数据不可用。",
+  "保護されたメタデータを利用できません。",
+  "보호된 메타데이터를 사용할 수 없습니다."
  ],
  "Quit": [
   "Encerrar",
@@ -1304,6 +1412,15 @@
   "設定を復元中",
   "설정 복원 중"
  ],
+ "Selected cleanup items changed. Review your selection again.": [
+  "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
+  "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
+  "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
+  "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
+  "所选清理项目已更改。请重新检查选择。",
+  "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
+  "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
+ ],
  "Selected files need review": [
   "Arquivos selecionados precisam de revisão",
   "Les fichiers sélectionnés doivent être vérifiés",
@@ -1366,6 +1483,15 @@
   "在访达中显示",
   "Finderに表示",
   "Finder에서 보기"
+ ],
+ "Some selected items could not be cleaned.": [
+  "Não foi possível limpar alguns itens selecionados.",
+  "Certains éléments sélectionnés n’ont pas pu être nettoyés.",
+  "No se pudieron limpiar algunos elementos seleccionados.",
+  "Einige ausgewählte Objekte konnten nicht bereinigt werden.",
+  "部分所选项目无法清理。",
+  "一部の選択項目をクリーンアップできませんでした。",
+  "선택한 일부 항목을 정리할 수 없습니다."
  ],
  "System": [
   "Sistema",
@@ -1726,113 +1852,5 @@
   "正在处理",
   "処理中",
   "작업 중"
- ],
- "1 selected file": [
-  "1 arquivo selecionado",
-  "1 fichier sélectionné",
-  "1 archivo seleccionado",
-  "1 ausgewählte Datei",
-  "已选择1个文件",
-  "1個の選択したファイル",
-  "선택한 파일 1개"
- ],
- "1 smaller": [
-  "1 menor",
-  "1 plus petit",
-  "1 más pequeño",
-  "1 kleineres",
-  "另外 1 个较小项",
-  "ほか1個の小さい項目",
-  "작은 항목 1개"
- ],
- "MacSpace quits this app before uninstalling it.": [
-  "O MacSpace fecha este app antes de desinstalá-lo.",
-  "MacSpace quitte cette app avant de la désinstaller.",
-  "MacSpace cierra esta app antes de desinstalarla.",
-  "MacSpace beendet diese App vor der Deinstallation.",
-  "MacSpace 会在卸载前退出此 App。",
-  "MacSpaceはアンインストールする前にこのアプリを終了します。",
-  "MacSpace가 이 앱을 제거하기 전에 종료합니다."
- ],
- "In use": [
-  "Em uso",
-  "En cours d’utilisation",
-  "En uso",
-  "In Verwendung",
-  "使用中",
-  "使用中",
-  "사용 중"
- ],
- "Other items": [
-  "Outros itens",
-  "Autres éléments",
-  "Otros elementos",
-  "Andere Objekte",
-  "其他项目",
-  "ほかの項目",
-  "기타 항목"
- ],
- "Free selected": [
-  "Liberar selecionados",
-  "Libérer la sélection",
-  "Liberar seleccionados",
-  "Auswahl freigeben",
-  "释放所选内容",
-  "選択項目を解放",
-  "선택 항목 정리"
- ],
- "Free the selected items?": [
-  "Liberar os itens selecionados?",
-  "Libérer les éléments sélectionnés ?",
-  "¿Liberar los elementos seleccionados?",
-  "Ausgewählte Objekte freigeben?",
-  "释放所选项目？",
-  "選択した項目を解放しますか？",
-  "선택한 항목을 비우시겠습니까?"
- ],
- "Needs permission for the selected cleanup.": [
-  "A limpeza selecionada precisa de permissão.",
-  "Le nettoyage sélectionné nécessite une autorisation.",
-  "La limpieza seleccionada necesita permiso.",
-  "Die ausgewählte Bereinigung benötigt eine Berechtigung.",
-  "所选清理需要权限。",
-  "選択したクリーンアップには権限が必要です。",
-  "선택한 정리 작업에 권한이 필요합니다."
- ],
- "Some selected items could not be cleaned.": [
-  "Não foi possível limpar alguns itens selecionados.",
-  "Certains éléments sélectionnés n’ont pas pu être nettoyés.",
-  "No se pudieron limpiar algunos elementos seleccionados.",
-  "Einige ausgewählte Objekte konnten nicht bereinigt werden.",
-  "部分所选项目无法清理。",
-  "一部の選択項目をクリーンアップできませんでした。",
-  "선택한 일부 항목을 정리할 수 없습니다."
- ],
- "Cleaned selected items": [
-  "Itens selecionados limpos",
-  "Éléments sélectionnés nettoyés",
-  "Elementos seleccionados limpiados",
-  "Ausgewählte Objekte bereinigt",
-  "已清理所选项目",
-  "選択した項目をクリーンアップしました",
-  "선택한 항목 정리 완료"
- ],
- "Selected cleanup items changed. Review your selection again.": [
-  "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
-  "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.",
-  "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.",
-  "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.",
-  "所选清理项目已更改。请重新检查选择。",
-  "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
-  "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
- ],
- "Cleans the selected cleanup items in each module.": [
-  "Limpa os itens selecionados para limpeza em cada módulo.",
-  "Nettoie les éléments de nettoyage sélectionnés dans chaque module.",
-  "Limpia los elementos seleccionados para limpieza en cada módulo.",
-  "Bereinigt die ausgewählten Objekte in jedem Modul.",
-  "清理各模块中选定的清理项目。",
-  "各モジュールで選択したクリーンアップ項目を処理します。",
-  "각 모듈에서 선택한 정리 항목을 정리합니다."
  ]
 }

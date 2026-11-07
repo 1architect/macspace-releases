@@ -5,6 +5,40 @@ import MacSpaceSdk
 @testable import MacSpaceOtherSystemFilesPrivileged
 
 final class TimeMachineTests: XCTestCase {
+    func testLocalSnapshotOptInDoesNotAuthorizeOrRememberBackupDiskSelections() throws {
+        let connected = TimeMachineState.BackupDisk(destination: disk, backups: backups(["2026-10-01-120000", "2026-10-02-120000"]))
+        let snap = snapshot(snapshots: ["2026-10-01-010000.local", "2026-10-02-010000.local"], estimate: 1_000_000_000, disks: [connected])
+        for optIn in [false, true] {
+            let page = OtherSystemFilesScreenBuilder.screen(snap, cleanNonRecoverable: optIn)
+            let target = try XCTUnwrap(page.cleanupTargets.first { $0.action.id == "freeSnapshots" })
+            XCTAssertEqual(target.automatic, optIn)
+            XCTAssertEqual(target.defaultSelected, optIn)
+            XCTAssertFalse(target.remembersSelection)
+            XCTAssertEqual(target.isSelected([CleanupTarget.preferenceKey(id: target.id): !optIn]), optIn)
+            XCTAssertNotNil(target.action.confirmation)
+            XCTAssertFalse(page.cleanupTargets.contains { $0.action.id == "deleteBackups" })
+            let row = OtherSystemFilesScreenBuilder.backupDiskRow(connected, backingUp: false)
+            let selection = try XCTUnwrap(row.selection)
+            XCTAssertNil(selection.persistenceKey)
+            XCTAssertTrue(selection.checked.isEmpty)
+            XCTAssertEqual(Set(selection.choices.keys), ["backup:2026-10-01-120000"])
+        }
+    }
+
+    func testAutomaticSnapshotRequestsNeedOptInAndBackupDisksAlwaysRequireManualSelection() async {
+        for optIn in [false, true] {
+            let context = ModuleContext(manifest: ModuleManifest(id: "test", name: "Test", summary: "", version: "1", symbol: ""),
+                options: NonRecoverableOptions(enabled: optIn), permissions: NonRecoverablePermissions())
+            for action in optIn ? ["deleteBackups"] : ["deleteBackups", "freeSnapshots"] {
+                let result = await OtherSystemFilesModule().perform(.init(actionID: action, parameters: ["automatic": "1"]), context: context,
+                    progress: { _ in XCTFail("Must refuse before work") })
+                XCTAssertEqual(result.outcome, .failed)
+                XCTAssertFalse(result.refresh)
+                XCTAssertNil(result.presentation)
+            }
+        }
+    }
+
     private let utc = TimeZone(identifier: "UTC")!
 
     // MARK: Reading
@@ -179,6 +213,16 @@ final class TimeMachineTests: XCTestCase {
         XCTAssertEqual(list.rows[1].badge?.text, "Not connected")
         XCTAssertFalse(OtherSystemFilesScreenBuilder.blocksWithItems(snap).contains { $0.id.hasPrefix("backupdisk:") }, "a backup disk is not this Mac's space")
     }
+}
+
+private struct NonRecoverableOptions: OptionStore {
+    var enabled: Bool
+    func bool(_ id: String) -> Bool { enabled && id == CleanupBatch.nonRecoverableOptionID }
+    func string(_ id: String) -> String { "" }
+    func isBackgroundTaskEnabled(_ id: String) -> Bool { false }
+}
+private struct NonRecoverablePermissions: PermissionChecker {
+    func status(of permission: Permission) -> PermissionStatus { .missing }
 }
 
 final class FakeRunner: CommandRunning, @unchecked Sendable {

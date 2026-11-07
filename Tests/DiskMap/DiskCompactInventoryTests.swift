@@ -5,7 +5,7 @@ import MacSpacePlatform
 import MacSpaceSdk
 @testable import MacSpaceDiskMap
 
-final class DiskCompactInventoryTests: XCTestCase {
+final class DiskCompactInventoryTests: DiskSecurityFixtureCase {
     private func fixture() throws -> (home: URL, root: URL, db: DiskDatabase) {
         let home = FileManager.default.temporaryDirectory.appendingPathComponent("compact-" + UUID().uuidString).resolvingSymlinksInPath()
         let root = home.appendingPathComponent("Downloads")

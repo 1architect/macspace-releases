@@ -278,19 +278,22 @@ If you prefer to do it manually please follow the order below:
 
 ## Build from source
 
-The source is this repository. [Docs/Handoff.md](Docs/Handoff.md) explains how it is put
-together. You need macOS 27 and Xcode 27.
+You need macOS 27 and Xcode 27. No Apple Developer membership is needed to compile or run fixture tests:
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 swift test
-INSTALL=1 Scripts/Assemble.sh
+SIGN_IDENTITY=- NOTARY_PROFILE= Scripts/Assemble.sh
 ```
 
-The last command builds `Build/MacSpace.app` and copies it to `/Applications`. Without a
-Developer ID certificate, the build is signed ad hoc and not notarized, and macOS asks for Full
-Disk Access again after each build. A build you make yourself has no update key, so it never
-checks for updates.
+Use the path to your Xcode installation if its name differs. The last command creates an ad-hoc `Build/MacSpace.app`;
+add `INSTALL=1` to install it. Ad-hoc builds are not notarized and may need Full Disk Access granted again after rebuilding.
+They omit restricted Keychain entitlements: the current persistent encrypted Apps and files cache and operations requiring durable
+owner recovery keys are unavailable without provisioning. No plaintext-key or plaintext-cache fallback is used.
+
+Fully provisioned builds require matching signing profiles, stored outside the repository. See the
+[contributor guide](CONTRIBUTING.md#build-and-test) for source-build limitations and
+[release setup](Docs/Releasing.md#local-signing-and-provisioning-setup) for signed builds. A build without the update public key never checks for updates.
 
 ---
 

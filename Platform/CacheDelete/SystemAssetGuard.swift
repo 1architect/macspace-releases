@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 /// Whether MacSpace may ask macOS to delete its system assets (mobileassetd's purge) now. Not while Apple Intelligence is available:
 /// its models download and update as system assets, and pieces not yet installed count as purgeable. On 2026-10-12, purges of
@@ -24,18 +25,19 @@ public enum SystemAssetGuard {
     public static func available(inEligibility data: Data) -> Bool? {
         guard let root = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
               let domain = root[siriModeDomain] as? [String: Any],
-              let answer = (domain["os_eligibility_answer_t"] as? NSNumber)?.intValue else { return nil }
-        return answer == eligibleAnswer
+              let number = domain["os_eligibility_answer_t"] as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID(),
+              !["f", "d"].contains(String(cString: number.objCType)),
+              let answer = Int(number.stringValue) else { return nil }
+        switch answer { case 2: return false; case eligibleAnswer: return true; default: return nil }
     }
 
-    /// The system assets are kept now: Apple Intelligence is available. When its answer cannot be read, they are not held, as before.
-    public static var holdsAssets: Bool { appleIntelligenceAvailable() == true }
+    /// Unknown eligibility cannot authorize deletion of system assets.
+    public static var holdsAssets: Bool { appleIntelligenceAvailable() != false }
 
-    /// Owner withdrawal has a stricter gate than legacy purge-only callers: only the reviewed 2/4 answers are meaningful.
+    /// Owner withdrawal and purge-only callers accept only the reviewed 2/4 answers.
     public static func reviewedAvailability(inEligibility data: Data) -> Bool? {
-        guard let root = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              let domain = root[siriModeDomain] as? [String: Any], let answer = domain["os_eligibility_answer_t"] as? Int else { return nil }
-        switch answer { case 2: return false; case 4: return true; default: return nil }
+        available(inEligibility: data)
     }
 
     public static var reviewedAvailability: Bool? {
@@ -46,7 +48,9 @@ public enum SystemAssetGuard {
     /// switches, `AssetModelCleanup`) may go ahead while Apple Intelligence is on, as long as MobileAsset is downloading nothing
     /// (`downloadsIdle`): what went on 2026-10-12 were pieces caught mid-download, which count as purgeable until installed.
     public static func refusal(_ services: [String], featureCleanup: Bool = false) -> String? {
-        guard services.contains(CacheDeleteService.mobileAsset), holdsAssets else { return nil }
+        guard services.contains(CacheDeleteService.mobileAsset) else { return nil }
+        guard let available = appleIntelligenceAvailable() else { return unknownMessage }
+        guard available else { return nil }
         if featureCleanup, downloadsIdle() { return nil }
         return heldMessage
     }
@@ -66,4 +70,5 @@ public enum SystemAssetGuard {
 
     /// Said where a purge was not made, in English (results' details and the CLI).
     public static let heldMessage = "Apple Intelligence is on: MacSpace does not ask macOS to delete system assets, which hold its models and their downloads."
+    public static let unknownMessage = String(localized: "Apple Intelligence availability could not be verified. No system assets were purged.")
 }

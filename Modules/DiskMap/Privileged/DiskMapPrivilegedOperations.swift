@@ -69,23 +69,34 @@ public enum AppRemovalExecutor {
     }
     public static func execute(plan: AppRemovalPlan, catalog: AppCatalog, home: String, systemLibrary: String = "/Library", uid: uid_t = getuid(),
                                stopStartup: (([AppStartupItem]) throws -> Void)? = nil,
-                               remove: (String) throws -> Void = { try FileManager.default.removeItem(atPath: $0) }) -> AppRemovalResult {
+                               remove: ((String) throws -> Void)? = nil) -> AppRemovalResult {
         if let error = validate(plan: plan, catalog: catalog, home: home, systemLibrary: systemLibrary) {
             return AppRemovalResult(removed: [], failures: [plan.owner.path: error])
         }
         var result = AppRemovalResult(removed: [], failures: [:])
+        // Pin every target and its descendants before stopping services or removing any data.
+        let targets = plan.targets.filter { $0.path != plan.owner.path } + plan.targets.filter { $0.path == plan.owner.path }
+        let guarded: ReviewedDirectoryRemoval.Plan?
         do {
+            guarded = try remove == nil ? ReviewedDirectoryRemoval.prepareAuthorized(targets.map { target in
+                let identity = target.identity
+                return .init(path: target.path, expected: .init(device: identity.device, inode: identity.inode, uid: identity.uid,
+                                                              modifiedSeconds: identity.modifiedSeconds, modifiedNanos: identity.modifiedNanos))
+            }, home: home, uid: uid) : nil
             if let stopStartup { try stopStartup(plan.startupItems ?? []) }
             else { try AppStartupItems.stop(plan.startupItems ?? [], uid: uid) }
         } catch { return AppRemovalResult(removed: [], failures: [plan.owner.path: error.localizedDescription]) }
         // Data first, bundle last. Preflight verified every target before any side effect.
-        let targets = plan.targets.filter { $0.path != plan.owner.path } + plan.targets.filter { $0.path == plan.owner.path }
-        for target in targets {
+        for (index, target) in targets.enumerated() {
             guard result.failures.isEmpty else { break }
             guard AppFileIdentity(path: target.path) == target.identity else {
                 result.failures[target.path] = "Target changed after review."; break
             }
-            do { try remove(target.path); result.removed.append(target.path) }
+            do {
+                if let remove { try remove(target.path) }
+                else { try guarded!.remove(at: index) }
+                result.removed.append(target.path)
+            }
             catch { result.failures[target.path] = error.localizedDescription }
         }
         return result

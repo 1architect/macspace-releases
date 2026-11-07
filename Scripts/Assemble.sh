@@ -4,7 +4,10 @@
 #   Scripts/Assemble.sh                      local build into Build/MacSpace.app; copy it to /Applications to run it. Signed with
 #                                            the first Developer ID / Apple Development identity found (ad-hoc without one). A stable identity keeps Full Disk Access across rebuilds:
 #                                            macOS ties the permission to the signature, and an ad-hoc signature changes every build.
-#   SIGN_IDENTITY=- Scripts/Assemble.sh      force an ad-hoc signature
+#   SIGN_IDENTITY=- Scripts/Assemble.sh      source/contributor build: ad-hoc, with protected Keychain features unavailable
+#   python3 Scripts/StoreMetadataProfiles.py <app.provisionprofile> <cli.provisionprofile>
+#                                            one-time maintainer setup; profiles stay outside the repository.
+#   METADATA_PROFILES_DIR=<folder>            override the local signing-profile store (individual file overrides also work).
 #   CONFIG=release VERSION=1.0.0 BUILD=42 SIGN_IDENTITY="Developer ID Application: …" Scripts/Assemble.sh
 #   ICON=/path/to/MacSpace.icon Scripts/Assemble.sh   the app icon, an Icon Composer document (default: App/Resources/MacSpace.icon)
 #   Notarization is on by default with a Developer ID identity: the app is notarized and the ticket stapled, so it opens on any
@@ -46,23 +49,39 @@ SWIFT_FLAGS=()
 # A local build gets a build number of its own, 1.<year and day>.<time>: macOS keeps an app's icon by its identity and build
 # number, and every build being "1" kept the icon it first cached (the generic one). It stays below any release build (2 and up).
 BUILD=${BUILD:-1.$(date +%y%j).$((10#$(date +%H%M%S)))}
+# One-time profile storage is shared by local builds; CI can override either file.
+METADATA_PROFILES_DIR=${METADATA_PROFILES_DIR:-"$HOME/Library/Application Support/MacSpace/Signing/Profiles"}
+METADATA_APP_PROFILE=${METADATA_APP_PROFILE:-"$METADATA_PROFILES_DIR/MacSpace.provisionprofile"}
+METADATA_CLI_PROFILE=${METADATA_CLI_PROFILE:-"$METADATA_PROFILES_DIR/MacSpaceCli.provisionprofile"}
 AUTO_IDENTITY=0
 if [ -z "${SIGN_IDENTITY+x}" ]; then
-  SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "((Developer ID Application|Apple Development):.*)"$/\1/p' | head -1 || true)
+  IDENTITIES=$(security find-identity -v -p codesigning 2>/dev/null || true)
+  SIGN_IDENTITY=$(printf '%s' "$IDENTITIES" | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "(Developer ID Application:.*)"$/\1/p' | head -1 || true)
+  if [ -z "$SIGN_IDENTITY" ]; then
+    SIGN_IDENTITY=$(printf '%s' "$IDENTITIES" | sed -nE 's/^ *[0-9]+\) [0-9A-F]+ "(Apple Development:.*)"$/\1/p' | head -1 || true)
+  fi
   SIGN_IDENTITY=${SIGN_IDENTITY:--}
-  [ "$SIGN_IDENTITY" = "-" ] || AUTO_IDENTITY=1
+  AUTO_IDENTITY=1
 fi
-# codesign is given the certificate's SHA-1 hash, not its name: with two certificates of the same name in the keychain (a renewed
-# or re-imported Developer ID), signing by name failed as "ambiguous" at the first item, and the app was left half signed.
+METADATA_PROVISIONED=0
 SIGN_KEY=$SIGN_IDENTITY
-if [ "$SIGN_IDENTITY" != "-" ] && ! printf '%s' "$SIGN_IDENTITY" | grep -qE '^[0-9A-Fa-f]{40}$'; then
-  HASH=$(security find-identity -v -p codesigning 2>/dev/null | awk -v name="$SIGN_IDENTITY" '
-    { line = $0; sub(/^ *[0-9]+\) /, "", line); hash = substr(line, 1, 40); rest = substr(line, 43); sub(/"$/, "", rest)
-      if (rest == name) { print hash; exit } }' || true)
-  [ -n "$HASH" ] && SIGN_KEY=$HASH
+if [ "$SIGN_IDENTITY" != "-" ]; then
+  [ -f "$METADATA_APP_PROFILE" ] && [ -f "$METADATA_CLI_PROFILE" ] || {
+    echo "error: missing metadata provisioning profiles. Run python3 Scripts/StoreMetadataProfiles.py <app.provisionprofile> <cli.provisionprofile>, or set METADATA_APP_PROFILE and METADATA_CLI_PROFILE. Nothing was replaced." >&2
+    exit 1
+  }
+  PROFILE_ARGS=()
+  case "$SIGN_IDENTITY" in "Apple Development:"*) PROFILE_ARGS+=(--development) ;; esac
+  [ "$AUTO_IDENTITY" = 1 ] || PROFILE_ARGS+=(--identity "$SIGN_IDENTITY")
+  [ -z "${TEAM_ID:-}" ] || PROFILE_ARGS+=(--team "$TEAM_ID")
+  SELECTION=$(python3 Scripts/ValidateMetadataProfiles.py --app-profile "$METADATA_APP_PROFILE" --cli-profile "$METADATA_CLI_PROFILE" --select-identity ${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"})
+  SIGN_KEY=$(printf '%s' "$SELECTION" | plutil -extract certificate raw -o - -)
+  SIGN_IDENTITY=$(printf '%s' "$SELECTION" | plutil -extract name raw -o - -)
+  TEAM_ID=$(printf '%s' "$SELECTION" | plutil -extract team raw -o - -)
+  METADATA_PROVISIONED=1
 fi
-# Notarized unless NOTARY_PROFILE is set empty. Only a Developer ID identity can be notarized; without one (a contributor's build) it
-# is skipped, unless a profile was asked for explicitly.
+TEAM_ID=${TEAM_ID:-UNSIGNED}
+# Notarization applies to Developer ID distributions, after profile-based identity selection.
 NOTARY_EXPLICIT=${NOTARY_PROFILE+x}
 NOTARY_PROFILE=${NOTARY_PROFILE-MacSpace}
 case "$SIGN_IDENTITY" in
@@ -72,11 +91,7 @@ case "$SIGN_IDENTITY" in
        NOTARY_PROFILE=""
      fi ;;
 esac
-# Public half of the Sparkle update key. Without it the built app never checks for updates.
 SPARKLE_PUBLIC_KEY=${SPARKLE_PUBLIC_KEY:-}
-# The team that signs the app; the helper accepts only clients signed by it. Not a secret (it is in every signed binary).
-TEAM_ID=${TEAM_ID:-$(printf '%s' "$SIGN_IDENTITY" | sed -n 's/.*(\([A-Z0-9]\{10\}\)).*/\1/p')}
-TEAM_ID=${TEAM_ID:-UNSIGNED}
 if [ -z "${DEVELOPER_DIR:-}" ] && [ -d /Applications/Xcode-beta.app ] && ! xcode-select -p 2>/dev/null | grep -q Xcode; then
   export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 fi
@@ -92,7 +107,13 @@ FINAL="$OUT_DIR/MacSpace.app"
 STAGING="$OUT_DIR/.staging"
 APP="$STAGING/MacSpace.app"
 rm -rf "$STAGING"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources"
+CLI_WORKER="$APP/Contents/Helpers/MacSpaceCli.app"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$APP/Contents/Resources" "$CLI_WORKER/Contents/MacOS"
+sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" Packaging/Metadata-Cli-Info.plist > "$CLI_WORKER/Contents/Info.plist"
+if [ "$METADATA_PROVISIONED" = 1 ]; then
+  cp "$METADATA_APP_PROFILE" "$APP/Contents/embedded.provisionprofile"
+  cp "$METADATA_CLI_PROFILE" "$CLI_WORKER/Contents/embedded.provisionprofile"
+fi
 
 sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_PUBLIC_KEY|" App/Resources/Info.plist > "$APP/Contents/Info.plist"
 if [ -n "${FEED_URL:-}" ]; then
@@ -127,6 +148,7 @@ if [ "$DEV" = 1 ]; then
   cp App/Resources/TextCatalog.json "$APP/Contents/Resources/"
 fi
 cp "$BIN/MacSpaceCli" "$APP/Contents/MacOS/MacSpaceCli"
+cp "$BIN/MacSpaceCli" "$CLI_WORKER/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
 sed "s/__TEAM_ID__/$TEAM_ID/" Packaging/com.macspace.helper.plist > "$APP/Contents/Library/LaunchDaemons/com.macspace.helper.plist"
@@ -142,6 +164,7 @@ reroot() { # file, new rpath
 }
 reroot "$APP/Contents/MacOS/MacSpace" "@executable_path/../Frameworks"
 reroot "$APP/Contents/MacOS/MacSpaceCli" "@executable_path/../Frameworks"
+reroot "$CLI_WORKER/Contents/MacOS/MacSpaceCli" "@executable_path/../../../../Frameworks"
 reroot "$APP/Contents/MacOS/MacSpaceHelper" "@executable_path/../Frameworks"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do
   install_name_tool -id "@rpath/$(basename "$lib")" "$lib"
@@ -179,11 +202,43 @@ done
 codesign "${FLAGS[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
 for lib in "$APP"/Contents/Frameworks/*.dylib; do codesign "${FLAGS[@]}" "$lib"; done
 for bundle in "${MODULES[@]}"; do codesign "${FLAGS[@]}" "$bundle"; done
-# Its own identifier, which the helper accepts besides the app's: signed as "MacSpaceCli", `MacSpaceCli helper --ping` was turned away.
+# Metadata access belongs only to these two executable identities. Helpers and Sparkle receive no metadata group.
+sed "s/__TEAM_ID__/$TEAM_ID/g" Packaging/Metadata-App.entitlements > "$STAGING/Metadata-App.entitlements"
+sed "s/__TEAM_ID__/$TEAM_ID/g" Packaging/Metadata-Cli.entitlements > "$STAGING/Metadata-Cli.entitlements"
+cp Vendor/SQLCipher/LICENSE.txt "$APP/Contents/Resources/SQLCipher-LICENSE.txt"
+# The compatibility CLI has no restricted entitlements. Metadata operations exec
+# the worker, whose app-like bundle carries its own authorizing profile.
 codesign "${FLAGS[@]}" --identifier com.macspace.cli "$APP/Contents/MacOS/MacSpaceCli"
 codesign "${FLAGS[@]}" --identifier com.macspace.helper "$APP/Contents/MacOS/MacSpaceHelper"
-codesign "${FLAGS[@]}" "$APP"
+if [ "$METADATA_PROVISIONED" = 1 ]; then
+  codesign "${FLAGS[@]}" --entitlements "$STAGING/Metadata-Cli.entitlements" "$CLI_WORKER"
+  codesign "${FLAGS[@]}" --entitlements "$STAGING/Metadata-App.entitlements" "$APP"
+else
+  codesign "${FLAGS[@]}" "$CLI_WORKER"
+  codesign "${FLAGS[@]}" "$APP"
+fi
 codesign --verify --deep --strict "$APP" || { echo "error: the signed app does not verify; nothing was replaced" >&2; exit 1; }
+# Inspect the entitlements actually embedded in each signature, not only the input templates.
+if [ "$METADATA_PROVISIONED" = 1 ]; then
+for entry in "app:$APP" "cli:$CLI_WORKER"; do
+  component=${entry%%:*}
+  executable=${entry#*:}
+  entitlement_output="$STAGING/$component-signed-entitlements.plist"
+  codesign -d --entitlements - --xml "$executable" > "$entitlement_output" 2>/dev/null
+  group=$(plutil -extract keychain-access-groups.0 raw -o - "$entitlement_output")
+  application=$(/usr/libexec/PlistBuddy -c "Print :com.apple.application-identifier" "$entitlement_output")
+  [ "$group" = "$TEAM_ID.com.macspace.metadata" ] && [ "$application" = "$TEAM_ID.com.macspace.$component" ] || {
+    echo "error: signed metadata identity does not match its restricted access group" >&2; exit 1;
+  }
+  if plutil -extract keychain-access-groups.1 raw -o - "$entitlement_output" >/dev/null 2>&1; then
+    echo "error: unexpected extra Keychain access group" >&2; exit 1
+  fi
+  for forbidden in com.apple.security.get-task-allow com.apple.security.cs.disable-library-validation; do
+    value=$(/usr/libexec/PlistBuddy -c "Print :$forbidden" "$entitlement_output" 2>/dev/null || true)
+    [ "$value" != true ] || { echo "error: distribution signature weakens runtime isolation" >&2; exit 1; }
+  done
+done
+fi
 
 # Notarization: Gatekeeper opens a Developer ID app copied from elsewhere only once Apple has notarized it. The ticket is stapled to
 # the app, so it also opens offline.
@@ -209,8 +264,15 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
     [ -n "$SUBMISSION" ] && xcrun notarytool log "$SUBMISSION" --keychain-profile "$NOTARY_PROFILE" >&2
     exit 1
   fi
+  if [ "$METADATA_PROVISIONED" = 1 ]; then xcrun stapler staple "$CLI_WORKER"; fi
   xcrun stapler staple "$APP"
   spctl -a -vv "$APP"
+fi
+# Platform distribution checks supplement explicit profile authorization checks.
+# Do not start either executable as part of verification.
+if [ "$METADATA_PROVISIONED" = 1 ] && [ -n "${NOTARY_PROFILE:-}" ]; then
+  syspolicy_check distribution "$APP"
+  syspolicy_check distribution "$CLI_WORKER"
 fi
 # Complete, signed (and notarized): it takes the place of the previous build in one move.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$PWD/$APP" 2>/dev/null || true
