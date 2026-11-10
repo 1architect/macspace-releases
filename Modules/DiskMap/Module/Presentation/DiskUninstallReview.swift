@@ -55,12 +55,10 @@ enum DiskUninstallReview {
         guard plans.count == selected.count, !plans.isEmpty, let encoded = try? JSONEncoder().encode(plans) else {
             return Screen(title: loc("Review app data"), widgets: [])
         }
-        let message = loc("MacSpace quits the selected apps before uninstalling them. Unselected and shared data is preserved.")
-            + "\n\n" + String(format: loc("Selected apps: %@"), ListFormatter.localizedString(byJoining: selected.map { $0.owner.name }))
-            + "\n\n" + (FileRemovalSettings.movesToTrash() ? loc("Selected app data will be moved to Trash.") : loc("Selected app data will be permanently deleted."))
+        let trash = FileRemovalSettings.movesToTrash()
         let action = Action(id: "uninstallSelected", title: loc("Uninstall"), role: .destructive,
-            parameters: ["plans": String(decoding: encoded, as: UTF8.self), "trash": FileRemovalSettings.movesToTrash() ? "1" : "0"],
-            confirmation: Confirmation(title: loc("Uninstall selected apps?"), message: message, confirmTitle: loc("Uninstall")),
+            parameters: ["plans": String(decoding: encoded, as: UTF8.self), "trash": trash ? "1" : "0"],
+            confirmation: confirmation(trash: trash),
             requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
         let candidates = DiskUninstallBatch.dataCandidates(selected, apps: apps, home: home)
         let byPath = Dictionary(uniqueKeysWithValues: candidates.map { ($0.path, $0) })
@@ -84,7 +82,7 @@ enum DiskUninstallReview {
             measured[path] = value
             return value
         }
-        var choices: [String: UInt64] = [:], names: [String: String] = [:]
+        var choices: [String: UInt64] = [:]
         var includedBytes: UInt64 = 0
         var checked: [String] = [], sections: [SelectionSection] = []
         var suggestedCaches = 0
@@ -115,7 +113,7 @@ enum DiskUninstallReview {
                     unavailableReason: candidate == nil ? (shared ? loc("Used by other apps") : path.hasPrefix(home + "/Library/") ? loc("Protected or unreadable data") : loc("Outside your user Library")) : nil)
                 items[owner, default: []].append(Item(row: row, bytes: size, category: category, selectable: candidate != nil))
                 if candidate != nil {
-                    choices[id] = size; names[id] = path
+                    choices[id] = size
                     // Match the removal batch's existing 32-location bound; additional caches remain opt-in.
                     if suggested && suggestedCaches < 32 { checked.append(id); suggestedCaches += 1 }
                 }
@@ -140,7 +138,6 @@ enum DiskUninstallReview {
                                   unavailableReason: optional.isEmpty ? (preserved.isEmpty ? loc("No app data to remove") : preservationReason(preserved)) : nil))
         }
         let selection = Selection(action: action, choices: choices, checked: checked, sections: sections,
-            noteNames: names, note: message.replacingOccurrences(of: "%", with: "%%") + "\n\n" + loc("Selected app data: %@"),
             scope: "uninstall-review:" + selected.map { $0.owner.path }.sorted().joined(separator: "\n"), includedBytes: includedBytes)
         var widgets: [ScreenWidget] = []
         for app in selected {
@@ -162,6 +159,12 @@ enum DiskUninstallReview {
         }
         return Screen(title: selected.count == 1 ? selected[0].owner.name : loc("Review app data"), layout: .singleColumn,
                       widgets: widgets, selection: selection)
+    }
+
+    static func confirmation(trash: Bool) -> Confirmation {
+        Confirmation(title: loc("Uninstall selected apps?"),
+            message: trash ? loc("Quits the apps and trashes selected data.") : loc("Quits the apps and permanently deletes selected data."),
+            confirmTitle: loc("Uninstall"))
     }
 
     static func categoryID(_ owner: String, _ category: Category) -> String { "uninstall-category:" + owner + ":" + category.rawValue }

@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "1個の機能を無効にしますか？";
 "Disable all" = "すべて無効にする";
 "Disable automatically if changed" = "変更されたら自動的に無効にする";
+"Disable features?" = "機能を無効にしますか？";
 "Disabled" = "無効";
 "Disabling" = "無効にしています";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "無効にすると「システム設定 > 一般 > デバイス管理」でプロファイルの承認を求められます。";
@@ -81,8 +82,10 @@
 "Partly off" = "一部オフ";
 "Personalized ads" = "パーソナライズされた広告";
 "Policies" = "ポリシー";
+"Re-enable features?" = "機能を再有効化しますか？";
 "Reopen apps to apply." = "アプリを開き直すと適用されます。";
 "Restart to apply." = "再起動すると適用されます。";
+"Restores the previous settings." = "以前の設定に戻します。";
 "Set by another profile" = "別のプロファイルによる設定";
 "Share analytics with Apple" = "解析をAppleと共有";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "macOSが無効な機能を再びオンにし、MacSpaceが再度無効にすると通知します。";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "ビジュアルインテリジェンス";
 "Waiting for approval" = "承認待ち";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "macOSによる次の診断送信の判断を待っています。成功の記録は、診断情報を含まないサーバへの接続の場合もあります。";
+"You can re-enable them later." = "後から再有効化できます。";
 "debloat" = "Debloat";
+"macOS asks you to approve a profile." = "macOSからプロファイルの承認を求められます。";
 "macOS asks you to approve the policy profile once." = "macOSがポリシープロファイルの承認を一度だけ求めます。";
 "macOS prevents this change from taking effect on this Mac." = "macOSがこのMacでの変更の適用を阻止しています。";
 "macOS still chose to send diagnostics after this change." = "この変更後もmacOSは診断情報の送信を選択しています。";

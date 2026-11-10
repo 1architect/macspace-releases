@@ -5,8 +5,8 @@ import MacSpaceSdk
 public enum CloudFileRows {
     public static func action(_ source: PurgeableDocuments.Source) -> Action {
         Action(id: "removeDownloads", title: String(localized: "Free"), parameters: ["path": source.path],
-               confirmation: Confirmation(title: String(localized: "Free \(ByteFormat.string(source.bytes)) of \(source.name) downloads?"),
-                                          message: String(localized: "The files stay in \(source.name) and download again when you open them."),
+               confirmation: Confirmation(title: String(localized: "Remove local copies?"),
+                                          message: String(localized: "Files stay in the cloud."),
                                           confirmTitle: String(localized: "Free")), workingTitle: String(localized: "Freeing space"),
                labelSamples: [String(localized: "Removing downloads")] +
                    [0, 999, 999_499, 999_499_999, 999_499_999_999, source.bytes].filter { $0 <= source.bytes }.map {

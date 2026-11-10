@@ -52,7 +52,7 @@ final class DiskDatabase: @unchecked Sendable {
         guard let boundary = msc_boundary_create(access.path) else { throw Failure(message: "Cannot pin disk index") }
         self.boundary = boundary
         var initialized = false
-        defer { if !initialized { for value in prepared.values { msc_sqlite3_finalize(value) }; msc_sqlite3_close(db); db = nil; msc_boundary_destroy(self.boundary); self.boundary = nil } }
+        defer { if !initialized { for value in prepared.values { msc_sqlite3_finalize(value) }; prepared.removeAll(); msc_sqlite3_close(db); db = nil; msc_boundary_destroy(self.boundary); self.boundary = nil } }
         guard msc_sqlite3_open_v2(access.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_NOFOLLOW, msc_boundary_name(boundary)) == SQLITE_OK else { throw error() }
         guard key.withUnsafeBytes({ msc_cipher_key(db, $0.baseAddress, Int32($0.count)) }) == SQLITE_OK else { throw MetadataUnavailable() }
         try access.validate()
@@ -103,12 +103,15 @@ final class DiskDatabase: @unchecked Sendable {
         ("dirs_apps", "dirs(path,total) WHERE substr(path,-4)='.app'"),
         ("dirs_bundles", "dirs(bundle) WHERE bundle<>''"),
         ("entries_links", "entries(link,parent,name) WHERE link<>''"),
+        // Totals visit only hard links; ordinary files are already included in dirs.direct.
+        ("entries_link_parents", "entries(parent,link,name,bytes) WHERE link<>''"),
         ("entries_large", "entries(logical DESC,parent,name) WHERE inventory=1")
     ]
+    static let entryLayout = "(parent INTEGER NOT NULL,name TEXT NOT NULL,bytes INTEGER NOT NULL,logical INTEGER NOT NULL,uid INTEGER,link TEXT NOT NULL,category TEXT NOT NULL,modified INTEGER,kind TEXT NOT NULL,inventory INTEGER NOT NULL,PRIMARY KEY(parent,name)) WITHOUT ROWID"
     private func compactSchema() throws {
         // A directory's path exists once; every file stores only its integer parent and leaf name.
         try execute("CREATE TABLE IF NOT EXISTS dirs (id INTEGER PRIMARY KEY,path TEXT NOT NULL UNIQUE,parent INTEGER NOT NULL,direct INTEGER NOT NULL,total INTEGER NOT NULL,readable INTEGER NOT NULL,uid INTEGER,bundle TEXT,items INTEGER)")
-        try execute("CREATE TABLE IF NOT EXISTS entries (parent INTEGER NOT NULL,name TEXT NOT NULL,bytes INTEGER NOT NULL,logical INTEGER NOT NULL,uid INTEGER,link TEXT NOT NULL,category TEXT NOT NULL,modified INTEGER,kind TEXT NOT NULL,inventory INTEGER NOT NULL,PRIMARY KEY(parent,name)) WITHOUT ROWID")
+        try execute("CREATE TABLE IF NOT EXISTS entries \(Self.entryLayout)")
         let projection = "SELECT CASE WHEN d.path='/' THEN '/'||e.name ELSE d.path||'/'||e.name END AS path,d.path AS parent,e.bytes,e.logical,e.uid,e.link,e.category,e.modified,e.kind FROM entries e JOIN dirs d ON d.id=e.parent"
         try execute("CREATE VIEW IF NOT EXISTS files AS " + projection)
         try execute("CREATE VIEW IF NOT EXISTS file_details AS " + projection + " WHERE e.inventory=1")
@@ -234,11 +237,11 @@ final class DiskDatabase: @unchecked Sendable {
     }
     private static let entryInsertSQL = "INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory WHERE entries.bytes IS NOT excluded.bytes OR entries.logical IS NOT excluded.logical OR entries.uid IS NOT excluded.uid OR entries.link IS NOT excluded.link OR entries.category IS NOT excluded.category OR entries.modified IS NOT excluded.modified OR entries.kind IS NOT excluded.kind OR entries.inventory IS NOT excluded.inventory"
     private static let refreshInsertSQL = entryInsertSQL.replacingOccurrences(of: "entries", with: "refresh_entries")
-    func put(_ file: DiskFile, link: String = "", trackSeen: Bool = false, staging: Bool = false) throws {
+    func put(_ file: DiskFile, link: String = "", trackSeen: Bool = false, staging: Bool = false, parentExists: Bool = false) throws {
         let eligible = file.bytes > 0 && file.ownerUID == getuid() && inventoryIncludes(file.path)
         guard eligible || !link.isEmpty else { return }
         let parent = Self.parent(file.path), name = (file.path as NSString).lastPathComponent
-        try ensureDirectory(parent)
+        if !parentExists { try ensureDirectory(parent) }
         try query(staging ? Self.refreshInsertSQL : Self.entryInsertSQL, [
             .text(name), .number(file.bytes), .number(file.logicalBytes), .optional(file.ownerUID), .text(link),
             .text(eligible ? DiskCategory.inventoryCategory(file.path).rawValue : DiskCategory.other.rawValue), .date(file.modifiedAt), .text(eligible ? DiskFileType.key(file.path) : ""), .number(eligible ? 1 : 0), .text(parent)])
@@ -247,13 +250,22 @@ final class DiskDatabase: @unchecked Sendable {
     func directory(_ path: String, contents: Bool = false) throws -> DiskDirectory? {
         var node: DiskDirectory?
         try query("SELECT path,direct,total,readable,uid,bundle,items FROM dirs WHERE path=?", [.text(path)]) {
-            node = DiskDirectory(path: Self.text($0, 0), itemCount: msc_sqlite3_column_type($0, 6) == SQLITE_NULL ? nil : Self.number($0, 6), directBytes: Self.number($0, 1), bytes: Self.number($0, 2), readable: Self.number($0, 3) != 0, bundleIdentifier: Self.text($0, 5).isEmpty ? nil : Self.text($0, 5), ownerUID: Self.uid($0, 4))
+            node = Self.decodeDirectory($0)
         }
         if contents, node != nil {
             try query("SELECT path FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) { node?.folders.append(Self.text($0, 0)) }
             node?.files = try files(parent: path, limit: 200)
         }
         return node
+    }
+    private static func decodeDirectory(_ row: OpaquePointer) -> DiskDirectory {
+        DiskDirectory(path: text(row, 0), itemCount: msc_sqlite3_column_type(row, 6) == SQLITE_NULL ? nil : number(row, 6), directBytes: number(row, 1), bytes: number(row, 2), readable: number(row, 3) != 0, bundleIdentifier: text(row, 5).isEmpty ? nil : text(row, 5), ownerUID: uid(row, 4))
+    }
+    /// Project the same direct children in one indexed read instead of a query for every path.
+    func childDirectories(_ path: String, row: (DiskDirectory) -> Void) throws {
+        try query("SELECT path,direct,total,readable,uid,bundle,items FROM dirs WHERE " + (directoryParentIDs ? "parent=(SELECT id FROM dirs WHERE path=?)" : "parent=?") + " ORDER BY path", [.text(path)]) {
+            row(Self.decodeDirectory($0))
+        }
     }
     /// Legacy caches lack direct entry counts. Measure only visible folder roots once per revision.
     func countedDirectory(_ path: String) throws -> DiskDirectory? {
@@ -352,8 +364,11 @@ final class DiskDatabase: @unchecked Sendable {
         try query("DELETE FROM entries WHERE parent=(SELECT id FROM dirs WHERE path=?)", [.text(parent)])
     }
     func total(_ path: String) throws {
+        try updateTotals(where: "path=?", values: [.text(path)])
+    }
+    private func updateTotals(where predicate: String, values: [Value]) throws {
         let measured = "direct+COALESCE((SELECT SUM(total) FROM dirs c WHERE c.parent=dirs.id),0)+COALESCE((SELECT SUM(bytes) FROM entries e WHERE e.parent=dirs.id AND e.link<>'' AND (e.parent,e.name)=(SELECT l.parent,l.name FROM entries l WHERE l.link=e.link AND l.link<>'' ORDER BY l.parent,l.name LIMIT 1)),0)"
-        try query("UPDATE dirs SET total=\(measured) WHERE path=? AND total IS NOT (\(measured))", [.text(path)])
+        try query("UPDATE dirs SET total=\(measured) WHERE \(predicate) AND total IS NOT (\(measured))", values)
     }
     func resolvePendingParents() throws {
         try execute("UPDATE dirs SET parent=COALESCE((SELECT p.id FROM dirs p JOIN pending_parents q ON q.parent=p.path WHERE q.path=dirs.path),0) WHERE path IN (SELECT path FROM pending_parents); DELETE FROM pending_parents")
@@ -372,18 +387,30 @@ final class DiskDatabase: @unchecked Sendable {
             var depth: UInt64 = 2147483647, last: UInt64 = 0, done = 0, count = 0
             try query("SELECT COUNT(*) FROM dirs") { count = Int(Self.number($0, 0)) }
             let step = max(1, count / 128)
+            let batchSize = max(32, min(512, step))
             progress?(0)
             while true {
                 var batch: [(String, UInt64)] = []
                 // Separate equal-depth and next-depth seeks: an OR/tuple cursor can restart a full index scan.
-                try query("SELECT path,id FROM dirs WHERE length(path)=? AND id>? ORDER BY id LIMIT 512", [.number(depth), .number(last)]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
-                if batch.count < 512 {
-                    try query("SELECT path,id FROM dirs WHERE length(path)<? ORDER BY length(path) DESC,id LIMIT ?", [.number(depth), .number(UInt64(512 - batch.count))]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
+                try query("SELECT path,id FROM dirs WHERE length(path)=? AND id>? ORDER BY id LIMIT ?", [.number(depth), .number(last), .number(UInt64(batchSize))]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
+                if batch.count < batchSize {
+                    try query("SELECT path,id FROM dirs WHERE length(path)<? ORDER BY length(path) DESC,id LIMIT ?", [.number(depth), .number(UInt64(batchSize - batch.count))]) { batch.append((Self.text($0, 0), Self.number($0, 1))) }
                 }
                 if batch.isEmpty { break }
-                for (path, _) in batch {
-                    try total(path); done += 1
-                    if done % step == 0 || done == count { progress?(Double(done) / Double(max(count, 1))) }
+                // Equal-length paths cannot be ancestors of one another. Update each bounded group
+                // together, keeping longer descendants ahead of parents and retaining unchanged totals.
+                var offset = 0
+                while offset < batch.count {
+                    let length = UInt64(batch[offset].0.unicodeScalars.count)
+                    let first = batch[offset].1
+                    var end = offset + 1
+                    while end < batch.count && UInt64(batch[end].0.unicodeScalars.count) == length { end += 1 }
+                    try updateTotals(where: "length(path)=? AND id>=? AND id<=?",
+                                     values: [.number(length), .number(first), .number(batch[end - 1].1)])
+                    let before = done
+                    done += end - offset
+                    if done / step != before / step || done == count { progress?(Double(done) / Double(max(count, 1))) }
+                    offset = end
                 }
                 last = batch.last!.1; depth = UInt64(batch.last!.0.unicodeScalars.count)
                 try Task.checkCancellation()

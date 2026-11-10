@@ -58,12 +58,14 @@
 "Day" = "Tag";
 "Delete" = "Löschen";
 "Delete %@?" = "%@ löschen?";
+"Delete this item?" = "Dieses Objekt löschen?";
 "Developed by\n%@" = "Entwickelt von\n%@";
 "Does the few things that need an administrator." = "Erledigt die wenigen Aufgaben, die einen Administrator erfordern.";
 "Drag into the Full Disk Access list" = "In die Liste „Festplattenvollzugriff“ ziehen";
 "Every 3 days" = "Alle 3 Tage";
 "Every day" = "Täglich";
 "Every week" = "Wöchentlich";
+"Files stay in the cloud." = "Die Dateien bleiben in der Cloud.";
 "Finishing in the background" = "Wird im Hintergrund abgeschlossen";
 "Follow System" = "Wie System";
 "Free" = "Freigeben";
@@ -145,6 +147,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "Beende MacSpace und kopiere es erneut. Berechtigungen für diese Kopie gingen beim nächsten Update verloren.";
 "Recent cleanups" = "Letzte Bereinigungen";
 "Refresh" = "Aktualisieren";
+"Remove local copies?" = "Lokale Kopien entfernen?";
 "Removing %@" = "%@ werden entfernt";
 "Removing %lld%%, %@" = "Wird entfernt %lld %%, %@";
 "Removing downloads" = "Downloads werden entfernt";
@@ -155,8 +158,10 @@
 "Restart your Mac from the Apple menu." = "Starte deinen Mac über das Apple-Menü neu.";
 "Restart your Mac to apply this change." = "Starte deinen Mac neu, um diese Änderung anzuwenden.";
 "Restore" = "Wiederherstellen";
+"Restores changed settings and moves the app to Trash." = "Stellt geänderte Einstellungen wieder her und legt die App in den Papierkorb.";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.";
 "Restoring settings" = "Einstellungen wiederherstellen";
+"Save your work first. Some changes may be permanent." = "Sichere deine Arbeit. Änderungen können dauerhaft sein.";
 "Selected cleanup items changed. Review your selection again." = "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.";
 "Selected files need review" = "Ausgewählte Dateien müssen überprüft werden";
 "Settings" = "Einstellungen";
@@ -179,6 +184,7 @@
 "Uninstall" = "Deinstallieren";
 "Uninstall MacSpace?" = "MacSpace deinstallieren?";
 "Uninstall MacSpace…" = "MacSpace deinstallieren…";
+"Uninstall this app?" = "Diese App deinstallieren?";
 "Uninstall…" = "Deinstallieren…";
 "Unknown" = "Unbekannt";
 "Updates" = "Updates";

@@ -198,10 +198,10 @@ enum DiskMapScreenBuilder {
     static func uninstallAction(_ app: DiskApplication) -> Action? {
         DiskUninstallBatch.plan(app).flatMap { plan in
             guard let encoded = try? plan.encoded() else { return nil }
+            let trash = FileRemovalSettings.movesToTrash()
             return Action(id: "uninstall", title: loc("Uninstall"), role: .destructive,
-                parameters: ["app": app.owner.path, "identifier": app.owner.identifier, "plan": encoded, "trash": FileRemovalSettings.movesToTrash() ? "1" : "0"],
-                confirmation: Confirmation(title: loc("Uninstall \(app.owner.name)?"),
-                    message: loc("The app and selected associated data will be removed. Unselected and shared data is preserved.") + "\n\n" + plan.targets.map(\.path).joined(separator: "\n") + "\n\n" + (FileRemovalSettings.movesToTrash() ? loc("Selected app data will be moved to Trash.") : loc("Selected app data will be permanently deleted.")), confirmTitle: loc("Uninstall")),
+                parameters: ["app": app.owner.path, "identifier": app.owner.identifier, "plan": encoded, "trash": trash ? "1" : "0"],
+                confirmation: DiskUninstallReview.confirmation(trash: trash),
                 requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
         }
     }
@@ -261,12 +261,12 @@ enum DiskMapScreenBuilder {
                 paths: [leftover.path])
         }
         let choices = Dictionary(leftovers.filter { $0.identity != nil }.map { ($0.choiceID, $0.bytes) }, uniquingKeysWith: { first, _ in first })
-        let message = unmatchedExplanation + "\n\n" + loc("This permanently deletes only the selected app-data locations.")
-        let selection = Selection(action: Action(id: "freeUnmatchedData", title: loc("Free selected"),
+        let selection = Selection(action: Action(id: "freeUnmatchedData", title: loc("Free selected"), role: .destructive,
             parameters: ["trash": "0"],
-            confirmation: Confirmation(title: loc("Free the selected app data?"), message: message, confirmTitle: loc("Delete")),
+            confirmation: Confirmation(title: loc("Delete selected app data?"),
+                message: loc("Selected data is permanently deleted."), confirmTitle: loc("Delete")),
             requires: [.fullDiskAccess], workingTitle: loc("Freeing space")), choices: choices,
-            noteNames: Dictionary(uniqueKeysWithValues: leftovers.map { ($0.choiceID, $0.path) }), note: message + "\n\n" + loc("Selected app data: %@"), scope: "unmatched-app-data")
+            scope: "unmatched-app-data")
         return Screen(title: loc("Unmatched app data"), layout: .singleColumn,
             widgets: [.banner(Banner(id: "unmatched-explanation", severity: .warning, title: loc("Review before freeing"), message: unmatchedExplanation)),
                       .list(ListWidget(id: "reviewable-app-data", title: loc("Unmatched app data"), emptyMessage: apps.measurementsComplete ? loc("No unmatched app data found") : loc("App-data measurements are unavailable or incomplete."), rows: rows))], selection: selection)

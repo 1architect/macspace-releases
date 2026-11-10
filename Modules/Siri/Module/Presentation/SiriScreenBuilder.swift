@@ -240,8 +240,8 @@ enum SiriScreenBuilder {
         guard !features.isEmpty else { return nil }
         let size = ByteFormat.string(features.compactMap { snapshot.featureModelBytes[$0] }.reduce(0, +))
         return Action(id: "freeFeatureModels", title: loc("Free \(size)"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free \(size)?"),
-                                                 message: loc("Deletes the models of the features you switched off. They download again if you switch one back on."),
+                      confirmation: Confirmation(title: loc("Free unused models?"),
+                                                 message: loc("They download again if re-enabled."),
                                                  confirmTitle: loc("Free")),
                       workingTitle: loc("Freeing space"))
     }
@@ -287,14 +287,13 @@ enum SiriScreenBuilder {
     static func setAll(_ rows: [ToggleRow], on: Bool) -> Action {
         let one = rows.count == 1 ? rows[0].title : nil
         let title = on ? one.map { loc("Enable \($0)") } ?? loc("Enable all") : one.map { loc("Disable \($0)") } ?? loc("Disable all")
-        let question = on ? one.map { loc("Enable \($0) again?") } ?? loc("Enable all \(rows.count) features again?")
-                          : one.map { loc("Disable \($0)?") } ?? loc("Disable \(rows.count) features?")
+        let question = on ? loc("Re-enable features?") : loc("Disable features?")
         return Action(id: on ? "enableAll" : "disableAll", title: title,
                symbol: on ? "arrow.uturn.backward" : "checkmark.shield", role: .prominent,
                parameters: ["ids": rows.map(\.id).joined(separator: ",")],
                confirmation: on
-                ? Confirmation(title: question, message: loc("macOS downloads their models again."), confirmTitle: loc("Enable"))
-                : Confirmation(title: question, message: loc("Each one can be enabled again. MacSpace frees their models."), confirmTitle: loc("Disable")),
+                ? Confirmation(title: question, message: loc("macOS downloads the models again."), confirmTitle: loc("Enable"))
+                : Confirmation(title: question, message: loc("Frees models until re-enabled."), confirmTitle: loc("Disable")),
                requires: rows.flatMap(\.action.requires).reduce(into: []) { if !$0.contains($1) { $0.append($1) } })
     }
 
@@ -312,7 +311,7 @@ enum SiriScreenBuilder {
         // No button while MacSpace is already asking macOS again in the background.
         guard let bytes = snapshot.purgeableAssetsBytes, bytes >= purgeThreshold, !snapshot.assetsRetrying else { return nil }
         return Action(id: "purgeAssets", title: loc("Free up to \(ByteFormat.string(bytes))"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free up to \(ByteFormat.string(bytes))?"), message: loc("Deletes Apple Intelligence models and other downloads macOS no longer needs."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
+                      confirmation: Confirmation(title: loc("Free unused downloads?"), message: loc("macOS downloads them again as needed."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
     static func switchList(_ snapshot: SiriSnapshot) -> ToggleList {

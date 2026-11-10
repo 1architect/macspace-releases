@@ -165,9 +165,9 @@ public enum InfoText {
     }
 }
 
-/// Asked before an action runs. Keep it short: the title asks the question ("Free 250 MB?"), and the message, when there is one, says
-/// in one line what the user would not expect (an app that will quit). Never how MacSpace works inside. The host must align
-/// the app icon, heading and message to a shared leading edge in every confirmation, including cache selection.
+/// Asked before an action runs. Use a short question and an optional short consequence.
+/// Keep the title to one displayed line and the message to two. Item names, paths and
+/// inventories belong on the review page. Write one message for a batch.
 public struct Confirmation: Codable, Equatable, Sendable {
     public var title: String
     public var message: String
@@ -729,15 +729,13 @@ public struct Selection: Codable, Equatable, Sendable {
     public var suggestedTitle: String?
     public var sections: [SelectionSection]
     public var save: Action?
-    /// Rows that add a name to the confirmation while they are checked, by id: an open app's cache adds the app, which the action
-    /// quits. The names of the checked ones, joined as a list ("Enscape and WhatsApp"), fill `note`, which becomes the confirmation's
-    /// message.
-    public var noteNames: [String: String]
-    /// The confirmation's message while one of `noteNames` is checked, with `%@` for their names: "Quits %@.".
+    /// Checked rows that trigger the selection's fixed confirmation message.
+    public var noteChoiceIDs: Set<String>
+    /// A short, localized confirmation message when any of `noteChoiceIDs` is checked.
     public var note: String?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteNames: [String: String] = [:], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:], persistenceKey: String? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteChoiceIDs: Set<String> = [], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:], persistenceKey: String? = nil) {
         self.scope = scope
         self.partial = partial
         self.session = session
@@ -755,11 +753,11 @@ public struct Selection: Codable, Equatable, Sendable {
         self.suggestedTitle = suggestedTitle
         self.sections = sections
         self.save = save
-        self.noteNames = noteNames
+        self.noteChoiceIDs = noteChoiceIDs
         self.note = note
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteNames, note, persistenceKey }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteChoiceIDs, note, persistenceKey }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
@@ -781,7 +779,7 @@ public struct Selection: Codable, Equatable, Sendable {
         suggestedTitle = try container.decodeIfPresent(String.self, forKey: .suggestedTitle)
         sections = try container.decodeIfPresent([SelectionSection].self, forKey: .sections) ?? []
         save = try container.decodeIfPresent(Action.self, forKey: .save)
-        noteNames = try container.decodeIfPresent([String: String].self, forKey: .noteNames) ?? [:]
+        noteChoiceIDs = try container.decodeIfPresent(Set<String>.self, forKey: .noteChoiceIDs) ?? []
         note = try container.decodeIfPresent(String.self, forKey: .note)
     }
 

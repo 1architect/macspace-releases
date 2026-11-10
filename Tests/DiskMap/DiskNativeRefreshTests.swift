@@ -151,4 +151,42 @@ final class DiskNativeRefreshTests: DiskSecurityFixtureCase {
             XCTAssertEqual(names, ["old"])
         }
     }
+    func testCancellationAfterFirstMergeBatchRollsBackAndRetryMergesLaterDirectories() throws {
+        try fixture { root, db, _ in
+            try db.put(DiskDirectory(path: root.path))
+            try db.query("WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<4100) INSERT INTO dirs(path,parent,direct,total,readable) SELECT ?||i,1,0,0,1 FROM n", [.text(root.path + "/folder-")])
+            try db.saveState(DiskIndex(root: root.path))
+            let first = root.path + "/folder-1/a.txt", last = root.path + "/folder-4100/b.txt"
+            func merge(cancelAfterFirstBatch: Bool) throws {
+                var cancel = false
+                try db.transaction {
+                    try db.beginNativeRefresh()
+                    try db.execute("INSERT INTO refresh_dirs(id,complete,readable) SELECT id,1,1 FROM dirs")
+                    for path in [first, last] {
+                        try db.put(DiskFile(path: path, bytes: 4096, logicalBytes: 4096, ownerUID: getuid()), staging: true)
+                    }
+                    _ = try db.finishNativeRefresh(cancelled: { cancel }, progress: { value in
+                        if cancelAfterFirstBatch && value > 0.2 { cancel = true }
+                    })
+                }
+            }
+            XCTAssertThrowsError(try merge(cancelAfterFirstBatch: true)) { XCTAssertTrue($0 is CancellationError) }
+            XCTAssertEqual(try db.query("SELECT name FROM entries"), 0)
+            try merge(cancelAfterFirstBatch: false)
+            XCTAssertEqual(try db.query("SELECT name FROM entries"), 2)
+        }
+    }
+
+    func testLinkedDirectoryLookupIsBoundedAndExcludesOrdinaryFiles() throws {
+        try fixture { root, db, _ in
+            let linked = root.path + "/linked", ordinary = root.path + "/ordinary"
+            try db.put(DiskDirectory(path: root.path))
+            for path in [linked, ordinary] { try db.put(DiskDirectory(path: path)) }
+            try db.put(DiskFile(path: linked + "/alias", bytes: 4096, logicalBytes: 4096), link: "family")
+            try db.put(DiskFile(path: ordinary + "/file", bytes: 4096, logicalBytes: 4096, ownerUID: getuid()))
+            XCTAssertEqual(try db.linkedDirectoryPaths(limit: 1), [linked])
+            XCTAssertNil(try db.linkedDirectoryPaths(limit: 0))
+        }
+    }
+
 }

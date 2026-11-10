@@ -270,7 +270,7 @@ enum BlockLayout {
         let first = selections.first
         let combinesSelection = first?.scope != nil && selections.allSatisfy {
             $0.scope == first?.scope && $0.action == first?.action && $0.save == nil && $0.sections.isEmpty
-                && $0.note == nil && $0.noteNames.isEmpty && $0.suggestedTitle == nil
+                && $0.note == nil && $0.noteChoiceIDs.isEmpty && $0.suggestedTitle == nil
         }
         let rows = parts.sorted { $0.bytes == $1.bytes ? $0.id < $1.id : $0.bytes > $1.bytes }.flatMap { part -> [Row] in
             if isFolder(part), let group = part.group {
@@ -560,7 +560,7 @@ struct BlocksView: View {
                         let shape = Self.shape(rects[index], in: proxy.size, corner: corner, outer: outerRadius.map { $0 - gap / 2 })
                         placed(Surface(shape: shape, color: fill, highlighted: hovered == segment.id,
                                        strength: appeared || plan != nil ? 1 : 0)
-                                   .graphContextMenu(label: segment.label, actions: segment.contextActions),
+                                   .graphContextMenu(actions: segment.contextActions),
                                index: index, rect: drawn, grown: appeared || plan != nil ? 1 : 0.6)
                     }
                     ForEach(visible, id: \.element.id) { index, segment in

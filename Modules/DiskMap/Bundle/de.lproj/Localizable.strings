@@ -48,6 +48,9 @@
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Daten mit exakten Kennungen nicht gefundener Apps. Gemeinsam genutzte App-Gruppendaten bleiben erhalten.";
 "Delete" = "Löschen";
 "Delete %@?" = "%@ löschen?";
+"Delete selected app data?" = "Ausgewählte App-Daten löschen?";
+"Delete selected files?" = "Ausgewählte Dateien löschen?";
+"Delete this folder?" = "Diesen Ordner löschen?";
 "Deleted" = "Gelöscht";
 "Deleted folder" = "Ordner gelöscht";
 "Deleting" = "Wird gelöscht";
@@ -81,6 +84,7 @@
 "Identical local personal files are grouped with one retained copy. No files are preselected." = "Identische lokale persönliche Dateien werden mit einer beibehaltenen Kopie gruppiert. Nichts ist vorausgewählt.";
 "Images" = "Bilder";
 "Included with the app" = "In der App enthalten";
+"Includes everything inside." = "Der gesamte Inhalt ist inbegriffen.";
 "Install the helper in Settings" = "Installiere das Hilfsprogramm in den Einstellungen";
 "Installed app. Removal is limited to the exact reviewed targets." = "Installierte App. Nur die genau geprüften Ziele werden entfernt.";
 "Installers" = "Installationsdateien";
@@ -98,6 +102,8 @@
 "Measurements pending" = "Messungen ausstehend";
 "Media" = "Medien";
 "More items" = "Weitere Objekte";
+"Move files to Trash?" = "Dateien in den Papierkorb legen?";
+"Move folder to Trash?" = "Ordner in den Papierkorb legen?";
 "Move to Trash" = "In den Papierkorb legen";
 "Movies" = "Filme";
 "Music" = "Musik";
@@ -128,6 +134,7 @@
 "Other formats" = "Andere Formate";
 "Outside your user Library" = "Außerhalb deiner Benutzer-Library";
 "PDF documents" = "PDF-Dokumente";
+"Permanently deletes everything inside." = "Löscht den gesamten Inhalt dauerhaft.";
 "Photo libraries" = "Fotomediatheken";
 "Photos & Video" = "Fotos & Videos";
 "Pictures" = "Bilder";
@@ -141,9 +148,12 @@
 "Protected system component; cannot be removed here." = "Geschützte Systemkomponente; kann hier nicht entfernt werden.";
 "Quit the app before uninstalling it." = "Beenden Sie die App vor der Deinstallation.";
 "Quit the selected apps before uninstalling them." = "Beende die ausgewählten Apps vor der Deinstallation.";
+"Quits the apps and permanently deletes selected data." = "Beendet die Apps und löscht gewählte Daten dauerhaft.";
+"Quits the apps and trashes selected data." = "Beendet die Apps und legt gewählte Daten in den Papierkorb.";
 "Reading apps…" = "Apps werden gelesen…";
 "Reading files…" = "Dateien werden gelesen…";
 "Recommended" = "Empfehlungen";
+"Removal was canceled." = "Das Entfernen wurde abgebrochen.";
 "Reopen the list and confirm deletion again." = "Liste erneut öffnen und Löschung bestätigen.";
 "Reopen the list and review your selection again." = "Liste erneut öffnen und Auswahl prüfen.";
 "Retained copy" = "Beibehaltene Kopie";
@@ -163,6 +173,7 @@
 "Selected app data: %@" = "Ausgewählte App-Daten: %@";
 "Selected apps: %@" = "Ausgewählte Apps: %@";
 "Selected cleanup items changed. Review your selection again." = "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.";
+"Selected data is permanently deleted." = "Die ausgewählten Daten werden dauerhaft gelöscht.";
 "Selected files" = "Ausgewählte Dateien";
 "Selected files changed or are open. Review them again." = "Ausgewählte Dateien wurden geändert oder sind geöffnet. Erneut prüfen.";
 "Selected files changed or are unavailable. Review your selection again." = "Ausgewählte Dateien wurden geändert oder sind nicht verfügbar. Prüfe die Auswahl erneut.";
@@ -194,6 +205,7 @@
 "These identifiers were not matched to the discovered apps. Ownership is uncertain, so this data is kept for review." = "Diese Kennungen wurden keiner gefundenen App zugeordnet. Die Zugehörigkeit ist unklar; die Daten bleiben zur Prüfung erhalten.";
 "This app cannot be uninstalled." = "Diese App kann nicht deinstalliert werden.";
 "This app is managed by macOS or MacSpace and cannot be removed here." = "Diese App wird von macOS oder MacSpace verwaltet und kann hier nicht entfernt werden.";
+"This cannot be undone." = "Das kann nicht rückgängig gemacht werden.";
 "This file cannot be deleted here." = "Diese Datei kann hier nicht gelöscht werden.";
 "This folder and all its contents will be moved to Trash." = "Dieser Ordner und sein gesamter Inhalt werden in den Papierkorb verschoben.";
 "This folder cannot be deleted here." = "Dieser Ordner kann hier nicht gelöscht werden.";

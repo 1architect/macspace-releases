@@ -58,12 +58,14 @@
 "Day" = "日间";
 "Delete" = "删除";
 "Delete %@?" = "删除 %@？";
+"Delete this item?" = "删除此项目？";
 "Developed by\n%@" = "开发者\n%@";
 "Does the few things that need an administrator." = "执行少量需要管理员权限的操作。";
 "Drag into the Full Disk Access list" = "拖入完全磁盘访问列表";
 "Every 3 days" = "每 3 天";
 "Every day" = "每天";
 "Every week" = "每周";
+"Files stay in the cloud." = "文件仍保留在云端。";
 "Finishing in the background" = "正在后台完成";
 "Follow System" = "跟随系统";
 "Free" = "释放";
@@ -145,6 +147,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "退出 MacSpace 并重新拷贝。授予此副本的权限会在下次更新时丢失。";
 "Recent cleanups" = "最近清理";
 "Refresh" = "刷新";
+"Remove local copies?" = "移除本地副本？";
 "Removing %@" = "正在移除 %@";
 "Removing %lld%%, %@" = "正在移除 %lld%%，%@";
 "Removing downloads" = "正在移除下载";
@@ -155,8 +158,10 @@
 "Restart your Mac from the Apple menu." = "请从苹果菜单重新启动 Mac。";
 "Restart your Mac to apply this change." = "重新启动 Mac 以应用此更改。";
 "Restore" = "还原";
+"Restores changed settings and moves the app to Trash." = "恢复改过的设置，并将 App 移到废纸篓。";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。";
 "Restoring settings" = "正在还原设置";
+"Save your work first. Some changes may be permanent." = "请先保存工作。某些更改可能无法撤销。";
 "Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Selected files need review" = "所选文件需要检查";
 "Settings" = "设置";
@@ -179,6 +184,7 @@
 "Uninstall" = "卸载";
 "Uninstall MacSpace?" = "卸载 MacSpace？";
 "Uninstall MacSpace…" = "卸载 MacSpace…";
+"Uninstall this app?" = "卸载此 App？";
 "Uninstall…" = "卸载…";
 "Unknown" = "未知";
 "Updates" = "更新";

@@ -48,6 +48,7 @@
 "Disable %@?" = "%@を無効にしますか？";
 "Disable %lld features?" = "%lld個の機能を無効にしますか？";
 "Disable all" = "すべて無効にする";
+"Disable features?" = "機能を無効にしますか？";
 "Downloading" = "ダウンロード中";
 "Each one can be enabled again. MacSpace frees their models." = "どの機能も再び有効にできます。MacSpaceがモデルを解放します。";
 "Enable" = "有効にする";
@@ -61,9 +62,12 @@
 "Free %@?" = "%@を解放しますか？";
 "Free now" = "今すぐ解放";
 "Free switched-off features' models automatically" = "オフにした機能のモデルを自動で解放";
+"Free unused downloads?" = "未使用のダウンロードを解放しますか？";
+"Free unused models?" = "未使用のモデルを解放しますか？";
 "Free up to %@" = "最大%@を解放";
 "Free up to %@?" = "最大%@を解放しますか？";
 "Freeing space" = "空き容量を増やしています";
+"Frees models until re-enabled." = "再有効化するまでモデルを解放します。";
 "Home page alerts" = "ホームの通知";
 "Its models are gone." = "モデルは削除されました。";
 "Keeps the models" = "モデルを保持";
@@ -90,6 +94,7 @@
 "Open System Settings > Apple Account > iCloud." = "「システム設定 > Apple Account > iCloud」を開いてください。";
 "Or delete the account in System Settings > Users & Groups." = "または「システム設定 > ユーザとグループ」でアカウントを削除してください。";
 "Other accounts" = "ほかのアカウント";
+"Re-enable features?" = "機能を再有効化しますか？";
 "Released Apple Intelligence models" = "解放されたApple Intelligenceモデル";
 "Released Apple Intelligence models and unused system assets" = "解放されたApple Intelligenceモデルと未使用のシステムアセット";
 "Restart to finish" = "再起動して完了";
@@ -111,6 +116,7 @@
 "The current Siri language could not be read." = "現在のSiri言語を読み取れませんでした。";
 "The system language could not be read." = "システム言語を読み取れませんでした。";
 "The system or Siri language could not be read." = "システムまたはSiriの言語を読み取れませんでした。";
+"They download again if re-enabled." = "機能を再有効化すると再ダウンロードされます。";
 "This account was deleted, but macOS still keeps its models. In Terminal, run:" = "削除済みアカウントのモデルがまだ保持されています。ターミナルで実行：";
 "This is a virtual machine" = "これは仮想マシンです";
 "Turn off Sync this Mac and keep the data on this Mac." = "「このMacを同期」をオフにし、データをこのMacに残してください。";
@@ -134,7 +140,9 @@
 "free up to %@ of models" = "モデルを最大%@解放";
 "freeing %@ of models" = "%@のモデルを解放中";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "仮想マシンではApple Intelligenceを利用できません。実機のMacでMacSpaceを使ってください。";
+"macOS downloads the models again." = "macOSがモデルを再ダウンロードします。";
 "macOS downloads their models again." = "macOSがモデルを再びダウンロードします。";
+"macOS downloads them again as needed." = "macOSは必要に応じて再ダウンロードします。";
 "macOS is freeing the model" = "macOSがモデルを解放中";
 "macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOSがこれらのモデルを10分間保持しています。再起動後にMacSpaceが削除します。";
 "macOS still keeps these models." = "macOSはまだこれらのモデルを保持しています。";

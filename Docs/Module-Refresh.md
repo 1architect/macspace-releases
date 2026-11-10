@@ -207,3 +207,72 @@ Inventory statements use a lock-notification gate with a 100 ms fallback session
 session request per SQL statement. Keychain reads/writes still force a current session check. This preserves immediate
 notification-driven suspension while avoiding per-row OS round trips. The isolated measurement and its end-to-end limits are in
 [Research.md](Research.md#session-probing-during-inventory-writes-2026-11-07).
+
+
+## Apps and Files totals at 66% (2026-11-10)
+
+The page truncates its loading percentage. The start of full folder-total reconciliation maps to
+`0.9 * (0.04 + 0.88 * 0.8) = 0.6696`, displayed as 66%. The scan can therefore appear stuck there
+while totaling a large inventory. Native refresh also reaches that boundary before merging its
+staged rows. The screenshot alone does not identify which of these operations is pending.
+
+Totals now have a covering partial index by parent for hard-link rows, avoiding reads of ordinary
+file records already accounted for in each directory's direct bytes. Full reconciliation updates
+bounded groups of equal-length paths in bottom-up order, rather than issuing an update for every
+folder. Equal-length paths cannot contain one another; the existing hard-link representative
+ordering and conditional writes remain unchanged. Smaller inventories use smaller batches so
+measured progress continues throughout reconciliation.
+
+Native initial/full scans and targeted reads also skip redundant parent insertion checks when
+writing file records: those scanner paths have already ensured the parent before enumeration.
+Other database callers retain the parent check. No file classification, scan coverage, deletion
+policy, or content verification is skipped. The new synthetic totals regression compares the
+previous per-folder calculation against the optimized result, including shared hard links and
+subsequent partial reconciliation; existing native/sequential tests cover scanner equivalence.
+
+Snapshot construction also reads direct child directory records in one indexed query, using the
+same decoder as individual directory reads. This removes one-query-per-child startup/navigation
+work for broad folders without changing projected records or the child order. The initial debug
+synthetic totals run (2,000 folders, 132,000 file records) measured 1.02 seconds for the former
+per-folder/index configuration and 0.18 seconds for grouped/indexed totals, with identical bytes.
+A subsequent run measured 109 ms versus 28 ms (3.8×). These are phase timings on a generated
+database, not an end-to-end app launch measurement. The 48 targeted checks passed (one opt-in
+audit skipped), including measured progress and four navigation requests over 20,000 cached
+managed folders in 1.03 seconds with no app-discovery or content-hashing work.
+
+The broad regression run also exposed a cancellation cleanup crash: a throwing database initializer
+finalized its prepared statements in its failure defer, then deinitialization finalized the same
+pointers again. Failure cleanup now clears the statement cache before closing the connection.
+A cancelled-initialization regression verifies both safe unwinding and reopening the unpublished
+cache. This was confirmed by an XCTest crash report in `msc_sqlite3_finalize` during cancelled
+cache-generation initialization; it is separate from the expensive totals phase in the screenshot.
+
+Final follow-up validation: 70 tests executed, one opt-in audit skipped, no failures, including
+cancelled initialization, totals, ownership, removal and the previously load-sensitive navigation
+timing check (0.90 seconds on rerun). A preceding 44-test run passed the cancellation regression
+but exceeded the navigation timing threshold (2.04 seconds against 1.5); the complete-suite run
+before the cleanup fix terminated in the cancellation crash rather than completing. The broad
+memory check passed. No app was opened or visually inspected.
+
+
+The follow-up filesystem profile covered about 401,500 directories and 66,800 retained file rows.
+Traversal/staging took 109 seconds despite the earlier totals optimization. Directory readers were
+waiting on the SQLite writer for failure checks, first-file hard-link lookups and empty flushes.
+Walkers now use atomic failure/cancellation flags, a bounded set of linked directory paths with an
+indexed fallback, and skip empty batches. Native exclusion prefixes are prepared once, with path
+validation retained for matching candidates. Bulk scans temporarily use a 16 MiB page cache,
+returning to the 2 MiB cache afterward. Native staging shares the compact entry primary-key layout.
+
+Native merge now seeks past completed directory IDs, reconciles retained hard-link evidence before
+joining staged aliases, and merges bounded parent-ID ranges. This removes the alias-family cross
+product and reports completed merge work, with cancellation checks between batches. The original
+hard-link query took 75.65 seconds for a generated 10,000-name family; the filtered query produced
+the same result in 0.012 seconds. That fixture is separate from the real-filesystem timing.
+
+The filesystem full-refresh measurement fell from 156.4 to 44.4 seconds, with traversal/staging
+falling from 109.2 to 18.1 seconds. Cold scans were 51.7 and 53.5 seconds. Measurements used
+isolated fixture-key databases on AC power with Low Power Mode off. The baseline already included
+the merge instrumentation/compact staging changes, allowing the subsequent walker changes to be
+measured independently. Thirty-seven release regression tests passed, including partial-merge
+cancellation/rollback/retry and bounded linked-directory fallback. The opt-in filesystem diagnostic
+also passed. Visual and Low Power Mode verification remain with the maintainer.

@@ -12,6 +12,7 @@
 "1 snapshot" = "1個のスナップショット";
 "Already gone" = "すでにありません";
 "App container caches" = "アプリコンテナのキャッシュ";
+"Apps download them again as needed." = "アプリは必要に応じて再ダウンロードします。";
 "Apps download them again if they need them." = "必要に応じてアプリが再ダウンロードします。";
 "Automatic cleanup is off for items that cannot be recovered." = "復元できない項目の自動クリーンアップはオフです。";
 "Backing up now" = "バックアップ中";
@@ -24,15 +25,19 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。";
 "Couldn't free it" = "解放できませんでした";
+"Delete selected backups?" = "選択したバックアップを削除しますか？";
 "Deleted by macOS when the disk is full" = "ディスクが満杯になるとmacOSが削除";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "このMac上のその時刻からは復元できなくなります。バックアップディスクのバックアップは残ります。";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "容量不足時にmacOSが自動で削除するファイルです。システム設定では使用可能な容量に含まれます。";
+"Files unique to these backups are lost." = "そのバックアップにしかないファイルは失われます。";
 "Free" = "解放";
 "Free %@ of %@ downloads?" = "%@分の%@のダウンロードを解放しますか？";
 "Free %lld Time Machine snapshots?" = "Time Machineのスナップショットを%lld個解放しますか？";
 "Free 1 Time Machine snapshot?" = "Time Machineのスナップショットを1個解放しますか？";
+"Free local snapshots?" = "ローカルスナップショットを削除？";
 "Free now" = "今すぐ解放";
+"Free purgeable app files?" = "アプリファイルを解放しますか？";
 "Free selected" = "選択項目を解放";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "アプリが消去可能としたファイルを今すぐ解放します。通常macOSはディスクがほぼ満杯のときだけ削除します。";
 "Free the selected backups?" = "選択したバックアップを解放しますか？";
@@ -44,6 +49,7 @@
 "Installs at the next restart" = "次回の再起動時にインストール";
 "Latest" = "最新";
 "Left alone" = "そのままにする項目";
+"Local restore points are permanently deleted." = "ローカルの復元ポイントは完全に削除されます。";
 "MacSpace could not measure right now. Try the refresh button." = "今は測定できません。更新ボタンをお試しください。";
 "Not connected" = "未接続";
 "Open" = "開く";

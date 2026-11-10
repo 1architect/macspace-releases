@@ -19,10 +19,6 @@ extension ModuleHandle {
         if let bulk = selection.bulk {
             action.parameters["ids"] = nil; action.parameters["reviewed"] = nil; action.parameters["origins"] = nil
             action.parameters["selectionToken"] = bulk.token
-            if action.confirmation != nil {
-                let count = bulk.count == 1 ? String(localized: "1 selected file") : String(format: String(localized: "%lld selected files"), Int64(clamping: bulk.count))
-                action.confirmation?.message += "\n\n" + count + "\n" + ByteFormat.string(bulk.bytes)
-            }
         } else { action.parameters["ids"] = Selection.parameter(ids.sorted()) }
         if selection.bulk == nil, !selection.reviewed.isEmpty, let data = try? encoder.encode(selection.reviewed.filter { ids.contains($0.key) }) {
             action.parameters["reviewed"] = String(decoding: data, as: UTF8.self)
@@ -30,12 +26,8 @@ extension ModuleHandle {
         if selection.bulk == nil, !selection.origins.isEmpty, let data = try? encoder.encode(selection.origins.filter { ids.contains($0.key) }) {
             action.parameters["origins"] = String(decoding: data, as: UTF8.self)
         }
-        // The checked rows that name something in the confirmation (an open app, which the action quits), in page order.
-        let names = (group.selection?.sections.isEmpty == false ? group.selection!.sections.flatMap(\.rows) : group.children.map(\.id)).filter(ids.contains).compactMap { selection.noteNames[$0] }.reduce(into: [String]()) { names, name in
-            if !names.contains(name) { names.append(name) }
-        }
-        if let note = selection.note, !names.isEmpty {
-            action.confirmation?.message = String(format: note, ListFormatter.localizedString(byJoining: names))
+        if let note = selection.note, !selection.noteChoiceIDs.isDisjoint(with: ids) {
+            action.confirmation?.message = note
         }
         return action
     }
@@ -73,14 +65,14 @@ extension ModuleHandle {
         func rows(_ values: [Row]) {
             for row in values {
                 candidates += row.actions
-                if let action = row.contextActions?.delete { candidates.append(GraphMenuPolicy.deletion(action, label: row.title)!) }
+                if let action = GraphMenuPolicy.deletion(row.contextActions?.delete) { candidates.append(action) }
                 if let selection = row.selection { candidates += [selection.action, selection.save].compactMap { $0 } }
                 rows(row.children)
             }
         }
         func segments(_ values: [UsageSegment]) {
             for segment in values {
-                if let action = GraphMenuPolicy.deletion(segment.contextActions?.delete, label: segment.label) { candidates.append(action) }
+                if let action = GraphMenuPolicy.deletion(segment.contextActions?.delete) { candidates.append(action) }
             }
             rows(values.compactMap(\.group))
         }

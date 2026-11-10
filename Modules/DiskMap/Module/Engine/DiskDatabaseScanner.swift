@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Darwin
 import MacSpacePlatform
 import MacSpaceSdk
@@ -6,6 +7,13 @@ import MacSpaceDiskMapPrivileged
 
 /// Native directory streaming writes directly into an on-disk transaction. No whole-disk Swift object graph exists.
 struct DiskDatabaseScanner {
+    private final class ScanFailure {
+        private let failed = Atomic(false)
+        // The writer lock protects the error. Walkers only consult the atomic flag.
+        var error: Error? { didSet { failed.store(error != nil, ordering: .relaxed) } }
+        var hasError: Bool { failed.load(ordering: .relaxed) }
+    }
+
     let db: DiskDatabase
     let excluded: [String]
     var metadata: (String) -> stat? = { path in var info = stat(); return lstat(path, &info) == 0 ? info : nil }
@@ -32,6 +40,15 @@ struct DiskDatabaseScanner {
             : min(1, Double(completedWork) / Double(expectedWork))
         report?(0.8 * fraction)
     }
+    private func walkExclusions() -> (String) -> Bool {
+        let prefixes = excluded.map { ($0, $0 == "/" ? "/" : $0 + "/") }
+        return { path in
+            // Most entries match no exclusion. Validate the path only for a potential match.
+            prefixes.contains { path == $0.0 || path.hasPrefix($0.1) }
+                && FileReviewPolicy.isNormalizedAbsolutePath(path)
+        }
+    }
+
     private(set) var visited = 0
     init(db: DiskDatabase, excluded: [String]) { self.db = db; self.excluded = excluded }
     mutating func scan(_ changes: DiskEvents.Changes, cursor: UInt64, progress: LoadProgressSink?) throws {
@@ -41,6 +58,10 @@ struct DiskDatabaseScanner {
         if let info = metadata(db.root) { devices.insert(info.st_dev) }
         if db.root == "/", let info = metadata(DataVolume.path) { devices.insert(info.st_dev) }
         let started = Date()
+        // Keep the working pages for the bulk write/ancestor pass resident. Idle readers retain
+        // the smaller cache, and the scanner releases these pages again at its checkpoint.
+        try db.execute("PRAGMA cache_size=-16384")
+        defer { try? db.execute("PRAGMA cache_size=-2048") }
         report = progress
         defer { report = nil }
         try db.transaction {
@@ -115,26 +136,28 @@ struct DiskDatabaseScanner {
             var files: [(DiskFile, String)] = []
             var folders: [DiskDirectory] = []
         }
-        let db = db, metadata = metadata, devices = devices, excluded = excluded, report = report, cancelled = cancelled
+        let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
         guard let info = metadata(db.root) else { throw DiskDatabase.Failure(message: "The scan root is unreadable") }
         try db.put(DiskDirectory(path: db.root, ownerUID: info.st_uid))
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else {
             try db.query("UPDATE dirs SET readable=0 WHERE path=?", [.text(db.root)]); return
         }
         let lock = NSLock()
-        var failure: Error?, count = 0, directories = 0
+        let failure = ScanFailure()
+        var count = 0, directories = 0
         func writing(_ work: () throws -> Void) {
             lock.withLock {
-                guard failure == nil else { return }
+                guard !failure.hasError else { return }
                 do { if cancelled() { throw CancellationError() }; try Task.checkCancellation(); try work(); try db.flushBatch() }
-                catch { failure = error }
+                catch { failure.error = error }
             }
         }
         func flush(_ totals: inout Totals) {
+            guard !totals.files.isEmpty || !totals.folders.isEmpty else { return }
             writing {
                 for node in totals.folders { try db.ensureDirectory(node.path, ownerUID: node.ownerUID) }
                 for (file, link) in totals.files {
-                    try db.put(file, link: link)
+                    try db.put(file, link: link, parentExists: true)
                     count += 1
                 }
                 report?(0.7 * Double(count) / Double(count + 100_000))
@@ -143,16 +166,16 @@ struct DiskDatabaseScanner {
         }
         DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, visit: { totals, makePath, entry in
             totals.items += 1
-            let path = makePath()
             if cancelled() { writing { throw CancellationError() }; return false }
-            guard devices.contains(entry.device), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return false }
+            guard devices.contains(entry.device), entry.isDirectory || (entry.isRegularFile && !entry.isDataless) else { return false }
+            let path = makePath()
+            guard !isExcluded(path) else { return false }
             if entry.isDirectory {
-                guard !lock.withLock({ failure != nil }), let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
                 totals.folders.append(DiskDirectory(path: path, ownerUID: info.st_uid))
                 if totals.folders.count >= 256 { flush(&totals) }
                 return info.st_flags & UInt32(SF_DATALESS) == 0
             }
-            guard entry.isRegularFile && !entry.isDataless else { return false }
             let parent = DiskDatabase.parent(path)
             let identity = entry.linkCount > 1 ? metadata(path) : nil
             let link = identity.map { "\($0.st_dev):\($0.st_ino)" } ?? ""
@@ -172,7 +195,7 @@ struct DiskDatabaseScanner {
             }
             totals.bytes = 0; totals.items = 0; totals.bundle = nil; totals.readable = true
         })
-        if let failure { throw failure }
+        if let error = failure.error { throw error }
         visited = directories
     }
 
@@ -235,10 +258,10 @@ struct DiskDatabaseScanner {
                                 // The nonempty predicate is required for SQLite to use the partial hard-link indexes.
                                 try db.updateLink(file, link: key)
                             }
-                            try db.put(file, link: key, trackSeen: refreshesWholeRoot)
+                            try db.put(file, link: key, trackSeen: refreshesWholeRoot, parentExists: true)
                         } else {
                             node.directBytes += file.bytes
-                            if file.bytes > 0 { try db.put(file, trackSeen: refreshesWholeRoot) }
+                            if file.bytes > 0 { try db.put(file, trackSeen: refreshesWholeRoot, parentExists: true) }
                         }
                     }
                 } catch { failure = error }
@@ -284,31 +307,36 @@ extension DiskDatabaseScanner {
             var files: [(DiskFile, String)] = []
             var folders: [(String, UInt32?)] = []
         }
-        let db = db, metadata = metadata, devices = devices, excluded = excluded, report = report, cancelled = cancelled
+        let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
         let inventoryIncludes = db.inventoryIncludes, includeEntries = includesEntryWork, expected = expectedWork
+        let linkedParents = try db.linkedDirectoryPaths(limit: 4096)
         try db.beginNativeRefresh()
         try db.nativeDirectorySeen(db.root, uid: rootInfo.st_uid)
         let lock = NSLock()
-        var failure: Error?, directories = 0, entries = 0
+        let failure = ScanFailure()
+        var directories = 0, entries = 0, reported = 0
         var changedCatalog = try db.query("SELECT 1 FROM dirs WHERE substr(path,-4)='.app' LIMIT 1") > 0
         func writing(_ operation: () throws -> Void) {
             lock.withLock {
-                guard failure == nil else { return }
+                guard !failure.hasError else { return }
                 do {
                     if cancelled() { throw CancellationError() }
                     try Task.checkCancellation()
                     try operation(); try db.flushBatch()
-                } catch { failure = error }
+                } catch { failure.error = error }
             }
         }
         func progress() {
             let done = includeEntries ? entries + directories : directories
-            if expected > 0 { report?(0.8 * min(1, Double(done) / Double(expected))) }
+            guard expected > 0, done - reported >= max(32, expected / 128) else { return }
+            reported = done
+            report?(0.72 * min(1, Double(done) / Double(expected)))
         }
         func flush(_ batch: inout Batch) {
+            guard batch.pendingItems > 0 || !batch.files.isEmpty || !batch.folders.isEmpty else { return }
             writing {
                 for (path, uid) in batch.folders { try db.nativeDirectorySeen(path, uid: uid) }
-                for (file, link) in batch.files { try db.put(file, link: link, staging: true) }
+                for (file, link) in batch.files { try db.put(file, link: link, staging: true, parentExists: true) }
                 entries += batch.pendingItems
                 if batch.app { changedCatalog = true }
                 progress()
@@ -316,21 +344,25 @@ extension DiskDatabaseScanner {
             batch.pendingItems = 0
             batch.files.removeAll(keepingCapacity: true); batch.folders.removeAll(keepingCapacity: true)
         }
+        let walkStarted = Date()
         DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Batch() }, visit: { batch, makePath, entry in
             batch.items += 1; batch.pendingItems += 1
             if cancelled() { writing { throw CancellationError() }; return false }
+            guard devices.contains(entry.device), entry.isDirectory || (entry.isRegularFile && !entry.isDataless) else { return false }
             let path = makePath()
-            guard devices.contains(entry.device), !excluded.contains(where: { DiskDatabase.contains(path, below: $0) }) else { return false }
+            guard !isExcluded(path) else { return false }
             if entry.isDirectory {
                 batch.folders.append((path, entry.ownerUID))
                 if path.hasSuffix(".app") || path.contains(".app/") { batch.app = true }
                 if batch.folders.count >= 256 { flush(&batch) }
-                guard !lock.withLock({ failure != nil }), let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
                 return info.st_flags & UInt32(SF_DATALESS) == 0
             }
-            guard entry.isRegularFile && !entry.isDataless else { return false }
             let parent = DiskDatabase.parent(path)
-            if batch.hadLinks == nil { writing { batch.hadLinks = try db.hasLinkedEntries(parent: parent) } }
+            if batch.hadLinks == nil {
+                if let linkedParents { batch.hadLinks = linkedParents.contains(parent) }
+                else { writing { batch.hadLinks = try db.hasLinkedEntries(parent: parent) } }
+            }
             let identity = entry.linkCount > 1 || batch.hadLinks == true ? metadata(path) : nil
             var link = ""
             if let identity {
@@ -355,8 +387,10 @@ extension DiskDatabaseScanner {
             }
             batch = Batch()
         })
-        if let failure { throw failure }
-        let bundlesChanged = try db.finishNativeRefresh(cancelled: cancelled)
+        if let error = failure.error { throw error }
+        db.phase?("native-walk", Date().timeIntervalSince(walkStarted), directories)
+        report?(0.72)
+        let bundlesChanged = try db.finishNativeRefresh(cancelled: cancelled, progress: { report?(0.72 + 0.08 * $0) })
         catalogChanged = catalogChanged || changedCatalog || bundlesChanged
         visited = directories
     }

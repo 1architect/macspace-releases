@@ -521,6 +521,15 @@
   "%@を削除しますか？",
   "%@을(를) 삭제할까요?"
  ],
+ "Delete this item?": [
+  "Excluir este item?",
+  "Supprimer cet élément ?",
+  "¿Eliminar este elemento?",
+  "Dieses Objekt löschen?",
+  "删除此项目？",
+  "この項目を削除しますか？",
+  "이 항목을 삭제할까요?"
+ ],
  "Developed by\n%@": [
   "Desenvolvido por\n%@",
   "Développé par\n%@",
@@ -575,6 +584,15 @@
   "毎週",
   "매주"
  ],
+ "Files stay in the cloud.": [
+  "Os arquivos ficam na nuvem.",
+  "Les fichiers restent dans le cloud.",
+  "Los archivos quedan en la nube.",
+  "Die Dateien bleiben in der Cloud.",
+  "文件仍保留在云端。",
+  "ファイルはクラウドに残ります。",
+  "파일은 클라우드에 남습니다."
+ ],
  "Finishing in the background": [
   "Concluindo em segundo plano",
   "Fin en arrière-plan",
@@ -623,7 +641,7 @@
  "Free the selected items?": [
   "Liberar os itens selecionados?",
   "Libérer les éléments sélectionnés ?",
-  "¿Liberar los elementos seleccionados?",
+  "¿Liberar la selección?",
   "Ausgewählte Objekte freigeben?",
   "释放所选项目？",
   "選択した項目を解放しますか？",
@@ -1304,6 +1322,15 @@
   "更新",
   "새로 고침"
  ],
+ "Remove local copies?": [
+  "Remover cópias locais?",
+  "Supprimer les copies locales ?",
+  "¿Quitar las copias locales?",
+  "Lokale Kopien entfernen?",
+  "移除本地副本？",
+  "ローカルコピーを削除しますか？",
+  "로컬 복사본을 제거할까요?"
+ ],
  "Removing %@": [
   "Removendo %@",
   "Suppression de %@",
@@ -1403,6 +1430,15 @@
   "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。",
   "MacSpace가 변경한 설정을 복원하고 앱을 휴지통으로 옮깁니다. 기록은 유지됩니다. 삭제한 파일은 복원할 수 없습니다."
  ],
+ "Restores changed settings and moves the app to Trash.": [
+  "Restaura os ajustes alterados e move o app para o Lixo.",
+  "Rétablit les réglages modifiés et place l’app dans la corbeille.",
+  "Restaura los ajustes modificados y mueve la app a la papelera.",
+  "Stellt geänderte Einstellungen wieder her und legt die App in den Papierkorb.",
+  "恢复改过的设置，并将 App 移到废纸篓。",
+  "変更した設定を戻し、アプリをゴミ箱に移動します。",
+  "변경한 설정을 복원하고 앱을 휴지통으로 이동합니다."
+ ],
  "Restoring settings": [
   "Restaurando ajustes",
   "Restauration des réglages",
@@ -1411,6 +1447,15 @@
   "正在还原设置",
   "設定を復元中",
   "설정 복원 중"
+ ],
+ "Save your work first. Some changes may be permanent.": [
+  "Salve seu trabalho. Algumas mudanças podem ser permanentes.",
+  "Enregistrez votre travail. Certains changements peuvent être définitifs.",
+  "Guarda tu trabajo. Algunos cambios pueden ser permanentes.",
+  "Sichere deine Arbeit. Änderungen können dauerhaft sein.",
+  "请先保存工作。某些更改可能无法撤销。",
+  "作業を保存してください。一部の変更は元に戻せない場合があります。",
+  "작업을 저장하세요. 일부 변경 사항은 되돌릴 수 없을 수 있습니다."
  ],
  "Selected cleanup items changed. Review your selection again.": [
   "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
@@ -1609,6 +1654,15 @@
   "卸载 MacSpace…",
   "MacSpaceをアンインストール…",
   "MacSpace 제거…"
+ ],
+ "Uninstall this app?": [
+  "Desinstalar este app?",
+  "Désinstaller cette app ?",
+  "¿Desinstalar esta app?",
+  "Diese App deinstallieren?",
+  "卸载此 App？",
+  "このアプリをアンインストールしますか？",
+  "이 앱을 제거할까요?"
  ],
  "Uninstall…": [
   "Desinstalar…",

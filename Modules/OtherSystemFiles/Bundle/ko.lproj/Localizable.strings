@@ -12,6 +12,7 @@
 "1 snapshot" = "스냅샷 1개";
 "Already gone" = "이미 삭제됨";
 "App container caches" = "앱 컨테이너 캐시";
+"Apps download them again as needed." = "필요하면 앱이 다시 다운로드합니다.";
 "Apps download them again if they need them." = "필요할 때 앱이 다시 다운로드합니다.";
 "Automatic cleanup is off for items that cannot be recovered." = "복구할 수 없는 항목의 자동 정리가 꺼져 있습니다.";
 "Backing up now" = "백업 중";
@@ -24,15 +25,19 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "이 Mac에 보관된 클라우드 파일 사본입니다. 제거해도 파일은 클라우드에 유지됩니다.";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Time Machine이 하루 동안 보관하는 이 Mac의 사본으로, 백업 디스크 없이 파일을 복원할 수 있습니다. 정리해도 최신 사본과 다음 백업에 필요한 사본은 남습니다.";
 "Couldn't free it" = "정리하지 못함";
+"Delete selected backups?" = "선택한 백업을 삭제할까요?";
 "Deleted by macOS when the disk is full" = "디스크가 가득 차면 macOS가 삭제";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "앱이 삭제해도 된다고 표시한 파일입니다. 디스크가 거의 차면 macOS가 정리하고, 그렇지 않으면 MacSpace가 다시 요청합니다.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "이 Mac에서 해당 시점의 파일을 복원할 수 없게 됩니다. 백업 디스크의 백업은 유지됩니다.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "디스크 공간이 부족하면 macOS가 자동으로 삭제하는 파일입니다. 시스템 설정에서는 사용 가능한 공간으로 계산합니다.";
+"Files unique to these backups are lost." = "이 백업에만 있는 파일은 사라집니다.";
 "Free" = "확보";
 "Free %@ of %@ downloads?" = "%@의 %@ 다운로드를 정리할까요?";
 "Free %lld Time Machine snapshots?" = "Time Machine 스냅샷 %lld개를 정리할까요?";
 "Free 1 Time Machine snapshot?" = "Time Machine 스냅샷 1개를 정리할까요?";
+"Free local snapshots?" = "로컬 스냅샷을 정리할까요?";
 "Free now" = "지금 확보";
+"Free purgeable app files?" = "지울 수 있는 앱 파일을 정리할까요?";
 "Free selected" = "선택 항목 정리";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "앱이 제거 가능하다고 표시한 파일을 정리합니다. macOS는 보통 디스크가 거의 찼을 때만 삭제합니다.";
 "Free the selected backups?" = "선택한 백업을 정리할까요?";
@@ -44,6 +49,7 @@
 "Installs at the next restart" = "다음 재시동 시 설치";
 "Latest" = "최신";
 "Left alone" = "그대로 유지";
+"Local restore points are permanently deleted." = "로컬 복원 지점은 영구 삭제됩니다.";
 "MacSpace could not measure right now. Try the refresh button." = "지금은 측정할 수 없습니다. 새로 고침 버튼을 눌러보세요.";
 "Not connected" = "연결되지 않음";
 "Open" = "열기";

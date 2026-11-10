@@ -12,6 +12,7 @@
 "1 snapshot" = "1 instantâneo";
 "Already gone" = "Já apagado";
 "App container caches" = "Caches de contêineres de apps";
+"Apps download them again as needed." = "Os apps baixam os arquivos de novo se precisarem.";
 "Apps download them again if they need them." = "Os apps os baixam de novo se precisarem.";
 "Automatic cleanup is off for items that cannot be recovered." = "A limpeza automática está desativada para itens que não podem ser recuperados.";
 "Backing up now" = "Fazendo backup agora";
@@ -24,15 +25,19 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Cópias de arquivos da nuvem guardadas neste Mac. Removê-las mantém os arquivos na nuvem.";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Cópias deste Mac que o Time Machine guarda por um dia, para restaurar arquivos sem o disco de backup. Liberar mantém a mais recente e a que o próximo backup usa.";
 "Couldn't free it" = "Não foi possível liberar";
+"Delete selected backups?" = "Excluir os backups selecionados?";
 "Deleted by macOS when the disk is full" = "Apagado pelo macOS quando o disco estiver cheio";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "Arquivos que os apps marcaram como seguros para apagar. O macOS os libera quando o disco está quase cheio; o MacSpace insiste se ele não liberar.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Não será mais possível restaurar arquivos dessas horas neste Mac. Os backups no disco de backup permanecem.";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "Arquivos que o macOS apaga sozinho quando falta espaço. Os Ajustes do Sistema contam esse espaço como disponível.";
+"Files unique to these backups are lost." = "Arquivos que só existem nesses backups serão perdidos.";
 "Free" = "Liberar";
 "Free %@ of %@ downloads?" = "Liberar %@ de downloads do %@?";
 "Free %lld Time Machine snapshots?" = "Liberar %lld instantâneos do Time Machine?";
 "Free 1 Time Machine snapshot?" = "Liberar 1 instantâneo do Time Machine?";
+"Free local snapshots?" = "Liberar snapshots locais?";
 "Free now" = "Liberar agora";
+"Free purgeable app files?" = "Liberar arquivos de apps?";
 "Free selected" = "Liberar selecionados";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Libere os arquivos que os apps marcaram como removíveis, que o macOS só apagaria com o disco quase cheio.";
 "Free the selected backups?" = "Liberar os backups selecionados?";
@@ -44,6 +49,7 @@
 "Installs at the next restart" = "Instala ao reiniciar";
 "Latest" = "Mais recente";
 "Left alone" = "Mantido como está";
+"Local restore points are permanently deleted." = "Os pontos de restauração locais são apagados de vez.";
 "MacSpace could not measure right now. Try the refresh button." = "O MacSpace não conseguiu medir nada agora. Tente o botão atualizar.";
 "Not connected" = "Não conectado";
 "Open" = "Abrir";

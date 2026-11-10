@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "1 Funktion deaktivieren?";
 "Disable all" = "Alle deaktivieren";
 "Disable automatically if changed" = "Automatisch deaktivieren, wenn geändert";
+"Disable features?" = "Funktionen deaktivieren?";
 "Disabled" = "Deaktiviert";
 "Disabling" = "Wird deaktiviert";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "Beim Deaktivieren musst du ein Profil unter Systemeinstellungen > Allgemein > Geräteverwaltung genehmigen.";
@@ -81,8 +82,10 @@
 "Partly off" = "Teilweise aus";
 "Personalized ads" = "Personalisierte Werbung";
 "Policies" = "Richtlinien";
+"Re-enable features?" = "Funktionen wieder aktivieren?";
 "Reopen apps to apply." = "Zum Anwenden Apps neu öffnen.";
 "Restart to apply." = "Zum Anwenden neu starten.";
+"Restores the previous settings." = "Stellt die vorherigen Einstellungen wieder her.";
 "Set by another profile" = "Von einem anderen Profil festgelegt";
 "Share analytics with Apple" = "Analysedaten mit Apple teilen";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Zeigt eine Mitteilung, wenn macOS eine deaktivierte Funktion wieder einschaltet und MacSpace sie erneut deaktiviert.";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "Visuelle Intelligenz";
 "Waiting for approval" = "Wartet auf Genehmigung";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "Warten auf die nächste Diagnoseentscheidung von macOS. Ein protokollierter Erfolg kann auch nur eine Serveranfrage ohne Diagnosedaten sein.";
+"You can re-enable them later." = "Du kannst sie später wieder aktivieren.";
 "debloat" = "Debloat";
+"macOS asks you to approve a profile." = "macOS bittet um Genehmigung eines Profils.";
 "macOS asks you to approve the policy profile once." = "macOS bittet dich einmal, das Richtlinienprofil zu genehmigen.";
 "macOS prevents this change from taking effect on this Mac." = "macOS verhindert, dass diese Änderung auf diesem Mac wirksam wird.";
 "macOS still chose to send diagnostics after this change." = "macOS hat sich nach dieser Änderung weiterhin für das Senden von Diagnosedaten entschieden.";

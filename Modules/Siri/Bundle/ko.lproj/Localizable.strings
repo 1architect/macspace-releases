@@ -48,6 +48,7 @@
 "Disable %@?" = "%@을(를) 끌까요?";
 "Disable %lld features?" = "기능 %lld개를 끌까요?";
 "Disable all" = "모두 끄기";
+"Disable features?" = "기능을 끌까요?";
 "Downloading" = "다운로드 중";
 "Each one can be enabled again. MacSpace frees their models." = "각 기능은 다시 켤 수 있습니다. MacSpace가 모델을 정리합니다.";
 "Enable" = "켜기";
@@ -61,9 +62,12 @@
 "Free %@?" = "%@ 확보할까요?";
 "Free now" = "지금 확보";
 "Free switched-off features' models automatically" = "끈 기능의 모델 자동 정리";
+"Free unused downloads?" = "사용하지 않는 다운로드를 정리할까요?";
+"Free unused models?" = "사용하지 않는 모델을 정리할까요?";
 "Free up to %@" = "최대 %@ 확보";
 "Free up to %@?" = "최대 %@ 확보할까요?";
 "Freeing space" = "공간 확보 중";
+"Frees models until re-enabled." = "기능을 다시 켤 때까지 모델을 정리합니다.";
 "Home page alerts" = "홈 알림";
 "Its models are gone." = "모델이 삭제되었습니다.";
 "Keeps the models" = "모델 유지";
@@ -90,6 +94,7 @@
 "Open System Settings > Apple Account > iCloud." = "시스템 설정 > Apple 계정 > iCloud를 여세요.";
 "Or delete the account in System Settings > Users & Groups." = "또는 시스템 설정 > 사용자 및 그룹에서 계정을 삭제하세요.";
 "Other accounts" = "다른 계정";
+"Re-enable features?" = "기능을 다시 켤까요?";
 "Released Apple Intelligence models" = "해제된 Apple Intelligence 모델";
 "Released Apple Intelligence models and unused system assets" = "해제된 Apple Intelligence 모델 및 미사용 시스템 에셋";
 "Restart to finish" = "완료하려면 재시동";
@@ -111,6 +116,7 @@
 "The current Siri language could not be read." = "현재 Siri 언어를 읽지 못했습니다.";
 "The system language could not be read." = "시스템 언어를 읽지 못했습니다.";
 "The system or Siri language could not be read." = "시스템 또는 Siri 언어를 읽지 못했습니다.";
+"They download again if re-enabled." = "기능을 다시 켜면 모델이 다운로드됩니다.";
 "This account was deleted, but macOS still keeps its models. In Terminal, run:" = "계정이 삭제되었지만 macOS가 모델을 유지하고 있습니다. 터미널에서 실행:";
 "This is a virtual machine" = "가상 머신입니다";
 "Turn off Sync this Mac and keep the data on this Mac." = "이 Mac 동기화를 끄고 데이터를 이 Mac에 유지하세요.";
@@ -134,7 +140,9 @@
 "free up to %@ of models" = "모델 최대 %@ 확보";
 "freeing %@ of models" = "모델 %@ 정리 중";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS는 가상 머신에서 Apple Intelligence를 제공하지 않습니다. 실제 Mac에서 MacSpace를 사용하세요.";
+"macOS downloads the models again." = "macOS가 모델을 다시 다운로드합니다.";
 "macOS downloads their models again." = "macOS가 모델을 다시 다운로드합니다.";
+"macOS downloads them again as needed." = "필요하면 macOS가 다시 다운로드합니다.";
 "macOS is freeing the model" = "macOS가 모델을 정리하는 중";
 "macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOS가 이 모델을 10분 동안 유지했습니다. 재시동하면 MacSpace가 삭제합니다.";
 "macOS still keeps these models." = "macOS가 아직 이 모델을 유지하고 있습니다.";

@@ -12,6 +12,7 @@
 "1 snapshot" = "1 个快照";
 "Already gone" = "已不存在";
 "App container caches" = "应用容器缓存";
+"Apps download them again as needed." = "App 会按需重新下载。";
 "Apps download them again if they need them." = "应用需要时会重新下载。";
 "Automatic cleanup is off for items that cannot be recovered." = "无法恢复的项目已禁用自动清理。";
 "Backing up now" = "正在备份";
@@ -24,15 +25,19 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "保留在此 Mac 上的云端文件副本。移除后文件仍保留在云端。";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Time Machine 保留一天的此 Mac 副本，用于在没有备份磁盘时恢复文件。释放会保留最新的一份和下次备份需要的一份。";
 "Couldn't free it" = "无法释放";
+"Delete selected backups?" = "删除选中的备份？";
 "Deleted by macOS when the disk is full" = "磁盘满时由 macOS 删除";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "应用标记为可安全删除的文件。磁盘快满时 macOS 会释放它们；若未释放，MacSpace 会继续请求。";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "无法再从这些时间点在此 Mac 上恢复文件。备份磁盘上的备份不受影响。";
 "Files macOS deletes on its own when the disk runs low. System Settings counts this space as available." = "macOS 在磁盘空间不足时自行删除的文件。系统设置将此空间视为可用。";
+"Files unique to these backups are lost." = "仅存在于这些备份中的文件将丢失。";
 "Free" = "释放";
 "Free %@ of %@ downloads?" = "释放 %@ 的 %@ 下载？";
 "Free %lld Time Machine snapshots?" = "释放 %lld 个 Time Machine 快照？";
 "Free 1 Time Machine snapshot?" = "释放 1 个 Time Machine 快照？";
+"Free local snapshots?" = "释放本地快照？";
 "Free now" = "立即释放";
+"Free purgeable app files?" = "释放可清除的 App 文件？";
 "Free selected" = "释放所选内容";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "释放应用标记为可清除的文件，否则 macOS 仅在磁盘空间即将用尽时删除。";
 "Free the selected backups?" = "释放所选备份？";
@@ -44,6 +49,7 @@
 "Installs at the next restart" = "下次重新启动时安装";
 "Latest" = "最新";
 "Left alone" = "不作处理";
+"Local restore points are permanently deleted." = "本地恢复点会被永久删除。";
 "MacSpace could not measure right now. Try the refresh button." = "MacSpace 暂时无法测量，请点击刷新按钮重试。";
 "Not connected" = "未连接";
 "Open" = "打开";

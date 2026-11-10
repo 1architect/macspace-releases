@@ -163,7 +163,7 @@ final class SdkTests: XCTestCase {
         // A choosing page can name its checked rows in the confirmation, and an action say what its button shows while it runs.
         group.selection?.action.confirmation = Confirmation(title: "T", confirmTitle: "Free")
         group.selection?.action.workingTitle = "Freeing space"
-        group.selection?.noteNames = ["c": "C"]
+        group.selection?.noteChoiceIDs = ["c"]
         group.selection?.note = "Quits %@."
         XCTAssertEqual(try JSONDecoder().decode(Row.self, from: JSONEncoder().encode(group)), group)
     }

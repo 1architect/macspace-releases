@@ -98,8 +98,8 @@ enum OtherSystemFilesScreenBuilder {
         let size = ByteFormat.string(bytes)
         return Action(id: "purgeFiles", title: prominent ? loc("Free up to \(size)") : loc("Free"), symbol: prominent ? "sparkles" : nil,
                       role: prominent ? .prominent : .normal,
-                      confirmation: Confirmation(title: loc("Free up to \(size) of purgeable app files?"),
-                                                 message: loc("Apps download them again if they need them."),
+                      confirmation: Confirmation(title: loc("Free purgeable app files?"),
+                                                 message: loc("Apps download them again as needed."),
                                                  confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
     }
 
@@ -149,8 +149,8 @@ enum OtherSystemFilesScreenBuilder {
         let detail = loc("Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs.")
         let size = ByteFormat.string(bytes)
         let free = Action(id: "freeSnapshots", title: loc("Free"), role: .destructive,
-                          confirmation: Confirmation(title: removable.count == 1 ? loc("Free 1 Time Machine snapshot?") : loc("Free \(removable.count) Time Machine snapshots?"),
-                                                     message: loc("Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay."),
+                          confirmation: Confirmation(title: loc("Free local snapshots?"),
+                                                     message: loc("Local restore points are permanently deleted."),
                                                      confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
         let row = Row(id: service.id, title: service.title, subtitle: count, trailing: bytes > 0 ? size : nil, badges: badges, symbol: service.symbol,
                       detail: detail, actions: removable.isEmpty || backingUp ? [] : [free])
@@ -196,8 +196,8 @@ enum OtherSystemFilesScreenBuilder {
         if !removable.isEmpty, !backingUp {
             group.selection = Selection(
                 action: Action(id: "deleteBackups", title: loc("Free selected"), role: .destructive, parameters: ["mountPoint": mount],
-                               confirmation: Confirmation(title: loc("Free the selected backups?"),
-                                                          message: loc("They are deleted from \(destination.name) for good. Files that are only in them can't be restored."),
+                               confirmation: Confirmation(title: loc("Delete selected backups?"),
+                                                          message: loc("Files unique to these backups are lost."),
                                                           confirmTitle: loc("Free")),
                                requires: [.privilegedHelper], workingTitle: loc("Freeing space")),
                 choices: Dictionary(removable.map { ("backup:\($0.stamp)", UInt64(0)) }, uniquingKeysWith: { first, _ in first }),

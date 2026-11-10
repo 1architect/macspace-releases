@@ -58,12 +58,14 @@
 "Day" = "昼";
 "Delete" = "削除";
 "Delete %@?" = "%@を削除しますか？";
+"Delete this item?" = "この項目を削除しますか？";
 "Developed by\n%@" = "開発者\n%@";
 "Does the few things that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Drag into the Full Disk Access list" = "フルディスクアクセスのリストにドラッグ";
 "Every 3 days" = "3日ごと";
 "Every day" = "毎日";
 "Every week" = "毎週";
+"Files stay in the cloud." = "ファイルはクラウドに残ります。";
 "Finishing in the background" = "バックグラウンドで完了処理中";
 "Follow System" = "システムに合わせる";
 "Free" = "解放";
@@ -145,6 +147,7 @@
 "Quit MacSpace and copy it again. Permissions given to this copy would be lost at the next update." = "MacSpaceを終了してコピーし直してください。このコピーに与えた権限は次の更新で失われます。";
 "Recent cleanups" = "最近のクリーンアップ";
 "Refresh" = "更新";
+"Remove local copies?" = "ローカルコピーを削除しますか？";
 "Removing %@" = "%@を削除中";
 "Removing %lld%%, %@" = "削除中 %lld%%、%@";
 "Removing downloads" = "ダウンロードを削除中";
@@ -155,8 +158,10 @@
 "Restart your Mac from the Apple menu." = "アップルメニューからMacを再起動してください。";
 "Restart your Mac to apply this change." = "この変更を適用するにはMacを再起動してください。";
 "Restore" = "元に戻す";
+"Restores changed settings and moves the app to Trash." = "変更した設定を戻し、アプリをゴミ箱に移動します。";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。";
 "Restoring settings" = "設定を復元中";
+"Save your work first. Some changes may be permanent." = "作業を保存してください。一部の変更は元に戻せない場合があります。";
 "Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
 "Selected files need review" = "選択したファイルの確認が必要です";
 "Settings" = "設定";
@@ -179,6 +184,7 @@
 "Uninstall" = "アンインストール";
 "Uninstall MacSpace?" = "MacSpaceをアンインストールしますか？";
 "Uninstall MacSpace…" = "MacSpaceをアンインストール…";
+"Uninstall this app?" = "このアプリをアンインストールしますか？";
 "Uninstall…" = "アンインストール…";
 "Unknown" = "不明";
 "Updates" = "アップデート";

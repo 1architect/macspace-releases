@@ -431,6 +431,33 @@
   "%@を削除しますか？",
   "%@을(를) 삭제할까요?"
  ],
+ "Delete selected app data?": [
+  "Apagar dados de apps?",
+  "Supprimer les données d’app ?",
+  "¿Eliminar datos de apps?",
+  "Ausgewählte App-Daten löschen?",
+  "删除选中的 App 数据？",
+  "選択したアプリデータを削除しますか？",
+  "선택한 앱 데이터를 삭제할까요?"
+ ],
+ "Delete selected files?": [
+  "Apagar os arquivos selecionados?",
+  "Supprimer les fichiers sélectionnés ?",
+  "¿Eliminar los archivos seleccionados?",
+  "Ausgewählte Dateien löschen?",
+  "删除选中的文件？",
+  "選択したファイルを削除しますか？",
+  "선택한 파일을 삭제할까요?"
+ ],
+ "Delete this folder?": [
+  "Apagar esta pasta?",
+  "Supprimer ce dossier ?",
+  "¿Eliminar esta carpeta?",
+  "Diesen Ordner löschen?",
+  "删除此文件夹？",
+  "このフォルダを削除しますか？",
+  "이 폴더를 삭제할까요?"
+ ],
  "Deleted": [
   "Apagado",
   "Supprimé",
@@ -728,6 +755,15 @@
   "アプリと一緒に削除",
   "앱과 함께 제거됨"
  ],
+ "Includes everything inside.": [
+  "Inclui todo o conteúdo da pasta.",
+  "Tout son contenu est inclus.",
+  "Incluye todo su contenido.",
+  "Der gesamte Inhalt ist inbegriffen.",
+  "包括其中的所有内容。",
+  "中のすべての項目も対象です。",
+  "폴더 안의 모든 항목이 포함됩니다."
+ ],
  "Install the helper in Settings": [
   "Instale o auxiliar nos Ajustes",
   "Installez l’assistant dans Réglages",
@@ -880,6 +916,24 @@
   "更多项目",
   "その他の項目",
   "더 많은 항목"
+ ],
+ "Move files to Trash?": [
+  "Mover os arquivos para o Lixo?",
+  "Mettre les fichiers à la corbeille ?",
+  "¿Mover los archivos a la papelera?",
+  "Dateien in den Papierkorb legen?",
+  "将文件移到废纸篓？",
+  "ファイルをゴミ箱に移動しますか？",
+  "파일을 휴지통으로 이동할까요?"
+ ],
+ "Move folder to Trash?": [
+  "Mover a pasta para o Lixo?",
+  "Placer le dossier dans la corbeille ?",
+  "¿Mover la carpeta a la papelera?",
+  "Ordner in den Papierkorb legen?",
+  "将文件夹移到废纸篓？",
+  "フォルダをゴミ箱に移動しますか？",
+  "폴더를 휴지통으로 이동할까요?"
  ],
  "Move to Trash": [
   "Mover para o Lixo",
@@ -1151,6 +1205,15 @@
   "PDF書類",
   "PDF 문서"
  ],
+ "Permanently deletes everything inside.": [
+  "Apaga permanentemente todo o conteúdo da pasta.",
+  "Efface définitivement tout son contenu.",
+  "Elimina todo su contenido de forma permanente.",
+  "Löscht den gesamten Inhalt dauerhaft.",
+  "永久删除其中的所有内容。",
+  "中のすべての項目が完全に削除されます。",
+  "폴더 안의 모든 항목이 영구 삭제됩니다."
+ ],
  "Photo libraries": [
   "Fototecas",
   "Photothèques",
@@ -1268,6 +1331,24 @@
   "選択したアプリを終了してからアンインストールしてください。",
   "선택한 앱을 종료한 후 제거하세요."
  ],
+ "Quits the apps and permanently deletes selected data.": [
+  "Encerra os apps e apaga de vez os dados selecionados.",
+  "Ferme les apps et efface les données choisies définitivement.",
+  "Cierra las apps y elimina los datos elegidos para siempre.",
+  "Beendet die Apps und löscht gewählte Daten dauerhaft.",
+  "退出这些 App 并永久删除选中的数据。",
+  "アプリを終了し、選択したデータを完全に削除します。",
+  "앱을 종료하고 선택한 데이터를 영구 삭제합니다."
+ ],
+ "Quits the apps and trashes selected data.": [
+  "Encerra os apps e move os dados selecionados para o Lixo.",
+  "Ferme les apps et met les données choisies à la corbeille.",
+  "Cierra las apps y mueve los datos elegidos a la papelera.",
+  "Beendet die Apps und legt gewählte Daten in den Papierkorb.",
+  "退出这些 App，并将选中的数据移到废纸篓。",
+  "アプリを終了し、選択したデータをゴミ箱に移動します。",
+  "앱을 종료하고 선택한 데이터를 휴지통으로 이동합니다."
+ ],
  "Reading apps…": [
   "Lendo apps…",
   "Lecture des apps…",
@@ -1294,6 +1375,15 @@
   "建议检查",
   "おすすめ",
   "추천"
+ ],
+ "Removal was canceled.": [
+  "A remoção foi cancelada.",
+  "La suppression a été annulée.",
+  "Se canceló la eliminación.",
+  "Das Entfernen wurde abgebrochen.",
+  "移除操作已取消。",
+  "削除はキャンセルされました。",
+  "제거가 취소되었습니다."
  ],
  "Reopen the list and confirm deletion again.": [
   "Reabra a lista e confirme a exclusão novamente.",
@@ -1465,6 +1555,15 @@
   "所选清理项目已更改。请重新检查选择。",
   "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。",
   "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요."
+ ],
+ "Selected data is permanently deleted.": [
+  "Os dados selecionados são apagados para sempre.",
+  "Les données sélectionnées sont effacées définitivement.",
+  "Los datos seleccionados se eliminan de forma permanente.",
+  "Die ausgewählten Daten werden dauerhaft gelöscht.",
+  "选中的数据会被永久删除。",
+  "選択したデータは完全に削除されます。",
+  "선택한 데이터는 영구 삭제됩니다."
  ],
  "Selected files": [
   "Arquivos selecionados",
@@ -1745,6 +1844,15 @@
   "このアプリはmacOSまたはMacSpaceで管理されているため、ここでは削除できません。",
   "macOS 또는 MacSpace가 관리하는 앱이므로 여기서 제거할 수 없습니다."
  ],
+ "This cannot be undone.": [
+  "Essa ação é irreversível.",
+  "Cette action est irréversible.",
+  "Esta acción no se puede deshacer.",
+  "Das kann nicht rückgängig gemacht werden.",
+  "此操作无法撤销。",
+  "この操作は取り消せません。",
+  "이 작업은 되돌릴 수 없습니다."
+ ],
  "This file cannot be deleted here.": [
   "Este arquivo não pode ser apagado aqui.",
   "Ce fichier ne peut pas être supprimé ici.",
@@ -1868,7 +1976,7 @@
   "¿Desinstalar las apps seleccionadas?",
   "Ausgewählte Apps deinstallieren?",
   "卸载选中的 App？",
-  "選択したアプリをアンインストールしますか？",
+  "アプリをアンインストールしますか？",
   "선택한 앱을 제거할까요?"
  ],
  "Uninstalled": [

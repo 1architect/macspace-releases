@@ -6,11 +6,11 @@ enum DiskFileReview {
     static let destination = "file-deletion-review"
 
     static func removalAction(id: String = "freeFiles", parameters: [String: String] = [:]) -> Action {
-        let trash = FileRemovalSettings.movesToTrash()
+        let trash = parameters["trash"].map { $0 == "1" } ?? FileRemovalSettings.movesToTrash()
         return Action(id: id, title: trash ? loc("Move to Trash") : loc("Delete"), role: .destructive,
             parameters: parameters.merging(["trash": trash ? "1" : "0"]) { _, current in current },
-            confirmation: Confirmation(title: loc("Free the selected files?"),
-                message: trash ? loc("The selected files will be moved to Trash.") : loc("This permanently deletes the selected files."),
+            confirmation: Confirmation(title: trash ? loc("Move files to Trash?") : loc("Delete selected files?"),
+                message: trash ? "" : loc("This cannot be undone."),
                 confirmTitle: trash ? loc("Move to Trash") : loc("Delete")),
             requires: [.fullDiskAccess], workingTitle: loc("Freeing space"))
     }
@@ -29,8 +29,7 @@ enum DiskFileReview {
     }
 
     static func single(_ file: DiskFile, parameters: [String: String]) -> Screen {
-        var action = removalAction(id: "deleteGraphFile", parameters: parameters)
-        action.confirmation?.message += "\n\n" + FileReviewPolicy.livePath(file.path)
+        let action = removalAction(id: "deleteGraphFile", parameters: parameters)
         let id = DiskFileRemoval.id(file.path)
         return Screen(title: loc("Review selected files"), subtitle: message, layout: .singleColumn,
             widgets: [.list(ListWidget(id: "review-files", title: loc("Selected files"), rows: rows([file]), cascadesOnAppear: true))],

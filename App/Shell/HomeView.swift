@@ -247,7 +247,7 @@ struct TileFace: View {
         case let .dots(dots):
             VStack(alignment: .leading, spacing: 10) {
                 DotsView(dots: dots, tint: tint, diameter: min(15, (size.width - 2 * Self.margin - 6 * 7) / 7), loading: info.loading)
-                    .graphContextMenu(label: info.title)
+                    .graphContextMenu()
                 HStack(spacing: 10) {
                     legend(Circle().fill(palette.step(5)), String(localized: "disabled"))
                     legend(Circle().strokeBorder(palette.step(3), lineWidth: 1.5), String(localized: "enabled"))
@@ -264,7 +264,7 @@ struct TileFace: View {
             StateView(on: on, detail: detail, meter: meter, meterIsActionable: actionable, tint: tint, loading: info.loading,
                       part: switchOverlaid ? .allButSwitch : .all, disabled: info.switchAction == nil,
                       showsDetail: StateView.detailFits(detail, width: size.width - 2 * Self.margin))
-                .graphContextMenu(label: info.title)
+                .graphContextMenu()
                 // The tile's width, so the detail stays on one line; the meter keeps its own width (`StateView`).
                 .frame(width: max(size.width - 2 * Self.margin, 0), alignment: .leading)
                 .padding(.leading, Self.margin)
@@ -274,7 +274,7 @@ struct TileFace: View {
             // the caption, which says the figures.
             let top = GlassCircleButton.margin + GlassCircleButton.diameter
             BarGaugeView(value: value, tint: tint, loading: info.loading)
-                .graphContextMenu(label: info.title)
+                .graphContextMenu()
                 .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
                 .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
         }
@@ -839,7 +839,7 @@ private struct TileSwitch: View {
                           return result.map { $0.outcome != .failed } ?? false
                       } },
                       disabled: info.switchAction == nil)
-                .graphContextMenu(label: info.title)
+                .graphContextMenu()
                 .environment(\.graphInteraction, GraphInteraction(handle: handle))
                 .padding(.leading, TileFace.margin)
                 .padding(.top, TileFace.topInset)

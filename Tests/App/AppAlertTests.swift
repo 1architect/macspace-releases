@@ -23,17 +23,22 @@ final class AppAlertTests: XCTestCase {
         }
     }
 
-    func testCacheConfirmationKeepsItsFullMessageOnTheSameLeftEdge() {
+    func testConfirmationKeepsItsTitleAndBodyOnTheSameLeftEdgeWithThreeLinesTotal() {
         _ = NSApplication.shared
         let alert = AppAlert()
-        alert.messageText = "Free selected 250 MB?"
-        alert.informativeText = "Quits Enscape and WhatsApp."
+        alert.limitsConfirmationCopy = true
+        alert.messageText = "Free the selected caches?"
+        alert.informativeText = "Quits apps using the selected caches."
         alert.addButton(withTitle: "Free")
         alert.addButton(withTitle: "Cancel")
         alert.layout()
         let labels = alert.window.contentView!.subviews.compactMap { $0 as? NSTextField }.filter { $0.stringValue == alert.messageText || $0.stringValue == alert.informativeText }
         XCTAssertEqual(labels.count, 2)
-        for label in labels { XCTAssertEqual(label.frame.minX, 20, accuracy: 0.1); XCTAssertEqual(label.alignment, .left) }
+        for label in labels {
+            XCTAssertEqual(label.frame.minX, 20, accuracy: 0.1)
+            XCTAssertEqual(label.alignment, .left)
+            XCTAssertEqual(label.maximumNumberOfLines, label.stringValue == alert.messageText ? 1 : 2)
+        }
     }
 
     func testFinalDrawingPassRepairsNativeRecenteringForEveryAlertStyle() throws {

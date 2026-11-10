@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import CoreServices
 import CryptoKit
 import Darwin
@@ -6,10 +7,9 @@ import MacSpacePlatform
 import MacSpaceSdk
 
 private final class DiskScanCancellation: @unchecked Sendable {
-    private let lock = NSLock()
-    private var value = false
-    func cancel() { lock.withLock { value = true } }
-    var isCancelled: Bool { lock.withLock { value } }
+    private let value = Atomic(false)
+    func cancel() { value.store(true, ordering: .relaxed) }
+    var isCancelled: Bool { value.load(ordering: .relaxed) }
 }
 
 /// Only metadata and short transactions occupy this actor. Duplicate content reads run outside it.

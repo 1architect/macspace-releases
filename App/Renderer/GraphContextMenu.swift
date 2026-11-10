@@ -22,20 +22,18 @@ extension EnvironmentValues {
 
 /// Navigation actions review the item before asking for destructive confirmation.
 enum GraphMenuPolicy {
-    static func deletion(_ action: Action?, label: String) -> Action? {
+    static func deletion(_ action: Action?) -> Action? {
         guard var action else { return nil }
         action.title = String(localized: "Delete")
         action.role = .destructive
         if action.pageID == nil, action.confirmation == nil {
-            action.confirmation = Confirmation(title: String(localized: "Delete \(label)?"),
-                message: String(localized: "Confirm deletion of this item."), confirmTitle: String(localized: "Delete"))
+            action.confirmation = Confirmation(title: String(localized: "Delete this item?"), confirmTitle: String(localized: "Delete"))
         }
         return action
     }
 }
 
 private struct GraphContextMenu: ViewModifier {
-    let label: String
     let actions: GraphContextActions?
     var enabled = true
     @Environment(\.graphContextMenusEnabled) private var graphMenusEnabled
@@ -51,7 +49,7 @@ private struct GraphContextMenu: ViewModifier {
                         RevealTarget.show(existing.map { URL(fileURLWithPath: $0) })
                     } label: { Label(String(localized: "Open in Finder"), systemImage: "folder") }
                 }
-                if let action = GraphMenuPolicy.deletion(actions?.delete, label: label) {
+                if let action = GraphMenuPolicy.deletion(actions?.delete) {
                     Button(role: .destructive) {
                         Task { await interaction.delete(action) }
                     } label: { Label(String(localized: "Delete"), systemImage: "trash") }
@@ -67,7 +65,7 @@ private struct GraphContextMenu: ViewModifier {
 }
 
 extension View {
-    func graphContextMenu(label: String, actions: GraphContextActions? = nil, enabled: Bool = true) -> some View {
-        modifier(GraphContextMenu(label: label, actions: actions, enabled: enabled))
+    func graphContextMenu(actions: GraphContextActions? = nil, enabled: Bool = true) -> some View {
+        modifier(GraphContextMenu(actions: actions, enabled: enabled))
     }
 }

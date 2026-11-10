@@ -459,13 +459,14 @@ public struct DiskMapModule: MacSpaceModule {
         case "freeUnmatchedData":
             guard request.parameters["trash"] == "0" else { return .failed(loc("Reopen the list and confirm deletion again.")) }
             let apps = await inventory.read(index, force: true)
-            let ids = Set(Selection.ids(request.parameters["ids"]))
-            guard let removal = DiskUnmatchedRemoval.execute(ids: ids, candidates: apps.reviewableLeftovers, progress: progress) else {
+            guard let ids = try? Selection.decodeIDs(request.parameters["ids"]),
+                  let removal = DiskUnmatchedRemoval.execute(ids: Set(ids), candidates: apps.reviewableLeftovers, progress: progress) else {
                 return .failed(loc("App data changed. Reopen the list and review your selection again."))
             }
             await store.mark(removal.targets.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention,
-                                  message: removal.failures.isEmpty ? loc("Freed selected files") : loc("Some files could not be removed"), details: removal.failures)
+                                  message: removal.failures.isEmpty ? loc("Freed selected files") : loc("Some app data could not be removed"),
+                                  details: removal.failures, removedBytes: removal.removedBytes)
         case "uninstall", "uninstallSelected":
             let apps = await inventory.read(index, force: true)
             let reviewedPlans: [AppRemovalPlan]

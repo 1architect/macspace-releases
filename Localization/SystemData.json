@@ -620,6 +620,15 @@
   "削除",
   "삭제"
  ],
+ "Delete version history?": [
+  "Excluir o histórico de versões?",
+  "Supprimer l’historique des versions ?",
+  "¿Eliminar el historial de versiones?",
+  "Versionsverlauf löschen?",
+  "删除版本历史？",
+  "バージョン履歴を削除しますか？",
+  "버전 기록을 삭제할까요?"
+ ],
  "Deleted %@.": [
   "%@ apagado.",
   "%@ supprimé.",
@@ -737,6 +746,15 @@
   "Finderでゴミ箱を空にしてください。",
   "Finder에서 휴지통을 비우세요."
  ],
+ "Empty the Trash?": [
+  "Esvaziar o Lixo?",
+  "Vider la corbeille ?",
+  "¿Vaciar la papelera?",
+  "Papierkorb leeren?",
+  "清倒废纸篓？",
+  "ゴミ箱を空にしますか？",
+  "휴지통을 비울까요?"
+ ],
  "Erase Console records used for troubleshooting.": [
   "Apaga os registros do Console usados para resolução de problemas.",
   "Efface les enregistrements de Console utilisés pour le dépannage.",
@@ -763,6 +781,15 @@
   "废纸篓中的所有内容将永久删除。",
   "ゴミ箱の内容をすべて完全に削除します。",
   "휴지통의 모든 항목이 영구적으로 삭제됩니다."
+ ],
+ "Everything inside is permanently deleted.": [
+  "Todo o conteúdo do Lixo é apagado de vez.",
+  "Tout son contenu est effacé définitivement.",
+  "Se elimina todo su contenido para siempre.",
+  "Der gesamte Inhalt wird dauerhaft gelöscht.",
+  "其中的所有内容都会被永久删除。",
+  "中のすべての項目が完全に削除されます。",
+  "휴지통의 모든 항목은 영구 삭제됩니다."
  ],
  "File system metadata": [
   "Metadados do sistema de arquivos",
@@ -827,6 +854,15 @@
   "すべてのバージョン履歴を解放しますか？",
   "모든 버전 기록을 정리할까요?"
  ],
+ "Free cached crash symbols?": [
+  "Liberar símbolos de falhas em cache?",
+  "Libérer les symboles en cache ?",
+  "¿Liberar los símbolos en caché?",
+  "Symbole aus dem Cache entfernen?",
+  "释放缓存的崩溃符号？",
+  "クラッシュ記号を解放しますか？",
+  "캐시된 충돌 기호를 정리할까요?"
+ ],
  "Free caches": [
   "Liberar caches",
   "Libérer les caches",
@@ -854,6 +890,15 @@
   "古いレポートを解放しますか？",
   "오래된 보고서를 정리할까요?"
  ],
+ "Free old update files?": [
+  "Liberar restos de atualização?",
+  "Libérer les restes de mise à jour ?",
+  "¿Liberar restos de actualización?",
+  "Alte Update-Dateien freigeben?",
+  "释放旧更新文件？",
+  "更新の残りを解放しますか？",
+  "오래된 업데이트 파일을 정리할까요?"
+ ],
  "Free recommended": [
   "Liberar recomendados",
   "Libérer la recommandation",
@@ -872,6 +917,15 @@
   "選択項目を解放",
   "선택 항목 정리"
  ],
+ "Free stuck downloads?": [
+  "Liberar downloads interrompidos?",
+  "Libérer les téléchargements bloqués ?",
+  "¿Liberar descargas atascadas?",
+  "Blockierte Downloads freigeben?",
+  "释放卡住的下载？",
+  "停止したダウンロードを解放しますか？",
+  "멈춘 다운로드를 정리할까요?"
+ ],
  "Free stuck wallpaper downloads?": [
   "Liberar os downloads de wallpapers travados?",
   "Libérer les téléchargements de fonds d’écran bloqués ?",
@@ -880,6 +934,15 @@
   "释放卡住的墙纸下载？",
   "停止した壁紙のダウンロードを解放しますか？",
   "멈춘 배경화면 다운로드를 정리할까요?"
+ ],
+ "Free system data?": [
+  "Liberar dados do sistema?",
+  "Libérer les données système ?",
+  "¿Liberar datos del sistema?",
+  "Systemdaten freigeben?",
+  "释放系统数据？",
+  "システムデータを解放しますか？",
+  "시스템 데이터를 정리할까요?"
  ],
  "Free the leftover update files?": [
   "Liberar os arquivos restantes da atualização?",
@@ -916,6 +979,15 @@
   "释放系统日志？",
   "システムログを解放しますか？",
   "시스템 로그를 정리할까요?"
+ ],
+ "Free unused downloads?": [
+  "Liberar downloads sem uso?",
+  "Libérer les fichiers inutilisés ?",
+  "¿Liberar descargas en desuso?",
+  "Ungenutzte Downloads freigeben?",
+  "释放未使用的下载？",
+  "未使用のダウンロードを解放しますか？",
+  "사용하지 않는 다운로드를 정리할까요?"
  ],
  "Free unused system assets?": [
   "Liberar os arquivos do sistema não usados?",
@@ -1340,6 +1412,15 @@
   "古いレポートは「今すぐ解放」で削除できます。",
   "지금 확보에서 오래된 보고서를 삭제합니다."
  ],
+ "Old reports are permanently deleted.": [
+  "Os relatórios antigos são apagados de vez.",
+  "Les anciens rapports sont effacés définitivement.",
+  "Los informes antiguos se eliminan para siempre.",
+  "Alte Berichte werden dauerhaft gelöscht.",
+  "旧报告会被永久删除。",
+  "古いレポートは完全に削除されます。",
+  "오래된 리포트는 영구 삭제됩니다."
+ ],
  "Older version": [
   "Versão antiga",
   "Ancienne version",
@@ -1457,6 +1538,15 @@
   "%@を終了します。",
   "%@ 종료합니다."
  ],
+ "Quits apps using the selected caches.": [
+  "Encerra os apps que usam os caches selecionados.",
+  "Ferme les apps qui utilisent les caches choisis.",
+  "Cierra las apps que usan las cachés seleccionadas.",
+  "Beendet Apps, die gewählte Caches nutzen.",
+  "退出使用所选缓存的 App。",
+  "選んだキャッシュを使用中のアプリを終了します。",
+  "선택한 캐시를 사용하는 앱을 종료합니다."
+ ],
  "Rebuilt by Spotlight; macOS manages it.": [
   "Reconstruído pelo Spotlight; o macOS o gerencia.",
   "Reconstruit par Spotlight ; macOS le gère.",
@@ -1537,6 +1627,24 @@
   "%@ 关闭时可安全删除，需要时会重建。",
   "%@の終了中は安全に削除でき、必要時に再作成されます。",
   "%@이(가) 종료된 상태에서 안전하게 삭제할 수 있습니다. 필요하면 다시 생성됩니다."
+ ],
+ "Save and close documents first. Earlier versions are lost.": [
+  "Salve e feche os documentos. Versões anteriores serão perdidas.",
+  "Enregistrez et fermez vos documents. Les anciennes versions seront perdues.",
+  "Guarda y cierra los documentos. Se perderán las versiones anteriores.",
+  "Speichere und schließe Dokumente. Frühere Versionen gehen verloren.",
+  "请先保存并关闭文稿。早期版本会丢失。",
+  "書類を保存して閉じてください。以前のバージョンは失われます。",
+  "문서를 저장하고 닫으세요. 이전 버전은 사라집니다."
+ ],
+ "Save your work first. The system log is erased.": [
+  "Salve seu trabalho. O registro do sistema será apagado.",
+  "Enregistrez votre travail. Le journal système est effacé.",
+  "Guarda tu trabajo. Se borra el registro del sistema.",
+  "Sichere deine Arbeit. Das Systemprotokoll wird gelöscht.",
+  "请先保存工作。系统日志将被清除。",
+  "作業を保存してください。システムログが消去されます。",
+  "작업을 저장하세요. 시스템 로그가 지워집니다."
  ],
  "Saved home folder of a deleted account: %@": [
   "Pasta pessoal salva de uma conta apagada: %@",
@@ -1871,6 +1979,15 @@
   "ヘルパーから応答がありません",
   "보조 프로그램 응답 없음"
  ],
+ "The log history is permanently deleted.": [
+  "O histórico do registro é apagado de vez.",
+  "L’historique du journal est effacé définitivement.",
+  "El historial del registro se elimina para siempre.",
+  "Der Protokollverlauf wird dauerhaft gelöscht.",
+  "日志历史会被永久删除。",
+  "ログの履歴は完全に削除されます。",
+  "로그 기록은 영구 삭제됩니다."
+ ],
  "This permanently deletes %@.": [
   "Isto apaga permanentemente %@.",
   "Cela supprime définitivement %@.",
@@ -2186,6 +2303,15 @@
   "次にクラッシュレポートを読むときにmacOSが再作成します。",
   "다음에 충돌 보고서를 읽을 때 macOS가 다시 생성합니다."
  ],
+ "macOS downloads them again as needed.": [
+  "O macOS baixa os arquivos de novo se precisar.",
+  "macOS les retélécharge au besoin.",
+  "macOS los vuelve a descargar si los necesita.",
+  "macOS lädt sie bei Bedarf erneut.",
+  "macOS 会按需重新下载。",
+  "macOSは必要に応じて再ダウンロードします。",
+  "필요하면 macOS가 다시 다운로드합니다."
+ ],
  "macOS downloads them again if they're needed.": [
   "O macOS os baixa de novo se forem necessários.",
   "macOS les retélécharge si besoin.",
@@ -2203,6 +2329,15 @@
   "macOS 锁定这些内容，MacSpace 也无法访问。",
   "macOSがロックしており、MacSpaceもアクセスできません。",
   "macOS가 잠근 항목으로 MacSpace도 접근할 수 없습니다."
+ ],
+ "macOS rebuilds them as needed.": [
+  "O macOS recria os símbolos quando precisa.",
+  "macOS les recrée au besoin.",
+  "macOS los vuelve a crear si los necesita.",
+  "macOS erstellt sie bei Bedarf erneut.",
+  "macOS 会按需重建。",
+  "macOSが必要に応じて再作成します。",
+  "필요하면 macOS가 다시 생성합니다."
  ],
  "macOS restore image: %@": [
   "Imagem de restauração do macOS: %@",

@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "停用 1 项功能？";
 "Disable all" = "全部停用";
 "Disable automatically if changed" = "如有更改，自动停用";
+"Disable features?" = "停用功能？";
 "Disabled" = "已停用";
 "Disabling" = "正在停用";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "停用功能时，会要求你在“系统设置 > 通用 > 设备管理”中批准描述文件。";
@@ -81,8 +82,10 @@
 "Partly off" = "部分关闭";
 "Personalized ads" = "个性化广告";
 "Policies" = "策略";
+"Re-enable features?" = "重新启用功能？";
 "Reopen apps to apply." = "重新打开应用后生效。";
 "Restart to apply." = "重新启动后生效。";
+"Restores the previous settings." = "恢复之前的设置。";
 "Set by another profile" = "由其他描述文件设置";
 "Share analytics with Apple" = "与 Apple 共享分析";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "macOS 重新开启已停用的功能，而 MacSpace 再次停用时显示通知。";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "视觉智能";
 "Waiting for approval" = "等待批准";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "正在等待 macOS 下一次诊断发送决定。成功记录也可能只是未包含诊断信息的服务器联络。";
+"You can re-enable them later." = "你可以稍后重新启用它们。";
 "debloat" = "精简";
+"macOS asks you to approve a profile." = "macOS 会要求你批准一个描述文件。";
 "macOS asks you to approve the policy profile once." = "macOS 只会要求你批准一次策略描述文件。";
 "macOS prevents this change from taking effect on this Mac." = "macOS 阻止此更改在这台 Mac 上生效。";
 "macOS still chose to send diagnostics after this change." = "此次更改后，macOS 仍决定发送诊断信息。";

@@ -69,6 +69,7 @@
 "Data of Apple background services." = "Apple 백그라운드 서비스 데이터입니다.";
 "Data of an Apple app or service." = "Apple 앱 또는 서비스 데이터입니다.";
 "Delete" = "삭제";
+"Delete version history?" = "버전 기록을 삭제할까요?";
 "Deleted %@." = "%@ 삭제됨.";
 "Developer" = "개발자";
 "Diagnostic and crash reports" = "진단 및 충돌 보고서";
@@ -82,9 +83,11 @@
 "Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "문서의 이전 버전입니다(파일 > 다음으로 복귀). 최신 버전만 유지합니다.";
 "Empties after 30 days" = "30일 후 비워짐";
 "Empty the Trash in Finder." = "Finder에서 휴지통을 비우세요.";
+"Empty the Trash?" = "휴지통을 비울까요?";
 "Erase Console records used for troubleshooting." = "문제 해결용 콘솔 기록을 지웁니다.";
 "Everything else" = "나머지 항목";
 "Everything in the Trash is deleted for good." = "휴지통의 모든 항목이 영구적으로 삭제됩니다.";
+"Everything inside is permanently deleted." = "휴지통의 모든 항목은 영구 삭제됩니다.";
 "File system metadata" = "파일 시스템 메타데이터";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "이미 설치된 macOS 업데이트의 파일이며 대기 중인 업데이트는 없습니다. macOS가 아직 제거하지 않았고 보호된 폴더에 있으므로 MacSpace가 유지합니다.";
 "Free" = "확보";
@@ -92,16 +95,21 @@
 "Free %@ in the Trash?" = "휴지통의 %@ 정리할까요?";
 "Free %@?" = "%@ 확보할까요?";
 "Free all version history?" = "모든 버전 기록을 정리할까요?";
+"Free cached crash symbols?" = "캐시된 충돌 기호를 정리할까요?";
 "Free caches" = "캐시 정리";
 "Free now" = "지금 확보";
 "Free old reports?" = "오래된 보고서를 정리할까요?";
+"Free old update files?" = "오래된 업데이트 파일을 정리할까요?";
 "Free recommended" = "권장 항목 정리";
 "Free selected" = "선택 항목 정리";
+"Free stuck downloads?" = "멈춘 다운로드를 정리할까요?";
 "Free stuck wallpaper downloads?" = "멈춘 배경화면 다운로드를 정리할까요?";
+"Free system data?" = "시스템 데이터를 정리할까요?";
 "Free the leftover update files?" = "잔여 업데이트 파일을 정리할까요?";
 "Free the selected caches?" = "선택한 캐시를 정리할까요?";
 "Free the symbols for crash reports?" = "충돌 보고서용 기호를 정리할까요?";
 "Free the system log?" = "시스템 로그를 정리할까요?";
+"Free unused downloads?" = "사용하지 않는 다운로드를 정리할까요?";
 "Free unused system assets?" = "사용하지 않는 시스템 리소스를 비울까요?";
 "Free up to %@ of unused system assets?" = "미사용 시스템 에셋을 최대 %@ 확보할까요?";
 "Freeing space" = "공간 확보 중";
@@ -149,6 +157,7 @@
 "Old diagnostic and crash reports" = "오래된 진단 및 충돌 보고서";
 "Old reports and unused system assets" = "오래된 보고서 및 미사용 시스템 에셋";
 "Old reports are deleted from Free now." = "지금 확보에서 오래된 보고서를 삭제합니다.";
+"Old reports are permanently deleted." = "오래된 리포트는 영구 삭제됩니다.";
 "Older version" = "이전 버전";
 "Open %@" = "%@ 열기";
 "Open now" = "열려 있음";
@@ -162,6 +171,7 @@
 "Project deleted" = "프로젝트 삭제됨";
 "Protected by macOS" = "macOS가 보호";
 "Quits %@." = "%@ 종료합니다.";
+"Quits apps using the selected caches." = "선택한 캐시를 사용하는 앱을 종료합니다.";
 "Rebuilt by Spotlight; macOS manages it." = "Spotlight가 다시 생성하고 macOS가 관리합니다.";
 "Recommended" = "권장";
 "Remove it with the tool that made it." = "생성한 도구에서 제거하세요.";
@@ -171,6 +181,8 @@
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "logd가 순환 관리합니다. 삭제하면 문제 해결에 필요한 로그가 제거됩니다.";
 "Rust packages" = "Rust 패키지";
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@이(가) 종료된 상태에서 안전하게 삭제할 수 있습니다. 필요하면 다시 생성됩니다.";
+"Save and close documents first. Earlier versions are lost." = "문서를 저장하고 닫으세요. 이전 버전은 사라집니다.";
+"Save your work first. The system log is erased." = "작업을 저장하세요. 시스템 로그가 지워집니다.";
 "Saved home folder of a deleted account: %@" = "삭제된 계정의 저장된 홈 폴더: %@";
 "See what fills System Data and free what is safe to remove." = "시스템 데이터의 구성을 확인하고 안전하게 제거할 수 있는 항목을 정리합니다.";
 "Selected cleanup items changed. Review your selection again." = "선택한 정리 항목이 변경되었습니다. 선택 항목을 다시 검토하세요.";
@@ -208,6 +220,7 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "Siri 음성 서비스, 음성 인식 및 통화 기능이 Siri와 시스템 언어를 위해 사용합니다. 제거할 수 있는 설정이 없습니다.";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "선택한 Siri 음성과 언어에 대한 텍스트 음성 변환 서비스 데이터입니다.";
 "The helper did not answer" = "보조 프로그램 응답 없음";
+"The log history is permanently deleted." = "로그 기록은 영구 삭제됩니다.";
 "This permanently deletes %@." = "%@이(가) 영구적으로 삭제됩니다.";
 "Tool cache" = "도구 캐시";
 "Tool cache: ~/.cache/%@" = "도구 캐시: ~/.cache/%@";
@@ -243,8 +256,10 @@
 "and %lld more" = "외 %lld개";
 "free %@" = "%@ 확보";
 "macOS builds them again the next time it reads a crash report." = "다음에 충돌 보고서를 읽을 때 macOS가 다시 생성합니다.";
+"macOS downloads them again as needed." = "필요하면 macOS가 다시 다운로드합니다.";
 "macOS downloads them again if they're needed." = "필요하면 macOS가 다시 다운로드합니다.";
 "macOS keeps these locked, even from MacSpace." = "macOS가 잠근 항목으로 MacSpace도 접근할 수 없습니다.";
+"macOS rebuilds them as needed." = "필요하면 macOS가 다시 생성합니다.";
 "macOS restore image: %@" = "macOS 복원 이미지: %@";
 "macOS's model catalog, for the Photos spatial effect." = "사진 공간 효과를 위한 macOS 모델 카탈로그입니다.";
 "nothing to free" = "확보할 공간 없음";

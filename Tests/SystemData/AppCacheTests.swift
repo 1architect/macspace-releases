@@ -262,8 +262,8 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(selection.checked, ["appcache:gone"])
         XCTAssertEqual(selection.suggested, ["appcache:gone"])
         XCTAssertNotNil(selection.choices["appcache:open"], "its app is open: chosen, it is freed once MacSpace may quit the app")
-        XCTAssertEqual(selection.noteNames.keys.sorted(), ["appcache:open"], "its app is named in the confirmation, which quits it")
-        XCTAssertEqual(selection.note, "Quits %@.")
+        XCTAssertEqual(selection.noteChoiceIDs, ["appcache:open"], "The selected cache triggers the quit warning")
+        XCTAssertEqual(selection.note, "Quits apps using the selected caches.")
         XCTAssertEqual(selection.action.workingTitle, "Freeing space")
         XCTAssertEqual(selection.action.id, "freeCaches")
         XCTAssertNotNil(selection.save)
@@ -307,7 +307,7 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(SystemDataScreenBuilder.cleanAll(snap)?.confirmation?.message ?? "", "", "not chosen: nothing quits")
         snap.choices = CacheChoices(chosen: [], all: ["apps"])
         XCTAssertEqual(CachesPage.chosenBytes(snap, now: now), 300_000_000, "the part's box takes it")
-        XCTAssertEqual(SystemDataScreenBuilder.cleanAll(snap)?.confirmation?.message, "Quits Firefox.")
+        XCTAssertEqual(SystemDataScreenBuilder.cleanAll(snap)?.confirmation?.message, "Quits apps using the selected caches.")
     }
 
     /// The apps quit for a cache are found as the cleaner finds them; a container's only by bundle identifier, and never MacSpace or

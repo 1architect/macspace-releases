@@ -88,16 +88,16 @@ final class DiskUninstallBatchTests: DiskSecurityFixtureCase {
             XCTAssertFalse(Set(candidates.map(\.id)).contains(data.id))
         }
     }
-    func testMandatoryAppNamesRemainLiteralWhenFormattingOptionalDataConfirmation() throws {
+    func testConfirmationOmitsAppNamesAndOptionalDataPaths() throws {
         try fixture { home, original in
             var apps = original
             apps.apps[0].owner.name = "100% %@ App"
             let page = DiskMapScreenBuilder.uninstallReview(DiskIndex(root: home), selected: apps.apps, apps: apps, home: home)
-            let note = try XCTUnwrap(page.selection?.note)
-            let formatted = String(format: note, "Selected location")
-            XCTAssertTrue(formatted.contains("100% %@ App"))
-            XCTAssertTrue(formatted.contains("Selected location"))
-            XCTAssertTrue(page.selection?.action.confirmation?.message.contains("100% %@ App") == true)
+            let confirmation = try XCTUnwrap(page.selection?.action.confirmation)
+            XCTAssertNil(page.selection?.note)
+            XCTAssertEqual(confirmation.title, "Uninstall selected apps?")
+            XCTAssertFalse(confirmation.message.contains("100% %@ App"))
+            XCTAssertFalse(confirmation.message.contains(home))
         }
     }
     func testAppsAreSortedByDescendingSizeWithStableTies() throws {

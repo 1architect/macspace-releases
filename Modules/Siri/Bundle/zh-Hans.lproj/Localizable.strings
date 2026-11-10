@@ -48,6 +48,7 @@
 "Disable %@?" = "停用 %@？";
 "Disable %lld features?" = "停用 %lld 项功能？";
 "Disable all" = "全部停用";
+"Disable features?" = "停用功能？";
 "Downloading" = "正在下载";
 "Each one can be enabled again. MacSpace frees their models." = "每项功能都可以重新启用。MacSpace 会释放它们的模型。";
 "Enable" = "启用";
@@ -61,9 +62,12 @@
 "Free %@?" = "释放 %@？";
 "Free now" = "立即释放";
 "Free switched-off features' models automatically" = "自动释放已关闭功能的模型";
+"Free unused downloads?" = "释放未使用的下载？";
+"Free unused models?" = "释放未使用的模型？";
 "Free up to %@" = "最多释放 %@";
 "Free up to %@?" = "最多释放 %@？";
 "Freeing space" = "正在释放空间";
+"Frees models until re-enabled." = "释放模型，直到功能重新启用。";
 "Home page alerts" = "主页提醒";
 "Its models are gone." = "模型已移除。";
 "Keeps the models" = "保留模型";
@@ -90,6 +94,7 @@
 "Open System Settings > Apple Account > iCloud." = "打开“系统设置 > Apple 账户 > iCloud”。";
 "Or delete the account in System Settings > Users & Groups." = "或在“系统设置 > 用户与群组”中删除账户。";
 "Other accounts" = "其他账户";
+"Re-enable features?" = "重新启用功能？";
 "Released Apple Intelligence models" = "已释放的 Apple 智能模型";
 "Released Apple Intelligence models and unused system assets" = "已释放的 Apple 智能模型与未使用的系统资源";
 "Restart to finish" = "重新启动以完成";
@@ -111,6 +116,7 @@
 "The current Siri language could not be read." = "无法读取当前 Siri 语言。";
 "The system language could not be read." = "无法读取系统语言。";
 "The system or Siri language could not be read." = "无法读取系统或 Siri 语言。";
+"They download again if re-enabled." = "重新启用功能时会再次下载模型。";
 "This account was deleted, but macOS still keeps its models. In Terminal, run:" = "此账户已删除，但 macOS 仍保留其模型。在终端运行：";
 "This is a virtual machine" = "这是虚拟机";
 "Turn off Sync this Mac and keep the data on this Mac." = "关闭“同步此 Mac”并将数据保留在此 Mac 上。";
@@ -134,7 +140,9 @@
 "free up to %@ of models" = "最多释放 %@ 模型";
 "freeing %@ of models" = "正在释放 %@ 模型";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS 不在虚拟机中提供 Apple 智能。请在实体 Mac 上使用 MacSpace。";
+"macOS downloads the models again." = "macOS 会重新下载模型。";
 "macOS downloads their models again." = "macOS 会重新下载它们的模型。";
+"macOS downloads them again as needed." = "macOS 会按需重新下载。";
 "macOS is freeing the model" = "macOS 正在释放模型";
 "macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOS 已将这些模型保留了十分钟。重新启动后，MacSpace 会将其删除。";
 "macOS still keeps these models." = "macOS 仍保留着这些模型。";

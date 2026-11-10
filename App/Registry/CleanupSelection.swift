@@ -35,14 +35,13 @@ extension ModuleHandle {
         let targets = currentCleanupTargets.filter { ids.contains($0.id) && $0.available }.sorted { $0.id < $1.id }
         var required: [Permission] = []
         for permission in targets.flatMap(\.action.requires) where !required.contains(permission) { required.append(permission) }
-        let message = targets.map { target in
-            let confirmation = target.action.confirmation
-            return target.title + (confirmation.map { "\n" + $0.title + ($0.message.isEmpty ? "" : "\n" + $0.message) } ?? "")
-        }.joined(separator: "\n\n")
+        let confirmation = targets.count == 1 ? targets.first?.action.confirmation : nil
+        let batch = Confirmation(title: String(localized: "Free the selected items?"),
+            message: String(localized: "Save your work first. Some changes may be permanent."), confirmTitle: String(localized: "Free"))
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         return Action(id: CleanupBatch.actionID, title: String(localized: "Free selected"), role: .prominent,
             parameters: ["targets": String(decoding: (try? encoder.encode(targets)) ?? Data(), as: UTF8.self)],
-            confirmation: Confirmation(title: String(localized: "Free the selected items?"), message: message, confirmTitle: String(localized: "Free")),
+            confirmation: confirmation ?? batch,
             requires: required, workingTitle: String(localized: "Freeing space"))
     }
 }

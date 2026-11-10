@@ -107,6 +107,15 @@
   "アプリコンテナのキャッシュ",
   "앱 컨테이너 캐시"
  ],
+ "Apps download them again as needed.": [
+  "Os apps baixam os arquivos de novo se precisarem.",
+  "Les apps les retéléchargent au besoin.",
+  "Las apps vuelven a descargarlos si los necesitan.",
+  "Apps laden sie bei Bedarf erneut.",
+  "App 会按需重新下载。",
+  "アプリは必要に応じて再ダウンロードします。",
+  "필요하면 앱이 다시 다운로드합니다."
+ ],
  "Apps download them again if they need them.": [
   "Os apps os baixam de novo se precisarem.",
   "Les apps les retéléchargent si besoin.",
@@ -215,6 +224,15 @@
   "解放できませんでした",
   "정리하지 못함"
  ],
+ "Delete selected backups?": [
+  "Excluir os backups selecionados?",
+  "Supprimer les sauvegardes choisies ?",
+  "¿Eliminar las copias seleccionadas?",
+  "Ausgewählte Backups löschen?",
+  "删除选中的备份？",
+  "選択したバックアップを削除しますか？",
+  "선택한 백업을 삭제할까요?"
+ ],
  "Deleted by macOS when the disk is full": [
   "Apagado pelo macOS quando o disco estiver cheio",
   "Supprimé par macOS quand le disque est plein",
@@ -250,6 +268,15 @@
   "macOS 在磁盘空间不足时自行删除的文件。系统设置将此空间视为可用。",
   "容量不足時にmacOSが自動で削除するファイルです。システム設定では使用可能な容量に含まれます。",
   "디스크 공간이 부족하면 macOS가 자동으로 삭제하는 파일입니다. 시스템 설정에서는 사용 가능한 공간으로 계산합니다."
+ ],
+ "Files unique to these backups are lost.": [
+  "Arquivos que só existem nesses backups serão perdidos.",
+  "Les fichiers propres à ces sauvegardes seront perdus.",
+  "Se perderán los archivos exclusivos de esas copias.",
+  "Dateien, die nur darin liegen, gehen verloren.",
+  "仅存在于这些备份中的文件将丢失。",
+  "そのバックアップにしかないファイルは失われます。",
+  "이 백업에만 있는 파일은 사라집니다."
  ],
  "Free": [
   "Liberar",
@@ -287,6 +314,15 @@
   "Time Machineのスナップショットを1個解放しますか？",
   "Time Machine 스냅샷 1개를 정리할까요?"
  ],
+ "Free local snapshots?": [
+  "Liberar snapshots locais?",
+  "Libérer les instantanés locaux ?",
+  "¿Liberar las instantáneas locales?",
+  "Lokale Schnappschüsse freigeben?",
+  "释放本地快照？",
+  "ローカルスナップショットを削除？",
+  "로컬 스냅샷을 정리할까요?"
+ ],
  "Free now": [
   "Liberar agora",
   "À libérer",
@@ -295,6 +331,15 @@
   "立即释放",
   "今すぐ解放",
   "지금 확보"
+ ],
+ "Free purgeable app files?": [
+  "Liberar arquivos de apps?",
+  "Libérer les fichiers d’app purgeables ?",
+  "¿Liberar archivos de apps?",
+  "Entbehrliche App-Dateien freigeben?",
+  "释放可清除的 App 文件？",
+  "アプリファイルを解放しますか？",
+  "지울 수 있는 앱 파일을 정리할까요?"
  ],
  "Free selected": [
   "Liberar selecionados",
@@ -394,6 +439,15 @@
   "不作处理",
   "そのままにする項目",
   "그대로 유지"
+ ],
+ "Local restore points are permanently deleted.": [
+  "Os pontos de restauração locais são apagados de vez.",
+  "Les points de restauration locaux sont effacés définitivement.",
+  "Los puntos de restauración locales se eliminan para siempre.",
+  "Lokale Wiederherstellungspunkte werden dauerhaft gelöscht.",
+  "本地恢复点会被永久删除。",
+  "ローカルの復元ポイントは完全に削除されます。",
+  "로컬 복원 지점은 영구 삭제됩니다."
  ],
  "MacSpace could not measure right now. Try the refresh button.": [
   "O MacSpace não conseguiu medir nada agora. Tente o botão atualizar.",

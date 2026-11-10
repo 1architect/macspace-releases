@@ -69,6 +69,7 @@
 "Data of Apple background services." = "Apple 后台服务的数据。";
 "Data of an Apple app or service." = "Apple 应用或服务的数据。";
 "Delete" = "删除";
+"Delete version history?" = "删除版本历史？";
 "Deleted %@." = "已删除 %@。";
 "Developer" = "开发者";
 "Diagnostic and crash reports" = "诊断与崩溃报告";
@@ -82,9 +83,11 @@
 "Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "文稿的旧版本（“文件 > 复原到”）。仅保留最新版本。";
 "Empties after 30 days" = "30 天后清空";
 "Empty the Trash in Finder." = "在访达中清倒废纸篓。";
+"Empty the Trash?" = "清倒废纸篓？";
 "Erase Console records used for troubleshooting." = "抹掉用于故障排查的控制台记录。";
 "Everything else" = "其他所有内容";
 "Everything in the Trash is deleted for good." = "废纸篓中的所有内容将永久删除。";
+"Everything inside is permanently deleted." = "其中的所有内容都会被永久删除。";
 "File system metadata" = "文件系统元数据";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "已安装的 macOS 更新残留文件，没有待安装更新。macOS 尚未移除且文件位于受保护文件夹，MacSpace 不作处理。";
 "Free" = "释放";
@@ -92,16 +95,21 @@
 "Free %@ in the Trash?" = "释放废纸篓中的 %@？";
 "Free %@?" = "释放 %@？";
 "Free all version history?" = "释放全部版本历史？";
+"Free cached crash symbols?" = "释放缓存的崩溃符号？";
 "Free caches" = "释放缓存";
 "Free now" = "立即释放";
 "Free old reports?" = "释放旧报告？";
+"Free old update files?" = "释放旧更新文件？";
 "Free recommended" = "释放推荐内容";
 "Free selected" = "释放所选内容";
+"Free stuck downloads?" = "释放卡住的下载？";
 "Free stuck wallpaper downloads?" = "释放卡住的墙纸下载？";
+"Free system data?" = "释放系统数据？";
 "Free the leftover update files?" = "释放更新残留文件？";
 "Free the selected caches?" = "释放所选缓存？";
 "Free the symbols for crash reports?" = "释放崩溃报告符号？";
 "Free the system log?" = "释放系统日志？";
+"Free unused downloads?" = "释放未使用的下载？";
 "Free unused system assets?" = "释放未使用的系统资源？";
 "Free up to %@ of unused system assets?" = "释放最多 %@ 未使用的系统资源？";
 "Freeing space" = "正在释放空间";
@@ -149,6 +157,7 @@
 "Old diagnostic and crash reports" = "旧诊断与崩溃报告";
 "Old reports and unused system assets" = "旧报告和未使用的系统资源";
 "Old reports are deleted from Free now." = "旧报告可在“立即释放”中删除。";
+"Old reports are permanently deleted." = "旧报告会被永久删除。";
 "Older version" = "旧版本";
 "Open %@" = "打开 %@";
 "Open now" = "正在运行";
@@ -162,6 +171,7 @@
 "Project deleted" = "项目已删除";
 "Protected by macOS" = "受 macOS 保护";
 "Quits %@." = "将退出 %@。";
+"Quits apps using the selected caches." = "退出使用所选缓存的 App。";
 "Rebuilt by Spotlight; macOS manages it." = "由 Spotlight 重建，macOS 管理。";
 "Recommended" = "推荐";
 "Remove it with the tool that made it." = "使用创建它的工具移除。";
@@ -171,6 +181,8 @@
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "由 logd 轮换；删除会移除故障排查所需日志。";
 "Rust packages" = "Rust 软件包";
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@ 关闭时可安全删除，需要时会重建。";
+"Save and close documents first. Earlier versions are lost." = "请先保存并关闭文稿。早期版本会丢失。";
+"Save your work first. The system log is erased." = "请先保存工作。系统日志将被清除。";
 "Saved home folder of a deleted account: %@" = "已删除账户保存的个人文件夹：%@";
 "See what fills System Data and free what is safe to remove." = "查看系统数据的内容并释放可安全移除的部分。";
 "Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
@@ -208,6 +220,7 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "Siri 语音服务、语音识别和通话功能使用的 Siri 语言和系统语言模型。没有设置可以移除。";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "Siri 文字转语音服务使用的所选声音和语言。";
 "The helper did not answer" = "辅助程序无响应";
+"The log history is permanently deleted." = "日志历史会被永久删除。";
 "This permanently deletes %@." = "将永久删除 %@。";
 "Tool cache" = "工具缓存";
 "Tool cache: ~/.cache/%@" = "工具缓存：~/.cache/%@";
@@ -243,8 +256,10 @@
 "and %lld more" = "以及另外 %lld 项";
 "free %@" = "释放 %@";
 "macOS builds them again the next time it reads a crash report." = "macOS 下次读取崩溃报告时会重建。";
+"macOS downloads them again as needed." = "macOS 会按需重新下载。";
 "macOS downloads them again if they're needed." = "需要时 macOS 会重新下载。";
 "macOS keeps these locked, even from MacSpace." = "macOS 锁定这些内容，MacSpace 也无法访问。";
+"macOS rebuilds them as needed." = "macOS 会按需重建。";
 "macOS restore image: %@" = "macOS 恢复映像：%@";
 "macOS's model catalog, for the Photos spatial effect." = "macOS 模型目录，用于照片的空间效果。";
 "nothing to free" = "没有可释放的内容";

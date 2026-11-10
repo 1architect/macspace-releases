@@ -136,7 +136,7 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertEqual(caches.children.map(\.id), ["supportcache:big", "usercache:small", "supportcache:open"],
                        "recommended first, the open app's cache last, crumbs hidden")
         XCTAssertNotNil(caches.selection?.choices["supportcache:open"], "chosen, its app is quit first if the user says so")
-        XCTAssertEqual(caches.selection?.noteNames.keys.sorted(), ["supportcache:open"])
+        XCTAssertEqual(caches.selection?.noteChoiceIDs, ["supportcache:open"])
         XCTAssertEqual(caches.children.first { $0.id == "supportcache:open" }?.badges.map(\.text), ["Open now"])
         XCTAssertNotNil(list.rows[0].actions[0].confirmation)
         XCTAssertNotNil(list.rows[2].actions[0].confirmation, "freeing reports asks first")

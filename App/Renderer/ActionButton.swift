@@ -32,6 +32,7 @@ public enum ConfirmationAlert {
     public static func ask(_ action: Action) -> Bool {
         guard let confirmation = action.confirmation else { return true }
         let alert = AppAlert()
+        alert.limitsConfirmationCopy = true
         alert.messageText = confirmation.title
         alert.informativeText = confirmation.message
         alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = action.role == .destructive

@@ -269,6 +269,15 @@
   "Apple IntelligenceのモデルとmacOSが不要になったダウンロードを削除します。",
   "Apple Intelligence 모델과 macOS에 더 이상 필요하지 않은 다운로드를 삭제합니다."
  ],
+ "Disable features?": [
+  "Desativar os recursos?",
+  "Désactiver les fonctions ?",
+  "¿Desactivar las funciones?",
+  "Funktionen deaktivieren?",
+  "停用功能？",
+  "機能を無効にしますか？",
+  "기능을 끌까요?"
+ ],
  "Feature settings updated.": [
   "Ajustes do recurso atualizados.",
   "Réglages de la fonction mis à jour.",
@@ -314,6 +323,24 @@
   "オフにした機能のモデルを削除します。機能をオンに戻すと再度ダウンロードされます。",
   "끈 기능의 모델을 삭제합니다. 기능을 다시 켜면 모델이 다시 다운로드됩니다."
  ],
+ "Free unused downloads?": [
+  "Liberar downloads sem uso?",
+  "Libérer les fichiers inutilisés ?",
+  "¿Liberar descargas en desuso?",
+  "Ungenutzte Downloads freigeben?",
+  "释放未使用的下载？",
+  "未使用のダウンロードを解放しますか？",
+  "사용하지 않는 다운로드를 정리할까요?"
+ ],
+ "Free unused models?": [
+  "Liberar modelos sem uso?",
+  "Libérer les modèles inutilisés ?",
+  "¿Liberar los modelos en desuso?",
+  "Ungenutzte Modelle freigeben?",
+  "释放未使用的模型？",
+  "未使用のモデルを解放しますか？",
+  "사용하지 않는 모델을 정리할까요?"
+ ],
  "Free up to %@": [
   "Liberar até %@",
   "Libérer jusqu’à %@",
@@ -340,6 +367,15 @@
   "正在释放空间",
   "空き容量を増やしています",
   "공간 확보 중"
+ ],
+ "Frees models until re-enabled.": [
+  "Libera os modelos até a reativação.",
+  "Libère les modèles jusqu’à la réactivation.",
+  "Libera los modelos hasta que reactives las funciones.",
+  "Gibt Modelle bis zur Reaktivierung frei.",
+  "释放模型，直到功能重新启用。",
+  "再有効化するまでモデルを解放します。",
+  "기능을 다시 켤 때까지 모델을 정리합니다."
  ],
  "Its models are gone.": [
   "Os modelos foram removidos.",
@@ -484,6 +520,15 @@
   "其他账户",
   "ほかのアカウント",
   "다른 계정"
+ ],
+ "Re-enable features?": [
+  "Reativar os recursos?",
+  "Réactiver les fonctions ?",
+  "¿Reactivar las funciones?",
+  "Funktionen wieder aktivieren?",
+  "重新启用功能？",
+  "機能を再有効化しますか？",
+  "기능을 다시 켤까요?"
  ],
  "Released Apple Intelligence models": [
   "Modelos do Apple Intelligence liberados",
@@ -647,6 +692,15 @@
   "システムまたはSiriの言語を読み取れませんでした。",
   "시스템 또는 Siri 언어를 읽지 못했습니다."
  ],
+ "They download again if re-enabled.": [
+  "Os modelos voltam ao reativar os recursos.",
+  "Ils sont retéléchargés à la réactivation.",
+  "Se vuelven a descargar al reactivar las funciones.",
+  "Bei Reaktivierung werden sie erneut geladen.",
+  "重新启用功能时会再次下载模型。",
+  "機能を再有効化すると再ダウンロードされます。",
+  "기능을 다시 켜면 모델이 다운로드됩니다."
+ ],
  "This account was deleted, but macOS still keeps its models. In Terminal, run:": [
   "Esta conta foi apagada, mas o macOS ainda mantém os modelos dela. No Terminal, execute:",
   "Ce compte a été supprimé, mais macOS conserve encore ses modèles. Dans Terminal, exécutez :",
@@ -745,6 +799,24 @@
   "通常很快完成。如未完成，MacSpace 会在 %lld 分钟后处理。",
   "通常はすぐ終わります。終わらない場合は%lld分後にMacSpaceが処理します。",
   "보통 곧 완료됩니다. 그렇지 않으면 %lld분 후 MacSpace가 처리합니다."
+ ],
+ "macOS downloads the models again.": [
+  "O macOS baixa os modelos de novo.",
+  "macOS retélécharge les modèles.",
+  "macOS vuelve a descargar los modelos.",
+  "macOS lädt die Modelle erneut.",
+  "macOS 会重新下载模型。",
+  "macOSがモデルを再ダウンロードします。",
+  "macOS가 모델을 다시 다운로드합니다."
+ ],
+ "macOS downloads them again as needed.": [
+  "O macOS baixa os arquivos de novo se precisar.",
+  "macOS les retélécharge au besoin.",
+  "macOS los vuelve a descargar si los necesita.",
+  "macOS lädt sie bei Bedarf erneut.",
+  "macOS 会按需重新下载。",
+  "macOSは必要に応じて再ダウンロードします。",
+  "필요하면 macOS가 다시 다운로드합니다."
  ],
  "macOS still keeps these models.": [
   "O macOS ainda mantém esses modelos.",

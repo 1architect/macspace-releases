@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "Désactiver 1 fonctionnalité ?";
 "Disable all" = "Tout désactiver";
 "Disable automatically if changed" = "Désactiver automatiquement en cas de changement";
+"Disable features?" = "Désactiver les fonctions ?";
 "Disabled" = "Désactivé";
 "Disabling" = "Désactivation";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "En désactiver une vous demande d’approuver un profil dans Réglages Système > Général > Gestion de l’appareil.";
@@ -81,8 +82,10 @@
 "Partly off" = "Partiellement désactivé";
 "Personalized ads" = "Publicités personnalisées";
 "Policies" = "Règles";
+"Re-enable features?" = "Réactiver les fonctions ?";
 "Reopen apps to apply." = "Rouvrez les apps pour appliquer.";
 "Restart to apply." = "Redémarrez pour appliquer.";
+"Restores the previous settings." = "Rétablit les réglages précédents.";
 "Set by another profile" = "Défini par un autre profil";
 "Share analytics with Apple" = "Partager l’analyse avec Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Affiche une notification quand macOS réactive une fonction désactivée et que MacSpace la désactive de nouveau.";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "Intelligence visuelle";
 "Waiting for approval" = "En attente d’approbation";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "En attente de la prochaine décision de macOS concernant les diagnostics. Un succès enregistré peut aussi correspondre à un simple contact avec le serveur, sans diagnostics.";
+"You can re-enable them later." = "Vous pourrez les réactiver plus tard.";
 "debloat" = "debloat";
+"macOS asks you to approve a profile." = "macOS demande d’approuver un profil.";
 "macOS asks you to approve the policy profile once." = "macOS vous demande d’approuver une fois le profil de règles.";
 "macOS prevents this change from taking effect on this Mac." = "macOS empêche cette modification de prendre effet sur ce Mac.";
 "macOS still chose to send diagnostics after this change." = "macOS a encore choisi d’envoyer des diagnostics après cette modification.";

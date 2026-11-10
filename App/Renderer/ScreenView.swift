@@ -142,7 +142,7 @@ struct ScreenView: View {
             selection.choices = Dictionary(group.children.compactMap { row in selection.choices[row.id].map { (row.id, $0) } }, uniquingKeysWith: { first, _ in first })
             selection.checked = selection.checked.filter(ids.contains)
             selection.suggested = selection.suggested.filter(ids.contains)
-            selection.noteNames = selection.noteNames.filter { ids.contains($0.key) }
+            selection.noteChoiceIDs.formIntersection(ids)
             selection.sections = selection.sections.compactMap { section in
                 var section = section; section.rows = section.rows.filter(ids.contains)
                 return section.rows.isEmpty ? nil : section
@@ -524,7 +524,7 @@ struct HeroBlocks: View {
                             .foregroundStyle(design.palette(tint).soft).fixedSize()
                     }
                     .lineLimit(1)
-                    .graphContextMenu(label: segment.label, actions: segment.contextActions)
+                    .graphContextMenu(actions: segment.contextActions)
                     .help("\(segment.label) \(ByteFormat.string(segment.bytes))")
                     .modifier(PageItemReveal(index: index + 1, count: cascadeCount, visible: detailsVisible))
                     .transition(PageCascade.transition(index: index + 1, count: cascadeCount))

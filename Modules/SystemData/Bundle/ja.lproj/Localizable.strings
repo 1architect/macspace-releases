@@ -69,6 +69,7 @@
 "Data of Apple background services." = "Appleのバックグラウンドサービスのデータです。";
 "Data of an Apple app or service." = "Appleのアプリまたはサービスのデータです。";
 "Delete" = "削除";
+"Delete version history?" = "バージョン履歴を削除しますか？";
 "Deleted %@." = "%@を削除しました。";
 "Developer" = "開発者";
 "Diagnostic and crash reports" = "診断・クラッシュレポート";
@@ -82,9 +83,11 @@
 "Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "書類の以前のバージョン（ファイル > バージョンを戻す）です。最新のものだけ残します。";
 "Empties after 30 days" = "30日後に削除";
 "Empty the Trash in Finder." = "Finderでゴミ箱を空にしてください。";
+"Empty the Trash?" = "ゴミ箱を空にしますか？";
 "Erase Console records used for troubleshooting." = "問題調査用のコンソール記録を消去します。";
 "Everything else" = "その他すべて";
 "Everything in the Trash is deleted for good." = "ゴミ箱の内容をすべて完全に削除します。";
+"Everything inside is permanently deleted." = "中のすべての項目が完全に削除されます。";
 "File system metadata" = "ファイルシステムのメタデータ";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "インストール済みmacOS更新の残りです。保留中の更新はありません。保護されたフォルダに残っているため、MacSpaceはそのままにします。";
 "Free" = "解放";
@@ -92,16 +95,21 @@
 "Free %@ in the Trash?" = "ゴミ箱の%@を解放しますか？";
 "Free %@?" = "%@を解放しますか？";
 "Free all version history?" = "すべてのバージョン履歴を解放しますか？";
+"Free cached crash symbols?" = "クラッシュ記号を解放しますか？";
 "Free caches" = "キャッシュを解放";
 "Free now" = "今すぐ解放";
 "Free old reports?" = "古いレポートを解放しますか？";
+"Free old update files?" = "更新の残りを解放しますか？";
 "Free recommended" = "推奨項目を解放";
 "Free selected" = "選択項目を解放";
+"Free stuck downloads?" = "停止したダウンロードを解放しますか？";
 "Free stuck wallpaper downloads?" = "停止した壁紙のダウンロードを解放しますか？";
+"Free system data?" = "システムデータを解放しますか？";
 "Free the leftover update files?" = "更新の残りのファイルを解放しますか？";
 "Free the selected caches?" = "選択したキャッシュを解放しますか？";
 "Free the symbols for crash reports?" = "クラッシュレポート用シンボルを解放しますか？";
 "Free the system log?" = "システムログを解放しますか？";
+"Free unused downloads?" = "未使用のダウンロードを解放しますか？";
 "Free unused system assets?" = "未使用のシステムアセットを解放しますか？";
 "Free up to %@ of unused system assets?" = "未使用のシステムアセットを最大%@解放しますか？";
 "Freeing space" = "空き容量を増やしています";
@@ -149,6 +157,7 @@
 "Old diagnostic and crash reports" = "古い診断・クラッシュレポート";
 "Old reports and unused system assets" = "古いレポートと未使用のシステムアセット";
 "Old reports are deleted from Free now." = "古いレポートは「今すぐ解放」で削除できます。";
+"Old reports are permanently deleted." = "古いレポートは完全に削除されます。";
 "Older version" = "古いバージョン";
 "Open %@" = "%@を開く";
 "Open now" = "起動中";
@@ -162,6 +171,7 @@
 "Project deleted" = "プロジェクト削除済み";
 "Protected by macOS" = "macOSが保護";
 "Quits %@." = "%@を終了します。";
+"Quits apps using the selected caches." = "選んだキャッシュを使用中のアプリを終了します。";
 "Rebuilt by Spotlight; macOS manages it." = "Spotlightが再作成し、macOSが管理します。";
 "Recommended" = "推奨";
 "Remove it with the tool that made it." = "作成元のツールで削除してください。";
@@ -171,6 +181,8 @@
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "logdがローテーションします。削除すると問題調査用のログが失われます。";
 "Rust packages" = "Rustパッケージ";
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "%@の終了中は安全に削除でき、必要時に再作成されます。";
+"Save and close documents first. Earlier versions are lost." = "書類を保存して閉じてください。以前のバージョンは失われます。";
+"Save your work first. The system log is erased." = "作業を保存してください。システムログが消去されます。";
 "Saved home folder of a deleted account: %@" = "削除済みアカウントの保存されたホーム：%@";
 "See what fills System Data and free what is safe to remove." = "システムデータの内容を確認し、安全に削除できるものを解放します。";
 "Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
@@ -208,6 +220,7 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "Siriの音声サービス、音声認識、通話機能がSiriとシステムの言語用に保持します。削除する設定はありません。";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "選択した声と言語用のSiri読み上げサービスのデータです。";
 "The helper did not answer" = "ヘルパーから応答がありません";
+"The log history is permanently deleted." = "ログの履歴は完全に削除されます。";
 "This permanently deletes %@." = "%@を完全に削除します。";
 "Tool cache" = "ツールキャッシュ";
 "Tool cache: ~/.cache/%@" = "ツールキャッシュ：~/.cache/%@";
@@ -243,8 +256,10 @@
 "and %lld more" = "ほか%lld件";
 "free %@" = "%@を解放";
 "macOS builds them again the next time it reads a crash report." = "次にクラッシュレポートを読むときにmacOSが再作成します。";
+"macOS downloads them again as needed." = "macOSは必要に応じて再ダウンロードします。";
 "macOS downloads them again if they're needed." = "必要に応じてmacOSが再ダウンロードします。";
 "macOS keeps these locked, even from MacSpace." = "macOSがロックしており、MacSpaceもアクセスできません。";
+"macOS rebuilds them as needed." = "macOSが必要に応じて再作成します。";
 "macOS restore image: %@" = "macOS復元イメージ：%@";
 "macOS's model catalog, for the Photos spatial effect." = "写真の空間効果用のmacOSモデルカタログです。";
 "nothing to free" = "解放できるものはありません";

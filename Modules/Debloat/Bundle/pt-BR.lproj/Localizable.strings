@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "Desativar 1 recurso?";
 "Disable all" = "Desativar tudo";
 "Disable automatically if changed" = "Desativar automaticamente se houver alteração";
+"Disable features?" = "Desativar os recursos?";
 "Disabled" = "Desativado";
 "Disabling" = "Desativando";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "Desativar uma delas pede que você aprove um perfil em Ajustes do Sistema > Geral > Gerenciamento de Dispositivo.";
@@ -81,8 +82,10 @@
 "Partly off" = "Parcialmente desativado";
 "Personalized ads" = "Anúncios personalizados";
 "Policies" = "Políticas";
+"Re-enable features?" = "Reativar os recursos?";
 "Reopen apps to apply." = "Reabra os apps para aplicar.";
 "Restart to apply." = "Reinicie para aplicar.";
+"Restores the previous settings." = "Restaura os ajustes anteriores.";
 "Set by another profile" = "Definido por outro perfil";
 "Share analytics with Apple" = "Compartilhar análises com a Apple";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "Mostra uma notificação quando o macOS reativa um recurso desativado e o MacSpace o desativa de novo.";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "Inteligência Visual";
 "Waiting for approval" = "Aguardando aprovação";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "Aguardando a próxima decisão de envio de diagnósticos do macOS. Um sucesso registrado também pode ser apenas um contato com o servidor, sem diagnósticos.";
+"You can re-enable them later." = "Você pode reativá-los depois.";
 "debloat" = "debloat";
+"macOS asks you to approve a profile." = "O macOS pede a aprovação de um perfil.";
 "macOS asks you to approve the policy profile once." = "O macOS pede que você aprove o perfil de políticas uma vez.";
 "macOS prevents this change from taking effect on this Mac." = "O macOS impede que esta alteração tenha efeito neste Mac.";
 "macOS still chose to send diagnostics after this change." = "O macOS ainda decidiu enviar diagnósticos após esta alteração.";

@@ -59,7 +59,7 @@ final class LiveActionDispatchRegressionTests: XCTestCase {
             let handle = try await handle(directory, module: GraphActionModule(source: source, calls: calls), confirm: { action in
                 confirmations += 1; XCTAssertEqual(action.role, .destructive); XCTAssertNotNil(action.confirmation); return true
             })
-            let action = try XCTUnwrap(GraphMenuPolicy.deletion(GraphActionModule.deletion, label: "Folder"))
+            let action = try XCTUnwrap(GraphMenuPolicy.deletion(GraphActionModule.deletion))
             XCTAssertNotNil(handle.trustedAction(action))
             var forged = action; forged.parameters["path"] = "/different"
             _ = await handle.perform(forged); XCTAssertTrue(calls.all.isEmpty)

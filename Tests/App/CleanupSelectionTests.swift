@@ -51,8 +51,10 @@ final class CleanupSelectionTests: XCTestCase {
         XCTAssertEqual(first.checked(try XCTUnwrap(first.activeSelection)), ["safe"])
         handleToggle("safe", first); handleToggle("optional", first)
         XCTAssertTrue(calls.all.isEmpty, "Checkbox changes save intent without cleaning anything")
-        XCTAssertTrue(try action(first).confirmation?.message.contains("Details for optional") == true)
-        XCTAssertFalse(try action(first).confirmation?.message.contains("Details for safe") == true)
+        XCTAssertEqual(try action(first).confirmation?.message, "Details for optional")
+        handleToggle("safe", first)
+        XCTAssertEqual(try action(first).confirmation?.message, "Save your work first. Some changes may be permanent.")
+        handleToggle("safe", first)
         first.clearPageSelections(); first.deactivate()
         let second = try await handle(SettingsStore(defaults: defaults), calls)
         defer { second.deactivate() }

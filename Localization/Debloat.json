@@ -305,6 +305,15 @@
   "すべて無効にする",
   "모두 끄기"
  ],
+ "Disable features?": [
+  "Desativar os recursos?",
+  "Désactiver les fonctions ?",
+  "¿Desactivar las funciones?",
+  "Funktionen deaktivieren?",
+  "停用功能？",
+  "機能を無効にしますか？",
+  "기능을 끌까요?"
+ ],
  "Disabled": [
   "Desativado",
   "Désactivé",
@@ -557,6 +566,15 @@
   "ポリシー",
   "정책"
  ],
+ "Re-enable features?": [
+  "Reativar os recursos?",
+  "Réactiver les fonctions ?",
+  "¿Reactivar las funciones?",
+  "Funktionen wieder aktivieren?",
+  "重新启用功能？",
+  "機能を再有効化しますか？",
+  "기능을 다시 켤까요?"
+ ],
  "Reopen apps to apply.": [
   "Reabra os apps para aplicar.",
   "Rouvrez les apps pour appliquer.",
@@ -574,6 +592,15 @@
   "重新启动后生效。",
   "再起動すると適用されます。",
   "재시동하면 적용됩니다."
+ ],
+ "Restores the previous settings.": [
+  "Restaura os ajustes anteriores.",
+  "Rétablit les réglages précédents.",
+  "Restaura los ajustes anteriores.",
+  "Stellt die vorherigen Einstellungen wieder her.",
+  "恢复之前的设置。",
+  "以前の設定に戻します。",
+  "이전 설정을 복원합니다."
  ],
  "Siri": [
   "Siri",
@@ -692,6 +719,15 @@
   "承認待ち",
   "승인 대기 중"
  ],
+ "You can re-enable them later.": [
+  "Você pode reativá-los depois.",
+  "Vous pourrez les réactiver plus tard.",
+  "Puedes reactivarlas más adelante.",
+  "Du kannst sie später wieder aktivieren.",
+  "你可以稍后重新启用它们。",
+  "後から再有効化できます。",
+  "나중에 다시 켤 수 있습니다."
+ ],
  "debloat": [
   "debloat",
   "debloat",
@@ -700,6 +736,15 @@
   "精简",
   "Debloat",
   "기능 정리"
+ ],
+ "macOS asks you to approve a profile.": [
+  "O macOS pede a aprovação de um perfil.",
+  "macOS demande d’approuver un profil.",
+  "macOS pide que apruebes un perfil.",
+  "macOS bittet um Genehmigung eines Profils.",
+  "macOS 会要求你批准一个描述文件。",
+  "macOSからプロファイルの承認を求められます。",
+  "macOS에서 프로파일 승인을 요청합니다."
  ],
  "macOS asks you to approve the policy profile once.": [
   "O macOS pede que você aprove o perfil de políticas uma vez.",

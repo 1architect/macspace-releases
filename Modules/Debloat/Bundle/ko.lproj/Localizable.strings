@@ -45,6 +45,7 @@
 "Disable 1 feature?" = "기능 1개를 끌까요?";
 "Disable all" = "모두 끄기";
 "Disable automatically if changed" = "변경되면 자동으로 끄기";
+"Disable features?" = "기능을 끌까요?";
 "Disabled" = "꺼짐";
 "Disabling" = "끄는 중";
 "Disabling one asks you to approve a profile in System Settings > General > Device Management." = "기능을 끄면 시스템 설정 > 일반 > 기기 관리에서 프로파일 승인을 요청합니다.";
@@ -81,8 +82,10 @@
 "Partly off" = "일부 꺼짐";
 "Personalized ads" = "개인 맞춤형 광고";
 "Policies" = "정책";
+"Re-enable features?" = "기능을 다시 켤까요?";
 "Reopen apps to apply." = "앱을 다시 열면 적용됩니다.";
 "Restart to apply." = "재시동하면 적용됩니다.";
+"Restores the previous settings." = "이전 설정을 복원합니다.";
 "Set by another profile" = "다른 프로파일에서 설정";
 "Share analytics with Apple" = "Apple과 분석 공유";
 "Shows a notification when macOS switches a disabled feature back on and MacSpace disables it again." = "macOS가 꺼진 기능을 다시 켜고 MacSpace가 다시 끄면 알림을 표시합니다.";
@@ -109,7 +112,9 @@
 "Visual Intelligence" = "시각적 지능";
 "Waiting for approval" = "승인 대기 중";
 "Waiting for macOS's next diagnostics decision. A recorded success can also be a check-in without diagnostics." = "macOS의 다음 진단 정보 전송 결정을 기다리는 중입니다. 성공 기록은 진단 정보 없이 서버에 접속한 것일 수도 있습니다.";
+"You can re-enable them later." = "나중에 다시 켤 수 있습니다.";
 "debloat" = "기능 정리";
+"macOS asks you to approve a profile." = "macOS에서 프로파일 승인을 요청합니다.";
 "macOS asks you to approve the policy profile once." = "macOS가 정책 프로파일 승인을 한 번 요청합니다.";
 "macOS prevents this change from taking effect on this Mac." = "macOS가 이 Mac에서 이 변경 사항이 적용되지 않도록 합니다.";
 "macOS still chose to send diagnostics after this change." = "이 변경 후에도 macOS가 진단 정보를 전송하기로 결정했습니다.";

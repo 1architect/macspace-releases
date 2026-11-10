@@ -256,8 +256,8 @@ enum DebloatScreenBuilder {
         guard !controls.isEmpty else { return nil }
         return Action(id: "restoreAll", title: loc("Enable all"), symbol: "arrow.uturn.backward", role: .prominent,
                       parameters: ["ids": controls.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: controls.count == 1 ? loc("Enable 1 feature again?") : loc("Enable all \(controls.count) features again?"),
-                                                 message: loc("MacSpace restores the settings it saved before disabling them."),
+                      confirmation: Confirmation(title: loc("Re-enable features?"),
+                                                 message: loc("Restores the previous settings."),
                                                  confirmTitle: loc("Enable")),
                       requires: controls.contains(where: needsHelper) ? [.privilegedHelper] : [])
     }
@@ -266,13 +266,10 @@ enum DebloatScreenBuilder {
     static func switchOffRecommended(_ snapshot: DebloatSnapshot) -> Action? {
         let recommended = recommended(snapshot)
         guard !recommended.isEmpty else { return nil }
-        // Short: what happens, and only what the user has to do or check.
-        var message = loc("Each one can be enabled again.")
-        if recommended.contains(where: isPolicy) { message += " " + loc("macOS asks you to approve the policy profile once.") }
-        if recommended.contains(where: { !$0.tested }) { message += " " + loc("Some are not tested yet.") }
+        let message = recommended.contains(where: isPolicy) ? loc("macOS asks you to approve a profile.") : loc("You can re-enable them later.")
         return Action(id: "applyRecommended", title: loc("Disable all"), symbol: "checkmark.shield", role: .prominent,
                       parameters: ["ids": recommended.map(\.id).joined(separator: ",")],
-                      confirmation: Confirmation(title: recommended.count == 1 ? loc("Disable 1 feature?") : loc("Disable \(recommended.count) features?"), message: message, confirmTitle: loc("Disable")),
+                      confirmation: Confirmation(title: loc("Disable features?"), message: message, confirmTitle: loc("Disable")),
                       requires: [.privilegedHelper])
     }
 

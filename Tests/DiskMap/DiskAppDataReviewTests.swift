@@ -182,7 +182,8 @@ final class DiskAppDataReviewTests: DiskSecurityFixtureCase {
                            "Defaults must work with the ordinary scanner output, without fabricated exclusive confidence")
             XCTAssertNil(page.selection?.choices[app.owner.path])
             XCTAssertEqual(page.selection?.includedBytes, app.bytes)
-            XCTAssertTrue(page.selection?.note?.contains("Selected apps") == true)
+            XCTAssertNil(page.selection?.note)
+            XCTAssertEqual(page.selection?.action.confirmation?.title, "Uninstall selected apps?")
             XCTAssertEqual(app.plan?.targets.map(\.path), [app.owner.path], "Inferred paths are never silently added to the privileged plan")
             var withDataPlan = app
             let optional = try XCTUnwrap(candidates.first)

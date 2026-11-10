@@ -34,7 +34,7 @@ extension DiskDatabase {
             index.categories = try categorySummaries(folder: folder)
         }
         index.directories[folder] = node
-        for path in node.folders { index.directories[path] = try directory(path) }
+        try childDirectories(folder) { index.directories[$0.path] = $0 }
         // `contents` includes this directory's direct files. Descendant inventories use bounded lazy queries.
         index.inventoryAuthoritative = inventory
         if inventory {
@@ -62,7 +62,7 @@ extension DiskDatabase {
                 let path = root == DataVolume.path ? DataVolume.path + live : live
                 if let node = try directory(path, contents: true) {
                     index.directories[path] = node
-                    for path in node.folders { index.directories[path] = try directory(path) }
+                    try childDirectories(path) { index.directories[$0.path] = $0 }
                 }
             }
         }

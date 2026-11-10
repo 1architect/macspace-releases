@@ -15,8 +15,8 @@ enum DiskDirectoryRemoval {
         let trash = FileRemovalSettings.movesToTrash()
         return Action(id: "deleteFolder", title: loc("Delete"), symbol: "trash", role: .destructive,
             parameters: ["path": path, "reviewed": String(decoding: evidence, as: UTF8.self), "trash": trash ? "1" : "0"],
-            confirmation: Confirmation(title: loc("Delete \((live as NSString).lastPathComponent)?"),
-                message: (trash ? loc("This folder and all its contents will be moved to Trash.") : loc("This permanently deletes the folder and all its contents.")) + "\n\n" + live,
+            confirmation: Confirmation(title: trash ? loc("Move folder to Trash?") : loc("Delete this folder?"),
+                message: trash ? loc("Includes everything inside.") : loc("Permanently deletes everything inside."),
                 confirmTitle: trash ? loc("Move to Trash") : loc("Delete")), requires: [.fullDiskAccess], workingTitle: loc("Freeing space"))
     }
 

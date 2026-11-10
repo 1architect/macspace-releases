@@ -720,7 +720,7 @@ struct RowView: View {
                 .padding(.vertical, 4)
             } else if !row.children.isEmpty || row.pageID != nil { groupRow } else { itemRow }
         }
-        .graphContextMenu(label: row.title, actions: row.contextActions, enabled: row.contextActions != nil)
+        .graphContextMenu(actions: row.contextActions, enabled: row.contextActions != nil)
         .modifier(RowAppeared(appeared: $appeared))
     }
 
@@ -1161,7 +1161,7 @@ struct UsageBarView: View {
                     ForEach(usage.segments) { segment in
                         Rectangle()
                             .fill(Palette.color(segment.tone, design))
-                            .graphContextMenu(label: segment.label, actions: segment.contextActions)
+                            .graphContextMenu(actions: segment.contextActions)
                             .frame(width: total > 0 ? max(2, proxy.size.width * Double(segment.bytes) / total) : 0)
                     }
                     Spacer(minLength: 0)
@@ -1178,7 +1178,7 @@ struct UsageBarView: View {
                         Text(segment.label).font(.caption).lineLimit(1).truncationMode(.tail)
                         ChangingText(text: ByteFormat.string(segment.bytes)).font(.caption).foregroundStyle(.secondary).lineLimit(1).fixedSize()
                     }
-                    .graphContextMenu(label: segment.label, actions: segment.contextActions)
+                    .graphContextMenu(actions: segment.contextActions)
                 }
             }
         }
@@ -1202,7 +1202,7 @@ struct BarChartView: View {
                     .frame(height: 8)
                     ChangingText(text: bar.valueLabel, alignment: .trailing).font(.caption).foregroundStyle(.secondary).frame(width: 72, alignment: .trailing)
                 }
-                .graphContextMenu(label: bar.label, actions: bar.contextActions)
+                .graphContextMenu(actions: bar.contextActions)
             }
         }
     }

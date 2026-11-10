@@ -32,6 +32,16 @@ final class DiskLoadingDiagnosticTests: DiskSecurityFixtureCase {
         try db.query("SELECT COUNT(*) FROM entries") { files = DiskDatabase.number($0, 0) }
         let footprint = (try? FileManager.default.attributesOfItem(atPath: location.path)[.size] as? NSNumber)?.uint64Value ?? 0
         print("DISK_FULL_INDEX directories=\(directories) retainedFileEntries=\(files) databaseBytes=\(footprint)")
+        if ProcessInfo.processInfo.environment["MACSPACE_DIAGNOSTIC_REFRESH"] == "1" {
+            let refresh = Date()
+            await store.mark([root], recursive: true)
+            let updated = await store.view(progress: { value in
+                DiskScanMetrics.write("DISK_REFRESH progress=\(value) seconds=\(Date().timeIntervalSince(refresh))")
+            })
+            XCTAssertGreaterThan(updated.index.revision, first.index.revision)
+            XCTAssertNotEqual(updated.index.loadError, true)
+            print("DISK_FULL_REFRESH seconds=\(Date().timeIntervalSince(refresh))")
+        }
         let reopen = Date(), restored = DiskStore(root: root, cache: cache.appendingPathComponent("index"))
         let second = await restored.view()
         XCTAssertNotEqual(second.index.loadError, true)

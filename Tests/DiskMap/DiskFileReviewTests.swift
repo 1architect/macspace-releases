@@ -102,7 +102,7 @@ final class DiskFileReviewTests: DiskSecurityFixtureCase {
         XCTAssertEqual(selection.action.id, "deleteGraphFile")
         XCTAssertEqual(selection.action.parameters["reviewed"], original.parameters["reviewed"])
         XCTAssertEqual(selection.action.parameters["id"], original.parameters["id"])
-        XCTAssertTrue(selection.action.confirmation?.message.contains(target.path) == true)
+        XCTAssertFalse(selection.action.confirmation?.message.contains(target.path) == true)
         XCTAssertNil(selection.action.pageID)
         XCTAssertEqual(try Data(contentsOf: target), Data([1]))
 

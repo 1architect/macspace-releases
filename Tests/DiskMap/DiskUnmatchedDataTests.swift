@@ -115,6 +115,30 @@ final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
         }
     }
 
+    func testProductionRemovalAcceptsMoreThanThirtyTwoReviewedLocations() throws {
+        try guardedFixture { home, path in
+            var candidates = try (0..<33).map { n in
+                let folder = path + "-\(n)"
+                try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: false)
+                try Data("reviewed".utf8).write(to: URL(fileURLWithPath: folder + "/payload"))
+                return AppLeftover(identifier: "org.example.unmatched-\(n)", path: folder, bytes: 8, identity: AppFileIdentity(path: folder))
+            }
+            let preferences = home + "/Library/Preferences"
+            try FileManager.default.createDirectory(atPath: preferences, withIntermediateDirectories: false)
+            let file = preferences + "/org.example.unmatched.plist"
+            try Data("reviewed".utf8).write(to: URL(fileURLWithPath: file))
+            candidates.append(AppLeftover(identifier: "org.example.unmatched", path: file, bytes: 8,
+                identity: try XCTUnwrap(AppFileIdentity(path: file)), fileIdentity: try XCTUnwrap(FileReviewIdentity(file))))
+            let ids = Set(candidates.map(\.choiceID)), progress = Progress()
+            let result = try XCTUnwrap(DiskUnmatchedRemoval.execute(ids: ids, candidates: candidates, home: home,
+                progress: { progress.record($0.finished) }))
+            XCTAssertTrue(result.failures.isEmpty, result.failures.joined(separator: "\n"))
+            XCTAssertEqual(result.targets.count, candidates.count)
+            XCTAssertEqual(Set(progress.finished), ids)
+            XCTAssertTrue(candidates.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) })
+        }
+    }
+
     func testDirectoryPolicyAllowsReviewedAppDataButRejectsRootsAndTraversal() throws {
         try guardedFixture { home, path in
             XCTAssertTrue(ReviewedDirectoryRemoval.includes(path, home: home))
@@ -132,7 +156,7 @@ final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
         }
     }
 
-    func testEntireBatchPreflightsDescendantsBeforeAnyInjectedRemoval() throws {
+    func testUnsafeDescendantBlocksOnlyItsOwnLocation() throws {
         try guardedFixture { home, first in
             let second = home + "/Library/Application Support/org.example.second"
             try FileManager.default.createDirectory(atPath: second, withIntermediateDirectories: true)
@@ -142,7 +166,7 @@ final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
             let candidates = [first, second].map { AppLeftover(identifier: ($0 as NSString).lastPathComponent, path: $0, bytes: 8, identity: AppFileIdentity(path: $0)) }
             var removed: [String] = []
             let result = try XCTUnwrap(DiskUnmatchedRemoval.execute(ids: Set(candidates.map(\.choiceID)), candidates: candidates, home: home, remove: { removed.append($0) }))
-            XCTAssertTrue(removed.isEmpty)
+            XCTAssertEqual(removed, [first])
             XCTAssertTrue(result.failures.contains { $0.contains(second + "/alias") })
             XCTAssertTrue(FileManager.default.fileExists(atPath: first + "/nested/payload"))
             XCTAssertEqual(try String(contentsOfFile: outside, encoding: .utf8), "keep")

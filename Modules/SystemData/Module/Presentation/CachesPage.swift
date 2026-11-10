@@ -270,8 +270,8 @@ enum CachesPage {
             suggestedTitle: loc("Free recommended"),
             sections: sections,
             save: Action(id: "saveCacheChoice", title: loc("Free selected")),
-            noteNames: Dictionary(choosable.filter(\.open).map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first }),
-            note: loc("Quits %@."), persistenceKey: "app-caches")
+            noteChoiceIDs: Set(choosable.filter(\.open).map(\.id)),
+            note: quitMessage, persistenceKey: "app-caches")
         return group
     }
 
@@ -292,13 +292,10 @@ enum CachesPage {
         return Row(id: entry.id, title: entry.title, trailing: ByteFormat.string(entry.bytes), badges: badges.map { Badge($0, .info) }, paths: entry.paths)
     }
 
-    /// The confirmation's line when some of these caches belong to open apps, which Free quits first: "Quits Enscape and WhatsApp.".
-    /// nil when none does.
+    static var quitMessage: String { loc("Quits apps using the selected caches.") }
+
     static func quitNote(_ entries: [CacheEntry]) -> String? {
-        var names: [String] = []
-        for entry in entries where entry.open && !names.contains(entry.title) { names.append(entry.title) }
-        guard !names.isEmpty else { return nil }
-        return String(format: loc("Quits %@."), ListFormatter.localizedString(byJoining: names))
+        entries.contains(where: \.open) ? quitMessage : nil
     }
 
     // MARK: What the page takes out of the rest

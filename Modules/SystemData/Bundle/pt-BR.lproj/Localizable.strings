@@ -69,6 +69,7 @@
 "Data of Apple background services." = "Dados de serviços em segundo plano da Apple.";
 "Data of an Apple app or service." = "Dados de um app ou serviço da Apple.";
 "Delete" = "Apagar";
+"Delete version history?" = "Excluir o histórico de versões?";
 "Deleted %@." = "%@ apagado.";
 "Developer" = "Desenvolvedor";
 "Diagnostic and crash reports" = "Relatórios de diagnóstico e de falhas";
@@ -82,9 +83,11 @@
 "Earlier versions of your documents (File > Revert To). Only keeps the latest version." = "Versões anteriores dos seus documentos (Arquivo > Reverter Para). Mantém somente a última versão.";
 "Empties after 30 days" = "Esvazia após 30 dias";
 "Empty the Trash in Finder." = "Esvazie o Lixo no Finder.";
+"Empty the Trash?" = "Esvaziar o Lixo?";
 "Erase Console records used for troubleshooting." = "Apaga os registros do Console usados para resolução de problemas.";
 "Everything else" = "Todo o resto";
 "Everything in the Trash is deleted for good." = "Tudo o que está no Lixo é apagado de vez.";
+"Everything inside is permanently deleted." = "Todo o conteúdo do Lixo é apagado de vez.";
 "File system metadata" = "Metadados do sistema de arquivos";
 "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone." = "Arquivos de uma atualização anterior do macOS já instalada; nenhuma atualização está pendente. O macOS não os removeu e eles estão numa pasta protegida, então o MacSpace não mexe neles.";
 "Free" = "Liberar";
@@ -92,16 +95,21 @@
 "Free %@ in the Trash?" = "Liberar %@ do Lixo?";
 "Free %@?" = "Liberar %@?";
 "Free all version history?" = "Liberar todo o histórico de versões?";
+"Free cached crash symbols?" = "Liberar símbolos de falhas em cache?";
 "Free caches" = "Liberar caches";
 "Free now" = "Liberar agora";
 "Free old reports?" = "Liberar os relatórios antigos?";
+"Free old update files?" = "Liberar restos de atualização?";
 "Free recommended" = "Liberar recomendados";
 "Free selected" = "Liberar selecionados";
+"Free stuck downloads?" = "Liberar downloads interrompidos?";
 "Free stuck wallpaper downloads?" = "Liberar os downloads de wallpapers travados?";
+"Free system data?" = "Liberar dados do sistema?";
 "Free the leftover update files?" = "Liberar os arquivos restantes da atualização?";
 "Free the selected caches?" = "Liberar os caches selecionados?";
 "Free the symbols for crash reports?" = "Liberar os símbolos para relatórios de falhas?";
 "Free the system log?" = "Liberar o registro do sistema?";
+"Free unused downloads?" = "Liberar downloads sem uso?";
 "Free unused system assets?" = "Liberar os arquivos do sistema não usados?";
 "Free up to %@ of unused system assets?" = "Liberar até %@ de recursos do sistema sem uso?";
 "Freeing space" = "Liberando espaço";
@@ -149,6 +157,7 @@
 "Old diagnostic and crash reports" = "Relatórios antigos de diagnóstico e de falhas";
 "Old reports and unused system assets" = "Relatórios antigos e recursos do sistema sem uso";
 "Old reports are deleted from Free now." = "Os relatórios antigos são apagados em Liberar agora.";
+"Old reports are permanently deleted." = "Os relatórios antigos são apagados de vez.";
 "Older version" = "Versão antiga";
 "Open %@" = "Abrir %@";
 "Open now" = "Aberto agora";
@@ -162,6 +171,7 @@
 "Project deleted" = "Projeto apagado";
 "Protected by macOS" = "Protegido pelo macOS";
 "Quits %@." = "Encerra %@.";
+"Quits apps using the selected caches." = "Encerra os apps que usam os caches selecionados.";
 "Rebuilt by Spotlight; macOS manages it." = "Reconstruído pelo Spotlight; o macOS o gerencia.";
 "Recommended" = "Recomendados";
 "Remove it with the tool that made it." = "Remova-o com a ferramenta que o criou.";
@@ -171,6 +181,8 @@
 "Rotated by logd; deleting it removes the logs needed for troubleshooting." = "Rotacionado pelo logd; apagá-lo remove os registros necessários para solucionar problemas.";
 "Rust packages" = "Pacotes Rust";
 "Safe to delete while %@ is closed. It's rebuilt when needed." = "Pode ser apagado com segurança enquanto %@ estiver fechado. É recriado quando necessário.";
+"Save and close documents first. Earlier versions are lost." = "Salve e feche os documentos. Versões anteriores serão perdidas.";
+"Save your work first. The system log is erased." = "Salve seu trabalho. O registro do sistema será apagado.";
 "Saved home folder of a deleted account: %@" = "Pasta pessoal salva de uma conta apagada: %@";
 "See what fills System Data and free what is safe to remove." = "Veja o que ocupa Dados do Sistema e libere o que pode ser removido com segurança.";
 "Selected cleanup items changed. Review your selection again." = "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.";
@@ -208,6 +220,7 @@
 "The Siri speech service, speech recognition and phone call features, for the Siri language and the system language. No setting removes them." = "O serviço de fala da Siri, o reconhecimento de fala e os recursos de ligação, para o idioma da Siri e o do sistema. Nenhum ajuste os remove.";
 "The Siri text-to-speech service, for the selected Siri voice and language." = "O serviço de conversão de texto em fala da Siri, para a voz e o idioma escolhidos.";
 "The helper did not answer" = "O auxiliar não respondeu";
+"The log history is permanently deleted." = "O histórico do registro é apagado de vez.";
 "This permanently deletes %@." = "Isto apaga permanentemente %@.";
 "Tool cache" = "Cache de ferramenta";
 "Tool cache: ~/.cache/%@" = "Cache de ferramenta: ~/.cache/%@";
@@ -243,8 +256,10 @@
 "and %lld more" = "e mais %lld";
 "free %@" = "liberar %@";
 "macOS builds them again the next time it reads a crash report." = "O macOS os cria de novo na próxima vez que ler um relatório de falha.";
+"macOS downloads them again as needed." = "O macOS baixa os arquivos de novo se precisar.";
 "macOS downloads them again if they're needed." = "O macOS os baixa de novo se forem necessários.";
 "macOS keeps these locked, even from MacSpace." = "O macOS mantém isto inacessível, até para o MacSpace.";
+"macOS rebuilds them as needed." = "O macOS recria os símbolos quando precisa.";
 "macOS restore image: %@" = "Imagem de restauração do macOS: %@";
 "macOS's model catalog, for the Photos spatial effect." = "O catálogo de modelos do macOS, para o efeito espacial do Fotos.";
 "nothing to free" = "nada a liberar";

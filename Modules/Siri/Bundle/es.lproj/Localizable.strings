@@ -48,6 +48,7 @@
 "Disable %@?" = "¿Desactivar %@?";
 "Disable %lld features?" = "¿Desactivar %lld funciones?";
 "Disable all" = "Desactivar todo";
+"Disable features?" = "¿Desactivar las funciones?";
 "Downloading" = "Descargando";
 "Each one can be enabled again. MacSpace frees their models." = "Cada una se puede volver a activar. MacSpace libera sus modelos.";
 "Enable" = "Activar";
@@ -61,9 +62,12 @@
 "Free %@?" = "¿Liberar %@?";
 "Free now" = "Liberar ahora";
 "Free switched-off features' models automatically" = "Liberar automáticamente los modelos de las funciones desactivadas";
+"Free unused downloads?" = "¿Liberar descargas en desuso?";
+"Free unused models?" = "¿Liberar los modelos en desuso?";
 "Free up to %@" = "Liberar hasta %@";
 "Free up to %@?" = "¿Liberar hasta %@?";
 "Freeing space" = "Liberando espacio";
+"Frees models until re-enabled." = "Libera los modelos hasta que reactives las funciones.";
 "Home page alerts" = "Alertas en la página de inicio";
 "Its models are gone." = "Sus modelos se han eliminado.";
 "Keeps the models" = "Conserva los modelos";
@@ -90,6 +94,7 @@
 "Open System Settings > Apple Account > iCloud." = "Abre Ajustes del Sistema > Cuenta de Apple > iCloud.";
 "Or delete the account in System Settings > Users & Groups." = "O elimina la cuenta en Ajustes del Sistema > Usuarios y grupos.";
 "Other accounts" = "Otras cuentas";
+"Re-enable features?" = "¿Reactivar las funciones?";
 "Released Apple Intelligence models" = "Modelos de Apple Intelligence liberados";
 "Released Apple Intelligence models and unused system assets" = "Modelos de Apple Intelligence liberados y recursos del sistema sin usar";
 "Restart to finish" = "Reinicia para terminar";
@@ -111,6 +116,7 @@
 "The current Siri language could not be read." = "No se ha podido leer el idioma actual de Siri.";
 "The system language could not be read." = "No se ha podido leer el idioma del sistema.";
 "The system or Siri language could not be read." = "No se ha podido leer el idioma del sistema o de Siri.";
+"They download again if re-enabled." = "Se vuelven a descargar al reactivar las funciones.";
 "This account was deleted, but macOS still keeps its models. In Terminal, run:" = "Esta cuenta se eliminó, pero macOS aún conserva sus modelos. En Terminal, ejecuta:";
 "This is a virtual machine" = "Esto es una máquina virtual";
 "Turn off Sync this Mac and keep the data on this Mac." = "Desactiva Sincronizar este Mac y conserva los datos en este Mac.";
@@ -134,7 +140,9 @@
 "free up to %@ of models" = "liberar hasta %@ de modelos";
 "freeing %@ of models" = "liberando %@ de modelos";
 "macOS does not offer Apple Intelligence in a virtual machine. Use MacSpace on a real Mac." = "macOS no ofrece Apple Intelligence en una máquina virtual. Usa MacSpace en un Mac real.";
+"macOS downloads the models again." = "macOS vuelve a descargar los modelos.";
 "macOS downloads their models again." = "macOS vuelve a descargar sus modelos.";
+"macOS downloads them again as needed." = "macOS los vuelve a descargar si los necesita.";
 "macOS is freeing the model" = "macOS está liberando el modelo";
 "macOS kept these models for ten minutes. After a restart, MacSpace deletes them." = "macOS ha conservado estos modelos durante diez minutos. Tras reiniciar, MacSpace los elimina.";
 "macOS still keeps these models." = "macOS aún conserva estos modelos.";
