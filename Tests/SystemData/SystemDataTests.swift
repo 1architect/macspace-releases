@@ -315,6 +315,52 @@ final class SystemDataTests: XCTestCase {
         XCTAssertFalse(fm.fileExists(atPath: clang.paths[0]))
     }
 
+    func testCleanerWithLiveOpenFileCheckDoesNotBlockItsOwnRemovalPlan() throws {
+        try file("folders/C/com.example.idle/blob", mb: 1)
+        let folder = root.appendingPathComponent("folders/C/com.example.idle")
+        let item = SystemDataItem(id: "idle", title: "Idle", kind: .appCache, paths: [folder.path], bytes: 1_000_000,
+                                  readable: true, owners: [], inUse: false,
+                                  cleanup: .init(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
+        let cleaner = SystemDataCleaner(runningApps: { [] }, processCheck: .live, freeSpace: { nil })
+
+        // A real external handle must still block cleanup.
+        let handle = try FileHandle(forReadingFrom: folder.appendingPathComponent("blob"))
+        let blocked = cleaner.clean([item], allowedRoots: [folder.deletingLastPathComponent().path])
+        XCTAssertFalse(try XCTUnwrap(blocked.results.first).deleted)
+        XCTAssertTrue(fm.fileExists(atPath: folder.path))
+        try handle.close()
+
+        let result = cleaner.clean([item], allowedRoots: [folder.deletingLastPathComponent().path])
+        XCTAssertTrue(try XCTUnwrap(result.results.first).deleted, "\(result.results.map(\.detail))")
+        XCTAssertFalse(fm.fileExists(atPath: folder.path))
+    }
+
+    func testCleanerPreservesTargetReplacedDuringOpenFileCheck() throws {
+        try file("folders/C/com.example.replaced/original", mb: 1)
+        let folder = root.appendingPathComponent("folders/C/com.example.replaced")
+        let preserved = folder.deletingLastPathComponent().appendingPathComponent("preserved")
+        let item = SystemDataItem(id: "replaced", title: "Replaced", kind: .appCache, paths: [folder.path], bytes: 1_000_000,
+                                  readable: true, owners: [], inUse: false,
+                                  cleanup: .init(kind: .deleteWhenNotRunning, description: "", command: nil), notes: [])
+        let check = ProcessCheck(processes: { [] }, holdsOpen: { _ in
+            do {
+                try FileManager.default.moveItem(at: folder, to: preserved)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try Data("replacement".utf8).write(to: folder.appendingPathComponent("replacement"))
+                return false
+            } catch {
+                XCTFail("Could not replace fixture: \(error)")
+                return nil
+            }
+        }, appPath: { _ in nil })
+        let result = SystemDataCleaner(runningApps: { [] }, processCheck: check, freeSpace: { nil })
+            .clean([item], allowedRoots: [folder.deletingLastPathComponent().path])
+
+        XCTAssertFalse(try XCTUnwrap(result.results.first).deleted)
+        XCTAssertTrue(fm.fileExists(atPath: preserved.appendingPathComponent("original").path))
+        XCTAssertEqual(try Data(contentsOf: folder.appendingPathComponent("replacement")), Data("replacement".utf8))
+    }
+
     /// The live check, on this test process: it is one of the user's processes, and a file it holds open is seen until it is closed.
     func testLiveProcessCheckSeesThisProcessAndItsOpenFiles() throws {
         try file("folders/C/com.example.open/blob", mb: 1)

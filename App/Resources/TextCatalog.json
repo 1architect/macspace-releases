@@ -15552,8 +15552,8 @@
     "key" : "%@ is running; quit it first.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1053",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1058"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1051",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1056"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15998,7 +15998,7 @@
     "key" : "An app is using these files. Try again later.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1063"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1061"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18410,7 +18410,7 @@
     "kind" : "Result message",
     "places" : [
       "Modules\/SystemData\/Module\/SystemDataModule.swift:335",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1047"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1045"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18429,7 +18429,7 @@
     "key" : "Nothing was freed: MacSpace couldn't check which files are in use.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1065"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1063"
     ],
     "table" : "SystemData",
     "translations" : {

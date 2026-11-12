@@ -1033,14 +1033,12 @@ public struct SystemDataCleaner {
                 }
                 paths.append(standardized)
             }
-            let plan: ReviewedDirectoryRemoval.Plan
+            let targets: [ReviewedDirectoryRemoval.Target]
             do {
-                let targets = try paths.map { path -> ReviewedDirectoryRemoval.Target in
+                targets = try paths.map { path -> ReviewedDirectoryRemoval.Target in
                     guard let identity = ReviewedDirectoryRemoval.cleanupIdentity(path) else { throw PrivateFile.Refusal() }
                     return .init(path: path, expected: identity)
                 }
-                // Existing allowlists were applied above; pin exactly those authorized targets.
-                plan = try ReviewedDirectoryRemoval.prepareCleanup(targets, within: Array(Set(paths.map { ($0 as NSString).deletingLastPathComponent })))
             } catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription) }
             // Read again for each item: an app or a build can start while earlier items are deleted.
             guard let processes = processCheck.processes() else {
@@ -1064,6 +1062,12 @@ public struct SystemDataCleaner {
             case nil:
                 return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Nothing was freed: MacSpace couldn't check which files are in use."))
             }
+            // Check for use before the removal plan opens its own target descriptors; otherwise MacSpace blocks itself.
+            // Keep the identities captured above so a target replaced during those checks is still refused.
+            let plan: ReviewedDirectoryRemoval.Plan
+            do {
+                plan = try ReviewedDirectoryRemoval.prepareCleanup(targets, within: Array(Set(paths.map { ($0 as NSString).deletingLastPathComponent })))
+            } catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription) }
             var removed: [String] = []
             for (index, path) in paths.enumerated() {
                 do { try plan.remove(at: index) }
