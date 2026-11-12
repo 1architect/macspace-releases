@@ -24,6 +24,7 @@ Each canvas registers its destination and uses the existing `WindowReader` to id
 - Home follows all dashboard tiles; automatic normal reads request tile progress without constructing unused module pages.
 - An open module follows that module's tile and page. Opening it shows its cached page immediately and verifies quietly, even when its tile was just read on Home. A page opened during a tile read joins that read's ongoing backend work and progress. Explicit Refresh and changes to options/actions supersede older presentations.
 - Settings does not poll modules. Modules covered by another page are not polled unless another visible window shows their page or a dashboard.
+- Covering a module keeps its current read and lightweight observers alive while the app has a visible canvas. Polling visibility is separate from backend activity; closing/hiding the last canvas still retires the read and suspends optional work.
 - Minimized/closed windows and a hidden app do not contribute visible destinations. Closing the last canvas does not re-enable polling.
 - Separately enabled watches and automatic cleanup continue without a visible module. Their completion refreshes the UI only when that module is watched. User actions still verify their results.
 
@@ -305,3 +306,11 @@ The initial synthetic progress-burst benchmark bypassed the relays already used 
 an artificial app-discovery delay. Neither established a production scan or animation speedup. Those benchmarks and the duplicate
 33 ms progress-delivery layer were removed after user feedback. The Back/reopen regression now covers first load as well as cached
 pages; the warm-up handoff test fails if the screen waits for the tile to finish or starts another tile read.
+
+The subsequent runtime reproduction identified a separate cancellation: opening Other System Files stopped Disk at 22.3%,
+retired its generation, and canceled its full-root reconciliation. Returning to Disk started another root pass at 3.6%.
+The host now supplies app-window visibility separately from whether a module is being followed. Covered reads can finish and
+cache their result without starting periodic reads; foreground observers remain active to preserve filesystem event coverage.
+Joining an existing refresh also retains its loading state, including with a cached page. Two regressions reproduced these
+failures before correction and cover module switching, progress/start-time preservation and last-canvas cancellation.
+Development builds record these lifecycle transitions through the `com.macspace` / `LoadContinuity` unified-log category.

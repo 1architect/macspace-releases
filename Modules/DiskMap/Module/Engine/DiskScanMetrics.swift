@@ -1,7 +1,11 @@
 import Foundation
+import OSLog
 
 /// Opt-in backend diagnostics. No app window or diagnostic view is involved.
 enum DiskScanMetrics {
+    #if MACSPACE_DEV
+    private static let logger = Logger(subsystem: "com.macspace", category: "LoadContinuity")
+    #endif
     private static let enabled = ProcessInfo.processInfo.environment["MACSPACE_DISK_METRICS"] == "1"
     private static let lock = NSLock()
     private static let file: FileHandle? = {
@@ -10,6 +14,9 @@ enum DiskScanMetrics {
         return FileHandle(forWritingAtPath: path)
     }()
     static func write(_ message: String) {
+        #if MACSPACE_DEV
+        logger.notice("\(message, privacy: .public)")
+        #endif
         guard enabled else { return }
         let data = Data((message + "\n").utf8)
         lock.withLock {

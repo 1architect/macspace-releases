@@ -762,6 +762,17 @@ struct ActionDock: View {
         .onChange(of: phase != nil, initial: true) { _, shown in _ = lifetime.update(shown: shown) }
         .onChange(of: lifetime.reservesSpace, initial: true) { _, reserved in isVisible = reserved }
         .onDisappear { lifetime.cancel() }
+        #if MACSPACE_DEV
+        .onAppear {
+            if case let .loading(fill) = phase { handle.traceLoad("dock-mount displayed=\(fill?.reported ?? -1) pageProgress=\(handle.pageLoading?.reported ?? -1) screenProgress=\(handle.screen?.loadingFraction ?? -1)") }
+        }
+        .onChange(of: phase) { old, new in
+            if case let .loading(before) = old, case let .loading(after) = new,
+               let previous = before?.reported, let current = after?.reported, current < previous {
+                handle.traceLoad("dock-regression from=\(previous) to=\(current)")
+            }
+        }
+        #endif
         .task(id: notice.map { "\($0.title)|\($0.message ?? "")" }) {
             guard let notice, notice.action == nil, handle.screen?.primary != nil else { return }
             showsPassingNotice = true

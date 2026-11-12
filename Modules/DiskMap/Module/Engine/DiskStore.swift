@@ -169,6 +169,9 @@ actor DiskStore {
         await applyActivity(desiredActive && !protectedStorageSuspended)
     }
     private func applyActivity(_ value: Bool) async {
+        #if MACSPACE_DEV
+        DiskScanMetrics.write("DISK_ACTIVITY active=\(value) inFlight=\(flight != nil) historyValidated=\(historyValidated)")
+        #endif
         active = value
         if value, reader != nil, watcher == nil { watcher = DiskEvents(root: root, since: published?.index.eventID ?? 0, excluded: excluded); historyValidated = false }
         if !value {

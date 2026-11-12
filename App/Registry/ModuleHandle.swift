@@ -2,6 +2,7 @@ import Foundation
 import MacSpacePlatform
 import MacSpaceSdk
 import SwiftUI
+import OSLog
 
 private final class FinishedChoiceProgress: @unchecked Sendable {
     private let lock = NSLock()
@@ -15,6 +16,21 @@ private final class FinishedChoiceProgress: @unchecked Sendable {
 /// One module as the app sees it: its manifest, whether it is running, and the latest screen it produced.
 @MainActor
 public final class ModuleHandle: ObservableObject, Identifiable {
+    #if MACSPACE_DEV
+    private static let loadLogger = Logger(subsystem: "com.macspace", category: "LoadContinuity")
+    #endif
+    static func logLoad(_ event: @autoclosure () -> String) {
+        #if MACSPACE_DEV
+        let message = event()
+        loadLogger.notice("\(message, privacy: .public)")
+        #endif
+    }
+    func traceLoad(_ event: @autoclosure () -> String) {
+        #if MACSPACE_DEV
+        guard id == "com.macspace.disk-map" else { return }
+        Self.logLoad("\(event()) gen=\(refreshGeneration) flight=\(readFlight != nil) watched=\(isWatched) windowVisible=\(windowIsVisible) pageVisible=\(screenIsVisible) screen=\(screen != nil) reloading=\(isReloading) refreshing=\(isRefreshing) progress=\(loading?.reported ?? -1)")
+        #endif
+    }
     public enum State: Equatable {
         case off
         case incompatible(String)
@@ -747,10 +763,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var hasCurrentRefresh: Bool { readFlight != nil || refreshRequests.contains(refreshGeneration) }
     private var needsModuleActivity: Bool {
         !preparingForUninstall && state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
-            (isWatched && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
+            (windowIsVisible && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
     }
 
-    /// Focus changes stop optional polling, not an in-flight read of a still-visible window or an action.
+    /// Module visibility controls polling; window visibility controls backend lifetime and in-flight reads.
     /// Serialize/coalesce updates so a queued old suspension cannot cancel a newer foreground read.
     private func syncModuleActivity() async {
         guard let module else { return }
@@ -761,6 +777,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             guard let self, self.activityGeneration == generation else { return }
             let active = self.needsModuleActivity
             guard self.appliedModuleActivity != active else { return }
+            self.traceLoad("activity active=\(active) appActive=\(Self.isAppActive())")
             await module.setActive(active)
             self.appliedModuleActivity = active
         }
@@ -887,14 +904,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     @MainActor private final class ReadFlight {
         let generation: Int
         var readsScreen: Bool
-        let explicit: Bool
-        var silent: Bool
+        let silent: Bool
         var task: Task<Void, Never>?
         var screenTask: Task<Screen, Never>?
         var startScreen: (@MainActor () -> Void)?
         var hasReadPresentation = false
-        init(generation: Int, readsScreen: Bool, silent: Bool, explicit: Bool) {
-            self.generation = generation; self.readsScreen = readsScreen; self.silent = silent; self.explicit = explicit
+        init(generation: Int, readsScreen: Bool, silent: Bool) {
+            self.generation = generation; self.readsScreen = readsScreen; self.silent = silent
         }
         func includeScreen() { readsScreen = true; startScreen?() }
     }
@@ -902,15 +918,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     private func read(reload: Bool = false, quiet: Bool = false, following: Bool = false,
                       navigation: Bool = false, superseding: Bool = false) async {
+        traceLoad("read-request reload=\(reload) quiet=\(quiet) following=\(following) navigation=\(navigation) superseding=\(superseding)")
         if reload || !quiet { invalidatePendingSelections() }
         guard !Task.isCancelled, !preparingForUninstall, state == .ready, let module else { return }
         guard !quiet || !performing else { return }
         dashboardWarmup?.cancel(); dashboardWarmup = nil
         if quiet, !reload, !superseding, let flight = readFlight {
-            if navigation, screen != nil, !flight.explicit {
-                flight.silent = true
-                clearRefreshPresentation()
-            }
             let needsLateScreen = screenIsVisible && !flight.readsScreen && flight.hasReadPresentation
             if screenIsVisible, !needsLateScreen {
                 flight.includeScreen()
@@ -927,7 +940,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         refreshGeneration += 1
         clearRefreshPresentation()
-        let flight = ReadFlight(generation: refreshGeneration, readsScreen: screenIsVisible, silent: navigation && screen != nil, explicit: reload || !quiet)
+        let flight = ReadFlight(generation: refreshGeneration, readsScreen: screenIsVisible, silent: navigation && screen != nil)
         readFlight = flight
         let task = Task { @MainActor [weak self, weak flight] in
             guard let self, let flight, self.readFlight === flight else { return }
@@ -1008,6 +1021,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             newScreen = await flight.screenTask?.value
         }
         flight.hasReadPresentation = true; flight.startScreen = nil
+        traceLoad("read-result resultGen=\(generation) cancelled=\(Task.isCancelled)")
         guard generation == refreshGeneration, state == .ready, !Task.isCancelled else { return }
         if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = refreshClock()
@@ -1034,6 +1048,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         refreshes.insert(generation)
         if blocking { blockingRefreshes.insert(generation) }
         if loadingGeneration != generation {
+            traceLoad("loading-start newGen=\(generation) blocking=\(blocking)")
             loading = LoadFill(started: started, expected: expected)
             loadingGeneration = generation
         }
@@ -1050,7 +1065,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     }
 
     /// A newer read or action supersedes old reads immediately; their late completion must not keep the widget loading.
-    private func clearRefreshPresentation() {
+    private func clearRefreshPresentation(reason: String = #function) {
+        traceLoad("loading-clear source=\(reason)")
         refreshes.removeAll()
         blockingRefreshes.removeAll()
         if loading != nil { loading = nil }
@@ -1162,18 +1178,23 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// MacSpace at 30% CPU in the background.
     public private(set) var isWatched = true
     public private(set) var screenIsVisible = true
+    /// A covered module stops polling, but a visible app keeps its existing reads and lightweight observers alive.
+    private var windowIsVisible = true
 
-    /// Called by the host when the last window goes away or the first one comes back. Back in view, the module is read again at
-    /// once if its figures are old, which also starts the periodic readings again.
-    public func setWatched(_ watched: Bool, screenVisible: Bool = true) {
+    /// Covered modules stop polling. Their current read and observers remain active while an app window is visible.
+    /// Losing the last visible canvas retires replies before backend cancellation.
+    public func setWatched(_ watched: Bool, screenVisible: Bool = true, windowVisible: Bool? = nil) {
+        let windowVisible = windowVisible ?? watched
         let openedPage = watched && screenVisible && !screenIsVisible
-        guard watched != isWatched || screenVisible != screenIsVisible else { return }
+        guard watched != isWatched || screenVisible != screenIsVisible || windowVisible != windowIsVisible else { return }
+        traceLoad("watch-change newWatched=\(watched) newPageVisible=\(screenVisible) newWindowVisible=\(windowVisible)")
         if !watched || !screenVisible { cancelRequestedPage() }
         invalidatePendingSelections()
         isWatched = watched
         screenIsVisible = screenVisible
+        windowIsVisible = windowVisible
         dashboardWarmup?.cancel(); dashboardWarmup = nil
-        if !watched {
+        if !windowVisible {
             // A suspended read can return its previous cache. Retire its generation before cancellation;
             // it must not publish that response or record a successful refresh time.
             readFlight = nil
@@ -1199,8 +1220,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         requestModuleActivityUpdate()
     }
     func appBecameActive() {
-        guard state == .ready, isWatched, isEnabled else { return }
+        guard state == .ready, windowIsVisible, isEnabled else { return }
         requestModuleActivityUpdate()
+        guard isWatched else { return }
         guard !hasCurrentRefresh, pageRequests.isEmpty, !actionNeedsModuleActivity, !performing else { return }
         if presentationAge >= Self.autoRefreshInterval, !performing {
             Task { if isWatched { await refresh(quiet: true) } }

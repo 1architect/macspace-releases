@@ -124,8 +124,8 @@ public final class ModuleHost: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 ConfigurationProfiles.shared.refresh()
-                for handle in self.activeHandles where handle.isWatched {
-                    if handle.manifest.permissions.contains(.configurationProfile) {
+                for handle in self.activeHandles {
+                    if handle.isWatched, handle.manifest.permissions.contains(.configurationProfile) {
                         Task { if handle.isWatched { await handle.refresh(reload: true, quiet: true) } }
                     }
                     else { handle.appBecameActive() }
@@ -143,14 +143,19 @@ public final class ModuleHost: ObservableObject {
     private var hadCanvas = false
 
     func setVisibleDestination(_ destination: Destination?, for canvas: UUID, window: WindowBox? = nil) {
+        let canvasWindow = (window ?? canvasWindows[canvas])?.window
+        ModuleHandle.logLoad("canvas=\(canvas) destination=\(String(describing: destination)) window=\(canvasWindow?.windowNumber ?? -1) visible=\(canvasWindow?.isVisible ?? false)")
         visibleDestinations[canvas] = destination
         canvasWindows[canvas] = destination == nil ? nil : window
         if destination != nil { hadCanvas = true }
         updateModuleVisibility()
     }
 
-    private func visibility(for id: String) -> (watched: Bool, screen: Bool) {
-        guard !visibleDestinations.isEmpty else { return (watched && !hadCanvas, true) }
+    private func visibility(for id: String) -> (watched: Bool, screen: Bool, window: Bool) {
+        guard !visibleDestinations.isEmpty else {
+            let initial = watched && !hadCanvas
+            return (initial, initial, initial)
+        }
         let destinations = visibleDestinations.filter { canvas, _ in
             guard let box = canvasWindows[canvas] else { return true }
             guard let window = box.window else { return false }
@@ -158,13 +163,14 @@ public final class ModuleHost: ObservableObject {
         }.values
         let page = destinations.contains(.module(id)) || (id == "com.macspace.disk-map" && destinations.contains(.storage))
         let dashboard = destinations.contains(.home)
-        return (watched && (page || dashboard), page)
+        let visible = watched && !destinations.isEmpty
+        return (visible && (page || dashboard), visible && page, visible)
     }
 
     private func updateModuleVisibility() {
         for handle in handles {
             let scope = visibility(for: handle.id)
-            handle.setWatched(scope.watched, screenVisible: scope.screen)
+            handle.setWatched(scope.watched, screenVisible: scope.screen, windowVisible: scope.window)
         }
     }
 
@@ -195,6 +201,7 @@ public final class ModuleHost: ObservableObject {
 
     private func updateWatched(closing: NSWindow?) {
         let now = !NSApp.isHidden && BackgroundPresence.hasOpenWindow(besides: closing, includingMiniaturized: false)
+        ModuleHandle.logLoad("window-visibility watched=\(now) hidden=\(NSApp.isHidden) closing=\(closing != nil) visibleWindows=\(NSApp.windows.filter(\.isVisible).count)")
         watched = now
         updateModuleVisibility()
     }
@@ -211,7 +218,7 @@ public final class ModuleHost: ObservableObject {
             let handle = ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
             if handle.id == "com.macspace.disk-map" { handle.dashboardWarmupDelay = .seconds(1) }
             let scope = visibility(for: handle.id)
-            handle.setWatched(scope.watched, screenVisible: scope.screen)
+            handle.setWatched(scope.watched, screenVisible: scope.screen, windowVisible: scope.window)
             return handle
         }
         observeStates()

@@ -78,6 +78,101 @@ final class FocusScanLifetimeTests: XCTestCase {
         XCTFail("The controlled read never started")
     }
 
+    func testSwitchingToAnotherModuleKeepsTheFirstDiskScanUntilTheLastCanvasCloses() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let original = ModuleHandle.isAppActive
+        ModuleHandle.isAppActive = { true }; defer { ModuleHandle.isAppActive = original }
+        let control = FocusScanControl(), canvas = UUID()
+        try Fixtures.writeBundle(Fixtures.manifest(id: "com.macspace.disk-map"), name: "Disk", into: directory)
+        try Fixtures.writeBundle(Fixtures.manifest(id: "com.test.other"), name: "Other", into: directory)
+        let host = ModuleHost(modulesDirectory: directory, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), privileged: nil,
+                              loader: { descriptor -> any MacSpaceModule in
+                                  if descriptor.id == "com.macspace.disk-map" { return FocusScanModule(control) }
+                                  return FakeModule()
+                              })
+        defer { host.handles.forEach { $0.deactivate() }; host.scheduler.stopAll(); Task { await control.finish() } }
+        host.setVisibleDestination(.storage, for: canvas)
+        await control.arm()
+        let startup = Task { await host.reload() }
+        try await waitForPending(control)
+        let handle = try XCTUnwrap(host.handle(for: "com.macspace.disk-map"))
+        XCTAssertNil(handle.screen)
+        await control.advance(0.22)
+        for _ in 0..<100 where handle.loading?.reported != 0.22 { try await Task.sleep(for: .milliseconds(5)) }
+        let started = handle.loading?.started
+        host.setVisibleDestination(.home, for: canvas)
+        host.setVisibleDestination(.module("com.test.other"), for: canvas)
+        try await Task.sleep(for: .milliseconds(50))
+        let coveredCancellations = await control.cancellations
+        XCTAssertEqual(coveredCancellations, 0, "Covering Disk with another module must not cancel its active scan")
+        XCTAssertFalse(handle.isWatched, "The covered module must not start periodic reads")
+        XCTAssertTrue(handle.isRefreshing)
+        XCTAssertEqual(handle.loading?.reported, 0.22)
+        XCTAssertEqual(handle.loading?.started, started)
+        host.setVisibleDestination(.home, for: canvas)
+        host.setVisibleDestination(.storage, for: canvas)
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(handle.loading?.reported, 0.22)
+        XCTAssertEqual(handle.loading?.started, started)
+        let starts = await control.starts
+        XCTAssertEqual(starts, 1)
+        host.setVisibleDestination(nil, for: canvas)
+        await startup.value
+        let finalCancellations = await control.cancellations
+        XCTAssertEqual(finalCancellations, 1, "Closing the last canvas must still cancel optional work")
+        XCTAssertNil(handle.screen, "A cancelled reply must not become a completed page")
+        XCTAssertNil(handle.loading)
+    }
+
+    func testReturningToACachedPageDoesNotClearAnAlreadyRunningRefresh() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        await control.advance(0.35)
+        for _ in 0..<100 where handle.loading?.reported != 0.35 { try await Task.sleep(for: .milliseconds(5)) }
+        let started = handle.loading?.started
+        handle.setWatched(true, screenVisible: false)
+        handle.setWatched(true, screenVisible: true)
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(handle.isRefreshing)
+        XCTAssertEqual(handle.loading?.reported, 0.35)
+        XCTAssertEqual(handle.loading?.started, started)
+        await control.finish(); await scan.value
+    }
+
+    func testCoveredReadCompletesIntoCacheAndReactivationRestoresObserversWithoutPolling() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let original = ModuleHandle.isAppActive, activity = Activity()
+        ModuleHandle.isAppActive = { activity.active }; defer { ModuleHandle.isAppActive = original }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        handle.setWatched(false, screenVisible: false, windowVisible: true)
+        await control.finish(); await scan.value
+        XCTAssertEqual(handle.screen?.title, "1")
+        XCTAssertFalse(handle.isWatched)
+        XCTAssertFalse(handle.isRefreshing)
+        var active = await control.active
+        XCTAssertTrue(active)
+        activity.active = false; handle.appResignedActive()
+        for _ in 0..<100 { if await !control.active { break }; try await Task.sleep(for: .milliseconds(5)) }
+        active = await control.active
+        XCTAssertFalse(active)
+        await control.arm()
+        activity.active = true; handle.appBecameActive()
+        for _ in 0..<100 { if await control.active { break }; try await Task.sleep(for: .milliseconds(5)) }
+        try await Task.sleep(for: .milliseconds(30))
+        active = await control.active
+        let pending = await control.pending
+        XCTAssertTrue(active)
+        XCTAssertFalse(pending, "A covered module may observe changes without starting another read")
+    }
+
     func testAppSwitchCannotCancelOrCompleteAnInFlightRefresh() async throws {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         let original = ModuleHandle.isAppActive
