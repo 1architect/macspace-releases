@@ -17,6 +17,7 @@ struct WidgetForm<Top: View>: View {
     var maximumColumns = 3
     var expandsGroups = false
     var handle: ModuleHandle?
+    var viewState: ModulePageViewState?
     @ViewBuilder var top: Top
     @Environment(\.pageCascadeCount) private var cascadeCount
     @Environment(\.pageBottomRoom) private var bottomRoom
@@ -31,6 +32,7 @@ struct WidgetForm<Top: View>: View {
     @Namespace private var listCanvas
     @State private var viewportHeight: CGFloat = 0
     @StateObject private var loadingGraph = WideGraphLoadingState()
+    @State private var presentationCache = WidgetPresentationCache()
 
     static func itemIDs(_ widgets: [ScreenWidget]) -> [String] {
         widgets.flatMap { widget -> [String] in
@@ -54,8 +56,8 @@ struct WidgetForm<Top: View>: View {
         let count: Int
         let visible: Bool
 
-        init(_ ids: [String], offset: Int, cascadeCount: Int, visible: Bool) {
-            index = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        init(_ ids: [String], index: [String: Int]? = nil, offset: Int, cascadeCount: Int, visible: Bool) {
+            self.index = index ?? Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
             self.offset = offset
             count = max(cascadeCount, offset + ids.count)
             self.visible = visible
@@ -93,15 +95,17 @@ struct WidgetForm<Top: View>: View {
             let listReady = graph == nil || (!expanded && loadingGraph.phase == .ready)
             let columns = graph == nil ? layout.columns : 1
             let listWidth = graph?.listWidth ?? layout.columnWidth
-            let visibleWidgets = ModulePagePresentation.visibleWidgets(widgets, checked: rowChoice?.checked ?? [])
-            let items = ModulePagePresentation.items(visibleWidgets, width: listWidth, expandsGroups: expandsGroups)
-            let ids = Self.itemIDs(items.flatMap(\.widgets).map(fitted))
+            let prepared = presentationCache.value(widgets: widgets, checked: rowChoice?.checked ?? [], width: listWidth,
+                expandsGroups: expandsGroups,
+                fitting: .init(height: viewportHeight, rowTops: overviewRowsTop, scrollTop: scrollTop, bottomRoom: bottomRoom), fit: fitted)
+            let items = prepared.items
+            let ids = prepared.ids
             // In separate panes the list starts its own cascade as soon as the graph arrives.
             // Stacked pages still reveal the legend first, followed by the rows below it.
             let offset = graph == nil ? cascadeOffset : 0
             let count = graph == nil ? cascadeCount : ids.count
             let structure = PageCascade.Structure(ids: ids, offset: offset, count: count)
-            let positions = Positions(ids, offset: offset, cascadeCount: count, visible: detailsVisible && listReady)
+            let positions = Positions(ids, index: prepared.positions, offset: offset, cascadeCount: count, visible: detailsVisible && listReady)
             Group {
                 if let graph {
                     HStack(alignment: .top, spacing: expanded ? 0 : ModulePageLayout.gap) {
@@ -112,6 +116,7 @@ struct WidgetForm<Top: View>: View {
                                 .padding(.top, 20)
                                 .padding(.bottom, max(bottomRoom, 20))
                         }
+                        .modifier(ModulePageScrollState(state: viewState))
                         .contentMargins(.horizontal, 0, for: .scrollContent)
                         .frame(width: expanded ? 0 : graph.listWidth)
                         .clipped()
@@ -144,6 +149,7 @@ struct WidgetForm<Top: View>: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, max(bottomRoom, 20))
                     }
+                    .modifier(ModulePageScrollState(state: viewState))
                 }
             }
             .animation(PageCascade.layoutAnimation(from: previousStructure, to: structure, reduceMotion: reduceMotion), value: ids)
@@ -158,6 +164,13 @@ struct WidgetForm<Top: View>: View {
         }
         .font(.system(size: 13))
         .buttonStyle(.bordered)
+        .onAppear {
+            if let viewState {
+                var transaction = Transaction(); transaction.disablesAnimations = true
+                withTransaction(transaction) { flipped = viewState.flippedSections }
+            }
+        }
+        .onChange(of: flipped) { _, value in viewState?.flippedSections = value }
         .onDisappear { loadingGraph.cancel() }
     }
 

@@ -9,6 +9,13 @@ final class StorageOverview: ObservableObject {
     /// One reading for every window and the menu bar, so a cleanup run from one shows in all of them.
     static let shared = StorageOverview()
 
+    private let readCapacity: @Sendable () -> (UInt64?, UInt64?)
+    private var capacityFlight: (id: UUID, task: Task<(UInt64?, UInt64?), Never>)?
+
+    init(readCapacity: (@Sendable () -> (UInt64?, UInt64?))? = nil) {
+        self.readCapacity = readCapacity ?? Self.liveCapacity
+    }
+
     @Published private(set) var usedBytes: UInt64?
     @Published private(set) var totalBytes: UInt64?
 
@@ -75,17 +82,27 @@ final class StorageOverview: ObservableObject {
     }
 
     func refresh() async {
+        let flight: (id: UUID, task: Task<(UInt64?, UInt64?), Never>)
+        if let pending = capacityFlight { flight = pending }
+        else {
+            flight = (UUID(), Task.detached(priority: .utility, operation: readCapacity))
+            capacityFlight = flight
+        }
+        let reading = await flight.task.value
+        guard capacityFlight?.id == flight.id else { return }
+        capacityFlight = nil
         lastRead = Date()
-        let reading = await Task.detached(priority: .utility) { () -> (UInt64?, UInt64?) in
-            // Space macOS frees by itself when it is needed (purgeable) counts as available, as System Settings counts it: with the
-            // plain free space the tile said 230.9 GB used where System Settings said 203.3 GB (2026-10-06).
-            let values = try? URL(fileURLWithPath: DataVolume.path).resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
-            guard let capacity = values?.volumeTotalCapacity, let available = values?.volumeAvailableCapacityForImportantUsage,
-                  available >= 0, Int64(capacity) >= available else { return (nil, nil) }
-            return (UInt64(Int64(capacity) - available), UInt64(capacity))
-        }.value
         // Set only when it changed: every set redraws the tiles that show it.
         if usedBytes != reading.0 { usedBytes = reading.0 }
         if totalBytes != reading.1 { totalBytes = reading.1 }
+    }
+
+    private nonisolated static func liveCapacity() -> (UInt64?, UInt64?) {
+        // Space macOS frees by itself when it is needed (purgeable) counts as available, as System Settings counts it: with the
+        // plain free space the tile said 230.9 GB used where System Settings said 203.3 GB (2026-10-06).
+        let values = try? URL(fileURLWithPath: DataVolume.path).resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
+        guard let capacity = values?.volumeTotalCapacity, let available = values?.volumeAvailableCapacityForImportantUsage,
+              available >= 0, Int64(capacity) >= available else { return (nil, nil) }
+        return (UInt64(Int64(capacity) - available), UInt64(capacity))
     }
 }

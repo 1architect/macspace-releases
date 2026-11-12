@@ -232,7 +232,7 @@ struct ScreenView: View {
     @ViewBuilder
     private var mainPage: some View { modulePage(content, layout: handle.screen?.layout ?? .adaptive, selection: handle.screen.flatMap { handle.pageSelection($0, id: "screen:root") }) }
 
-    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil, navigation: Bool = false) -> some View {
+    private func modulePage(_ content: (hero: UsageBar?, widgets: [ScreenWidget], loaded: Bool)?, layout: ModuleLayout, selection: Row? = nil, navigation: Bool = false, stateID: String = "screen:root") -> some View {
         let legendCount = content?.hero.map { BlockLayout.legendSegments($0.segments, blocks: Self.graphBlocks($0)).count + 1 } ?? 0
         return ScrollViewReader { proxy in
           Group {
@@ -244,7 +244,7 @@ struct ScreenView: View {
                            graphLoading: !content.loaded || handle.isRefreshing || handle.isReloading,
                            detailsVisible: !refreshing, cascadeOffset: legendCount,
                            maximumColumns: layout == .singleColumn ? 1 : 3,
-                           expandsGroups: true, handle: handle) {
+                           expandsGroups: true, handle: handle, viewState: handle.pageViewState(stateID)) {
                     if let hero = content.hero {
                         HeroBlocks(usage: hero, tint: tint, loading: !content.loaded || handle.isRefreshing || handle.isCleaning,
                                    reading: (!content.loaded || handle.isRefreshing) && !handle.isCleaning, fill: handle.loading,
@@ -289,12 +289,12 @@ struct ScreenView: View {
     @ViewBuilder
     private func groupPage(_ group: Row) -> some View {
         if let page = handle.pages[group.id] ?? handle.graphPage(group.id) {
-            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id), navigation: true)
+            modulePage((page.hero, Self.withoutBanners(page.widgets), true), layout: page.layout ?? .adaptive, selection: handle.pageSelection(page, id: group.id), navigation: true, stateID: group.id)
         } else {
             let widgets = ModulePagePresentation.groupWidgets(group)
             let choiceGroup = handle.selectionGroup(group)
             WidgetForm(widgets: widgets, handler: handler, showsTop: false, detailsVisible: !hidesDetails,
-                              maximumColumns: 1) { EmptyView() }
+                              maximumColumns: 1, viewState: handle.pageViewState(group.id)) { EmptyView() }
                 .environment(\.pageCascadeCount, WidgetForm<EmptyView>.itemIDs(widgets).count)
                 .scrollIndicators(.never)
                 .modifier(PageScrollArea(hasFooter: hasFooter))

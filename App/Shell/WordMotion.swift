@@ -5,17 +5,19 @@ struct TextMotionSnapshot: Equatable {
     let text: String
     let font: Font
     var size: CGSize?
+    let pieces: [WordChange.Piece]
+    let phrase: [String]
 
     init(_ text: String, font: Font = .body, size: CGSize? = nil) {
         self.text = text
         self.size = size
         let fields = TextFields.split(text)
+        pieces = WordChange.pieces(text)
+        phrase = fields.filter { !$0.numeric }.map(\.text)
         let percentage = fields.count >= 2 && fields[fields.count - 2].numeric
             && (fields.last?.text == "%" || fields.last?.text == "٪")
         self.font = percentage ? font.monospacedDigit() : font
     }
-
-    var phrase: [String] { TextFields.split(text).filter { !$0.numeric }.map(\.text) }
 }
 
 /// Word changes own two static snapshots. They never keep a native, unfinished numeric transition alive underneath them.
@@ -52,6 +54,16 @@ struct WordChange: Identifiable {
     let id: UInt64
     let outgoing: TextMotionSnapshot
     let incoming: TextMotionSnapshot
+    private let leading: (outgoing: Set<Int>, incoming: Set<Int>)
+    private let trailing: (outgoing: Set<Int>, incoming: Set<Int>)
+    let wordCount: Int
+
+    init(id: UInt64, outgoing: TextMotionSnapshot, incoming: TextMotionSnapshot) {
+        self.id = id; self.outgoing = outgoing; self.incoming = incoming
+        leading = Self.match(outgoing.pieces, incoming.pieces, fromEnd: false)
+        trailing = Self.match(outgoing.pieces, incoming.pieces, fromEnd: true)
+        wordCount = max(outgoing.pieces.filter { !$0.whitespace }.count, incoming.pieces.filter { !$0.whitespace }.count)
+    }
 
     struct Piece: Equatable {
         let text: String
@@ -84,10 +96,13 @@ struct WordChange: Identifiable {
     /// in moves sideways as the words before it change width: matched as unchanged, it jumped to its new place while the rest rolled
     /// ("MB" in a chart legend as the pointer went from block to block).
     func unchanged(alignment: HorizontalAlignment = .leading) -> (outgoing: Set<Int>, incoming: Set<Int>) {
-        let old = Self.pieces(outgoing.text), new = Self.pieces(incoming.text)
+        if alignment == .leading { return leading }
+        if alignment == .trailing { return trailing }
+        return ([], [])
+    }
+
+    private static func match(_ old: [Piece], _ new: [Piece], fromEnd: Bool) -> (outgoing: Set<Int>, incoming: Set<Int>) {
         var shared = 0
-        let fromEnd = alignment == .trailing
-        guard fromEnd || alignment == .leading else { return ([], []) }
         while shared < min(old.count, new.count) {
             let a = old[fromEnd ? old.count - 1 - shared : shared], b = new[fromEnd ? new.count - 1 - shared : shared]
             guard a.text == b.text else { break }
@@ -98,10 +113,6 @@ struct WordChange: Identifiable {
             return Set(kept.filter { !$0.whitespace }.map(\.ordinal))
         }
         return (words(old), words(new))
-    }
-
-    var wordCount: Int {
-        max(Self.pieces(outgoing.text).filter { !$0.whitespace }.count, Self.pieces(incoming.text).filter { !$0.whitespace }.count)
     }
 }
 
@@ -161,10 +172,45 @@ private struct WordRollOffset: LayoutValueKey {
 struct WordChangeFrame: View, @preconcurrency Animatable {
     let change: WordChange
     var elapsed: Double
-    var alignment: Alignment = .leading
-    var singleLine = true
-    var reduceMotion = false
-    var delay: Double = 0
+    let alignment: Alignment
+    let singleLine: Bool
+    let reduceMotion: Bool
+    let delay: Double
+    private let prepared: PreparedWords
+
+    init(change: WordChange, elapsed: Double, alignment: Alignment = .leading, singleLine: Bool = true,
+         reduceMotion: Bool = false, delay: Double = 0) {
+        self.change = change; self.elapsed = elapsed; self.alignment = alignment; self.singleLine = singleLine
+        self.reduceMotion = reduceMotion; self.delay = delay
+        prepared = PreparedWords(change: change, alignment: alignment.horizontal)
+    }
+
+    /// These paragraph descriptions are independent of elapsed time. SwiftUI interpolates
+    /// only the samples below, keeping tokenization and Text construction out of each frame.
+    @MainActor private struct PreparedWords {
+        struct Word: Identifiable { let id: Int; let paragraph: Text }
+        struct Layer {
+            let snapshot: TextMotionSnapshot
+            let unchanged: Text?
+            let hasUnchanged: Bool
+            let words: [Word]
+        }
+        let outgoing: Layer
+        let incoming: Layer
+        init(change: WordChange, alignment: HorizontalAlignment) {
+            let matched = change.unchanged(alignment: alignment)
+            func layer(_ snapshot: TextMotionSnapshot, unchanged: Set<Int>, outgoing: Bool) -> Layer {
+                Layer(snapshot: snapshot,
+                      unchanged: !outgoing && !unchanged.isEmpty ? WordChangeFrame.paragraph(snapshot.pieces, showing: unchanged) : nil,
+                      hasUnchanged: !unchanged.isEmpty,
+                      words: snapshot.pieces.filter { !$0.whitespace && !unchanged.contains($0.ordinal) }.map {
+                          Word(id: $0.ordinal, paragraph: WordChangeFrame.paragraph(snapshot.pieces, showing: [$0.ordinal]))
+                      })
+            }
+            outgoing = layer(change.outgoing, unchanged: matched.outgoing, outgoing: true)
+            incoming = layer(change.incoming, unchanged: matched.incoming, outgoing: false)
+        }
+    }
 
     var animatableData: Double {
         get { elapsed }
@@ -172,35 +218,35 @@ struct WordChangeFrame: View, @preconcurrency Animatable {
     }
 
     var body: some View {
-        let matched = change.unchanged(alignment: alignment.horizontal)
         ZStack(alignment: alignment) {
-            layer(change.outgoing, unchanged: matched.outgoing, outgoing: true)
-            layer(change.incoming, unchanged: matched.incoming, outgoing: false)
+            layer(prepared.outgoing, outgoing: true)
+            layer(prepared.incoming, outgoing: false)
         }
         .accessibilityHidden(true)
     }
 
     private struct Word: Identifiable {
         let id: Int
+        let paragraph: Text
         let sample: WordMotionSample
     }
 
-    private func layer(_ snapshot: TextMotionSnapshot, unchanged: Set<Int>, outgoing: Bool) -> some View {
-        let pieces = WordChange.pieces(snapshot.text)
-        let words = pieces.filter { !$0.whitespace && !unchanged.contains($0.ordinal) }.map { piece in
-            Word(id: piece.ordinal, sample: .at(elapsed, ordinal: piece.ordinal, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay))
+    private func layer(_ layer: PreparedWords.Layer, outgoing: Bool) -> some View {
+        let snapshot = layer.snapshot
+        let words = layer.words.map { word in
+            Word(id: word.id, paragraph: word.paragraph, sample: .at(elapsed, ordinal: word.id, outgoing: outgoing, reduceMotion: reduceMotion, delay: delay))
         }
         // Unchanged words are drawn once, by the incoming phrase.
-        let atRest = (!outgoing || unchanged.isEmpty) && words.allSatisfy { $0.sample.opacity == 1 && $0.sample.y == 0 && $0.sample.blur == 0 }
+        let atRest = (!outgoing || !layer.hasUnchanged) && words.allSatisfy { $0.sample.opacity == 1 && $0.sample.y == 0 && $0.sample.blur == 0 }
         return Group {
             if atRest {
                 Text(verbatim: snapshot.text)
             } else {
                 WordRollLayout {
                     Text(verbatim: "Ag").lineLimit(1).fixedSize().hidden()
-                    if !outgoing, !unchanged.isEmpty { Self.paragraph(pieces, showing: unchanged) }
+                    if let unchanged = layer.unchanged { unchanged }
                     ForEach(words.filter { $0.sample.opacity > 0 }) { word in
-                        Self.paragraph(pieces, showing: [word.id])
+                        word.paragraph
                             .opacity(word.sample.opacity)
                             .blur(radius: word.sample.blur)
                             .layoutValue(key: WordRollOffset.self, value: word.sample.y)

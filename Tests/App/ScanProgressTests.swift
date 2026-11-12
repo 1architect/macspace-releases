@@ -24,10 +24,11 @@ private actor ScanControl {
 private struct ScanningModule: MacSpaceModule {
     let control: ScanControl
     let refreshAfter: TimeInterval?
-    init() { control = ScanControl(); refreshAfter = nil }
-    init(control: ScanControl, refreshAfter: TimeInterval? = nil) { self.control = control; self.refreshAfter = refreshAfter }
+    let offersCleanup: Bool
+    init() { control = ScanControl(); refreshAfter = nil; offersCleanup = false }
+    init(control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false) { self.control = control; self.refreshAfter = refreshAfter; self.offersCleanup = offersCleanup }
     func tile(context: ModuleContext) async -> Tile { Tile(title: "test", status: "ready", refreshAfter: refreshAfter) }
-    func screen(context: ModuleContext) async -> Screen { Screen(title: "Test", widgets: []) }
+    func screen(context: ModuleContext) async -> Screen { Screen(title: "Test", primary: offersCleanup ? Action(id: "clean", title: "Free") : nil, widgets: []) }
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         await control.scan(progress)
         return await screen(context: context)
@@ -37,10 +38,10 @@ private struct ScanningModule: MacSpaceModule {
 
 @MainActor
 final class ScanProgressTests: XCTestCase {
-    private func handle(_ directory: URL, control: ScanControl, refreshAfter: TimeInterval? = nil) async throws -> ModuleHandle {
+    private func handle(_ directory: URL, control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let module = ScanningModule(control: control, refreshAfter: refreshAfter)
+        let module = ScanningModule(control: control, refreshAfter: refreshAfter, offersCleanup: offersCleanup)
         let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         return handle
@@ -95,7 +96,7 @@ final class ScanProgressTests: XCTestCase {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let control = ScanControl()
-        let handle = try await handle(directory, control: control)
+        let handle = try await handle(directory, control: control, offersCleanup: true)
         defer { handle.deactivate() }
         await control.arm()
         let task = Task { await handle.perform(Action(id: "clean", title: "Free")) }

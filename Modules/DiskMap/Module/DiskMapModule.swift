@@ -147,10 +147,15 @@ public struct DiskMapModule: MacSpaceModule {
         } else { await invalidate() }
     }
     public func tile(context: ModuleContext) async -> Tile {
-        let snapshot = await store.view(); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
+        await tile(context: context, progress: { _ in })
     }
     public func tile(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Tile {
-        let snapshot = await store.view(progress: { progress(0.9 * $0) }); return DiskMapScreenBuilder.tile(snapshot.index, files: snapshot.files)
+        let snapshot = await store.view(progress: { progress(0.9 * $0) })
+        // Home warms the same inventory that a first page needs, without building an unused screen.
+        // Both callers join DiskInventory's single flight; unchanged catalog revisions reuse discovery.
+        _ = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
+        let completed = await store.navigation()
+        return DiskMapScreenBuilder.tile(completed.index, files: completed.files)
     }
     public func screen(context: ModuleContext) async -> Screen {
         let snapshot = await store.view()

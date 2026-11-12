@@ -34,7 +34,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// The tile is last session's, shown until the module has read the Mac again.
     @Published public private(set) var tileIsStale = false
     @Published public private(set) var isBusy = false
-    /// Actual scan work: charts move immediately; existing page details remain interactive.
+    /// Visible scan feedback; cached navigation verifies without restarting loading effects.
     @Published public private(set) var isRefreshing = false
     /// Only the first page load hides details. Manual and automatic refreshes retain the current page.
     @Published public private(set) var isReloading = false
@@ -103,6 +103,19 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var openingPage: Task<Void, Never>?
     private var pageIDs: [String: String] = [:]
     private var pageUse: [String] = []
+    private var viewStates: [String: ModulePageViewState] = [:]
+    private var viewStateUse: [String] = []
+
+    func pageViewState(_ id: String) -> ModulePageViewState {
+        let value = viewStates[id] ?? ModulePageViewState()
+        viewStates[id] = value
+        viewStateUse.removeAll { $0 == id }; viewStateUse.append(id)
+        while viewStates.count > max(12, groupPath.count + 1),
+              let oldest = viewStateUse.first(where: { $0 != "screen:root" && $0 != id && !groupPath.contains($0) }) {
+            viewStates[oldest] = nil; viewStateUse.removeAll { $0 == oldest }
+        }
+        return value
+    }
 
     private func retainPage(_ id: String) {
         pageUse.removeAll { $0 == id }; pageUse.append(id)
@@ -154,16 +167,16 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         await syncModuleActivity()
         guard generation == pageLoadGeneration, state == .ready, !Task.isCancelled else { return nil }
-        return await module.page(id: id, context: context(), progress: { [weak self] fraction in
-            Task { @MainActor in
-                guard let self, self.pageLoadGeneration == generation, fraction.isFinite, self.screenIsVisible else { return }
-                if fraction < 1, self.pageLoading == nil {
-                    self.pageLoading = LoadFill(started: started, expected: LoadFill.firstGuess)
-                    self.updateBusy()
-                }
-                self.pageLoading?.reported = min(1, max(0, fraction))
+        let reports = ReadProgressDelivery { [weak self] fraction in
+            guard let self, self.pageLoadGeneration == generation, self.screenIsVisible else { return }
+            if fraction < 1, self.pageLoading == nil {
+                self.pageLoading = LoadFill(started: started, expected: LoadFill.firstGuess)
+                self.updateBusy()
             }
-        })
+            self.pageLoading?.reported = fraction
+        }
+        defer { reports.cancel() }
+        return await module.page(id: id, context: context(), progress: { reports.report($0) })
     }
     private var requestedPage: String?
     private var requestedPageGeneration = 0
@@ -728,7 +741,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var activityTask: Task<Void, Never>?
     private var activityGeneration = 0
     private var appliedModuleActivity: Bool?
-    private var hasCurrentRefresh: Bool { refreshRequests.contains(refreshGeneration) }
+    private var hasCurrentRefresh: Bool { readFlight != nil || refreshRequests.contains(refreshGeneration) }
     private var needsModuleActivity: Bool {
         !preparingForUninstall && state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
             (isWatched && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
@@ -821,7 +834,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
         }
         state = .ready
-        if isWatched { await refresh() }
+        if isWatched, !deferDashboardWarmup() { await refresh() }
     }
 
     /// Drops the module's UI state. The loaded code stays in memory (bundles cannot be unloaded safely); it is simply not called.
@@ -831,6 +844,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if case .incompatible = state { return }
         requestModuleActivityUpdate()
         pageLoadGeneration += 1; pageLoading = nil
+        readFlight = nil
+        dashboardWarmup?.cancel(); dashboardWarmup = nil
         refreshGeneration += 1; clearRefreshPresentation()
         state = .off
         queuedRows.removeAll(); queuedRequestIDs.removeAll()
@@ -845,6 +860,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         pages = [:]
         pageIDs = [:]
         pageUse = []
+        viewStates = [:]; viewStateUse = []
+        lastRefreshed = nil; lastScreenRefreshed = nil
         groupPath = []
         sessionScopes = []; sessionGroup = nil; scopedReviewed = [:]; scopedOrigins = [:]; sessionSections = [:]; sessionSectionPages = [:]
         sessionBulk = [:]; bulkVisible = [:]; bulkSections = [:]; bulkEdit = nil
@@ -858,21 +875,67 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// module has no `status` and reads the Mac in full: each one filled the page's button and pulsed its background, every five
     /// seconds while Siri's models were being freed (2026-10-19).
     public func refresh(reload: Bool = false, quiet: Bool = false, following: Bool = false) async {
+        await read(reload: reload, quiet: quiet, following: following)
+    }
+
+    /// Option/background mutations must supersede a presentation captured before the change.
+    func refreshAfterChange() async { await read(quiet: true, superseding: true) }
+
+    @MainActor private final class ReadFlight {
+        let generation: Int
+        let readsScreen: Bool
+        let explicit: Bool
+        var silent: Bool
+        var task: Task<Void, Never>?
+        init(generation: Int, readsScreen: Bool, silent: Bool, explicit: Bool) {
+            self.generation = generation; self.readsScreen = readsScreen; self.silent = silent; self.explicit = explicit
+        }
+    }
+    private var readFlight: ReadFlight?
+
+    private func read(reload: Bool = false, quiet: Bool = false, following: Bool = false,
+                      navigation: Bool = false, superseding: Bool = false) async {
         if reload || !quiet { invalidatePendingSelections() }
-        guard !preparingForUninstall, state == .ready, let module else { return }
+        guard !Task.isCancelled, !preparingForUninstall, state == .ready, let module else { return }
         guard !quiet || !performing else { return }
+        dashboardWarmup?.cancel(); dashboardWarmup = nil
+        if quiet, !reload, !superseding, let flight = readFlight {
+            if navigation, screen != nil, !flight.explicit {
+                flight.silent = true
+                clearRefreshPresentation()
+            }
+            await flight.task?.value
+            if readFlight === flight { readFlight = nil; requestModuleActivityUpdate(); scheduleAutoRefresh() }
+            // A Home read cannot satisfy a page request, even if it just refreshed the tile.
+            if screenIsVisible, !flight.readsScreen, state == .ready, isWatched {
+                await read(quiet: true, following: following, navigation: navigation)
+            }
+            return
+        }
+        refreshGeneration += 1
+        clearRefreshPresentation()
+        let flight = ReadFlight(generation: refreshGeneration, readsScreen: screenIsVisible, silent: navigation && screen != nil, explicit: reload || !quiet)
+        readFlight = flight
+        let task = Task { @MainActor [weak self, weak flight] in
+            guard let self, let flight, self.readFlight === flight else { return }
+            await self.refreshNow(module: module, reload: reload, quiet: quiet, following: following, flight: flight)
+        }
+        flight.task = task
+        await task.value
+        if readFlight === flight { readFlight = nil; requestModuleActivityUpdate(); scheduleAutoRefresh() }
+    }
+
+    private func refreshNow(module: any MacSpaceModule, reload: Bool, quiet: Bool, following: Bool, flight: ReadFlight) async {
         // Retire the pending timer before an explicit read; it must not fire halfway through and supersede the user's reload.
         autoRefresh?.cancel()
         autoRefresh = nil
         let context = context()
-        refreshGeneration += 1
-        clearRefreshPresentation()
-        let generation = refreshGeneration
+        let generation = flight.generation
         let started = Date()
         let expected = settings.loadDuration(module: id, reload: reload) ?? LoadFill.firstGuess
         refreshRequests.insert(generation)
-        let blocking = screen == nil && screenIsVisible
-        if !quiet || blocking { showRefresh(generation, started: started, expected: expected, blocking: blocking) }
+        let blocking = screen == nil && flight.readsScreen
+        if !flight.silent, !quiet || blocking { showRefresh(generation, started: started, expected: expected, blocking: blocking) }
         if reload && !quiet {
             rereadGeneration = generation
             isRereading = true
@@ -901,22 +964,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             } else { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
         }
         // What the module says of its progress fills the Loading button (`LoadFill.reported`).
-        let reports: LoadProgressSink = { [weak self] fraction in
-            Task { @MainActor in
-                guard let self, fraction.isFinite, generation == self.refreshGeneration,
-                      self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
-                if !self.refreshes.contains(generation) {
-                    guard fraction < 1, self.isWatched, !following else { return }
-                    self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
-                }
-                let fraction = min(max(fraction, 0), 1)
-                guard fraction > self.loading?.reported ?? -1 else { return }
-                self.loading?.reported = fraction
+        let delivery = ReadProgressDelivery { [weak self, weak flight] fraction in
+            guard let self, let flight, !flight.silent, generation == self.refreshGeneration,
+                  self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
+            if !self.refreshes.contains(generation) {
+                guard fraction < 1, self.isWatched, !following else { return }
+                self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
             }
+            guard fraction > self.loading?.reported ?? -1 else { return }
+            self.loading?.reported = fraction
         }
+        defer { delivery.cancel() }
+        let reports: LoadProgressSink = { delivery.report($0) }
         let newTile: Tile
         let newScreen: Screen?
-        let readsScreen = screenIsVisible
+        let readsScreen = flight.readsScreen
         if quiet, !reload, let status = await module.status(context: context) {
             newTile = status.tile
             newScreen = readsScreen ? status.screen : nil
@@ -927,7 +989,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         guard generation == refreshGeneration, state == .ready, !Task.isCancelled else { return }
         if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
-        lastRefreshed = Date()
+        lastRefreshed = refreshClock()
         // Only what changed is published: each published value redraws the tile and the page, and the readings that follow the Mac
         // by themselves mostly find it unchanged.
         if tile != newTile {
@@ -939,6 +1001,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             guard generation == refreshGeneration, state == .ready else { return }
             reconcileSelection(newScreen)
             if screen != newScreen { screen = newScreen; invalidateClosedPages() }
+            lastScreenRefreshed = refreshClock()
         }
         if reload { invalidateClosedPages() }
         await refreshPages()
@@ -1050,6 +1113,29 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     static var isAppActive: @MainActor () -> Bool = { NSApp?.isActive ?? true }
     private var autoRefresh: Task<Void, Never>?
     private var lastRefreshed: Date?
+    private var lastScreenRefreshed: Date?
+    var refreshClock: () -> Date = { Date() }
+    var dashboardWarmupDelay: Duration = .zero
+    private var dashboardWarmup: Task<Void, Never>?
+
+    /// Only the first detailed dashboard inventory waits for the opening animation.
+    /// A direct visit cancels the delay and joins/starts the same normal read.
+    private func deferDashboardWarmup() -> Bool {
+        guard dashboardWarmupDelay > .zero, isWatched, !screenIsVisible, lastRefreshed == nil else { return false }
+        if dashboardWarmup == nil {
+            dashboardWarmup = Task { @MainActor [weak self, dashboardWarmupDelay] in
+                do { try await Task.sleep(for: dashboardWarmupDelay) } catch { return }
+                guard let self, self.state == .ready, self.isWatched, !self.screenIsVisible else { return }
+                self.dashboardWarmup = nil
+                await self.read(quiet: true)
+            }
+        }
+        return true
+    }
+
+    var presentationAge: TimeInterval {
+        (screenIsVisible ? lastScreenRefreshed : lastRefreshed).map { refreshClock().timeIntervalSince($0) } ?? .infinity
+    }
     /// Whether a window of MacSpace is on screen. Without one nobody sees the tile or the page, so the module is not read again by
     /// itself: with the window closed, those readings (a full scan of the disk for System Data, every two minutes) were what kept
     /// MacSpace at 30% CPU in the background.
@@ -1065,9 +1151,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         invalidatePendingSelections()
         isWatched = watched
         screenIsVisible = screenVisible
+        dashboardWarmup?.cancel(); dashboardWarmup = nil
         if !watched {
             // A suspended read can return its previous cache. Retire its generation before cancellation;
             // it must not publish that response or record a successful refresh time.
+            readFlight = nil
             refreshGeneration += 1; clearRefreshPresentation()
             pageLoadGeneration += 1; pageLoading = nil; updateBusy()
         }
@@ -1076,9 +1164,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             autoRefresh?.cancel()
             autoRefresh = nil
         } else if state == .ready {
-            let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
-            if openedPage || age >= Self.fastestAutoRefresh {
-                Task { if isWatched { await refresh(quiet: true) } }
+            if deferDashboardWarmup() { return }
+            if openedPage || presentationAge >= Self.fastestAutoRefresh {
+                Task { if isWatched { await read(quiet: true, navigation: openedPage) } }
             } else { scheduleAutoRefresh() }
         }
     }
@@ -1092,8 +1180,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard state == .ready, isWatched, isEnabled else { return }
         requestModuleActivityUpdate()
         guard !hasCurrentRefresh, pageRequests.isEmpty, !actionNeedsModuleActivity, !performing else { return }
-        let age = lastRefreshed.map { Date().timeIntervalSince($0) } ?? .infinity
-        if age >= Self.autoRefreshInterval, !performing {
+        if presentationAge >= Self.autoRefreshInterval, !performing {
             Task { if isWatched { await refresh(quiet: true) } }
         } else { scheduleAutoRefresh() }
     }
@@ -1157,6 +1244,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             if let rowID, !quiet { setRowResult(result, for: rowID) } else { lastResult = result }
             return result
         }
+        readFlight = nil
         refreshGeneration += 1
         clearRefreshPresentation()
         performing = true
@@ -1258,7 +1346,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             invalidateClosedPages()
             await refreshPages(all: true)
             tileIsStale = false
-            lastRefreshed = Date()
+            lastRefreshed = refreshClock(); lastScreenRefreshed = lastRefreshed
             scheduleAutoRefresh()
         } else if result.refresh { await refresh(quiet: true) }
         if !quiet {
@@ -1319,6 +1407,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     private func autoCleanNow() async -> CleanupReport? {
         guard !preparingForUninstall, state == .ready, manifest.autoClean == true, let module else { return nil }
+        readFlight = nil; refreshGeneration += 1; clearRefreshPresentation()
         isCleaning = true
         performing = true
         actionNeedsModuleActivity = true
@@ -1329,7 +1418,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             CleanupHistory.shared.record(moduleID: id, moduleName: manifest.name, freedBytes: report.freedBytes, trigger: .automatic, summary: report.summary)
         }
         performing = false
-        if isWatched { await refresh(quiet: true) }
+        if isWatched { await refreshAfterChange() }
         return report
     }
 
@@ -1337,7 +1426,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard !preparingForUninstall, state == .ready, let module else { return }
         await module.runBackgroundTask(taskID, context: context())
         // A task may have changed something (the Debloat watch switching a feature off again): the tile and page show it.
-        if isWatched { await refresh(quiet: true) }
+        if isWatched { await refreshAfterChange() }
     }
 }
 

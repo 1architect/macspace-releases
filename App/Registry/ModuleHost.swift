@@ -209,6 +209,7 @@ public final class ModuleHost: ObservableObject {
         handles = found.modules.map { descriptor in
             if let known = existing[descriptor.id], known.descriptor == descriptor { return known }
             let handle = ModuleHandle(descriptor: descriptor, settings: settings, permissions: permissions, privileged: privileged, loader: loader)
+            if handle.id == "com.macspace.disk-map" { handle.dashboardWarmupDelay = .seconds(1) }
             let scope = visibility(for: handle.id)
             handle.setWatched(scope.watched, screenVisible: scope.screen)
             return handle
@@ -236,7 +237,7 @@ public final class ModuleHost: ObservableObject {
     public func setOption(_ value: OptionValue, _ optionID: String, module id: String) {
         settings.setOption(value, optionID, module: id)
         guard let handle = handles.first(where: { $0.id == id }) else { return }
-        if handle.isWatched { Task { await handle.refresh(quiet: true) } }
+        if handle.isWatched { Task { await handle.refreshAfterChange() } }
     }
 
     public func setBackgroundTask(_ enabled: Bool, _ taskID: String, module id: String) {
