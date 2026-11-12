@@ -56,7 +56,8 @@ final class NavigationResponsivenessTests: XCTestCase {
         return handle
     }
     private func until(_ condition: () async -> Bool) async throws {
-        for _ in 0..<1_000 {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while ContinuousClock.now < deadline {
             if await condition() { return }
             try await Task.sleep(for: .milliseconds(2))
         }
@@ -92,6 +93,27 @@ final class NavigationResponsivenessTests: XCTestCase {
         XCTAssertEqual(handle.screen, cached)
     }
 
+    func testFirstPageLoadKeepsItsProgressAcrossHomeAndReopening() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let control = NavigationReadControl(), handle = try handle(directory, control, warmup: .milliseconds(20))
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm(.screen)
+        let initial = Task { await handle.activate() }
+        try await until { await control.pending }
+        await control.advance(0.7)
+        try await until { handle.loading?.reported == 0.7 }
+        for _ in 0..<3 {
+            handle.setWatched(true, screenVisible: false)
+            try await Task.sleep(for: .milliseconds(40))
+            handle.setWatched(true, screenVisible: true)
+            try await Task.sleep(for: .milliseconds(10))
+            XCTAssertEqual(handle.loading?.reported, 0.7)
+        }
+        let screens = await control.screens
+        XCTAssertEqual(screens, 1)
+        await control.finish(); await initial.value
+    }
+
     func testOpeningDuringATileOnlyReadStillFetchesThePage() async throws {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         let control = NavigationReadControl(), handle = try handle(directory, control, tileOnly: true)
@@ -99,12 +121,21 @@ final class NavigationResponsivenessTests: XCTestCase {
         await control.arm(.tile)
         let tile = Task { await handle.activate() }
         try await until { await control.pending }
+        await control.advance(0.7)
+        try await until { handle.loading?.reported == 0.7 }
+        let started = handle.loading?.started
         XCTAssertNil(handle.screen)
         handle.setWatched(true, screenVisible: true)
+        // The page must join storage work now, rather than start another store.view after the tile finishes.
+        try await until { await control.screens == 1 }
+        XCTAssertEqual(handle.loading?.reported, 0.7)
+        XCTAssertEqual(handle.loading?.started, started)
         await control.finish(); await tile.value
         try await until { handle.screen != nil }
         let screens = await control.screens
         XCTAssertEqual(screens, 1)
+        let tiles = await control.tiles
+        XCTAssertEqual(tiles, 1, "Opening must not create a second tile/store read")
     }
 
     func testExplicitRefreshSupersedesAnOlderNavigationReadAndRejectsItsLateResult() async throws {

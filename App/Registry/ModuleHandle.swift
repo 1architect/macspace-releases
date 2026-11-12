@@ -167,16 +167,19 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         await syncModuleActivity()
         guard generation == pageLoadGeneration, state == .ready, !Task.isCancelled else { return nil }
-        let reports = ReadProgressDelivery { [weak self] fraction in
-            guard let self, self.pageLoadGeneration == generation, self.screenIsVisible else { return }
-            if fraction < 1, self.pageLoading == nil {
-                self.pageLoading = LoadFill(started: started, expected: LoadFill.firstGuess)
-                self.updateBusy()
+        let reports = LoadProgressRelay()
+        reports.attach { [weak self] fraction in
+            Task { @MainActor in
+                guard let self, self.pageLoadGeneration == generation, self.screenIsVisible else { return }
+                if fraction < 1, self.pageLoading == nil {
+                    self.pageLoading = LoadFill(started: started, expected: LoadFill.firstGuess)
+                    self.updateBusy()
+                }
+                guard fraction > self.pageLoading?.reported ?? -1 else { return }
+                self.pageLoading?.reported = fraction
             }
-            self.pageLoading?.reported = fraction
         }
-        defer { reports.cancel() }
-        return await module.page(id: id, context: context(), progress: { reports.report($0) })
+        return await module.page(id: id, context: context(), progress: { if $0.isFinite { reports.report($0) } })
     }
     private var requestedPage: String?
     private var requestedPageGeneration = 0
@@ -883,13 +886,17 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     @MainActor private final class ReadFlight {
         let generation: Int
-        let readsScreen: Bool
+        var readsScreen: Bool
         let explicit: Bool
         var silent: Bool
         var task: Task<Void, Never>?
+        var screenTask: Task<Screen, Never>?
+        var startScreen: (@MainActor () -> Void)?
+        var hasReadPresentation = false
         init(generation: Int, readsScreen: Bool, silent: Bool, explicit: Bool) {
             self.generation = generation; self.readsScreen = readsScreen; self.silent = silent; self.explicit = explicit
         }
+        func includeScreen() { readsScreen = true; startScreen?() }
     }
     private var readFlight: ReadFlight?
 
@@ -904,10 +911,16 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 flight.silent = true
                 clearRefreshPresentation()
             }
+            let needsLateScreen = screenIsVisible && !flight.readsScreen && flight.hasReadPresentation
+            if screenIsVisible, !needsLateScreen {
+                flight.includeScreen()
+                if screen == nil, refreshRequests.contains(flight.generation) {
+                    blockingRefreshes.insert(flight.generation); updateBusy()
+                }
+            }
             await flight.task?.value
             if readFlight === flight { readFlight = nil; requestModuleActivityUpdate(); scheduleAutoRefresh() }
-            // A Home read cannot satisfy a page request, even if it just refreshed the tile.
-            if screenIsVisible, !flight.readsScreen, state == .ready, isWatched {
+            if needsLateScreen, screenIsVisible, state == .ready, isWatched {
                 await read(quiet: true, following: following, navigation: navigation)
             }
             return
@@ -964,29 +977,37 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             } else { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
         }
         // What the module says of its progress fills the Loading button (`LoadFill.reported`).
-        let delivery = ReadProgressDelivery { [weak self, weak flight] fraction in
-            guard let self, let flight, !flight.silent, generation == self.refreshGeneration,
-                  self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
-            if !self.refreshes.contains(generation) {
-                guard fraction < 1, self.isWatched, !following else { return }
-                self.showRefresh(generation, started: started, expected: expected, blocking: blocking)
+        let delivery = LoadProgressRelay()
+        delivery.attach { [weak self, weak flight] fraction in
+            Task { @MainActor in
+                guard let self, let flight, !flight.silent, generation == self.refreshGeneration,
+                      self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
+                if !self.refreshes.contains(generation) {
+                    guard fraction < 1, self.isWatched, !following else { return }
+                    self.showRefresh(generation, started: started, expected: expected, blocking: self.screen == nil && flight.readsScreen)
+                }
+                guard fraction > self.loading?.reported ?? -1 else { return }
+                self.loading?.reported = fraction
             }
-            guard fraction > self.loading?.reported ?? -1 else { return }
-            self.loading?.reported = fraction
         }
-        defer { delivery.cancel() }
-        let reports: LoadProgressSink = { delivery.report($0) }
+        defer { flight.startScreen = nil }
+        let reports: LoadProgressSink = { if $0.isFinite { delivery.report($0) } }
         let newTile: Tile
         let newScreen: Screen?
-        let readsScreen = flight.readsScreen
         if quiet, !reload, let status = await module.status(context: context) {
             newTile = status.tile
-            newScreen = readsScreen ? status.screen : nil
+            newScreen = flight.readsScreen ? status.screen : nil
         } else {
-            async let nextTile = module.tile(context: context, progress: reports)
-            async let nextScreen: Screen? = readsScreen ? module.screen(context: context, progress: reports) : nil
-            (newTile, newScreen) = await (nextTile, nextScreen)
+            flight.startScreen = { [weak flight] in
+                guard let flight, flight.screenTask == nil else { return }
+                flight.screenTask = Task { await module.screen(context: context, progress: reports) }
+            }
+            if flight.readsScreen { flight.includeScreen() }
+            newTile = await module.tile(context: context, progress: reports)
+            if screenIsVisible { flight.includeScreen() }
+            newScreen = await flight.screenTask?.value
         }
+        flight.hasReadPresentation = true; flight.startScreen = nil
         guard generation == refreshGeneration, state == .ready, !Task.isCancelled else { return }
         if refreshes.contains(generation) { settings.setLoadDuration(Date().timeIntervalSince(started), module: id, reload: reload) }
         lastRefreshed = refreshClock()
@@ -1121,7 +1142,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     /// Only the first detailed dashboard inventory waits for the opening animation.
     /// A direct visit cancels the delay and joins/starts the same normal read.
     private func deferDashboardWarmup() -> Bool {
-        guard dashboardWarmupDelay > .zero, isWatched, !screenIsVisible, lastRefreshed == nil else { return false }
+        guard dashboardWarmupDelay > .zero, isWatched, !screenIsVisible, !hasCurrentRefresh, lastRefreshed == nil else { return false }
         if dashboardWarmup == nil {
             dashboardWarmup = Task { @MainActor [weak self, dashboardWarmupDelay] in
                 do { try await Task.sleep(for: dashboardWarmupDelay) } catch { return }
@@ -1164,6 +1185,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             autoRefresh?.cancel()
             autoRefresh = nil
         } else if state == .ready {
+            if !openedPage, hasCurrentRefresh { return }
             if deferDashboardWarmup() { return }
             if openedPage || presentationAge >= Self.fastestAutoRefresh {
                 Task { if isWatched { await read(quiet: true, navigation: openedPage) } }

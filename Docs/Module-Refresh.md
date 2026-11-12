@@ -22,7 +22,7 @@ Implemented on `fixes-and-improvements-v111`, 2026-10-18. Module contract versio
 Each canvas registers its destination and uses the existing `WindowReader` to identify its window. Visible destinations are combined across windows:
 
 - Home follows all dashboard tiles; automatic normal reads request tile progress without constructing unused module pages.
-- An open module follows that module's tile and page. Opening it shows its cached page immediately and verifies quietly, even when its tile was just read on Home. Concurrent presentation requests join a shared read; a tile-only read is followed by a page read when necessary. Explicit Refresh and changes to options/actions supersede older presentations.
+- An open module follows that module's tile and page. Opening it shows its cached page immediately and verifies quietly, even when its tile was just read on Home. A page opened during a tile read joins that read's ongoing backend work and progress. Explicit Refresh and changes to options/actions supersede older presentations.
 - Settings does not poll modules. Modules covered by another page are not polled unless another visible window shows their page or a dashboard.
 - Minimized/closed windows and a hidden app do not contribute visible destinations. Closing the last canvas does not re-enable polling.
 - Separately enabled watches and automatic cleanup continue without a visible module. Their completion refreshes the UI only when that module is watched. User actions still verify their results.
@@ -281,7 +281,10 @@ also passed. Visual and Low Power Mode verification remain with the maintainer.
 ## Cached navigation and deferred warm-up (2026-11-12)
 
 Reopening a measured module retains its page while a silent navigation read verifies it. Tile and page freshness are tracked
-separately. Presentation requests share a read; opening a page during a tile-only read requests the missing page afterward.
+separately. Presentation requests share a read; opening a page during a tile-only read attaches its screen request immediately,
+so both requests can join the same backend scan. Back to Home retains the flight and progress without scheduling another warm-up.
+The original implementation waited for the tile and then started a new read; the corrected regression requires the screen request
+to start before the held tile finishes and verifies that it does not cause a second tile read or reset the loading start/fraction.
 Explicit invalidation, option changes and action verification retain their generation boundaries and supersede older output.
 Initial loads and explicit Refresh keep their existing progress and animation treatment.
 
@@ -294,52 +297,11 @@ its root when larger). Deactivation drops those values. Rendered view trees and 
 Widget projections reuse the current content, selection, width and fitting inputs. Word motion prepares its tokens, matching and
 paragraph descriptions outside interpolated frames; its shaping, anchors, blur, spring and timing remain the same.
 
-Scan and lazy-navigation reports retain one pending main-queue delivery, with the first report dispatched immediately and later
-updates at most once per 33 milliseconds. The latest monotonic value replaces intermediate reports; completing or superseding a
-read rejects queued/late callbacks. Action progress and its completed-item accounting remain unchanged. Concurrent disk-capacity
-requests also share one utility read.
+Scan and lazy-navigation reports use the existing SDK `LoadProgressRelay`, which bounds progress to percentage-sized steps.
+Completed or superseded generations reject late callbacks. Action progress and its completed-item accounting remain unchanged.
+Concurrent disk-capacity requests share one utility read.
 
-Headless release diagnostics are opt-in:
-
-```sh
-MACSPACE_RESPONSIVENESS_BENCHMARK=1 swift test -c release -Xswiftc -enable-testing \
-  --filter 'ResponsivenessBenchmarkTests|DiskWarmLoadingBenchmarkTests'
-MACSPACE_RESPONSIVENESS_BENCHMARK=1 MACSPACE_BENCH_LOAD=1 swift test -c release -Xswiftc -enable-testing \
-  --filter ResponsivenessBenchmarkTests
-```
-
-The host fixture intentionally emits 10,000 progress reports to exercise burst delivery. Its two optional CPU workers provide
-controlled contention; its short heartbeat sample is a scheduling diagnostic, not an animation-frame benchmark. The host revisit
-loop includes navigation cancellation/coalescing, so it does not imply 20 completed scans. The separate disk fixture measures
-300 folders and 1,200 files with an injected 25 ms app-inventory read. These fixtures do not measure production launch, signing
-checks or actual animation smoothness, and use no production cache, app window or helper.
-
-
-Release fixture comparison against checkpoint `6014641` (medians; six disk runs, three host runs per CPU condition):
-
-| Disk fixture | Checkpoint | Updated |
-|---|---:|---:|
-| Detailed tile warm-up | 31.1 ms | 106.9 ms |
-| First page after warm-up | 41.8 ms | 13.7 ms |
-| Twenty cached backend screens | 112.1 ms | 259.9 ms |
-| Backend resume after suspension | 33.6 ms | 45.4 ms |
-
-| Host progress fixture | Checkpoint idle / two CPU workers | Updated idle / two CPU workers |
-|---|---:|---:|
-| First read | 14.3 / 14.9 ms | 4.4 / 4.7 ms |
-| Twenty navigation requests | 1.5 / 1.2 ms | 8.0 / 10.3 ms |
-| Process CPU across the fixture | 22.0 / 50.2 ms | 14.5 / 48.6 ms |
-| Process peak RSS | 88.6 / 88.8 MiB | 77.5 / 77.5 MiB |
-| Short heartbeat p95 excess delay | 10.8 / 12.7 ms | 2.1 / 2.4 ms |
-
-Prewarming deliberately moves app-discovery work into the tile read, reducing the first page's wait. The host previously
-superseded navigation reads, while the updated host joins them, so navigation-loop duration is not a comparison of equal completed
-scan counts. Cached disk/backend timings varied substantially: the first updated run took 106 ms for twenty screens, versus
-260 ms across repeated runs. Those cached paths have no new scan algorithm, and this measurement does not establish a general
-backend speedup; environmental contention was not held constant between the baseline and updated batches. The short host
-heartbeat also has only two to seven samples per run. Animation frame rate and full app launch remain unmeasured.
-
-Validation passed 202 distinct headless checks across the checkpoint, targeted, broad and optimized runs; one optional production
-cache audit was skipped. The optimized selection passed all 52 checks. One existing scan-action test fixture was corrected to
-publish its cleanup action, matching the already enforced executable-contract policy; its original failure was reproduced against
-the checkpoint build. No app window was opened and no screenshots were taken.
+The initial synthetic progress-burst benchmark bypassed the relays already used by shipped scanners, and the disk fixture injected
+an artificial app-discovery delay. Neither established a production scan or animation speedup. Those benchmarks and the duplicate
+33 ms progress-delivery layer were removed after user feedback. The Back/reopen regression now covers first load as well as cached
+pages; the warm-up handoff test fails if the screen waits for the tile to finish or starts another tile read.
