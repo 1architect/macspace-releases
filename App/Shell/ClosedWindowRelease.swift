@@ -8,6 +8,7 @@ import SwiftUI
 ///
 /// Built again only once the window is visible, never while it is still hidden: built hidden, the window's opening animations had
 /// already played when it appeared (an earlier attempt).
+/// Scan/progress models belong to ModuleHost and can finish during its close grace after these views are released.
 @MainActor
 public final class ClosedWindowRelease: ObservableObject {
     public static let shared = ClosedWindowRelease()

@@ -24,7 +24,7 @@ Each canvas registers its destination and uses the existing `WindowReader` to id
 - Home follows all dashboard tiles; automatic normal reads request tile progress without constructing unused module pages.
 - An open module follows that module's tile and page. Opening it shows its cached page immediately and verifies quietly, even when its tile was just read on Home. A page opened during a tile read joins that read's ongoing backend work and progress. Explicit Refresh and changes to options/actions supersede older presentations.
 - Settings does not poll modules. Modules covered by another page are not polled unless another visible window shows their page or a dashboard.
-- Covering a module keeps its current read and lightweight observers alive while the app has a visible canvas. Polling visibility is separate from backend activity; closing/hiding the last canvas still retires the read and suspends optional work.
+- Covering a module keeps its current read and lightweight observers alive while the app has a visible canvas. Closing/hiding the last canvas stops polling immediately and gives already-started reads up to five minutes to finish; idle backends suspend immediately.
 - Minimized/closed windows and a hidden app do not contribute visible destinations. Closing the last canvas does not re-enable polling.
 - Separately enabled watches and automatic cleanup continue without a visible module. Their completion refreshes the UI only when that module is watched. User actions still verify their results.
 
@@ -168,7 +168,7 @@ Refresh progress uses the cached directory and entry counts for the affected sco
 
 Switching to another application stops future automatic polling but lets an already-running read of a visible MacSpace window finish. Returning to MacSpace retains that read and its progress instead of starting another generation. Lazy page reads and action verification use the same activity rule. Activity updates are serialized and coalesced so an old queued suspension cannot cancel a newer read.
 
-Closing/hiding the last visible window still suspends optional inventory work. The host retires its read/page generations before suspension, so a cancelled module reply containing the previous cache cannot be published or recorded as a successful refresh. Disk inventory retains exact interrupted directory scopes independently of its watcher and retries a cancelled flight when a newly active caller joins it. Cancelled shallow directory scopes are not reinterpreted as file events on their parents.
+Closing/hiding the last visible window stops new UI polling and gives existing reads bounded completion headroom. Expiry retires read/page generations before suspension, so a cancelled module reply containing the previous cache cannot be published or recorded as a successful refresh. Disk inventory retains exact interrupted directory scopes independently of its watcher and retries a cancelled flight when a newly active caller joins it. Cancelled shallow directory scopes are not reinterpreted as file events on their parents.
 
 ## Filesystem history and full-root reconciliation (2026-11-04)
 
@@ -314,3 +314,16 @@ cache their result without starting periodic reads; foreground observers remain 
 Joining an existing refresh also retains its loading state, including with a cached page. Two regressions reproduced these
 failures before correction and cover module switching, progress/start-time preservation and last-canvas cancellation.
 Development builds record these lifecycle transitions through the `com.macspace` / `LoadContinuity` unified-log category.
+
+## Closing to the menu bar: read completion headroom
+
+An already-started tile, screen or lazy-page read may finish for up to five minutes after the last canvas closes, hides or minimizes.
+Its generation, start time and reported progress remain live; reopening cancels the deadline and joins the same read. When the read
+finishes while closed, its verified result is cached and its backend suspends promptly instead of waiting for the deadline. No new
+presentation polling starts while closed. Expiry retires the generation before requesting cancellation, preserving the last completed
+cache. Disabling a module or preparing uninstall cancels grace; independently authorized actions retain their existing lifetime.
+
+The window's rendered view tree can still be released immediately. ModuleHost owns the scan and progress model separately, so
+preserving useful scan work does not require retaining the closed window's drawing tree. Protected-storage session checks and
+lock-driven suspension remain authoritative. Tests cover reopen continuity, completion into cache, late first progress, deadline
+expiry, stale-deadline cancellation and immediate suspension with a zero grace period.

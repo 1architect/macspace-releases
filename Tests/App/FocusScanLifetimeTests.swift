@@ -8,10 +8,11 @@ private actor FocusScanControl {
     private(set) var starts = 0
     private var revision = 0
     private var held = false
+    private var initialProgress = true
     private var waiters: [CheckedContinuation<Int, Never>] = []
     private var reports: [LoadProgressSink] = []
     var pending: Bool { !waiters.isEmpty }
-    func arm() { held = true }
+    func arm(initialProgress: Bool = true) { held = true; self.initialProgress = initialProgress }
     func setActive(_ value: Bool) {
         active = value
         if !value && !waiters.isEmpty {
@@ -25,7 +26,7 @@ private actor FocusScanControl {
         guard active else { return -1 }
         guard held else { return revision }
         if waiters.isEmpty { starts += 1 }
-        reports.append(progress); progress(0)
+        reports.append(progress); if initialProgress { progress(0) }
         return await withCheckedContinuation { waiters.append($0) }
     }
     func advance(_ value: Double) { for report in reports { report(value) } }
@@ -78,6 +79,56 @@ final class FocusScanLifetimeTests: XCTestCase {
         XCTFail("The controlled read never started")
     }
 
+    func testClosingToTheMenuBarAndReopeningRetainsTheSameScanAndProgress() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let original = ModuleHandle.isAppActive, activity = Activity()
+        ModuleHandle.isAppActive = { activity.active }; defer { ModuleHandle.isAppActive = original }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        await control.advance(0.42)
+        for _ in 0..<100 where handle.loading?.reported != 0.42 { try await Task.sleep(for: .milliseconds(5)) }
+        let started = handle.loading?.started
+        activity.active = false
+        handle.setWatched(false, screenVisible: false)
+        handle.appResignedActive()
+        try await Task.sleep(for: .milliseconds(40))
+        var cancellations = await control.cancellations
+        XCTAssertEqual(cancellations, 0)
+        XCTAssertEqual(handle.loading?.reported, 0.42)
+        activity.active = true
+        handle.setWatched(true, screenVisible: true)
+        handle.appBecameActive()
+        try await Task.sleep(for: .milliseconds(30))
+        cancellations = await control.cancellations
+        XCTAssertEqual(cancellations, 0)
+        XCTAssertEqual(handle.loading?.reported, 0.42)
+        XCTAssertEqual(handle.loading?.started, started)
+        await control.finish(); await scan.value
+    }
+
+    func testClosedWindowReadFinishesIntoCacheAndSuspendsWithoutWaitingForTheDeadline() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let original = ModuleHandle.isAppActive
+        ModuleHandle.isAppActive = { true }; defer { ModuleHandle.isAppActive = original }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        handle.setWatched(false, screenVisible: false)
+        try await Task.sleep(for: .milliseconds(30))
+        await control.finish(); await scan.value
+        for _ in 0..<100 { if await !control.active { break }; try await Task.sleep(for: .milliseconds(5)) }
+        let cancellations = await control.cancellations, active = await control.active
+        XCTAssertEqual(cancellations, 0)
+        XCTAssertEqual(handle.screen?.title, "1")
+        XCTAssertFalse(active, "Finished hidden work must release its backend promptly")
+        XCTAssertNil(handle.loading)
+    }
+
     func testSwitchingToAnotherModuleKeepsTheFirstDiskScanUntilTheLastCanvasCloses() async throws {
         let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
         let original = ModuleHandle.isAppActive
@@ -96,6 +147,7 @@ final class FocusScanLifetimeTests: XCTestCase {
         let startup = Task { await host.reload() }
         try await waitForPending(control)
         let handle = try XCTUnwrap(host.handle(for: "com.macspace.disk-map"))
+        handle.hiddenReadGrace = .zero
         XCTAssertNil(handle.screen)
         await control.advance(0.22)
         for _ in 0..<100 where handle.loading?.reported != 0.22 { try await Task.sleep(for: .milliseconds(5)) }
@@ -207,6 +259,7 @@ final class FocusScanLifetimeTests: XCTestCase {
         let original = ModuleHandle.isAppActive
         ModuleHandle.isAppActive = { true }; defer { ModuleHandle.isAppActive = original }
         let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        handle.hiddenReadGrace = .zero
         defer { handle.deactivate() }
         await control.arm()
         let scan = Task { await handle.refresh(reload: true) }
@@ -220,6 +273,63 @@ final class FocusScanLifetimeTests: XCTestCase {
         try await waitForPending(control)
         await control.finish()
         for _ in 0..<100 where handle.screen?.title != "1" { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(handle.screen?.title, "1")
+    }
+
+    func testClosingBeforeFirstProgressKeepsTrackingTheHiddenRead() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm(initialProgress: false)
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        XCTAssertNil(handle.loading)
+        handle.setWatched(false, screenVisible: false)
+        await control.advance(0.45)
+        for _ in 0..<100 where handle.loading?.reported != 0.45 { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(handle.loading?.reported, 0.45)
+        handle.setWatched(true, screenVisible: true)
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(handle.loading?.reported, 0.45)
+        let cancellations = await control.cancellations
+        XCTAssertEqual(cancellations, 0)
+        await control.finish(); await scan.value
+    }
+
+    func testHiddenReadDeadlineCancelsAndCannotPublishItsInterruptedReply() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        handle.hiddenReadGrace = .milliseconds(60)
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        handle.setWatched(false, screenVisible: false)
+        XCTAssertTrue(handle.isRefreshing, "Closing starts grace rather than canceling the read")
+        await scan.value
+        let cancellations = await control.cancellations
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(handle.screen?.title, "0", "The expired read's cancelled reply must not replace the cache")
+        XCTAssertNil(handle.loading)
+        XCTAssertFalse(handle.isRefreshing)
+    }
+
+    func testReopeningCancelsTheOldDeadlineBeforeAnotherWindowClose() async throws {
+        let directory = try Fixtures.temporaryDirectory(); defer { try? FileManager.default.removeItem(at: directory) }
+        let control = FocusScanControl(), handle = try await handle(directory, control: control)
+        defer { handle.deactivate(); Task { await control.finish() } }
+        await control.arm()
+        let scan = Task { await handle.refresh(quiet: true) }
+        try await waitForPending(control)
+        handle.hiddenReadGrace = .milliseconds(20)
+        handle.setWatched(false, screenVisible: false)
+        handle.setWatched(true, screenVisible: true)
+        handle.hiddenReadGrace = .seconds(5)
+        handle.setWatched(false, screenVisible: false)
+        try await Task.sleep(for: .milliseconds(100))
+        let cancellations = await control.cancellations
+        XCTAssertEqual(cancellations, 0, "The cancelled first deadline cannot expire the new grace period")
+        await control.finish(); await scan.value
         XCTAssertEqual(handle.screen?.title, "1")
     }
 

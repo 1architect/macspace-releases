@@ -748,6 +748,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var preparingForUninstall = false
 
     func beginUninstall() {
+        cancelHiddenReadGrace()
         invalidatePendingSelections()
         preparingForUninstall = true
         autoRefresh?.cancel()
@@ -761,14 +762,19 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private var activityGeneration = 0
     private var appliedModuleActivity: Bool?
     private var hasCurrentRefresh: Bool { readFlight != nil || refreshRequests.contains(refreshGeneration) }
+    private var hasPendingReads: Bool { hasCurrentRefresh || !pageRequests.isEmpty }
     private var needsModuleActivity: Bool {
         !preparingForUninstall && state == .ready && isEnabled && (actionNeedsModuleActivity || performing ||
-            (windowIsVisible && (Self.isAppActive() || hasCurrentRefresh || !pageRequests.isEmpty)))
+            (windowIsVisible && (Self.isAppActive() || hasPendingReads)) || (finishingHiddenRead && hasPendingReads))
     }
 
     /// Module visibility controls polling; window visibility controls backend lifetime and in-flight reads.
     /// Serialize/coalesce updates so a queued old suspension cannot cancel a newer foreground read.
     private func syncModuleActivity() async {
+        if finishingHiddenRead, !hasPendingReads {
+            traceLoad("hidden-read-finished")
+            cancelHiddenReadGrace()
+        }
         guard let module else { return }
         activityGeneration += 1
         let generation = activityGeneration, previous = activityTask
@@ -862,6 +868,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         cancelRequestedPage()
         invalidatePendingSelections()
         if case .incompatible = state { return }
+        cancelHiddenReadGrace()
         requestModuleActivityUpdate()
         pageLoadGeneration += 1; pageLoading = nil
         readFlight = nil
@@ -996,7 +1003,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 guard let self, let flight, !flight.silent, generation == self.refreshGeneration,
                       self.state == .ready, !self.preparingForUninstall, self.refreshRequests.contains(generation) else { return }
                 if !self.refreshes.contains(generation) {
-                    guard fraction < 1, self.isWatched, !following else { return }
+                    guard fraction < 1, self.isWatched || self.windowIsVisible || self.finishingHiddenRead, !following else { return }
                     self.showRefresh(generation, started: started, expected: expected, blocking: self.screen == nil && flight.readsScreen)
                 }
                 guard fraction > self.loading?.reported ?? -1 else { return }
@@ -1180,9 +1187,43 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     public private(set) var screenIsVisible = true
     /// A covered module stops polling, but a visible app keeps its existing reads and lightweight observers alive.
     private var windowIsVisible = true
+    var hiddenReadGrace: Duration = .seconds(300)
+    private var finishingHiddenRead = false
+    private var hiddenReadDeadline: Task<Void, Never>?
+
+    private func cancelHiddenReadGrace() {
+        hiddenReadDeadline?.cancel(); hiddenReadDeadline = nil
+        finishingHiddenRead = false
+    }
+
+    private func retireHiddenReads() {
+        // A suspended module can reply with its previous cache. Retire the generation first.
+        readFlight = nil
+        refreshGeneration += 1; clearRefreshPresentation()
+        pageLoadGeneration += 1; pageLoading = nil; updateBusy()
+    }
+
+    private func finishReadsAfterWindowCloses() {
+        guard hasPendingReads, hiddenReadGrace > .zero, state == .ready, isEnabled, !preparingForUninstall else {
+            cancelHiddenReadGrace(); retireHiddenReads()
+            return
+        }
+        guard !finishingHiddenRead else { return }
+        finishingHiddenRead = true
+        let delay = hiddenReadGrace
+        traceLoad("hidden-read-grace-start duration=\(delay)")
+        hiddenReadDeadline = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: delay) } catch { return }
+            guard !Task.isCancelled, let self, !self.windowIsVisible, self.finishingHiddenRead else { return }
+            self.hiddenReadDeadline = nil; self.finishingHiddenRead = false
+            self.traceLoad("hidden-read-grace-expired")
+            if !self.actionNeedsModuleActivity, !self.performing { self.retireHiddenReads() }
+            self.requestModuleActivityUpdate()
+        }
+    }
 
     /// Covered modules stop polling. Their current read and observers remain active while an app window is visible.
-    /// Losing the last visible canvas retires replies before backend cancellation.
+    /// Closing the last canvas gives existing reads bounded headroom; idle backends suspend immediately.
     public func setWatched(_ watched: Bool, screenVisible: Bool = true, windowVisible: Bool? = nil) {
         let windowVisible = windowVisible ?? watched
         let openedPage = watched && screenVisible && !screenIsVisible
@@ -1194,13 +1235,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         screenIsVisible = screenVisible
         windowIsVisible = windowVisible
         dashboardWarmup?.cancel(); dashboardWarmup = nil
-        if !windowVisible {
-            // A suspended read can return its previous cache. Retire its generation before cancellation;
-            // it must not publish that response or record a successful refresh time.
-            readFlight = nil
-            refreshGeneration += 1; clearRefreshPresentation()
-            pageLoadGeneration += 1; pageLoading = nil; updateBusy()
-        }
+        if windowVisible { cancelHiddenReadGrace() }
+        else { finishReadsAfterWindowCloses() }
         requestModuleActivityUpdate()
         if !watched {
             autoRefresh?.cancel()
