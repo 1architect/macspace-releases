@@ -226,9 +226,9 @@ extension DiskDatabase {
         defer { try? execute("ROLLBACK") }
         let source = small ? "smaller" : "file_details"
         let counted = small ? "(link='' OR path=(SELECT MIN(path) FROM smaller l WHERE l.link=f.link AND l.link<>''))" : countedDetails
-        try execute("CREATE TEMP TABLE IF NOT EXISTS browse_types(kind TEXT PRIMARY KEY,bytes INTEGER) WITHOUT ROWID; DELETE FROM browse_types")
-        if small { try execute("INSERT INTO browse_types SELECT kind,bytes FROM smaller_totals") }
-        else { try query("INSERT INTO browse_types SELECT kind,SUM(bytes) FROM file_details f WHERE " + filter.0 + " AND " + counted + " GROUP BY kind", filter.1) }
+        try execute("CREATE TEMP TABLE IF NOT EXISTS browse_types(kind TEXT PRIMARY KEY,bytes INTEGER,items INTEGER) WITHOUT ROWID; DELETE FROM browse_types")
+        if small { try execute("INSERT INTO browse_types SELECT kind,bytes,count FROM smaller_totals") }
+        else { try query("INSERT INTO browse_types SELECT kind,SUM(bytes),COUNT(*) FROM file_details f WHERE " + filter.0 + " AND " + counted + " GROUP BY kind", filter.1) }
         let rank = "COALESCE((SELECT bytes FROM browse_types t WHERE t.kind=f.kind),0)"
         var sql = filter.0 + " AND " + counted, values = filter.1
         if let size = request.afterSize, let path = request.afterPath {
@@ -238,9 +238,8 @@ extension DiskDatabase {
             sql += " AND (" + rank + "<? OR (" + rank + "=? AND (kind>? OR (kind=? AND (logical<? OR (logical=? AND path>?))))))"
             values += [.number(bytes), .number(bytes), .text(type), .text(type), .number(size), .number(size), .text(path)]
         }
-        var files: [DiskFile] = [], count: UInt64 = 0, bytes: UInt64 = 0
+        var files: [DiskFile] = []
         try query("SELECT path,bytes,logical,uid,modified FROM \(source) f WHERE " + sql + " ORDER BY " + rank + " DESC,kind,logical DESC,path LIMIT 201", values) { files.append(try decodeDetail($0)) }
-        try query("SELECT COUNT(*),COALESCE(SUM(bytes),0) FROM \(source) f WHERE " + filter.0 + " AND " + counted, filter.1) { count = Self.number($0, 0); bytes = Self.number($0, 1) }
         let more = files.count > 200 || (small && smallerHasMore && !files.isEmpty)
         if files.count > 200 { files.removeLast() }
         var next: DiskBrowseRequest?
@@ -250,13 +249,9 @@ extension DiskDatabase {
             if lstat(path, &info) == 0 { if files.count >= 200 { files.removeLast() }; files.append(try reviewedFile(.init(path: path, bytes: UInt64(max(0, info.st_blocks)) * 512, logicalBytes: UInt64(max(0, identity.size)), ownerUID: identity.uid, identity: identity), duplicateEvidence: false)) }
         }
         var types: [DiskTypeSummary] = []
-        if small {
-            try query("SELECT kind,count,bytes FROM smaller_totals ORDER BY bytes DESC,kind") { types.append(.init(key: Self.text($0, 0), count: Self.number($0, 1), bytes: Self.number($0, 2))) }
-            if let type = request.fileType { types = types.filter { $0.key == type } }
-            count = types.reduce(0) { $0 + $1.count }; bytes = types.reduce(0) { $0 + $1.bytes }
-        } else {
-            try query("SELECT kind,COUNT(*),SUM(bytes) FROM file_details f WHERE " + filter.0 + " AND " + counted + " GROUP BY kind ORDER BY SUM(bytes) DESC,kind", filter.1) { types.append(.init(key: Self.text($0, 0), count: Self.number($0, 1), bytes: Self.number($0, 2))) }
-        }
+        try query("SELECT kind,items,bytes FROM browse_types ORDER BY bytes DESC,kind") { types.append(.init(key: Self.text($0, 0), count: Self.number($0, 1), bytes: Self.number($0, 2))) }
+        if small, let type = request.fileType { types = types.filter { $0.key == type } }
+        let count = types.reduce(UInt64(0)) { $0 + $1.count }, bytes = types.reduce(UInt64(0)) { $0 + $1.bytes }
         var ownership: [String: DiskOwnershipClaim] = [:]
         for file in files { ownership[file.path] = try ownershipEvidence(file.path) }
         return .init(request: request, files: files, next: next, ownership: ownership, availableTypes: Set(DiskCategory.inventoryCategories.map(\.rawValue)), eligibleCount: count, eligibleBytes: bytes, unavailableReason: small && smallerIncomplete ? "Some folders could not be read. Their files are not included." : nil, types: types, totalsComplete: !small || !smallerIncomplete)

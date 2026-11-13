@@ -6,6 +6,28 @@ import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
 final class DiskSafetyTests: DiskSecurityFixtureCase {
+    func testBrowseUsesMetadataWhileRemovalStillChecksLiveReaders() throws {
+        let root = URL(fileURLWithPath: "/private/tmp/navigation-reader-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("open.bin")
+        try Data([1, 2, 3]).write(to: url)
+        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
+        let identity = try XCTUnwrap(FileReviewIdentity(url.path))
+        let file = DiskFile(path: url.path, bytes: 4096, logicalBytes: 3, ownerUID: getuid(), identity: identity)
+        let request = DiskBrowseRequest(folder: root.path, kind: .category, category: .largeFiles)
+        let page = DiskMapScreenBuilder.browsePage(.init(request: request, files: [file], ownership: [:]))
+        let rows = page.widgets.flatMap { widget -> [Row] in if case let .list(list) = widget { return list.rows }; return [] }
+        XCTAssertEqual(rows.first, DiskMapScreenBuilder.fileRow(file), "Opening inventory must not wait for live process enumeration")
+        var index = DiskIndex(root: root.path); index.directories[root.path] = DiskDirectory(path: root.path)
+        var removed = false
+        let result = try XCTUnwrap(DiskFileRemoval.execute(ids: [DiskFileRemoval.id(file.path)], folder: root.path, index: index,
+            files: [file], eligible: { _ in true }, remove: { _ in removed = true }, confirmedMoveToTrash: false))
+        XCTAssertFalse(removed)
+        XCTAssertEqual(result.failures.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+    }
+
     func testCurrentOpenReaderIsAttributedAndPreventsRemoval() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         defer { try? FileManager.default.removeItem(at: url) }

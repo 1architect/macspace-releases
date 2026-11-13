@@ -53,7 +53,12 @@ actor DiskInventory {
     }
     func invalidate() { revision = nil; apps?.catalogRevision = nil }
     func passive() -> DiskApplications { apps ?? DiskApplications() }
-    func navigation(_ index: DiskIndex) async -> DiskApplications { await read(index) }
+    func navigation(_ index: DiskIndex) async -> DiskApplications {
+        // Navigation uses the catalog already presented by the module, including during byte-only updates.
+        // Invalidation clears revision; destructive execution below still obtains and validates fresh evidence.
+        if revision != nil, let apps { return apps }
+        return await read(index)
+    }
     func measurements(_ value: DiskApplications, index: DiskIndex) -> DiskApplications {
         let measured = value.remeasured(index)
         if revision == index.revision, apps?.catalogReadAt == value.catalogReadAt { apps = measured }
@@ -154,18 +159,17 @@ public struct DiskMapModule: MacSpaceModule {
         // Home warms the same inventory that a first page needs, without building an unused screen.
         // Both callers join DiskInventory's single flight; unchanged catalog revisions reuse discovery.
         _ = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
+        await store.prepareNavigation()
         let completed = await store.navigation()
         return DiskMapScreenBuilder.tile(completed.index, files: completed.files)
     }
     public func screen(context: ModuleContext) async -> Screen {
-        let snapshot = await store.view()
-        let apps = await browsing(snapshot.index)
-        let completed = await store.navigation()
-        return DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
+        await screen(context: context, progress: { _ in })
     }
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         let snapshot = await store.view(progress: { progress(0.9 * $0) })
         let apps = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
+        await store.prepareNavigation()
         let completed = await store.navigation()
         let screen = DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files)
         progress(1)

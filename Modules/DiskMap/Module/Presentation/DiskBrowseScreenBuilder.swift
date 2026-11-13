@@ -27,7 +27,8 @@ extension DiskMapScreenBuilder {
         if page.request.kind != .duplicates {
             for n in page.files.indices { page.files[n].duplicateVerification = nil }
         }
-        let open = OpenFileUse.inspect(Set(page.files.map(\.path)))
+        // Browsing is a metadata projection. Selection review and removal inspect live readers separately.
+        let open: [String: [OpenFileUse.Reader]] = [:]
         var selection = fileSelection(page.files.filter { page.ownership[$0.path] == nil && page.request.kind != .managed }, open: open)
         let title = browseTitle(page.request), categoryID = "content-category:" + page.request.selectionScope
         var widgets: [ScreenWidget] = []

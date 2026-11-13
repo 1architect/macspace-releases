@@ -327,3 +327,22 @@ The window's rendered view tree can still be released immediately. ModuleHost ow
 preserving useful scan work does not require retaining the closed window's drawing tree. Protected-storage session checks and
 lock-driven suspension remain authoritative. Tests cover reopen continuity, completion into cache, late first progress, deadline
 expiry, stale-deadline cancellation and immediate suspension with a zero grace period.
+
+
+## Prepared Apps and Files navigation (2026-11-13)
+
+Uninstall Apps uses the catalog already presented by the module instead of repeating inventory work after byte-only revisions.
+Explicit invalidation still rebuilds that catalog. Common root file categories and their smaller-than-100-MB projections are
+prepared after measurement/ownership reconciliation, before the root page exposes its links. Ordinary browse results use a
+12-entry cache of bounded metadata pages; managed-library enumeration and duplicate verification keep their separate paths.
+Full/targeted invalidation, reconciled inventory changes, ownership publication, protected-session suspension and uninstall
+preparation discard the prepared projections. Folder large-file lookups share this cache as well.
+
+Browse-page construction no longer enumerates user processes and their descriptors. Live open-use checks remain in selection
+review/streaming and removal, and original file identities and app plans are verified before destructive execution. Display
+metadata is never deletion authority. Browse totals and type rankings share one grouped query instead of repeating aggregate
+passes; pagination order, hard-link representatives, scope filters and the 200-file bound remain unchanged.
+
+The prepared-navigation regression verifies reuse for large, smaller and Other pages, replacement rejection at live preflight,
+and invalidation of cached identities. A generated encrypted 30,000-record fixture compares totals, type groups and pagination
+against the reference query; its phase timings are not app-wide or visual responsiveness measurements.

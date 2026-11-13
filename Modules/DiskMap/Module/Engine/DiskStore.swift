@@ -198,6 +198,7 @@ actor DiskStore {
             await applyActivity(false)
             reader = nil; readerLocation = nil; published = nil
             folderViews.removeAll(); folderUse.removeAll(); browseReadings.removeAll(); browseUse.removeAll()
+            preparedBrowse.removeAll(); preparedBrowseUse.removeAll()
             await selections.close(); await writer.close()
             protectionDrain = nil
         }
@@ -218,17 +219,20 @@ actor DiskStore {
         reader = nil; readerLocation = nil
         published = nil; folderViews.removeAll(); folderUse.removeAll()
         browseReadings.removeAll(); browseUse.removeAll()
+        preparedBrowse.removeAll(); preparedBrowseUse.removeAll()
         await selections.close()
         await writer.close()
         try DiskCacheRetention.removeOwnedArtifacts(base: cacheURL, home: home)
     }
     func invalidate() {
         folderViews.removeAll(); folderUse.removeAll()
+        preparedBrowse.removeAll(); preparedBrowseUse.removeAll()
         explicitlyInvalidated = true
         for reading in browseReadings.values { reading.task.cancel() }
         browseReadings.removeAll(); browseUse.removeAll()
     }
     private func invalidateBrowse(_ changes: DiskEvents.Changes) {
+        preparedBrowse.removeAll(); preparedBrowseUse.removeAll()
         let affected = browseReadings.filter { _, reading in
             let folder = reading.preview.request.folder
             return changes.shallow.contains { DiskDatabase.contains($0, below: folder) }
@@ -271,7 +275,7 @@ actor DiskStore {
             return await browse(request)
         }
         var request = DiskBrowseRequest(folder: folder, kind: .category, category: .largeFiles); request.inFolder = true; request.focusPath = focusPath
-        if !includeSmaller, let cached = try? reader?.browse(request), !cached.files.isEmpty { return cached }
+        if !includeSmaller, let cached = await browse(request), !cached.files.isEmpty { return cached }
         request.includeSmaller = true
         return await browse(request)
     }
@@ -286,6 +290,31 @@ actor DiskStore {
     private var browseReadings: [String: BrowseReading] = [:]
     private var browseWorkers: [UUID: Task<DiskBrowsePage?, Never>] = [:]
     private var browseUse: [String] = []
+    private var preparedBrowse: [String: DiskBrowsePage] = [:]
+    private var preparedBrowseUse: [String] = []
+    private func retainBrowse(_ page: DiskBrowsePage) -> DiskBrowsePage {
+        let key = page.request.pageID
+        preparedBrowse[key] = page
+        preparedBrowseUse.removeAll { $0 == key }; preparedBrowseUse.append(key)
+        while preparedBrowseUse.count > 12 { preparedBrowse.removeValue(forKey: preparedBrowseUse.removeFirst()) }
+        return page
+    }
+    /// Prepare bounded metadata projections before the main page exposes its navigation links.
+    func prepareNavigation() {
+        guard active, let index = published?.index, let reader else { return }
+        var requests = [DiskBrowseRequest(folder: root, kind: .category, category: .largeFiles)]
+        requests += (index.categories ?? []).filter { $0.count > 0 }.map { .init(folder: root, kind: .category, category: $0.category) }
+        for request in requests {
+            var scopes = [request]
+            if request.category != .installers {
+                var small = request; small.includeSmaller = true; small.smallerOnly = true
+                scopes.append(small)
+            }
+            for scope in scopes where preparedBrowse[scope.pageID] == nil {
+                if let page = try? reader.browse(scope) { _ = retainBrowse(page) }
+            }
+        }
+    }
     private func finishBrowse(_ key: String, id: UUID, result: DiskBrowsePage?) {
         browseWorkers.removeValue(forKey: id)
         guard var reading = browseReadings[key], reading.id == id else { return }
@@ -298,7 +327,11 @@ actor DiskStore {
         if published == nil { _ = await view() }
         if request.kind == .duplicates { return try? reader?.duplicatePage(request) }
         if reader?.canReview(request) == false { return DiskBrowsePage(request: request, files: [], ownership: [:]) }
-        guard request.usesMetadataInventory else { return try? reader?.browse(request, progress: progress) }
+        if !request.usesMetadataInventory {
+            if let cached = preparedBrowse[request.pageID] { return retainBrowse(cached) }
+            guard let page = try? reader?.browse(request, progress: progress) else { return nil }
+            return retainBrowse(page)
+        }
         let key = request.pageID
         if let reading = browseReadings[key] {
             if reading.done { return reading.result }
@@ -373,6 +406,7 @@ actor DiskStore {
     }
     private func publishDuplicates() {
         folderViews.removeAll(); folderUse.removeAll()
+        preparedBrowse.removeAll(); preparedBrowseUse.removeAll()
         if flight == nil, let reader, let snapshot = try? reader.snapshot() {
             var index = snapshot.index
             index.duplicateUnknown = duplicateUnknown; index.duplicateFailure = duplicateFailure
