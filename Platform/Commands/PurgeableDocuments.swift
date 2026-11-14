@@ -90,24 +90,28 @@ public enum PurgeableDocuments {
         let started = Date()
         var found: [(path: String, bytes: UInt64)] = []
         progress(0)
-        // Enumerating first gives metadata inspection a real denominator. File Provider resource reads dominate the scan; a
-        // bounded number run together, and parent Keep Downloaded markers are read once per scan rather than once per file.
-        let walked = walk(rootPath, timeLimit: timeLimit) { found.append(($0, $1)) }
+        // Enumerating first gives metadata inspection a real denominator. A bounded number of resource reads run together,
+        // and parent Keep Downloaded markers are read once per scan rather than once per file.
+        let walked = ModuleLoadMetrics.measure("cloud-documents", "enumeration") {
+            walk(rootPath, timeLimit: timeLimit) { found.append(($0, $1)) }
+        }
         guard walked else { return nil }
         progress(0.05)
         let candidates = found
         let queue = JobCounter(count: candidates.count)
         let pinned = ScanPins(root: root)
         let totals = CloudScanTotals()
-        DispatchQueue.concurrentPerform(iterations: min(4, max(candidates.count, 1))) { _ in
-            while let index = queue.next(), Date().timeIntervalSince(started) <= timeLimit {
-                let candidate = candidates[index]
-                let url = URL(fileURLWithPath: candidate.path)
-                let eligible = !pinned.isKept(url) && state(url).canEvict
-                let relative = candidate.path.dropFirst(rootPath.count).drop { $0 == "/" }
-                let top = relative.contains("/") ? String(relative.prefix { $0 != "/" }) : "(top level)"
-                let done = totals.record(bytes: candidate.bytes, folder: top, eligible: eligible)
-                progress(0.05 + 0.95 * Double(done) / Double(candidates.count))
+        ModuleLoadMetrics.measure("cloud-documents", "eligibility") {
+            DispatchQueue.concurrentPerform(iterations: min(4, max(candidates.count, 1))) { _ in
+                while let index = queue.next(), Date().timeIntervalSince(started) <= timeLimit {
+                    let candidate = candidates[index]
+                    let url = URL(fileURLWithPath: candidate.path)
+                    let eligible = !pinned.isKept(url) && state(url).canEvict
+                    let relative = candidate.path.dropFirst(rootPath.count).drop { $0 == "/" }
+                    let top = relative.contains("/") ? String(relative.prefix { $0 != "/" }) : "(top level)"
+                    let done = totals.record(bytes: candidate.bytes, folder: top, eligible: eligible)
+                    progress(0.05 + 0.95 * Double(done) / Double(candidates.count))
+                }
             }
         }
         progress(1)
