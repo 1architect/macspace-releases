@@ -10,11 +10,17 @@ public final class SystemDataEntry: MacSpaceModuleEntry, @unchecked Sendable {
 }
 
 /// System Data: what fills it, and what is safe to free.
-public struct SystemDataModule: MacSpaceModule {
+public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
     private let store = SystemDataStore()
     static let moduleID = "com.macspace.system-data"
 
     public init() {}
+
+    public func presentation(context: ModuleContext, progress: @escaping LoadProgressSink) async -> ModulePresentation {
+        let value = await snapshot(context: context, progress: progress)
+        return ModulePresentation(tile: SystemDataScreenBuilder.tile(value),
+                                  screen: SystemDataScreenBuilder.screen(value, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
+    }
 
     public func invalidate() async { PurgeableDocuments.forget(); await store.invalidate() }
 

@@ -10,10 +10,16 @@ public final class OtherSystemFilesEntry: MacSpaceModuleEntry, @unchecked Sendab
 
 /// Other System Files: what macOS counts as purgeable, and freeing the part that measurably frees space (the files apps marked
 /// purgeable), now instead of when the disk is nearly full.
-public struct OtherSystemFilesModule: MacSpaceModule {
+public struct OtherSystemFilesModule: MacSpaceModule, ModulePresentationReading {
     private let store = PurgeableStore()
 
     public init() {}
+
+    public func presentation(context: ModuleContext, progress: @escaping LoadProgressSink) async -> ModulePresentation {
+        let value = await snapshot(progress: progress)
+        return ModulePresentation(tile: OtherSystemFilesScreenBuilder.tile(value),
+                                  screen: OtherSystemFilesScreenBuilder.screen(value, cleanNonRecoverable: context.options.bool(CleanupBatch.nonRecoverableOptionID)))
+    }
 
     public func invalidate() async {
         PurgeableDocuments.forget()

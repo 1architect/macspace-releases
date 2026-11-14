@@ -9,10 +9,15 @@ public final class DebloatEntry: MacSpaceModuleEntry, @unchecked Sendable {
 }
 
 /// Analytics, advertising and background-intelligence controls that macOS itself honours, each reversible.
-public struct DebloatModule: MacSpaceModule {
+public struct DebloatModule: MacSpaceModule, ModulePresentationReading {
     private let store = DebloatStore()
 
     public init() {}
+
+    public func presentation(context: ModuleContext, progress: @escaping LoadProgressSink) async -> ModulePresentation {
+        let value = await snapshot(context, progress: progress)
+        return ModulePresentation(tile: DebloatScreenBuilder.tile(value), screen: DebloatScreenBuilder.screen(value))
+    }
 
     public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
         await Self.prepareForUninstall(engine: DebloatStore.liveEngine(), context: context)

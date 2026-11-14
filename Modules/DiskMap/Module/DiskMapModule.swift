@@ -111,7 +111,7 @@ actor DiskInventory {
         return result
     }
 }
-public struct DiskMapModule: MacSpaceModule {
+public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
     private var sessionObserver: MetadataSession.Observation?
     private let store: DiskStore
     private let inventory: DiskInventory
@@ -165,6 +165,16 @@ public struct DiskMapModule: MacSpaceModule {
     }
     public func screen(context: ModuleContext) async -> Screen {
         await screen(context: context, progress: { _ in })
+    }
+    public func presentation(context: ModuleContext, progress: @escaping LoadProgressSink) async -> ModulePresentation {
+        let snapshot = await store.view(progress: { progress(0.9 * $0) })
+        let apps = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
+        await store.prepareNavigation()
+        let completed = await store.navigation()
+        let value = ModulePresentation(tile: DiskMapScreenBuilder.tile(completed.index, files: completed.files),
+                                       screen: DiskMapScreenBuilder.screen(completed.index, apps: apps, files: completed.files))
+        progress(1)
+        return value
     }
     public func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         let snapshot = await store.view(progress: { progress(0.9 * $0) })

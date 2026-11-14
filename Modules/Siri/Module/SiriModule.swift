@@ -9,10 +9,15 @@ public final class SiriEntry: MacSpaceModuleEntry, @unchecked Sendable {
 }
 
 /// Apple Intelligence: the off-switch, a watcher for when macOS turns it back on, and removal of the models it leaves behind.
-public struct SiriModule: MacSpaceModule {
+public struct SiriModule: MacSpaceModule, ModulePresentationReading {
     private let store = SiriStore()
 
     public init() {}
+
+    public func presentation(context: ModuleContext, progress: @escaping LoadProgressSink) async -> ModulePresentation {
+        let value = Self.presented(await snapshot(context: context, progress: progress), context)
+        return ModulePresentation(tile: SiriScreenBuilder.tile(value), screen: SiriScreenBuilder.screen(value))
+    }
 
     public func prepareForUninstall(context: ModuleContext) async -> ActionResult {
         guard await ManagedModelCleanup.shared.beginChange() else { return .failed(loc("A feature change is still running.")) }

@@ -1044,6 +1044,10 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         if quiet, !reload, let status = await module.status(context: context) {
             newTile = status.tile
             newScreen = flight.readsScreen ? status.screen : nil
+        } else if flight.readsScreen, let reader = module as? any ModulePresentationReading {
+            let presentation = await reader.presentation(context: context, progress: reports)
+            newTile = presentation.tile
+            newScreen = presentation.screen
         } else {
             flight.startScreen = { [weak flight] in
                 guard let flight, flight.screenTask == nil else { return }

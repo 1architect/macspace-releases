@@ -1,6 +1,6 @@
 # Module loading performance
 
-The target is a 50% loading-time reduction relative to `2efc7f3`, preserving presentations, actions, safety boundaries and refresh policy. **This target is not yet achieved.**
+The target is a 50% reduction in module data-loading time relative to `2efc7f3`, preserving presentations, actions, safety boundaries and refresh policy. Visual page-opening time is outside this target. **This target is not yet achieved.**
 
 ## Latest comparable measurements
 
@@ -45,3 +45,5 @@ The candidate reduces initial inventory directory statements, rejects impossible
 Increasing the foreground helper count worsened measured contention and was removed. Bounded directory-list reuse was also removed after a scoped trial returned zero reuse hits; its memory and complexity were not justified. The remaining target requires further reduction of the dominant filesystem work, not a claim based on a favourable isolated run.
 
 Raw evidence is kept locally under ignored `results/module-loading-20261113/` and `results/module-loading-20261114-*-paired/` directories.
+
+The host can also request a joint tile/screen reading from the five bundled modules. This optional SDK capability uses one snapshot orchestration when both outputs are needed; dashboard-only reads remain tile-only, and older modules retain their existing calls. Host tests cover activation, explicit refresh and the dashboard-to-page transition. This does not establish a loading-time reduction: the paired reader benchmark still uses the same independent entry points in both variants.
