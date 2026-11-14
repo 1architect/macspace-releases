@@ -6,8 +6,8 @@ let package = Package(
     name: "Platform",
     platforms: [.macOS("27.0")],
     products: [.library(name: "MacSpacePlatform", type: .dynamic, targets: ["MacSpacePlatform"])],
-    dependencies: [.package(path: "../Sdk")],
+    dependencies: [.package(path: "../Sdk"), .package(path: "../Vendor/SQLCipher")],
     targets: [
-        .target(name: "MacSpacePlatform", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk")], path: ".", exclude: ["Package.swift"]),
+        .target(name: "MacSpacePlatform", dependencies: [.product(name: "MacSpaceSdk", package: "Sdk"), .product(name: "MacSpaceCipher", package: "SQLCipher")], path: ".", exclude: ["Package.swift"]),
     ]
 )

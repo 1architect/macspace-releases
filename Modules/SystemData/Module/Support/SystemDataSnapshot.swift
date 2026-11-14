@@ -277,7 +277,9 @@ actor SystemDataStore {
     /// and what was read beside it (`progress`, up to `scanned`).
     static func liveSnapshot(progress: LoadProgressRelay) -> SystemDataSnapshot {
         let cloudRevision = CloudDownloadRemovals.shared.changes().revision
-        let sizingPool = ScanPool(free: SystemDataInspector.scanHelpers)
+        let archive = DirectoryListingArchive.experimental()
+        defer { archive?.finish() }
+        let sizingPool = ScanPool(free: SystemDataInspector.scanHelpers, archive: archive)
         // Read while the disk is: Homebrew's dry runs take a second or two, System Settings' categories added 10 seconds to every
         // scan one after the other, and CacheDelete computes a fresh figure for each of its services.
         let homebrew = Background { ModuleLoadMetrics.measure("system-data", "homebrew") { HomebrewCleanup.plan() } }

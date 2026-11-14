@@ -152,7 +152,7 @@ cp "$BIN/MacSpaceCli" "$CLI_WORKER/Contents/MacOS/MacSpaceCli"
 cp "$BIN/MacSpaceHelper" "$APP/Contents/MacOS/MacSpaceHelper"
 mkdir -p "$APP/Contents/Library/LaunchDaemons"
 sed "s/__TEAM_ID__/$TEAM_ID/" Packaging/com.macspace.helper.plist > "$APP/Contents/Library/LaunchDaemons/com.macspace.helper.plist"
-cp "$BIN/libMacSpaceSdk.dylib" "$BIN/libMacSpacePlatform.dylib" "$APP/Contents/Frameworks/"
+cp "$BIN/libMacSpaceSdk.dylib" "$BIN/libMacSpacePlatform.dylib" "$BIN/libMacSpaceCipher.dylib" "$APP/Contents/Frameworks/"
 cp -R "$BIN/Sparkle.framework" "$APP/Contents/Frameworks/"
 
 # Drop the build machine's rpaths and point everything at the app's Frameworks folder.

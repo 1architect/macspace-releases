@@ -133,6 +133,8 @@ final class ModuleLoadingBenchmarks: XCTestCase {
         for sample in 0..<count {
             PurgeableDocuments.forget()
             let cache = directory.appendingPathComponent("index-\(sample)")
+            // A candidate may persist directory facts; isolate every first sample and reuse only for its completed-index read.
+            setenv("MACSPACE_DIRECTORY_ARCHIVE", directory.appendingPathComponent("facts-\(sample)").path, 1)
             let root = environment["MACSPACE_LOADING_ROOT"] ?? "/"
             let diskStore = DiskStore(root: root, cache: cache)
             let disk = DiskMapModule(store: diskStore)

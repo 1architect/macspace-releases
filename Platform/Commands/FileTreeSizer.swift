@@ -32,6 +32,29 @@ public final class CloneLedger: @unchecked Sendable {
     public init() {}
 
     private var links = Set<UInt64>()
+    private var files: [Int32: Set<UInt64>] = [:]
+    private var hardlinked: [Int32: Set<UInt64>] = [:]
+
+    /// Cached link counts can precede a new alias in another directory. Track file IDs as well as observed hard links;
+    /// repeated ordinary paths remain countable, as they were in independent overlapping measurements.
+    func claimFile(_ inode: UInt64, device: Int32, linkCount: UInt32, path: () -> String) -> Bool {
+        lock.lock()
+        let first = files[device, default: []].insert(inode).inserted
+        if linkCount > 1 || hardlinked[device]?.contains(inode) == true {
+            hardlinked[device, default: []].insert(inode)
+            let unique = links.insert(inode).inserted
+            lock.unlock()
+            return first && unique
+        }
+        lock.unlock()
+        guard !first else { return true }
+        var info = stat()
+        if lstat(path(), &info) == 0 && info.st_nlink > 1 {
+            lock.withLock { hardlinked[device, default: []].insert(inode); links.insert(inode) }
+            return false
+        }
+        return true
+    }
 
     /// True the first time a family is seen.
     func claim(_ family: UInt64) -> Bool {
@@ -117,6 +140,16 @@ public struct FileTreeSizer: Sendable {
         return walk.state
     }
 
+    /// Clone-private allocation changes when another member is removed or created. Recheck it for a repeated family instead
+    /// of trusting an otherwise unchanged directory's cached value.
+    static func livePrivateBytes(_ path: String) -> UInt64 {
+        var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0,
+                            fileattr: 0, forkattr: attrgroup_t(ATTR_CMNEXT_PRIVATESIZE))
+        var data = [UInt8](repeating: 0, count: 16)
+        guard data.withUnsafeMutableBytes({ getattrlist(path, &list, $0.baseAddress, $0.count, UInt32(FSOPT_NOFOLLOW | FSOPT_ATTR_CMN_EXTENDED)) }) == 0 else { return 0 }
+        return data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 4, as: UInt64.self) }
+    }
+
     /// Descriptive filesystem sizing only. This deliberately does not claim unique APFS block ownership.
     /// Descendants mounted from another filesystem are skipped to avoid obvious double counting, and so are folders still only in
     /// the cloud (`SF_DATALESS`): listing them would make the cloud app fetch them, and what they hold takes no space here.
@@ -142,17 +175,19 @@ public struct FileTreeSizer: Sendable {
         let clones = clones
         let countsPurgeable = countsPurgeable
         let extended = countsPurgeable || clones != nil
-        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, makeState: { Sums() }) { sums, path, entry in
+        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, archive: pool?.archive, makeState: { Sums() }) { sums, path, entry in
             if entry.isDirectory { return entry.isDataless ? .skip : .descend }
             guard entry.isRegularFile else { return .skip }
             // A file reached by several hard links counts at its first path only.
-            if entry.linkCount > 1, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
+            if entry.fileID != 0 {
+                guard links.claimFile(entry.fileID, device: entry.device, linkCount: entry.linkCount, path: path) else { return .skip }
+            } else if entry.linkCount > 1, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
             sums.sawFile = true
             sums.logical += entry.logicalBytes
             var value = entry.allocatedBytes
             if extended, value > 0 {
                 // A later member of a clone family adds only what it does not share.
-                if let clones, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.privateBytes) }
+                if let clones, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.fromArchive ? Self.livePrivateBytes(path()) : entry.privateBytes) }
                 if countsPurgeable, entry.extendedFlags & UInt64(EF_IS_PURGEABLE) != 0 { sums.purgeable += value }
             }
             sums.allocated += value
