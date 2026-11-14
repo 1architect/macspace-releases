@@ -55,7 +55,9 @@ def main():
         for module in sorted(MODULES):
             old = statistics.median(next(row["seconds"] for row in sample[phase] if row["module"] == module) for sample in baseline)
             new = statistics.median(next(row["seconds"] for row in sample[phase] if row["module"] == module) for sample in candidate)
-            print(f"  {module}: {old:.3f}s -> {new:.3f}s ({(1 - new / old) * 100:.1f}%)")
+            module_met = new <= old
+            passed &= module_met
+            print(f"  {module}: {old:.3f}s -> {new:.3f}s ({(1 - new / old) * 100:.1f}%); {'PASS' if module_met else 'REGRESSION'}")
     print("Scope: backend readers and presentation builders; helper, production Keychain and UI are excluded.")
     return 0 if passed else 1
 
