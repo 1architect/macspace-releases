@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import XCTest
 @testable import MacSpacePlatform
@@ -10,7 +11,11 @@ final class DirectoryEntryNameTests: XCTestCase {
         let names = ["A.app", "upper.APP", "regular.app", ".app", "é.app", "文档.app", "👩🏽‍💻.app", "x.app.txt", "x.app\u{301}", "file"]
         for name in names { try Data([1]).write(to: root.appendingPathComponent(name)) }
         var found: [String: Bool] = [:]
-        XCTAssertTrue(DirectoryWalk.entries(at: root.path) { name, entry in found[name] = entry.hasApplicationSuffix })
+        XCTAssertTrue(DirectoryWalk.entries(at: root.path) { name, entry in
+            found[name] = entry.hasApplicationSuffix
+            XCTAssertTrue(entry.hasDirectoryMetadata)
+            XCTAssertEqual(entry.ownerUID, getuid())
+        })
         XCTAssertEqual(found.count, names.count)
         for name in names { XCTAssertEqual(found[name], name.hasSuffix(".app"), name) }
     }

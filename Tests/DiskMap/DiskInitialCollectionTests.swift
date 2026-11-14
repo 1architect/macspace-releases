@@ -4,6 +4,49 @@ import XCTest
 @testable import MacSpaceDiskMap
 
 final class DiskInitialCollectionTests: DiskSecurityFixtureCase {
+    func testEnumeratedDirectoryMetadataMatchesFreshStatsAcrossInitialAndFullRefresh() throws {
+        let base = URL(fileURLWithPath: "/private/tmp/initial-metadata-" + UUID().uuidString)
+        let home = base.appendingPathComponent("home")
+        defer { try? FileManager.default.removeItem(at: base) }
+        for relative in ["Downloads/empty", "Documents/文档", "Library/Caches"] {
+            try FileManager.default.createDirectory(at: home.appendingPathComponent(relative), withIntermediateDirectories: true)
+        }
+        // Exercise a partial directory batch as well as the final directory write.
+        for index in 0..<300 {
+            try Data(repeating: UInt8(index % 255), count: 4096).write(to: home.appendingPathComponent("Downloads/file-\(index).txt"))
+        }
+        XCTAssertEqual(link(home.appendingPathComponent("Downloads/file-0.txt").path,
+                            home.appendingPathComponent("Documents/文档/linked.txt").path), 0)
+        XCTAssertEqual(symlink(home.appendingPathComponent("Downloads").path,
+                               home.appendingPathComponent("Documents/alias").path), 0)
+        let batched = try DiskDatabase(url: base.appendingPathComponent("batched/index.sqlite"), root: home.path, home: home.path)
+        let statted = try DiskDatabase(url: base.appendingPathComponent("statted/index.sqlite"), root: home.path, home: home.path)
+        // Cross-directory hard links may attribute their blocks to different parents in a parallel traversal.
+        // Compare their combined total and the directory metadata separately from that existing attribution policy.
+        func rows(_ db: DiskDatabase) throws -> [String] {
+            var result: [String] = []
+            try db.query("SELECT d.path,COALESCE(p.path,''),d.readable,d.uid,d.bundle,d.items FROM dirs d LEFT JOIN dirs p ON d.parent=p.id ORDER BY d.path") { row in
+                result.append((0..<6).map { DiskDatabase.text(row, $0) }.joined(separator: "\t"))
+            }
+            return result
+        }
+        for cursor: UInt64 in [1, 2] {
+            for (db, freshStats) in [(batched, false), (statted, true)] {
+                var scanner = DiskDatabaseScanner(db: db, excluded: [])
+                if freshStats {
+                    scanner.metadata = { path in
+                        var info = stat()
+                        return lstat(path, &info) == 0 ? info : nil
+                    }
+                }
+                try scanner.scan(.init(recursive: [home.path]), cursor: cursor, progress: nil)
+            }
+            XCTAssertEqual(try rows(batched), try rows(statted))
+            XCTAssertEqual(try batched.directory(home.path)?.bytes, try statted.directory(home.path)?.bytes)
+            XCTAssertEqual(try batched.query("SELECT 1 FROM dirs WHERE path<>? AND parent=0", [.text(home.path)]), 0)
+        }
+    }
+
     func testLazyPathsRetainExplicitFileExclusionsAndArbitraryInventoryPredicates() throws {
         let base = URL(fileURLWithPath: "/private/tmp/initial-paths-" + UUID().uuidString)
         let home = base.appendingPathComponent("home")

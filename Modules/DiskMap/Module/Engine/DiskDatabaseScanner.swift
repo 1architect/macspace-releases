@@ -16,7 +16,10 @@ struct DiskDatabaseScanner {
 
     let db: DiskDatabase
     let excluded: [String]
-    var metadata: (String) -> stat? = { path in var info = stat(); return lstat(path, &info) == 0 ? info : nil }
+    var metadata: (String) -> stat? = { path in var info = stat(); return lstat(path, &info) == 0 ? info : nil } {
+        didSet { usesEnumeratedMetadata = false }
+    }
+    private var usesEnumeratedMetadata = true
     var cancelled: @Sendable () -> Bool = { false }
     var parallelRootRefresh = true
     private var devices = Set<dev_t>()
@@ -139,6 +142,7 @@ struct DiskDatabaseScanner {
             var bytes: UInt64 = 0; var items: UInt64 = 0; var bundle: String?; var readable = true
             var pendingFiles = 0
             var directoryCreated = false
+            var ownerUID: UInt32?
             var directory: String?
             var excludedDirectory = false
             var checkExclusions = false
@@ -149,7 +153,7 @@ struct DiskDatabaseScanner {
         }
         let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
         let inventoryIncludes = db.inventoryIncludes, uid = getuid()
-        let personalPolicy = db.usesPersonalPolicy
+        let personalPolicy = db.usesPersonalPolicy, enumeratedMetadata = usesEnumeratedMetadata
         let excludedParents = Set(excluded.map(DiskDatabase.parent))
         guard let info = metadata(db.root) else { throw DiskDatabase.Failure(message: "The scan root is unreadable") }
         try db.put(DiskDirectory(path: db.root, ownerUID: info.st_uid))
@@ -169,7 +173,10 @@ struct DiskDatabaseScanner {
         func flush(_ totals: inout Totals, finished: (path: String, complete: Bool)? = nil) {
             guard finished != nil || totals.pendingFiles > 0 || !totals.folders.isEmpty else { return }
             let ownPath = finished?.path ?? totals.files.first.map { DiskDatabase.parent($0.0.path) } ?? totals.folders.first.map { DiskDatabase.parent($0.path) }
-            let ownerUID = totals.directoryCreated ? nil : ownPath.flatMap { metadata($0)?.st_uid }
+            let ownerUID: UInt32?
+            if totals.directoryCreated { ownerUID = nil }
+            else if enumeratedMetadata, let enumeratedOwner = totals.ownerUID { ownerUID = enumeratedOwner }
+            else { ownerUID = ownPath.flatMap { metadata($0)?.st_uid } }
             writing {
                 if let finished {
                     try db.collectInitialDirectory(DiskDirectory(path: finished.path, itemCount: finished.complete ? totals.items : nil,
@@ -191,7 +198,7 @@ struct DiskDatabaseScanner {
             totals.pendingFiles = 0
             totals.files.removeAll(keepingCapacity: true); totals.folders.removeAll(keepingCapacity: true)
         }
-        DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, visit: { totals, makePath, entry in
+        DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, directoryStarted: { totals, uid in totals.ownerUID = uid }, visit: { totals, makePath, entry in
             totals.items += 1
             if cancelled() { writing { throw CancellationError() }; return false }
             guard devices.contains(entry.device), entry.isDirectory || (entry.isRegularFile && !entry.isDataless) else { return false }
@@ -207,9 +214,16 @@ struct DiskDatabaseScanner {
             if entry.isDirectory {
                 let path = makePath()
                 guard !isExcluded(path) else { return false }
-                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
-                if info.st_flags & UInt32(SF_DATALESS) != 0 {
-                    totals.folders.append(DiskDirectory(path: path, ownerUID: info.st_uid))
+                guard !failure.hasError else { return false }
+                let ownerUID: UInt32, dataless: Bool
+                if enumeratedMetadata && entry.hasDirectoryMetadata {
+                    ownerUID = entry.ownerUID; dataless = entry.isDataless
+                } else {
+                    guard let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                    ownerUID = info.st_uid; dataless = info.st_flags & UInt32(SF_DATALESS) != 0
+                }
+                if dataless {
+                    totals.folders.append(DiskDirectory(path: path, ownerUID: ownerUID))
                     if totals.folders.count >= 256 { flush(&totals) }
                     return false
                 }
@@ -350,6 +364,7 @@ extension DiskDatabaseScanner {
         }
         let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
         let inventoryIncludes = db.inventoryIncludes, includeEntries = includesEntryWork, expected = expectedWork
+        let enumeratedMetadata = usesEnumeratedMetadata
         let linkedParents = try db.linkedDirectoryPaths(limit: 4096)
         try db.beginNativeRefresh()
         try db.nativeDirectorySeen(db.root, uid: rootInfo.st_uid)
@@ -396,7 +411,9 @@ extension DiskDatabaseScanner {
                 batch.folders.append((path, entry.ownerUID))
                 if path.hasSuffix(".app") || path.contains(".app/") { batch.app = true }
                 if batch.folders.count >= 256 { flush(&batch) }
-                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                guard !failure.hasError else { return false }
+                if enumeratedMetadata && entry.hasDirectoryMetadata { return !entry.isDataless }
+                guard let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
                 return info.st_flags & UInt32(SF_DATALESS) == 0
             }
             let parent = DiskDatabase.parent(path)

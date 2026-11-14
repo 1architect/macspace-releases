@@ -15,6 +15,8 @@ public enum DirectoryWalk {
         /// `st_flags` (`SF_DATALESS` for a folder still in the cloud).
         public let flags: UInt32
         public let ownerUID: UInt32
+        /// Whether the batch returned the owner and flags needed to reuse directory metadata.
+        public let hasDirectoryMetadata: Bool
         public let linkCount: UInt32
         public let logicalBytes: UInt64
         public let allocatedBytes: UInt64
@@ -59,12 +61,15 @@ public enum DirectoryWalk {
 
     /// Bounded native workers share the existing directory queue. Each worker owns only its current
     /// buffer and accumulator; consumers synchronize shared writes, never retain an entire file tree.
+    /// `directoryStarted` receives the enumerated owner before each directory, including empty/unreadable ones.
+    /// A nil owner means the filesystem omitted those attributes; callers can fall back to a fresh metadata read.
     public static func scan<State>(_ root: String, devices: Set<Int32>, pool: ScanPool,
                                    makeState: @escaping () -> State,
+                                   directoryStarted: ((inout State, UInt32?) -> Void)? = nil,
                                    visit: @escaping (inout State, () -> String, Entry) -> Bool,
                                    finished: @escaping (inout State, String, Bool) -> Void) {
         _ = walk(root, extended: false, pool: pool, devices: devices, modificationDates: true,
-                 finished: finished, makeState: makeState,
+                 finished: finished, directoryStarted: directoryStarted, makeState: makeState,
                  visit: { state, path, entry in visit(&state, path, entry) ? .descend : .skip })
     }
 
@@ -77,12 +82,13 @@ public enum DirectoryWalk {
     /// `unreadable` counts the folders that could not be listed (no permission, SIP), whose contents are left out.
     static func walk<State>(_ root: String, extended: Bool, pool: ScanPool? = nil, refusesLinks: Bool = false,
                             devices: Set<Int32>? = nil, modificationDates: Bool = false,
-                            finished: ((inout State, String, Bool) -> Void)? = nil, makeState: @escaping () -> State,
+                            finished: ((inout State, String, Bool) -> Void)? = nil,
+                            directoryStarted: ((inout State, UInt32?) -> Void)? = nil, makeState: @escaping () -> State,
                             visit: @escaping (inout State, _ path: () -> String, Entry) -> Step) -> (states: [State], unreadable: Int) {
         var rootInfo = stat()
         // A folder still only in the cloud is not listed: listing it would make the cloud app fetch it.
         guard lstat(root, &rootInfo) == 0, rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
-        let walk = Walk(root: root, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, devices: devices, modificationDates: modificationDates, finished: finished, makeState: makeState, visit: visit)
+        let walk = Walk(root: root, ownerUID: rootInfo.st_uid, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, devices: devices, modificationDates: modificationDates, finished: finished, directoryStarted: directoryStarted, makeState: makeState, visit: visit)
         walk.work(helper: false)
         walk.helpers.wait()
         return walk.result()
@@ -102,6 +108,7 @@ public enum DirectoryWalk {
         let device: Int32
         let devices: Set<Int32>
         let finished: ((inout State, String, Bool) -> Void)?
+        let directoryStarted: ((inout State, UInt32?) -> Void)?
         let pool: ScanPool?
         let makeState: () -> State
         let visit: (inout State, () -> String, Entry) -> Step
@@ -110,15 +117,16 @@ public enum DirectoryWalk {
         private var unreadable = 0
 
         private let condition = NSCondition()
-        private var folders: [String]
+        private struct Folder { let path: String; let ownerUID: UInt32? }
+        private var folders: [Folder]
         private var listing = 0
         private var list = attrlist()
         private let options: UInt64
         private let openFlags: Int32
         private let qos: DispatchQoS.QoSClass
 
-        init(root: String, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool,
-             finished: ((inout State, String, Bool) -> Void)?, makeState: @escaping () -> State,
+        init(root: String, ownerUID: UInt32, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool,
+             finished: ((inout State, String, Bool) -> Void)?, directoryStarted: ((inout State, UInt32?) -> Void)?, makeState: @escaping () -> State,
              visit: @escaping (inout State, () -> String, Entry) -> Step) {
             // One of the two: `open` refuses `O_NOFOLLOW` together with `O_NOFOLLOW_ANY` (EINVAL on 26B5101f), which made every folder
             // unreadable to the helper and every place it measures 0 bytes (the version history, the Spotlight index and the system
@@ -128,11 +136,12 @@ public enum DirectoryWalk {
             self.device = device
             self.devices = devices ?? [device]
             self.finished = finished
+            self.directoryStarted = directoryStarted
             self.pool = pool
             self.makeState = makeState
             self.visit = visit
             qos = pool?.qos ?? LoadWorkPriority.current
-            folders = [root]
+            folders = [Folder(path: root, ownerUID: ownerUID)]
             list = DirectoryWalk.attributes(extended: extended)
             if modificationDates { list.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
             options = UInt64(extended ? FSOPT_ATTR_CMN_EXTENDED : 0)
@@ -146,7 +155,7 @@ public enum DirectoryWalk {
 
         /// A helper leaves as soon as nothing is waiting, giving its place in the pool back; the walk's own thread waits for the
         /// folders still being listed, which may hold more.
-        private func next(helper: Bool) -> String? {
+        private func next(helper: Bool) -> Folder? {
             condition.lock()
             defer { condition.unlock() }
             while folders.isEmpty && listing > 0 && !helper { condition.wait() }
@@ -155,7 +164,7 @@ public enum DirectoryWalk {
             return folder
         }
 
-        private func listed(_ found: [String], failed: Bool) {
+        private func listed(_ found: [Folder], failed: Bool) {
             condition.lock()
             folders.append(contentsOf: found)
             listing -= 1
@@ -180,18 +189,19 @@ public enum DirectoryWalk {
             defer { buffer.deallocate() }
             var request = list
             while let folder = next(helper: helper) {
-                var found: [String] = []
-                let complete = Self.list(folder, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device) { name, entry in
+                var found: [Folder] = []
+                directoryStarted?(&state, folder.ownerUID)
+                let complete = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device) { name, entry in
                     var built: String?
                     let path = { () -> String in
                         if let built { return built }
-                        let made = folder.hasSuffix("/") ? folder + String(cString: name) : folder + "/" + String(cString: name)
+                        let made = folder.path.hasSuffix("/") ? folder.path + String(cString: name) : folder.path + "/" + String(cString: name)
                         built = made
                         return made
                     }
-                    if visit(&state, path, entry) == .descend, entry.isDirectory, devices.contains(entry.device) { found.append(path()) }
+                    if visit(&state, path, entry) == .descend, entry.isDirectory, devices.contains(entry.device) { found.append(Folder(path: path(), ownerUID: entry.hasDirectoryMetadata ? entry.ownerUID : nil)) }
                 }
-                finished?(&state, folder, complete)
+                finished?(&state, folder.path, complete)
                 listed(found, failed: !complete)
             }
             condition.lock()
@@ -255,7 +265,8 @@ public enum DirectoryWalk {
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0 { privateBytes = UInt64(max(field.loadUnaligned(as: Int64.self), 0)); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 { family = field.loadUnaligned(as: UInt64.self); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 { extendedFlags = field.loadUnaligned(as: UInt64.self); field += 8 }
-                    body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID, linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
+                    body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID,
+                                     hasDirectoryMetadata: returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS) == attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS), linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
                                      cloneFamily: family, privateBytes: privateBytes, extendedFlags: extendedFlags, hasApplicationSuffix: appSuffix))
                 }
             }

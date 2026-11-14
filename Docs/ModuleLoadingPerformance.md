@@ -8,14 +8,16 @@ Measured on 2026-11-14, Apple M4, macOS 27.2 (26B123), optimized release builds 
 
 | Module | New inventory index | Completed inventory index |
 | --- | ---: | ---: |
-| Disk Map | 38.857 → 32.558 | 17.443 → 12.998 |
-| System Data | 26.498 → 23.590 | 18.118 → 15.650 |
-| Siri & Apple Intelligence | 3.382 → 3.834 | 2.684 → 3.580 |
-| Debloat | 7.227 → 7.858 | 0.317 → 0.370 |
-| Other System Files | 8.710 → 10.613 | 8.486 → 8.443 |
-| **All five ready** | **38.857 → 32.559** | **18.118 → 15.650** |
+| Disk Map | 46.120 → 37.045 | 17.282 → 14.127 |
+| System Data | 23.682 → 27.398 | 20.233 → 16.299 |
+| Siri & Apple Intelligence | 3.243 → 5.131 | 3.017 → 3.705 |
+| Debloat | 8.852 → 11.002 | 0.438 → 0.335 |
+| Other System Files | 10.148 → 11.744 | 8.861 → 9.875 |
+| **All five ready** | **46.120 → 37.045** | **20.233 → 16.299** |
 
-The aggregate reductions are **16.2%** and **13.6%**, below the required 50%. Per-module results include regressions; faster aggregate completion is not proof that every module became faster. Earlier separate runs reported reductions above 50%, but paired measurements did not reproduce them. Those earlier results are not treated as completion evidence.
+The aggregate reductions are **19.7%** and **19.4%**, below the required 50%. Per-module results include regressions; faster aggregate completion is not proof that every module became faster. Earlier separate runs reported reductions above 50%, but paired measurements did not reproduce them. Those earlier results are not treated as completion evidence.
+
+These latest three pairs are in `results/module-loading-20261114-enumerated-paired/`. The candidate is `83dcda6` plus the directory-metadata changes recorded by the runner's diff hash. The preceding three-pair comparison (`module-loading-20261114-lazy-paired`) showed aggregate reductions of 16.2% and 13.6%. Differences between those two experiments cannot isolate the effect of the newest change because filesystem and machine state also changed.
 
 ## Scope and safeguards
 
@@ -47,3 +49,7 @@ Increasing the foreground helper count worsened measured contention and was remo
 Raw evidence is kept locally under ignored `results/module-loading-20261113/` and `results/module-loading-20261114-*-paired/` directories.
 
 The host can also request a joint tile/screen reading from the five bundled modules. This optional SDK capability uses one snapshot orchestration when both outputs are needed; dashboard-only reads remain tile-only, and older modules retain their existing calls. Host tests cover activation, explicit refresh and the dashboard-to-page transition. This does not establish a loading-time reduction: the paired reader benchmark still uses the same independent entry points in both variants.
+
+The inventory walker now carries each directory's enumerated owner through its bounded work queue. Initial collection reuses that owner, and both initial/full traversal reuse the directory flags already returned by the native batch. Missing attributes and injected metadata readers retain the stat fallback. Enumeration still opens directories without following their final symlink. Tests compare initial and full-refresh metadata, parent relations and aggregate sizes against the stat path, including empty directories, a partial batch, Unicode, symlinks and cross-parent hard links.
+
+The next bottleneck to address is duplicated tree traversal by System Data's item measurements and storage-category measurements. A shared pass must keep independent accounting ledgers, per-consumer exclusions, device boundaries, application exclusions and unreadable-directory handling; a listing cache alone did not provide reuse. The latest results do not justify claiming that all modules became faster.
