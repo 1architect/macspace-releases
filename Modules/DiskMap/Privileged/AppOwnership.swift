@@ -103,12 +103,8 @@ public enum AppOwnership {
         }
         paths.formUnion(candidates.filter { !$0.contains(".app/") && !$0.contains("/.Trash/") && !$0.contains("/.Trashes/") })
         // Public registration lookup by known bundle ID. There is no claim of a complete global registration inventory.
-        var seeds: [AppOwner] = []
-        for (offset, path) in paths.sorted().enumerated() {
-            if Task.isCancelled { return AppCatalog(owners: []) }
-            if let owner = autoreleasepool(invoking: { AppOwner(path: path, knownIdentifiers: []) }) { seeds.append(owner) }
-            progress(0.4 * Double(offset + 1) / Double(max(paths.count, 1)))
-        }
+        let seeds = readOwners(paths.sorted(), progress: { progress(0.4 * $0) })
+        if Task.isCancelled { return AppCatalog(owners: []) }
         let identifiers = Set(seeds.map(\.identifier))
         for (offset, id) in identifiers.sorted().enumerated() {
             if Task.isCancelled { return AppCatalog(owners: []) }
@@ -119,14 +115,28 @@ public enum AppOwnership {
             progress(0.4 + 0.4 * Double(offset + 1) / Double(max(identifiers.count, 1)))
         }
         let prior = Dictionary(seeds.map { ($0.path, $0) }, uniquingKeysWith: { a, _ in a })
-        var owners: [AppOwner] = []
-        for (offset, path) in paths.sorted().enumerated() {
-            if Task.isCancelled { return AppCatalog(owners: []) }
-            if let owner = autoreleasepool(invoking: { prior[path] ?? AppOwner(path: path, knownIdentifiers: []) }) { owners.append(owner) }
-            progress(0.8 + 0.2 * Double(offset + 1) / Double(max(paths.count, 1)))
-        }
+        let owners = readOwners(paths.sorted(), known: prior, progress: { progress(0.8 + 0.2 * $0) })
+        if Task.isCancelled { return AppCatalog(owners: []) }
         progress(1)
         return AppCatalog(owners: owners, registeredPaths: registered)
+    }
+
+    /// Independent bundle metadata/signing reads overlap in bounded batches. Results and progress retain input order;
+    /// cancellation is checked on the caller's task between batches, rather than on unrelated GCD worker threads.
+    static func readOwners(_ paths: [String], known: [String: AppOwner] = [:],
+                           read: @escaping @Sendable (String) -> AppOwner? = { AppOwner(path: $0, knownIdentifiers: []) },
+                           progress: @Sendable (Double) -> Void = { _ in }) -> [AppOwner] {
+        let values = LockedArray<AppOwner?>(repeating: nil, count: paths.count)
+        for offset in stride(from: 0, to: paths.count, by: 4) {
+            guard !Task.isCancelled else { return [] }
+            let count = min(4, paths.count - offset)
+            DispatchQueue.concurrentPerform(iterations: count) { index in
+                let path = paths[offset + index]
+                values.set(offset + index, autoreleasepool { known[path] ?? read(path) })
+            }
+            for index in 0..<count { progress(Double(offset + index + 1) / Double(paths.count)) }
+        }
+        return values.values.compactMap { $0 }
     }
     public static func installed(home: String) -> [AppOwner] { discover(home: home).owners }
     public static func classification(_ owner: AppOwner, home: String, registered: Set<String> = [], candidates: [AppOwner] = []) -> (AppClassification, String) {

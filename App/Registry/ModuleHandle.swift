@@ -974,7 +974,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         clearRefreshPresentation()
         let flight = ReadFlight(generation: refreshGeneration, readsScreen: screenIsVisible, silent: navigation && screen != nil)
         readFlight = flight
-        let task = Task { @MainActor [weak self, weak flight] in
+        let priority: TaskPriority = reload || !quiet || navigation || tile == nil || (flight.readsScreen && screen == nil)
+            ? .userInitiated : Task.currentPriority
+        let task = Task(priority: priority) { @MainActor [weak self, weak flight] in
             guard let self, let flight, self.readFlight === flight else { return }
             await self.refreshNow(module: module, reload: reload, quiet: quiet, following: following, flight: flight)
         }
@@ -1306,7 +1308,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         let pagePending = groupPath.last.flatMap { pages[$0] }?.loadingFraction ?? (groupPath.isEmpty ? screen?.loadingFraction : nil)
         let delay = pagePending != nil ? Self.fastestAutoRefresh : max(min(tile?.refreshAfter ?? interval, interval), Self.fastestAutoRefresh)
         let following = delay < interval
-        autoRefresh = Task { [weak self] in
+        autoRefresh = Task(priority: .utility) { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, let self, self.state == .ready, self.isWatched else { return }
             // This timer has fired. The read may cancel a pending timer, without canceling its own task.

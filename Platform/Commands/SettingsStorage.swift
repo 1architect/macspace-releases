@@ -163,6 +163,8 @@ public struct SettingsStorageMeter {
     public var home: URL
     public var dataVolume = "/System/Volumes/Data"
     public var root = ""
+    /// A coordinated scan may lend idle sizing workers from other independent measurements.
+    public var sizingPool: ScanPool?
     public var volumes: () -> [APFSVolumeUsage] = APFSVolumeUsage.live
     public var apps: () -> [String] = { IndexedApps.paths() }
     /// (capacity, available for important use) of the Data volume.
@@ -314,7 +316,7 @@ public struct SettingsStorageMeter {
         // A clone's shared blocks count once over all the places: copies in Documents of a game in an Application Support bottle,
         // counted in full in both, put the categories 58 GB above used and System Data at 0 (measured 2026-10-21). Which place
         // meets a family first, and holds its shared blocks, depends on the order the workers reach them.
-        let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers, clones: CloneLedger())
+        let sizes = AllocatedSize.allocatedBytes(jobs, workers: Self.workers, clones: CloneLedger(), pool: sizingPool)
         var next = 0
         var categories = places.map { place in
             defer { next += place.paths.count }
@@ -342,16 +344,24 @@ public enum AllocatedSize {
 
     /// With a ledger, each APFS clone family's shared blocks and each hard-linked file count once across every tree measured with it.
     public static func allocatedBytes(_ root: String, excluding excluded: Set<String>, excludingApplications: Bool = false,
-                                      clones: CloneLedger? = nil) -> UInt64 {
+                                      clones: CloneLedger? = nil, pool: ScanPool? = nil) -> UInt64 {
         var info = stat()
         guard lstat(root, &info) == 0 else { return 0 }
         guard info.st_mode & S_IFMT == S_IFDIR else { return UInt64(max(info.st_blocks, 0)) * 512 }
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else { return 0 }
         // A file reached by several hard links counts once (`HardLinks`): in this tree, or with a ledger in every tree.
         let links = clones ?? CloneLedger()
-        return DirectoryWalk.walk(root, extended: clones != nil, initial: UInt64(0)) { total, path, entry in
-            if !excluded.isEmpty, excluded.contains(path()) { return .skip }
-            if excludingApplications && ApplicationBundles.isApplication(path()) { return .skip }
+        let excludedParents = Set(excluded.map { ($0 as NSString).deletingLastPathComponent })
+        struct Total { var bytes: UInt64 = 0; var directory: String?; var checkExclusions = false }
+        let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool,
+            finished: { total, _, _ in total.directory = nil }, makeState: { Total() }) { total, path, entry in
+            if !excluded.isEmpty, total.directory == nil {
+                let directory = (path() as NSString).deletingLastPathComponent
+                total.directory = directory
+                total.checkExclusions = excludedParents.contains(directory)
+            }
+            if total.checkExclusions, excluded.contains(path()) { return .skip }
+            if excludingApplications && entry.hasApplicationSuffix && ApplicationBundles.isApplication(path()) { return .skip }
             if entry.isDirectory {
                 return entry.isDataless ? .skip : .descend
             }
@@ -359,9 +369,10 @@ public enum AllocatedSize {
             var value = entry.allocatedBytes
             // A later member of a clone family adds only what it does not share.
             if let clones, entry.isRegularFile, value > 0, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.privateBytes) }
-            total += value
+            total.bytes += value
             return .skip
-        }.state
+        }
+        return result.states.reduce(0) { $0 + $1.bytes }
     }
 
     /// Several trees at once, `workers` at a time, in the order given.
@@ -369,13 +380,17 @@ public enum AllocatedSize {
         allocatedBytes(jobs.map { Job(path: $0.path, excluding: $0.excluding) }, workers: workers)
     }
 
-    public static func allocatedBytes(_ jobs: [Job], workers: Int, clones: CloneLedger? = nil) -> [UInt64] {
+    public static func allocatedBytes(_ jobs: [Job], workers: Int, clones: CloneLedger? = nil, pool: ScanPool? = nil) -> [UInt64] {
         let results = LockedArray(repeating: UInt64(0), count: jobs.count)
         let queue = JobCounter(count: jobs.count)
+        // Donate an existing worker's place after its last small tree, so one large Documents/category tree does not
+        // finish alone. The total worker budget stays unchanged, and clone/hard-link ledgers remain shared.
+        let workersPool = pool ?? ScanPool(free: 0)
         DispatchQueue.concurrentPerform(iterations: min(max(workers, 1), max(jobs.count, 1))) { _ in
+            defer { workersPool.release() }
             while let index = queue.next() {
                 let job = jobs[index]
-                results.set(index, allocatedBytes(job.path, excluding: job.excluding, excludingApplications: job.excludingApplications, clones: clones))
+                results.set(index, allocatedBytes(job.path, excluding: job.excluding, excludingApplications: job.excludingApplications, clones: clones, pool: workersPool))
             }
         }
         return results.values

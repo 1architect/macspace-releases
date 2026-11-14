@@ -333,6 +333,8 @@ public struct SystemDataInspector {
 
     /// The processes that are not apps, for the items deleted while their owner is closed; injectable for tests.
     public var processCheck: ProcessCheck = .live
+    /// Idle sizing workers may help another reader in the same complete snapshot.
+    public var sizingPool: ScanPool?
 
     /// Who uses an app cache folder, by its owner's name (`AppCaches.owner`); injectable for tests.
     public var appCacheOwner: @Sendable (String) -> AppCache.Owner = { AppCaches.owner(of: $0) }
@@ -361,7 +363,7 @@ public struct SystemDataInspector {
         // Each scan counts an APFS clone family once across every item (`CloneLedger`).
         // A worker with no path left to start helps with the large trees still being walked (`ScanPool`), plus one more thread
         // from the start: one cloud folder took 6 seconds and finished alone after every other path.
-        let pool = ScanPool(free: Self.scanHelpers)
+        let pool = sizingPool ?? ScanPool(free: Self.scanHelpers)
         let sizer = FileTreeSizer(countsPurgeable: true, clones: CloneLedger(), pool: pool)
         let running = runningApps()
         var items: [SystemDataItem] = []
@@ -783,11 +785,11 @@ public struct SystemDataInspector {
             }
         }
 
-        finish()
+        ModuleLoadMetrics.measure("system-data", "item-measurements") { finish() }
         // What System Settings lists in another category is not System Data: an item in such a place (or in the home folder outside
         // ~/Library, which is Documents) is left out whole, and such a place inside an item is taken off it. The same places make
         // Settings' categories (`SettingsStorageMeter`), so the page's items and its total agree on what is System Data.
-        let claimed = claimedPlaces()
+        let claimed = ModuleLoadMetrics.measure("system-data", "category-claims") { claimedPlaces() }
         func plain(_ path: String) -> String { path.hasPrefix("/System/Volumes/Data/") ? String(path.dropFirst("/System/Volumes/Data".count)) : path }
         func isClaimed(_ path: String) -> Bool {
             claimed.contains { path == $0 || path.hasPrefix($0 + "/") } || SettingsStorageMeter.isDocuments(path, home: home)
@@ -835,10 +837,12 @@ public struct SystemDataInspector {
             let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
             let dates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: caches.count)
             let queue = JobCounter(count: caches.count)
-            DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
-                while let index = queue.next() {
-                    sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0)
-                    if caches[index].offered { dates.set(index, AppCaches.measure(caches[index].path, now: now, skippingApple: true)) }
+            ModuleLoadMetrics.measure("system-data", "container-cache-measurements") {
+                DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
+                    while let index = queue.next() {
+                        sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0)
+                        if caches[index].offered { dates.set(index, AppCaches.measure(caches[index].path, now: now, skippingApple: true)) }
+                    }
                 }
             }
             // The owner by bundle identifier: the container is named after it.
@@ -885,8 +889,10 @@ public struct SystemDataInspector {
         // Their dates are read side by side, as the sizes were: one after the other, every cache folder was walked again alone.
         let cacheDates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: candidates.count)
         let nextCache = JobCounter(count: candidates.count)
-        DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(candidates.count, 1))) { _ in
-            while let index = nextCache.next() { cacheDates.set(index, AppCaches.measure(candidates[index].path, now: now)) }
+        ModuleLoadMetrics.measure("system-data", "app-cache-dates") {
+            DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(candidates.count, 1))) { _ in
+                while let index = nextCache.next() { cacheDates.set(index, AppCaches.measure(candidates[index].path, now: now)) }
+            }
         }
         report.appCaches = zip(candidates, cacheDates.values).compactMap { candidate, dates -> AppCache? in
             guard let dates else { return nil }
@@ -907,7 +913,7 @@ public struct SystemDataInspector {
             if let path = locations.userSystemDirectory?.path { roots.append((path, 3)) }
             // The per-user folders are visited from this account's own; the databases, from their own root.
             let skipped = Set([system["varFolders"], system["systemDatabases"]].compactMap { $0 })
-            report.protectedFolders = Self.protectedFolders(under: roots, skipping: skipped)
+            report.protectedFolders = ModuleLoadMetrics.measure("system-data", "protected-folders") { Self.protectedFolders(under: roots, skipping: skipped) }
         }
         report.rootOnly = otherAccountFolders.map { folder in
             RootOnlyPlace(id: "downloads:idleassetsd:\((folder as NSString).lastPathComponent)", title: loc("Wallpaper and screen saver downloads"), kind: .systemLibrary,

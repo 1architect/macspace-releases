@@ -90,7 +90,7 @@ actor DiskInventory {
             let reports = LoadProgressRelay()
             generation += 1
             pending = Reading(id: generation, revision: index.revision,
-                task: Task.detached(priority: .utility) {
+                task: Task.detached(priority: Task.currentPriority) {
                     let result = autoreleasepool { loader(index, previousForRead, { reports.report($0) }) }
                     reports.report(1)
                     return result

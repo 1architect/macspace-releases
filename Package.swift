@@ -40,5 +40,6 @@ let package = Package(
         .testTarget(name: "DebloatTests", dependencies: ["MacSpaceDebloat", "MacSpaceDebloatPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Debloat"),
         .testTarget(name: "OtherSystemFilesTests", dependencies: ["MacSpaceOtherSystemFiles", "MacSpaceOtherSystemFilesPrivileged", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/OtherSystemFiles"),
         .testTarget(name: "PlatformTests", dependencies: [.product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Platform"),
+        .testTarget(name: "ModuleLoadingBenchmarks", dependencies: ["MacSpaceDiskMap", "MacSpaceSystemData", "MacSpaceSiri", "MacSpaceDebloat", "MacSpaceOtherSystemFiles", .product(name: "MacSpacePlatform", package: "Platform"), .product(name: "MacSpaceSdk", package: "Sdk")], path: "Tests/Performance"),
     ]
 )

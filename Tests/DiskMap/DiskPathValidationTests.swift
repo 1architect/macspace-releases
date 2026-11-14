@@ -3,6 +3,27 @@ import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
 final class DiskPathValidationTests: DiskSecurityFixtureCase {
+    func testCompiledPersonalFilterRetainsEveryPolicyBoundary() {
+        for home in ["/Users/example", "/Users/João/文档", "/Users/Ke\u{301}"] {
+            let filter = FileReviewPolicy.personalFileFilter(home: home)
+            let bases = [home, home + "/Downloads", home + "/Documents", home + "/Library", home + "/Pictures"]
+            let components = ["file.txt", "x/é.pdf", "雪/👩🏽‍💻.zip", ".hidden/a.txt", "Library/a.txt", "node_modules/a.txt",
+                              "x.app/file.txt", "x.APP/file.txt", "x.framework/file", "../Downloads/a", "a//b", "./a", "a/..", "a\0/b", "a/", "x.photoslibrary/a", "DerivedData/.hidden/a"]
+            for base in bases {
+                for suffix in components {
+                    for prefix in ["", "/System/Volumes/Data"] {
+                        let path = prefix + base + "/" + suffix
+                        XCTAssertEqual(filter(path), FileReviewPolicy.includes(path, home: home), path)
+                    }
+                }
+            }
+            for folder in FileReviewPolicy.personalFolders {
+                XCTAssertTrue(filter(home + "/" + folder + "/file.txt"))
+                XCTAssertFalse(filter(home + "/" + folder))
+                XCTAssertFalse(filter(home + "/" + folder + "-other/file.txt"))
+            }
+        }
+    }
     func testByteValidationRetainsPathBoundarySemanticsForUnicodeAndInvalidComponents() {
         let roots = ["/", "/Users/example", "/Users/João/文档"]
         let endings = ["file", "a.b", ".hidden", "...", "é", "e\u{301}", "雪/👩🏽‍💻", "a/", "./file", "../file", "a/./file", "a/../file", "a//file", "a\0/file", ".", ".."]

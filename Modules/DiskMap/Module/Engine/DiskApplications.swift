@@ -90,7 +90,9 @@ struct DiskApplications: Sendable {
             result = previous
         } else {
             let candidates = (index.appPaths ?? index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }).map(livePath)
+            let discoveryStarted = Date()
             let catalog = AppOwnership.discover(home: home, candidates: candidates, progress: { progress(0.25 * $0) })
+            DiskScanMetrics.phase("catalog-discovery", since: discoveryStarted)
             let byHost = home + "/Library/Preferences/ByHost"
             let preferences = (try? FileManager.default.contentsOfDirectory(atPath: byHost)) ?? []
             let dataPaths = [home + "/Library", "/Library"].flatMap { library in
@@ -101,27 +103,41 @@ struct DiskApplications: Sendable {
             }
             let resolver = OwnershipResolver(catalog: catalog, byHostPreferences: preferences.prefix(8192).map { byHost + "/" + $0 },
                 embeddedIdentifiers: index.appBundleIdentifiers ?? [:], availableDataPaths: dataPaths)
+            let receiptsStarted = Date()
             let receipts = AppReceiptReader.read(previous: previous?.receipts)
             progress(0.4)
             let receiptClaims = receipts.claims(owners: catalog.owners)
+            DiskScanMetrics.phase("receipt-manifests", since: receiptsStarted)
             result = DiskApplications()
             result.receipts = receipts
             result.catalogRevision = index.catalogRevision
             result.catalog = catalog; result.discoveryComplete = catalog.discoveryComplete; result.catalogReadAt = Date()
-            for owner in catalog.owners {
+            let ownershipStarted = Date(), owners = catalog.owners
+            for offset in stride(from: 0, to: owners.count, by: 4) {
                 if Task.isCancelled { return previous ?? DiskApplications() }
-                let classification = AppOwnership.classification(owner, home: home, registered: catalog.registeredPaths, candidates: catalog.owners)
-                let ownership = resolver.claims(for: owner, home: home) + (receiptClaims[owner.path] ?? [])
-                let plan = classification.0 == .installedUser ? resolver.plan(for: owner, home: home) : nil
-                let dataPaths = ownership.filter { $0.confidence == .verifiedExclusive && $0.source != "bundle" }.flatMap(\.paths)
-                let stamp = (try? FileManager.default.attributesOfItem(atPath: owner.path + "/Contents/Info.plist"))?[.modificationDate] as? Date
-                result.apps.append(DiskApplication(owner: owner, bytes: 0, dataPaths: dataPaths, removable: plan != nil,
-                    metadataStamp: stamp, classification: classification.0, reason: classification.1, ownership: ownership, plan: plan))
+                let count = min(4, owners.count - offset)
+                let batch = LockedArray<DiskApplication?>(repeating: nil, count: count)
+                DispatchQueue.concurrentPerform(iterations: count) { number in
+                    autoreleasepool {
+                        let owner = owners[offset + number]
+                        let classification = AppOwnership.classification(owner, home: home, registered: catalog.registeredPaths, candidates: owners)
+                        let ownership = resolver.claims(for: owner, home: home) + (receiptClaims[owner.path] ?? [])
+                        let plan = classification.0 == .installedUser ? resolver.plan(for: owner, home: home) : nil
+                        let dataPaths = ownership.filter { $0.confidence == .verifiedExclusive && $0.source != "bundle" }.flatMap(\.paths)
+                        let stamp = (try? FileManager.default.attributesOfItem(atPath: owner.path + "/Contents/Info.plist"))?[.modificationDate] as? Date
+                        batch.set(number, DiskApplication(owner: owner, bytes: 0, dataPaths: dataPaths, removable: plan != nil,
+                            metadataStamp: stamp, classification: classification.0, reason: classification.1, ownership: ownership, plan: plan))
+                    }
+                }
+                result.apps.append(contentsOf: batch.values.compactMap { $0 })
                 progress(0.4 + 0.5 * Double(result.apps.count) / Double(max(catalog.owners.count, 1)))
             }
+            DiskScanMetrics.phase("ownership-review", since: ownershipStarted)
             result.apps.sort { $0.owner.name.localizedStandardCompare($1.owner.name) == .orderedAscending }
         }
+        let measurementStarted = Date()
         result = result.remeasured(index, progress: { progress(0.9 + 0.06 * $0) })
+        DiskScanMetrics.phase("catalog-measurements", since: measurementStarted)
         let measuredBases = reviewBases.map { measuredPath(home + "/Library/" + $0, index: index) }
         result.measurementsComplete = measuredBases.allSatisfy {
             if index.directories[$0]?.readable == true { return true }
@@ -130,10 +146,12 @@ struct DiskApplications: Sendable {
         }
         // Refilter against today's installed catalog even if a different Library scope is unreadable.
         // Retaining the previous candidate list can offer newly installed apps' data for removal.
+        let leftoversStarted = Date()
         var fileScopesComplete = true
         let known = (index.knownBundleIdentifiers ?? []).union(AppOwnership.serviceIdentifiers(home: home))
         result.reviewableLeftovers = unmatchedData(index, apps: result.apps, knownIdentifiers: known, home: home, unreadable: { _ in fileScopesComplete = false })
         result.measurementsComplete = result.measurementsComplete && fileScopesComplete
+        DiskScanMetrics.phase("leftover-review", since: leftoversStarted)
         progress(1)
         return result
     }

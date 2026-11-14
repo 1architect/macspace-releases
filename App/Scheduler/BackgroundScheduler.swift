@@ -23,7 +23,7 @@ public final class BackgroundScheduler {
         }
         for (key, entry) in wanted where running[key] == nil {
             let interval = UInt64(max(entry.task.intervalSeconds, 1)) * 1_000_000_000
-            running[key] = Task { [weak handle = entry.handle, taskID = entry.task.id] in
+            running[key] = Task(priority: .utility) { [weak handle = entry.handle, taskID = entry.task.id] in
                 while !Task.isCancelled {
                     await handle?.runBackgroundTask(taskID)
                     try? await Task.sleep(nanoseconds: interval)

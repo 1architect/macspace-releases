@@ -29,7 +29,7 @@ public actor SharedReading<Value: Sendable> {
         let relay = LoadProgressRelay()
         if let progress { relay.attach(progress) }
         relay.report(0)
-        let task = Task.detached(priority: .utility) {
+        let task = Task.detached(priority: Task.currentPriority) {
             defer { relay.report(1) }
             return await read(relay)
         }

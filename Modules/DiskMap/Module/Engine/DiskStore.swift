@@ -302,6 +302,8 @@ actor DiskStore {
     /// Prepare bounded metadata projections before the main page exposes its navigation links.
     func prepareNavigation() {
         guard active, let index = published?.index, let reader else { return }
+        let started = Date()
+        defer { DiskScanMetrics.phase("navigation-projections", since: started) }
         var requests = [DiskBrowseRequest(folder: root, kind: .category, category: .largeFiles)]
         requests += (index.categories ?? []).filter { $0.count > 0 }.map { .init(folder: root, kind: .category, category: $0.category) }
         for request in requests {

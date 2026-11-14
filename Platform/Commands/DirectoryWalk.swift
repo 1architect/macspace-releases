@@ -23,6 +23,8 @@ public enum DirectoryWalk {
         public let cloneFamily: UInt64
         public let privateBytes: UInt64
         public let extendedFlags: UInt64
+        /// Exact leaf-name suffix for application exclusion, without constructing a full path.
+        public let hasApplicationSuffix: Bool
 
         public var isDirectory: Bool { type == UInt32(VDIR.rawValue) }
         public var isRegularFile: Bool { type == UInt32(VREG.rawValue) }
@@ -113,6 +115,7 @@ public enum DirectoryWalk {
         private var list = attrlist()
         private let options: UInt64
         private let openFlags: Int32
+        private let qos: DispatchQoS.QoSClass
 
         init(root: String, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool,
              finished: ((inout State, String, Bool) -> Void)?, makeState: @escaping () -> State,
@@ -128,6 +131,7 @@ public enum DirectoryWalk {
             self.pool = pool
             self.makeState = makeState
             self.visit = visit
+            qos = pool?.qos ?? LoadWorkPriority.current
             folders = [root]
             list = DirectoryWalk.attributes(extended: extended)
             if modificationDates { list.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
@@ -161,7 +165,7 @@ public enum DirectoryWalk {
             condition.unlock()
             if waiting > 1, let pool, pool.tryAcquire() {
                 helpers.enter()
-                DispatchQueue.global(qos: .utility).async { [self] in
+                DispatchQueue.global(qos: qos).async { [self] in
                     work(helper: true)
                     pool.release()
                     helpers.leave()
@@ -222,6 +226,9 @@ public enum DirectoryWalk {
                     guard returned.commonattr & attrgroup_t(ATTR_CMN_NAME) != 0 else { complete = false; continue }
                     let reference = field.loadUnaligned(as: attrreference_t.self)
                     let name = UnsafePointer((field + Int(reference.attr_dataoffset)).assumingMemoryBound(to: CChar.self))
+                    let nameLength = strlen(name)
+                    let appSuffix = nameLength >= 4 && name[nameLength - 4] == 46 && name[nameLength - 3] == 97
+                        && name[nameLength - 2] == 112 && name[nameLength - 1] == 112
                     field += MemoryLayout<attrreference_t>.size
                     var device = rootDevice
                     if returned.commonattr & attrgroup_t(ATTR_CMN_DEVID) != 0 { device = field.loadUnaligned(as: Int32.self); field += 4 }
@@ -249,7 +256,7 @@ public enum DirectoryWalk {
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 { family = field.loadUnaligned(as: UInt64.self); field += 8 }
                     if returned.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 { extendedFlags = field.loadUnaligned(as: UInt64.self); field += 8 }
                     body(name, Entry(type: type, device: device, flags: flags, ownerUID: ownerUID, linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
-                                     cloneFamily: family, privateBytes: privateBytes, extendedFlags: extendedFlags))
+                                     cloneFamily: family, privateBytes: privateBytes, extendedFlags: extendedFlags, hasApplicationSuffix: appSuffix))
                 }
             }
         }
@@ -261,8 +268,9 @@ public enum DirectoryWalk {
 public final class ScanPool: @unchecked Sendable {
     private let lock = NSLock()
     private var free: Int
+    let qos: DispatchQoS.QoSClass
 
-    public init(free: Int) { self.free = max(free, 0) }
+    public init(free: Int) { self.free = max(free, 0); qos = LoadWorkPriority.current }
 
     func tryAcquire() -> Bool {
         lock.lock()

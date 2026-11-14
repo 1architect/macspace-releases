@@ -11,12 +11,10 @@ extension DiskDatabase {
             for claim in Set(catalog.apps.flatMap(\.ownership)) {
                 let data = try encoder.encode(claim)
                 try query("INSERT OR IGNORE INTO claims(data) VALUES(?)", [.data(data)])
-                var id: UInt64 = 0
-                try query("SELECT id FROM claims WHERE data=?", [.data(data)]) { id = Self.number($0, 0) }
                 for live in claim.paths {
                     let path = root == DataVolume.path ? DataVolume.path + live : live
                     guard Self.contains(path, below: root) else { continue }
-                    try query("INSERT OR IGNORE INTO ownership VALUES(?,?)", [.text(path), .number(id)])
+                    try query("INSERT OR IGNORE INTO ownership SELECT ?,id FROM claims WHERE data=?", [.text(path), .data(data)])
                 }
             }
             try execute("DELETE FROM claims WHERE id NOT IN (SELECT claim FROM ownership)")

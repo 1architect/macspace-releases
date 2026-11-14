@@ -53,7 +53,7 @@ public final class AutoCleaner: ObservableObject {
     public func start(host: ModuleHost) {
         self.host = host
         guard loop == nil else { return }
-        loop = Task { [weak self] in
+        loop = Task(priority: .utility) { [weak self] in
             // A moment after launch, so the modules have loaded.
             try? await Task.sleep(for: .seconds(60))
             while !Task.isCancelled {
@@ -89,7 +89,7 @@ public final class AutoCleaner: ObservableObject {
     }
 
     private func checkSoon() {
-        Task { [weak self] in
+        Task(priority: .utility) { [weak self] in
             try? await Task.sleep(for: .seconds(5))
             await self?.runIfDue()
         }

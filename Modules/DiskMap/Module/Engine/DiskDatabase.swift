@@ -10,7 +10,8 @@ import MacSpaceDiskMapPrivileged
 final class DiskDatabase: @unchecked Sendable {
     private var db: OpaquePointer?
     private var boundary: OpaquePointer?
-    var inventoryIncludes: (String) -> Bool
+    var inventoryIncludes: (String) -> Bool { didSet { usesPersonalPolicy = false } }
+    private(set) var usesPersonalPolicy = true
     let duplicateEligibility: DiskDuplicateEligibility
     private(set) var compact = false
     private(set) var directoryParentIDs = true
@@ -42,7 +43,7 @@ final class DiskDatabase: @unchecked Sendable {
     init(url: URL, root: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws {
         self.root = root; self.home = home
         self.duplicateEligibility = DiskDuplicateEligibility(home: home)
-        self.inventoryIncludes = { FileReviewPolicy.includes($0, home: home) }
+        self.inventoryIncludes = FileReviewPolicy.personalFileFilter(home: home)
         let material = try MetadataKeys.key(.inventory, create: true)
         let purpose = url.lastPathComponent.hasSuffix(".selection") ? "selection" : "inventory"
         let derived = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: material), salt: Data("MacSpace.inventory.v1".utf8),
@@ -231,9 +232,14 @@ final class DiskDatabase: @unchecked Sendable {
         try query("UPDATE dirs SET items=? WHERE path=? AND items IS NOT ?", [node.itemCount.map { .number($0) } ?? .optional(nil), .text(node.path), node.itemCount.map { .number($0) } ?? .optional(nil)])
         try rememberParent(node.path)
     }
-    func ensureDirectory(_ path: String, ownerUID: UInt32? = nil) throws {
+    func ensureDirectory(_ path: String, ownerUID: UInt32? = nil, parentExists: Bool = false) throws {
         try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),0,0,1,?,'') ON CONFLICT(path) DO UPDATE SET uid=excluded.uid WHERE dirs.uid IS NULL AND excluded.uid IS NOT NULL", [.text(path), .text(path == root ? "" : Self.parent(path)), .optional(ownerUID)])
-        try rememberParent(path)
+        if !parentExists { try rememberParent(path) }
+    }
+    /// Initial traversal finishes each parent before enqueuing its children. Most directories can therefore be inserted
+    /// once, with their completed measurements, instead of inserting placeholders and updating them in a second query.
+    func collectInitialDirectory(_ node: DiskDirectory) throws {
+        try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle,items) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,0,?,?,?,?) ON CONFLICT(path) DO UPDATE SET direct=excluded.direct,readable=excluded.readable,uid=COALESCE(dirs.uid,excluded.uid),bundle=excluded.bundle,items=excluded.items", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? ""), node.itemCount.map { .number($0) } ?? .optional(nil)])
     }
     private static let entryInsertSQL = "INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory WHERE entries.bytes IS NOT excluded.bytes OR entries.logical IS NOT excluded.logical OR entries.uid IS NOT excluded.uid OR entries.link IS NOT excluded.link OR entries.category IS NOT excluded.category OR entries.modified IS NOT excluded.modified OR entries.kind IS NOT excluded.kind OR entries.inventory IS NOT excluded.inventory"
     private static let refreshInsertSQL = entryInsertSQL.replacingOccurrences(of: "entries", with: "refresh_entries")

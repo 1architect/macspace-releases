@@ -124,19 +124,33 @@ struct DiskDatabaseScanner {
     }
     private static func bundleIdentifier(_ path: String, parent: String, entry: DirectoryWalk.Entry) -> String? {
         guard path.hasSuffix("/Info.plist"), entry.logicalBytes <= 1_048_576,
-              parent.hasSuffix("/Contents") || parent.hasSuffix("/Resources") || ["app", "appex", "xpc", "bundle", "framework", "plugin"].contains((parent as NSString).pathExtension),
+              bundleContainer(parent),
               let id = autoreleasepool(invoking: { NSDictionary(contentsOfFile: path)?["CFBundleIdentifier"] as? String }), AppOwner.validIdentifier(id) else { return nil }
         return id
+    }
+    private static func bundleContainer(_ path: String) -> Bool {
+        path.hasSuffix("/Contents") || path.hasSuffix("/Resources")
+            || ["app", "appex", "xpc", "bundle", "framework", "plugin"].contains((path as NSString).pathExtension)
     }
 
     /// Filesystem waits overlap across eight existing native workers; SQLite still has one writer.
     private mutating func initialScan() throws {
         struct Totals {
             var bytes: UInt64 = 0; var items: UInt64 = 0; var bundle: String?; var readable = true
+            var pendingFiles = 0
+            var directoryCreated = false
+            var directory: String?
+            var excludedDirectory = false
+            var checkExclusions = false
+            var personal = false
+            var bundleContainer = false
             var files: [(DiskFile, String)] = []
             var folders: [DiskDirectory] = []
         }
         let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
+        let inventoryIncludes = db.inventoryIncludes, uid = getuid()
+        let personalPolicy = db.usesPersonalPolicy
+        let excludedParents = Set(excluded.map(DiskDatabase.parent))
         guard let info = metadata(db.root) else { throw DiskDatabase.Failure(message: "The scan root is unreadable") }
         try db.put(DiskDirectory(path: db.root, ownerUID: info.st_uid))
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else {
@@ -152,48 +166,75 @@ struct DiskDatabaseScanner {
                 catch { failure.error = error }
             }
         }
-        func flush(_ totals: inout Totals) {
-            guard !totals.files.isEmpty || !totals.folders.isEmpty else { return }
+        func flush(_ totals: inout Totals, finished: (path: String, complete: Bool)? = nil) {
+            guard finished != nil || totals.pendingFiles > 0 || !totals.folders.isEmpty else { return }
+            let ownPath = finished?.path ?? totals.files.first.map { DiskDatabase.parent($0.0.path) } ?? totals.folders.first.map { DiskDatabase.parent($0.path) }
+            let ownerUID = totals.directoryCreated ? nil : ownPath.flatMap { metadata($0)?.st_uid }
             writing {
-                for node in totals.folders { try db.ensureDirectory(node.path, ownerUID: node.ownerUID) }
+                if let finished {
+                    try db.collectInitialDirectory(DiskDirectory(path: finished.path, itemCount: finished.complete ? totals.items : nil,
+                        directBytes: totals.bytes, readable: finished.complete && totals.readable, bundleIdentifier: totals.bundle, ownerUID: ownerUID))
+                    directories += 1
+                } else if !totals.directoryCreated, !totals.files.isEmpty || !totals.folders.isEmpty, let ownPath {
+                    // Only a directory with retained files needs a placeholder before its enumeration finishes.
+                    try db.ensureDirectory(ownPath, ownerUID: ownerUID, parentExists: true)
+                    totals.directoryCreated = true
+                }
+                // Dataless children are not traversed; retain their existing zero/unknown placeholders.
+                for node in totals.folders { try db.ensureDirectory(node.path, ownerUID: node.ownerUID, parentExists: true) }
                 for (file, link) in totals.files {
                     try db.put(file, link: link, parentExists: true)
-                    count += 1
                 }
+                count += totals.pendingFiles
                 report?(0.7 * Double(count) / Double(count + 100_000))
             }
+            totals.pendingFiles = 0
             totals.files.removeAll(keepingCapacity: true); totals.folders.removeAll(keepingCapacity: true)
         }
         DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, visit: { totals, makePath, entry in
             totals.items += 1
             if cancelled() { writing { throw CancellationError() }; return false }
             guard devices.contains(entry.device), entry.isDirectory || (entry.isRegularFile && !entry.isDataless) else { return false }
-            let path = makePath()
-            guard !isExcluded(path) else { return false }
-            if entry.isDirectory {
-                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
-                totals.folders.append(DiskDirectory(path: path, ownerUID: info.st_uid))
-                if totals.folders.count >= 256 { flush(&totals) }
-                return info.st_flags & UInt32(SF_DATALESS) == 0
+            if totals.directory == nil {
+                let directory = DiskDatabase.parent(makePath())
+                totals.directory = directory
+                totals.excludedDirectory = isExcluded(directory)
+                totals.checkExclusions = excludedParents.contains(directory)
+                totals.personal = !personalPolicy || inventoryIncludes(directory + "/candidate")
+                totals.bundleContainer = Self.bundleContainer(directory)
             }
-            let parent = DiskDatabase.parent(path)
-            let identity = entry.linkCount > 1 ? metadata(path) : nil
+            guard !totals.excludedDirectory else { return false }
+            if entry.isDirectory {
+                let path = makePath()
+                guard !isExcluded(path) else { return false }
+                guard !failure.hasError, let info = metadata(path), info.st_mode & S_IFMT == S_IFDIR else { return false }
+                if info.st_flags & UInt32(SF_DATALESS) != 0 {
+                    totals.folders.append(DiskDirectory(path: path, ownerUID: info.st_uid))
+                    if totals.folders.count >= 256 { flush(&totals) }
+                    return false
+                }
+                return true
+            }
+            if totals.checkExclusions, isExcluded(makePath()) { return false }
+            let identity = entry.linkCount > 1 ? metadata(makePath()) : nil
             let link = identity.map { "\($0.st_dev):\($0.st_ino)" } ?? ""
             if entry.linkCount > 1 && identity == nil { totals.readable = false }
-            let file = DiskFile(path: path, bytes: entry.allocatedBytes, logicalBytes: entry.logicalBytes, ownerUID: entry.ownerUID, modifiedAt: entry.modifiedAt)
-            if link.isEmpty { totals.bytes += file.bytes }
-            if let id = Self.bundleIdentifier(path, parent: parent, entry: entry) { totals.bundle = id }
-            totals.files.append((file, link))
-            if totals.files.count >= 256 { flush(&totals) }
+            if link.isEmpty { totals.bytes += entry.allocatedBytes }
+            if totals.bundleContainer, entry.logicalBytes <= 1_048_576,
+               let id = Self.bundleIdentifier(makePath(), parent: totals.directory!, entry: entry) { totals.bundle = id }
+            // Most files only contribute directory bytes. Classify candidates on the readers, as the native refresh does,
+            // instead of allocating records and reparsing all paths while every worker waits for the SQLite writer.
+            if !link.isEmpty || (totals.personal && entry.allocatedBytes > 0 && entry.ownerUID == uid && inventoryIncludes(makePath())) {
+                totals.files.append((DiskFile(path: makePath(), bytes: entry.allocatedBytes, logicalBytes: entry.logicalBytes, ownerUID: entry.ownerUID, modifiedAt: entry.modifiedAt), link))
+            }
+            totals.pendingFiles += 1
+            if totals.pendingFiles >= 256 { flush(&totals) }
             return false
         }, finished: { totals, path, complete in
-            flush(&totals)
-            writing {
-                try db.ensureDirectory(path)
-                try db.query("UPDATE dirs SET direct=?,bundle=?,readable=?,items=? WHERE path=?", [.number(totals.bytes), .text(totals.bundle ?? ""), .number(complete && totals.readable ? 1 : 0), complete ? .number(totals.items) : .optional(nil), .text(path)])
-                directories += 1
-            }
+            flush(&totals, finished: (path, complete))
             totals.bytes = 0; totals.items = 0; totals.bundle = nil; totals.readable = true
+            totals.directoryCreated = false
+            totals.directory = nil
         })
         if let error = failure.error { throw error }
         visited = directories

@@ -7,6 +7,12 @@ import MacSpaceDiskMapPrivileged
 
 extension DiskDatabase {
     func putDetail(_ file: DiskFile, link: String) throws { try put(file, link: link) }
+    /// Root category projections must start with the partial personal-file index. The equivalent generic view lets SQLite
+    /// start with the root's directory range instead, doing a file lookup for every operating-system/app directory.
+    var inventoryScanSource: String {
+        guard compact else { return "file_details" }
+        return "(SELECT CASE WHEN d.path='/' THEN '/'||e.name ELSE d.path||'/'||e.name END AS path,d.path AS parent,e.bytes,e.logical,e.uid,e.link,e.category,e.modified,e.kind FROM entries e INDEXED BY entries_large CROSS JOIN dirs d ON d.id=e.parent WHERE e.inventory=1)"
+    }
     var countedDetails: String {
         if !compact { return "(link='' OR path=(SELECT MIN(path) FROM file_details l WHERE l.link=f.link AND l.link<>''))" }
         return "(link='' OR path=(SELECT CASE WHEN d.path='/' THEN '/'||e.name ELSE d.path||'/'||e.name END FROM entries e JOIN dirs d ON d.id=e.parent WHERE e.link=f.link AND e.link<>'' AND e.inventory=1 ORDER BY e.parent,e.name LIMIT 1))"
@@ -16,18 +22,24 @@ extension DiskDatabase {
         var grouped: [DiskCategory: DiskCategorySummary] = [:]
         let folder = folder ?? root
         let prefix = folder == "/" ? "/" : folder + "/"
-        try query("SELECT category,SUM(bytes),COUNT(*) FROM file_details f WHERE (parent=? OR (parent>=? AND parent<?)) AND (logical>=100000000 OR category='installers') AND \(countedDetails) GROUP BY category", [.text(folder), .text(prefix), .text(String(prefix.dropLast()) + "0")]) {
+        let source = folder == root ? inventoryScanSource : "file_details"
+        try query("SELECT category,SUM(bytes),COUNT(*) FROM \(source) f WHERE (parent=? OR (parent>=? AND parent<?)) AND (logical>=100000000 OR category='installers') AND \(countedDetails) GROUP BY category", [.text(folder), .text(prefix), .text(String(prefix.dropLast()) + "0")]) {
             if let category = DiskCategory(rawValue: Self.text($0, 0)) { grouped[category] = .init(category: category, bytes: Self.number($0, 1), count: Self.number($0, 2)) }
         }
         return DiskCategory.inventoryCategories.map { grouped[$0] ?? .init(category: $0, bytes: 0, count: 0) }
     }
     func ownershipEvidence(_ path: String) throws -> DiskOwnershipClaim? {
-        var branch = path, claims: [DiskOwnershipClaim] = []
+        var branch = path, ancestors: [String] = [], claims: [DiskOwnershipClaim] = []
         while Self.contains(branch, below: root) {
-            try query("SELECT c.data FROM ownership o JOIN claims c ON c.id=o.claim WHERE o.path=?", [.text(branch)]) {
-                claims.append(try JSONDecoder().decode(DiskOwnershipClaim.self, from: Self.data($0, 0)))
-            }
+            ancestors.append(branch)
             if branch == root { break }; branch = Self.parent(branch)
+        }
+        guard !ancestors.isEmpty else { return nil }
+        // One indexed query covers every ancestor, rather than opening a separate lookup at each depth for every visible file.
+        // Do not deduplicate matching relations: the existing combination rule also sees a claim held at two ancestors twice.
+        let placeholders = Array(repeating: "?", count: ancestors.count).joined(separator: ",")
+        try query("SELECT c.data FROM ownership o JOIN claims c ON c.id=o.claim WHERE o.path IN (" + placeholders + ")", ancestors.map(Value.text)) {
+            claims.append(try JSONDecoder().decode(DiskOwnershipClaim.self, from: Self.data($0, 0)))
         }
         return claims.isEmpty ? nil : DiskOwnership.combined(claims, paths: [path])
     }
@@ -224,11 +236,11 @@ extension DiskDatabase {
         if small { try cacheSmaller(request, progress: progress) }
         try execute("BEGIN DEFERRED")
         defer { try? execute("ROLLBACK") }
-        let source = small ? "smaller" : "file_details"
+        let source = small ? "smaller" : request.kind == .category && request.folder == root ? inventoryScanSource : "file_details"
         let counted = small ? "(link='' OR path=(SELECT MIN(path) FROM smaller l WHERE l.link=f.link AND l.link<>''))" : countedDetails
         try execute("CREATE TEMP TABLE IF NOT EXISTS browse_types(kind TEXT PRIMARY KEY,bytes INTEGER,items INTEGER) WITHOUT ROWID; DELETE FROM browse_types")
         if small { try execute("INSERT INTO browse_types SELECT kind,bytes,count FROM smaller_totals") }
-        else { try query("INSERT INTO browse_types SELECT kind,SUM(bytes),COUNT(*) FROM file_details f WHERE " + filter.0 + " AND " + counted + " GROUP BY kind", filter.1) }
+        else { try query("INSERT INTO browse_types SELECT kind,SUM(bytes),COUNT(*) FROM \(source) f WHERE " + filter.0 + " AND " + counted + " GROUP BY kind", filter.1) }
         let rank = "COALESCE((SELECT bytes FROM browse_types t WHERE t.kind=f.kind),0)"
         var sql = filter.0 + " AND " + counted, values = filter.1
         if let size = request.afterSize, let path = request.afterPath {

@@ -234,7 +234,7 @@ actor SystemDataStore {
         let relay = LoadProgressRelay()
         if let progress { relay.attach(progress) }
         relay.report(0)
-        let task = Task.detached(priority: .utility) { () -> SystemDataSnapshot in
+        let task = Task.detached(priority: Task.currentPriority) { () -> SystemDataSnapshot in
             let scanned = builder(relay)
             relay.report(Self.scanned)
             defer { relay.report(1) }
@@ -277,16 +277,25 @@ actor SystemDataStore {
     /// and what was read beside it (`progress`, up to `scanned`).
     static func liveSnapshot(progress: LoadProgressRelay) -> SystemDataSnapshot {
         let cloudRevision = CloudDownloadRemovals.shared.changes().revision
+        let sizingPool = ScanPool(free: SystemDataInspector.scanHelpers)
         // Read while the disk is: Homebrew's dry runs take a second or two, System Settings' categories added 10 seconds to every
         // scan one after the other, and CacheDelete computes a fresh figure for each of its services.
-        let homebrew = Background { HomebrewCleanup.plan() }
-        let developer = Background { DeveloperCaches.scan() }
-        let settings = Background { SettingsStorageMeter().measure() }
-        let purgeableServices = Background { livePurgeableServices() }
-        let assetFamilies = Background { AssetFamilyScanner().scan() }
+        let homebrew = Background { ModuleLoadMetrics.measure("system-data", "homebrew") { HomebrewCleanup.plan() } }
+        let developer = Background { ModuleLoadMetrics.measure("system-data", "developer-caches") { DeveloperCaches.scan() } }
+        let settings = Background { ModuleLoadMetrics.measure("system-data", "storage-categories") {
+            var meter = SettingsStorageMeter()
+            meter.sizingPool = sizingPool
+            return meter.measure()
+        } }
+        let purgeableServices = Background { ModuleLoadMetrics.measure("system-data", "cache-delete") { livePurgeableServices() } }
+        let assetFamilies = Background { ModuleLoadMetrics.measure("system-data", "asset-families") { AssetFamilyScanner().scan() } }
         // The cloud folders' uploaded copies too: walked after the disk, they held the scan at 75% for 2.5 seconds (2026-10-22).
-        let cloudSources = Background { PurgeableDocuments.scan(maxAge: 600) }
-        let report = SystemDataInspector().inspect(progress: progress.part(0...0.65))
+        let cloudSources = Background { ModuleLoadMetrics.measure("system-data", "cloud-copies") { PurgeableDocuments.scan(maxAge: 600) } }
+        let report = ModuleLoadMetrics.measure("system-data", "inspect") {
+            var inspector = SystemDataInspector()
+            inspector.sizingPool = sizingPool
+            return inspector.inspect(progress: progress.part(0...0.65))
+        }
         let services = purgeableServices.value
         progress.report(0.7)
         let purgeable = services[CacheDeleteService.mobileAsset].map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -339,7 +348,8 @@ private final class Background<Value>: @unchecked Sendable {
     private var result: Value?
 
     init(_ work: @escaping @Sendable () -> Value) {
-        DispatchQueue.global(qos: .utility).async { self.result = work(); self.done.signal() }
+        let qos = LoadWorkPriority.qos(for: Task.currentPriority)
+        DispatchQueue.global(qos: qos).async { self.result = work(); self.done.signal() }
     }
 
     /// Waited for once; the semaphore orders the write before this read.

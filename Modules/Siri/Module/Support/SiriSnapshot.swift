@@ -125,15 +125,15 @@ actor SiriStore {
         // These reads have no dependency on the language plan or each other. In particular, CacheDelete's child process
         // must not delay reading accounts and installed models. The store still publishes one complete snapshot.
         let parts = progress.parallelParts(weights: [0.15, 0.15, 0.35, 0.25, 0.1])
-        async let accountRead = Task.detached(priority: .utility) {
+        async let accountRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[1](1) }
             return AppleIntelligenceAccountsReport.live()
         }.value
-        async let purgeableRead = Task.detached(priority: .utility) {
+        async let purgeableRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[2](1) }
             return PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
         }.value
-        async let modelRead = Task.detached(priority: .utility) {
+        async let modelRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[3](1) }
             return modelBytes()
         }.value

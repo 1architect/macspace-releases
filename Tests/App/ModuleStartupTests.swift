@@ -2,6 +2,23 @@ import XCTest
 import MacSpaceSdk
 @testable import MacSpaceApp
 
+private final class ReadPriorities: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [UInt8] = []
+    var values: [UInt8] { lock.withLock { recorded } }
+    func record() { lock.withLock { recorded.append(Task.currentPriority.rawValue) } }
+    func reset() { lock.withLock { recorded.removeAll() } }
+}
+
+private struct PriorityModule: MacSpaceModule {
+    let reads: ReadPriorities
+    init() { reads = ReadPriorities() }
+    init(reads: ReadPriorities) { self.reads = reads }
+    func tile(context: ModuleContext) async -> Tile { reads.record(); return Tile(title: "Priority", status: "ready") }
+    func screen(context: ModuleContext) async -> Screen { reads.record(); return Screen(title: "Priority", widgets: []) }
+    func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("") }
+}
+
 private final class ModuleLoadControl: @unchecked Sendable {
     private let lock = NSLock()
     private let gate = DispatchSemaphore(value: 0)
@@ -19,6 +36,26 @@ private final class ModuleLoadControl: @unchecked Sendable {
 
 @MainActor
 final class ModuleStartupTests: XCTestCase {
+    func testOpeningUsesForegroundPriorityAndQuietRefreshRetainsUtility() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let reads = ReadPriorities()
+        let handle = try handle(in: directory, loader: { _ in PriorityModule(reads: reads) })
+        defer { handle.deactivate() }
+        handle.setWatched(true, screenVisible: true)
+        let opened = expectation(description: "Foreground opening")
+        let opening = Task(priority: .utility) { await handle.activate(); opened.fulfill() }
+        await fulfillment(of: [opened], timeout: 3)
+        await opening.value
+        XCTAssertEqual(reads.values, [TaskPriority.userInitiated.rawValue, TaskPriority.userInitiated.rawValue])
+        reads.reset()
+        let refreshed = expectation(description: "Quiet refresh")
+        let updating = Task(priority: .utility) { await handle.refresh(quiet: true); refreshed.fulfill() }
+        await fulfillment(of: [refreshed], timeout: 3)
+        await updating.value
+        XCTAssertEqual(reads.values, [TaskPriority.utility.rawValue, TaskPriority.utility.rawValue])
+    }
+
     private func handle(in directory: URL, loader: @escaping ModuleHandle.Loader) throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Fixture", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)

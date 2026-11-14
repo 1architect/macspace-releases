@@ -212,7 +212,7 @@ actor PurgeableStore {
         if let progress { relay.attach(progress) }
         relay.report(0)
         let builder = self.builder
-        let task = Task.detached(priority: .utility) {
+        let task = Task.detached(priority: Task.currentPriority) {
             defer { relay.report(1) }
             return await builder(relay)
         }
@@ -292,7 +292,7 @@ actor PurgeableStore {
     static func liveSnapshot(progress: LoadProgressRelay) async -> PurgeableSnapshot {
         let cloudRevision = CloudDownloadRemovals.shared.changes().revision
         let parts = progress.parallelParts(weights: [0.2, 0.65, 0.05, 0.1])
-        async let services = Task.detached(priority: .utility) {
+        async let services = Task.detached(priority: Task.currentPriority) {
             defer { parts[0](1) }
             let urgency = CacheDeleteService.fsPurgeableDataUrgency
             if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
@@ -300,12 +300,12 @@ actor PurgeableStore {
         }.value
         // Explicit eviction is independent of APFS's pressure-based purge estimate. File Provider can evict uploaded local
         // copies that have not been marked purgeable, and CacheDelete can report only a small fraction of their allocated sizes.
-        async let documents = Task.detached(priority: .utility) { PurgeableDocuments.scan(maxAge: 600, progress: parts[1]) }.value
-        async let updates = Task.detached(priority: .utility) {
+        async let documents = Task.detached(priority: Task.currentPriority) { PurgeableDocuments.scan(maxAge: 600, progress: parts[1]) }.value
+        async let updates = Task.detached(priority: Task.currentPriority) {
             defer { parts[2](1) }
             return PreparedUpdate.find()
         }.value
-        async let timeMachine = Task.detached(priority: .utility) { TimeMachineState.live(progress: parts[3]) }.value
+        async let timeMachine = Task.detached(priority: Task.currentPriority) { TimeMachineState.live(progress: parts[3]) }.value
         let values = await (services, documents, updates, timeMachine)
         var snapshot = PurgeableSnapshot(services: values.0, takenAt: Date(), documents: values.1, updates: values.2)
         snapshot.timeMachine = values.3

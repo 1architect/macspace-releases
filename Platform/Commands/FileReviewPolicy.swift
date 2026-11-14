@@ -50,6 +50,17 @@ public enum FileReviewPolicy {
     public static func includes(_ path: String, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Bool {
         exclusion(path, home: home) == nil
     }
+
+    /// Compile the scan's six possible personal roots once. Most inventory entries belong to macOS or app data;
+    /// rejecting those prefixes avoids parsing every component while retaining the full policy for every candidate.
+    public static func personalFileFilter(home: String) -> @Sendable (String) -> Bool {
+        let prefixes = personalFolders.map { home + "/" + $0 + "/" }
+        return { original in
+            let path = livePath(original)
+            guard prefixes.contains(where: path.hasPrefix) else { return false }
+            return includes(path, home: home)
+        }
+    }
 }
 
 /// Captured file identity, including content-change markers. It never grants deletion authority.
