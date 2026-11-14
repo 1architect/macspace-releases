@@ -38,7 +38,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         case ready
     }
 
-    public typealias Loader = (ModuleDescriptor) throws -> any MacSpaceModule
+    public typealias Loader = @Sendable (ModuleDescriptor) throws -> any MacSpaceModule
 
     public let descriptor: ModuleDescriptor
     public nonisolated var id: String { descriptor.id }
@@ -812,6 +812,11 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private let permissions: any PermissionChecker
     private let privileged: (any PrivilegedChannel)?
     private let loader: Loader
+    private struct ModuleLoad {
+        let id = UUID()
+        let task: Task<any MacSpaceModule, Error>
+    }
+    private var moduleLoad: ModuleLoad?
     /// Opens a System Settings pane; the tests keep System Settings closed.
     private let openPane: @Sendable (URL) -> Void
     private let confirm: @MainActor (Action) -> Bool
@@ -846,19 +851,39 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         manifest.permissions.filter { permissions.status(of: $0) != .granted }
     }
 
+    private func loadModule() async throws {
+        guard module == nil else { return }
+        // Bundle loading and module initialization can touch disk and Keychain. Keep that work off the UI thread,
+        // and let concurrent activations join it rather than constructing separate stores and observers.
+        if moduleLoad == nil {
+            let loader = self.loader, descriptor = self.descriptor
+            moduleLoad = ModuleLoad(task: Task.detached(priority: .userInitiated) { try loader(descriptor) })
+        }
+        let pending = moduleLoad!
+        do {
+            let loaded = try await pending.task.value
+            if module == nil { module = loaded; moduleEpoch = UUID() }
+            if moduleLoad?.id == pending.id { moduleLoad = nil }
+        } catch {
+            if moduleLoad?.id == pending.id { moduleLoad = nil }
+            throw error
+        }
+    }
+
     /// Loads the module (once) when it is enabled and compatible, then fetches its tile and screen.
     public func activate() async {
         guard !preparingForUninstall else { return }
         if case .incompatible = state { return }
         guard isEnabled else { deactivate(); return }
-        if module == nil {
-            do { module = try loader(descriptor); moduleEpoch = UUID() } catch {
-                state = .failed(error.localizedDescription)
-                // Last session's tile stays, but nothing will refresh it: it must not show as loading (and animate) forever.
-                tileIsStale = false
-                return
-            }
+        do { try await loadModule() }
+        catch {
+            guard isEnabled, !preparingForUninstall, module == nil, moduleLoad == nil else { return }
+            state = .failed(error.localizedDescription)
+            // Last session's tile stays, but nothing will refresh it: it must not show as loading (and animate) forever.
+            tileIsStale = false
+            return
         }
+        guard isEnabled, !preparingForUninstall, !Task.isCancelled else { return }
         state = .ready
         if isWatched, !deferDashboardWarmup() { await refresh() }
     }
@@ -1442,7 +1467,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard !isBusy else { return .failed(String(localized: "Working")) }
         await syncModuleActivity()
         do {
-            if module == nil { module = try loader(descriptor) }
+            try await loadModule()
             guard let module else { return .failed(manifest.name) }
             return await module.prepareForUninstall(context: context())
         } catch { return .failed(error.localizedDescription) }

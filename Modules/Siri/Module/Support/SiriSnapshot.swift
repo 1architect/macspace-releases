@@ -58,12 +58,12 @@ struct SiriPlanFailure: Error, Sendable, Equatable {
 }
 
 actor SiriStore {
-    typealias Builder = @Sendable (LoadProgressRelay) -> SiriSnapshot
+    typealias Builder = @Sendable (LoadProgressRelay) async -> SiriSnapshot
 
     private let reading: SharedReading<SiriSnapshot>
 
     init(builder: @escaping Builder = SiriStore.liveSnapshot) {
-        reading = SharedReading { builder($0) }
+        reading = SharedReading { await builder($0) }
     }
 
     func snapshot(maxAge: TimeInterval = 4, now: Date = Date(), progress: LoadProgressSink? = nil) async -> SiriSnapshot {
@@ -115,13 +115,28 @@ actor SiriStore {
 
     func invalidate() async { await reading.invalidate() }
 
-    static func liveSnapshot(progress: LoadProgressRelay) -> SiriSnapshot {
-        var snapshot = liveSnapshotOnThisMac(progress: progress)
+    static func liveSnapshot(progress: LoadProgressRelay) async -> SiriSnapshot {
+        var snapshot = await liveSnapshotOnThisMac(progress: progress)
         snapshot.isVirtualMachine = Machine.isVirtualMachine
         return snapshot
     }
 
-    private static func liveSnapshotOnThisMac(progress: LoadProgressRelay) -> SiriSnapshot {
+    private static func liveSnapshotOnThisMac(progress: LoadProgressRelay) async -> SiriSnapshot {
+        // These reads have no dependency on the language plan or each other. In particular, CacheDelete's child process
+        // must not delay reading accounts and installed models. The store still publishes one complete snapshot.
+        let parts = progress.parallelParts(weights: [0.15, 0.15, 0.35, 0.25, 0.1])
+        async let accountRead = Task.detached(priority: .utility) {
+            defer { parts[1](1) }
+            return AppleIntelligenceAccountsReport.live()
+        }.value
+        async let purgeableRead = Task.detached(priority: .utility) {
+            defer { parts[2](1) }
+            return PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
+        }.value
+        async let modelRead = Task.detached(priority: .utility) {
+            defer { parts[3](1) }
+            return modelBytes()
+        }.value
         let guardian = AppleIntelligenceLanguageGuard()
         let environment = LiveSiriLanguageEnvironment()
         let status = guardian.status()
@@ -131,12 +146,10 @@ actor SiriStore {
         } catch {
             plan = .failure(SiriPlanFailure(message: "\(error)"))
         }
-        progress.report(0.15)
-        let accounts = AppleIntelligenceAccountsReport.live()
-        progress.report(0.3)
+        parts[0](1)
+        let accounts = await accountRead
         let cli = ToolLocator.cli()
-        var purgeable = PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
-        progress.report(0.65)
+        var purgeable = await purgeableRead
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`). Not offered at all while Apple Intelligence
         // is on: MacSpace leaves the system assets alone then (`SystemAssetGuard`).
         purgeable = SystemAssetGuard.holdsAssets ? nil : purgeable.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
@@ -144,8 +157,7 @@ actor SiriStore {
         var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
-        let models = modelBytes()
-        progress.report(0.9)
+        let models = await modelRead
         snapshot.recordedModelBytes = models.installed
         snapshot.installedModelBytes = models.installed
         snapshot.downloadingModelBytes = models.downloading
@@ -155,6 +167,7 @@ actor SiriStore {
         snapshot.phoneFeatures = PhoneFeatureFlags().status()
         snapshot.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
         readFeatureModels(into: &snapshot)
+        parts[4](1)
         return snapshot
     }
 

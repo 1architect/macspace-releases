@@ -35,38 +35,24 @@ public enum PurgeableDocuments {
         }
     }
 
-    private static let lock = NSLock()
-    nonisolated(unsafe) private static var cached: (at: Date, sources: [Source])?
-    nonisolated(unsafe) private static var generation = 0
+    private static let reading = SharedSynchronousReading<[Source]> { scan(progress: $0) }
 
     /// `scan`, at most once every `maxAge` seconds: a cloud folder can hold millions of files.
     public static func scan(maxAge: TimeInterval, now: Date = Date(), progress: @escaping @Sendable (Double) -> Void = { _ in }) -> [Source] {
-        lock.lock()
-        if let cached, now.timeIntervalSince(cached.at) < maxAge { lock.unlock(); progress(1); return cached.sources }
-        let started = generation
-        lock.unlock()
-        let sources = scan(progress: progress)
-        lock.lock()
-        if started == generation { cached = (now, sources) }
-        lock.unlock()
-        return sources
+        reading.value(maxAge: maxAge, now: now, progress: progress)
     }
 
     /// Reconcile only the affected provider after eviction. Other providers keep their measurements and cache age.
     public static func refreshSource(_ root: URL) -> Source? {
         guard isCloudFolder(root.path) else { return nil }
-        lock.lock()
-        let name = cached?.sources.first { $0.path == root.path }?.name ?? displayName(root.lastPathComponent)
-        lock.unlock()
+        let name = reading.current?.first { $0.path == root.path }?.name ?? displayName(root.lastPathComponent)
         guard let source = scan(root, name: name) else { return nil }
-        lock.lock()
-        generation += 1
-        if cached != nil {
-            cached?.sources.removeAll { $0.path == root.path }
-            if source.bytes > 0 { cached?.sources.append(source) }
-            cached?.sources.sort { $0.bytes > $1.bytes }
+        reading.reconcile { cached in
+            guard var sources = cached else { return nil }
+            sources.removeAll { $0.path == root.path }
+            if source.bytes > 0 { sources.append(source) }
+            return sources.sorted { $0.bytes > $1.bytes }
         }
-        lock.unlock()
         return source
     }
 
@@ -157,10 +143,7 @@ public enum PurgeableDocuments {
 
     /// Forgets the last scan, after downloads were removed.
     public static func forget() {
-        lock.lock()
-        cached = nil
-        generation += 1
-        lock.unlock()
+        reading.invalidate()
     }
 
     /// What removing a cloud folder's downloads did.

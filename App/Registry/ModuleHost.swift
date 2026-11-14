@@ -65,6 +65,7 @@ public final class ModuleHost: ObservableObject {
 
     private var checkedHelper = false
     private var startTask: Task<Void, Never>?
+    private var reloadTask: Task<Void, Never>?
     private var stateObservers: [AnyCancellable] = []
     private var tileObservers: [AnyCancellable] = []
 
@@ -208,9 +209,19 @@ public final class ModuleHost: ObservableObject {
 
     /// Scans the modules folder and activates every enabled module.
     public func reload() async {
+        if let reloadTask { await reloadTask.value; return }
+        let task = Task { await self.reloadNow() }
+        reloadTask = task
+        await task.value
+        reloadTask = nil
+    }
+
+    private func reloadNow() async {
         guard let modulesDirectory else { handles = []; problems = []; hasScanned = true; return }
         // The modules are listed first, so the dashboard can lay out its tiles before anything slow happens.
-        let found = ModuleScanner.scan(directory: modulesDirectory)
+        let found = await Task.detached(priority: .userInitiated) {
+            ModuleScanner.scan(directory: modulesDirectory)
+        }.value
         problems = found.problems
         let existing = Dictionary(uniqueKeysWithValues: handles.map { ($0.id, $0) })
         handles = found.modules.map { descriptor in

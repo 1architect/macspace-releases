@@ -102,12 +102,25 @@ public final class DebloatEngine {
     /// Several controls with one reading of what they share: the journal, the running processes and the installed profiles. One at a
     /// time, each control read the journal, listed the processes and ran `system_profiler` again, every time the page was read.
     public func status(of controls: [DebloatControl], progress: (Double) -> Void = { _ in }) -> [ControlStatus] {
+        readStatuses(of: controls, progress: progress) { controls.contains(where: Self.hasPolicy) ? macSpaceHeld() : nil }
+    }
+
+    /// A page needs both the controls and pending profile work. Read installed profiles once for the whole presentation;
+    /// the separate action/verification methods continue to query the current system state.
+    public func inspection(of controls: [DebloatControl], progress: (Double) -> Void = { _ in }) -> (statuses: [ControlStatus], profileWork: ProfileWork) {
+        let installed = system.installedProfiles()
+        let held = installed.map(Self.heldSettings)
+        let statuses = readStatuses(of: controls, progress: progress) { held }
+        return (statuses, profileWork(installed: installed ?? []))
+    }
+
+    private func readStatuses(of controls: [DebloatControl], progress: (Double) -> Void, held readHeld: () -> Set<String>?) -> [ControlStatus] {
         guard !controls.isEmpty else { return [] }
         let entries = journal.allEntries
         progress(0.05)
         let processes = system.processes()
         progress(0.15)
-        let held = controls.contains(where: Self.hasPolicy) ? macSpaceHeld() : nil
+        let held = readHeld()
         progress(0.3)
         return controls.enumerated().map { index, control in
             let result = status(of: control, entries: entries, processes: processes, held: Self.hasPolicy(control) ? held : nil)
@@ -124,9 +137,11 @@ public final class DebloatEngine {
 
     /// The managed settings MacSpace's own profiles hold, as "payloadType:key"; nil when the installed profiles cannot be read.
     func macSpaceHeld() -> Set<String>? {
-        (system.installedProfiles()).map { profiles in
-            Set(profiles.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }.flatMap(\.values.keys))
-        }
+        system.installedProfiles().map(Self.heldSettings)
+    }
+
+    private static func heldSettings(_ profiles: [InstalledProfile]) -> Set<String> {
+        Set(profiles.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }.flatMap(\.values.keys))
     }
 
     func settingStatus(_ setting: ControlSetting) -> SettingStatus {
@@ -465,7 +480,10 @@ public final class DebloatEngine {
     /// staged with the same identifier replaces the installed one, so there is never more than one; profiles of earlier versions
     /// (one per policy, or per set) go once it holds everything.
     public func profileWork() -> ProfileWork {
-        let all = system.installedProfiles() ?? []
+        profileWork(installed: system.installedProfiles() ?? [])
+    }
+
+    private func profileWork(installed all: [InstalledProfile]) -> ProfileWork {
         let wanted = wantedPolicies(installed: all)
         let installed = all.filter { ConfigurationProfileBuilder.isMacSpaceProfile($0.identifier) }
         if wanted.isEmpty {

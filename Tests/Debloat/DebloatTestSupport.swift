@@ -111,8 +111,11 @@ final class FakeDebloatSystem: DebloatSystem {
     }
     /// Installed profiles, by identifier, with their managed values as payloadType:key -> value; their values read as forced.
     var installedValues: [String: [String: PlistValue]] = [:]
+    var profileReadCount = 0
+    var profilesUnreadable = false
     func installedProfiles() -> [InstalledProfile]? {
-        installedValues.map { InstalledProfile(identifier: $0.key, values: $0.value.mapValues(InstalledProfile.text)) }
+        profileReadCount += 1
+        return profilesUnreadable ? nil : installedValues.map { InstalledProfile(identifier: $0.key, values: $0.value.mapValues(InstalledProfile.text)) }
     }
     /// The user approving the last staged profile: it replaces the installed one with its identifier.
     func approveLastProfile() {

@@ -62,6 +62,18 @@ final class DebloatEngineTests: XCTestCase {
         XCTAssertEqual(statuses.map(\.state), try controls.map { try state(engine, $0.id) })
     }
 
+    func testPageInspectionReadsProfilesOnceAndPreservesStatusesAndProfileWork() {
+        let system = FakeDebloatSystem(), engine = DebloatEngine(system: system, journal: MemoryJournalStore())
+        for unreadable in [false, true] {
+            system.profilesUnreadable = unreadable
+            let before = system.profileReadCount
+            let inspection = engine.inspection(of: engine.controls)
+            XCTAssertEqual(system.profileReadCount - before, 1, "even an unavailable profile report is shared within this read")
+            XCTAssertEqual(inspection.statuses, engine.status())
+            XCTAssertEqual(inspection.profileWork, engine.profileWork())
+        }
+    }
+
     // MARK: Plans
 
     func testUntestedControlsApplyWithANoteToCheckThem() throws {

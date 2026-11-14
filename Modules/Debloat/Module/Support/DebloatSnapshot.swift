@@ -70,12 +70,13 @@ actor DebloatStore {
         // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta), and a retired
         // one only where it is still applied.
         let offered = engine.controls.filter { $0.isOffered(in: environment) }
-        let statuses = Dictionary(engine.status(of: offered, progress: progress.part(0.15...0.85)).map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
+        let inspection = engine.inspection(of: offered, progress: progress.part(0.15...0.85))
+        let statuses = Dictionary(inspection.statuses.map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
         let controls = offered.filter { control in isShown(control, in: environment, status: { statuses[control.id] ?? engine.status(of: control) }) }
         progress.report(0.9)
         return DebloatSnapshot(controls: controls, statuses: statuses.filter { id, _ in controls.contains { $0.id == id } },
                                environment: environment,
                                cannotTakeEffect: Set(controls.filter(engine.cannotTakeEffect).map(\.id)), takenAt: Date(),
-                               reapplied: DebloatWatchStore().recent(), profileWork: engine.profileWork())
+                               reapplied: DebloatWatchStore().recent(), profileWork: inspection.profileWork)
     }
 }
