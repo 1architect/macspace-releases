@@ -387,8 +387,58 @@ final class DiskDatabase: @unchecked Sendable {
         }
         try checkpoint()
     }
-    func reconcileTotals(all: Bool, progress: LoadProgressSink? = nil) throws {
+    private enum InitialTotalsFallback: Error { case unsupported }
+
+    /// Fresh collection assigns parents before children. A bounded numeric vector can fold descendants in reverse ID order
+    /// without repeating the child/link sums for every path-length group. Older/sparse/reordered indexes keep the general pass.
+    private func reconcileInitialTotals(progress: LoadProgressSink?) throws -> Bool {
+        var maximum: UInt64 = 0, count = 0
+        try query("SELECT MAX(id),COUNT(*) FROM dirs") { maximum = Self.number($0, 0); count = Int(Self.number($0, 1)) }
+        guard maximum > 0, maximum <= 1_048_576 else { return false }
+        var totals = [UInt64](repeating: 0, count: Int(maximum) + 1)
+        func add(_ value: UInt64, to id: UInt64) throws {
+            guard id <= maximum else { throw InitialTotalsFallback.unsupported }
+            let result = totals[Int(id)].addingReportingOverflow(value)
+            guard !result.overflow, result.partialValue <= UInt64(Int64.max) else { throw InitialTotalsFallback.unsupported }
+            totals[Int(id)] = result.partialValue
+        }
+        progress?(0)
+        do {
+            // Keep the existing hard-link representative policy (smallest parent ID/name), once for the entire collection.
+            try query("SELECT e.parent,SUM(e.bytes) FROM entries e WHERE e.link<>'' AND (e.parent,e.name)=(SELECT l.parent,l.name FROM entries l WHERE l.link=e.link AND l.link<>'' ORDER BY l.parent,l.name LIMIT 1) GROUP BY e.parent") {
+                try add(Self.number($0, 1), to: Self.number($0, 0))
+            }
+            var processed = 0
+            let step = max(1, count / 128)
+            try query("SELECT id,parent,direct FROM dirs ORDER BY id DESC") { row in
+                let id = Self.number(row, 0), parent = Self.number(row, 1)
+                guard parent < id else { throw InitialTotalsFallback.unsupported }
+                try add(Self.number(row, 2), to: id)
+                if parent != 0 { try add(totals[Int(id)], to: parent) }
+                processed += 1
+                if processed % step == 0 { try Task.checkCancellation() }
+            }
+        } catch is InitialTotalsFallback { return false }
+        // Do not advance progress before validating the complete ID order: a fallback must never move it backwards.
+        progress?(0.5)
+        let batchSize = 512
+        for first in stride(from: 1, through: Int(maximum), by: batchSize) {
+            try Task.checkCancellation()
+            let end = min(Int(maximum) + 1, first + batchSize)
+            var values: [Value] = []
+            values.reserveCapacity((end - first) * 2)
+            for id in first..<end { values.append(.number(UInt64(id))); values.append(.number(totals[id])) }
+            let rows = Array(repeating: "(?,?)", count: end - first).joined(separator: ",")
+            try query("WITH measured(id,bytes) AS (VALUES \(rows)) UPDATE dirs SET total=measured.bytes FROM measured WHERE dirs.id=measured.id AND dirs.total IS NOT measured.bytes", values)
+            try flushBatch()
+            progress?(0.5 + 0.5 * Double(end - 1) / Double(maximum))
+        }
+        return true
+    }
+
+    func reconcileTotals(all: Bool, initial: Bool = false, progress: LoadProgressSink? = nil) throws {
         try resolvePendingParents()
+        if all, initial, try reconcileInitialTotals(progress: progress) { try execute("DELETE FROM dirty"); return }
         if all {
             var depth: UInt64 = 2147483647, last: UInt64 = 0, done = 0, count = 0
             try query("SELECT COUNT(*) FROM dirs") { count = Int(Self.number($0, 0)) }

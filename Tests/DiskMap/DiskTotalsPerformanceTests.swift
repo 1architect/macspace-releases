@@ -62,10 +62,34 @@ final class DiskTotalsPerformanceTests: DiskSecurityFixtureCase {
         XCTAssertEqual(try db.directory(root.path)?.bytes, UInt64(folders * (4096 + 16384) + 8192))
         XCTAssertEqual(try db.directory(root.path + "/folder-00000-雪")?.bytes, 4096 + 16384 + 8192)
         XCTAssertEqual(try db.directory(root.path + "/folder-00001-雪")?.bytes, 4096 + 16384)
+        var expectedRows: [String: UInt64] = [:]
+        try db.query("SELECT path,total FROM dirs") { expectedRows[DiskDatabase.text($0, 0)] = DiskDatabase.number($0, 1) }
+        try db.execute("UPDATE dirs SET total=0")
+        try db.transaction { try db.reconcileTotals(all: true, initial: true) }
+        var initialRows: [String: UInt64] = [:]
+        try db.query("SELECT path,total FROM dirs") { initialRows[DiskDatabase.text($0, 0)] = DiskDatabase.number($0, 1) }
+        XCTAssertEqual(initialRows, expectedRows)
         // A changed family still transfers to exactly one representative on partial reconciliation.
         try db.execute("UPDATE entries SET bytes=32768 WHERE link='shared'")
         for path in try db.linkParents(at: root.path + "/folder-00001-雪") { try db.markTotals(path) }
         try db.transaction { try db.reconcileTotals(all: false) }
         XCTAssertEqual(try db.directory(root.path)?.bytes, UInt64(folders * (4096 + 16384) + 32768))
+    }
+
+    func testInitialTotalsFallsBackForReorderedParentsAndAnOversizedIDRange() throws {
+        let base = URL(fileURLWithPath: "/private/tmp/initial-totals-fallback-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let root = base.appendingPathComponent("Downloads").path
+        let db = try DiskDatabase(url: base.appendingPathComponent("cache/index.sqlite"), root: root, home: base.path)
+        // Resolving a later parent violates the initial ID ordering; it must use the unchanged general algorithm.
+        try db.put(DiskDirectory(path: root + "/child", directBytes: 4096))
+        try db.put(DiskDirectory(path: root, directBytes: 8192))
+        try db.transaction { try db.reconcileTotals(all: true, initial: true) }
+        XCTAssertEqual(try db.directory(root)?.bytes, 12288)
+        try db.execute("DELETE FROM dirs")
+        try db.put(DiskDirectory(path: root, directBytes: 16384))
+        try db.query("UPDATE dirs SET id=2000000 WHERE path=?", [.text(root)])
+        try db.transaction { try db.reconcileTotals(all: true, initial: true) }
+        XCTAssertEqual(try db.directory(root)?.bytes, 16384)
     }
 }

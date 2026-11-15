@@ -107,7 +107,7 @@ struct DiskDatabaseScanner {
             for path in shallow { try read(path, recursive: false) }
             progress?(0.8)
             let totalsStarted = Date()
-            try db.reconcileTotals(all: initial || refreshesWholeRoot, progress: { progress?(0.8 + 0.19 * $0) })
+            try db.reconcileTotals(all: initial || refreshesWholeRoot, initial: initial, progress: { progress?(0.8 + 0.19 * $0) })
             db.phase?("totals", Date().timeIntervalSince(totalsStarted), visited)
             if initial { state.storageRevision = 4; state.personalInventoryVersion = DiskIndex.personalInventorySchemaVersion }
             state.eventID = cursor; state.revision += 1
