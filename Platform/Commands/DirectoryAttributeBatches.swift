@@ -1,3 +1,4 @@
+import Compression
 import Darwin
 import Foundation
 
@@ -6,6 +7,24 @@ import Foundation
 enum DirectoryAttributeBatches {
     struct Batch { var count: Int32; var bytes: Data }
     private static let magic: UInt32 = 0x3146444d
+    private static let compressedMagic: UInt32 = 0x3246444d
+    private static let algorithm = COMPRESSION_LZ4_RAW
+    static var compressionScratchSize: Int { compression_encode_scratch_buffer_size(algorithm) }
+
+    /// Reuse the worker's native buffer after enumeration. Store only the smaller payload in the pending queue.
+    static func compact(_ data: Data, into buffer: UnsafeMutableRawPointer, capacity: Int, scratch: UnsafeMutableRawPointer) -> Data {
+        let headerSize = 8
+        guard data.count >= 512, capacity > headerSize else { return data }
+        let limit = min(capacity - headerSize, data.count - headerSize - 128)
+        let length = data.withUnsafeBytes { source in
+            compression_encode_buffer((buffer + headerSize).assumingMemoryBound(to: UInt8.self), limit,
+                source.baseAddress!.assumingMemoryBound(to: UInt8.self), source.count, scratch, algorithm)
+        }
+        guard length > 0 else { return data }
+        buffer.storeBytes(of: compressedMagic.littleEndian, as: UInt32.self)
+        buffer.storeBytes(of: UInt32(data.count).littleEndian, toByteOffset: 4, as: UInt32.self)
+        return Data(bytes: buffer, count: headerSize + length)
+    }
 
     static func encode(_ batches: [Batch], request: attrlist) -> Data? {
         var result = Data()
@@ -20,6 +39,32 @@ enum DirectoryAttributeBatches {
     }
     static func decode(_ data: Data, request: attrlist) -> [Batch]? {
         guard data.count >= 8 && data.count <= DirectoryListingArchive.maximumPayload else { return nil }
+        let header = data.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self).littleEndian }
+        if header == compressedMagic {
+            guard let expanded = expand(data) else { return nil }
+            return decodeNative(expanded, request: request)
+        }
+        return decodeNative(data, request: request)
+    }
+
+    private static func expand(_ data: Data) -> Data? {
+        guard data.count > 8 else { return nil }
+        return data.withUnsafeBytes { source in
+            let length = Int(source.loadUnaligned(fromByteOffset: 4, as: UInt32.self).littleEndian)
+            guard length >= 512, length <= DirectoryListingArchive.maximumPayload, length > data.count else { return nil }
+            // A spare byte distinguishes an exact decode from an output that exhausted its destination.
+            var expanded = Data(count: length + 1)
+            let decoded = expanded.withUnsafeMutableBytes { destination in
+                compression_decode_buffer(destination.baseAddress!.assumingMemoryBound(to: UInt8.self), destination.count,
+                    (source.baseAddress! + 8).assumingMemoryBound(to: UInt8.self), source.count - 8, nil, algorithm)
+            }
+            guard decoded == length else { return nil }
+            expanded.removeLast()
+            return expanded
+        }
+    }
+
+    private static func decodeNative(_ data: Data, request: attrlist) -> [Batch]? {
         return data.withUnsafeBytes { raw in
             guard raw.loadUnaligned(as: UInt32.self).littleEndian == magic else { return nil }
             let number = raw.loadUnaligned(fromByteOffset: 4, as: UInt32.self).littleEndian

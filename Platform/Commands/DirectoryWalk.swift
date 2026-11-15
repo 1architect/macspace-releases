@@ -212,6 +212,10 @@ public enum DirectoryWalk {
             let capacity = 256 * 1024
             let buffer = UnsafeMutableRawPointer.allocate(byteCount: capacity, alignment: 8)
             defer { buffer.deallocate() }
+            let scratch = archive != nil && list.forkattr != 0
+                ? UnsafeMutableRawPointer.allocate(byteCount: max(1, DirectoryAttributeBatches.compressionScratchSize), alignment: 16)
+                : nil
+            defer { scratch?.deallocate() }
             var request = list
             while let folder = next(helper: helper) {
                 var found: [Folder] = []
@@ -226,7 +230,7 @@ public enum DirectoryWalk {
                     }
                 }
                 directoryStarted?(&state, folder.ownerUID)
-                let complete = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device, archive: archive) { name, entry in
+                let complete = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device, archive: archive, compressionScratch: scratch) { name, entry in
                     var built: String?
                     let path = { () -> String in
                         if let built { return built }
@@ -246,7 +250,8 @@ public enum DirectoryWalk {
 
         /// Lists one folder; false when it could not be listed, or only in part.
         static func list(_ folder: String, _ request: inout attrlist, flags: Int32, options: UInt64, buffer: UnsafeMutableRawPointer, capacity: Int, rootDevice: Int32,
-                         archive: DirectoryListingArchive? = nil, body: (UnsafePointer<CChar>, Facts) -> Void) -> Bool {
+                         archive: DirectoryListingArchive? = nil, compressionScratch: UnsafeMutableRawPointer? = nil,
+                         body: (UnsafePointer<CChar>, Facts) -> Void) -> Bool {
             let descriptor = open(folder, flags)
             guard descriptor >= 0 else { return false }
             defer { close(descriptor) }
@@ -300,7 +305,8 @@ public enum DirectoryWalk {
             }
             if complete, let archive, let identity, let saved, let payload = DirectoryAttributeBatches.encode(saved, request: reading),
                fstat(descriptor, &before) == 0, identity == DirectoryListingArchive.Identity(before) {
-                archive.record(payload, path: folder, request: key, identity: identity, generation: lookup?.generation)
+                let stored = compressionScratch.map { DirectoryAttributeBatches.compact(payload, into: buffer, capacity: capacity, scratch: $0) } ?? payload
+                archive.record(stored, path: folder, request: key, identity: identity, generation: lookup?.generation)
             }
             return complete
         }

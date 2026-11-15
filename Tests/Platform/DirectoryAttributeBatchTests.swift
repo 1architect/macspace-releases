@@ -31,5 +31,23 @@ final class DirectoryAttributeBatchTests: XCTestCase {
         XCTAssertNil(DirectoryAttributeBatches.decode(malformed, request: request))
         let empty = try XCTUnwrap(DirectoryAttributeBatches.encode([], request: request))
         XCTAssertEqual(DirectoryAttributeBatches.decode(empty, request: request)?.count, 0)
+
+        let native = Data(bytes: buffer, count: length)
+        let batch = DirectoryAttributeBatches.Batch(count: 64, bytes: Data((0..<64).flatMap { _ in native }))
+        let raw = try XCTUnwrap(DirectoryAttributeBatches.encode([batch], request: request))
+        let scratch = UnsafeMutableRawPointer.allocate(byteCount: max(1, DirectoryAttributeBatches.compressionScratchSize), alignment: 16)
+        defer { scratch.deallocate() }
+        let compact = DirectoryAttributeBatches.compact(raw, into: buffer, capacity: 256 * 1024, scratch: scratch)
+        XCTAssertLessThan(compact.count, raw.count)
+        let replay = try XCTUnwrap(DirectoryAttributeBatches.decode(compact, request: request)?.first)
+        XCTAssertEqual(replay.count, batch.count)
+        XCTAssertEqual(replay.bytes, batch.bytes)
+        XCTAssertNil(DirectoryAttributeBatches.decode(Data(compact.dropLast()), request: request))
+        var oversized = compact
+        oversized.replaceSubrange(4..<8, with: [UInt8](repeating: 0xff, count: 4))
+        XCTAssertNil(DirectoryAttributeBatches.decode(oversized, request: request))
+        let invalidRaw = Data(repeating: 0, count: 2048)
+        XCTAssertNil(DirectoryAttributeBatches.decode(
+            DirectoryAttributeBatches.compact(invalidRaw, into: buffer, capacity: 256 * 1024, scratch: scratch), request: request))
     }
 }
