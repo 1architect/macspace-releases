@@ -422,13 +422,17 @@ actor DiskStore {
         guard evidenceRevision != catalog.catalogReadAt else { return }
         if let ownershipFlight { await ownershipFlight.value; return }
         let writer = writer
+        let writeStarted = Date()
         let task = Task.detached(priority: .utility) { () -> Bool in
             do { try await writer.ownership(catalog); return true } catch { return false }
         }
         ownershipFlight = Task { _ = await task.value }
         if await task.value { evidenceRevision = catalog.catalogReadAt }
+        DiskScanMetrics.phase("ownership-write", since: writeStarted)
         ownershipFlight = nil
+        let projectionStarted = Date()
         publishDuplicates()
+        DiskScanMetrics.phase("ownership-projection", since: projectionStarted)
     }
     func flushPersistence() async { await writer.flush() }
     func snapshot(progress: LoadProgressSink? = nil) async -> DiskIndex {

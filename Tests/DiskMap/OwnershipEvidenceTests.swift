@@ -213,6 +213,32 @@ final class OwnershipEvidenceTests: DiskSecurityFixtureCase {
 
         }
     }
+    func testBatchedOwnershipMatchesLiveEvidenceAcrossPageBoundariesAndByteDistinctPaths() throws {
+        try fixture { home in
+            let owner = try app(home)
+            let parent = home + "/Evidence"
+            let composed = parent + "/Café"
+            let decomposed = parent + "/Cafe\u{301}"
+            let shared = DiskOwnershipClaim(paths: [parent, parent + "/Nested"], ownerPaths: [owner.path],
+                confidence: .shared, source: "shared", reason: "Shared ancestor")
+            let exact = DiskOwnershipClaim(paths: [composed], ownerPaths: [owner.path], confidence: .unknown,
+                source: "exact", reason: "Exact byte spelling")
+            var catalog = DiskApplications()
+            catalog.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: false,
+                metadataStamp: nil, ownership: [shared, exact])]
+            let db = try DiskDatabase(url: URL(fileURLWithPath: home + "/index.sqlite"), root: home)
+            try db.recordOwnership(catalog)
+            let paths = (0..<600).map { parent + "/Nested/leaf-\($0)" }
+                + [composed, decomposed, composed + "/leaf", decomposed + "/leaf", home + "/EvidenceSibling", "/outside"]
+            let projected = try db.projectedOwnership(paths)
+            for path in paths {
+                XCTAssertEqual(projected[Data(path.utf8)], try db.ownershipEvidence(path))
+            }
+            XCTAssertNotEqual(projected[Data(composed.utf8)], projected[Data(decomposed.utf8)])
+            XCTAssertEqual(projected[Data(paths[0].utf8)]?.paths, [paths[0]])
+        }
+    }
+
     func testReceiptPathsAreUnknownEvenWithACompleteReadableManifest() throws {
         try fixture { home in
             let owner = try app(home)

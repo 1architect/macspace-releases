@@ -28,20 +28,64 @@ extension DiskDatabase {
         }
         return DiskCategory.inventoryCategories.map { grouped[$0] ?? .init(category: $0, bytes: 0, count: 0) }
     }
-    func ownershipEvidence(_ path: String) throws -> DiskOwnershipClaim? {
-        var branch = path, ancestors: [String] = [], claims: [DiskOwnershipClaim] = []
+    private func ownershipAncestors(_ path: String) -> [String] {
+        var branch = path, ancestors: [String] = []
         while Self.contains(branch, below: root) {
             ancestors.append(branch)
             if branch == root { break }; branch = Self.parent(branch)
         }
+        return ancestors
+    }
+
+    func ownershipEvidence(_ path: String) throws -> DiskOwnershipClaim? {
+        let ancestors = ownershipAncestors(path)
         guard !ancestors.isEmpty else { return nil }
         // One indexed query covers every ancestor, rather than opening a separate lookup at each depth for every visible file.
         // Do not deduplicate matching relations: the existing combination rule also sees a claim held at two ancestors twice.
         let placeholders = Array(repeating: "?", count: ancestors.count).joined(separator: ",")
+        let decoder = JSONDecoder()
+        var claims: [DiskOwnershipClaim] = []
         try query("SELECT c.data FROM ownership o JOIN claims c ON c.id=o.claim WHERE o.path IN (" + placeholders + ")", ancestors.map(Value.text)) {
-            claims.append(try JSONDecoder().decode(DiskOwnershipClaim.self, from: Self.data($0, 0)))
+            claims.append(try decoder.decode(DiskOwnershipClaim.self, from: Self.data($0, 0)))
         }
         return claims.isEmpty ? nil : DiskOwnership.combined(claims, paths: [path])
+    }
+
+    /// A completed page reuses ancestor relations across its paths. Work in groups so a wide folder does not need
+    /// a second in-memory evidence graph. The caller's read transaction pins both claims and inventory.
+    func projectedOwnership(_ paths: [String]) throws -> [Data: DiskOwnershipClaim] {
+        let batchSize = 256
+        let decoder = JSONDecoder()
+        var evidence: [Data: DiskOwnershipClaim] = [:]
+        for start in stride(from: 0, to: paths.count, by: batchSize) {
+            let batch = paths[start..<min(start + batchSize, paths.count)]
+            // SQLite compares these TEXT keys byte for byte. Swift String equality also folds canonical variants.
+            let branches = batch.map { ownershipAncestors($0).map { Data($0.utf8) } }
+            let ancestors = Array(Set(branches.joined()))
+            var claimsByAncestor: [Data: [DiskOwnershipClaim]] = [:]
+            var decoded: [Int64: DiskOwnershipClaim] = [:]
+            for offset in stride(from: 0, to: ancestors.count, by: batchSize) {
+                let keys = ancestors[offset..<min(offset + batchSize, ancestors.count)]
+                let placeholders = Array(repeating: "?", count: keys.count).joined(separator: ",")
+                let values = keys.map { Value.text(String(decoding: $0, as: UTF8.self)) }
+                try query("SELECT o.path,c.id,c.data FROM ownership o JOIN claims c ON c.id=o.claim WHERE o.path IN (" + placeholders + ")", values) { row in
+                    let id = msc_sqlite3_column_int64(row, 1)
+                    let claim: DiskOwnershipClaim
+                    if let cached = decoded[id] { claim = cached }
+                    else {
+                        claim = try decoder.decode(DiskOwnershipClaim.self, from: Self.data(row, 2))
+                        decoded[id] = claim
+                    }
+                    claimsByAncestor[Self.data(row, 0), default: []].append(claim)
+                }
+            }
+            for (path, branch) in zip(batch, branches) {
+                // Keep multiple occurrences of the same claim when it is attached to two ancestors.
+                let claims = branch.flatMap { claimsByAncestor[$0] ?? [] }
+                if !claims.isEmpty { evidence[Data(path.utf8)] = DiskOwnership.combined(claims, paths: [path]) }
+            }
+        }
+        return evidence
     }
     func canRemoveDirectory(_ path: String) throws -> Bool {
         guard Self.contains(path, below: root), try directory(path) != nil, try ownershipEvidence(path) == nil else { return false }

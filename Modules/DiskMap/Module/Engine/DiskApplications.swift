@@ -124,6 +124,16 @@ struct DiskApplications: Sendable {
             // Byte revisions do not force signature verification or ownership discovery.
             result = previous
         } else {
+            // Receipt parsing only depends on the previous manifests. Run it alongside app discovery and join
+            // before assigning historical evidence to the discovered owners.
+            let receiptSeed = previous?.receipts
+            let receiptResult = LockedArray(repeating: AppReceiptCatalog(), count: 1)
+            let receiptRead = DispatchGroup()
+            DispatchQueue.global(qos: LoadWorkPriority.current).async(group: receiptRead) {
+                let started = Date()
+                receiptResult.set(0, AppReceiptReader.read(previous: receiptSeed))
+                DiskScanMetrics.phase("receipt-manifests", since: started)
+            }
             let candidates = (index.appPaths ?? index.directories.keys.filter { $0.hasSuffix(".app") && !$0.dropLast(4).contains(".app/") }).map(livePath)
             let discoveryStarted = Date()
             let catalog = AppOwnership.discover(home: home, candidates: candidates, progress: { progress(0.25 * $0) })
@@ -138,11 +148,14 @@ struct DiskApplications: Sendable {
             }
             let resolver = OwnershipResolver(catalog: catalog, byHostPreferences: preferences.prefix(8192).map { byHost + "/" + $0 },
                 embeddedIdentifiers: index.appBundleIdentifiers ?? [:], availableDataPaths: dataPaths)
-            let receiptsStarted = Date()
-            let receipts = AppReceiptReader.read(previous: previous?.receipts)
+            let waitStarted = Date()
+            receiptRead.wait()
+            let receipts = receiptResult.values[0]
+            DiskScanMetrics.phase("receipt-wait", since: waitStarted)
             progress(0.4)
+            let claimsStarted = Date()
             let receiptClaims = receipts.claims(owners: catalog.owners)
-            DiskScanMetrics.phase("receipt-manifests", since: receiptsStarted)
+            DiskScanMetrics.phase("receipt-claims", since: claimsStarted)
             result = DiskApplications()
             result.receipts = receipts
             result.catalogRevision = index.catalogRevision

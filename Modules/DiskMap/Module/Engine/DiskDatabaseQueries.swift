@@ -78,18 +78,20 @@ extension DiskDatabase {
             return DiskSnapshot(index)
         }
         // Evidence IDs belong to this projection; the source graph stays on disk.
+        let paths = Array(index.directories.keys) + index.directories.values.flatMap { $0.files.map(\.path) }
+        let evidence = try projectedOwnership(paths)
         var referenced: [UInt32: DiskOwnershipClaim] = [:], identifiers: [DiskOwnershipClaim: UInt32] = [:]
-        func ownership(_ path: String) throws -> UInt32? {
-            guard let claim = try ownershipEvidence(path) else { return nil }
+        func ownership(_ path: String) -> UInt32? {
+            guard let claim = evidence[Data(path.utf8)] else { return nil }
             if let id = identifiers[claim] { return id }
             let id = UInt32(identifiers.count + 1)
             identifiers[claim] = id; referenced[id] = claim
             return id
         }
         for path in index.directories.keys {
-            index.directories[path]?.ownershipID = try ownership(path)
+            index.directories[path]?.ownershipID = ownership(path)
             if let files = index.directories[path]?.files, !files.isEmpty {
-                index.directories[path]?.files = try files.map { file in var file = file; file.ownershipID = try ownership(file.path); return file }
+                index.directories[path]?.files = files.map { file in var file = file; file.ownershipID = ownership(file.path); return file }
             }
         }
         index.ownershipClaims = referenced
