@@ -50,7 +50,7 @@ enum DirectoryAttributeBatches {
                 let returned = raw.loadUnaligned(fromByteOffset: offset + 4, as: attribute_set_t.self)
                 guard returned.commonattr & ~request.commonattr == 0, returned.fileattr & ~request.fileattr == 0,
                       returned.forkattr & ~request.forkattr == 0, returned.dirattr == 0, returned.volattr == 0,
-                      returned.commonattr & attrgroup_t(ATTR_CMN_NAME) != 0 else { return false }
+                      returned.commonattr & attrgroup_t(ATTR_CMN_NAME | ATTR_CMN_DEVID) == attrgroup_t(ATTR_CMN_NAME | ATTR_CMN_DEVID) else { return false }
                 var field = offset + 24
                 if returned.commonattr & attrgroup_t(ATTR_CMN_ERROR) != 0 {
                     guard field <= offset + length - 4, raw.loadUnaligned(fromByteOffset: field, as: UInt32.self) == 0 else { return false }

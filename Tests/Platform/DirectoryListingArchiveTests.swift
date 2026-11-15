@@ -218,6 +218,48 @@ final class DirectoryListingArchiveTests: XCTestCase {
         archive.finish()
     }
 
+    func testSharedLeasesPublishOnlyAfterTheLastReaderAndDiscardOlderInFlightOutput() throws {
+        let path = folder.appendingPathComponent("shared-data").path
+        let first = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        let initial = first.archive.lookup(path, request: "fixture", identity: identity)
+        let second = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        XCTAssertTrue(first.archive === second.archive)
+        first.archive.record(Data([1]), path: path, request: "fixture", identity: identity, generation: initial.generation)
+        XCTAssertNil(second.archive.read(path, request: "fixture", identity: identity))
+        let current = second.archive.lookup(path, request: "fixture", identity: identity)
+        second.archive.record(Data([2]), path: path, request: "fixture", identity: identity, generation: current.generation)
+        first.finish(); first.finish()
+        XCTAssertEqual(second.archive.read(path, request: "fixture", identity: identity), Data([2]))
+        second.finish()
+        XCTAssertNil(first.archive.read(path, request: "fixture", identity: identity))
+        // Finished leases may remain referenced: their file lock must already be released.
+        let next = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        XCTAssertEqual(next.archive.read(path, request: "fixture", identity: identity), Data([2]))
+        next.finish()
+    }
+
+    func testSharedSupersetPreservesBasicDatesAndExtendedAttributeVisibility() throws {
+        let root = folder.appendingPathComponent("visible-data")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data(repeating: 3, count: 8192).write(to: root.appendingPathComponent("file"))
+        let archive = try DirectoryListingArchive(url: location, validateHistory: false)
+        func records(_ cache: DirectoryListingArchive?, extended: Bool, dates: Bool) -> (rows: [String], cached: Int) {
+            struct Records { var rows: [String] = []; var cached = 0 }
+            let result = DirectoryWalk.walk(root.path, extended: extended, modificationDates: dates, archive: cache, makeState: { Records() }) { records, path, entry in
+                records.rows.append("\(path()):\(entry.allocatedBytes):\(entry.modifiedAt?.timeIntervalSince1970 ?? -1):\(entry.cloneFamily):\(entry.privateBytes):\(entry.extendedFlags)")
+                if entry.fromArchive { records.cached += 1 }; return .skip
+            }
+            return (result.states.flatMap(\.rows).sorted(), result.states.reduce(0) { $0 + $1.cached })
+        }
+        let basic = records(archive, extended: false, dates: true)
+        XCTAssertEqual(basic.rows, records(nil, extended: false, dates: true).rows)
+        let extended = records(archive, extended: true, dates: false)
+        XCTAssertEqual(extended.rows, records(nil, extended: true, dates: false).rows)
+        XCTAssertEqual(extended.cached, 1)
+        XCTAssertEqual(records(archive, extended: false, dates: false).rows, records(nil, extended: false, dates: false).rows)
+        archive.finish()
+    }
+
     func testEventAliasesShareCanonicalKeys() {
         XCTAssertEqual(DirectoryChangeHistory.canonical("/var/folders/x"), "/private/var/folders/x")
         XCTAssertEqual(DirectoryChangeHistory.canonical("/System/Volumes/Data/Users/me/Library"), "/Users/me/Library")

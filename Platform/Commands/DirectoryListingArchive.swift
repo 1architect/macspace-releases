@@ -9,7 +9,7 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     static let maximumPayload = 1_048_576
     private let lock = NSRecursiveLock()
     private let access: DirectoryArchiveAccess
-    private let ownership: PrivateFile.ExclusiveLock
+    private var ownership: PrivateFile.ExclusiveLock?
     private let excluded: String
     private var db: OpaquePointer?
     private var boundary: OpaquePointer?
@@ -20,6 +20,64 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     private var writes = 0
     private let transient = unsafeBitCast(-1, to: msc_sqlite3_destructor_type.self)
     private var hits = 0, misses = 0
+    private var generation: UInt64 = 0
+    private static let registryLock = NSLock()
+    private struct Readers { var archive: DirectoryListingArchive; var count: Int }
+    nonisolated(unsafe) private static var readers: [String: Readers] = [:]
+
+    public final class Lease: @unchecked Sendable {
+        public let archive: DirectoryListingArchive
+        private let path: String
+        private let lock = NSLock()
+        private var released = false
+        fileprivate init(_ archive: DirectoryListingArchive, path: String) { self.archive = archive; self.path = path }
+        public func finish() {
+            let release = lock.withLock { () -> Bool in
+                if released { return false }; released = true; return true
+            }
+            if release { DirectoryListingArchive.release(path) }
+        }
+        deinit { finish() }
+    }
+
+    public static func experimentalLease() -> Lease? {
+        guard let path = ProcessInfo.processInfo.environment["MACSPACE_DIRECTORY_ARCHIVE"],
+              FileReviewPolicy.isNormalizedAbsolutePath(path), LivePermissionChecker.probeFullDiskAccess() == .granted else { return nil }
+        return try? borrow(URL(fileURLWithPath: DirectoryChangeHistory.canonical(path)).appendingPathComponent("facts.sqlite"))
+    }
+    static func borrow(_ url: URL, validateHistory: Bool = true) throws -> Lease {
+        let path = url.path
+        let (archive, existing) = try registryLock.withLock { () throws -> (DirectoryListingArchive, Bool) in
+            if var group = readers[path] {
+                group.count += 1; readers[path] = group
+                return (group.archive, true)
+            }
+            let archive = try DirectoryListingArchive(url: url, validateHistory: validateHistory)
+            readers[path] = Readers(archive: archive, count: 1)
+            return (archive, false)
+        }
+        // A later consumer has its own request boundary. In-flight native output from the preceding boundary is discarded.
+        if existing { archive.advanceReadBoundary() }
+        return Lease(archive, path: path)
+    }
+    private static func release(_ path: String) {
+        let archive = registryLock.withLock { () -> DirectoryListingArchive? in
+            guard var group = readers[path] else { return nil }
+            group.count -= 1
+            if group.count == 0 { readers.removeValue(forKey: path); return group.archive }
+            readers[path] = group; return nil
+        }
+        archive?.finish()
+    }
+
+    func advanceReadBoundary(changes: DirectoryChangeHistory.Changes? = nil) {
+        lock.withLock {
+            guard usable && !finished else { return }
+            generation += 1
+            do { try invalidate(changes ?? history?.flush().changes ?? .init()) }
+            catch { usable = false }
+        }
+    }
 
     struct Identity: Equatable {
         let device: UInt64, inode: UInt64, uid: UInt64, gid: UInt64, mode: UInt64, flags: UInt64
@@ -135,9 +193,12 @@ public final class DirectoryListingArchive: @unchecked Sendable {
             && identity.device == UInt64(UInt32(bitPattern: access.device))
     }
     func read(_ path: String, request: String, identity: Identity) -> Data? {
-        guard FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return nil }
+        lookup(path, request: request, identity: identity).data
+    }
+    func lookup(_ path: String, request: String, identity: Identity) -> (data: Data?, generation: UInt64) {
+        guard FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return (nil, 0) }
         return lock.withLock {
-            guard usable && !finished else { return nil }
+            guard usable && !finished else { return (nil, generation) }
             do {
                 var data: Data?
                 try query("SELECT payload FROM listings WHERE path=? AND request=? AND identity=?", text: [DirectoryChangeHistory.canonical(path), request], blobs: [identity.data]) { row in
@@ -145,14 +206,14 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                     if count > 0 && count <= Self.maximumPayload, let bytes = msc_sqlite3_column_blob(row, 0) { data = Data(bytes: bytes, count: count) }
                 }
                 if data != nil { hits += 1 } else { misses += 1 }
-                return data
-            } catch { usable = false; return nil }
+                return (data, generation)
+            } catch { usable = false; return (nil, generation) }
         }
     }
-    func record(_ data: Data, path: String, request: String, identity: Identity) {
+    func record(_ data: Data, path: String, request: String, identity: Identity, generation expected: UInt64? = nil) {
         guard data.count <= Self.maximumPayload, FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return }
         lock.withLock {
-            guard usable && !finished else { return }
+            guard usable && !finished, expected == nil || expected == generation else { return }
             do {
                 try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [DirectoryChangeHistory.canonical(path), request], blobs: [identity.data, data])
                 writes += 1
@@ -178,6 +239,7 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                 _ = msc_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &pageMisses, &high, 0)
                 FileHandle.standardError.write(Data("DIRECTORY_ARCHIVE hits=\(hits) misses=\(misses) pageHits=\(pageHits) pageMisses=\(pageMisses) usable=\(usable)\n".utf8))
             }
+            closeDatabase(); ownership = nil
         }
     }
     func accepts(_ path: String) -> Bool {

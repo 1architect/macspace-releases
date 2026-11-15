@@ -151,6 +151,9 @@ struct DiskDatabaseScanner {
             var files: [(DiskFile, String)] = []
             var folders: [DiskDirectory] = []
         }
+        let lease = DirectoryListingArchive.experimentalLease()
+        defer { lease?.finish() }
+        let archive = lease?.archive
         let db = db, metadata = metadata, devices = devices, isExcluded = walkExclusions(), report = report, cancelled = cancelled
         let inventoryIncludes = db.inventoryIncludes, uid = getuid()
         let personalPolicy = db.usesPersonalPolicy, enumeratedMetadata = usesEnumeratedMetadata
@@ -198,7 +201,7 @@ struct DiskDatabaseScanner {
             totals.pendingFiles = 0
             totals.files.removeAll(keepingCapacity: true); totals.folders.removeAll(keepingCapacity: true)
         }
-        DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), makeState: { Totals() }, directoryStarted: { totals, uid in totals.ownerUID = uid }, visit: { totals, makePath, entry in
+        DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), archive: archive, makeState: { Totals() }, directoryStarted: { totals, uid in totals.ownerUID = uid }, visit: { totals, makePath, entry in
             totals.items += 1
             if cancelled() { writing { throw CancellationError() }; return false }
             guard devices.contains(entry.device), entry.isDirectory || (entry.isRegularFile && !entry.isDataless) else { return false }

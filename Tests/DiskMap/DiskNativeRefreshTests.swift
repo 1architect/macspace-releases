@@ -60,7 +60,15 @@ final class DiskNativeRefreshTests: DiskSecurityFixtureCase {
             try self.file(a + "/source")
             try FileManager.default.createDirectory(atPath: b, withIntermediateDirectories: true)
             try FileManager.default.linkItem(atPath: a + "/source", toPath: b + "/alias")
-            for db in [native, reference] { var scan = DiskDatabaseScanner(db: db, excluded: []); try scan.scan(.init(), cursor: 1, progress: nil) }
+            // Hard-link attribution follows parent IDs. Independent parallel first scans may assign A/B different IDs,
+            // which would compare different starting states rather than the two refresh implementations.
+            for db in [native, reference] {
+                for path in [base, a, b] { try db.put(DiskDirectory(path: path, ownerUID: getuid())) }
+                try db.saveState(DiskIndex(root: base))
+                var scan = DiskDatabaseScanner(db: db, excluded: []); scan.parallelRootRefresh = false
+                try scan.scan(.init(recursive: [base]), cursor: 1, progress: nil)
+            }
+            try compare(native, reference)
             try self.file(a + "/source", bytes: 131_072)
             for (db, parallel) in [(native, true), (reference, false)] {
                 var scan = DiskDatabaseScanner(db: db, excluded: []); scan.parallelRootRefresh = parallel
