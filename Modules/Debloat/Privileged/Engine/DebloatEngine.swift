@@ -108,7 +108,7 @@ public final class DebloatEngine {
     /// A page needs both the controls and pending profile work. Read installed profiles once for the whole presentation;
     /// the separate action/verification methods continue to query the current system state.
     public func inspection(of controls: [DebloatControl], progress: (Double) -> Void = { _ in }) -> (statuses: [ControlStatus], profileWork: ProfileWork) {
-        let installed = system.installedProfiles()
+        let installed = ModuleLoadMetrics.measure("debloat", "installed-profiles") { system.installedProfiles() }
         let held = installed.map(Self.heldSettings)
         let statuses = readStatuses(of: controls, progress: progress) { held }
         return (statuses, profileWork(installed: installed ?? []))
@@ -116,14 +116,16 @@ public final class DebloatEngine {
 
     private func readStatuses(of controls: [DebloatControl], progress: (Double) -> Void, held readHeld: () -> Set<String>?) -> [ControlStatus] {
         guard !controls.isEmpty else { return [] }
-        let entries = journal.allEntries
+        let entries = ModuleLoadMetrics.measure("debloat", "journal") { journal.allEntries }
         progress(0.05)
-        let processes = system.processes()
+        let processes = ModuleLoadMetrics.measure("debloat", "processes") { system.processes() }
         progress(0.15)
         let held = readHeld()
         progress(0.3)
         return controls.enumerated().map { index, control in
-            let result = status(of: control, entries: entries, processes: processes, held: Self.hasPolicy(control) ? held : nil)
+            let result = ModuleLoadMetrics.measure("debloat", "control:" + control.id) {
+                status(of: control, entries: entries, processes: processes, held: Self.hasPolicy(control) ? held : nil)
+            }
             progress(0.3 + 0.7 * Double(index + 1) / Double(controls.count))
             return result
         }

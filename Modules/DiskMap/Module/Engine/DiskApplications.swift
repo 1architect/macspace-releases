@@ -31,6 +31,41 @@ struct AppLeftover: Sendable {
         return "app-data:" + ((try? encoder.encode(Target(path: path, identity: identity, fileIdentity: fileIdentity))) ?? Data()).base64EncodedString()
     }
 }
+
+/// Tests the exact path and both directions of the slash-delimited relation used by DiskIndex.contains.
+struct ClaimedPathIndex {
+    private let paths: Set<String>
+    private var ancestors: Set<String> = []
+
+    init(_ paths: Set<String>) {
+        self.paths = paths
+        for path in paths {
+            if path.hasPrefix("/") { ancestors.insert("/") }
+            Self.visitParents(of: path) { parent in
+                ancestors.insert(parent)
+                return false
+            }
+        }
+    }
+
+    func overlaps(_ path: String) -> Bool {
+        if paths.contains(path) || ancestors.contains(path) { return true }
+        if paths.contains("/") && path.hasPrefix("/") { return true }
+        return Self.visitParents(of: path) { paths.contains($0) }
+    }
+
+    @discardableResult
+    private static func visitParents(of path: String, _ visit: (String) -> Bool) -> Bool {
+        // A separator may be part of a grapheme in a legal filename. Retain String.hasPrefix's boundary check.
+        let scalars = path.unicodeScalars
+        for index in scalars.indices where scalars[index] == "/" {
+            let parent = String(path[..<index])
+            if path.hasPrefix(parent + "/"), visit(parent) { return true }
+        }
+        return false
+    }
+}
+
 struct DiskApplications: Sendable {
     private struct FileMeasurement: Sendable { var bytes: UInt64; var identity: String? }
     private var measurementRevision: UInt64?
@@ -177,7 +212,7 @@ struct DiskApplications: Sendable {
         })
         let vendorNames = Set(vendorNamespaces.compactMap { $0.split(separator: ".").last.map(String.init) })
         let installedTeams = Set(apps.compactMap { $0.owner.team })
-        let claimed = Set(apps.flatMap(\.ownership).flatMap(\.paths))
+        let claimed = ClaimedPathIndex(Set(apps.flatMap(\.ownership).flatMap(\.paths)))
         var rows: [AppLeftover] = []
         func identifierMatch(_ value: String) -> Bool {
             if identifierPrefixes.contains(value) { return true }
@@ -194,7 +229,7 @@ struct DiskApplications: Sendable {
                 || vendorNames.contains(id.lowercased()) || vendorNamespaces.contains(id.lowercased().split(separator: ".").prefix(2).joined(separator: "."))
                 || installedTeams.contains(String(id.split(separator: ".").first ?? ""))
                 || identifierMatch(id)
-                || claimed.contains(where: { index.contains(path, below: $0) || index.contains($0, below: path) })
+                || claimed.overlaps(path)
         }
         for base in reviewBases {
             let folder = measuredPath(home + "/Library/" + base, index: index)

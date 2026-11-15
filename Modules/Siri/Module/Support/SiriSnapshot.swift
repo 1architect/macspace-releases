@@ -127,15 +127,15 @@ actor SiriStore {
         let parts = progress.parallelParts(weights: [0.15, 0.15, 0.35, 0.25, 0.1])
         async let accountRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[1](1) }
-            return AppleIntelligenceAccountsReport.live()
+            return ModuleLoadMetrics.measure("siri", "accounts") { AppleIntelligenceAccountsReport.live() }
         }.value
         async let purgeableRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[2](1) }
-            return PurgeRun(service: CacheDeleteService.mobileAsset).estimate()
+            return ModuleLoadMetrics.measure("siri", "purgeable") { PurgeRun(service: CacheDeleteService.mobileAsset).estimate() }
         }.value
         async let modelRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[3](1) }
-            return modelBytes()
+            return ModuleLoadMetrics.measure("siri", "model-inventory") { modelBytes() }
         }.value
         let guardian = AppleIntelligenceLanguageGuard()
         let environment = LiveSiriLanguageEnvironment()
@@ -164,9 +164,11 @@ actor SiriStore {
         snapshot.lockedModelBytes = models.locked
         snapshot.assetsRetrying = PurgeRetrier.shared.isRetrying(CacheDeleteService.mobileAsset)
         snapshot.cloudSyncEnabled = SiriCloudSync.isEnabled()
-        snapshot.phoneFeatures = PhoneFeatureFlags().status()
-        snapshot.featureSettings = Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
-        readFeatureModels(into: &snapshot)
+        snapshot.phoneFeatures = ModuleLoadMetrics.measure("siri", "phone-status") { PhoneFeatureFlags().status() }
+        snapshot.featureSettings = ModuleLoadMetrics.measure("siri", "feature-settings") {
+            Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, ModelFeatureSettings().status($0)) })
+        }
+        ModuleLoadMetrics.measure("siri", "feature-models") { readFeatureModels(into: &snapshot) }
         parts[4](1)
         return snapshot
     }

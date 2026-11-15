@@ -65,12 +65,14 @@ actor DebloatStore {
 
     static func liveSnapshot(progress: LoadProgressRelay) -> DebloatSnapshot {
         let engine = liveEngine()
-        let environment = engine.system.environment()
+        let environment = ModuleLoadMetrics.measure("debloat", "environment") { engine.system.environment() }
         progress.report(0.15)
         // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta), and a retired
         // one only where it is still applied.
         let offered = engine.controls.filter { $0.isOffered(in: environment) }
-        let inspection = engine.inspection(of: offered, progress: progress.part(0.15...0.85))
+        let inspection = ModuleLoadMetrics.measure("debloat", "inspection") {
+            engine.inspection(of: offered, progress: progress.part(0.15...0.85))
+        }
         let statuses = Dictionary(inspection.statuses.map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
         let controls = offered.filter { control in isShown(control, in: environment, status: { statuses[control.id] ?? engine.status(of: control) }) }
         progress.report(0.9)

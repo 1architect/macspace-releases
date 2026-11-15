@@ -7,6 +7,23 @@ import MacSpacePlatform
 @testable import MacSpaceDiskMap
 
 final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
+    func testClaimedPathIndexMatchesExistingPathRelation() {
+        let reference = DiskIndex(root: "/")
+        let probes = [
+            "/", "", "/Caches", "/Caches/Example", "/Caches/Example2", "/Caches/Example/child",
+            "/Caches/Example/", "/Caches/Example//child", "/Caches/É", "/Caches/E\u{301}/child",
+            "/Caches/Example/\u{301}child", "/Caches/\u{600}/child", "/Caches/\u{600}",
+            "relative", "relative/child"
+        ]
+        for claim in probes {
+            let index = ClaimedPathIndex([claim])
+            for path in probes {
+                let expected = reference.contains(path, below: claim) || reference.contains(claim, below: path)
+                XCTAssertEqual(index.overlaps(path), expected, "\(claim) and \(path)")
+            }
+        }
+    }
+
     private final class Progress: @unchecked Sendable {
         private let lock = NSLock()
         private var value: [String] = []
