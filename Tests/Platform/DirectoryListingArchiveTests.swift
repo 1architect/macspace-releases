@@ -262,6 +262,52 @@ final class DirectoryListingArchiveTests: XCTestCase {
         next.finish()
     }
 
+    func testConcurrentNegativeLookupsAndPopulationSurviveCheckpointsAndInvalidation() throws {
+        let archive = try DirectoryListingArchive(url: location, validateHistory: false)
+        let identity = identity, root = folder.appendingPathComponent("concurrent-data").path
+        DispatchQueue.concurrentPerform(iterations: 8) { worker in
+            for number in 0..<256 {
+                let path = root + "/\(worker)-\(number)", payload = Data(path.utf8)
+                let lookup = archive.lookup(path, request: "fixture", identity: identity)
+                XCTAssertNil(lookup.data)
+                archive.record(payload, path: path, request: "fixture", identity: identity, generation: lookup.generation)
+                XCTAssertEqual(archive.read(path, request: "fixture", identity: identity), payload)
+            }
+        }
+        archive.advanceReadBoundary(changes: .init(lost: true))
+        let lookup = archive.lookup(root + "/0-0", request: "fixture", identity: identity)
+        XCTAssertNil(lookup.data)
+        archive.record(Data([7]), path: root + "/0-0", request: "fixture", identity: identity, generation: lookup.generation)
+        XCTAssertEqual(archive.read(root + "/0-0", request: "fixture", identity: identity), Data([7]))
+        archive.finish()
+    }
+
+    func testNegativeLookupDoesNotWaitForTheFenceAndCannotPublishBeforeItsBoundary() throws {
+        let archive = try DirectoryListingArchive(url: location, validateHistory: false)
+        let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0), finished = DispatchGroup()
+        finished.enter()
+        DispatchQueue.global().async {
+            archive.advanceReadBoundary(changes: {
+                entered.signal()
+                _ = release.wait(timeout: .now() + 5)
+                return .init(lost: true)
+            })
+            finished.leave()
+        }
+        XCTAssertEqual(entered.wait(timeout: .now() + 2), .success)
+        let path = folder.appendingPathComponent("during-fence").path, start = Date()
+        let lookup = archive.lookup(path, request: "fixture", identity: identity)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 1, "A negative lookup must not wait for history or a checkpoint")
+        release.signal()
+        XCTAssertEqual(finished.wait(timeout: .now() + 2), .success)
+        archive.record(Data([1]), path: path, request: "fixture", identity: identity, generation: lookup.generation)
+        XCTAssertNil(archive.read(path, request: "fixture", identity: identity), "Pre-fence native output must not become current")
+        let current = archive.lookup(path, request: "fixture", identity: identity)
+        archive.record(Data([2]), path: path, request: "fixture", identity: identity, generation: current.generation)
+        XCTAssertEqual(archive.read(path, request: "fixture", identity: identity), Data([2]))
+        archive.finish()
+    }
+
     func testSharedSupersetPreservesBasicDatesAndExtendedAttributeVisibility() throws {
         let root = folder.appendingPathComponent("visible-data")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -20,6 +20,8 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     private var writes = 0
     private let transient = unsafeBitCast(-1, to: msc_sqlite3_destructor_type.self)
     private var hits = 0, misses = 0
+    // Negative lookups must not queue behind SQLite commits/checkpoints. No code holds this lock while acquiring `lock`.
+    private let hintLock = NSLock()
     /// Negative membership hints only: collisions may cause an unnecessary SQL lookup, never authorize a cache hit.
     /// The fixed 512 KiB bitset is rebuilt from ciphertext on open and updated under the database lock.
     private var paths = PathHints()
@@ -98,11 +100,17 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     }
 
     func advanceReadBoundary(changes: DirectoryChangeHistory.Changes? = nil) {
+        advanceReadBoundary(changes: { changes ?? self.history?.flush().changes ?? .init() })
+    }
+
+    func advanceReadBoundary(changes readChanges: () -> DirectoryChangeHistory.Changes) {
         lock.withLock {
             guard usable && !finished else { return }
-            generation += 1
-            do { try invalidate(changes ?? history?.flush().changes ?? .init()) }
+            do { try invalidate(readChanges()) }
             catch { usable = false }
+            // Fast negative lookups can proceed during the fence. Their native output belongs to the old boundary and
+            // must be rejected if it arrives after invalidation; publish the next generation only once the fence finishes.
+            hintLock.withLock { generation += 1 }
         }
     }
 
@@ -159,7 +167,7 @@ public final class DirectoryListingArchive: @unchecked Sendable {
             try invalidate(watcher.flush().changes)
         } else { try invalidate(changes) }
         try query("SELECT DISTINCT path FROM listings") { row in
-            if let value = msc_sqlite3_column_text(row, 0) { paths.insert(String(cString: value)) }
+            if let value = msc_sqlite3_column_text(row, 0) { hintLock.withLock { paths.insert(String(cString: value)) } }
         }
         try query("INSERT OR REPLACE INTO header VALUES(1,?,0)", text: [version])
         try execute("COMMIT; BEGIN IMMEDIATE")
@@ -210,10 +218,10 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         }
     }
     private func invalidate(_ changes: DirectoryChangeHistory.Changes) throws {
-        if changes.lost { try execute("DELETE FROM listings"); paths = PathHints(); return }
+        if changes.lost { try execute("DELETE FROM listings"); hintLock.withLock { paths = PathHints() }; return }
         for path in changes.shallow { try query("DELETE FROM listings WHERE path=?", text: [path]) }
         for path in changes.recursive {
-            if path == "/" { try execute("DELETE FROM listings"); paths = PathHints(); return }
+            if path == "/" { try execute("DELETE FROM listings"); hintLock.withLock { paths = PathHints() }; return }
             try query("DELETE FROM listings WHERE path=? OR (path>=? AND path<?)", text: [path, path + "/", path + "0"])
         }
     }
@@ -227,17 +235,22 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     }
     func lookup(_ path: String, request: String, identity: Identity) -> (data: Data?, generation: UInt64) {
         guard FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return (nil, 0) }
+        let canonical = DirectoryChangeHistory.canonical(path)
+        let absentGeneration: UInt64? = hintLock.withLock {
+            guard !paths.mayContain(canonical) else { return nil }
+            misses += 1
+            return generation
+        }
+        if let absentGeneration { return (nil, absentGeneration) }
         return lock.withLock {
             guard usable && !finished else { return (nil, generation) }
-            let canonical = DirectoryChangeHistory.canonical(path)
-            guard paths.mayContain(canonical) else { misses += 1; return (nil, generation) }
             do {
                 var data: Data?
                 try query("SELECT payload FROM listings WHERE path=? AND request=? AND identity=?", text: [canonical, request], blobs: [identity.data]) { row in
                     let count = Int(msc_sqlite3_column_bytes(row, 0))
                     if count > 0 && count <= Self.maximumPayload, let bytes = msc_sqlite3_column_blob(row, 0) { data = Data(bytes: bytes, count: count) }
                 }
-                if data != nil { hits += 1 } else { misses += 1 }
+                if data != nil { hits += 1 } else { hintLock.withLock { misses += 1 } }
                 return (data, generation)
             } catch { usable = false; return (nil, generation) }
         }
@@ -249,7 +262,7 @@ public final class DirectoryListingArchive: @unchecked Sendable {
             do {
                 let canonical = DirectoryChangeHistory.canonical(path)
                 try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [canonical, request], blobs: [identity.data, data])
-                paths.insert(canonical)
+                hintLock.withLock { paths.insert(canonical) }
                 writes += 1
                 if writes >= 1024 { try execute("COMMIT; PRAGMA wal_checkpoint(PASSIVE); BEGIN IMMEDIATE"); writes = 0 }
             } catch { usable = false }
@@ -271,7 +284,8 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                 var pageHits: Int32 = 0, pageMisses: Int32 = 0, high: Int32 = 0
                 _ = msc_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &pageHits, &high, 0)
                 _ = msc_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &pageMisses, &high, 0)
-                FileHandle.standardError.write(Data("DIRECTORY_ARCHIVE hits=\(hits) misses=\(misses) pageHits=\(pageHits) pageMisses=\(pageMisses) usable=\(usable)\n".utf8))
+                let missed = hintLock.withLock { misses }
+                FileHandle.standardError.write(Data("DIRECTORY_ARCHIVE hits=\(hits) misses=\(missed) pageHits=\(pageHits) pageMisses=\(pageMisses) usable=\(usable)\n".utf8))
             }
             closeDatabase(); ownership = nil
         }
@@ -280,5 +294,5 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         let value = DirectoryChangeHistory.canonical(path)
         return value != excluded && !value.hasPrefix(excluded + "/")
     }
-    var statistics: (hits: Int, misses: Int) { lock.withLock { (hits, misses) } }
+    var statistics: (hits: Int, misses: Int) { lock.withLock { hintLock.withLock { (hits, misses) } } }
 }
