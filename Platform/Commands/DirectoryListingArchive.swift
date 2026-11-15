@@ -22,6 +22,20 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     private var hits = 0, misses = 0
     // Negative lookups must not queue behind SQLite commits/checkpoints. No code holds this lock while acquiring `lock`.
     private let hintLock = NSLock()
+    static let maximumPendingBytes = 16 * 1024 * 1024
+    static let maximumPendingRecords = 16_384
+    private let writer: DispatchQueue?
+    private struct PendingKey: Hashable, Sendable { let path: String; let request: String }
+    private struct Pending: Sendable {
+        let id: UInt64, generation: UInt64
+        let identity: Identity
+        let data: Data
+        let cost: Int
+    }
+    private var pending: [PendingKey: Pending] = [:]
+    private var pendingBytes = 0, pendingCount = 0, dropped = 0
+    private var nextPendingID: UInt64 = 0
+    private var accepting = true
     /// Negative membership hints only: collisions may cause an unnecessary SQL lookup, never authorize a cache hit.
     /// The fixed 512 KiB bitset is rebuilt from ciphertext on open and updated under the database lock.
     private var paths = PathHints()
@@ -81,7 +95,7 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                 group.count += 1; readers[path] = group
                 return (group.archive, true)
             }
-            let archive = try DirectoryListingArchive(url: url, validateHistory: validateHistory)
+            let archive = try DirectoryListingArchive(url: url, validateHistory: validateHistory, writeBehind: true)
             readers[path] = Readers(archive: archive, count: 1)
             return (archive, false)
         }
@@ -107,14 +121,14 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         lock.withLock {
             guard usable && !finished else { return }
             do { try invalidate(readChanges()) }
-            catch { usable = false }
+            catch { abandon() }
             // Fast negative lookups can proceed during the fence. Their native output belongs to the old boundary and
             // must be rejected if it arrives after invalidation; publish the next generation only once the fence finishes.
             hintLock.withLock { generation += 1 }
         }
     }
 
-    struct Identity: Equatable {
+    struct Identity: Equatable, Sendable {
         let device: UInt64, inode: UInt64, uid: UInt64, gid: UInt64, mode: UInt64, flags: UInt64
         let modified: Int64, modifiedNanos: Int64, changed: Int64, changedNanos: Int64
         init(_ value: stat) {
@@ -134,7 +148,9 @@ public final class DirectoryListingArchive: @unchecked Sendable {
 
     /// Callers own the complete snapshot lifetime and must finish after all consumers stop. A failed cache never changes the
     /// fallback reader's result. `validateHistory: false` is exclusively for deterministic fixture tests with explicit changes.
-    init(url: URL, validateHistory: Bool = true, changes: DirectoryChangeHistory.Changes = .init()) throws {
+    init(url: URL, validateHistory: Bool = true, changes: DirectoryChangeHistory.Changes = .init(), writeBehind: Bool = false) throws {
+        // Leases drain before releasing their archive. Standalone archives retain synchronous lifetime/deinit semantics.
+        writer = writeBehind ? DispatchQueue(label: "com.macspace.directory-facts.writer", qos: DispatchQoS(qosClass: LoadWorkPriority.current, relativePriority: 0)) : nil
         try MetadataKeys.requireAvailable()
         excluded = DirectoryChangeHistory.canonical(url.deletingLastPathComponent().path)
         let key = try MetadataKeys.key(.inventory, create: true)
@@ -236,12 +252,20 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     func lookup(_ path: String, request: String, identity: Identity) -> (data: Data?, generation: UInt64) {
         guard FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return (nil, 0) }
         let canonical = DirectoryChangeHistory.canonical(path)
-        let absentGeneration: UInt64? = hintLock.withLock {
-            guard !paths.mayContain(canonical) else { return nil }
+        let quick: (value: Pending?, absentGeneration: UInt64?) = hintLock.withLock {
+            if accepting, let value = pending[PendingKey(path: canonical, request: request)], value.generation == generation, value.identity == identity {
+                return (value, nil)
+            }
+            guard !paths.mayContain(canonical) else { return (nil, nil) }
             misses += 1
-            return generation
+            return (nil, generation)
         }
-        if let absentGeneration { return (nil, absentGeneration) }
+        if let value = quick.value {
+            do { try MetadataKeys.requireAvailable() } catch { return (nil, value.generation) }
+            hintLock.withLock { hits += 1 }
+            return (value.data, value.generation)
+        }
+        if let absentGeneration = quick.absentGeneration { return (nil, absentGeneration) }
         return lock.withLock {
             guard usable && !finished else { return (nil, generation) }
             do {
@@ -250,25 +274,54 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                     let count = Int(msc_sqlite3_column_bytes(row, 0))
                     if count > 0 && count <= Self.maximumPayload, let bytes = msc_sqlite3_column_blob(row, 0) { data = Data(bytes: bytes, count: count) }
                 }
-                if data != nil { hits += 1 } else { hintLock.withLock { misses += 1 } }
+                hintLock.withLock { if data != nil { hits += 1 } else { misses += 1 } }
                 return (data, generation)
-            } catch { usable = false; return (nil, generation) }
+            } catch { abandon(); return (nil, generation) }
         }
     }
     func record(_ data: Data, path: String, request: String, identity: Identity, generation expected: UInt64? = nil) {
         guard data.count <= Self.maximumPayload, FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return }
+        let canonical = DirectoryChangeHistory.canonical(path)
+        guard let writer else { store(data, path: canonical, request: request, identity: identity, generation: expected); return }
+        do { try MetadataKeys.requireAvailable() } catch { return }
+        let key = PendingKey(path: canonical, request: request)
+        hintLock.withLock {
+            guard accepting, expected == nil || expected == generation else { return }
+            // Include bounded metadata/closure overhead as well as payload bytes in admission control.
+            let cost = data.count + canonical.utf8.count + request.utf8.count + 512
+            guard pendingCount < Self.maximumPendingRecords, pendingBytes <= Self.maximumPendingBytes - cost else { dropped += 1; return }
+            nextPendingID += 1
+            let item = Pending(id: nextPendingID, generation: generation, identity: identity, data: data, cost: cost)
+            pending[key] = item; pendingBytes += cost; pendingCount += 1
+            paths.insert(canonical)
+            // Enqueue under the same short lock that orders pending replacements and closes admission in finish().
+            writer.async { [self] in
+                store(item.data, path: key.path, request: key.request, identity: item.identity, generation: item.generation)
+                hintLock.withLock {
+                    if pending[key]?.id == item.id { pending.removeValue(forKey: key) }
+                    pendingBytes -= item.cost; pendingCount -= 1
+                }
+            }
+        }
+    }
+    private func abandon() {
+        usable = false
+        hintLock.withLock { accepting = false; pending.removeAll() }
+    }
+    private func store(_ data: Data, path: String, request: String, identity: Identity, generation expected: UInt64?) {
         lock.withLock {
             guard usable && !finished, expected == nil || expected == generation else { return }
             do {
-                let canonical = DirectoryChangeHistory.canonical(path)
-                try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [canonical, request], blobs: [identity.data, data])
-                hintLock.withLock { paths.insert(canonical) }
+                try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [path, request], blobs: [identity.data, data])
+                hintLock.withLock { paths.insert(path) }
                 writes += 1
                 if writes >= 1024 { try execute("COMMIT; PRAGMA wal_checkpoint(PASSIVE); BEGIN IMMEDIATE"); writes = 0 }
-            } catch { usable = false }
+            } catch { abandon() }
         }
     }
     public func finish() {
+        hintLock.withLock { accepting = false }
+        writer?.sync {}
         lock.withLock {
             guard !finished else { return }
             do {
@@ -284,8 +337,8 @@ public final class DirectoryListingArchive: @unchecked Sendable {
                 var pageHits: Int32 = 0, pageMisses: Int32 = 0, high: Int32 = 0
                 _ = msc_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &pageHits, &high, 0)
                 _ = msc_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &pageMisses, &high, 0)
-                let missed = hintLock.withLock { misses }
-                FileHandle.standardError.write(Data("DIRECTORY_ARCHIVE hits=\(hits) misses=\(missed) pageHits=\(pageHits) pageMisses=\(pageMisses) usable=\(usable)\n".utf8))
+                let counts = hintLock.withLock { (hits, misses, dropped) }
+                FileHandle.standardError.write(Data("DIRECTORY_ARCHIVE hits=\(counts.0) misses=\(counts.1) dropped=\(counts.2) pageHits=\(pageHits) pageMisses=\(pageMisses) usable=\(usable)\n".utf8))
             }
             closeDatabase(); ownership = nil
         }
@@ -295,4 +348,5 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         return value != excluded && !value.hasPrefix(excluded + "/")
     }
     var statistics: (hits: Int, misses: Int) { lock.withLock { hintLock.withLock { (hits, misses) } } }
+    var pendingStatistics: (bytes: Int, count: Int, dropped: Int) { hintLock.withLock { (pendingBytes, pendingCount, dropped) } }
 }

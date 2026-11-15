@@ -110,12 +110,13 @@ final class DirectoryListingArchiveTests: XCTestCase {
         let expected = walk(nil)
         XCTAssertFalse(expected.rows.isEmpty)
         do {
-            let archive = try DirectoryListingArchive(url: location, validateHistory: false)
+            let lease = try DirectoryListingArchive.borrow(location, validateHistory: false)
+            let archive = lease.archive
             XCTAssertEqual(walk(archive).rows, expected.rows)
             let repeated = walk(archive)
             XCTAssertEqual(repeated.rows, expected.rows)
             XCTAssertEqual(repeated.cached, expected.rows.count)
-            archive.finish()
+            lease.finish()
         }
         let archive = try DirectoryListingArchive(url: location, validateHistory: false)
         let restored = walk(archive)
@@ -283,7 +284,8 @@ final class DirectoryListingArchiveTests: XCTestCase {
     }
 
     func testNegativeLookupDoesNotWaitForTheFenceAndCannotPublishBeforeItsBoundary() throws {
-        let archive = try DirectoryListingArchive(url: location, validateHistory: false)
+        let lease = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        let archive = lease.archive
         let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0), finished = DispatchGroup()
         finished.enter()
         DispatchQueue.global().async {
@@ -305,7 +307,45 @@ final class DirectoryListingArchiveTests: XCTestCase {
         let current = archive.lookup(path, request: "fixture", identity: identity)
         archive.record(Data([2]), path: path, request: "fixture", identity: identity, generation: current.generation)
         XCTAssertEqual(archive.read(path, request: "fixture", identity: identity), Data([2]))
-        archive.finish()
+        lease.finish()
+    }
+
+    func testLeasePendingWritesStayBoundedAndRejectACompletedFence() throws {
+        let lease = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        let archive = lease.archive, identity = identity
+        let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0), finished = DispatchGroup()
+        finished.enter()
+        DispatchQueue.global().async {
+            archive.advanceReadBoundary(changes: {
+                entered.signal(); _ = release.wait(timeout: .now() + 5)
+                return .init(lost: true)
+            })
+            finished.leave()
+        }
+        XCTAssertEqual(entered.wait(timeout: .now() + 2), .success)
+        let root = folder.appendingPathComponent("pending-data").path
+        let lookup = archive.lookup(root, request: "fixture", identity: identity)
+        let payload = Data(repeating: 7, count: 65536)
+        for index in 0..<512 {
+            archive.record(payload, path: root + "/\(index)", request: "fixture", identity: identity, generation: lookup.generation)
+        }
+        let queued = archive.pendingStatistics
+        XCTAssertLessThanOrEqual(queued.bytes, DirectoryListingArchive.maximumPendingBytes)
+        XCTAssertLessThanOrEqual(queued.count, DirectoryListingArchive.maximumPendingRecords)
+        XCTAssertGreaterThan(queued.dropped, 0)
+        XCTAssertEqual(archive.read(root + "/0", request: "fixture", identity: identity), payload, "Pending facts must be immediately readable")
+        release.signal()
+        XCTAssertEqual(finished.wait(timeout: .now() + 2), .success)
+        lease.finish()
+        XCTAssertEqual(archive.pendingStatistics.bytes, 0)
+        XCTAssertEqual(archive.pendingStatistics.count, 0)
+        let next = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        XCTAssertNil(next.archive.read(root + "/0", request: "fixture", identity: identity), "Queued pre-fence output must not persist")
+        next.archive.record(Data([9]), path: root, request: "fixture", identity: identity)
+        next.finish()
+        let restored = try DirectoryListingArchive.borrow(location, validateHistory: false)
+        XCTAssertEqual(restored.archive.read(root, request: "fixture", identity: identity), Data([9]), "Finishing a lease drains current facts before publication")
+        restored.finish()
     }
 
     func testSharedSupersetPreservesBasicDatesAndExtendedAttributeVisibility() throws {
