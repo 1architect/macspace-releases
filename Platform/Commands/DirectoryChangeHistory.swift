@@ -84,6 +84,11 @@ final class DirectoryChangeHistory: @unchecked Sendable {
             if path == wantedFence { fence.signal() }
             guard !pending.lost else { return }
             guard FileReviewPolicy.isNormalizedAbsolutePath(path), path != excluded, !path.hasPrefix(excluded + "/") else { return }
+            // An alias event can change link count/content/ownership at other cached parents without changing those
+            // directories' identities. The inventory's basic reader cannot repair that from clone-ledger state.
+            if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemIsHardlink | kFSEventStreamEventFlagItemIsLastHardlink) != 0 {
+                pending = Changes(lost: true); return
+            }
             let recursive = flags & FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagItemIsDir) != 0
             if recursive { pending.recursive.insert(path) }
             pending.shallow.insert((path as NSString).deletingLastPathComponent)

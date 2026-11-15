@@ -257,14 +257,20 @@ public enum DirectoryWalk {
             let requested = request
             var reading = request
             var readingOptions = options
+            var archived = request
             if identity != nil {
-                reading = DirectoryWalk.attributes(extended: true, fileIDs: true)
-                reading.commonattr |= attrgroup_t(ATTR_CMN_MODTIME)
-                readingOptions = UInt64(FSOPT_ATTR_CMN_EXTENDED)
+                archived = DirectoryWalk.attributes(extended: true, fileIDs: true)
+                archived.commonattr |= attrgroup_t(ATTR_CMN_MODTIME)
+                // Inventory can consume existing sizing facts without paying for clone/private attributes or archive writes
+                // on its own misses. Only readers that need extended facts populate this shared representation.
+                if requested.forkattr != 0 {
+                    reading = archived
+                    readingOptions = UInt64(FSOPT_ATTR_CMN_EXTENDED)
+                }
             }
-            let key = "\(reading.commonattr):\(reading.fileattr):\(reading.forkattr):\(readingOptions)"
+            let key = "\(archived.commonattr):\(archived.fileattr):\(archived.forkattr):\(UInt64(FSOPT_ATTR_CMN_EXTENDED))"
             let lookup = identity.flatMap { identity in archive?.lookup(folder, request: key, identity: identity) }
-            if let data = lookup?.data, let batches = DirectoryAttributeBatches.decode(data, request: reading) {
+            if let data = lookup?.data, let batches = DirectoryAttributeBatches.decode(data, request: archived) {
                 for batch in batches {
                     batch.bytes.withUnsafeBytes { raw in
                         _ = parse(UnsafeMutableRawPointer(mutating: raw.baseAddress!), count: batch.count, rootDevice: rootDevice, cached: true, visible: requested, body: body)
@@ -273,7 +279,7 @@ public enum DirectoryWalk {
                 return true
             }
             var complete = true
-            var saved: [DirectoryAttributeBatches.Batch]? = identity == nil ? nil : []
+            var saved: [DirectoryAttributeBatches.Batch]? = identity != nil && requested.forkattr != 0 ? [] : nil
             var savedBytes = 8
             while true {
                 let count = getattrlistbulk(descriptor, &reading, buffer, capacity, readingOptions)

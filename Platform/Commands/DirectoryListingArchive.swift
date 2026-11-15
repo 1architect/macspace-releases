@@ -20,6 +20,33 @@ public final class DirectoryListingArchive: @unchecked Sendable {
     private var writes = 0
     private let transient = unsafeBitCast(-1, to: msc_sqlite3_destructor_type.self)
     private var hits = 0, misses = 0
+    /// Negative membership hints only: collisions may cause an unnecessary SQL lookup, never authorize a cache hit.
+    /// The fixed 512 KiB bitset is rebuilt from ciphertext on open and updated under the database lock.
+    private var paths = PathHints()
+    private struct PathHints {
+        private var words = [UInt64](repeating: 0, count: 65_536)
+        private func indexes(_ path: String) -> (UInt64, UInt64) {
+            let first = UInt64(bitPattern: Int64(path.hashValue))
+            return (first, (first >> 32) | 1)
+        }
+        mutating func insert(_ path: String) {
+            var (hash, step) = indexes(path)
+            for _ in 0..<4 {
+                let bit = Int(hash & 4_194_303)
+                words[bit >> 6] |= UInt64(1) << (bit & 63)
+                hash &+= step
+            }
+        }
+        func mayContain(_ path: String) -> Bool {
+            var (hash, step) = indexes(path)
+            for _ in 0..<4 {
+                let bit = Int(hash & 4_194_303)
+                if words[bit >> 6] & (UInt64(1) << (bit & 63)) == 0 { return false }
+                hash &+= step
+            }
+            return true
+        }
+    }
     private var generation: UInt64 = 0
     private static let registryLock = NSLock()
     private struct Readers { var archive: DirectoryListingArchive; var count: Int }
@@ -131,6 +158,9 @@ public final class DirectoryListingArchive: @unchecked Sendable {
             history = watcher
             try invalidate(watcher.flush().changes)
         } else { try invalidate(changes) }
+        try query("SELECT DISTINCT path FROM listings") { row in
+            if let value = msc_sqlite3_column_text(row, 0) { paths.insert(String(cString: value)) }
+        }
         try query("INSERT OR REPLACE INTO header VALUES(1,?,0)", text: [version])
         try execute("COMMIT; BEGIN IMMEDIATE")
         success = true
@@ -180,10 +210,10 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         }
     }
     private func invalidate(_ changes: DirectoryChangeHistory.Changes) throws {
-        if changes.lost { try execute("DELETE FROM listings"); return }
+        if changes.lost { try execute("DELETE FROM listings"); paths = PathHints(); return }
         for path in changes.shallow { try query("DELETE FROM listings WHERE path=?", text: [path]) }
         for path in changes.recursive {
-            if path == "/" { try execute("DELETE FROM listings"); return }
+            if path == "/" { try execute("DELETE FROM listings"); paths = PathHints(); return }
             try query("DELETE FROM listings WHERE path=? OR (path>=? AND path<?)", text: [path, path + "/", path + "0"])
         }
     }
@@ -199,9 +229,11 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         guard FileReviewPolicy.isNormalizedAbsolutePath(path), accepts(identity) else { return (nil, 0) }
         return lock.withLock {
             guard usable && !finished else { return (nil, generation) }
+            let canonical = DirectoryChangeHistory.canonical(path)
+            guard paths.mayContain(canonical) else { misses += 1; return (nil, generation) }
             do {
                 var data: Data?
-                try query("SELECT payload FROM listings WHERE path=? AND request=? AND identity=?", text: [DirectoryChangeHistory.canonical(path), request], blobs: [identity.data]) { row in
+                try query("SELECT payload FROM listings WHERE path=? AND request=? AND identity=?", text: [canonical, request], blobs: [identity.data]) { row in
                     let count = Int(msc_sqlite3_column_bytes(row, 0))
                     if count > 0 && count <= Self.maximumPayload, let bytes = msc_sqlite3_column_blob(row, 0) { data = Data(bytes: bytes, count: count) }
                 }
@@ -215,7 +247,9 @@ public final class DirectoryListingArchive: @unchecked Sendable {
         lock.withLock {
             guard usable && !finished, expected == nil || expected == generation else { return }
             do {
-                try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [DirectoryChangeHistory.canonical(path), request], blobs: [identity.data, data])
+                let canonical = DirectoryChangeHistory.canonical(path)
+                try query("INSERT OR REPLACE INTO listings VALUES(?,?,?,?)", text: [canonical, request], blobs: [identity.data, data])
+                paths.insert(canonical)
                 writes += 1
                 if writes >= 1024 { try execute("COMMIT; PRAGMA wal_checkpoint(PASSIVE); BEGIN IMMEDIATE"); writes = 0 }
             } catch { usable = false }

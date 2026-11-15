@@ -218,6 +218,30 @@ final class DirectoryListingArchiveTests: XCTestCase {
         archive.finish()
     }
 
+    func testLiveHistoryRetiresCachedBasicMetadataWhenAnAliasAppearsElsewhere() throws {
+        guard ProcessInfo.processInfo.environment["MACSPACE_DIRECTORY_HISTORY_TEST"] == "1" else { throw XCTSkip("Opt-in native FSEvents history fixture") }
+        let root = folder.appendingPathComponent("link-source"), aliases = folder.appendingPathComponent("link-aliases")
+        for directory in [root, aliases] { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
+        let source = root.appendingPathComponent("file")
+        try Data(repeating: 1, count: 8192).write(to: source)
+        do {
+            let archive = try DirectoryListingArchive(url: location)
+            _ = DirectoryWalk.walk(root.path, extended: true, archive: archive, makeState: { 0 }) { _, _, _ in .skip }
+            archive.finish()
+        }
+        try FileManager.default.linkItem(at: source, to: aliases.appendingPathComponent("alias"))
+        let archive = try DirectoryListingArchive(url: location)
+        func links(_ cache: DirectoryListingArchive?) -> [UInt32] {
+            DirectoryWalk.walk(root.path, extended: false, archive: cache, makeState: { [UInt32]() }) { counts, _, entry in
+                counts.append(entry.linkCount); return .skip
+            }.states.flatMap { $0 }
+        }
+        XCTAssertEqual(links(archive), [2])
+        XCTAssertEqual(links(archive), links(nil))
+        XCTAssertGreaterThan(archive.statistics.misses, 0)
+        archive.finish()
+    }
+
     func testSharedLeasesPublishOnlyAfterTheLastReaderAndDiscardOlderInFlightOutput() throws {
         let path = folder.appendingPathComponent("shared-data").path
         let first = try DirectoryListingArchive.borrow(location, validateHistory: false)
@@ -253,9 +277,12 @@ final class DirectoryListingArchiveTests: XCTestCase {
         }
         let basic = records(archive, extended: false, dates: true)
         XCTAssertEqual(basic.rows, records(nil, extended: false, dates: true).rows)
+        XCTAssertEqual(archive.statistics.hits, 0)
         let extended = records(archive, extended: true, dates: false)
         XCTAssertEqual(extended.rows, records(nil, extended: true, dates: false).rows)
-        XCTAssertEqual(extended.cached, 1)
+        XCTAssertEqual(extended.cached, 0, "A basic inventory miss must not populate extended facts")
+        XCTAssertEqual(records(archive, extended: false, dates: true).rows, basic.rows)
+        XCTAssertEqual(records(archive, extended: true, dates: false).cached, 1)
         XCTAssertEqual(records(archive, extended: false, dates: false).rows, records(nil, extended: false, dates: false).rows)
         archive.finish()
     }
