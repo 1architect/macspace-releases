@@ -353,7 +353,7 @@ public enum AllocatedSize {
         let links = clones ?? CloneLedger()
         let excludedParents = Set(excluded.map { ($0 as NSString).deletingLastPathComponent })
         struct Total { var bytes: UInt64 = 0; var directory: String?; var checkExclusions = false }
-        let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool, archive: pool?.archive,
+        let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool, privateSizes: false, archive: pool?.archive,
             finished: { total, _, _ in total.directory = nil }, makeState: { Total() }) { total, path, entry in
             if !excluded.isEmpty, total.directory == nil {
                 let directory = (path() as NSString).deletingLastPathComponent
@@ -370,7 +370,7 @@ public enum AllocatedSize {
             } else if entry.linkCount > 1, entry.isRegularFile, let inode = HardLinks.inode(path()), !links.claimLink(inode) { return .skip }
             var value = entry.allocatedBytes
             // A later member of a clone family adds only what it does not share.
-            if let clones, entry.isRegularFile, value > 0, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.fromArchive ? FileTreeSizer.livePrivateBytes(path()) : entry.privateBytes) }
+            if let clones, entry.isRegularFile, value > 0, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, FileTreeSizer.livePrivateBytes(path())) }
             total.bytes += value
             return .skip
         }

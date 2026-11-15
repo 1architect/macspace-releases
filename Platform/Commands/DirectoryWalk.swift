@@ -58,13 +58,16 @@ public enum DirectoryWalk {
         }
     }
 
-    private static func attributes(extended: Bool, fileIDs: Bool = false) -> attrlist {
+    private static func attributes(extended: Bool, fileIDs: Bool = false, privateSizes: Bool = true) -> attrlist {
         var list = attrlist()
         list.bitmapcount = u_short(ATTR_BIT_MAP_COUNT)
         list.commonattr = attrgroup_t(ATTR_CMN_RETURNED_ATTRS) | attrgroup_t(ATTR_CMN_ERROR | ATTR_CMN_NAME | ATTR_CMN_DEVID | ATTR_CMN_OBJTYPE | ATTR_CMN_OWNERID | ATTR_CMN_FLAGS)
         if fileIDs { list.commonattr |= attrgroup_t(ATTR_CMN_FILEID) }
         list.fileattr = attrgroup_t(ATTR_FILE_LINKCOUNT | ATTR_FILE_TOTALSIZE | ATTR_FILE_ALLOCSIZE)
-        if extended { list.forkattr = attrgroup_t(ATTR_CMNEXT_PRIVATESIZE | ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS) }
+        if extended {
+            list.forkattr = attrgroup_t(ATTR_CMNEXT_CLONEID | ATTR_CMNEXT_EXT_FLAGS)
+            if privateSizes { list.forkattr |= attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) }
+        }
         return list
     }
 
@@ -101,14 +104,14 @@ public enum DirectoryWalk {
     /// several threads at once, each with a `State` of its own (`makeState`); every state is returned, for the caller to add up.
     /// `unreadable` counts the folders that could not be listed (no permission, SIP), whose contents are left out.
     static func walk<State>(_ root: String, extended: Bool, pool: ScanPool? = nil, refusesLinks: Bool = false,
-                            devices: Set<Int32>? = nil, modificationDates: Bool = false, archive: DirectoryListingArchive? = nil,
+                            devices: Set<Int32>? = nil, modificationDates: Bool = false, privateSizes: Bool = true, archive: DirectoryListingArchive? = nil,
                             finished: ((inout State, String, Bool) -> Void)? = nil,
                             directoryStarted: ((inout State, UInt32?) -> Void)? = nil, makeState: @escaping () -> State,
                             visit: @escaping (inout State, _ path: () -> String, Facts) -> Step) -> (states: [State], unreadable: Int) {
         var rootInfo = stat()
         // A folder still only in the cloud is not listed: listing it would make the cloud app fetch it.
         guard lstat(root, &rootInfo) == 0, rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
-        let walk = Walk(root: root, ownerUID: rootInfo.st_uid, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, devices: devices, modificationDates: modificationDates, archive: archive, finished: finished, directoryStarted: directoryStarted, makeState: makeState, visit: visit)
+        let walk = Walk(root: root, ownerUID: rootInfo.st_uid, device: rootInfo.st_dev, extended: extended, pool: pool, refusesLinks: refusesLinks, devices: devices, modificationDates: modificationDates, privateSizes: privateSizes, archive: archive, finished: finished, directoryStarted: directoryStarted, makeState: makeState, visit: visit)
         walk.work(helper: false)
         walk.helpers.wait()
         return walk.result()
@@ -146,7 +149,7 @@ public enum DirectoryWalk {
         private let openFlags: Int32
         private let qos: DispatchQoS.QoSClass
 
-        init(root: String, ownerUID: UInt32, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool, archive: DirectoryListingArchive?,
+        init(root: String, ownerUID: UInt32, device: Int32, extended: Bool, pool: ScanPool?, refusesLinks: Bool, devices: Set<Int32>?, modificationDates: Bool, privateSizes: Bool, archive: DirectoryListingArchive?,
              finished: ((inout State, String, Bool) -> Void)?, directoryStarted: ((inout State, UInt32?) -> Void)?, makeState: @escaping () -> State,
              visit: @escaping (inout State, () -> String, Facts) -> Step) {
             // One of the two: `open` refuses `O_NOFOLLOW` together with `O_NOFOLLOW_ANY` (EINVAL on 26B5101f), which made every folder
@@ -164,7 +167,7 @@ public enum DirectoryWalk {
             self.visit = visit
             qos = pool?.qos ?? LoadWorkPriority.current
             folders = [Folder(path: root, ownerUID: ownerUID)]
-            list = DirectoryWalk.attributes(extended: extended, fileIDs: self.archive != nil)
+            list = DirectoryWalk.attributes(extended: extended, fileIDs: self.archive != nil, privateSizes: privateSizes)
             if modificationDates { list.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
             options = UInt64(extended ? FSOPT_ATTR_CMN_EXTENDED : 0)
         }
@@ -259,7 +262,8 @@ public enum DirectoryWalk {
             var readingOptions = options
             var archived = request
             if identity != nil {
-                archived = DirectoryWalk.attributes(extended: true, fileIDs: true)
+                archived = DirectoryWalk.attributes(extended: true, fileIDs: true,
+                    privateSizes: requested.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0)
                 archived.commonattr |= attrgroup_t(ATTR_CMN_MODTIME)
                 // Inventory can consume existing sizing facts without paying for clone/private attributes or archive writes
                 // on its own misses. Only readers that need extended facts populate this shared representation.

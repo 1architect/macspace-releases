@@ -140,8 +140,8 @@ public struct FileTreeSizer: Sendable {
         return walk.state
     }
 
-    /// Clone-private allocation changes when another member is removed or created. Recheck it for a repeated family instead
-    /// of trusting an otherwise unchanged directory's cached value.
+    /// Clone-private allocation is needed only for a repeated family, and changes when another member is removed or created.
+    /// Read it on demand rather than collecting it for every file or trusting an unchanged directory's cached value.
     static func livePrivateBytes(_ path: String) -> UInt64 {
         var list = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0, volattr: 0, dirattr: 0,
                             fileattr: 0, forkattr: attrgroup_t(ATTR_CMNEXT_PRIVATESIZE))
@@ -175,7 +175,9 @@ public struct FileTreeSizer: Sendable {
         let clones = clones
         let countsPurgeable = countsPurgeable
         let extended = countsPurgeable || clones != nil
-        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, archive: pool?.archive, makeState: { Sums() }) { sums, path, entry in
+        // Strict helper reads keep private sizes in the pinned directory batch. A later path lookup would not preserve
+        // O_NOFOLLOW_ANY's refusal of intermediate symlinks if a parent changed during the walk.
+        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, privateSizes: refusesLinks, archive: pool?.archive, makeState: { Sums() }) { sums, path, entry in
             if entry.isDirectory { return entry.isDataless ? .skip : .descend }
             guard entry.isRegularFile else { return .skip }
             // A file reached by several hard links counts at its first path only.
@@ -187,7 +189,7 @@ public struct FileTreeSizer: Sendable {
             var value = entry.allocatedBytes
             if extended, value > 0 {
                 // A later member of a clone family adds only what it does not share.
-                if let clones, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, entry.fromArchive ? Self.livePrivateBytes(path()) : entry.privateBytes) }
+                if let clones, entry.cloneFamily != 0, !clones.claim(entry.cloneFamily) { value = min(value, refusesLinks ? entry.privateBytes : Self.livePrivateBytes(path())) }
                 if countsPurgeable, entry.extendedFlags & UInt64(EF_IS_PURGEABLE) != 0 { sums.purgeable += value }
             }
             sums.allocated += value
