@@ -21,8 +21,16 @@ final class DirectoryChangeHistory: @unchecked Sendable {
     private var running = false
     private var processedThrough: UInt64 = 0
     private var pending = Changes()
+    private var invalidationReason: String?
     private var replaying: Bool
     private let excluded: String
+    private static let reportsMetrics = ProcessInfo.processInfo.environment["MACSPACE_LOAD_METRICS"] == "1"
+
+    /// Called under lock. Keep the first cause until this boundary is consumed.
+    private func loseHistory(_ reason: String) {
+        pending = Changes(lost: true)
+        if invalidationReason == nil { invalidationReason = reason }
+    }
 
     static func canonical(_ path: String) -> String {
         var value = path
@@ -61,8 +69,8 @@ final class DirectoryChangeHistory: @unchecked Sendable {
         if let stream {
             FSEventStreamSetDispatchQueue(stream, queue)
             running = FSEventStreamStart(stream)
-            if !running { pending.lost = true }
-        } else { pending.lost = true }
+            if !running { lock.withLock { loseHistory("stream-start") } }
+        } else { lock.withLock { loseHistory("stream-create") } }
     }
     deinit { stop() }
     func stop() {
@@ -77,7 +85,11 @@ final class DirectoryChangeHistory: @unchecked Sendable {
         let done = flags & FSEventStreamEventFlags(kFSEventStreamEventFlagHistoryDone) != 0
         lock.withLock {
             if done { replaying = false; history.signal() }
-            if flags & lost != 0 { pending = Changes(lost: true); history.signal(); return }
+            if flags & lost != 0 {
+                loseHistory("event-flags:\(flags & lost)")
+                history.signal()
+                return
+            }
             if done { return }
             guard !raw.isEmpty else { return }
             let path = Self.canonical(raw)
@@ -87,21 +99,25 @@ final class DirectoryChangeHistory: @unchecked Sendable {
             // An alias event can change link count/content/ownership at other cached parents without changing those
             // directories' identities. The inventory's basic reader cannot repair that from clone-ledger state.
             if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemIsHardlink | kFSEventStreamEventFlagItemIsLastHardlink) != 0 {
-                pending = Changes(lost: true); return
+                loseHistory("hard-link")
+                return
             }
             let recursive = flags & FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagItemIsDir) != 0
             if recursive { pending.recursive.insert(path) }
             pending.shallow.insert((path as NSString).deletingLastPathComponent)
-            if pending.recursive.count + pending.shallow.count > 8192 { pending = Changes(lost: true) }
+            if pending.recursive.count + pending.shallow.count > 8192 { loseHistory("scope-limit") }
         }
     }
 
     func flush() -> (through: UInt64, changes: Changes) {
+        let started = Self.reportsMetrics ? DispatchTime.now() : nil
         if lock.withLock({ replaying }) {
             _ = history.wait(timeout: .now() + 1)
             let timedOut = lock.withLock { () -> Bool in
                 guard replaying else { return false }
-                pending = Changes(lost: true); replaying = false; return true
+                loseHistory("replay-timeout")
+                replaying = false
+                return true
             }
             if timedOut {
                 // Do not FlushSync an unbounded old backlog. A fresh stream fences the upcoming full live read instead.
@@ -124,11 +140,20 @@ final class DirectoryChangeHistory: @unchecked Sendable {
             }
             try? file.remove()
         } catch { observed = false }
-        return lock.withLock {
+        let (through, changes, reason) = lock.withLock {
             wantedFence = nil
-            var changes = pending; pending = Changes()
-            if !running || !observed { changes = Changes(lost: true) }
-            return (processedThrough, changes)
+            if !running || !observed { loseHistory(!running ? "stream-unavailable" : "fence-unobserved") }
+            let result = (processedThrough, pending, invalidationReason)
+            pending = Changes()
+            invalidationReason = nil
+            return result
         }
+        if let started {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - started.uptimeNanoseconds) / 1e9
+            let cause = reason ?? (changes.recursive.contains("/") ? "recursive-root" : "none")
+            let line = "DIRECTORY_HISTORY discarded=\(cause) shallow=\(changes.shallow.count) recursive=\(changes.recursive.count) seconds=\(elapsed)\n"
+            FileHandle.standardError.write(Data(line.utf8))
+        }
+        return (through, changes)
     }
 }
