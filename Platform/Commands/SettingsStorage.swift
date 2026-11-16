@@ -296,21 +296,39 @@ public struct SettingsStorageMeter {
     /// How many places are measured at the same time. The scan of System Data's items runs beside this one.
     static let workers = 3
 
+    /// The live category discovery for a single snapshot. Totals and per-item deductions can use the same paths.
+    public struct CategoryPlan: Sendable {
+        fileprivate let homePath: String
+        fileprivate let root: String
+        fileprivate let places: [(id: String, paths: [String])]
+        public var claimedPlaces: [String] { places.flatMap(\.paths) }
+    }
+
+    public func prepareCategories() -> CategoryPlan {
+        CategoryPlan(homePath: home.path, root: root, places: places(apps: applicationPaths(apps())))
+    }
+
     public func measure() -> SettingsStorage? {
+        measure(using: nil)
+    }
+
+    public func measure(using prepared: CategoryPlan?) -> SettingsStorage? {
         guard let (capacity, available) = space(), capacity >= available else { return nil }
         let systemVolumes = dataDevice().map { APFSVolumeUsage.systemVolumes(volumes(), dataDevice: $0) } ?? 0
-        let apps = applicationPaths(self.apps())
-        let places = places(apps: apps)
+        let plan: CategoryPlan
+        if let prepared, prepared.homePath == home.path, prepared.root == root { plan = prepared }
+        else { plan = prepareCategories() }
+        let places = plan.places
+        let claimed = plan.claimedPlaces
         // Documents: the home folder without ~/Library, ~/Applications, the trash and every place another category claims there (the
         // media folders Settings names, the apps Spotlight found); Desktop and Documents too when iCloud Drive keeps them.
-        var excluded = Set(places.flatMap(\.paths).filter { $0.hasPrefix(home.path + "/") })
+        var excluded = Set(claimed.filter { $0.hasPrefix(home.path + "/") })
         for name in ["Library", "Applications", ".Trash", "Music/iTunes/iTunes Media", "Music/Music/Media", "Movies/Apple TV/Media",
                      "Movies/TV/Media", "Movies/TV/TV Library"] { excluded.insert(path(name)) }
         if desktopAndDocumentsInICloud() { excluded.formUnion([path("Desktop"), path("Documents")]) }
         // Every place, and the home folder for Documents, measured side by side: one after the other they took 10 seconds. A place
         // inside another (iOS backups in ~/Library/Application Support) counts once, in its own category: counted twice, it came off
         // System Data twice, which could read 0.
-        let claimed = places.flatMap(\.paths)
         let jobs = places.flatMap { $0.paths.map { place in AllocatedSize.Job(path: place, excluding: Set(claimed.filter { $0.hasPrefix(place + "/") })) } }
             + [AllocatedSize.Job(path: home.path, excluding: excluded, excludingApplications: true)]
         // A clone's shared blocks count once over all the places: copies in Documents of a game in an Application Support bottle,

@@ -285,17 +285,20 @@ actor SystemDataStore {
         // scan one after the other, and CacheDelete computes a fresh figure for each of its services.
         let homebrew = Background { ModuleLoadMetrics.measure("system-data", "homebrew") { HomebrewCleanup.plan() } }
         let developer = Background { ModuleLoadMetrics.measure("system-data", "developer-caches") { DeveloperCaches.scan() } }
+        let categoryPlan = Background {
+            ModuleLoadMetrics.measure("system-data", "category-plan") { SettingsStorageMeter().prepareCategories() }
+        }
         let settings = Background { ModuleLoadMetrics.measure("system-data", "storage-categories") {
             var meter = SettingsStorageMeter()
             meter.sizingPool = sizingPool
-            return meter.measure()
+            return meter.measure(using: categoryPlan.value)
         } }
         let purgeableServices = Background { ModuleLoadMetrics.measure("system-data", "cache-delete") { livePurgeableServices() } }
         let assetFamilies = Background { ModuleLoadMetrics.measure("system-data", "asset-families") { AssetFamilyScanner().scan() } }
         // The cloud folders' uploaded copies too: walked after the disk, they held the scan at 75% for 2.5 seconds (2026-10-22).
         let cloudSources = Background { ModuleLoadMetrics.measure("system-data", "cloud-copies") { PurgeableDocuments.scan(maxAge: 600) } }
         let report = ModuleLoadMetrics.measure("system-data", "inspect") {
-            var inspector = SystemDataInspector()
+            var inspector = SystemDataInspector(claimedPlaces: { categoryPlan.value.claimedPlaces })
             inspector.sizingPool = sizingPool
             return inspector.inspect(progress: progress.part(0...0.65))
         }
@@ -355,7 +358,7 @@ private final class Background<Value>: @unchecked Sendable {
         DispatchQueue.global(qos: qos).async { self.result = work(); self.done.signal() }
     }
 
-    /// Waited for once; the semaphore orders the write before this read.
+    /// Reusable by readers of the same snapshot. The semaphore orders publication before every read.
     var value: Value {
         done.wait()
         done.signal()

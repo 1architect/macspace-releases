@@ -794,14 +794,28 @@ public struct SystemDataInspector {
         func isClaimed(_ path: String) -> Bool {
             claimed.contains { path == $0 || path.hasPrefix($0 + "/") } || SettingsStorageMeter.isDocuments(path, home: home)
         }
-        for index in items.indices where (items[index].bytes ?? 0) > 0 && !items[index].paths.isEmpty {
-            let roots = items[index].paths.map(plain)
-            if roots.allSatisfy(isClaimed) { items[index].elsewhereBytes = items[index].bytes; continue }
-            // Only the outermost: iOS backups are inside ~/Library/Application Support, and both are claimed.
-            let nested = claimed.filter { place in roots.contains { place.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
-            let inside = nested.filter { place in !nested.contains { place.hasPrefix($0 + "/") } }
-            let bytes = inside.map { AllocatedSize.allocatedBytes($0, excluding: []) }.reduce(0, +)
-            if bytes > 0 { items[index].elsewhereBytes = min(bytes, items[index].bytes ?? 0) }
+        ModuleLoadMetrics.measure("system-data", "nested-category-sizes") {
+            // A nested claim can contribute to more than one displayed item. Measure that exact path once while
+            // retaining the independent hard-link counting used by every deduction.
+            var nestedSizes: [Data: UInt64] = [:]
+            for index in items.indices where (items[index].bytes ?? 0) > 0 && !items[index].paths.isEmpty {
+                let roots = items[index].paths.map(plain)
+                if roots.allSatisfy(isClaimed) {
+                    items[index].elsewhereBytes = items[index].bytes
+                    continue
+                }
+                // Only the outermost: iOS backups are inside ~/Library/Application Support, and both are claimed.
+                let nested = claimed.filter { place in roots.contains { place.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
+                let inside = nested.filter { place in !nested.contains { place.hasPrefix($0 + "/") } }
+                let bytes = inside.reduce(UInt64(0)) { sum, path in
+                    let key = Data(path.utf8)
+                    if let measured = nestedSizes[key] { return sum + measured }
+                    let measured = AllocatedSize.allocatedBytes(path, excluding: [])
+                    nestedSizes[key] = measured
+                    return sum + measured
+                }
+                if bytes > 0 { items[index].elsewhereBytes = min(bytes, items[index].bytes ?? 0) }
+            }
         }
         // The caches inside an app's Application Support folder were measured twice: on their own and in the app's folder.
         for (id, cache) in measuredTotals where id.hasPrefix("supportcache:") {

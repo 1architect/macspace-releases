@@ -98,11 +98,20 @@ final class SettingsStorageTests: XCTestCase {
         try Data(repeating: 3, count: 4_000_000).write(to: document)
         var meter = SettingsStorageMeter(home: home)
         meter.root = root.path
-        meter.apps = { [installed.path, personal.path, outside.path] }
+        var appReads = 0
+        meter.apps = {
+            appReads += 1
+            return [installed.path, personal.path, outside.path]
+        }
         meter.space = { (100_000_000, 10_000_000) }
         meter.dataDevice = { nil }
         meter.desktopAndDocumentsInICloud = { false }
         let reading = try XCTUnwrap(meter.measure())
+        let prepared = meter.prepareCategories()
+        XCTAssertEqual(appReads, 2)
+        XCTAssertEqual(try XCTUnwrap(meter.measure(using: prepared)), reading)
+        XCTAssertEqual(appReads, 2, "Reusing the snapshot plan must not query installed applications again")
+        XCTAssertTrue(prepared.claimedPlaces.contains(personal.path))
         let appBytes = [installed, personal].map { AllocatedSize.allocatedBytes($0.path, excluding: []) }.reduce(0, +)
         let documentBytes = AllocatedSize.allocatedBytes(document.path, excluding: [])
         XCTAssertEqual(reading.bytes("applications"), appBytes)
