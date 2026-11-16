@@ -26,10 +26,20 @@ public struct FileTreeSize: Sendable, Equatable {
 /// `~/Library/Application Support` alone, measured 2026-10-06). The first file of a family counts in full, later ones only the bytes
 /// they do not share (`ATTR_CMNEXT_PRIVATESIZE`).
 public final class CloneLedger: @unchecked Sendable {
-    private let lock = NSLock()
-    private var seen = Set<UInt64>()
+    private final class Families {
+        let lock = NSLock()
+        var seen = Set<UInt64>()
+    }
 
-    public init() {}
+    private let lock = NSLock()
+    private let families: [Families]
+
+    public convenience init() { self.init(trackingFamilies: true) }
+
+    init(trackingFamilies: Bool) {
+        // Only ledgers shared by clone-aware readings allocate these buckets. Link-only walks keep one lock.
+        families = trackingFamilies ? (0..<16).map { _ in Families() } : []
+    }
 
     private var links = Set<UInt64>()
     private var files: [Int32: Set<UInt64>] = [:]
@@ -58,9 +68,10 @@ public final class CloneLedger: @unchecked Sendable {
 
     /// True the first time a family is seen.
     func claim(_ family: UInt64) -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return seen.insert(family).inserted
+        // Mix consecutive file IDs across buckets while keeping every occurrence of one family under the same lock.
+        let slot = Int((family &* 0x9e3779b97f4a7c15) >> 60)
+        let bucket = families[slot]
+        return bucket.lock.withLock { bucket.seen.insert(family).inserted }
     }
 
     /// True the first time a hard-linked file (by its inode) is seen: its blocks are stored once however many paths reach it
@@ -129,7 +140,7 @@ public struct FileTreeSizer: Sendable {
     public static func unsharedBytes(at path: String) -> UInt64? {
         var info = stat()
         guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else { return nil }
-        let links = CloneLedger()
+        let links = CloneLedger(trackingFamilies: false)
         let walk = DirectoryWalk.walk(path, extended: true, initial: UInt64(0)) { total, path, entry in
             if entry.isDirectory { return entry.isDataless ? .skip : .descend }
             guard entry.isRegularFile else { return .skip }
@@ -171,7 +182,7 @@ public struct FileTreeSizer: Sendable {
 
         struct Sums { var logical: UInt64 = 0, allocated: UInt64 = 0, purgeable: UInt64 = 0, sawFile = false }
         // Hard-linked files met in this tree; across trees, the ledger's.
-        let links = clones ?? CloneLedger()
+        let links = clones ?? CloneLedger(trackingFamilies: false)
         let clones = clones
         let countsPurgeable = countsPurgeable
         let extended = countsPurgeable || clones != nil

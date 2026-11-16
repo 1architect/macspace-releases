@@ -1,5 +1,5 @@
 import XCTest
-import MacSpacePlatform
+@testable import MacSpacePlatform
 
 final class MacOSReleaseTests: XCTestCase {
     private let beta = MacOSRelease(major: 27, minor: 2, build: "26B5091g")
@@ -111,6 +111,20 @@ final class FileTreeSizerTests: XCTestCase {
         let second = try XCTUnwrap(FileTreeSizer(clones: ledger).size(at: root.appendingPathComponent("b"))).logicalBytes
         XCTAssertEqual(first + second, 1_000_000)
         XCTAssertLessThan(AllocatedSize.allocatedBytes(root.path, excluding: []), 1_200_000)
+    }
+
+    func testCloneFamiliesAreClaimedOnlyOnceAcrossConcurrentWorkers() {
+        let ledger = CloneLedger()
+        let counts = LockedArray(repeating: 0, count: 8)
+        DispatchQueue.concurrentPerform(iterations: 8) { worker in
+            var seen = 0
+            for offset in 0..<4096 {
+                let id = UInt64((worker * 53 + offset) % 4096) << 16
+                if ledger.claim(id) { seen += 1 }
+            }
+            counts.set(worker, seen)
+        }
+        XCTAssertEqual(counts.values.reduce(0, +), 4096)
     }
 
     /// Walked by several threads (`ScanPool`), a tree adds up to what one thread finds; links are not followed, and an excluded

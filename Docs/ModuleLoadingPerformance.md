@@ -178,3 +178,11 @@ In those samples, the initial receipt wait was at most 15 ms and ownership write
 At `d66d26c`, three paired runs against `2efc7f3` with the experimental archive measured **29.265 → 20.204 s (31.0%)** initially and **14.268 → 6.827 s (52.1%)** on reentry. Siri and Debloat regressed in both scenarios. Initial ownership writes took 1.433–1.564 s. Evidence is under `results/module-loading-20261116-ownership-write-vs-2efc7f3/`.
 
 Three independent pairs with the default configuration requested by `--archive off` measured **37.475 → 19.298 s (48.5%)** initially and **17.420 → 10.406 s (40.3%)** on reentry. Siri and Debloat regressed in both scenarios. The reports declare `directoryArchive: off` and the candidate emitted no archive activity. Evidence is under `results/module-loading-20261116-ownership-write-default-vs-2efc7f3/`. Both configurations still fail the complete target.
+
+## Parallel clone accounting and conditional Siri estimate
+
+Parallel clone-aware readers now use 16 independently locked sets keyed by clone family. Every occurrence of a family reaches the same set, so only the first claims its shared blocks. Link-only ledgers keep a single lock, and hard-link rules are unchanged. A controlled probe of 1.2 million claims preserved all counts across three alternating pairs. The eight-worker median improved from **396 to 160 ms**, while the one-worker median rose from **68 to 73 ms** (`/tmp/macspace-clone-ledger-probe.log`). These timings measure family claims alone.
+
+Siri skips the CacheDelete estimate while macOS holds system assets. It checks eligibility again before publication and performs a fresh estimate if that status changed during the read. The test host currently allows the estimate, so its live run exercises the same OS query. The Debloat experiment with a redundant native date predicate returned all 50 decisions and a warm median around 1.39 seconds in both forms. The current query was kept.
+
+**832 selected release tests passed** and nine opt-in diagnostics were skipped (`/tmp/macspace-shared-sizing-and-siri-validation.log`). Coverage includes concurrent family claims, native archive history, and eligibility transitions before a Siri snapshot publishes.

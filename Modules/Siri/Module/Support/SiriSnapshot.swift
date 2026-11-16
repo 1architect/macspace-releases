@@ -57,6 +57,28 @@ struct SiriPlanFailure: Error, Sendable, Equatable {
     var message: String
 }
 
+enum SiriPurgeableAssetReading: Sendable {
+    case held
+    case estimated(UInt64?)
+
+    static func read(held: () -> Bool, estimate: () -> UInt64?) -> Self {
+        if held() { return .held }
+        return .estimated(estimate())
+    }
+
+    func resolve(held: () -> Bool, estimate: () async -> UInt64?) async -> UInt64? {
+        guard !held() else { return nil }
+        switch self {
+        case .estimated(let bytes):
+            return bytes
+        case .held:
+            // Eligibility changed while the other readers ran. Obtain the estimate that this snapshot can now show.
+            let bytes = await estimate()
+            return held() ? nil : bytes
+        }
+    }
+}
+
 actor SiriStore {
     typealias Builder = @Sendable (LoadProgressRelay) async -> SiriSnapshot
 
@@ -131,7 +153,7 @@ actor SiriStore {
         }.value
         async let purgeableRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[2](1) }
-            return ModuleLoadMetrics.measure("siri", "purgeable") { PurgeRun(service: CacheDeleteService.mobileAsset).estimate() }
+            return SiriPurgeableAssetReading.read(held: { SystemAssetGuard.holdsAssets }, estimate: livePurgeableEstimate)
         }.value
         async let modelRead = Task.detached(priority: Task.currentPriority) {
             defer { parts[3](1) }
@@ -149,10 +171,12 @@ actor SiriStore {
         parts[0](1)
         let accounts = await accountRead
         let cli = ToolLocator.cli()
-        var purgeable = await purgeableRead
         // Without what macOS estimates but would not delete when asked (`PurgeHoldouts`). Not offered at all while Apple Intelligence
         // is on: MacSpace leaves the system assets alone then (`SystemAssetGuard`).
-        purgeable = SystemAssetGuard.holdsAssets ? nil : purgeable.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
+        let estimate = await purgeableRead.resolve(held: { SystemAssetGuard.holdsAssets }) {
+            await Task.detached(priority: Task.currentPriority) { livePurgeableEstimate() }.value
+        }
+        let purgeable = estimate.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
         var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
                                     releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
@@ -171,6 +195,10 @@ actor SiriStore {
         ModuleLoadMetrics.measure("siri", "feature-models") { readFeatureModels(into: &snapshot) }
         parts[4](1)
         return snapshot
+    }
+
+    private static func livePurgeableEstimate() -> UInt64? {
+        ModuleLoadMetrics.measure("siri", "purgeable") { PurgeRun(service: CacheDeleteService.mobileAsset).estimate() }
     }
 
     /// The Siri, Spatial Photos and Phone models on disk, read on every reading of the page as the Apple Intelligence models are.

@@ -350,7 +350,7 @@ public enum AllocatedSize {
         guard info.st_mode & S_IFMT == S_IFDIR else { return UInt64(max(info.st_blocks, 0)) * 512 }
         guard info.st_flags & UInt32(SF_DATALESS) == 0 else { return 0 }
         // A file reached by several hard links counts once (`HardLinks`): in this tree, or with a ledger in every tree.
-        let links = clones ?? CloneLedger()
+        let links = clones ?? CloneLedger(trackingFamilies: false)
         let excludedParents = Set(excluded.map { ($0 as NSString).deletingLastPathComponent })
         struct Total { var bytes: UInt64 = 0; var directory: String?; var checkExclusions = false }
         let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool, privateSizes: false, archive: pool?.archive,
