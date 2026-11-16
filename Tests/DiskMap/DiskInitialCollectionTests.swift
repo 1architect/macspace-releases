@@ -4,6 +4,29 @@ import XCTest
 @testable import MacSpaceDiskMap
 
 final class DiskInitialCollectionTests: DiskSecurityFixtureCase {
+    func testPublishedParentAndExistingPlaceholderUseTheSameDirectoryID() throws {
+        let base = URL(fileURLWithPath: "/private/tmp/initial-published-id-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let root = base.appendingPathComponent("home").path
+        let db = try DiskDatabase(url: base.appendingPathComponent("cache/index.sqlite"), root: root, home: root)
+        let parent = root + "/parent", child = parent + "/文"
+        try db.transaction {
+            let rootID = try XCTUnwrap(db.collectInitialDirectory(.init(path: root), parentRowID: nil, existing: false))
+            let parentID = try XCTUnwrap(db.collectInitialDirectory(.init(path: parent), parentRowID: rootID, existing: false))
+            try db.ensureDirectory(child, ownerUID: 501, parentExists: true)
+            var placeholder: UInt64?
+            try db.query("SELECT id FROM dirs WHERE path=?", [.text(child)]) { placeholder = DiskDatabase.number($0, 0) }
+            let childID = try XCTUnwrap(db.collectInitialDirectory(.init(path: child, itemCount: 1, directBytes: 4096, ownerUID: 502),
+                parentRowID: parentID, existing: false))
+            XCTAssertEqual(childID, placeholder)
+            let leaf = child + "/leaf"
+            XCTAssertNotNil(try db.collectInitialDirectory(.init(path: leaf), parentRowID: childID, existing: false))
+            try db.query("SELECT parent FROM dirs WHERE path=?", [.text(leaf)]) { XCTAssertEqual(DiskDatabase.number($0, 0), childID) }
+            XCTAssertEqual(try db.directory(child)?.ownerUID, 501)
+            XCTAssertEqual(try db.directory(child)?.directBytes, 4096)
+        }
+    }
+
     func testEnumeratedDirectoryMetadataMatchesFreshStatsAcrossInitialAndFullRefresh() throws {
         let base = URL(fileURLWithPath: "/private/tmp/initial-metadata-" + UUID().uuidString)
         let home = base.appendingPathComponent("home")

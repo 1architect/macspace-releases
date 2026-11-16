@@ -173,17 +173,20 @@ struct DiskDatabaseScanner {
                 catch { failure.error = error }
             }
         }
-        func flush(_ totals: inout Totals, finished: (path: String, complete: Bool)? = nil) {
-            guard finished != nil || totals.pendingFiles > 0 || !totals.folders.isEmpty else { return }
+        @discardableResult
+        func flush(_ totals: inout Totals, finished: (path: String, complete: Bool, parentRowID: UInt64?)? = nil) -> UInt64? {
+            guard finished != nil || totals.pendingFiles > 0 || !totals.folders.isEmpty else { return nil }
             let ownPath = finished?.path ?? totals.files.first.map { DiskDatabase.parent($0.0.path) } ?? totals.folders.first.map { DiskDatabase.parent($0.path) }
             let ownerUID: UInt32?
             if totals.directoryCreated { ownerUID = nil }
             else if enumeratedMetadata, let enumeratedOwner = totals.ownerUID { ownerUID = enumeratedOwner }
             else { ownerUID = ownPath.flatMap { metadata($0)?.st_uid } }
+            var rowID: UInt64?
             writing {
                 if let finished {
-                    try db.collectInitialDirectory(DiskDirectory(path: finished.path, itemCount: finished.complete ? totals.items : nil,
-                        directBytes: totals.bytes, readable: finished.complete && totals.readable, bundleIdentifier: totals.bundle, ownerUID: ownerUID))
+                    let node = DiskDirectory(path: finished.path, itemCount: finished.complete ? totals.items : nil,
+                        directBytes: totals.bytes, readable: finished.complete && totals.readable, bundleIdentifier: totals.bundle, ownerUID: ownerUID)
+                    rowID = try db.collectInitialDirectory(node, parentRowID: finished.parentRowID, existing: totals.directoryCreated)
                     directories += 1
                 } else if !totals.directoryCreated, !totals.files.isEmpty || !totals.folders.isEmpty, let ownPath {
                     // Only a directory with retained files needs a placeholder before its enumeration finishes.
@@ -200,6 +203,7 @@ struct DiskDatabaseScanner {
             }
             totals.pendingFiles = 0
             totals.files.removeAll(keepingCapacity: true); totals.folders.removeAll(keepingCapacity: true)
+            return rowID
         }
         DirectoryWalk.scan(db.root, devices: devices, pool: ScanPool(free: 7), archive: archive, makeState: { Totals() }, directoryStarted: { totals, uid in totals.ownerUID = uid }, visit: { totals, makePath, entry in
             totals.items += 1
@@ -247,11 +251,12 @@ struct DiskDatabaseScanner {
             totals.pendingFiles += 1
             if totals.pendingFiles >= 256 { flush(&totals) }
             return false
-        }, finished: { totals, path, complete in
-            flush(&totals, finished: (path, complete))
+        }, directoryPublished: { totals, path, complete, parentRowID in
+            let rowID = flush(&totals, finished: (path, complete, parentRowID))
             totals.bytes = 0; totals.items = 0; totals.bundle = nil; totals.readable = true
             totals.directoryCreated = false
             totals.directory = nil
+            return rowID
         })
         if let error = failure.error { throw error }
         visited = directories

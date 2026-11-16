@@ -22,6 +22,20 @@ final class LoadWorkPriorityTests: XCTestCase {
         }
     }
 
+    func testConcurrentScanPoolAdmissionsDoNotOversubscribeAndCanBeReused() {
+        let pool = ScanPool(free: 3)
+        for _ in 0..<4 {
+            let admitted = LockedArray(repeating: false, count: 32)
+            DispatchQueue.concurrentPerform(iterations: 32) { n in
+                admitted.set(n, pool.tryAcquire())
+            }
+            let permits = admitted.values.filter { $0 }.count
+            XCTAssertEqual(permits, 3)
+            XCTAssertFalse(pool.tryAcquire())
+            for _ in 0..<permits { pool.release() }
+        }
+    }
+
     func testSharedReaderStartsAtTheRequestPriorityIncludingBackgroundRequests() async {
         for priority in [TaskPriority.userInitiated, .medium, .utility, .background] {
             let done = expectation(description: "Reader priority \(priority)")

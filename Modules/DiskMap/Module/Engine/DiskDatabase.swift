@@ -241,6 +241,21 @@ final class DiskDatabase: @unchecked Sendable {
     func collectInitialDirectory(_ node: DiskDirectory) throws {
         try query("INSERT INTO dirs(path,parent,direct,total,readable,uid,bundle,items) VALUES(?,COALESCE((SELECT id FROM dirs WHERE path=?),0),?,0,?,?,?,?) ON CONFLICT(path) DO UPDATE SET direct=excluded.direct,readable=excluded.readable,uid=COALESCE(dirs.uid,excluded.uid),bundle=excluded.bundle,items=excluded.items", [.text(node.path), .text(node.path == root ? "" : Self.parent(node.path)), .number(node.directBytes), .number(node.readable ? 1 : 0), .optional(node.ownerUID), .text(node.bundleIdentifier ?? ""), node.itemCount.map { .number($0) } ?? .optional(nil)])
     }
+
+    /// Use a parent row already published by this same writer. An existing placeholder or repeated path retains its ID
+    /// and uses the ordinary upsert, which also handles the root and a missing parent context.
+    func collectInitialDirectory(_ node: DiskDirectory, parentRowID: UInt64?, existing: Bool) throws -> UInt64? {
+        if let parentRowID, !existing {
+            try query("INSERT OR IGNORE INTO dirs(path,parent,direct,total,readable,uid,bundle,items) VALUES(?,?,?,0,?,?,?,?)",
+                [.text(node.path), .number(parentRowID), .number(node.directBytes), .number(node.readable ? 1 : 0),
+                 .optional(node.ownerUID), .text(node.bundleIdentifier ?? ""), node.itemCount.map(Value.number) ?? .optional(nil)])
+            if msc_sqlite3_changes(db) == 1 { return UInt64(clamping: msc_sqlite3_last_insert_rowid(db)) }
+        }
+        try collectInitialDirectory(node)
+        var rowID: UInt64?
+        try query("SELECT id FROM dirs WHERE path=?", [.text(node.path)]) { rowID = Self.number($0, 0) }
+        return rowID
+    }
     private static let entryInsertSQL = "INSERT INTO entries SELECT id,?,?,?,?,?,?,?,?,? FROM dirs WHERE path=? ON CONFLICT(parent,name) DO UPDATE SET bytes=excluded.bytes,logical=excluded.logical,uid=excluded.uid,link=excluded.link,category=excluded.category,modified=excluded.modified,kind=excluded.kind,inventory=excluded.inventory WHERE entries.bytes IS NOT excluded.bytes OR entries.logical IS NOT excluded.logical OR entries.uid IS NOT excluded.uid OR entries.link IS NOT excluded.link OR entries.category IS NOT excluded.category OR entries.modified IS NOT excluded.modified OR entries.kind IS NOT excluded.kind OR entries.inventory IS NOT excluded.inventory"
     private static let refreshInsertSQL = entryInsertSQL.replacingOccurrences(of: "entries", with: "refresh_entries")
     func put(_ file: DiskFile, link: String = "", trackSeen: Bool = false, staging: Bool = false, parentExists: Bool = false) throws {
