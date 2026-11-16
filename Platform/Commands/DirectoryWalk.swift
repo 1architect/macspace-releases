@@ -260,11 +260,12 @@ public enum DirectoryWalk {
                     }
                 }
                 directoryStarted?(&state, folder.ownerUID)
+                let endsInSlash = folder.path.hasSuffix("/")
                 let complete = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device, archive: archive, compressionScratch: scratch) { name, entry in
                     var built: String?
                     let path = { () -> String in
                         if let built { return built }
-                        let made = folder.path.hasSuffix("/") ? folder.path + String(cString: name) : folder.path + "/" + String(cString: name)
+                        let made = endsInSlash ? folder.path + String(cString: name) : folder.path + "/" + String(cString: name)
                         built = made
                         return made
                     }
@@ -272,7 +273,7 @@ public enum DirectoryWalk {
                 }
                 let rowID = finished?(&state, folder.path, complete, folder.parentRowID)
                 if let rowID, !found.isEmpty {
-                    let prefix = folder.path.hasSuffix("/") ? folder.path : folder.path + "/"
+                    let prefix = endsInSlash ? folder.path : folder.path + "/"
                     // If a name combines with the delimiter, leave path resolution to the existing writer.
                     if prefix.last == "/" {
                         for child in found.indices where found[child].path.hasPrefix(prefix) {
@@ -294,31 +295,23 @@ public enum DirectoryWalk {
             let descriptor = open(folder, flags)
             guard descriptor >= 0 else { return false }
             defer { close(descriptor) }
-            let archive = archive.flatMap { $0.accepts(folder) ? $0 : nil }
-            var before = stat()
-            let identity: DirectoryListingArchive.Identity?
-            if let archive, fstat(descriptor, &before) == 0 {
-                let value = DirectoryListingArchive.Identity(before)
-                identity = archive.accepts(value) ? value : nil
-            } else { identity = nil }
             let requested = request
-            var reading = request
-            var readingOptions = options
-            var archived = request
-            if identity != nil {
-                archived = DirectoryWalk.attributes(extended: true, fileIDs: true,
-                    privateSizes: requested.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0)
-                archived.commonattr |= attrgroup_t(ATTR_CMN_MODTIME)
-                // Inventory can consume existing sizing facts without paying for clone/private attributes or archive writes
-                // on its own misses. Only readers that need extended facts populate this shared representation.
-                if requested.forkattr != 0 {
-                    reading = archived
-                    readingOptions = UInt64(FSOPT_ATTR_CMN_EXTENDED)
-                }
+            var before = stat()
+            guard let archive, archive.accepts(folder), fstat(descriptor, &before) == 0 else {
+                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
             }
+            let identity = DirectoryListingArchive.Identity(before)
+            guard archive.accepts(identity) else {
+                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
+            }
+            var archived = DirectoryWalk.attributes(extended: true, fileIDs: true,
+                privateSizes: requested.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0)
+            archived.commonattr |= attrgroup_t(ATTR_CMN_MODTIME)
             let key = "\(archived.commonattr):\(archived.fileattr):\(archived.forkattr):\(UInt64(FSOPT_ATTR_CMN_EXTENDED))"
-            let lookup = identity.flatMap { identity in archive?.lookup(folder, request: key, identity: identity) }
-            if let data = lookup?.data, let batches = DirectoryAttributeBatches.decode(data, request: archived) {
+            let lookup = archive.lookup(folder, request: key, identity: identity)
+            if let data = lookup.data, let batches = DirectoryAttributeBatches.decode(data, request: archived) {
                 for batch in batches {
                     batch.bytes.withUnsafeBytes { raw in
                         _ = parse(UnsafeMutableRawPointer(mutating: raw.baseAddress!), count: batch.count, rootDevice: rootDevice, cached: true, visible: requested, body: body)
@@ -326,26 +319,44 @@ public enum DirectoryWalk {
                 }
                 return true
             }
-            var complete = true
-            var saved: [DirectoryAttributeBatches.Batch]? = identity != nil && requested.forkattr != 0 ? [] : nil
-            var savedBytes = 8
-            while true {
-                let count = getattrlistbulk(descriptor, &reading, buffer, capacity, readingOptions)
-                if count < 0 { return false }
-                if count == 0 { break }
-                let parsed = parse(buffer, count: count, rootDevice: rootDevice, cached: false, visible: requested, body: body)
-                complete = complete && parsed.complete
-                if saved != nil {
-                    savedBytes += 8 + parsed.used
-                    if parsed.used > 0 && parsed.used <= capacity && savedBytes <= DirectoryListingArchive.maximumPayload {
-                        saved!.append(.init(count: count, bytes: Data(bytes: buffer, count: parsed.used)))
-                    } else { saved = nil }
-                }
+            // Inventory can replay sizing facts. Only the extended readers populate this shared representation.
+            guard requested.forkattr != 0 else {
+                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
             }
-            if complete, let archive, let identity, let saved, let payload = DirectoryAttributeBatches.encode(saved, request: reading),
+            var saved: [DirectoryAttributeBatches.Batch]? = []
+            var savedBytes = 8
+            let complete = readAttributes(descriptor, requesting: archived, visible: requested, options: UInt64(FSOPT_ATTR_CMN_EXTENDED),
+                buffer: buffer, capacity: capacity, rootDevice: rootDevice, capture: { count, used in
+                    guard saved != nil else { return }
+                    savedBytes += 8 + used
+                    if used > 0 && used <= capacity && savedBytes <= DirectoryListingArchive.maximumPayload {
+                        saved!.append(.init(count: count, bytes: Data(bytes: buffer, count: used)))
+                    } else {
+                        saved = nil
+                    }
+                }, body: body)
+            if complete, let saved, let payload = DirectoryAttributeBatches.encode(saved, request: archived),
                fstat(descriptor, &before) == 0, identity == DirectoryListingArchive.Identity(before) {
                 let stored = compressionScratch.map { DirectoryAttributeBatches.compact(payload, into: buffer, capacity: capacity, scratch: $0) } ?? payload
-                archive.record(stored, path: folder, request: key, identity: identity, generation: lookup?.generation)
+                archive.record(stored, path: folder, request: key, identity: identity, generation: lookup.generation)
+            }
+            return complete
+        }
+
+        private static func readAttributes(_ descriptor: Int32, requesting: attrlist, visible: attrlist, options: UInt64,
+                                           buffer: UnsafeMutableRawPointer, capacity: Int, rootDevice: Int32,
+                                           capture: ((Int32, Int) -> Void)? = nil,
+                                           body: (UnsafePointer<CChar>, Facts) -> Void) -> Bool {
+            var reading = requesting
+            var complete = true
+            while true {
+                let count = getattrlistbulk(descriptor, &reading, buffer, capacity, options)
+                if count < 0 { return false }
+                if count == 0 { break }
+                let parsed = parse(buffer, count: count, rootDevice: rootDevice, cached: false, visible: visible, body: body)
+                complete = complete && parsed.complete
+                capture?(count, parsed.used)
             }
             return complete
         }
@@ -353,6 +364,7 @@ public enum DirectoryWalk {
                                   body: (UnsafePointer<CChar>, Facts) -> Void) -> (complete: Bool, used: Int) {
             var complete = true
             var cursor = buffer
+            let showsDate = visible.commonattr & attrgroup_t(ATTR_CMN_MODTIME) != 0
             for _ in 0..<count {
                 let length = Int(cursor.loadUnaligned(as: UInt32.self))
                 defer { cursor += length }
@@ -378,8 +390,11 @@ public enum DirectoryWalk {
                 if returned.commonattr & attrgroup_t(ATTR_CMN_OBJTYPE) != 0 { type = field.loadUnaligned(as: UInt32.self); field += 4 }
                 var modifiedAt: Date?
                 if returned.commonattr & attrgroup_t(ATTR_CMN_MODTIME) != 0 {
-                    let time = field.loadUnaligned(as: timespec.self); field += MemoryLayout<timespec>.size
-                    if time.tv_sec > 0 { modifiedAt = Date(timeIntervalSince1970: Double(time.tv_sec) + Double(time.tv_nsec) / 1e9) }
+                    if showsDate {
+                        let time = field.loadUnaligned(as: timespec.self)
+                        if time.tv_sec > 0 { modifiedAt = Date(timeIntervalSince1970: Double(time.tv_sec) + Double(time.tv_nsec) / 1e9) }
+                    }
+                    field += MemoryLayout<timespec>.size
                 }
                 var ownerUID: UInt32 = 0
                 if returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID) != 0 { ownerUID = field.loadUnaligned(as: UInt32.self); field += 4 }
@@ -400,7 +415,7 @@ public enum DirectoryWalk {
                 if returned.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 { family = field.loadUnaligned(as: UInt64.self); field += 8 }
                 if returned.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 { extendedFlags = field.loadUnaligned(as: UInt64.self); field += 8 }
                 body(name, Facts(entry: Entry(type: type, device: device, flags: flags, ownerUID: ownerUID,
-                                 hasDirectoryMetadata: returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS) == attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS), linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: visible.commonattr & attrgroup_t(ATTR_CMN_MODTIME) != 0 ? modifiedAt : nil,
+                                 hasDirectoryMetadata: returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS) == attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS), linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
                                  cloneFamily: visible.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 ? family : 0,
                                  privateBytes: visible.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0 ? privateBytes : 0,
                                  extendedFlags: visible.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 ? extendedFlags : 0, hasApplicationSuffix: appSuffix), fileID: fileID, fromArchive: cached))
