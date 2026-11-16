@@ -19,6 +19,8 @@ def load(path):
             raise ValueError(f"{path}: root and build configuration must be recorded; regenerate legacy reports")
         if not isinstance(sample.get("requestPriority"), int):
             raise ValueError(f"{path}: request priority must be recorded; regenerate legacy reports")
+        if "directoryArchive" in sample and sample["directoryArchive"] not in {"off", "opt-in"}:
+            raise ValueError(f"{path}: invalid directory archive setting")
         for phase, total in SCENARIOS:
             if {row["module"] for row in sample[phase]} != MODULES or len(sample[phase]) != 5:
                 raise ValueError(f"{path}: {phase} must measure all five modules")
@@ -42,6 +44,9 @@ def main():
         baseline, candidate = load(args.baseline), load(args.candidate)
         if len({(sample["root"], sample["configuration"], sample["requestPriority"]) for sample in baseline + candidate}) != 1:
             raise ValueError("all samples must use the same scan root, build configuration and request priority")
+        archive_modes = {sample.get("directoryArchive", "legacy") for sample in baseline + candidate}
+        if len(archive_modes) != 1:
+            raise ValueError("all samples must use the same directory archive setting")
     except (ValueError, KeyError, TypeError, OSError) as error:
         parser.error(str(error))
     passed = True
@@ -58,7 +63,8 @@ def main():
             module_met = new <= old
             passed &= module_met
             print(f"  {module}: {old:.3f}s -> {new:.3f}s ({(1 - new / old) * 100:.1f}%); {'PASS' if module_met else 'REGRESSION'}")
-    print("Scope: backend readers and presentation builders; helper, production Keychain and UI are excluded.")
+    archive = archive_modes.pop()
+    print(f"Directory archive: {archive}. Scope: backend readers and presentation builders; helper, production Keychain and UI are excluded.")
     return 0 if passed else 1
 
 

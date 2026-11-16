@@ -55,6 +55,15 @@ class ModuleLoadingComparisonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
         self.assertIn("same scan root, build configuration and request priority", result.stderr)
 
+    def testRejectsMixedDefaultAndExperimentalArchiveReports(self):
+        for sample in self.baseline:
+            sample["directoryArchive"] = "off"
+        for sample in self.candidate:
+            sample["directoryArchive"] = "opt-in"
+        result = self.compare()
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("same directory archive setting", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

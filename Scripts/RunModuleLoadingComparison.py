@@ -18,6 +18,8 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--pairs", type=int, default=4)
     parser.add_argument("--root", default="/")
+    parser.add_argument("--archive", choices=["off", "opt-in"], default="off",
+                        help="use the app default or enable the experimental directory archive")
     args = parser.parse_args()
     if args.pairs < 3:
         parser.error("at least three pairs are required")
@@ -28,7 +30,8 @@ def main():
         parser.error("both variants must use the exact same benchmark source")
     output = args.output.resolve()
     output.mkdir(parents=True, mode=0o700, exist_ok=False)
-    metadata = {"harnessSHA256": hashes["baseline"], "root": args.root, "pairs": args.pairs, "variants": {}}
+    metadata = {"harnessSHA256": hashes["baseline"], "root": args.root, "pairs": args.pairs,
+                "directoryArchive": args.archive, "variants": {}}
     for name, path in variants.items():
         metadata["variants"][name] = {
             "path": str(path),
@@ -50,7 +53,7 @@ def main():
             prefix = output / f"{name}-{pair + 1:02d}"
             report = prefix.with_suffix(".json")
             environment = dict(os.environ, MACSPACE_LOADING_BENCHMARK="1", MACSPACE_LOADING_SAMPLES="1",
-                               MACSPACE_LOADING_ROOT=args.root, MACSPACE_LOADING_REPORT=str(report),
+                               MACSPACE_LOADING_ROOT=args.root, MACSPACE_LOADING_REPORT=str(report), MACSPACE_LOADING_ARCHIVE=args.archive,
                                MACSPACE_SYSTEM_DATA_DIAGNOSTIC="0", MACSPACE_DISK_METRICS="1",
                                MACSPACE_DISK_METRICS_FILE=str(prefix) + "-disk.txt", MACSPACE_LOAD_METRICS="1",
                                MACSPACE_LOAD_METRICS_FILE=str(prefix) + "-modules.txt")
@@ -61,6 +64,8 @@ def main():
             reading = json.loads(report.read_text())
             if len(reading) != 1 or reading[0]["root"] != args.root or reading[0]["configuration"] != "release":
                 raise ValueError(f"{name}: expected one complete release sample at the selected root")
+            if reading[0].get("directoryArchive") != args.archive:
+                raise ValueError(f"{name}: the benchmark must record its directory archive setting")
             samples[name].extend(reading)
             (output / f"{name}.json").write_text(json.dumps(samples[name], indent=2) + "\n")
             sample = reading[0]

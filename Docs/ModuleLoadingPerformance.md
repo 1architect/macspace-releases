@@ -2,7 +2,7 @@
 
 The target is a 50% reduction in module data-loading time relative to `2efc7f3`, preserving presentations, actions, safety boundaries and refresh policy. Visual page-opening time is outside this target. **This target is not yet achieved.**
 
-## Latest comparable measurements
+## Initial comparison before the directory archive experiments
 
 Measured on 2026-11-14, Apple M4, macOS 27.2 (26B123), optimized release builds and Full Disk Access. A detached reference checkout at `2efc7f3` and the candidate use identical benchmark source. Pre-existing unrelated model-cleanup edits were retained identically. Reference/candidate order alternates between pairs to reduce filesystem-cache and machine-load bias. The table contains medians from three complete pairs; values are seconds, reference → candidate.
 
@@ -25,7 +25,7 @@ The opt-in target runs all five real snapshot readers and presentation builders 
 
 Scenarios are kept separate: `first` uses new stores and a new index; `cachedIndexStartup` uses new stores with the completed index. Shared cloud measurements are invalidated between scenarios. The additional `reopen` reading uses the same instances and may perform I/O after cache expiry or filesystem events.
 
-Reports record the scan root, build configuration and request priority. Comparisons reject mismatches, incomplete module sets and fewer than three samples. They measure backend work, excluding bundle loading, helper readiness/root-only work, the production Keychain/session gate and UI rendering. No full application launch or visual verification is claimed.
+Reports record the scan root, build configuration, request priority and directory archive setting. Comparisons reject mismatches, incomplete module sets and fewer than three samples. They measure backend work, excluding bundle loading, helper readiness/root-only work, the production Keychain/session gate and UI rendering. No full application launch or visual verification is claimed.
 
 ## Reproduction
 
@@ -35,10 +35,10 @@ Build the same harness in both checkouts, then run:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 python3 Scripts/RunModuleLoadingComparison.py \
   --baseline /path/to/reference-checkout --candidate /path/to/candidate-checkout \
-  --output results/new-private-comparison --pairs 4
+  --output results/new-private-comparison --archive off --pairs 4
 ```
 
-The runner builds both variants first, alternates execution order and invokes `CompareModuleLoading.py`. It exits unsuccessfully when either aggregate median misses the 50% target or any module median regresses. Four Python acceptance tests cover aggregate improvement, hidden module regressions, target misses and mismatched context. Both variants use root `/` by default, release optimization and the same benchmark SHA-256. Output contains timing/phase evidence, not snapshot contents; the output directory is private and ignored by Git.
+The runner builds both variants first, alternates execution order and invokes `CompareModuleLoading.py`. It exits unsuccessfully when either aggregate median misses the 50% target or any module median regresses. Five Python acceptance tests cover aggregate improvement, hidden module regressions, target misses and mismatched context or archive settings. Both variants use root `/` by default, release optimization and the same benchmark SHA-256. Use `--archive opt-in` for a separate experimental run. The private output directory contains timing and phase evidence and is ignored by Git.
 
 ## Implemented and investigated
 
@@ -174,3 +174,7 @@ For Debloat, a read-only `OSLogStore.local()` probe returned the same 49 decisio
 At `ad69898`, receipt manifest discovery overlaps application discovery. Ownership projections fetch ancestor relations in groups and decode identical claim payloads once per group. The original combination rule still counts the same claim at multiple ancestors and uses SQLite's byte-sensitive path matching. A controlled projection of 8,000 paths returned the same 6,400 claims, with median time **100 → 40 ms**. All 828 selected release tests passed. Three pairs against `2efc7f3` with the experimental archive measured **56.038 → 38.143 s (31.9%)** initially and **29.605 → 17.205 s (41.9%)** with a completed index. Initial Siri, Debloat, and Other System Files regressed, as did Siri with a completed index. Evidence is under `results/module-loading-20261115-ownership-work-vs-2efc7f3/`.
 
 In those samples, the initial receipt wait was at most 15 ms and ownership writes took 2.304–3.203 s. The follow-up submits claims in bounded SQL batches and applies only added and removed relations within the same transaction. Its fixture crosses the batch limit and checks that an unchanged relation causes zero writes to the persistent ownership table. In a separate encrypted fixture with 12,000 claims and identical evidence across both algorithms, median initial persistence took **344 → 321 ms**, an unchanged refresh **187 → 118 ms**, and a refresh with 20 replacements **187 → 120 ms**. **829 selected tests passed**, with nine opt-in diagnostics skipped (`/tmp/macspace-ownership-write-validation.log`). The isolated write results measure this stage alone.
+
+At `d66d26c`, three paired runs against `2efc7f3` with the experimental archive measured **29.265 → 20.204 s (31.0%)** initially and **14.268 → 6.827 s (52.1%)** on reentry. Siri and Debloat regressed in both scenarios. Initial ownership writes took 1.433–1.564 s. Evidence is under `results/module-loading-20261116-ownership-write-vs-2efc7f3/`.
+
+Three independent pairs with the default configuration requested by `--archive off` measured **37.475 → 19.298 s (48.5%)** initially and **17.420 → 10.406 s (40.3%)** on reentry. Siri and Debloat regressed in both scenarios. The reports declare `directoryArchive: off` and the candidate emitted no archive activity. Evidence is under `results/module-loading-20261116-ownership-write-default-vs-2efc7f3/`. Both configurations still fail the complete target.

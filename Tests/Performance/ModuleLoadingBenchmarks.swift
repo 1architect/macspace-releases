@@ -23,6 +23,7 @@ final class ModuleLoadingBenchmarks: XCTestCase {
         var root: String
         var configuration: String
         var requestPriority: UInt8
+        var directoryArchive: String
         var first: [Measurement]
         var reopen: [Measurement]
         var allReadySeconds: Double
@@ -130,11 +131,20 @@ final class ModuleLoadingBenchmarks: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         var samples: [Sample] = []
         let count = max(1, Int(environment["MACSPACE_LOADING_SAMPLES"] ?? "3") ?? 3)
+        let archive = environment["MACSPACE_LOADING_ARCHIVE"] ?? "off"
+        guard ["off", "opt-in"].contains(archive) else {
+            XCTFail("Use off or opt-in for MACSPACE_LOADING_ARCHIVE")
+            return
+        }
         for sample in 0..<count {
             PurgeableDocuments.forget()
             let cache = directory.appendingPathComponent("index-\(sample)")
             // A candidate may persist directory facts; isolate every first sample and reuse only for its completed-index read.
-            setenv("MACSPACE_DIRECTORY_ARCHIVE", directory.appendingPathComponent("facts-\(sample)").path, 1)
+            if archive == "opt-in" {
+                setenv("MACSPACE_DIRECTORY_ARCHIVE", directory.appendingPathComponent("facts-\(sample)").path, 1)
+            } else {
+                unsetenv("MACSPACE_DIRECTORY_ARCHIVE")
+            }
             let root = environment["MACSPACE_LOADING_ROOT"] ?? "/"
             let diskStore = DiskStore(root: root, cache: cache)
             let disk = DiskMapModule(store: diskStore)
@@ -156,7 +166,7 @@ final class ModuleLoadingBenchmarks: XCTestCase {
             let (cachedIndex, cachedElapsed) = await Self.measureAll(Self.readers(disk: restored))
             try await Self.validate(restoredStore)
             print("MODULE_LOAD_CACHED_INDEX sample=\(sample) seconds=\(cachedElapsed)")
-            samples.append(Sample(root: root, configuration: configuration, requestPriority: Self.requestPriority.rawValue,
+            samples.append(Sample(root: root, configuration: configuration, requestPriority: Self.requestPriority.rawValue, directoryArchive: archive,
                                   first: first, reopen: reopen, allReadySeconds: elapsed, cachedIndexStartup: cachedIndex, cachedIndexAllReadySeconds: cachedElapsed))
             await restored.setActive(false)
         }
