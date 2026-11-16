@@ -61,8 +61,11 @@ public struct AppleIntelligenceModelRelease {
 
     /// Reasons the release cannot work now. Empty means it may run.
     public func blockers() -> [String] {
+        blockers(for: environment.context())
+    }
+
+    func blockers(for context: SiriLanguageContext) -> [String] {
         var blockers: [String] = []
-        let context = environment.context()
         guard let system = context.systemLanguage.map(AppleIntelligenceLanguageGuard.normalize),
               let siri = context.siriLanguage.map(AppleIntelligenceLanguageGuard.normalize) else {
             return [loc("The system or Siri language could not be read.")]

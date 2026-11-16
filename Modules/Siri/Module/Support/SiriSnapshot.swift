@@ -161,10 +161,12 @@ actor SiriStore {
         }.value
         let guardian = AppleIntelligenceLanguageGuard()
         let environment = LiveSiriLanguageEnvironment()
-        let status = guardian.status()
+        let statusAt = Date()
+        let context = ModuleLoadMetrics.measure("siri", "language-context") { environment.context() }
+        let status = guardian.evaluate(guardian.readInputs(using: context), now: statusAt)
         let plan: Result<SiriLanguageChangePlan, SiriPlanFailure>
         do {
-            plan = .success(try guardian.plan(.disable, context: environment.context(), scope: .thisMacOnly, saved: environment.loadSavedSettings()))
+            plan = .success(try guardian.plan(.disable, context: context, scope: .thisMacOnly, saved: environment.loadSavedSettings()))
         } catch {
             plan = .failure(SiriPlanFailure(message: "\(error)"))
         }
@@ -179,7 +181,7 @@ actor SiriStore {
         let purgeable = estimate.map { PurgeHoldouts.shared.freeable(CacheDeleteService.mobileAsset, estimate: $0) }
         let release = AppleIntelligenceModelRelease(environment: environment, accounts: { accounts })
         var snapshot = SiriSnapshot(status: status, disablePlan: plan, accounts: accounts, purgeableAssetsBytes: purgeable,
-                                    releaseBlockers: release.blockers(), watch: AppleIntelligenceWatchStore().load(),
+                                    releaseBlockers: release.blockers(for: context), watch: AppleIntelligenceWatchStore().load(),
                                     cliPath: cli?.path ?? "/Applications/MacSpace.app/Contents/MacOS/MacSpaceCli", takenAt: Date())
         let models = await modelRead
         snapshot.recordedModelBytes = models.installed
