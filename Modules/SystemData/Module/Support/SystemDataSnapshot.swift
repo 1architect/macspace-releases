@@ -293,7 +293,11 @@ actor SystemDataStore {
             meter.sizingPool = sizingPool
             return meter.measure(using: categoryPlan.value)
         } }
-        let purgeableServices = Background { ModuleLoadMetrics.measure("system-data", "cache-delete") { livePurgeableServices() } }
+        let purgeableServices = Background {
+            ModuleLoadMetrics.measure("system-data", "cache-delete") {
+                SnapshotEstimateScheduling.shared.broad { livePurgeableServices() }
+            }
+        }
         let assetFamilies = Background { ModuleLoadMetrics.measure("system-data", "asset-families") { AssetFamilyScanner().scan() } }
         // The cloud folders' uploaded copies too: walked after the disk, they held the scan at 75% for 2.5 seconds (2026-10-22).
         let cloudSources = Background { ModuleLoadMetrics.measure("system-data", "cloud-copies") { PurgeableDocuments.scan(maxAge: 600) } }

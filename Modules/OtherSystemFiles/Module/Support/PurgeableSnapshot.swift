@@ -295,8 +295,10 @@ actor PurgeableStore {
         async let services = Task.detached(priority: Task.currentPriority) {
             defer { parts[0](1) }
             let urgency = CacheDeleteService.fsPurgeableDataUrgency
-            if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
-            return CacheDeleteClient().purgeableByService(urgency: urgency)
+            return SnapshotEstimateScheduling.shared.broad {
+                if let cli = ToolLocator.cli() { return CacheDeleteClient.purgeableByServiceInSubprocess(executable: cli, urgency: urgency) }
+                return CacheDeleteClient().purgeableByService(urgency: urgency)
+            }
         }.value
         // Explicit eviction is independent of APFS's pressure-based purge estimate. File Provider can evict uploaded local
         // copies that have not been marked purgeable, and CacheDelete can report only a small fraction of their allocated sizes.

@@ -200,7 +200,9 @@ actor SiriStore {
     }
 
     private static func livePurgeableEstimate() -> UInt64? {
-        ModuleLoadMetrics.measure("siri", "purgeable") { PurgeRun(service: CacheDeleteService.mobileAsset).estimate() }
+        SnapshotEstimateScheduling.shared.targeted {
+            ModuleLoadMetrics.measure("siri", "purgeable") { PurgeRun(service: CacheDeleteService.mobileAsset).estimate() }
+        }
     }
 
     /// The Siri, Spatial Photos and Phone models on disk, read on every reading of the page as the Apple Intelligence models are.
