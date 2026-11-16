@@ -371,7 +371,7 @@ public enum AllocatedSize {
         let links = clones ?? CloneLedger(trackingFamilies: false)
         let excludedParents = Set(excluded.map { ($0 as NSString).deletingLastPathComponent })
         struct Total { var bytes: UInt64 = 0; var directory: String?; var checkExclusions = false }
-        let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool, privateSizes: false, archive: pool?.archive,
+        let result = DirectoryWalk.walk(root, extended: clones != nil, pool: pool, privateSizes: false, archive: pool?.archive, rootMetadata: info,
             finished: { total, _, _ in total.directory = nil }, makeState: { Total() }) { total, path, entry in
             if !excluded.isEmpty, total.directory == nil {
                 let directory = (path() as NSString).deletingLastPathComponent

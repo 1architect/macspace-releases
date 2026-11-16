@@ -5,6 +5,18 @@ import MacSpacePlatform
 
 /// The third-party caches nothing uses (`AppCaches`), Homebrew's cleanup (`HomebrewCleanup`) and the Trash row.
 final class AppCacheTests: XCTestCase {
+    private final class ListingCounts: FileManager, @unchecked Sendable {
+        private let lock = NSLock()
+        private var requests: [String: Int] = [:]
+
+        override func contentsOfDirectory(atPath path: String) throws -> [String] {
+            lock.withLock { requests[path, default: 0] += 1 }
+            return try super.contentsOfDirectory(atPath: path)
+        }
+
+        func count(_ path: String) -> Int { lock.withLock { requests[path, default: 0] } }
+    }
+
     private var root: URL!
     private let fm = FileManager.default
     private let now = Date(timeIntervalSince1970: 1_791_800_000)
@@ -127,7 +139,8 @@ final class AppCacheTests: XCTestCase {
         try write("Library/Containers/com.apple.Notes/Data/Library/Caches/blob", under: home)
         try write("Library/Group Containers/group.com.example.shared/Library/Caches/blob", under: home)
         let locations = SystemDataLocations(home: home, userSystemDirectory: nil, systemPaths: [:])
-        var inspector = SystemDataInspector(locations: locations, runningApps: { [] }, claimedPlaces: { [] })
+        let listings = ListingCounts()
+        var inspector = SystemDataInspector(locations: locations, fileManager: listings, runningApps: { [] }, claimedPlaces: { [] })
         inspector.hasFullDiskAccess = true
         inspector.processCheck = .none
         inspector.containerOwner = { id in (.app(name: "Sandboxed", lastOpened: nil), [id, "com.example.Host"]) }
@@ -140,9 +153,16 @@ final class AppCacheTests: XCTestCase {
         XCTAssertEqual(cache.title, "Sandboxed")
         XCTAssertEqual(Double(cache.bytes), 3_000_000, accuracy: 200_000, "macOS's background downloads are not counted")
         XCTAssertFalse(cache.ownerRunning)
+        let containers = home.appendingPathComponent("Library/Containers").path
+        let groups = home.appendingPathComponent("Library/Group Containers").path
+        XCTAssertEqual(listings.count(containers), 1)
+        XCTAssertEqual(listings.count(groups), 1)
+        XCTAssertEqual(listings.count(home.appendingPathComponent("Library/Caches").path), 1)
 
         inspector.hasFullDiskAccess = false
         XCTAssertTrue(inspector.inspect().appCaches.isEmpty, "without Full Disk Access, containers are not read")
+        XCTAssertEqual(listings.count(containers), 1)
+        XCTAssertEqual(listings.count(groups), 1)
     }
 
     /// A container belongs to the app with its bundle identifier, or to the app whose identifier an extension's begins with; Apple's

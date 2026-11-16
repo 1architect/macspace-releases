@@ -117,14 +117,16 @@ public enum DirectoryWalk {
     /// `unreadable` counts the folders that could not be listed (no permission, SIP), whose contents are left out.
     static func walk<State>(_ root: String, extended: Bool, pool: ScanPool? = nil, refusesLinks: Bool = false,
                             devices: Set<Int32>? = nil, modificationDates: Bool = false, privateSizes: Bool = true, archive: DirectoryListingArchive? = nil,
+                            rootMetadata: stat? = nil,
                             finished: ((inout State, String, Bool) -> Void)? = nil,
                             directoryStarted: ((inout State, UInt32?) -> Void)? = nil,
                             directoryPublished: ((inout State, String, Bool, UInt64?) -> UInt64?)? = nil,
                             makeState: @escaping () -> State,
                             visit: @escaping (inout State, _ path: () -> String, Facts) -> Step) -> (states: [State], unreadable: Int) {
-        var rootInfo = stat()
+        var rootInfo = rootMetadata ?? stat()
         // A folder still only in the cloud is not listed: listing it would make the cloud app fetch it.
-        guard lstat(root, &rootInfo) == 0, rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
+        guard rootMetadata != nil || lstat(root, &rootInfo) == 0 else { return ([], 0) }
+        guard rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
         let publish = directoryPublished ?? finished.map { callback in
             { (state: inout State, path: String, complete: Bool, _: UInt64?) -> UInt64? in
                 callback(&state, path, complete)

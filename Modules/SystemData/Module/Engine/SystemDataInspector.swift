@@ -528,7 +528,8 @@ public struct SystemDataInspector {
 
         // App caches and tool caches.
         let home = locations.home.path
-        for path in children((home as NSString).appendingPathComponent("Library/Caches")) {
+        let libraryCachePaths = children((home as NSString).appendingPathComponent("Library/Caches"))
+        for path in libraryCachePaths {
             let name = (path as NSString).lastPathComponent
             let owner = name.hasSuffix(".ShipIt") ? String(name.dropLast(".ShipIt".count)) : name
             add("appcache:\(name)", loc("App cache: \(AppNames.display(name))"), .appCache, paths: [path], owners: [owner],
@@ -613,9 +614,11 @@ public struct SystemDataInspector {
         add("logs:powerlog", loc("Power log"), .logs, paths: [system["powerlog"]].compactMap { $0 },
             cleanup: managed(loc("Battery and energy history used by System Settings > Battery.")))
         let library = (home as NSString).appendingPathComponent("Library")
+        var containerPaths: [(folder: String, path: String)] = []
         for folder in ["Group Containers", "Containers"] {
             guard hasFullDiskAccess else { unreadable.append((library as NSString).appendingPathComponent(folder)); continue }
             for path in children((library as NSString).appendingPathComponent(folder)) {
+                containerPaths.append((folder, path))
                 let name = (path as NSString).lastPathComponent
                 let apple = name.hasPrefix("com.apple.") || name.hasPrefix("group.com.apple.")
                 add("container:\(name)", folder == "Containers" ? loc("App container: \(AppNames.display(name))") : loc("App group data: \(AppNames.display(name))"), .appContainer, paths: [path], owners: [name],
@@ -838,14 +841,12 @@ public struct SystemDataInspector {
         // Third-party apps' own containers (not groups') have their caches offered on the caches page, as `~/Library/Caches` has.
         var offeredContainerCaches: [AppCache] = []
         if hasFullDiskAccess {
-            let caches: [(name: String, path: String, offered: Bool)] = ["Group Containers", "Containers"].flatMap { folder in
-                children((library as NSString).appendingPathComponent(folder)).compactMap { path in
-                    let name = (path as NSString).lastPathComponent
-                    let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
-                    // MacSpace's own are in use whenever this runs.
-                    let offered = folder == "Containers" && AppCaches.containerCachesFolder(home: home, container: name) != nil && !name.hasPrefix("com.macspace.")
-                    return fileManager.fileExists(atPath: caches) ? (name, caches, offered) : nil
-                }
+            let caches: [(name: String, path: String, offered: Bool)] = containerPaths.compactMap { folder, path in
+                let name = (path as NSString).lastPathComponent
+                let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
+                // MacSpace's own are in use whenever this runs.
+                let offered = folder == "Containers" && AppCaches.containerCachesFolder(home: home, container: name) != nil && !name.hasPrefix("com.macspace.")
+                return fileManager.fileExists(atPath: caches) ? (name, caches, offered) : nil
             }
             // Measured side by side, as the items are; an offered one's dates too, while its folder's records are fresh.
             let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
@@ -887,17 +888,15 @@ public struct SystemDataInspector {
         report.containerCachesBytes = containerCaches
         // Third-party caches, every size (the items above list only the large ones), with their dates and owner, then the containers'
         // measured above. MacSpace's own are left out: they are in use whenever this runs. So is Homebrew's, which its own cleanup handles.
-        let cachesFolder = (home as NSString).appendingPathComponent("Library/Caches")
-        let candidates: [(name: String, path: String, bytes: UInt64)] = children(cachesFolder).compactMap { path in
+        let developerCacheNames = DeveloperCaches.claimedLibraryCaches
+        let candidates: [(name: String, path: String, bytes: UInt64)] = libraryCachePaths.compactMap { path in
             let name = (path as NSString).lastPathComponent
+            guard !name.hasPrefix("."), !name.hasPrefix("com.macspace."), !isAppleCache(name),
+                  !developerCacheNames.contains(name), let bytes = measuredTotals["appcache:\(name)"] else { return nil }
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue, !name.hasPrefix("."),
-                  !name.hasPrefix("com.macspace."), !isAppleCache(name), !AppCaches.isApple(name),
+            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue, !AppCaches.isApple(name),
                   // Homebrew's downloads go through its own cleanup (the Homebrew row), which knows what an install is still using.
-                  !(name == "Homebrew" && HomebrewCleanup.brew() != nil),
-                  // A developer tool's cache is listed with the developer caches (`DeveloperCaches`), not here too.
-                  !DeveloperCaches.claimedLibraryCaches.contains(name),
-                  let bytes = measuredTotals["appcache:\(name)"] else { return nil }
+                  !(name == "Homebrew" && HomebrewCleanup.brew() != nil) else { return nil }
             return (name, path, bytes)
         }
         // Their dates are read side by side, as the sizes were: one after the other, every cache folder was walked again alone.

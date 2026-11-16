@@ -188,7 +188,8 @@ public struct FileTreeSizer: Sendable {
         let extended = countsPurgeable || clones != nil
         // Strict helper reads keep private sizes in the pinned directory batch. A later path lookup would not preserve
         // O_NOFOLLOW_ANY's refusal of intermediate symlinks if a parent changed during the walk.
-        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks, privateSizes: refusesLinks, archive: pool?.archive, makeState: { Sums() }) { sums, path, entry in
+        let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks,
+            privateSizes: refusesLinks, archive: pool?.archive, rootMetadata: info, makeState: { Sums() }) { sums, path, entry in
             if entry.isDirectory { return entry.isDataless ? .skip : .descend }
             guard entry.isRegularFile else { return .skip }
             // A file reached by several hard links counts at its first path only.
