@@ -47,6 +47,22 @@ final class AppCacheTests: XCTestCase {
         XCTAssertFalse(AppCaches.isDataLike("Cache.db"))
     }
 
+    func testCacheMeasurementKeepsUnicodeNamesAndTopLevelAppleExclusions() throws {
+        let document = "caché/深い/Relatório.PDF"
+        let key = "caché/深い/a3f9c01b7e2d4f55.mp4"
+        try write(document, under: root, bytes: 8192)
+        try write(key, under: root, bytes: 16384)
+        try write("com.apple.background/Document.pdf", under: root, bytes: 32768)
+        let singleDocument = try XCTUnwrap(AppCaches.measure(root.appendingPathComponent(document).path, now: now))
+        let singleKey = try XCTUnwrap(AppCaches.measure(root.appendingPathComponent(key).path, now: now))
+        let nested = try XCTUnwrap(AppCaches.measure(root.path, now: now, skippingApple: true))
+        XCTAssertGreaterThan(singleDocument.bytes, 0)
+        XCTAssertEqual(singleDocument.dataLikeBytes, singleDocument.bytes)
+        XCTAssertEqual(singleKey.dataLikeBytes, 0)
+        XCTAssertEqual(nested.bytes, singleDocument.bytes + singleKey.bytes)
+        XCTAssertEqual(nested.dataLikeBytes, singleDocument.bytes)
+    }
+
     /// Apple's by a name macOS has on its system volume, compared exactly: the disk ignores case, and `pip` is not `PIP.framework`.
     func testAppleNamesAreMatchedExactly() {
         XCTAssertTrue(AppCaches.isApple("PassKit"))

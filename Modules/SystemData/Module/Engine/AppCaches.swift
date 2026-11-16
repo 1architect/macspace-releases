@@ -107,11 +107,20 @@ public enum AppCaches {
         var dataLike: UInt64 = 0
         var total: UInt64 = 0
         func seconds(_ time: timespec) -> TimeInterval { TimeInterval(time.tv_sec) + TimeInterval(time.tv_nsec) / 1e9 }
+        func leafName(_ entry: UnsafeMutablePointer<FTSENT>) -> String? {
+            guard let path = entry.pointee.fts_path else { return nil }
+            // FTS supplies both byte lengths. Keep the original component handling for a caller-supplied root path.
+            let nameLength = Int(entry.pointee.fts_namelen)
+            let offset = Int(entry.pointee.fts_pathlen) - nameLength
+            if entry.pointee.fts_level > 0, nameLength > 0, offset > 0, path[offset - 1] == 47 {
+                return String(cString: path + offset)
+            }
+            return (String(cString: path) as NSString).lastPathComponent
+        }
         while let entry = fts_read(fts) {
             let info = Int32(entry.pointee.fts_info)
             if info == FTS_DNR || info == FTS_ERR || info == FTS_NS { return nil }
-            if skippingApple, entry.pointee.fts_level == 1, let entryPath = entry.pointee.fts_path,
-               isAppleEntry((String(cString: entryPath) as NSString).lastPathComponent) {
+            if skippingApple, entry.pointee.fts_level == 1, let name = leafName(entry), isAppleEntry(name) {
                 if info == FTS_D { fts_set(fts, entry, FTS_SKIP) }
                 continue
             }
@@ -127,7 +136,7 @@ public enum AppCaches {
             let allocated = UInt64(max(stat.st_blocks, 0)) * 512
             total += allocated
             if born >= recent { recentBytes += allocated }
-            if let path = entry.pointee.fts_path, isDataLike((String(cString: path) as NSString).lastPathComponent) { dataLike += allocated }
+            if let name = leafName(entry), isDataLike(name) { dataLike += allocated }
         }
         return (Date(timeIntervalSince1970: newest), recentBytes, dataLike, total)
     }
