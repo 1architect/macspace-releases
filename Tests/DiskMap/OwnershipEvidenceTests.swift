@@ -239,6 +239,41 @@ final class OwnershipEvidenceTests: DiskSecurityFixtureCase {
         }
     }
 
+    func testOwnershipRefreshOnlyChangesAddedAndRemovedRelationsAcrossBatches() throws {
+        try fixture { home in
+            let owner = try app(home)
+            let claims = (0..<301).map { index in
+                DiskOwnershipClaim(paths: [home + "/file-\(index)", "/outside/\(index)"], ownerPaths: [owner.path],
+                    confidence: .unknown, source: "fixture", reason: "Historical evidence")
+            }
+            var catalog = DiskApplications()
+            catalog.apps = [DiskApplication(owner: owner, bytes: 0, dataPaths: [], removable: false,
+                metadataStamp: nil, ownership: Array(claims.prefix(300)))]
+            let db = try DiskDatabase(url: URL(fileURLWithPath: home + "/index.sqlite"), root: home)
+            try db.recordOwnership(catalog)
+            XCTAssertEqual(try db.query("SELECT path FROM ownership"), 300)
+            let preserved = try db.ownershipEvidence(home + "/file-1")
+            try db.execute("""
+                CREATE TEMP TABLE ownership_audit(path TEXT NOT NULL);
+                CREATE TEMP TRIGGER audit_add AFTER INSERT ON main.ownership
+                    BEGIN INSERT INTO ownership_audit VALUES(new.path); END;
+                CREATE TEMP TRIGGER audit_remove AFTER DELETE ON main.ownership
+                    BEGIN INSERT INTO ownership_audit VALUES(old.path); END;
+                """)
+            try db.recordOwnership(catalog)
+            XCTAssertEqual(try db.query("SELECT path FROM ownership_audit"), 0)
+            catalog.apps[0].ownership = Array(claims.dropFirst())
+            try db.recordOwnership(catalog)
+            var changed: Set<String> = []
+            try db.query("SELECT path FROM ownership_audit") { changed.insert(DiskDatabase.text($0, 0)) }
+            XCTAssertEqual(changed, [home + "/file-0", home + "/file-300"])
+            XCTAssertEqual(try db.ownershipEvidence(home + "/file-1"), preserved)
+            XCTAssertNil(try db.ownershipEvidence(home + "/file-0"))
+            XCTAssertEqual(try db.ownershipEvidence(home + "/file-300"), claims[300])
+            XCTAssertEqual(try db.query("SELECT id FROM claims"), 300)
+        }
+    }
+
     func testReceiptPathsAreUnknownEvenWithACompleteReadableManifest() throws {
         try fixture { home in
             let owner = try app(home)

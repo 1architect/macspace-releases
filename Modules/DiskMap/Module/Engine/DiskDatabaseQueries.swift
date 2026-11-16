@@ -7,15 +7,50 @@ extension DiskDatabase {
     func recordOwnership(_ catalog: DiskApplications) throws {
         let encoder = JSONEncoder(); encoder.outputFormatting = .sortedKeys
         try transaction {
-            try execute("DELETE FROM ownership")
+            let replacing = try query("SELECT 1 FROM ownership LIMIT 1") > 0
+            if replacing {
+                try execute("CREATE TEMP TABLE IF NOT EXISTS desired_ownership(path TEXT NOT NULL, claim INTEGER NOT NULL, PRIMARY KEY(path,claim)) WITHOUT ROWID; DELETE FROM desired_ownership")
+            }
+            let target = replacing ? "desired_ownership" : "ownership"
+            let batchSize = 128
+            var claimValues: [Value] = []
+            var pathValues: [Value] = []
+            func flushClaims() throws {
+                guard !claimValues.isEmpty else { return }
+                let slots = Array(repeating: "(?)", count: claimValues.count).joined(separator: ",")
+                try query("INSERT OR IGNORE INTO claims(data) VALUES " + slots, claimValues)
+                claimValues.removeAll(keepingCapacity: true)
+            }
+            func flushPaths() throws {
+                guard !pathValues.isEmpty else { return }
+                try flushClaims()
+                let slots = Array(repeating: "(?,?)", count: pathValues.count / 2).joined(separator: ",")
+                try query("WITH desired(path,data) AS (VALUES " + slots + ") INSERT OR IGNORE INTO " + target + " SELECT d.path,c.id FROM desired d JOIN claims c ON c.data=d.data", pathValues)
+                pathValues.removeAll(keepingCapacity: true)
+            }
             for claim in Set(catalog.apps.flatMap(\.ownership)) {
                 let data = try encoder.encode(claim)
-                try query("INSERT OR IGNORE INTO claims(data) VALUES(?)", [.data(data)])
+                claimValues.append(.data(data))
+                if claimValues.count == batchSize { try flushClaims() }
                 for live in claim.paths {
                     let path = root == DataVolume.path ? DataVolume.path + live : live
                     guard Self.contains(path, below: root) else { continue }
-                    try query("INSERT OR IGNORE INTO ownership SELECT ?,id FROM claims WHERE data=?", [.text(path), .data(data)])
+                    pathValues.append(.text(path))
+                    pathValues.append(.data(data))
+                    if pathValues.count == batchSize * 2 { try flushPaths() }
                 }
+            }
+            try flushClaims()
+            try flushPaths()
+            // Apply only changed relations and publish them atomically with the referenced claim records.
+            if replacing {
+                try execute("""
+                    DELETE FROM ownership WHERE NOT EXISTS (
+                        SELECT 1 FROM desired_ownership d WHERE d.path=ownership.path AND d.claim=ownership.claim
+                    );
+                    INSERT OR IGNORE INTO ownership SELECT path,claim FROM desired_ownership;
+                    DELETE FROM desired_ownership
+                    """)
             }
             try execute("DELETE FROM claims WHERE id NOT IN (SELECT claim FROM ownership)")
         }
