@@ -381,10 +381,10 @@ public struct SystemDataInspector {
                 let bytes = (try? fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber)?.uint64Value
                 return SizeMeasurement(bytes: bytes, readable: bytes != nil, purgeable: FileTreeSizer.isPurgeable(path) ? bytes ?? 0 : 0)
             }
-            guard FileTreeSizer.canOpen(path) else {
+            let (measured, readable) = sizer.sizeAndReadability(at: URL(fileURLWithPath: path))
+            guard readable else {
                 return SizeMeasurement(bytes: nil, unreadableEntry: path)
             }
-            let measured = sizer.size(at: URL(fileURLWithPath: path))
             return SizeMeasurement(bytes: measured?.allocatedBytesEstimate ?? measured?.logicalBytes, readable: true, purgeable: measured?.purgeableBytes ?? 0)
         }
         func children(_ directory: String) -> [String] {

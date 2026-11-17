@@ -58,7 +58,7 @@ public enum DirectoryWalk {
         return Walk<Void>.list(path, &request, flags: O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW,
                                options: 0, buffer: buffer, capacity: capacity, rootDevice: info.st_dev) { name, entry in
             visit(String(cString: name), entry.entry)
-        }
+        }.complete
     }
 
     private static func attributes(extended: Bool, fileIDs: Bool = false, privateSizes: Bool = true) -> attrlist {
@@ -124,11 +124,11 @@ public enum DirectoryWalk {
                             directoryStarted: ((inout State, UInt32?) -> Void)? = nil,
                             directoryPublished: ((inout State, String, Bool, UInt64?) -> UInt64?)? = nil,
                             makeState: @escaping () -> State,
-                            visit: @escaping (inout State, _ path: () -> String, Facts) -> Step) -> (states: [State], unreadable: Int) {
+                            visit: @escaping (inout State, _ path: () -> String, Facts) -> Step) -> (states: [State], unreadable: Int, rootOpened: Bool) {
         var rootInfo = rootMetadata ?? stat()
         // A folder still only in the cloud is not listed: listing it would make the cloud app fetch it.
-        guard rootMetadata != nil || lstat(root, &rootInfo) == 0 else { return ([], 0) }
-        guard rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0) }
+        guard rootMetadata != nil || lstat(root, &rootInfo) == 0 else { return ([], 0, false) }
+        guard rootInfo.st_mode & S_IFMT == S_IFDIR, rootInfo.st_flags & UInt32(SF_DATALESS) == 0 else { return ([], 0, false) }
         let publish = directoryPublished ?? finished.map { callback in
             { (state: inout State, path: String, complete: Bool, _: UInt64?) -> UInt64? in
                 callback(&state, path, complete)
@@ -151,7 +151,6 @@ public enum DirectoryWalk {
     /// One walk's shared queue of folders still to list. Workers take the last one found (depth first), list it, and put back the
     /// folders it holds; the walk is over when the queue is empty and no worker is listing.
     private final class Walk<State>: @unchecked Sendable {
-        let root: String
         let device: Int32
         let devices: Set<Int32>
         let finished: ((inout State, String, Bool, UInt64?) -> UInt64?)?
@@ -163,12 +162,14 @@ public enum DirectoryWalk {
         let helpers = DispatchGroup()
         private var states: [State] = []
         private var unreadable = 0
+        private var rootOpened = false
 
         private let condition = NSCondition()
         private struct Folder {
             let path: String
             let ownerUID: UInt32?
             var cached = false
+            var isRoot = false
             var parentRowID: UInt64?
         }
         private var folders: [Folder]
@@ -186,7 +187,6 @@ public enum DirectoryWalk {
             // unreadable to the helper and every place it measures 0 bytes (the version history, the Spotlight index and the system
             // log vanished from the page). `O_NOFOLLOW_ANY` refuses a link in the last part of the path too.
             openFlags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | (refusesLinks ? O_NOFOLLOW_ANY : O_NOFOLLOW)
-            self.root = root
             self.device = device
             self.devices = devices ?? [device]
             self.finished = finished
@@ -196,16 +196,16 @@ public enum DirectoryWalk {
             self.makeState = makeState
             self.visit = visit
             qos = pool?.qos ?? LoadWorkPriority.current
-            folders = [Folder(path: root, ownerUID: ownerUID)]
+            folders = [Folder(path: root, ownerUID: ownerUID, isRoot: true)]
             list = DirectoryWalk.attributes(extended: extended, fileIDs: self.archive != nil, privateSizes: privateSizes)
             if modificationDates { list.commonattr |= attrgroup_t(ATTR_CMN_MODTIME) }
             options = UInt64(extended ? FSOPT_ATTR_CMN_EXTENDED : 0)
         }
 
-        func result() -> (states: [State], unreadable: Int) {
+        func result() -> (states: [State], unreadable: Int, rootOpened: Bool) {
             condition.lock()
             defer { condition.unlock() }
-            return (states, unreadable)
+            return (states, unreadable, rootOpened)
         }
 
         /// A helper leaves as soon as nothing is waiting, giving its place in the pool back; the walk's own thread waits for the
@@ -265,7 +265,7 @@ public enum DirectoryWalk {
                 }
                 directoryStarted?(&state, folder.ownerUID)
                 let endsInSlash = folder.path.hasSuffix("/")
-                let complete = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device, archive: archive, compressionScratch: scratch) { name, entry in
+                let result = Self.list(folder.path, &request, flags: openFlags, options: options, buffer: buffer, capacity: capacity, rootDevice: device, archive: archive, compressionScratch: scratch) { name, entry in
                     var built: String?
                     let path = { () -> String in
                         if let built { return built }
@@ -275,7 +275,9 @@ public enum DirectoryWalk {
                     }
                     if visit(&state, path, entry) == .descend, entry.isDirectory, devices.contains(entry.device) { found.append(Folder(path: path(), ownerUID: entry.hasDirectoryMetadata ? entry.ownerUID : nil, cached: entry.fromArchive)) }
                 }
-                let rowID = finished?(&state, folder.path, complete, folder.parentRowID)
+                // The root is listed on the calling thread before any child workers are queued.
+                if folder.isRoot { rootOpened = result.opened }
+                let rowID = finished?(&state, folder.path, result.complete, folder.parentRowID)
                 if let rowID, !found.isEmpty {
                     let prefix = endsInSlash ? folder.path : folder.path + "/"
                     // If a name combines with the delimiter, leave path resolution to the existing writer.
@@ -285,30 +287,30 @@ public enum DirectoryWalk {
                         }
                     }
                 }
-                listed(found, failed: !complete)
+                listed(found, failed: !result.complete)
             }
             condition.lock()
             states.append(state)
             condition.unlock()
         }
 
-        /// Lists one folder; false when it could not be listed, or only in part.
+        /// Reports separately whether the directory opened and whether its listing completed.
         static func list(_ folder: String, _ request: inout attrlist, flags: Int32, options: UInt64, buffer: UnsafeMutableRawPointer, capacity: Int, rootDevice: Int32,
                          archive: DirectoryListingArchive? = nil, compressionScratch: UnsafeMutableRawPointer? = nil,
-                         body: (UnsafePointer<CChar>, Facts) -> Void) -> Bool {
+                         body: (UnsafePointer<CChar>, Facts) -> Void) -> (opened: Bool, complete: Bool) {
             let descriptor = open(folder, flags)
-            guard descriptor >= 0 else { return false }
+            guard descriptor >= 0 else { return (false, false) }
             defer { close(descriptor) }
             let requested = request
             var before = stat()
             guard let archive, archive.accepts(folder), fstat(descriptor, &before) == 0 else {
-                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
-                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
+                return (true, readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body))
             }
             let identity = DirectoryListingArchive.Identity(before)
             guard archive.accepts(identity) else {
-                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
-                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
+                return (true, readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body))
             }
             var archived = DirectoryWalk.attributes(extended: true, fileIDs: true,
                 privateSizes: requested.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0)
@@ -321,12 +323,12 @@ public enum DirectoryWalk {
                         _ = parse(UnsafeMutableRawPointer(mutating: raw.baseAddress!), count: batch.count, rootDevice: rootDevice, cached: true, visible: requested, body: body)
                     }
                 }
-                return true
+                return (true, true)
             }
             // Inventory can replay sizing facts. Only the extended readers populate this shared representation.
             guard requested.forkattr != 0 else {
-                return readAttributes(descriptor, requesting: requested, visible: requested, options: options,
-                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body)
+                return (true, readAttributes(descriptor, requesting: requested, visible: requested, options: options,
+                    buffer: buffer, capacity: capacity, rootDevice: rootDevice, body: body))
             }
             var saved: [DirectoryAttributeBatches.Batch]? = []
             var savedBytes = 8
@@ -345,7 +347,7 @@ public enum DirectoryWalk {
                 let stored = compressionScratch.map { DirectoryAttributeBatches.compact(payload, into: buffer, capacity: capacity, scratch: $0) } ?? payload
                 archive.record(stored, path: folder, request: key, identity: identity, generation: lookup.generation)
             }
-            return complete
+            return (true, complete)
         }
 
         private static func readAttributes(_ descriptor: Int32, requesting: attrlist, visible: attrlist, options: UInt64,

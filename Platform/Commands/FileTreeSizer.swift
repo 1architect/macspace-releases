@@ -179,7 +179,24 @@ public struct FileTreeSizer: Sendable {
             return FileTreeSize(logicalBytes: UInt64(max(0, file.totalFileSize ?? file.fileSize ?? 0)),
                                 allocatedBytesEstimate: (file.totalFileAllocatedSize ?? file.fileAllocatedSize).map { UInt64(max(0, $0)) })
         }
+        return directorySize(root, metadata: info).size
+    }
 
+    /// Size and report readability using the directory walk's own open. Root links and dataless roots use the
+    /// separate readability check because a walk does not enter them.
+    public func sizeAndReadability(at url: URL) -> (size: FileTreeSize?, readable: Bool) {
+        let root = url.path
+        var info = stat()
+        if lstat(root, &info) == 0, info.st_mode & S_IFMT == S_IFDIR, info.st_flags & UInt32(SF_DATALESS) == 0 {
+            let result = directorySize(root, metadata: info)
+            return (result.readable ? result.size : nil, result.readable)
+        }
+        guard !refusesLinks else { return (nil, false) }
+        let readable = Self.canOpen(root)
+        return (readable ? size(at: url) : nil, readable)
+    }
+
+    private func directorySize(_ root: String, metadata: stat) -> (size: FileTreeSize, readable: Bool) {
         struct Sums { var logical: UInt64 = 0, allocated: UInt64 = 0, purgeable: UInt64 = 0, sawFile = false }
         // Hard-linked files met in this tree; across trees, the ledger's.
         let links = clones ?? CloneLedger(trackingFamilies: false)
@@ -189,7 +206,7 @@ public struct FileTreeSizer: Sendable {
         // Strict helper reads keep private sizes in the pinned directory batch. A later path lookup would not preserve
         // O_NOFOLLOW_ANY's refusal of intermediate symlinks if a parent changed during the walk.
         let walk = DirectoryWalk.walk(root, extended: extended, pool: pool, refusesLinks: refusesLinks,
-            privateSizes: refusesLinks, archive: pool?.archive, rootMetadata: info, makeState: { Sums() }) { sums, path, entry in
+            privateSizes: refusesLinks, archive: pool?.archive, rootMetadata: metadata, makeState: { Sums() }) { sums, path, entry in
             if entry.isDirectory { return entry.isDataless ? .skip : .descend }
             guard entry.isRegularFile else { return .skip }
             // A file reached by several hard links counts at its first path only.
@@ -213,7 +230,8 @@ public struct FileTreeSizer: Sendable {
             total.purgeable += part.purgeable
             total.sawFile = total.sawFile || part.sawFile
         }
-        return FileTreeSize(logicalBytes: total.logical, allocatedBytesEstimate: total.sawFile ? total.allocated : nil,
-                            unreadableFolders: walk.unreadable, purgeableBytes: total.purgeable)
+        let size = FileTreeSize(logicalBytes: total.logical, allocatedBytesEstimate: total.sawFile ? total.allocated : nil,
+                                unreadableFolders: walk.unreadable, purgeableBytes: total.purgeable)
+        return (size, walk.rootOpened)
     }
 }

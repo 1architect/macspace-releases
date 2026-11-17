@@ -68,6 +68,32 @@ final class HelperSizingTests: XCTestCase {
             }
         }
     }
+
+    func testTheNativeRootOpenPreservesSizingAndReadability() throws {
+        let root = URL(fileURLWithPath: "/private/tmp/sizer-readability-" + UUID().uuidString)
+        let tree = root.appendingPathComponent("tree")
+        let blocked = tree.appendingPathComponent("blocked")
+        try FileManager.default.createDirectory(at: blocked, withIntermediateDirectories: true)
+        defer {
+            chmod(blocked.path, 0o700)
+            try? FileManager.default.removeItem(at: root)
+        }
+        try Data(repeating: 7, count: 8192).write(to: tree.appendingPathComponent("file"))
+        XCTAssertEqual(chmod(blocked.path, 0), 0)
+        let alias = root.appendingPathComponent("alias")
+        XCTAssertEqual(symlink(tree.path, alias.path), 0)
+        let sizer = FileTreeSizer(countsPurgeable: true)
+        for path in [tree, blocked, alias, root.appendingPathComponent("missing")] {
+            let readable = FileTreeSizer.canOpen(path.path)
+            let actual = sizer.sizeAndReadability(at: path)
+            XCTAssertEqual(actual.readable, readable)
+            XCTAssertEqual(actual.size, readable ? sizer.size(at: path) : nil)
+        }
+        XCTAssertTrue(sizer.sizeAndReadability(at: alias).readable)
+        XCTAssertNil(sizer.sizeAndReadability(at: alias).size)
+        XCTAssertFalse(FileTreeSizer(refusesLinks: true).sizeAndReadability(at: alias).readable)
+    }
+
     /// The helper sizes root's folders with links refused anywhere in the path, purgeable files counted and helper threads: every
     /// combination must give the tree's size.
     func testEverySettingTheScanAndTheHelperUseGivesTheSameSize() throws {
