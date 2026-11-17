@@ -353,7 +353,7 @@ actor SystemDataStore {
 }
 
 /// Work started on another thread while the scan reads the disk; `value` waits for it.
-private final class Background<Value>: @unchecked Sendable {
+final class Background<Value>: @unchecked Sendable {
     private let done = DispatchSemaphore(value: 0)
     private var result: Value?
 

@@ -788,6 +788,29 @@ public struct SystemDataInspector {
             }
         }
 
+        let caches: [(name: String, path: String, offered: Bool)] = containerPaths.compactMap { folder, path in
+            let name = (path as NSString).lastPathComponent
+            let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
+            // MacSpace's own are in use whenever this runs.
+            let offered = folder == "Containers" && AppCaches.containerCachesFolder(home: home, container: name) != nil && !name.hasPrefix("com.macspace.")
+            return fileManager.fileExists(atPath: caches) ? (name, caches, offered) : nil
+        }
+        // These cache totals use their own accounting. Start them beside the item measurements so a slow
+        // directory open does not hold up the report after all of the items have been measured.
+        let cacheReading = hasFullDiskAccess ? Background {
+            let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
+            let dates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: caches.count)
+            let queue = JobCounter(count: caches.count)
+            return ModuleLoadMetrics.measure("system-data", "container-cache-measurements") {
+                DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
+                    while let index = queue.next() {
+                        sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0)
+                        if caches[index].offered { dates.set(index, AppCaches.measure(caches[index].path, now: now, skippingApple: true)) }
+                    }
+                }
+                return (sizes: sizes.values, dates: dates.values)
+            }
+        } : nil
         ModuleLoadMetrics.measure("system-data", "item-measurements") { finish() }
         // What System Settings lists in another category is not System Data: an item in such a place (or in the home folder outside
         // ~/Library, which is Documents) is left out whole, and such a place inside an item is taken off it. The same places make
@@ -840,28 +863,10 @@ public struct SystemDataInspector {
         var smallAppleCaches: UInt64 = 0
         // Third-party apps' own containers (not groups') have their caches offered on the caches page, as `~/Library/Caches` has.
         var offeredContainerCaches: [AppCache] = []
-        if hasFullDiskAccess {
-            let caches: [(name: String, path: String, offered: Bool)] = containerPaths.compactMap { folder, path in
-                let name = (path as NSString).lastPathComponent
-                let caches = (path as NSString).appendingPathComponent(folder == "Containers" ? "Data/Library/Caches" : "Library/Caches")
-                // MacSpace's own are in use whenever this runs.
-                let offered = folder == "Containers" && AppCaches.containerCachesFolder(home: home, container: name) != nil && !name.hasPrefix("com.macspace.")
-                return fileManager.fileExists(atPath: caches) ? (name, caches, offered) : nil
-            }
-            // Measured side by side, as the items are; an offered one's dates too, while its folder's records are fresh.
-            let sizes = LockedArray(repeating: UInt64(0), count: caches.count)
-            let dates = LockedArray<(lastChange: Date, recentBytes: UInt64, dataLikeBytes: UInt64, bytes: UInt64)?>(repeating: nil, count: caches.count)
-            let queue = JobCounter(count: caches.count)
-            ModuleLoadMetrics.measure("system-data", "container-cache-measurements") {
-                DispatchQueue.concurrentPerform(iterations: min(Self.scanWorkers, max(caches.count, 1))) { _ in
-                    while let index = queue.next() {
-                        sizes.set(index, FileTreeSizer().size(at: URL(fileURLWithPath: caches[index].path))?.bytes ?? 0)
-                        if caches[index].offered { dates.set(index, AppCaches.measure(caches[index].path, now: now, skippingApple: true)) }
-                    }
-                }
-            }
+        if let cacheReading {
+            let (sizes, dates) = cacheReading.value
             // The owner by bundle identifier: the container is named after it.
-            for (cache, measured) in zip(caches, dates.values) where cache.offered {
+            for (cache, measured) in zip(caches, dates) where cache.offered {
                 guard let measured, measured.bytes > 0 else { continue }
                 let owner = containerOwner(cache.name)
                 var entry = AppCache(id: "containercache:\(cache.name)", name: cache.name, path: cache.path, bytes: measured.bytes, lastChange: measured.lastChange,
@@ -873,7 +878,7 @@ public struct SystemDataInspector {
                 offeredContainerCaches.append(entry)
             }
             let positions = Dictionary(items.indices.map { (items[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
-            for (cache, bytes) in zip(caches, sizes.values) {
+            for (cache, bytes) in zip(caches, sizes) {
                 containerCaches += bytes
                 if let index = positions["container:\(cache.name)"] { items[index].cachesBytes = bytes }
                 else if cache.name.hasPrefix("com.apple.") || cache.name.hasPrefix("group.com.apple.") { smallAppleCaches += bytes }
