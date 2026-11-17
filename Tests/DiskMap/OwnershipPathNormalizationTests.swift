@@ -21,7 +21,7 @@ final class OwnershipPathNormalizationTests: DiskSecurityFixtureCase {
         return selected.sorted()
     }
     func testNormalizationMatchesExistingCoverageAndOrderingAcrossPermutationsAndUnicode() {
-        let paths = ["/A", "/A/child", "/A-B/child", "/AB/file", "/AB", "/雪/é", "/雪/é/child", "/雪/e\u{301}",
+        let paths = ["/A", "/A/child", "/A/other", "/A-B/child", "/A-B/other", "/AB/file", "/AB", "/雪/é", "/雪/é/child", "/雪/e\u{301}",
                      "/other/👩🏽‍💻/file", "/other/👩🏽‍💻", "/", "relative", "/bad/../path", "/bad//path", "/bad\0/file", "/trailing/"]
         let expected = reference(paths)
         for offset in paths.indices {

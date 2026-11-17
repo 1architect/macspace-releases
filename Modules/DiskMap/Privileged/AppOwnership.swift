@@ -186,15 +186,20 @@ public enum AppOwnership {
     }
     public static func normalizedPaths(_ paths: [String]) -> [String] {
         let candidates = Set(paths.filter(canonicalPath))
+        var previous: (parent: String, covered: Bool)?
         // Every valid candidate ancestor covers this path, whether that ancestor is itself covered
-        // by an outer candidate or not. No length/grapheme sort is needed to discover the outermost set.
-        return candidates.filter { path in
-            var ancestor = parent(path)
+        // by an outer candidate or not. Sorting for the result also groups most paths with a shared parent.
+        return candidates.sorted().filter { path in
+            let directory = parent(path)
+            if let previous, previous.parent == directory { return !previous.covered }
+            var ancestor = directory
+            var covered = false
             while ancestor != "/" && !ancestor.isEmpty {
-                if candidates.contains(ancestor) { return false }
+                if candidates.contains(ancestor) { covered = true; break }
                 ancestor = parent(ancestor)
             }
-            return true
-        }.sorted()
+            previous = (directory, covered)
+            return !covered
+        }
     }
 }
