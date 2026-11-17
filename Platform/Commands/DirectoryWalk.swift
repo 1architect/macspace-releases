@@ -28,6 +28,8 @@ public enum DirectoryWalk {
         public let extendedFlags: UInt64
         /// Exact leaf-name suffix for application exclusion, without constructing a full path.
         public let hasApplicationSuffix: Bool
+        /// Whether the leaf is named Info.plist.
+        public let isBundleInfo: Bool
 
         public var isDirectory: Bool { type == UInt32(VDIR.rawValue) }
         public var isRegularFile: Bool { type == UInt32(VREG.rawValue) }
@@ -385,6 +387,7 @@ public enum DirectoryWalk {
                 let nameLength = strlen(name)
                 let appSuffix = nameLength >= 4 && name[nameLength - 4] == 46 && name[nameLength - 3] == 97
                     && name[nameLength - 2] == 112 && name[nameLength - 1] == 112
+                let isBundleInfo = nameLength == 10 && strcmp(name, "Info.plist") == 0
                 field += MemoryLayout<attrreference_t>.size
                 var device = rootDevice
                 if returned.commonattr & attrgroup_t(ATTR_CMN_DEVID) != 0 { device = field.loadUnaligned(as: Int32.self); field += 4 }
@@ -420,7 +423,8 @@ public enum DirectoryWalk {
                                  hasDirectoryMetadata: returned.commonattr & attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS) == attrgroup_t(ATTR_CMN_OWNERID | ATTR_CMN_FLAGS), linkCount: links, logicalBytes: logical, allocatedBytes: allocated, modifiedAt: modifiedAt,
                                  cloneFamily: visible.forkattr & attrgroup_t(ATTR_CMNEXT_CLONEID) != 0 ? family : 0,
                                  privateBytes: visible.forkattr & attrgroup_t(ATTR_CMNEXT_PRIVATESIZE) != 0 ? privateBytes : 0,
-                                 extendedFlags: visible.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 ? extendedFlags : 0, hasApplicationSuffix: appSuffix), fileID: fileID, fromArchive: cached))
+                                 extendedFlags: visible.forkattr & attrgroup_t(ATTR_CMNEXT_EXT_FLAGS) != 0 ? extendedFlags : 0,
+                                 hasApplicationSuffix: appSuffix, isBundleInfo: isBundleInfo), fileID: fileID, fromArchive: cached))
             }
             return (complete, buffer.distance(to: cursor))
         }

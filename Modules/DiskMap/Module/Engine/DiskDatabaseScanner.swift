@@ -147,7 +147,6 @@ struct DiskDatabaseScanner {
             var excludedDirectory = false
             var checkExclusions = false
             var personal = false
-            var bundleContainer = false
             var files: [(DiskFile, String)] = []
             var folders: [DiskDirectory] = []
         }
@@ -215,7 +214,6 @@ struct DiskDatabaseScanner {
                 totals.excludedDirectory = isExcluded(directory)
                 totals.checkExclusions = excludedParents.contains(directory)
                 totals.personal = !personalPolicy || inventoryIncludes(directory + "/candidate")
-                totals.bundleContainer = Self.bundleContainer(directory)
             }
             guard !totals.excludedDirectory else { return false }
             if entry.isDirectory {
@@ -241,8 +239,8 @@ struct DiskDatabaseScanner {
             let link = identity.map { "\($0.st_dev):\($0.st_ino)" } ?? ""
             if entry.linkCount > 1 && identity == nil { totals.readable = false }
             if link.isEmpty { totals.bytes += entry.allocatedBytes }
-            if totals.bundleContainer, entry.logicalBytes <= 1_048_576,
-               let id = Self.bundleIdentifier(makePath(), parent: totals.directory!, entry: entry) { totals.bundle = id }
+            if entry.isBundleInfo, let directory = totals.directory,
+               let id = Self.bundleIdentifier(makePath(), parent: directory, entry: entry) { totals.bundle = id }
             // Most files only contribute directory bytes. Classify candidates on the readers, as the native refresh does,
             // instead of allocating records and reparsing all paths while every worker waits for the SQLite writer.
             if !link.isEmpty || (totals.personal && entry.allocatedBytes > 0 && entry.ownerUID == uid && inventoryIncludes(makePath())) {
@@ -437,7 +435,7 @@ extension DiskDatabaseScanner {
                 else { writing { if try db.hasKnownLink(key) { link = key } } }
             } else if entry.linkCount > 1 { batch.readable = false }
             if link.isEmpty { batch.bytes += entry.allocatedBytes }
-            if let id = Self.bundleIdentifier(path, parent: parent, entry: entry) { batch.bundle = id }
+            if entry.isBundleInfo, let id = Self.bundleIdentifier(path, parent: parent, entry: entry) { batch.bundle = id }
             if !link.isEmpty || (entry.allocatedBytes > 0 && entry.ownerUID == getuid() && inventoryIncludes(path)) {
                 batch.files.append((DiskFile(path: path, bytes: entry.allocatedBytes, logicalBytes: entry.logicalBytes,
                     ownerUID: entry.ownerUID, modifiedAt: entry.modifiedAt), link))

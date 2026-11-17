@@ -276,3 +276,14 @@ The live Debloat snapshot starts the same installed-profile command while it rea
 Three default pairs against `ccc6e76` measured Debloat at **10.332 → 9.732 s (5.8%)** initially and **0.359 → 0.327 s (8.9%)** with a completed index. The initial aggregate improved 3.6%, while the completed-index aggregate regressed 3.3% with System Data. These pairs isolate the Debloat changes. Evidence is under `results/module-loading-20261117-debloat-overlap-vs-ccc6e76/` and `/tmp/macspace-overlap-debloat-observations-tests-20261117.log`.
 
 A separate Disk Map probe collected common launchd declarations once before checking 57 installed apps. All six runs produced the same five reviewed startup items. The median fell from 33 to 2 ms in isolation. The production implementation remains unchanged by this probe (`results/module-loading-20261117-startup-items-probe/`).
+
+## Bundle metadata detection in the inventory walk
+
+The native reader now identifies the exact `Info.plist` leaf in the directory batch. The initial and full-refresh inventory check bundle containers only for those candidate files. The existing size, container and property-list checks still determine whether a bundle identifier is used. The extended inventory fixture verifies detection after the identifier changes on disk. The focused release suite passed **249 tests** with seven skipped, and the preceding integrated suite passed **840 tests** with nine skipped.
+
+Across three alternating synthetic pairs over 400,000 directories, both classifiers found the same 3,903 candidates, including the case-sensitive and Unicode path cases. The median classification time was **240 → 16 ms**. Four full default pairs against `2efc7f3` measured **36.875 → 23.864 s (35.3%)** initially and **18.931 → 10.649 s (43.7%)** with a completed index. Debloat regressed 4.4% and 17.6%, respectively. These pairs include the preceding Debloat changes and all earlier optimizations. The complete target remains open. Evidence is under `results/module-loading-20261117-bundle-leaf-probe/`, `results/module-loading-20261117-bundle-leaf-default-vs-2efc7f3/` and `/tmp/macspace-bundle-leaf-validation-20261117.log`.
+
+Two further experiments were stopped after their isolated comparisons:
+
+- Reordering Settings category jobs reduced the native median from 4.994 to 3.777 s. The total stayed equal within each stable set of readings, while some jobs received different shares of cloned files. The category totals therefore rule out this scheduling change (`results/module-loading-20261117-settings-job-order-probe/`).
+- Streaming the existing ownership graph before staging a replacement reduced an identical 20,000-relation refresh from 240 to 193 ms. With 20 replacements, it increased the median from 242 to 337 ms. The batched comparison also slowed both scenarios. All output relations were equal across methods (`results/module-loading-20261117-ownership-match-probe/`).

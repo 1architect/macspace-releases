@@ -95,11 +95,16 @@ final class DiskUnmatchedDataTests: DiskSecurityFixtureCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let component = root.path + "/System/Library/ExtensionKit/Extensions/Example.appex"
         try FileManager.default.createDirectory(atPath: component, withIntermediateDirectories: true)
-        try (["CFBundleIdentifier": "org.example.system.extension"] as NSDictionary).write(to: URL(fileURLWithPath: component + "/Info.plist"))
+        let plist = URL(fileURLWithPath: component + "/Info.plist")
+        try (["CFBundleIdentifier": "org.example.system.extension"] as NSDictionary).write(to: plist)
         let db = try DiskDatabase(url: root.appendingPathComponent("cache/index.sqlite"), root: root.path)
         var scanner = DiskDatabaseScanner(db: db, excluded: [root.path + "/cache"])
         try scanner.scan(.init(), cursor: 1, progress: nil)
         XCTAssertTrue(try db.snapshot().index.knownBundleIdentifiers?.contains("org.example.system.extension") == true)
+
+        try (["CFBundleIdentifier": "org.example.system.updated"] as NSDictionary).write(to: plist)
+        try scanner.scan(.init(recursive: [root.path]), cursor: 2, progress: nil)
+        XCTAssertTrue(try db.snapshot().index.knownBundleIdentifiers?.contains("org.example.system.updated") == true)
     }
 
     private func guardedFixture(_ body: (String, String) throws -> Void) throws {
