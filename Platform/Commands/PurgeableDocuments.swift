@@ -88,16 +88,14 @@ public enum PurgeableDocuments {
                      state: @escaping @Sendable (URL) -> CloudState = CloudState.read) -> Source? {
         let rootPath = root.path
         let started = Date()
-        var found: [(path: String, bytes: UInt64)] = []
         progress(0)
         // Enumerating first gives metadata inspection a real denominator. A bounded number of resource reads run together,
         // and parent Keep Downloaded markers are read once per scan rather than once per file.
-        let walked = ModuleLoadMetrics.measure("cloud-documents", "enumeration") {
-            walk(rootPath, timeLimit: timeLimit) { found.append(($0, $1)) }
+        let candidates = ModuleLoadMetrics.measure("cloud-documents", "enumeration") {
+            localCopies(rootPath, started: started)
         }
-        guard walked else { return nil }
+        guard let candidates else { return nil }
         progress(0.05)
-        let candidates = found
         let queue = JobCounter(count: candidates.count)
         let pinned = ScanPins(root: root)
         let totals = CloudScanTotals()
@@ -119,24 +117,70 @@ public enum PurgeableDocuments {
                       folders: totals.folders.values.sorted { $0.bytes > $1.bytes })
     }
 
+    private struct Branch: Sendable {
+        let path: String
+        let device: dev_t
+        let inode: ino_t
+    }
+
+    private static func localCopies(_ root: String, started: Date) -> [(path: String, bytes: UInt64)]? {
+        var files: [(path: String, bytes: UInt64)] = []
+        var found: [Branch] = []
+        guard walk(root, timeLimit: timeLimit, started: started, enqueue: { found.append($0) }, { files.append(($0, $1)) }) else { return nil }
+        let branches = found
+        if branches.isEmpty { return files }
+        let queue = JobCounter(count: branches.count)
+        let results = LockedArray(repeating: [(path: String, bytes: UInt64)](), count: branches.count)
+        DispatchQueue.concurrentPerform(iterations: min(4, branches.count)) { _ in
+            while let index = queue.next(), Date().timeIntervalSince(started) <= timeLimit {
+                let branch = branches[index]
+                var copies: [(path: String, bytes: UInt64)] = []
+                _ = walk(branch.path, timeLimit: timeLimit, started: started, expected: branch) { copies.append(($0, $1)) }
+                results.set(index, copies)
+            }
+        }
+        for copies in results.values { files.append(contentsOf: copies) }
+        return files
+    }
+
     /// Calls `visit` with each locally allocated file under `rootPath` and its allocated size, until `timeLimit` seconds have
     /// passed. False when the folder cannot be read.
     static func walk(_ rootPath: String, timeLimit: TimeInterval, _ visit: (String, UInt64) -> Void) -> Bool {
+        walk(rootPath, timeLimit: timeLimit, started: nil, visit)
+    }
+
+    private static func walk(_ rootPath: String, timeLimit: TimeInterval, started: Date?, expected: Branch? = nil,
+                             enqueue: ((Branch) -> Void)? = nil, _ visit: (String, UInt64) -> Void) -> Bool {
         guard FileManager.default.fileExists(atPath: rootPath), let rootCopy = strdup(rootPath) else { return false }
         defer { free(rootCopy) }
         var paths: [UnsafeMutablePointer<CChar>?] = [rootCopy, nil]
         guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR, nil) else { return false }
         defer { fts_close(fts) }
-        let started = Date()
+        let started = started ?? Date()
+        var rootDevice: dev_t?
+        var branches = 0
         while let entry = fts_read(fts) {
             if Date().timeIntervalSince(started) > timeLimit { break }
+            let level = entry.pointee.fts_level
+            let kind = Int32(entry.pointee.fts_info)
+            let metadata = (kind == FTS_D || kind == FTS_F) ? entry.pointee.fts_statp?.pointee : nil
+            if level == 0, let expected {
+                guard kind == FTS_D, metadata?.st_dev == expected.device, metadata?.st_ino == expected.inode else { return false }
+            }
             // A folder still only in the cloud (dataless) holds nothing on this Mac; listing it would make the provider fetch it.
-            if Int32(entry.pointee.fts_info) == FTS_D, let stat = entry.pointee.fts_statp, stat.pointee.st_flags & UInt32(SF_DATALESS) != 0 {
-                fts_set(fts, entry, FTS_SKIP)
+            if kind == FTS_D, let metadata {
+                if level == 0 { rootDevice = metadata.st_dev }
+                if metadata.st_flags & UInt32(SF_DATALESS) != 0 {
+                    fts_set(fts, entry, FTS_SKIP)
+                } else if let enqueue, level == 2, branches < 256, metadata.st_dev == rootDevice,
+                          let path = entry.pointee.fts_path, fts_set(fts, entry, FTS_SKIP) == 0 {
+                    // Limiting queued branches keeps memory bounded. Any remaining directories are walked here.
+                    branches += 1
+                    enqueue(Branch(path: String(cString: path), device: metadata.st_dev, inode: metadata.st_ino))
+                }
                 continue
             }
-            guard Int32(entry.pointee.fts_info) == FTS_F, let cPath = entry.pointee.fts_path else { continue }
-            let info = entry.pointee.fts_statp.pointee
+            guard kind == FTS_F, let cPath = entry.pointee.fts_path, let info = metadata else { continue }
             guard info.st_flags & UInt32(SF_DATALESS) == 0 else { continue }
             let allocated = UInt64(max(info.st_blocks, 0)) * 512
             guard allocated > 0 else { continue }

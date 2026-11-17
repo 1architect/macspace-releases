@@ -19,10 +19,11 @@ final class CloudDownloadTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         for folder in ["Pinned", "A", "B"] {
-            let directory = root.appendingPathComponent(folder)
+            let directory = root.appendingPathComponent(folder).appendingPathComponent("Subpastação/Deep")
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             for index in 0..<40 { try Data(repeating: 1, count: 8192).write(to: directory.appendingPathComponent("file\(index)")) }
         }
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("A/Link"), withDestinationURL: root.appendingPathComponent("Pinned"))
         var marker: UInt8 = 49
         XCTAssertEqual(setxattr(root.appendingPathComponent("Pinned").path, "com.apple.fileprovider.pinned#PX", &marker, 1, 0, 0), 0)
         let reads = Reads(), progress = LoadProgressRelay()
