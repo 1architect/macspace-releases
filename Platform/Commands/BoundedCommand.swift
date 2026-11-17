@@ -45,6 +45,9 @@ public enum BoundedCommand {
         _ = fcntl(out[0], F_SETFL, O_NONBLOCK); _ = fcntl(err[0], F_SETFL, O_NONBLOCK)
         var streams = [Data(), Data()], ended = [false, false], truncated = false
         var exitStatus: Int32?, exitSignal: Int32?, timedOut = false, terminated = false, killed = false
+        var completionQueue: Int32 = -1
+        var attemptedCompletionWatch = false
+        defer { if completionQueue >= 0 { close(completionQueue) } }
         var buffer = [UInt8](repeating: 0, count: 16_384)
         while true {
             let now = DispatchTime.now().uptimeNanoseconds
@@ -73,6 +76,31 @@ public enum BoundedCommand {
             if exitStatus != nil, ended.allSatisfy({ $0 }) { break }
             var descriptors = [pollfd(fd: ended[0] ? -1 : out[0], events: Int16(POLLIN | POLLHUP), revents: 0), pollfd(fd: ended[1] ? -1 : err[0], events: Int16(POLLIN | POLLHUP), revents: 0)]
             let remaining = max(1, min(10, Int((deadline - DispatchTime.now().uptimeNanoseconds.clamped(to: start...deadline)) / 1_000_000)))
+            if exitStatus == nil, ended.allSatisfy({ $0 }) {
+                // Both pipes can close before waitid observes exit. Wake on that child's exit instead of sleeping
+                // for an entire poll interval with no active file descriptors. waitid still reads the status without reaping.
+                if !attemptedCompletionWatch {
+                    attemptedCompletionWatch = true
+                    let descriptor = kqueue()
+                    if descriptor >= 0 {
+                        var watch = kevent(ident: UInt(pid), filter: Int16(EVFILT_PROC),
+                            flags: UInt16(EV_ADD | EV_ENABLE | EV_ONESHOT), fflags: UInt32(NOTE_EXIT), data: 0, udata: nil)
+                        if fcntl(descriptor, F_SETFD, FD_CLOEXEC) == 0,
+                           kevent(descriptor, &watch, 1, nil, 0, nil) == 0 {
+                            completionQueue = descriptor
+                        } else {
+                            close(descriptor)
+                        }
+                    }
+                }
+                if completionQueue >= 0 {
+                    var event = kevent()
+                    var wait = timespec(tv_sec: 0, tv_nsec: remaining * 1_000_000)
+                    if kevent(completionQueue, nil, 0, &event, 1, &wait) >= 0 { continue }
+                    close(completionQueue)
+                    completionQueue = -1
+                }
+            }
             _ = poll(&descriptors, 2, Int32(remaining))
         }
         if timedOut || exitStatus == nil { _ = kill(-pid, SIGKILL) }
