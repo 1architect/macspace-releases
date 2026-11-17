@@ -166,6 +166,10 @@ public final class LiveDebloatSystem: DebloatSystem {
     // MARK: Environment
 
     public func environment() -> DebloatEnvironment {
+        environment(readingProcesses: processes)
+    }
+
+    public func environment(readingProcesses: () -> [RunningProcess]?) -> DebloatEnvironment {
         if let cachedEnvironment { return cachedEnvironment }
         let build = MacOSRelease.current.build
         let seed = diagnosticHistory()?.seedAutoSubmit
@@ -179,7 +183,7 @@ public final class LiveDebloatSystem: DebloatSystem {
             fullDiskAccess: Self.probeFullDiskAccess(home: targetUser?.home, fileManager: fileManager),
             bootedAt: Self.bootTime(),
             sessionStartedAt: targetUser.flatMap { user in
-                processes()?.filter { $0.executable == Self.loginwindowPath && $0.uid == user.uid }
+                readingProcesses()?.filter { $0.executable == Self.loginwindowPath && $0.uid == user.uid }
                     .compactMap { $0.startedAt(now: now()) }.min()
             }
         )

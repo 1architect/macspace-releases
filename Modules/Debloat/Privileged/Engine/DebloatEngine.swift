@@ -68,6 +68,7 @@ public final class DebloatEngine {
 
     /// launchd settings of the control whose overrides launchd will not honor, by setting id.
     public func ignoredLaunchdSettings(_ control: DebloatControl) -> [String: LaunchdIgnoreReason] {
+        guard control.settings.contains(where: { $0.launchd != nil }) else { return [:] }
         var ignored: [String: LaunchdIgnoreReason] = [:]
         let removable = system.environment().sip == .enabled ? system.sipRemovableServices() : nil
         let jobs = system.launchdJobs()
@@ -109,16 +110,22 @@ public final class DebloatEngine {
     /// the separate action/verification methods continue to query the current system state.
     public func inspection(of controls: [DebloatControl], progress: (Double) -> Void = { _ in }) -> (statuses: [ControlStatus], profileWork: ProfileWork) {
         let installed = ModuleLoadMetrics.measure("debloat", "installed-profiles") { system.installedProfiles() }
+        return inspection(of: controls, installedProfiles: installed, processes: nil, progress: progress)
+    }
+
+    public func inspection(of controls: [DebloatControl], installedProfiles installed: [InstalledProfile]?,
+                           processes: [RunningProcess]?, progress: (Double) -> Void = { _ in }) -> (statuses: [ControlStatus], profileWork: ProfileWork) {
         let held = installed.map(Self.heldSettings)
-        let statuses = readStatuses(of: controls, progress: progress) { held }
+        let statuses = readStatuses(of: controls, processes: processes, progress: progress) { held }
         return (statuses, profileWork(installed: installed ?? []))
     }
 
-    private func readStatuses(of controls: [DebloatControl], progress: (Double) -> Void, held readHeld: () -> Set<String>?) -> [ControlStatus] {
+    private func readStatuses(of controls: [DebloatControl], processes observedProcesses: [RunningProcess]? = nil,
+                              progress: (Double) -> Void, held readHeld: () -> Set<String>?) -> [ControlStatus] {
         guard !controls.isEmpty else { return [] }
         let entries = ModuleLoadMetrics.measure("debloat", "journal") { journal.allEntries }
         progress(0.05)
-        let processes = ModuleLoadMetrics.measure("debloat", "processes") { system.processes() }
+        let processes = observedProcesses ?? ModuleLoadMetrics.measure("debloat", "processes") { system.processes() }
         progress(0.15)
         let held = readHeld()
         progress(0.3)

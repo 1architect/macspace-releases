@@ -62,6 +62,20 @@ final class DebloatEngineTests: XCTestCase {
         XCTAssertEqual(statuses.map(\.state), try controls.map { try state(engine, $0.id) })
     }
 
+    func testInspectionUsesAnAvailableProcessListIncludingAnEmptyOne() {
+        let (engine, system, _) = makeEngine()
+        let fresh = engine.inspection(of: controls)
+        XCTAssertEqual(system.processListings, 1)
+        let prepared = engine.inspection(of: controls, installedProfiles: [], processes: [])
+        XCTAssertEqual(system.processListings, 1)
+        XCTAssertEqual(system.profileReadCount, 1)
+        XCTAssertEqual(prepared.statuses, fresh.statuses)
+        XCTAssertEqual(prepared.profileWork, fresh.profileWork)
+        let fallback = engine.inspection(of: controls, installedProfiles: [], processes: nil)
+        XCTAssertEqual(system.processListings, 2)
+        XCTAssertEqual(fallback.statuses, fresh.statuses)
+    }
+
     func testPageInspectionReadsProfilesOnceAndPreservesStatusesAndProfileWork() {
         let system = FakeDebloatSystem(), engine = DebloatEngine(system: system, journal: MemoryJournalStore())
         for unreadable in [false, true] {

@@ -268,3 +268,11 @@ An isolated probe compared the native sequential walk with splitting at the firs
 Three default pairs against `2efc7f3` measured **35.350 → 23.607 s (33.2%)** initially and **17.930 → 10.701 s (40.3%)** with a completed index. Other System Files improved **47.9%** and **43.3%**, respectively. Debloat was the only module to regress, by **9.0%** and **48.9%**. Disk Map and System Data determined completion times. The complete target remains open. Evidence is under `results/module-loading-20261117-cloud-parallel-walk-default-vs-2efc7f3/`.
 
 A separate Disk Map receipt probe memoized each receipt path's nearest installed application by its parent directory. For 20,000 paths, all six runs produced identical evidence. The medians were 0.388 and 0.339 s. The production code remains unchanged by this probe (`results/module-loading-20261117-receipt-ancestor-probe/`).
+
+## Debloat profile and process reads
+
+The live Debloat snapshot starts the same installed-profile command while it reads the environment. If determining when the user session started produces a process list, the control inspection uses that list too. An unavailable list still triggers the inspection's fresh read. Controls without launchd settings skip the launchd override checks. The focused release suite passed 102 tests, including the empty-list, missing-list and profile compatibility cases.
+
+Three default pairs against `ccc6e76` measured Debloat at **10.332 → 9.732 s (5.8%)** initially and **0.359 → 0.327 s (8.9%)** with a completed index. The initial aggregate improved 3.6%, while the completed-index aggregate regressed 3.3% with System Data. These pairs isolate the Debloat changes. Evidence is under `results/module-loading-20261117-debloat-overlap-vs-ccc6e76/` and `/tmp/macspace-overlap-debloat-observations-tests-20261117.log`.
+
+A separate Disk Map probe collected common launchd declarations once before checking 57 installed apps. All six runs produced the same five reviewed startup items. The median fell from 33 to 2 ms in isolation. The production implementation remains unchanged by this probe (`results/module-loading-20261117-startup-items-probe/`).

@@ -41,8 +41,8 @@ actor DebloatStore {
 
     func invalidate() async { await reading.invalidate() }
 
-    static func liveEngine() -> DebloatEngine {
-        DebloatEngine(system: LiveDebloatSystem(), journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))
+    static func liveEngine(system: LiveDebloatSystem = LiveDebloatSystem()) -> DebloatEngine {
+        DebloatEngine(system: system, journal: DebloatJournalStore(targetUser: DebloatTargetUser.resolve()))
     }
 
     /// The states in which something of a control is applied.
@@ -64,14 +64,33 @@ actor DebloatStore {
     }
 
     static func liveSnapshot(progress: LoadProgressRelay) -> DebloatSnapshot {
-        let engine = liveEngine()
-        let environment = ModuleLoadMetrics.measure("debloat", "environment") { engine.system.environment() }
+        let system = LiveDebloatSystem()
+        let engine = liveEngine(system: system)
+        let profilesReady = DispatchGroup()
+        let profiles = LockedArray<[InstalledProfile]?>(repeating: nil, count: 1)
+        // The profile command has no dependency on the environment or on the process list.
+        DispatchQueue.global(qos: LoadWorkPriority.current).async(group: profilesReady) {
+            let result = ModuleLoadMetrics.measure("debloat", "installed-profiles") {
+                LiveDebloatSystem(targetUser: nil).installedProfiles()
+            }
+            profiles.set(0, result)
+        }
+        var processes: [RunningProcess]?
+        let environment = ModuleLoadMetrics.measure("debloat", "environment") {
+            system.environment {
+                let observed = ModuleLoadMetrics.measure("debloat", "processes") { system.processes() }
+                processes = observed
+                return observed
+            }
+        }
         progress.report(0.15)
         // Only the controls meant for this build (the analytics switch on a release build, its profile on a beta), and a retired
         // one only where it is still applied.
         let offered = engine.controls.filter { $0.isOffered(in: environment) }
         let inspection = ModuleLoadMetrics.measure("debloat", "inspection") {
-            engine.inspection(of: offered, progress: progress.part(0.15...0.85))
+            profilesReady.wait()
+            return engine.inspection(of: offered, installedProfiles: profiles.values[0], processes: processes,
+                                     progress: progress.part(0.15...0.85))
         }
         let statuses = Dictionary(inspection.statuses.map { ($0.controlID, $0) }, uniquingKeysWith: { first, _ in first })
         let controls = offered.filter { control in isShown(control, in: environment, status: { statuses[control.id] ?? engine.status(of: control) }) }
