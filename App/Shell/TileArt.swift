@@ -1038,28 +1038,38 @@ struct GlowEdge: View {
 
 // MARK: Gauge
 
-/// The disk's gauge: a bar across the tile filled to the share. The share and the disk's size are left to the caption.
+/// The disk's gauge fills with scan progress while reading and disk usage once the scan is complete.
 struct BarGaugeView: View {
     static let height: CGFloat = 10
 
     let value: Double
     let tint: TileTint
     var loading = false
+    var reading = false
+    var fill: LoadFill?
     @Environment(\.design) private var design
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @State private var drawn: Double = 0
 
+    static func fraction(usage: Double, reading: Bool, fill: LoadFill?, at date: Date) -> Double {
+        let value = reading ? fill?.fraction(at: date) ?? 0 : usage
+        return min(max(value, 0), 1)
+    }
+
     var body: some View {
         let palette = design.palette(tint)
-        let used = min(max(value, 0), 1) * drawn
+        let estimating = reading && fill != nil && fill?.reported == nil
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Surface(shape: Capsule(), color: palette.step(1))
-                Surface(shape: Capsule(), color: palette.step(5))
-                    .modifier(AnimatedLength(value: proxy.size.width * used, kind: .width))
-                // While loading, a light runs along the bar.
-                if loading && !reduceMotion {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: !estimating || reduceMotion || !appearsActive)) { context in
+                    let fraction = Self.fraction(usage: value, reading: reading, fill: fill, at: context.date)
+                    Surface(shape: Capsule(), color: palette.step(5))
+                        .modifier(AnimatedLength(value: proxy.size.width * fraction * drawn, kind: .width))
+                }
+                // Before the scan or the initial disk-capacity read reports anything, the bar has an indeterminate light.
+                if loading && fill == nil && !reduceMotion {
                     TimelineView(.animation(minimumInterval: 1 / 30, paused: !appearsActive)) { context in
                         let runner = 0.22
                         let from = LoadingWave.position(context.date) * (1 + runner) - runner
@@ -1073,7 +1083,9 @@ struct BarGaugeView: View {
         }
         .frame(height: Self.height)
         .animation(.smooth(duration: 0.4), value: loading)
-        .animation(Theme.value, value: value)
+        .animation(reduceMotion ? nil : Theme.value, value: value)
+        .animation(reduceMotion ? nil : Theme.value, value: reading)
+        .animation(reduceMotion ? nil : Theme.value, value: fill?.reported)
         .onAppear { withAnimation(.smooth(duration: 1.1).delay(0.2)) { drawn = 1 } }
     }
 }

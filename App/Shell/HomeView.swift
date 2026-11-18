@@ -66,17 +66,26 @@ struct TileInfo: Equatable {
         return text
     }
 
-    /// The disk: an arc filled as far as the disk is used. What macOS can purge by itself is not drawn: at a few gigabytes it was a
-    /// sliver too thin to see.
+    /// The Apps and Files caption and gauge when showing the startup disk's capacity.
     @MainActor
     init(_ storage: StorageOverview) {
         let status = storage.status()
-        // An empty gauge while the disk is read, so the light running along it shows where the figure will be.
         var graphic = TileGraphic.gauge(value: 0, label: "", sublabel: "")
         if let used = storage.usedFraction, let total = storage.totalBytes {
             graphic = .gauge(value: used, label: "\(Int((used * 100).rounded()))%", sublabel: String(localized: "of \(ByteFormat.string(total))"))
         }
         self.init(title: status.title, status: status.detail, graphic: graphic, loading: !storage.isLoaded)
+    }
+
+    /// Keep the capacity as the resting value, and use the module's ordinary loading state while it reads.
+    func showingScan(from module: TileInfo) -> TileInfo {
+        guard module.reading else { return self }
+        var result = self
+        result.status = module.status
+        result.loading = true
+        result.reading = true
+        result.fill = module.fill
+        return result
     }
 
     init(title: String, figure: String? = nil, status: String, needsAttention: Bool = false, graphic: TileGraphic? = nil, loading: Bool = false,
@@ -273,7 +282,7 @@ struct TileFace: View {
             // A bar across the tile, centered in the room between the window's close button, in this tile's top-left corner, and
             // the caption, which says the figures.
             let top = GlassCircleButton.margin + GlassCircleButton.diameter
-            BarGaugeView(value: value, tint: tint, loading: info.loading)
+            BarGaugeView(value: value, tint: tint, loading: info.loading, reading: info.reading, fill: info.fill)
                 .graphContextMenu()
                 .frame(width: max(size.width - 30, 0), height: BarGaugeView.height)
                 .position(x: size.width / 2, y: (top + max(size.height - Self.captionBand, top)) / 2)
@@ -341,9 +350,9 @@ struct HomeView: View {
         var placements: [Bento.Placement]
     }
 
-    static func arrangement(for size: CGSize, sizes: [Bento.Size], maximumSizes: [Bento.Size?]? = nil) -> Arrangement {
+    static func arrangement(for size: CGSize, sizes: [Bento.Size], maximumSizes: [Bento.Size?]? = nil, fallbackTile: Int? = nil) -> Arrangement {
         let columns = Bento.columns(for: size.width)
-        let placements = Bento.pack(sizes: sizes, columns: columns, maximumSizes: maximumSizes)
+        let placements = Bento.pack(sizes: sizes, columns: columns, maximumSizes: maximumSizes, fallbackTile: fallbackTile)
         return Arrangement(columns: columns, scrolls: needed(rows: Bento.rows(placements)) > size.height, placements: placements)
     }
 
@@ -452,10 +461,11 @@ struct HomeView: View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
         let sizes = tiles.map(\.size)
         let maximumSizes = tiles.map(\.maximumSize)
+        let settings = tiles.firstIndex { $0.destination == .settings }
         GeometryReader { proxy in
             // A new size takes its arrangement at once, every tile following the window: the tiles used to leave and come back
             // whenever the number of columns changed, which flashed the dashboard empty in the middle of a resize (2026-10-13).
-            let arrangement = Self.arrangement(for: proxy.size, sizes: sizes, maximumSizes: maximumSizes)
+            let arrangement = Self.arrangement(for: proxy.size, sizes: sizes, maximumSizes: maximumSizes, fallbackTile: settings)
             let columns = arrangement.columns
             let placements = arrangement.placements
             let rows = Bento.rows(placements)
@@ -643,7 +653,12 @@ private struct DashboardGround: View {
             } else {
                 TileGround(tint: tint, lifted: lifted)
             }
-        case .storage: TileGround(tint: tint, lifted: lifted, loading: !storage.isLoaded)
+        case .storage:
+            if let handle = destination.moduleID.flatMap({ host.handle(for: $0) }) {
+                ModuleGround(handle: handle, tint: tint, lifted: lifted, storageLoading: !storage.isLoaded)
+            } else {
+                TileGround(tint: tint, lifted: lifted, loading: !storage.isLoaded)
+            }
         case .settings, .home: TileGround(tint: tint, lifted: lifted)
         }
     }
@@ -653,8 +668,12 @@ private struct ModuleGround: View {
     @ObservedObject var handle: ModuleHandle
     let tint: TileTint
     let lifted: Bool
+    var storageLoading: Bool?
 
-    var body: some View { TileGround(tint: tint, lifted: lifted, loading: TileInfo(handle).loading) }
+    var body: some View {
+        let info = TileInfo(handle)
+        TileGround(tint: tint, lifted: lifted, loading: storageLoading.map { $0 || info.reading } ?? info.loading)
+    }
 }
 
 /// Moves a tile's ground and face alike: in with the window one after another, out in reverse order, to its place, lifted and tilted
@@ -777,7 +796,13 @@ struct TileContent: View {
         case let .module(id):
             if let handle = host.handle(for: id) { ModuleTileContent(handle: handle, content: self) }
         case .settings: layout(TileInfo.settings)
-        case .storage: layout(TileInfo(storage))
+        case .storage:
+            let capacity = TileInfo(storage)
+            if let handle = destination.moduleID.flatMap({ host.handle(for: $0) }) {
+                ModuleTileContent(handle: handle, content: self, capacity: capacity)
+            } else {
+                layout(capacity)
+            }
         case .home: EmptyView()
         }
     }
@@ -808,9 +833,11 @@ struct TileContent: View {
 private struct ModuleTileContent: View {
     @ObservedObject var handle: ModuleHandle
     let content: TileContent
+    var capacity: TileInfo?
 
     var body: some View {
-        content.layout(TileInfo(handle))
+        let info = TileInfo(handle)
+        content.layout(capacity?.showingScan(from: info) ?? info)
             .environment(\.graphInteraction, GraphInteraction(handle: handle))
     }
 }

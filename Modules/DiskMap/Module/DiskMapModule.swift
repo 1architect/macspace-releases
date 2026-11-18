@@ -161,7 +161,9 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
         _ = await browsing(snapshot.index, progress: { progress(0.9 + 0.09 * $0) })
         await store.prepareNavigation()
         let completed = await store.navigation()
-        return DiskMapScreenBuilder.tile(completed.index, files: completed.files)
+        let tile = DiskMapScreenBuilder.tile(completed.index, files: completed.files)
+        progress(1)
+        return tile
     }
     public func screen(context: ModuleContext) async -> Screen {
         await screen(context: context, progress: { _ in })

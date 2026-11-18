@@ -85,6 +85,41 @@ final class ScanProgressTests: XCTestCase {
         XCTAssertNil(handle.loading)
     }
 
+    func testStorageTileUsesSharedScanProgressThenRestoresCapacityCaptionAndBar() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let control = ScanControl()
+        let handle = try await handle(directory, control: control)
+        defer { handle.deactivate() }
+        let storage = StorageOverview(readCapacity: { (250_000_000_000, 500_000_000_000) })
+        await storage.refresh()
+        let capacity = TileInfo(storage)
+        guard case let .gauge(usage, _, _)? = capacity.graphic else { return XCTFail("Missing disk capacity gauge") }
+
+        await control.arm()
+        let reload = Task { await handle.refresh(reload: true) }
+        for _ in 0..<100 {
+            if await control.started { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        await control.advance(0.4)
+        for _ in 0..<100 where handle.loading?.reported != 0.4 { try await Task.sleep(for: .milliseconds(5)) }
+        let module = TileInfo(handle)
+        let reading = capacity.showingScan(from: module)
+        XCTAssertTrue(reading.loading)
+        XCTAssertTrue(reading.reading)
+        XCTAssertEqual(reading.status, TileInfo.loadingStatus(0.4))
+        XCTAssertEqual(reading.status, module.status)
+        XCTAssertEqual(reading.fill, module.fill)
+        XCTAssertEqual(BarGaugeView.fraction(usage: usage, reading: reading.reading, fill: reading.fill, at: Date()), 0.4)
+
+        await control.finish()
+        await reload.value
+        let completed = TileInfo(storage).showingScan(from: TileInfo(handle))
+        XCTAssertEqual(completed, capacity)
+        XCTAssertEqual(BarGaugeView.fraction(usage: usage, reading: completed.reading, fill: completed.fill, at: Date()), 0.5)
+    }
+
     func testFullAndQuietScansBothPublishProgressAndClearLoadingWhenDone() async throws {
         for quiet in [false, true] {
             let directory = try Fixtures.temporaryDirectory()
