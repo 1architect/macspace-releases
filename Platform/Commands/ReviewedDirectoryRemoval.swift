@@ -59,9 +59,11 @@ public enum ReviewedDirectoryRemoval {
     }
 
     /// All targets must finish preflight before a Plan can mutate any of them.
+    /// An uninstall may opt in to orphaned sockets inside explicitly reviewed app data.
     public static func prepare(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path,
-                               permitsDescendantLinks: Bool = false) throws -> Plan {
-        try prepare(targets, home: home, personal: false, permitsDescendantLinks: permitsDescendantLinks)
+                               permitsDescendantLinks: Bool = false, permitsOrphanedSockets: Bool = false) throws -> Plan {
+        try prepare(targets, home: home, personal: false, permitsDescendantLinks: permitsDescendantLinks,
+                    permitsOrphanedSockets: permitsOrphanedSockets)
     }
 
     /// Whole personal folders use the same descriptor-based preflight and guarded removal as app-data directories.
@@ -75,7 +77,7 @@ public enum ReviewedDirectoryRemoval {
     }
 
     public static func preparePersonal(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws -> Plan {
-        try prepare(targets, home: home, personal: true, permitsDescendantLinks: true)
+        try prepare(targets, home: home, personal: true, permitsDescendantLinks: true, permitsOrphanedSockets: false)
     }
 
     public final class CleanupRoot {
@@ -165,7 +167,8 @@ public enum ReviewedDirectoryRemoval {
         return Plan(items)
     }
 
-    private static func prepare(_ targets: [Target], home: String, personal: Bool, permitsDescendantLinks: Bool) throws -> Plan {
+    private static func prepare(_ targets: [Target], home: String, personal: Bool, permitsDescendantLinks: Bool,
+                                permitsOrphanedSockets: Bool) throws -> Plan {
         guard !targets.isEmpty, targets.count <= maxTargets, Set(targets.map(\.path)).count == targets.count else {
             throw Failure(home, "Invalid or excessive directory selection")
         }
@@ -181,7 +184,8 @@ public enum ReviewedDirectoryRemoval {
         }
         var prepared: [Prepared] = [], entries = 0
         for target in targets {
-            let item = try Prepared(target, home: home, permitsSymbolicLinks: permitsDescendantLinks)
+            let item = try Prepared(target, home: home, permitsSymbolicLinks: permitsDescendantLinks,
+                                    permitsOrphanedSockets: permitsOrphanedSockets)
             try item.preflight(entries: &entries)
             prepared.append(item)
         }
@@ -237,13 +241,73 @@ public enum ReviewedDirectoryRemoval {
               a.st_mtimespec.tv_sec == b.st_mtimespec.tv_sec, a.st_mtimespec.tv_nsec == b.st_mtimespec.tv_nsec else { return false }
         return afterRename || (a.st_ctimespec.tv_sec == b.st_ctimespec.tv_sec && a.st_ctimespec.tv_nsec == b.st_ctimespec.tv_nsec)
     }
-    private static func safe(_ value: stat, device: Int32, path: String, permitsSymbolicLinks: Bool = false, authorizedUID: uid_t? = nil) throws {
+    private static func safe(_ value: stat, device: Int32, path: String, permitsSymbolicLinks: Bool = false,
+                             permitsSocket: Bool = false, authorizedUID: uid_t? = nil) throws {
         let kind = value.st_mode & S_IFMT
+        let allowedType = kind == S_IFDIR || (value.st_nlink == 1 && (kind == S_IFREG || permitsSocket && kind == S_IFSOCK))
+            || (permitsSymbolicLinks && kind == S_IFLNK)
         guard value.st_uid == getuid() || authorizedUID == value.st_uid,
-              value.st_dev == device, value.st_flags & protectedFlags == 0,
-              kind == S_IFDIR || (kind == S_IFREG && value.st_nlink == 1) || (permitsSymbolicLinks && kind == S_IFLNK) else {
+              value.st_dev == device, value.st_flags & protectedFlags == 0, allowedType else {
             throw Failure(path, "Unsafe owner, mount, flags, link, or file type")
         }
+    }
+
+    private enum SocketStatus { case orphaned, active, unknown }
+
+    private static func socketStatus(parent: Int32, name: String, expected: stat) -> SocketStatus {
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+        let directory = buffer.withUnsafeMutableBufferPointer { buffer -> String? in
+            guard let base = buffer.baseAddress, fcntl(parent, F_GETPATH, base) == 0 else { return nil }
+            return String(validatingCString: base)
+        }
+        guard let directory else { return .unknown }
+        let path = directory + "/" + name
+        var current = stat()
+        guard lstat(path, &current) == 0, unchanged(current, expected) else { return .unknown }
+        let status: SocketStatus
+        if path.utf8.count + 2 <= SOCK_MAXADDRLEN {
+            status = probeSocket(path, expected: expected)
+        } else {
+            // A private short name lets the kernel probe a socket bound through a relative or aliased path.
+            var template = Array("/private/tmp/macspace-socket-XXXXXX".utf8CString)
+            guard let temporary = template.withUnsafeMutableBufferPointer({ buffer in
+                buffer.baseAddress.flatMap { mkdtemp($0) }.flatMap { String(validatingCString: $0) }
+            }) else { return .unknown }
+            defer { _ = rmdir(temporary) }
+            let alias = temporary + "/socket"
+            guard symlink(path, alias) == 0 else { return .unknown }
+            defer { _ = unlink(alias) }
+            status = probeSocket(alias, expected: expected)
+        }
+        guard status == .orphaned else { return status }
+        guard fstatat(parent, name, &current, AT_SYMLINK_NOFOLLOW) == 0, unchanged(current, expected),
+              lstat(path, &current) == 0, unchanged(current, expected) else { return .unknown }
+        return .orphaned
+    }
+
+    private static func probeSocket(_ path: String, expected: stat) -> SocketStatus {
+        var current = stat()
+        guard fstatat(AT_FDCWD, path, &current, 0) == 0, unchanged(current, expected) else { return .unknown }
+        let fd = socket(AF_UNIX, SOCK_DGRAM, 0)
+        guard fd >= 0 else { return .unknown }
+        defer { close(fd) }
+        guard fcntl(fd, F_SETFD, FD_CLOEXEC) == 0, fcntl(fd, F_SETFL, O_NONBLOCK) == 0 else { return .unknown }
+
+        // Darwin's address header is two bytes. The kernel accepts a longer Unix address
+        // than the fixed sun_path member, up to SOCK_MAXADDRLEN.
+        let length = path.utf8.count + 2
+        var address = [UInt8(length), UInt8(AF_UNIX)] + path.utf8
+        let (result, code) = address.withUnsafeMutableBufferPointer { buffer in
+            buffer.baseAddress!.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                let result = Darwin.connect(fd, $0, socklen_t(length))
+                return (result, errno)
+            }
+        }
+        if result == 0 || code == EPROTOTYPE { return .active }
+        // A datagram probe sends no data. The kernel checks the peer's type before
+        // stream listening state, so even a bound stream that hasn't listened is active.
+        guard code == ECONNREFUSED, fstatat(AT_FDCWD, path, &current, 0) == 0, unchanged(current, expected) else { return .unknown }
+        return .orphaned
     }
     private static func named(_ parent: Int32, _ name: String, path: String) throws -> stat {
         var value = stat()
@@ -308,6 +372,7 @@ public enum ReviewedDirectoryRemoval {
     fileprivate final class Prepared {
         let target: Target
         let permitsSymbolicLinks: Bool
+        let permitsOrphanedSockets: Bool
         let authorizedUID: uid_t?
         let parts: [String]
         var ancestors: [Descriptor] = []
@@ -318,9 +383,11 @@ public enum ReviewedDirectoryRemoval {
         var parent: Int32 { ancestors.last!.fd }
         var leaf: String { parts.last! }
 
-        init(_ target: Target, home: String, permitsSymbolicLinks: Bool, authorizedUID: uid_t? = nil) throws {
+        init(_ target: Target, home: String, permitsSymbolicLinks: Bool, permitsOrphanedSockets: Bool = false,
+             authorizedUID: uid_t? = nil) throws {
             self.target = target
             self.permitsSymbolicLinks = permitsSymbolicLinks
+            self.permitsOrphanedSockets = permitsOrphanedSockets
             self.authorizedUID = authorizedUID
             parts = target.path.split(separator: "/").map(String.init)
             manifest = try Manifest(path: target.path)
@@ -361,16 +428,35 @@ public enum ReviewedDirectoryRemoval {
             guard unchanged(value, top.initial), target.expected.matches(value) else { throw Failure(target.path, "Directory changed since preflight") }
         }
         func preflight(entries: inout Int) throws {
-            try walk(parent, leaf, path: target.path, depth: 0, entries: &entries)
+            try walk(parent, leaf, path: target.path, depth: 0, entries: &entries, recording: true)
             try manifest.rewind(path: target.path)
         }
-        func walk(_ parent: Int32, _ name: String, path: String, depth: Int, entries: inout Int) throws {
+        private func validateSocket(_ value: stat, parent: Int32, name: String, path: String) throws {
+            guard value.st_mode & S_IFMT == S_IFSOCK else { return }
+            switch socketStatus(parent: parent, name: name, expected: value) {
+            case .orphaned: return
+            case .active: throw Failure(path, "Unix socket is still in use")
+            case .unknown: throw Failure(path, "Could not verify whether the Unix socket is in use")
+            }
+        }
+        private func validateContentsBeforeMoving() throws {
+            guard permitsOrphanedSockets else { return }
+            // A socket can appear in a nested directory after review without changing the target's own metadata.
+            var entries = 0
+            try walk(parent, leaf, path: target.path, depth: 0, entries: &entries, recording: false)
+            try validate()
+        }
+        func walk(_ parent: Int32, _ name: String, path: String, depth: Int, entries: inout Int, recording: Bool) throws {
             entries += 1
             guard depth <= maxDepth, entries <= maxEntries, path.utf8.count < Int(PATH_MAX) else { throw Failure(path, "Directory preflight resource limit exceeded") }
             let value = try named(parent, name, path: path)
-            try safe(value, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks, authorizedUID: authorizedUID)
-            bytes += UInt64(max(value.st_blocks, 0)) * 512
-            try manifest.write(name, value, path: path)
+            try safe(value, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks,
+                     permitsSocket: permitsOrphanedSockets && depth > 0, authorizedUID: authorizedUID)
+            try validateSocket(value, parent: parent, name: name, path: path)
+            if recording {
+                bytes += UInt64(max(value.st_blocks, 0)) * 512
+                try manifest.write(name, value, path: path)
+            }
             guard value.st_mode & S_IFMT == S_IFDIR else { return }
             let directory = try Descriptor(openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC), path: path)
             guard unchanged(directory.initial, value) else { throw Failure(path, "Directory changed during preflight") }
@@ -390,11 +476,11 @@ public enum ReviewedDirectoryRemoval {
                 }
                 guard let child else { throw Failure(path, "Unrepresentable directory entry") }
                 if child == "." || child == ".." { continue }
-                try walk(directory.fd, child, path: path + "/" + child, depth: depth + 1, entries: &entries)
+                try walk(directory.fd, child, path: path + "/" + child, depth: depth + 1, entries: &entries, recording: recording)
             }
             var after = stat()
             guard fstat(directory.fd, &after) == 0, unchanged(value, after) else { throw Failure(path, "Directory changed during preflight") }
-            try manifest.write("", path: path)
+            if recording { try manifest.write("", path: path) }
         }
 
         func trash(fileManager: FileManager) throws {
@@ -407,6 +493,7 @@ public enum ReviewedDirectoryRemoval {
                         throw Failure(target.path, "Directory location changed before Trash")
                     }
                     try validate()
+                    try validateContentsBeforeMoving()
                     try fileManager.trashItem(at: url, resultingItemURL: nil)
                 } catch { removalError = error }
             }
@@ -416,6 +503,7 @@ public enum ReviewedDirectoryRemoval {
 
         func remove() throws {
             try validate()
+            try validateContentsBeforeMoving()
             let stageName = ".macspace-directory-" + UUID().uuidString
             let stagePath = (target.path as NSString).deletingLastPathComponent + "/" + stageName
             guard mkdirat(parent, stageName, 0o700) == 0 else { throw failure(target.path, "Cannot create private removal directory") }
@@ -437,8 +525,11 @@ public enum ReviewedDirectoryRemoval {
                    stage: Int32, stagePath: String, depth: Int) throws {
             guard depth <= maxDepth else { throw Failure(path, "Removal depth limit exceeded") }
             let current = try named(source, name, path: path)
-            try safe(current, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks, authorizedUID: authorizedUID)
+            let permitsSocket = permitsOrphanedSockets && depth > 0
+            try safe(current, device: top!.initial.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks,
+                     permitsSocket: permitsSocket, authorizedUID: authorizedUID)
             guard unchanged(current, expected) else { throw Failure(path, "Entry changed since preflight") }
+            try validateSocket(current, parent: source, name: name, path: path)
             let slot = UUID().uuidString
             guard renameatx_np(source, name, stage, slot, UInt32(RENAME_EXCL)) == 0 else { throw failure(path, "Cannot guard directory entry") }
             let preserved = stagePath + "/" + slot
@@ -459,11 +550,12 @@ public enum ReviewedDirectoryRemoval {
                     // Unexpected new children make rmdir fail; they are never enumerated/deleted here.
                     guard unlinkat(stage, slot, AT_REMOVEDIR) == 0 else { throw failure(path, "Cannot remove directory; remaining data preserved") }
                 } else {
-                    // Permitted symlinks are directory entries only:
-                    // rename/unlink never opens or follows their destinations, including links to / or outside the tree.
+                    // Rename/unlink operates on the reviewed entry itself.
                     let final = try named(stage, slot, path: path)
-                    try safe(final, device: expected.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks, authorizedUID: authorizedUID)
+                    try safe(final, device: expected.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks,
+                             permitsSocket: permitsSocket, authorizedUID: authorizedUID)
                     guard unchanged(final, moved) else { throw Failure(path, "Staged file changed") }
+                    try validateSocket(final, parent: stage, name: slot, path: path)
                     guard unlinkat(stage, slot, 0) == 0 else { throw failure(path, "Cannot unlink reviewed file") }
                 }
             } catch {

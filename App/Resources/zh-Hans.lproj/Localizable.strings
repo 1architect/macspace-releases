@@ -62,6 +62,7 @@
 "Developed by\n%@" = "开发者\n%@";
 "Does the few things that need an administrator." = "执行少量需要管理员权限的操作。";
 "Drag into the Full Disk Access list" = "拖入完全磁盘访问列表";
+"Eligible items go to Trash." = "符合条件的项目移到废纸篓。";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "符合条件的项目会留在废纸篓中，直到清空废纸篓。其他项目按通常的规则清理。";
 "Every 3 days" = "每 3 天";
 "Every day" = "每天";
@@ -90,7 +91,6 @@
 "In use" = "使用中";
 "Install helper" = "安装辅助程序";
 "It does the few tasks that need an administrator." = "它负责少量需要管理员权限的任务。";
-"Items stay in Trash until it is emptied." = "这些项目会留在废纸篓中，直到清空废纸篓。";
 "Keep running in the background" = "在后台继续运行";
 "Keep running in the menu bar" = "在菜单栏中继续运行";
 "Kept while Apple Intelligence is on" = "Apple 智能开启时保留";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "恢复改过的设置，并将 App 移到废纸篓。";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "还原 MacSpace 更改的设置并将应用移到废纸篓。保留清理历史，已释放的文件无法恢复。";
 "Restoring settings" = "正在还原设置";
-"Save your work first. Some changes may be permanent." = "请先保存工作。某些更改可能无法撤销。";
+"Save work. Some removals may be permanent." = "请保存工作。部分项目可能会被永久删除。";
+"Save your work." = "请保存工作。";
 "Selected cleanup items changed. Review your selection again." = "所选清理项目已更改。请重新检查选择。";
 "Selected files need review" = "所选文件需要检查";
 "Settings" = "设置";

@@ -166,8 +166,8 @@ public enum InfoText {
 }
 
 /// Asked before an action runs. Use a short question and an optional short consequence.
-/// Keep the title to one displayed line and the message to two. Item names, paths and
-/// inventories belong on the review page. Write one message for a batch.
+/// Keep the title to one displayed line and the message to one short paragraph of up to
+/// three lines. Item names, paths and inventories belong on the review page.
 public struct Confirmation: Codable, Equatable, Sendable {
     public var title: String
     public var message: String
@@ -212,6 +212,7 @@ public struct Action: Codable, Equatable, Sendable {
     public var pageID: String?
     /// Modules declare which removal actions can honor the user's Trash preference.
     /// For a mixed action, the module still decides which individual targets can be moved.
+    /// Actions with a frozen mode in `parameters["trash"]` describe that mode in their confirmation.
     public var trashSupport: TrashSupport?
     /// An action that empties Trash runs before a batch moves more items there.
     public var emptiesTrash: Bool?

@@ -28,11 +28,24 @@ struct ActionButton: View {
 /// whole frame, and on this window, clear around its rounded glass, that showed as a grey rectangle with square corners.
 @MainActor
 public enum ConfirmationAlert {
+    static func prompt(for action: Action, prefersTrash: Bool) -> Action {
+        guard prefersTrash, let support = action.trashSupport, var confirmation = action.confirmation else { return action }
+        if support == .all {
+            confirmation.confirmTitle = String(localized: "Move to Trash")
+        } else if action.parameters["trash"] == nil {
+            // Actions that freeze the Trash mode already describe it in their own prompt.
+            let note = String(localized: "Eligible items go to Trash.")
+            confirmation.message = [confirmation.message, note].filter { !$0.isEmpty }.joined(separator: " ")
+        }
+        var prompt = action
+        prompt.confirmation = confirmation
+        return prompt
+    }
+
     /// Whether the user confirmed the action; true when it asks nothing.
     public static func ask(_ action: Action) -> Bool {
         guard let confirmation = action.confirmation else { return true }
         let alert = AppAlert()
-        alert.limitsConfirmationCopy = true
         alert.messageText = confirmation.title
         alert.informativeText = confirmation.message
         alert.addButton(withTitle: confirmation.confirmTitle).hasDestructiveAction = action.role == .destructive

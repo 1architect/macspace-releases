@@ -49,7 +49,7 @@
 "Delete" = "Supprimer";
 "Delete %@?" = "Supprimer %@ ?";
 "Delete selected app data?" = "Supprimer les données d’app ?";
-"Delete selected files?" = "Supprimer les fichiers sélectionnés ?";
+"Delete selected files?" = "Supprimer ces fichiers ?";
 "Delete this folder?" = "Supprimer ce dossier ?";
 "Deleted" = "Supprimé";
 "Deleted folder" = "Dossier supprimé";
@@ -103,7 +103,7 @@
 "Media" = "Médias";
 "More items" = "Plus d’éléments";
 "Move files to Trash?" = "Mettre les fichiers à la corbeille ?";
-"Move folder to Trash?" = "Placer le dossier dans la corbeille ?";
+"Move folder to Trash?" = "Dossier à la corbeille ?";
 "Move to Trash" = "Placer dans la corbeille";
 "Moved to Trash" = "Placé dans la corbeille";
 "Movies" = "Vidéos";
@@ -220,7 +220,7 @@
 "Uninstall" = "Désinstaller";
 "Uninstall %@?" = "Désinstaller %@ ?";
 "Uninstall apps" = "Désinstaller des apps";
-"Uninstall selected apps?" = "Désinstaller les apps sélectionnées ?";
+"Uninstall selected apps?" = "Désinstaller ces apps ?";
 "Uninstalled" = "Désinstallée";
 "Uninstalling" = "Désinstallation";
 "Unknown action" = "Action inconnue";

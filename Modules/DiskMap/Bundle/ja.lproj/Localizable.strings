@@ -48,7 +48,7 @@
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "対応するアプリが見つからない正確なアプリ識別子のデータです。共有アプリグループのデータは保持されます。";
 "Delete" = "削除";
 "Delete %@?" = "%@を削除しますか？";
-"Delete selected app data?" = "選択したアプリデータを削除しますか？";
+"Delete selected app data?" = "選択データを削除しますか？";
 "Delete selected files?" = "選択したファイルを削除しますか？";
 "Delete this folder?" = "このフォルダを削除しますか？";
 "Deleted" = "削除済み";

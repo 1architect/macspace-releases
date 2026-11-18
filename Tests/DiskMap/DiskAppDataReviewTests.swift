@@ -6,6 +6,20 @@ import MacSpacePlatform
 import MacSpaceDiskMapPrivileged
 @testable import MacSpaceDiskMap
 
+private final class AppDataTrashFixture: FileManager, @unchecked Sendable {
+    let destination: URL
+
+    init(destination: URL) {
+        self.destination = destination
+        super.init()
+    }
+
+    override func trashItem(at url: URL, resultingItemURL: AutoreleasingUnsafeMutablePointer<NSURL?>?) throws {
+        try moveItem(at: url, to: destination)
+        resultingItemURL?.pointee = destination as NSURL
+    }
+}
+
 final class DiskAppDataReviewTests: DiskSecurityFixtureCase {
     func testDefaultsDoNotSelectNamedVendorCachesSharedDataOrUserDocuments() throws {
         try fixture { home, app in
@@ -284,6 +298,84 @@ final class DiskAppDataReviewTests: DiskSecurityFixtureCase {
             XCTAssertTrue(result.failures.isEmpty)
             XCTAssertFalse(FileManager.default.fileExists(atPath: container))
             XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: outside)), Data("keep".utf8))
+        }
+    }
+
+    private func withBoundSocket(in directory: String, type: Int32, listening: Bool = false, _ body: () throws -> Void) throws {
+        let alias = "/private/tmp/macspace-test-socket-" + UUID().uuidString
+        try FileManager.default.createSymbolicLink(atPath: alias, withDestinationPath: directory)
+        defer { _ = unlink(alias) }
+        let path = Array((alias + "/display.spice").utf8)
+        var address = sockaddr_un()
+        let length = path.count + 2
+        address.sun_len = UInt8(length)
+        address.sun_family = sa_family_t(AF_UNIX)
+        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: path) }
+        let fd = socket(AF_UNIX, type, 0)
+        guard fd >= 0 else { throw POSIXError(.EIO) }
+        defer { close(fd) }
+        let bound = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(fd, $0, socklen_t(length)) }
+        }
+        guard bound == 0, !listening || listen(fd, 1) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        try body()
+    }
+
+    func testOrphanedUnixSocketsAllowReviewedAppDataRemoval() throws {
+        try fixture { home, _ in
+            let container = home + "/Library/Group Containers/org.example.group"
+            let nested = container + "/" + String(repeating: "n", count: 180)
+            try FileManager.default.createDirectory(atPath: nested, withIntermediateDirectories: true)
+            try withBoundSocket(in: nested, type: SOCK_STREAM) {}
+            let target = try XCTUnwrap(DiskAppDataRemoval.target(container, home: home))
+            let result = try DiskAppDataRemoval.remove(ids: [target.id], candidates: [target], moveToTrash: false, home: home)
+            XCTAssertEqual(result.removed, [container], "\(result.failures)")
+            XCTAssertTrue(result.failures.isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: container))
+        }
+    }
+
+    func testBoundUnixSocketsBlockReviewedAppDataRemoval() throws {
+        for (type, listening) in [(SOCK_STREAM, false), (SOCK_STREAM, true), (SOCK_DGRAM, false)] {
+            try fixture { home, _ in
+                let container = home + "/Library/Group Containers/org.example.group"
+                try FileManager.default.createDirectory(atPath: container, withIntermediateDirectories: true)
+                let payload = URL(fileURLWithPath: container + "/payload")
+                try Data([1]).write(to: payload)
+                try withBoundSocket(in: container, type: type, listening: listening) {
+                    let target = try XCTUnwrap(DiskAppDataRemoval.target(container, home: home))
+                    XCTAssertThrowsError(try DiskAppDataRemoval.remove(ids: [target.id], candidates: [target], moveToTrash: false, home: home)) {
+                        XCTAssertEqual(($0 as? ReviewedDirectoryRemoval.Failure)?.reason, "Unix socket is still in use")
+                    }
+                    XCTAssertEqual(try Data(contentsOf: payload), Data([1]))
+                    XCTAssertTrue(FileManager.default.fileExists(atPath: container + "/display.spice"))
+                }
+            }
+        }
+    }
+
+    func testTrashRechecksNestedSocketActivityBeforeMovingAppData() throws {
+        try fixture { home, _ in
+            let container = home + "/Library/Group Containers/org.example.group"
+            let nested = container + "/nested"
+            try FileManager.default.createDirectory(atPath: nested, withIntermediateDirectories: true)
+            let identity = try XCTUnwrap(ReviewedDirectoryRemoval.Identity(container))
+            let target = ReviewedDirectoryRemoval.Target(path: container, expected: identity)
+            let trash = AppDataTrashFixture(destination: URL(fileURLWithPath: home + "/trash-fixture"))
+            do {
+                let plan = try ReviewedDirectoryRemoval.prepare([target], home: home, permitsOrphanedSockets: true)
+                try withBoundSocket(in: nested, type: SOCK_DGRAM) {
+                    XCTAssertThrowsError(try plan.trash(at: 0, fileManager: trash)) {
+                        XCTAssertEqual(($0 as? ReviewedDirectoryRemoval.Failure)?.reason, "Unix socket is still in use")
+                    }
+                    XCTAssertFalse(FileManager.default.fileExists(atPath: trash.destination.path))
+                    XCTAssertTrue(FileManager.default.fileExists(atPath: nested + "/display.spice"))
+                }
+            }
+            let orphanedPlan = try ReviewedDirectoryRemoval.prepare([target], home: home, permitsOrphanedSockets: true)
+            try orphanedPlan.trash(at: 0, fileManager: trash)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: trash.destination.path + "/nested/display.spice"))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: container))
         }
     }
     func testInstalledAppNamesVendorPathsIdentifiersAndUnreadableScopesAreNotUnmatched() throws {

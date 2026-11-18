@@ -62,6 +62,7 @@
 "Developed by\n%@" = "Développé par\n%@";
 "Does the few things that need an administrator." = "Effectue les quelques tâches qui demandent un administrateur.";
 "Drag into the Full Disk Access list" = "Faites glisser dans la liste Accès complet au disque";
+"Eligible items go to Trash." = "Corbeille si possible.";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "Les éléments admissibles restent dans la corbeille tant qu’elle n’est pas vidée. Les autres suivent les règles de nettoyage habituelles.";
 "Every 3 days" = "Tous les 3 jours";
 "Every day" = "Tous les jours";
@@ -72,7 +73,7 @@
 "Free" = "Libérer";
 "Free %@ of %@ downloads?" = "Libérer %@ de téléchargements de %@ ?";
 "Free selected" = "Libérer la sélection";
-"Free the selected items?" = "Libérer les éléments sélectionnés ?";
+"Free the selected items?" = "Libérer la sélection ?";
 "Freed %@" = "%@ libérés";
 "Freed in total" = "Libéré au total";
 "Freeing in the background" = "Libération en arrière-plan";
@@ -90,7 +91,6 @@
 "In use" = "En cours d’utilisation";
 "Install helper" = "Installer l’assistant";
 "It does the few tasks that need an administrator." = "Il effectue les quelques tâches qui demandent un administrateur.";
-"Items stay in Trash until it is emptied." = "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.";
 "Keep running in the background" = "Rester actif en arrière-plan";
 "Keep running in the menu bar" = "Rester dans la barre des menus";
 "Kept while Apple Intelligence is on" = "Conservé tant qu’Apple Intelligence est activé";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "Rétablit les réglages modifiés et place l’app dans la corbeille.";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaure les réglages modifiés par MacSpace et place l’app dans la Corbeille. Votre historique est conservé. Les fichiers supprimés ne peuvent pas être restaurés.";
 "Restoring settings" = "Restauration des réglages";
-"Save your work first. Some changes may be permanent." = "Enregistrez votre travail. Certains changements peuvent être définitifs.";
+"Save work. Some removals may be permanent." = "Enregistrez. Suppression définitive possible.";
+"Save your work." = "Enregistrez votre travail.";
 "Selected cleanup items changed. Review your selection again." = "Les éléments de nettoyage sélectionnés ont changé. Vérifiez à nouveau votre sélection.";
 "Selected files need review" = "Les fichiers sélectionnés doivent être vérifiés";
 "Settings" = "Réglages";

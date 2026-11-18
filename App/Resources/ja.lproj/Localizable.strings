@@ -62,6 +62,7 @@
 "Developed by\n%@" = "開発者\n%@";
 "Does the few things that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Drag into the Full Disk Access list" = "フルディスクアクセスのリストにドラッグ";
+"Eligible items go to Trash." = "対象の項目はゴミ箱に入ります。";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "対象の項目はゴミ箱を空にするまで残ります。その他の項目は通常のルールに従ってクリーンアップされます。";
 "Every 3 days" = "3日ごと";
 "Every day" = "毎日";
@@ -90,7 +91,6 @@
 "In use" = "使用中";
 "Install helper" = "ヘルパーをインストール";
 "It does the few tasks that need an administrator." = "管理者権限が必要な一部の処理を行います。";
-"Items stay in Trash until it is emptied." = "項目はゴミ箱を空にするまで残ります。";
 "Keep running in the background" = "バックグラウンドで実行を続ける";
 "Keep running in the menu bar" = "メニューバーで実行を続ける";
 "Kept while Apple Intelligence is on" = "Apple Intelligenceがオンの間は保持";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "変更した設定を戻し、アプリをゴミ箱に移動します。";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "MacSpaceが変更した設定を復元し、アプリをゴミ箱に移動します。履歴は保持されます。削除したファイルは復元できません。";
 "Restoring settings" = "設定を復元中";
-"Save your work first. Some changes may be permanent." = "作業を保存してください。一部の変更は元に戻せない場合があります。";
+"Save work. Some removals may be permanent." = "作業を保存してください。一部の項目は完全に削除される場合があります。";
+"Save your work." = "作業を保存してください。";
 "Selected cleanup items changed. Review your selection again." = "選択したクリーンアップ項目が変更されました。選択内容を再確認してください。";
 "Selected files need review" = "選択したファイルの確認が必要です";
 "Settings" = "設定";
@@ -187,7 +188,7 @@
 "Uninstall" = "アンインストール";
 "Uninstall MacSpace?" = "MacSpaceをアンインストールしますか？";
 "Uninstall MacSpace…" = "MacSpaceをアンインストール…";
-"Uninstall this app?" = "このアプリをアンインストールしますか？";
+"Uninstall this app?" = "アプリを削除しますか？";
 "Uninstall…" = "アンインストール…";
 "Unknown" = "不明";
 "Updates" = "アップデート";

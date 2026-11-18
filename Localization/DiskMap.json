@@ -435,15 +435,15 @@
   "Apagar dados de apps?",
   "Supprimer les données d’app ?",
   "¿Eliminar datos de apps?",
-  "Ausgewählte App-Daten löschen?",
+  "Diese App-Daten löschen?",
   "删除选中的 App 数据？",
-  "選択したアプリデータを削除しますか？",
+  "選択データを削除しますか？",
   "선택한 앱 데이터를 삭제할까요?"
  ],
  "Delete selected files?": [
-  "Apagar os arquivos selecionados?",
-  "Supprimer les fichiers sélectionnés ?",
-  "¿Eliminar los archivos seleccionados?",
+  "Apagar arquivos selecionados?",
+  "Supprimer ces fichiers ?",
+  "¿Eliminar estos archivos?",
   "Ausgewählte Dateien löschen?",
   "删除选中的文件？",
   "選択したファイルを削除しますか？",
@@ -920,7 +920,7 @@
  "Move files to Trash?": [
   "Mover os arquivos para o Lixo?",
   "Mettre les fichiers à la corbeille ?",
-  "¿Mover los archivos a la papelera?",
+  "¿Mover a la papelera?",
   "Dateien in den Papierkorb legen?",
   "将文件移到废纸篓？",
   "ファイルをゴミ箱に移動しますか？",
@@ -928,7 +928,7 @@
  ],
  "Move folder to Trash?": [
   "Mover a pasta para o Lixo?",
-  "Placer le dossier dans la corbeille ?",
+  "Dossier à la corbeille ?",
   "¿Mover la carpeta a la papelera?",
   "Ordner in den Papierkorb legen?",
   "将文件夹移到废纸篓？",
@@ -1980,10 +1980,10 @@
   "앱 제거"
  ],
  "Uninstall selected apps?": [
-  "Desinstalar os apps selecionados?",
-  "Désinstaller les apps sélectionnées ?",
-  "¿Desinstalar las apps seleccionadas?",
-  "Ausgewählte Apps deinstallieren?",
+  "Desinstalar apps selecionados?",
+  "Désinstaller ces apps ?",
+  "¿Desinstalar estas apps?",
+  "Diese Apps deinstallieren?",
   "卸载选中的 App？",
   "アプリをアンインストールしますか？",
   "선택한 앱을 제거할까요?"

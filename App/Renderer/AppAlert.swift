@@ -4,8 +4,6 @@ import AppKit
 /// Enforce the shared alignment after native layout and again immediately before drawing.
 @MainActor
 public final class AppAlert: NSAlert {
-    var limitsConfirmationCopy = false
-
     public override init() {
         super.init()
         icon = NSApp.applicationIconImage
@@ -54,10 +52,9 @@ public final class AppAlert: NSAlert {
                 if label.frame != aligned { label.frame = aligned }
             }
             if label.alignment != .left { label.alignment = .left }
-            let lineLimit = limitsConfirmationCopy ? (label.stringValue == messageText ? 1 : 2) : 0
-            if label.maximumNumberOfLines != lineLimit { label.maximumNumberOfLines = lineLimit }
+            if label.maximumNumberOfLines != 0 { label.maximumNumberOfLines = 0 }
             if label.lineBreakMode != .byWordWrapping { label.lineBreakMode = .byWordWrapping }
-            if label.cell?.truncatesLastVisibleLine != (lineLimit > 0) { label.cell?.truncatesLastVisibleLine = lineLimit > 0 }
+            if label.cell?.truncatesLastVisibleLine == true { label.cell?.truncatesLastVisibleLine = false }
             // Native alerts also carry paragraph alignment in their attributed strings. The control's .alignment alone
             // does not override those runs, even when its frame and cell both report left alignment.
             let attributed = NSMutableAttributedString(attributedString: label.attributedStringValue)

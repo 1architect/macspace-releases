@@ -102,14 +102,14 @@
 "Free old update files?" = "更新の残りを解放しますか？";
 "Free recommended" = "推奨項目を解放";
 "Free selected" = "選択項目を解放";
-"Free stuck downloads?" = "停止したダウンロードを解放しますか？";
+"Free stuck downloads?" = "停止中のダウンロードを削除？";
 "Free stuck wallpaper downloads?" = "停止した壁紙のダウンロードを解放しますか？";
 "Free system data?" = "システムデータを解放しますか？";
 "Free the leftover update files?" = "更新の残りのファイルを解放しますか？";
 "Free the selected caches?" = "選択したキャッシュを解放しますか？";
 "Free the symbols for crash reports?" = "クラッシュレポート用シンボルを解放しますか？";
 "Free the system log?" = "システムログを解放しますか？";
-"Free unused downloads?" = "未使用のダウンロードを解放しますか？";
+"Free unused downloads?" = "未使用のダウンロードを削除？";
 "Free unused system assets?" = "未使用のシステムアセットを解放しますか？";
 "Free up to %@ of unused system assets?" = "未使用のシステムアセットを最大%@解放しますか？";
 "Freeing space" = "空き容量を増やしています";

@@ -25,7 +25,7 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "このMacに保存されたクラウドファイルのコピーです。削除してもクラウドには残ります。";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Time Machineが1日保持するこのMacのコピー。バックアップディスクなしでファイルを復元できます。解放しても最新のものと次のバックアップに必要なものは残ります。";
 "Couldn't free it" = "解放できませんでした";
-"Delete selected backups?" = "選択したバックアップを削除しますか？";
+"Delete selected backups?" = "選択したバックアップを削除？";
 "Deleted by macOS when the disk is full" = "ディスクが満杯になるとmacOSが削除";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "アプリが削除してよいと示したファイル。ディスクがほぼいっぱいになるとmacOSが解放し、されない場合はMacSpaceが再度依頼します。";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "このMac上のその時刻からは復元できなくなります。バックアップディスクのバックアップは残ります。";

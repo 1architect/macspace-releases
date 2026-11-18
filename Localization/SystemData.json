@@ -622,8 +622,8 @@
  ],
  "Delete version history?": [
   "Excluir o histórico de versões?",
-  "Supprimer l’historique des versions ?",
-  "¿Eliminar el historial de versiones?",
+  "Effacer les anciennes versions ?",
+  "¿Borrar versiones previas?",
   "Versionsverlauf löschen?",
   "删除版本历史？",
   "バージョン履歴を削除しますか？",
@@ -855,10 +855,10 @@
   "모든 버전 기록을 정리할까요?"
  ],
  "Free cached crash symbols?": [
-  "Liberar símbolos de falhas em cache?",
+  "Liberar símbolos de falhas?",
   "Libérer les symboles en cache ?",
   "¿Liberar los símbolos en caché?",
-  "Symbole aus dem Cache entfernen?",
+  "Absturzsymbole freigeben?",
   "释放缓存的崩溃符号？",
   "クラッシュ記号を解放しますか？",
   "캐시된 충돌 기호를 정리할까요?"
@@ -918,12 +918,12 @@
   "선택 항목 정리"
  ],
  "Free stuck downloads?": [
-  "Liberar downloads interrompidos?",
-  "Libérer les téléchargements bloqués ?",
+  "Limpar downloads travados?",
+  "Purger les fichiers bloqués ?",
   "¿Liberar descargas atascadas?",
   "Blockierte Downloads freigeben?",
   "释放卡住的下载？",
-  "停止したダウンロードを解放しますか？",
+  "停止中のダウンロードを削除？",
   "멈춘 다운로드를 정리할까요?"
  ],
  "Free stuck wallpaper downloads?": [
@@ -956,8 +956,8 @@
  "Free the selected caches?": [
   "Liberar os caches selecionados?",
   "Libérer les caches sélectionnés ?",
-  "¿Liberar las cachés seleccionadas?",
-  "Die ausgewählten Caches freigeben?",
+  "¿Liberar estas cachés?",
+  "Caches freigeben?",
   "释放所选缓存？",
   "選択したキャッシュを解放しますか？",
   "선택한 캐시를 정리할까요?"
@@ -984,9 +984,9 @@
   "Liberar downloads sem uso?",
   "Libérer les fichiers inutilisés ?",
   "¿Liberar descargas en desuso?",
-  "Ungenutzte Downloads freigeben?",
+  "Downloads freigeben?",
   "释放未使用的下载？",
-  "未使用のダウンロードを解放しますか？",
+  "未使用のダウンロードを削除？",
   "사용하지 않는 다운로드를 정리할까요?"
  ],
  "Free unused system assets?": [
@@ -1641,7 +1641,7 @@
   "Salve seu trabalho. O registro do sistema será apagado.",
   "Enregistrez votre travail. Le journal système est effacé.",
   "Guarda tu trabajo. Se borra el registro del sistema.",
-  "Sichere deine Arbeit. Das Systemprotokoll wird gelöscht.",
+  "Arbeit sichern. Systemprotokoll wird gelöscht.",
   "请先保存工作。系统日志将被清除。",
   "作業を保存してください。システムログが消去されます。",
   "작업을 저장하세요. 시스템 로그가 지워집니다."

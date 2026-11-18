@@ -146,7 +146,7 @@ enum DiskAppDataRemoval {
         let plan = try folders.isEmpty ? nil : ReviewedDirectoryRemoval.prepare(folders.map {
             .init(path: $0.path, expected: .init(device: $0.identity.device, inode: $0.identity.inode, uid: $0.identity.uid,
                 modifiedSeconds: $0.identity.modifiedSeconds, modifiedNanos: $0.identity.modifiedNanos))
-        }, home: home, permitsDescendantLinks: true)
+        }, home: home, permitsDescendantLinks: true, permitsOrphanedSockets: true)
         var result = Result(), finished: [String] = []
         for item in selected {
             do {

@@ -16,8 +16,12 @@ private struct LazyPageModule: MacSpaceModule {
     init(model: LazyPageModel) { self.model = model }
     func tile(context: ModuleContext) async -> Tile { Tile(title: "Disk", status: "Ready") }
     func screen(context: ModuleContext) async -> Screen {
-        Screen(title: "Disk", hero: UsageBar(id: "map", title: "", segments: [UsageSegment(id: "folder", label: "Folder", bytes: await model.bytes, tone: .series(0), pageID: "folder:A")]),
-               widgets: [.list(ListWidget(id: "apps", rows: [Row(id: "apps-entry", title: "Apps", pageID: "apps")]))])
+        let row = Row(id: "apps-entry", title: "Apps", actions: [Action(id: "review", title: "Uninstall", pageID: "apps")], pageID: "apps")
+        let selection = Selection(action: Action(id: "review", title: "Review", pageID: "selected-apps"),
+            choices: ["app:A": 10, "app:B": 20, "app:C": 30],
+            checked: ["app:B", "app:A"], reviewed: ["app:A": "identity A", "app:B": "identity B", "app:C": "identity C"])
+        return Screen(title: "Disk", hero: UsageBar(id: "map", title: "", segments: [UsageSegment(id: "folder", label: "Folder", bytes: await model.bytes, tone: .series(0), pageID: "folder:A")]),
+                      widgets: [.list(ListWidget(id: "apps", rows: [row]))], selection: selection)
     }
     func page(id: String, context: ModuleContext) async -> Screen? {
         if let request = ActionPageRequest(pageID: id) {
@@ -42,11 +46,17 @@ final class LazyModulePageTests: XCTestCase {
         let model = LazyPageModel()
         let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
         await handle.activate(); defer { handle.deactivate() }
-        let parameters = ["ids": "app:A\napp:B", "reviewed": "original identities"]
-        _ = await handle.perform(Action(id: "review", title: "Review", parameters: parameters, pageID: "selected-apps"))
+        let action = try XCTUnwrap(handle.selectedAction)
+        let result = await handle.perform(action)
+        XCTAssertNil(result)
         for _ in 0..<100 { if await model.review != nil { break }; try await Task.sleep(for: .milliseconds(5)) }
-        let review = await model.review, bytes = await model.bytes
-        XCTAssertEqual(review, ActionPageRequest(destination: "selected-apps", parameters: parameters))
+        let received = await model.review, bytes = await model.bytes
+        let review = try XCTUnwrap(received)
+        XCTAssertEqual(review.destination, "selected-apps")
+        XCTAssertEqual(try Selection.decodeIDs(review.parameters["ids"]), ["app:A", "app:B"])
+        let reviewed = try XCTUnwrap(review.parameters["reviewed"])
+        XCTAssertEqual(try JSONDecoder().decode([String: String].self, from: Data(reviewed.utf8)),
+                       ["app:A": "identity A", "app:B": "identity B"])
         XCTAssertEqual(bytes, 100)
         XCTAssertFalse(handle.isCleaning)
     }
@@ -57,9 +67,11 @@ final class LazyModulePageTests: XCTestCase {
         let model = LazyPageModel()
         let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in LazyPageModule(model: model) })
         await handle.activate(); defer { handle.deactivate() }
-        let action = Action(id: "review", title: "Uninstall", pageID: "apps")
+        let screen = try XCTUnwrap(handle.screen)
+        let row = try XCTUnwrap(ScreenView.row("apps-entry", in: screen))
+        let action = try XCTUnwrap(row.actions.first)
         XCTAssertTrue(ModuleHandle.opensAtOnce(action))
-        let result = await handle.perform(action, rowID: "app")
+        let result = await handle.perform(action, rowID: row.id)
         XCTAssertNil(result)
         for _ in 0..<100 where handle.pages["apps"] == nil { try await Task.sleep(for: .milliseconds(5)) }
         XCTAssertEqual(handle.groupPath, ["apps"])

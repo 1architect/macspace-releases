@@ -49,7 +49,7 @@
 "Delete" = "Eliminar";
 "Delete %@?" = "¿Eliminar %@?";
 "Delete selected app data?" = "¿Eliminar datos de apps?";
-"Delete selected files?" = "¿Eliminar los archivos seleccionados?";
+"Delete selected files?" = "¿Eliminar estos archivos?";
 "Delete this folder?" = "¿Eliminar esta carpeta?";
 "Deleted" = "Eliminado";
 "Deleted folder" = "Carpeta eliminada";
@@ -102,7 +102,7 @@
 "Measurements pending" = "Mediciones pendientes";
 "Media" = "Multimedia";
 "More items" = "Más elementos";
-"Move files to Trash?" = "¿Mover los archivos a la papelera?";
+"Move files to Trash?" = "¿Mover a la papelera?";
 "Move folder to Trash?" = "¿Mover la carpeta a la papelera?";
 "Move to Trash" = "Mover a la Papelera";
 "Moved to Trash" = "Movido a la papelera";
@@ -220,7 +220,7 @@
 "Uninstall" = "Desinstalar";
 "Uninstall %@?" = "¿Desinstalar %@?";
 "Uninstall apps" = "Desinstalar apps";
-"Uninstall selected apps?" = "¿Desinstalar las apps seleccionadas?";
+"Uninstall selected apps?" = "¿Desinstalar estas apps?";
 "Uninstalled" = "Desinstalada";
 "Uninstalling" = "Desinstalando";
 "Unknown action" = "Acción desconocida";

@@ -25,7 +25,7 @@
 "Copies of cloud files kept on this Mac. Removing them keeps the files in the cloud." = "Copies de fichiers du cloud conservées sur ce Mac. Les supprimer laisse les fichiers dans le cloud.";
 "Copies of this Mac Time Machine keeps for a day, to restore files without the backup disk. Free keeps the newest and the one the next backup needs." = "Copies de ce Mac que Time Machine garde un jour, pour restaurer des fichiers sans le disque de sauvegarde. Libérer garde la plus récente et celle dont la prochaine sauvegarde a besoin.";
 "Couldn't free it" = "Impossible de libérer";
-"Delete selected backups?" = "Supprimer les sauvegardes choisies ?";
+"Delete selected backups?" = "Supprimer ces sauvegardes ?";
 "Deleted by macOS when the disk is full" = "Supprimé par macOS quand le disque est plein";
 "Files apps marked as safe to delete. macOS frees them when the disk is nearly full; MacSpace keeps asking if it doesn't." = "Fichiers que les apps ont marqués comme supprimables. macOS les libère quand le disque est presque plein ; MacSpace insiste sinon.";
 "Files can no longer be restored from those hours on this Mac. Backups on the backup disk stay." = "Les fichiers de ces heures ne pourront plus être restaurés sur ce Mac. Les sauvegardes sur le disque de sauvegarde restent.";
@@ -37,7 +37,7 @@
 "Free 1 Time Machine snapshot?" = "Libérer 1 instantané Time Machine ?";
 "Free local snapshots?" = "Libérer les instantanés locaux ?";
 "Free now" = "À libérer";
-"Free purgeable app files?" = "Libérer les fichiers d’app purgeables ?";
+"Free purgeable app files?" = "Libérer ces fichiers d’app ?";
 "Free selected" = "Libérer la sélection";
 "Free the files apps marked purgeable, which macOS otherwise deletes only when the disk is nearly full." = "Libérez les fichiers que les apps ont marqués comme purgeables, que macOS ne supprime sinon que lorsque le disque est presque plein.";
 "Free the selected backups?" = "Libérer les sauvegardes sélectionnées ?";

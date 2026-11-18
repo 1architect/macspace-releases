@@ -95,14 +95,14 @@
 "Free %@ in the Trash?" = "Liberar %@ do Lixo?";
 "Free %@?" = "Liberar %@?";
 "Free all version history?" = "Liberar todo o histórico de versões?";
-"Free cached crash symbols?" = "Liberar símbolos de falhas em cache?";
+"Free cached crash symbols?" = "Liberar símbolos de falhas?";
 "Free caches" = "Liberar caches";
 "Free now" = "Liberar agora";
 "Free old reports?" = "Liberar os relatórios antigos?";
 "Free old update files?" = "Liberar restos de atualização?";
 "Free recommended" = "Liberar recomendados";
 "Free selected" = "Liberar selecionados";
-"Free stuck downloads?" = "Liberar downloads interrompidos?";
+"Free stuck downloads?" = "Limpar downloads travados?";
 "Free stuck wallpaper downloads?" = "Liberar os downloads de wallpapers travados?";
 "Free system data?" = "Liberar dados do sistema?";
 "Free the leftover update files?" = "Liberar os arquivos restantes da atualização?";

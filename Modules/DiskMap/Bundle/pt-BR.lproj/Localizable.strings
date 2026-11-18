@@ -49,7 +49,7 @@
 "Delete" = "Apagar";
 "Delete %@?" = "Apagar %@?";
 "Delete selected app data?" = "Apagar dados de apps?";
-"Delete selected files?" = "Apagar os arquivos selecionados?";
+"Delete selected files?" = "Apagar arquivos selecionados?";
 "Delete this folder?" = "Apagar esta pasta?";
 "Deleted" = "Apagado";
 "Deleted folder" = "Pasta excluída";
@@ -220,7 +220,7 @@
 "Uninstall" = "Desinstalar";
 "Uninstall %@?" = "Desinstalar %@?";
 "Uninstall apps" = "Desinstalar apps";
-"Uninstall selected apps?" = "Desinstalar os apps selecionados?";
+"Uninstall selected apps?" = "Desinstalar apps selecionados?";
 "Uninstalled" = "Desinstalado";
 "Uninstalling" = "Desinstalando";
 "Unknown action" = "Ação desconhecida";

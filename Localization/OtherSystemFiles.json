@@ -225,12 +225,12 @@
   "정리하지 못함"
  ],
  "Delete selected backups?": [
-  "Excluir os backups selecionados?",
-  "Supprimer les sauvegardes choisies ?",
-  "¿Eliminar las copias seleccionadas?",
+  "Excluir backups selecionados?",
+  "Supprimer ces sauvegardes ?",
+  "¿Eliminar estas copias?",
   "Ausgewählte Backups löschen?",
   "删除选中的备份？",
-  "選択したバックアップを削除しますか？",
+  "選択したバックアップを削除？",
   "선택한 백업을 삭제할까요?"
  ],
  "Deleted by macOS when the disk is full": [
@@ -317,8 +317,8 @@
  "Free local snapshots?": [
   "Liberar snapshots locais?",
   "Libérer les instantanés locaux ?",
-  "¿Liberar las instantáneas locales?",
-  "Lokale Schnappschüsse freigeben?",
+  "¿Liberar instantáneas locales?",
+  "Lokale Snapshots freigeben?",
   "释放本地快照？",
   "ローカルスナップショットを削除？",
   "로컬 스냅샷을 정리할까요?"
@@ -334,9 +334,9 @@
  ],
  "Free purgeable app files?": [
   "Liberar arquivos de apps?",
-  "Libérer les fichiers d’app purgeables ?",
+  "Libérer ces fichiers d’app ?",
   "¿Liberar archivos de apps?",
-  "Entbehrliche App-Dateien freigeben?",
+  "App-Dateien freigeben?",
   "释放可清除的 App 文件？",
   "アプリファイルを解放しますか？",
   "지울 수 있는 앱 파일을 정리할까요?"

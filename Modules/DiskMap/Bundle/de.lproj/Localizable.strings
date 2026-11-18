@@ -48,7 +48,7 @@
 "Data with exact application identifiers for which no installed app was found. Shared app-group data is preserved." = "Daten mit exakten Kennungen nicht gefundener Apps. Gemeinsam genutzte App-Gruppendaten bleiben erhalten.";
 "Delete" = "Löschen";
 "Delete %@?" = "%@ löschen?";
-"Delete selected app data?" = "Ausgewählte App-Daten löschen?";
+"Delete selected app data?" = "Diese App-Daten löschen?";
 "Delete selected files?" = "Ausgewählte Dateien löschen?";
 "Delete this folder?" = "Diesen Ordner löschen?";
 "Deleted" = "Gelöscht";
@@ -220,7 +220,7 @@
 "Uninstall" = "Deinstallieren";
 "Uninstall %@?" = "%@ deinstallieren?";
 "Uninstall apps" = "Apps deinstallieren";
-"Uninstall selected apps?" = "Ausgewählte Apps deinstallieren?";
+"Uninstall selected apps?" = "Diese Apps deinstallieren?";
 "Uninstalled" = "Deinstalliert";
 "Uninstalling" = "Wird deinstalliert";
 "Unknown action" = "Unbekannte Aktion";

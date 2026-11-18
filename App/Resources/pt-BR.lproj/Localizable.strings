@@ -62,6 +62,7 @@
 "Developed by\n%@" = "Desenvolvido por\n%@";
 "Does the few things that need an administrator." = "Faz as poucas tarefas que exigem um administrador.";
 "Drag into the Full Disk Access list" = "Arraste para a lista de Acesso Total ao Disco";
+"Eligible items go to Trash." = "Itens elegíveis vão para o Lixo.";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "Os itens elegíveis ficam no Lixo até ele ser esvaziado. Os demais seguem as regras de limpeza habituais.";
 "Every 3 days" = "A cada 3 dias";
 "Every day" = "Todos os dias";
@@ -90,7 +91,6 @@
 "In use" = "Em uso";
 "Install helper" = "Instalar auxiliar";
 "It does the few tasks that need an administrator." = "Ele faz as poucas tarefas que exigem um administrador.";
-"Items stay in Trash until it is emptied." = "Os itens ficam no Lixo até ele ser esvaziado.";
 "Keep running in the background" = "Continuar em segundo plano";
 "Keep running in the menu bar" = "Continuar na barra de menus";
 "Kept while Apple Intelligence is on" = "Mantido enquanto a Apple Intelligence estiver ativa";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "Restaura os ajustes alterados e move o app para o Lixo.";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaura os ajustes alterados pelo MacSpace e move o app para o Lixo. Seu histórico é mantido. Arquivos apagados não podem ser restaurados.";
 "Restoring settings" = "Restaurando ajustes";
-"Save your work first. Some changes may be permanent." = "Salve seu trabalho. Algumas mudanças podem ser permanentes.";
+"Save work. Some removals may be permanent." = "Salve seu trabalho. Algumas remoções podem ser definitivas.";
+"Save your work." = "Salve seu trabalho.";
 "Selected cleanup items changed. Review your selection again." = "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.";
 "Selected files need review" = "Arquivos selecionados precisam de revisão";
 "Settings" = "Ajustes";

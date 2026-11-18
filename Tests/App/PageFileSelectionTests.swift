@@ -25,6 +25,11 @@ private struct FileSelectionModule: MacSpaceModule {
     }
     func page(id: String, context: ModuleContext) async -> Screen? {
         await reads.read()
+        if id == "partial-first" || id == "partial-second" {
+            let row = rows[id == "partial-first" ? 0 : 1]
+            let partial = Selection(action: selection.action, choices: [row.id: 200_000_000], scope: "partial", partial: true)
+            return Screen(title: "Partial", widgets: [.list(ListWidget(id: "files", rows: [row]))], selection: partial)
+        }
         return Screen(title: "Large files", layout: .singleColumn, widgets: [.list(ListWidget(id: "all", title: "Files of 100 MB or larger", rows: rows))], selection: selection)
     }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
@@ -192,12 +197,21 @@ final class PageFileSelectionTests: XCTestCase {
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
         let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in FileSelectionModule() })
         await handle.activate(); defer { handle.deactivate() }
-        let page = Screen(title: "Partial", widgets: [.list(ListWidget(id: "files", rows: [Row(id: "file", title: "File")]))],
-                          selection: Selection(action: Action(id: "freeFiles", title: "Free"), choices: ["file": 4096], scope: "partial", partial: true))
-        let group = try XCTUnwrap(handle.pageSelection(page, id: "partial"))
-        handle.toggle("file", in: group)
-        _ = await handle.perform(try XCTUnwrap(group.selection?.action), extraParameters: ["ids": Selection.parameter(["file"])])
-        XCTAssertTrue(handle.checked(try XCTUnwrap(handle.pageSelection(page, id: "partial"))).isEmpty)
+        handle.requestPage("partial-first")
+        for _ in 0..<100 where handle.groupPath.last != "partial-first" { try await Task.sleep(for: .milliseconds(5)) }
+        handle.toggle("file:0", in: try XCTUnwrap(handle.activeSelection))
+        handle.requestPage("partial-second")
+        for _ in 0..<100 where handle.groupPath.last != "partial-second" { try await Task.sleep(for: .milliseconds(5)) }
+        let page = try XCTUnwrap(handle.pages["partial-second"])
+        XCTAssertNil(ScreenView.row("file:0", in: page))
+
+        let action = try XCTUnwrap(handle.selectedAction)
+        XCTAssertEqual(try Selection.decodeIDs(action.parameters["ids"]), ["file:0"])
+        let result = await handle.perform(action)
+        XCTAssertEqual(result?.outcome, .needsAttention)
+        XCTAssertTrue(handle.checked(try XCTUnwrap(handle.activeSelection)).isEmpty)
+        handle.popGroup()
+        XCTAssertTrue(handle.checked(try XCTUnwrap(handle.activeSelection)).isEmpty)
     }
 
     func testRootAndMoreShareChoicesAndCachedReopenIsImmediateAndBounded() async throws {
@@ -380,7 +394,11 @@ final class PageFileSelectionTests: XCTestCase {
         XCTAssertLessThanOrEqual(requests.map { $0.visible.count }.max() ?? 0, 2)
         XCTAssertTrue(requests.allSatisfy { $0.ids.isEmpty })
         let token = try XCTUnwrap(handle.activeSelection?.selection?.bulk?.token)
-        _ = await handle.perform(try XCTUnwrap(group.selection?.action), extraParameters: ["selectionToken": token])
+        let action = try XCTUnwrap(handle.selectedAction)
+        XCTAssertEqual(action.parameters["selectionToken"], token)
+        XCTAssertNil(action.parameters["ids"])
+        let result = await handle.perform(action)
+        XCTAssertEqual(result?.outcome, .succeeded)
         XCTAssertNil(handle.activeSelection?.selection?.bulk)
     }
 
@@ -449,7 +467,10 @@ final class PageFileSelectionTests: XCTestCase {
         let group = try XCTUnwrap(handle.activeSelection)
         handle.toggle("one", in: group)
         handle.pushGroup("unrelated")
-        _ = await handle.perform(try XCTUnwrap(group.selection?.action), extraParameters: ["ids": "one"])
+        let action = try XCTUnwrap(handle.selectedAction)
+        XCTAssertEqual(try Selection.decodeIDs(action.parameters["ids"]), ["one"])
+        let result = await handle.perform(action)
+        XCTAssertEqual(result?.outcome, .needsAttention)
         XCTAssertTrue(handle.checked(try XCTUnwrap(handle.activeSelection)).isEmpty)
         handle.popGroup()
         XCTAssertTrue(handle.checked(try XCTUnwrap(handle.activeSelection)).isEmpty)

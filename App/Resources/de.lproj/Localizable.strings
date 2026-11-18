@@ -62,6 +62,7 @@
 "Developed by\n%@" = "Entwickelt von\n%@";
 "Does the few things that need an administrator." = "Erledigt die wenigen Aufgaben, die einen Administrator erfordern.";
 "Drag into the Full Disk Access list" = "In die Liste „Festplattenvollzugriff“ ziehen";
+"Eligible items go to Trash." = "Papierkorb, wo möglich.";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "Geeignete Elemente bleiben im Papierkorb, bis er geleert wird. Für andere Elemente gelten die üblichen Bereinigungsregeln.";
 "Every 3 days" = "Alle 3 Tage";
 "Every day" = "Täglich";
@@ -90,7 +91,6 @@
 "In use" = "In Verwendung";
 "Install helper" = "Hilfsprogramm installieren";
 "It does the few tasks that need an administrator." = "Es erledigt die wenigen Aufgaben, die einen Administrator erfordern.";
-"Items stay in Trash until it is emptied." = "Die Elemente bleiben im Papierkorb, bis er geleert wird.";
 "Keep running in the background" = "Im Hintergrund weiterlaufen";
 "Keep running in the menu bar" = "In der Menüleiste weiterlaufen";
 "Kept while Apple Intelligence is on" = "Bleibt, solange Apple Intelligence aktiv ist";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "Stellt geänderte Einstellungen wieder her und legt die App in den Papierkorb.";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Stellt von MacSpace geänderte Einstellungen wieder her und verschiebt die App in den Papierkorb. Dein Verlauf bleibt erhalten. Gelöschte Dateien können nicht wiederhergestellt werden.";
 "Restoring settings" = "Einstellungen wiederherstellen";
-"Save your work first. Some changes may be permanent." = "Sichere deine Arbeit. Änderungen können dauerhaft sein.";
+"Save work. Some removals may be permanent." = "Arbeit sichern. Löschungen können endgültig sein.";
+"Save your work." = "Sichere deine Arbeit.";
 "Selected cleanup items changed. Review your selection again." = "Die ausgewählten Bereinigungsobjekte haben sich geändert. Prüfen Sie Ihre Auswahl erneut.";
 "Selected files need review" = "Ausgewählte Dateien müssen überprüft werden";
 "Settings" = "Einstellungen";

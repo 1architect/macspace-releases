@@ -557,6 +557,15 @@
   "フルディスクアクセスのリストにドラッグ",
   "전체 디스크 접근 목록으로 드래그"
  ],
+ "Eligible items go to Trash.": [
+  "Itens elegíveis vão para o Lixo.",
+  "Corbeille si possible.",
+  "Los elementos aptos van a la papelera.",
+  "Papierkorb, wo möglich.",
+  "符合条件的项目移到废纸篓。",
+  "対象の項目はゴミ箱に入ります。",
+  "가능한 항목은 휴지통으로 이동합니다."
+ ],
  "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.": [
   "Os itens elegíveis ficam no Lixo até ele ser esvaziado. Os demais seguem as regras de limpeza habituais.",
   "Les éléments admissibles restent dans la corbeille tant qu’elle n’est pas vidée. Les autres suivent les règles de nettoyage habituelles.",
@@ -649,7 +658,7 @@
  ],
  "Free the selected items?": [
   "Liberar os itens selecionados?",
-  "Libérer les éléments sélectionnés ?",
+  "Libérer la sélection ?",
   "¿Liberar la selección?",
   "Ausgewählte Objekte freigeben?",
   "释放所选项目？",
@@ -808,15 +817,6 @@
   "它负责少量需要管理员权限的任务。",
   "管理者権限が必要な一部の処理を行います。",
   "관리자 권한이 필요한 일부 작업을 수행합니다."
- ],
- "Items stay in Trash until it is emptied.": [
-  "Os itens ficam no Lixo até ele ser esvaziado.",
-  "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.",
-  "Los elementos permanecen en la papelera hasta que se vacía.",
-  "Die Elemente bleiben im Papierkorb, bis er geleert wird.",
-  "这些项目会留在废纸篓中，直到清空废纸篓。",
-  "項目はゴミ箱を空にするまで残ります。",
-  "항목은 휴지통을 비울 때까지 남아 있습니다."
  ],
  "Keep running in the background": [
   "Continuar em segundo plano",
@@ -1466,14 +1466,23 @@
   "設定を復元中",
   "설정 복원 중"
  ],
- "Save your work first. Some changes may be permanent.": [
-  "Salve seu trabalho. Algumas mudanças podem ser permanentes.",
-  "Enregistrez votre travail. Certains changements peuvent être définitifs.",
-  "Guarda tu trabajo. Algunos cambios pueden ser permanentes.",
-  "Sichere deine Arbeit. Änderungen können dauerhaft sein.",
-  "请先保存工作。某些更改可能无法撤销。",
-  "作業を保存してください。一部の変更は元に戻せない場合があります。",
-  "작업을 저장하세요. 일부 변경 사항은 되돌릴 수 없을 수 있습니다."
+ "Save work. Some removals may be permanent.": [
+  "Salve seu trabalho. Algumas remoções podem ser definitivas.",
+  "Enregistrez. Suppression définitive possible.",
+  "Guarda tu trabajo. Puede haber borrados definitivos.",
+  "Arbeit sichern. Löschungen können endgültig sein.",
+  "请保存工作。部分项目可能会被永久删除。",
+  "作業を保存してください。一部の項目は完全に削除される場合があります。",
+  "작업을 저장하세요. 일부 항목은 영구 삭제될 수 있습니다."
+ ],
+ "Save your work.": [
+  "Salve seu trabalho.",
+  "Enregistrez votre travail.",
+  "Guarda tu trabajo.",
+  "Sichere deine Arbeit.",
+  "请保存工作。",
+  "作業を保存してください。",
+  "작업을 저장하세요."
  ],
  "Selected cleanup items changed. Review your selection again.": [
   "Os itens de limpeza selecionados mudaram. Revise a seleção novamente.",
@@ -1688,7 +1697,7 @@
   "¿Desinstalar esta app?",
   "Diese App deinstallieren?",
   "卸载此 App？",
-  "このアプリをアンインストールしますか？",
+  "アプリを削除しますか？",
   "이 앱을 제거할까요?"
  ],
  "Uninstall…": [

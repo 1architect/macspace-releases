@@ -62,6 +62,7 @@
 "Developed by\n%@" = "Desarrollado por\n%@";
 "Does the few things that need an administrator." = "Realiza las pocas tareas que requieren un administrador.";
 "Drag into the Full Disk Access list" = "Arrastra a la lista de Acceso total al disco";
+"Eligible items go to Trash." = "Los elementos aptos van a la papelera.";
 "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "Los elementos compatibles permanecen en la papelera hasta que se vacía. Los demás siguen sus reglas habituales de limpieza.";
 "Every 3 days" = "Cada 3 días";
 "Every day" = "Cada día";
@@ -90,7 +91,6 @@
 "In use" = "En uso";
 "Install helper" = "Instalar asistente";
 "It does the few tasks that need an administrator." = "Realiza las pocas tareas que requieren un administrador.";
-"Items stay in Trash until it is emptied." = "Los elementos permanecen en la papelera hasta que se vacía.";
 "Keep running in the background" = "Seguir en segundo plano";
 "Keep running in the menu bar" = "Seguir en la barra de menús";
 "Kept while Apple Intelligence is on" = "Se conserva mientras Apple Intelligence esté activado";
@@ -163,7 +163,8 @@
 "Restores changed settings and moves the app to Trash." = "Restaura los ajustes modificados y mueve la app a la papelera.";
 "Restores settings changed by MacSpace and moves the app to the Trash. Your history is kept. Freed files cannot be restored." = "Restaura los ajustes modificados por MacSpace y mueve la app a la Papelera. Se conserva tu historial. Los archivos eliminados no se pueden restaurar.";
 "Restoring settings" = "Restaurando ajustes";
-"Save your work first. Some changes may be permanent." = "Guarda tu trabajo. Algunos cambios pueden ser permanentes.";
+"Save work. Some removals may be permanent." = "Guarda tu trabajo. Puede haber borrados definitivos.";
+"Save your work." = "Guarda tu trabajo.";
 "Selected cleanup items changed. Review your selection again." = "Los elementos de limpieza seleccionados cambiaron. Revisa la selección de nuevo.";
 "Selected files need review" = "Los archivos seleccionados necesitan revisión";
 "Settings" = "Ajustes";

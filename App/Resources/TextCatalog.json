@@ -1190,6 +1190,25 @@
     }
   },
   {
+    "id" : "App|Eligible items go to Trash.",
+    "key" : "Eligible items go to Trash.",
+    "kind" : "Text",
+    "places" : [
+      "App\/Renderer\/ActionButton.swift:37"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Papierkorb, wo möglich.",
+      "en" : "Eligible items go to Trash.",
+      "es" : "Los elementos aptos van a la papelera.",
+      "fr" : "Corbeille si possible.",
+      "ja" : "対象の項目はゴミ箱に入ります。",
+      "ko" : "가능한 항목은 휴지통으로 이동합니다.",
+      "pt-BR" : "Itens elegíveis vão para o Lixo.",
+      "zh-Hans" : "符合条件的项目移到废纸篓。"
+    }
+  },
+  {
     "id" : "App|Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.",
     "key" : "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.",
     "kind" : "Message",
@@ -1386,14 +1405,14 @@
     "key" : "Free the selected items?",
     "kind" : "Confirmation title",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:39"
+      "App\/Registry\/CleanupSelection.swift:44"
     ],
     "table" : "App",
     "translations" : {
       "de" : "Ausgewählte Objekte freigeben?",
       "en" : "Free the selected items?",
       "es" : "¿Liberar la selección?",
-      "fr" : "Libérer les éléments sélectionnés ?",
+      "fr" : "Libérer la sélection ?",
       "ja" : "選択した項目を解放しますか？",
       "ko" : "선택한 항목을 비우시겠습니까?",
       "pt-BR" : "Liberar os itens selecionados?",
@@ -1723,25 +1742,6 @@
       "ko" : "관리자 권한이 필요한 일부 작업을 수행합니다.",
       "pt-BR" : "Ele faz as poucas tarefas que exigem um administrador.",
       "zh-Hans" : "它负责少量需要管理员权限的任务。"
-    }
-  },
-  {
-    "id" : "App|Items stay in Trash until it is emptied.",
-    "key" : "Items stay in Trash until it is emptied.",
-    "kind" : "Text",
-    "places" : [
-      "App\/Registry\/ModuleHandle.swift:1148"
-    ],
-    "table" : "App",
-    "translations" : {
-      "de" : "Die Elemente bleiben im Papierkorb, bis er geleert wird.",
-      "en" : "Items stay in Trash until it is emptied.",
-      "es" : "Los elementos permanecen en la papelera hasta que se vacía.",
-      "fr" : "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.",
-      "ja" : "項目はゴミ箱を空にするまで残ります。",
-      "ko" : "항목은 휴지통을 비울 때까지 남아 있습니다.",
-      "pt-BR" : "Os itens ficam no Lixo até ele ser esvaziado.",
-      "zh-Hans" : "这些项目会留在废纸篓中，直到清空废纸篓。"
     }
   },
   {
@@ -3127,22 +3127,41 @@
     }
   },
   {
-    "id" : "App|Save your work first. Some changes may be permanent.",
-    "key" : "Save your work first. Some changes may be permanent.",
-    "kind" : "Confirmation message",
+    "id" : "App|Save work. Some removals may be permanent.",
+    "key" : "Save work. Some removals may be permanent.",
+    "kind" : "Message",
     "places" : [
-      "App\/Registry\/CleanupSelection.swift:40"
+      "App\/Registry\/CleanupSelection.swift:42"
     ],
     "table" : "App",
     "translations" : {
-      "de" : "Sichere deine Arbeit. Änderungen können dauerhaft sein.",
-      "en" : "Save your work first. Some changes may be permanent.",
-      "es" : "Guarda tu trabajo. Algunos cambios pueden ser permanentes.",
-      "fr" : "Enregistrez votre travail. Certains changements peuvent être définitifs.",
-      "ja" : "作業を保存してください。一部の変更は元に戻せない場合があります。",
-      "ko" : "작업을 저장하세요. 일부 변경 사항은 되돌릴 수 없을 수 있습니다.",
-      "pt-BR" : "Salve seu trabalho. Algumas mudanças podem ser permanentes.",
-      "zh-Hans" : "请先保存工作。某些更改可能无法撤销。"
+      "de" : "Arbeit sichern. Löschungen können endgültig sein.",
+      "en" : "Save work. Some removals may be permanent.",
+      "es" : "Guarda tu trabajo. Puede haber borrados definitivos.",
+      "fr" : "Enregistrez. Suppression définitive possible.",
+      "ja" : "作業を保存してください。一部の項目は完全に削除される場合があります。",
+      "ko" : "작업을 저장하세요. 일부 항목은 영구 삭제될 수 있습니다.",
+      "pt-BR" : "Salve seu trabalho. Algumas remoções podem ser definitivas.",
+      "zh-Hans" : "请保存工作。部分项目可能会被永久删除。"
+    }
+  },
+  {
+    "id" : "App|Save your work.",
+    "key" : "Save your work.",
+    "kind" : "Message",
+    "places" : [
+      "App\/Registry\/CleanupSelection.swift:41"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Sichere deine Arbeit.",
+      "en" : "Save your work.",
+      "es" : "Guarda tu trabajo.",
+      "fr" : "Enregistrez votre travail.",
+      "ja" : "作業を保存してください。",
+      "ko" : "작업을 저장하세요.",
+      "pt-BR" : "Salve seu trabalho.",
+      "zh-Hans" : "请保存工作。"
     }
   },
   {
@@ -3596,7 +3615,7 @@
     "key" : "Uninstall this app?",
     "kind" : "Message",
     "places" : [
-      "App\/Settings\/AboutMacSpace.swift:38"
+      "App\/Settings\/AboutMacSpace.swift:37"
     ],
     "table" : "App",
     "translations" : {
@@ -3604,7 +3623,7 @@
       "en" : "Uninstall this app?",
       "es" : "¿Desinstalar esta app?",
       "fr" : "Désinstaller cette app ?",
-      "ja" : "このアプリをアンインストールしますか？",
+      "ja" : "アプリを削除しますか？",
       "ko" : "이 앱을 제거할까요?",
       "pt-BR" : "Desinstalar este app?",
       "zh-Hans" : "卸载此 App？"
@@ -7367,15 +7386,15 @@
     "key" : "Delete selected app data?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:266"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:267"
     ],
     "table" : "DiskMap",
     "translations" : {
-      "de" : "Ausgewählte App-Daten löschen?",
+      "de" : "Diese App-Daten löschen?",
       "en" : "Delete selected app data?",
       "es" : "¿Eliminar datos de apps?",
       "fr" : "Supprimer les données d’app ?",
-      "ja" : "選択したアプリデータを削除しますか？",
+      "ja" : "選択データを削除しますか？",
       "ko" : "선택한 앱 데이터를 삭제할까요?",
       "pt-BR" : "Apagar dados de apps?",
       "zh-Hans" : "删除选中的 App 数据？"
@@ -7392,11 +7411,11 @@
     "translations" : {
       "de" : "Ausgewählte Dateien löschen?",
       "en" : "Delete selected files?",
-      "es" : "¿Eliminar los archivos seleccionados?",
-      "fr" : "Supprimer les fichiers sélectionnés ?",
+      "es" : "¿Eliminar estos archivos?",
+      "fr" : "Supprimer ces fichiers ?",
       "ja" : "選択したファイルを削除しますか？",
       "ko" : "선택한 파일을 삭제할까요?",
-      "pt-BR" : "Apagar os arquivos selecionados?",
+      "pt-BR" : "Apagar arquivos selecionados?",
       "zh-Hans" : "删除选中的文件？"
     }
   },
@@ -8421,13 +8440,14 @@
     "key" : "Move files to Trash?",
     "kind" : "Confirmation title",
     "places" : [
+      "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:267",
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:12"
     ],
     "table" : "DiskMap",
     "translations" : {
       "de" : "Dateien in den Papierkorb legen?",
       "en" : "Move files to Trash?",
-      "es" : "¿Mover los archivos a la papelera?",
+      "es" : "¿Mover a la papelera?",
       "fr" : "Mettre les fichiers à la corbeille ?",
       "ja" : "ファイルをゴミ箱に移動しますか？",
       "ko" : "파일을 휴지통으로 이동할까요?",
@@ -8447,7 +8467,7 @@
       "de" : "Ordner in den Papierkorb legen?",
       "en" : "Move folder to Trash?",
       "es" : "¿Mover la carpeta a la papelera?",
-      "fr" : "Placer le dossier dans la corbeille ?",
+      "fr" : "Dossier à la corbeille ?",
       "ja" : "フォルダをゴミ箱に移動しますか？",
       "ko" : "폴더를 휴지통으로 이동할까요?",
       "pt-BR" : "Mover a pasta para o Lixo?",
@@ -10705,17 +10725,17 @@
     "key" : "Uninstall selected apps?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:165"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:164"
     ],
     "table" : "DiskMap",
     "translations" : {
-      "de" : "Ausgewählte Apps deinstallieren?",
+      "de" : "Diese Apps deinstallieren?",
       "en" : "Uninstall selected apps?",
-      "es" : "¿Desinstalar las apps seleccionadas?",
-      "fr" : "Désinstaller les apps sélectionnées ?",
+      "es" : "¿Desinstalar estas apps?",
+      "fr" : "Désinstaller ces apps ?",
       "ja" : "アプリをアンインストールしますか？",
       "ko" : "선택한 앱을 제거할까요?",
-      "pt-BR" : "Desinstalar os apps selecionados?",
+      "pt-BR" : "Desinstalar apps selecionados?",
       "zh-Hans" : "卸载选中的 App？"
     }
   },
@@ -11466,11 +11486,11 @@
     "translations" : {
       "de" : "Ausgewählte Backups löschen?",
       "en" : "Delete selected backups?",
-      "es" : "¿Eliminar las copias seleccionadas?",
-      "fr" : "Supprimer les sauvegardes choisies ?",
-      "ja" : "選択したバックアップを削除しますか？",
+      "es" : "¿Eliminar estas copias?",
+      "fr" : "Supprimer ces sauvegardes ?",
+      "ja" : "選択したバックアップを削除？",
       "ko" : "선택한 백업을 삭제할까요?",
-      "pt-BR" : "Excluir os backups selecionados?",
+      "pt-BR" : "Excluir backups selecionados?",
       "zh-Hans" : "删除选中的备份？"
     }
   },
@@ -11659,9 +11679,9 @@
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
-      "de" : "Lokale Schnappschüsse freigeben?",
+      "de" : "Lokale Snapshots freigeben?",
       "en" : "Free local snapshots?",
-      "es" : "¿Liberar las instantáneas locales?",
+      "es" : "¿Liberar instantáneas locales?",
       "fr" : "Libérer les instantanés locaux ?",
       "ja" : "ローカルスナップショットを削除？",
       "ko" : "로컬 스냅샷을 정리할까요?",
@@ -11697,10 +11717,10 @@
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
-      "de" : "Entbehrliche App-Dateien freigeben?",
+      "de" : "App-Dateien freigeben?",
       "en" : "Free purgeable app files?",
       "es" : "¿Liberar archivos de apps?",
-      "fr" : "Libérer les fichiers d’app purgeables ?",
+      "fr" : "Libérer ces fichiers d’app ?",
       "ja" : "アプリファイルを解放しますか？",
       "ko" : "지울 수 있는 앱 파일을 정리할까요?",
       "pt-BR" : "Liberar arquivos de apps?",
@@ -13764,11 +13784,11 @@
     ],
     "table" : "Siri",
     "translations" : {
-      "de" : "Ungenutzte Downloads freigeben?",
+      "de" : "Downloads freigeben?",
       "en" : "Free unused downloads?",
       "es" : "¿Liberar descargas en desuso?",
       "fr" : "Libérer les fichiers inutilisés ?",
-      "ja" : "未使用のダウンロードを解放しますか？",
+      "ja" : "未使用のダウンロードを削除？",
       "ko" : "사용하지 않는 다운로드를 정리할까요?",
       "pt-BR" : "Liberar downloads sem uso?",
       "zh-Hans" : "释放未使用的下载？"
@@ -16947,14 +16967,14 @@
     "key" : "Delete version history?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:621"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:622"
     ],
     "table" : "SystemData",
     "translations" : {
       "de" : "Versionsverlauf löschen?",
       "en" : "Delete version history?",
-      "es" : "¿Eliminar el historial de versiones?",
-      "fr" : "Supprimer l’historique des versions ?",
+      "es" : "¿Borrar versiones previas?",
+      "fr" : "Effacer les anciennes versions ?",
       "ja" : "バージョン履歴を削除しますか？",
       "ko" : "버전 기록을 삭제할까요?",
       "pt-BR" : "Excluir o histórico de versões?",
@@ -17452,17 +17472,17 @@
     "key" : "Free cached crash symbols?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:435"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:436"
     ],
     "table" : "SystemData",
     "translations" : {
-      "de" : "Symbole aus dem Cache entfernen?",
+      "de" : "Absturzsymbole freigeben?",
       "en" : "Free cached crash symbols?",
       "es" : "¿Liberar los símbolos en caché?",
       "fr" : "Libérer les symboles en cache ?",
       "ja" : "クラッシュ記号を解放しますか？",
       "ko" : "캐시된 충돌 기호를 정리할까요?",
-      "pt-BR" : "Liberar símbolos de falhas em cache?",
+      "pt-BR" : "Liberar símbolos de falhas?",
       "zh-Hans" : "释放缓存的崩溃符号？"
     }
   },
@@ -17588,17 +17608,17 @@
     "key" : "Free stuck downloads?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:605"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:606"
     ],
     "table" : "SystemData",
     "translations" : {
       "de" : "Blockierte Downloads freigeben?",
       "en" : "Free stuck downloads?",
       "es" : "¿Liberar descargas atascadas?",
-      "fr" : "Libérer les téléchargements bloqués ?",
-      "ja" : "停止したダウンロードを解放しますか？",
+      "fr" : "Purger les fichiers bloqués ?",
+      "ja" : "停止中のダウンロードを削除？",
       "ko" : "멈춘 다운로드를 정리할까요?",
-      "pt-BR" : "Liberar downloads interrompidos?",
+      "pt-BR" : "Limpar downloads travados?",
       "zh-Hans" : "释放卡住的下载？"
     }
   },
@@ -17664,13 +17684,13 @@
     "key" : "Free the selected caches?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:265"
+      "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:273"
     ],
     "table" : "SystemData",
     "translations" : {
-      "de" : "Die ausgewählten Caches freigeben?",
+      "de" : "Caches freigeben?",
       "en" : "Free the selected caches?",
-      "es" : "¿Liberar las cachés seleccionadas?",
+      "es" : "¿Liberar estas cachés?",
       "fr" : "Libérer les caches sélectionnés ?",
       "ja" : "選択したキャッシュを解放しますか？",
       "ko" : "선택한 캐시를 정리할까요?",
@@ -17721,15 +17741,15 @@
     "key" : "Free unused downloads?",
     "kind" : "Confirmation title",
     "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:363"
+      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:364"
     ],
     "table" : "SystemData",
     "translations" : {
-      "de" : "Ungenutzte Downloads freigeben?",
+      "de" : "Downloads freigeben?",
       "en" : "Free unused downloads?",
       "es" : "¿Liberar descargas en desuso?",
       "fr" : "Libérer les fichiers inutilisés ?",
-      "ja" : "未使用のダウンロードを解放しますか？",
+      "ja" : "未使用のダウンロードを削除？",
       "ko" : "사용하지 않는 다운로드를 정리할까요?",
       "pt-BR" : "Liberar downloads sem uso?",
       "zh-Hans" : "释放未使用的下载？"
@@ -19128,7 +19148,7 @@
     ],
     "table" : "SystemData",
     "translations" : {
-      "de" : "Sichere deine Arbeit. Das Systemprotokoll wird gelöscht.",
+      "de" : "Arbeit sichern. Systemprotokoll wird gelöscht.",
       "en" : "Save your work first. The system log is erased.",
       "es" : "Guarda tu trabajo. Se borra el registro del sistema.",
       "fr" : "Enregistrez votre travail. Le journal système est effacé.",

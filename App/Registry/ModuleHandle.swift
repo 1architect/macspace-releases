@@ -1142,15 +1142,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
         let instance = moduleEpoch
         let prefersTrash = settings.prefersTrash
-        var prompt = live
-        if prefersTrash, let support = live.trashSupport, var confirmation = live.confirmation {
-            let note = support == .all
-                ? String(localized: "Items stay in Trash until it is emptied.")
-                : String(localized: "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.")
-            confirmation.message = [confirmation.message, note].filter { !$0.isEmpty }.joined(separator: "\n\n")
-            if support == .all { confirmation.confirmTitle = String(localized: "Move to Trash") }
-            prompt.confirmation = confirmation
-        }
+        let prompt = ConfirmationAlert.prompt(for: live, prefersTrash: prefersTrash)
         guard extrasAreTrusted(extraParameters, for: live), confirm(prompt),
               !preparingForUninstall, moduleEpoch == instance,
               trustedAction(live) != nil, extrasAreTrusted(extraParameters, for: live) else { return nil }

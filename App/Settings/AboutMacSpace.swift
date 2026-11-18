@@ -34,7 +34,6 @@ public enum AboutMacSpace {
 
     private static func confirmUninstall(host: ModuleHost) {
         let alert = AppAlert()
-        alert.limitsConfirmationCopy = true
         alert.messageText = String(localized: "Uninstall this app?")
         alert.informativeText = String(localized: "Restores changed settings and moves the app to Trash.")
         alert.alertStyle = .warning

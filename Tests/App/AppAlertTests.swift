@@ -1,4 +1,5 @@
 import AppKit
+import MacSpaceSdk
 import XCTest
 @testable import MacSpaceApp
 
@@ -23,21 +24,45 @@ final class AppAlertTests: XCTestCase {
         }
     }
 
-    func testConfirmationKeepsItsTitleAndBodyOnTheSameLeftEdgeWithThreeLinesTotal() {
+    func testConfirmationFitsTheFullTitleAndMessageWithoutTruncation() throws {
         _ = NSApplication.shared
+        let confirmation = Confirmation(title: "Desinstalar apps selecionados?",
+            message: "Encerra os apps e move os dados selecionados para o Lixo.", confirmTitle: "Desinstalar")
+        let action = Action(id: "uninstall", title: "Desinstalar", role: .destructive, parameters: ["trash": "1"],
+                            confirmation: confirmation, trashSupport: .some)
+        let prompt = try XCTUnwrap(ConfirmationAlert.prompt(for: action, prefersTrash: true).confirmation)
+        XCTAssertEqual(prompt, confirmation)
         let alert = AppAlert()
-        alert.limitsConfirmationCopy = true
-        alert.messageText = "Free the selected caches?"
-        alert.informativeText = "Quits apps using the selected caches."
-        alert.addButton(withTitle: "Free")
-        alert.addButton(withTitle: "Cancel")
-        alert.layout()
-        let labels = alert.window.contentView!.subviews.compactMap { $0 as? NSTextField }.filter { $0.stringValue == alert.messageText || $0.stringValue == alert.informativeText }
-        XCTAssertEqual(labels.count, 2)
-        for label in labels {
-            XCTAssertEqual(label.frame.minX, 20, accuracy: 0.1)
-            XCTAssertEqual(label.alignment, .left)
-            XCTAssertEqual(label.maximumNumberOfLines, label.stringValue == alert.messageText ? 1 : 2)
+        alert.messageText = prompt.title
+        alert.informativeText = prompt.message
+        alert.addButton(withTitle: prompt.confirmTitle).hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancelar")
+        for _ in 0..<2 {
+            alert.layout()
+            let content = try XCTUnwrap(alert.window.contentView)
+            let labels = content.subviews.compactMap { $0 as? NSTextField }.filter {
+                $0.stringValue == alert.messageText || $0.stringValue == alert.informativeText
+            }
+            XCTAssertEqual(labels.count, 2)
+            for label in labels {
+                XCTAssertEqual(label.frame.minX, 20, accuracy: 0.1)
+                XCTAssertEqual(label.alignment, .left)
+                XCTAssertEqual(label.maximumNumberOfLines, 0)
+                XCTAssertEqual(label.lineBreakMode, .byWordWrapping)
+                let cell = try XCTUnwrap(label.cell)
+                XCTAssertFalse(cell.truncatesLastVisibleLine)
+                let fitting = cell.cellSize(forBounds: CGRect(x: 0, y: 0, width: label.bounds.width, height: 10_000))
+                XCTAssertGreaterThanOrEqual(label.bounds.height + 0.5, fitting.height, label.stringValue)
+                let storage = NSTextStorage(attributedString: label.attributedStringValue)
+                let layout = NSLayoutManager()
+                let lines = NSTextContainer(size: CGSize(width: label.bounds.width, height: 1_000))
+                lines.lineFragmentPadding = 0
+                layout.addTextContainer(lines)
+                storage.addLayoutManager(layout)
+                var count = 0
+                layout.enumerateLineFragments(forGlyphRange: layout.glyphRange(for: lines)) { _, _, _, _, _ in count += 1 }
+                XCTAssertLessThanOrEqual(count, label.stringValue == prompt.title ? 1 : 3)
+            }
         }
     }
 

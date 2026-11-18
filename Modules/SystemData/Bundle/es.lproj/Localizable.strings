@@ -69,7 +69,7 @@
 "Data of Apple background services." = "Datos de servicios en segundo plano de Apple.";
 "Data of an Apple app or service." = "Datos de una app o servicio de Apple.";
 "Delete" = "Eliminar";
-"Delete version history?" = "¿Eliminar el historial de versiones?";
+"Delete version history?" = "¿Borrar versiones previas?";
 "Deleted %@." = "%@ eliminado.";
 "Developer" = "Desarrollador";
 "Diagnostic and crash reports" = "Informes de diagnóstico y de fallos";
@@ -106,7 +106,7 @@
 "Free stuck wallpaper downloads?" = "¿Liberar las descargas de fondos de pantalla atascadas?";
 "Free system data?" = "¿Liberar datos del sistema?";
 "Free the leftover update files?" = "¿Liberar los archivos restantes de la actualización?";
-"Free the selected caches?" = "¿Liberar las cachés seleccionadas?";
+"Free the selected caches?" = "¿Liberar estas cachés?";
 "Free the symbols for crash reports?" = "¿Liberar los símbolos para informes de fallos?";
 "Free the system log?" = "¿Liberar el registro del sistema?";
 "Free unused downloads?" = "¿Liberar descargas en desuso?";

@@ -59,8 +59,20 @@ final class CleanupSelectionTests: XCTestCase {
         XCTAssertTrue(action.title.hasPrefix("Move to Trash"))
         _ = await handle.perform(action)
         XCTAssertEqual(approved?.confirmation?.confirmTitle, "Move to Trash")
-        XCTAssertTrue(approved?.confirmation?.message.contains("Items stay in Trash until it is emptied.") == true)
+        XCTAssertEqual(approved?.confirmation?.message, "Details for safe")
         XCTAssertEqual(calls.all, ["trash:safe"])
+    }
+
+    func testMixedTrashCleanupUsesOneShortParagraph() async throws {
+        let defaults = Fixtures.defaults(), calls = Calls()
+        defaults.set(true, forKey: FileRemovalSettings.moveToTrashKey)
+        var approved: Action?
+        let handle = try await handle(SettingsStore(defaults: defaults), calls, confirm: { approved = $0; return false })
+        defer { handle.deactivate() }
+        handleToggle("optional", handle)
+        _ = await handle.perform(try action(handle))
+        XCTAssertEqual(approved?.confirmation?.message, "Save work. Some removals may be permanent. Eligible items go to Trash.")
+        XCTAssertTrue(calls.all.isEmpty)
     }
     func testChoicesPersistAcrossHandleRestartAndAutomaticCleanupUsesOnlyTheSavedSelection() async throws {
         let defaults = Fixtures.defaults(), calls = Calls()
@@ -70,7 +82,7 @@ final class CleanupSelectionTests: XCTestCase {
         XCTAssertTrue(calls.all.isEmpty, "Checkbox changes save intent without cleaning anything")
         XCTAssertEqual(try action(first).confirmation?.message, "Details for optional")
         handleToggle("safe", first)
-        XCTAssertEqual(try action(first).confirmation?.message, "Save your work first. Some changes may be permanent.")
+        XCTAssertEqual(try action(first).confirmation?.message, "Save work. Some removals may be permanent.")
         handleToggle("safe", first)
         first.clearPageSelections(); first.deactivate()
         let second = try await handle(SettingsStore(defaults: defaults), calls)
