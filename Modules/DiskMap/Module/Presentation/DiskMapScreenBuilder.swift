@@ -202,15 +202,16 @@ enum DiskMapScreenBuilder {
             return Action(id: "uninstall", title: loc("Uninstall"), role: .destructive,
                 parameters: ["app": app.owner.path, "identifier": app.owner.identifier, "plan": encoded, "trash": trash ? "1" : "0"],
                 confirmation: DiskUninstallReview.confirmation(trash: trash),
-                requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
+                requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"), trashSupport: .some)
         }
     }
-    static func uninstallReview(_ index: DiskIndex, app: DiskApplication, apps: DiskApplications, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Screen {
-        uninstallReview(index, selected: [app], apps: apps, home: home)
+    static func uninstallReview(_ index: DiskIndex, app: DiskApplication, apps: DiskApplications, home: String = FileManager.default.homeDirectoryForCurrentUser.path,
+                                moveToTrash: Bool = FileRemovalSettings.movesToTrash()) -> Screen {
+        uninstallReview(index, selected: [app], apps: apps, home: home, moveToTrash: moveToTrash)
     }
     static func uninstallReview(_ index: DiskIndex, selected: [DiskApplication], apps: DiskApplications,
-                                home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> Screen {
-        DiskUninstallReview.screen(index, selected: selected, apps: apps, home: home)
+                                home: String = FileManager.default.homeDirectoryForCurrentUser.path, moveToTrash: Bool = FileRemovalSettings.movesToTrash()) -> Screen {
+        DiskUninstallReview.screen(index, selected: selected, apps: apps, home: home, moveToTrash: moveToTrash)
     }
     static func appDataPage(_ app: DiskApplication) -> Screen {
         let groups = [OwnershipConfidence.verifiedExclusive, .shared, .inferred, .unknown].compactMap { confidence -> Row? in
@@ -254,18 +255,18 @@ enum DiskMapScreenBuilder {
         ((path as NSString).deletingLastPathComponent as NSString).lastPathComponent == "Containers" ? loc("App container") : loc("App Data")
     }
 
-    static func leftoversPage(_ apps: DiskApplications) -> Screen {
+    static func leftoversPage(_ apps: DiskApplications, moveToTrash: Bool = FileRemovalSettings.movesToTrash()) -> Screen {
         let leftovers = apps.reviewableLeftovers.filter { $0.bytes > 0 }
         let rows = leftovers.map { leftover in
             Row(id: leftover.choiceID, title: leftover.identifier, subtitle: (leftover.path as NSString).deletingLastPathComponent, trailing: ByteFormat.string(leftover.bytes),
                 paths: [leftover.path])
         }
         let choices = Dictionary(leftovers.filter { $0.identity != nil }.map { ($0.choiceID, $0.bytes) }, uniquingKeysWith: { first, _ in first })
-        let selection = Selection(action: Action(id: "freeUnmatchedData", title: loc("Free selected"), role: .destructive,
-            parameters: ["trash": "0"],
-            confirmation: Confirmation(title: loc("Delete selected app data?"),
-                message: loc("Selected data is permanently deleted."), confirmTitle: loc("Delete")),
-            requires: [.fullDiskAccess], workingTitle: loc("Freeing space")), choices: choices,
+        let selection = Selection(action: Action(id: "freeUnmatchedData", title: moveToTrash ? loc("Move to Trash") : loc("Free selected"), role: .destructive,
+            parameters: ["trash": moveToTrash ? "1" : "0"],
+            confirmation: Confirmation(title: moveToTrash ? loc("Move files to Trash?") : loc("Delete selected app data?"),
+                message: moveToTrash ? "" : loc("Selected data is permanently deleted."), confirmTitle: moveToTrash ? loc("Move to Trash") : loc("Delete")),
+            requires: [.fullDiskAccess], workingTitle: loc("Freeing space"), trashSupport: .all), choices: choices,
             scope: "unmatched-app-data")
         return Screen(title: loc("Unmatched app data"), layout: .singleColumn,
             widgets: [.banner(Banner(id: "unmatched-explanation", severity: .warning, title: loc("Review before freeing"), message: unmatchedExplanation)),

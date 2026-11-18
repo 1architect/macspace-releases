@@ -2,7 +2,7 @@ import Foundation
 
 /// Version of the module contract. A module built for another version is shown as incompatible and not loaded.
 public enum SdkVersion {
-    public static let current = 22
+    public static let current = 24
 }
 
 /// `Manifest.json` inside a module bundle. The app reads it before running any module code, so the module list, the
@@ -26,6 +26,8 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
     /// How many columns the module's tile takes on the dashboard. Declared here, not in the tile, so the dashboard has its final layout
     /// before any module has answered. Small when absent.
     public var tileSize: Tile.Size?
+    /// Preferred maximum dashboard footprint in grid cells. With no preference, the dashboard may feature or stretch the tile.
+    public var preferredMaximumTileSize: Tile.GridSize?
     /// The deep color of the module's tile and page. The app picks one when absent.
     public var tileTint: TileTint?
     /// The module frees space by itself when automatic cleanup runs (`MacSpaceModule.autoClean`). Settings lists the modules that do.
@@ -34,7 +36,7 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
     public init(id: String, name: String, summary: String, version: String, sdkVersion: Int = SdkVersion.current,
                 symbol: String, minimumMacOS: String? = nil, order: Int = 100, permissions: [Permission] = [],
                 options: [OptionDefinition] = [], backgroundTasks: [BackgroundTaskDefinition] = [], tileSize: Tile.Size? = nil,
-                tileTint: TileTint? = nil, autoClean: Bool? = nil) {
+                tileTint: TileTint? = nil, autoClean: Bool? = nil, preferredMaximumTileSize: Tile.GridSize? = nil) {
         self.id = id
         self.name = name
         self.summary = summary
@@ -47,6 +49,7 @@ public struct ModuleManifest: Codable, Equatable, Sendable, Identifiable {
         self.options = options
         self.backgroundTasks = backgroundTasks
         self.tileSize = tileSize
+        self.preferredMaximumTileSize = preferredMaximumTileSize
         self.tileTint = tileTint
         self.autoClean = autoClean
     }

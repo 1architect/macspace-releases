@@ -59,8 +59,9 @@ public enum ReviewedDirectoryRemoval {
     }
 
     /// All targets must finish preflight before a Plan can mutate any of them.
-    public static func prepare(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws -> Plan {
-        try prepare(targets, home: home, personal: false)
+    public static func prepare(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path,
+                               permitsDescendantLinks: Bool = false) throws -> Plan {
+        try prepare(targets, home: home, personal: false, permitsDescendantLinks: permitsDescendantLinks)
     }
 
     /// Whole personal folders use the same descriptor-based preflight and guarded removal as app-data directories.
@@ -74,7 +75,7 @@ public enum ReviewedDirectoryRemoval {
     }
 
     public static func preparePersonal(_ targets: [Target], home: String = FileManager.default.homeDirectoryForCurrentUser.path) throws -> Plan {
-        try prepare(targets, home: home, personal: true)
+        try prepare(targets, home: home, personal: true, permitsDescendantLinks: true)
     }
 
     public final class CleanupRoot {
@@ -164,7 +165,7 @@ public enum ReviewedDirectoryRemoval {
         return Plan(items)
     }
 
-    private static func prepare(_ targets: [Target], home: String, personal: Bool) throws -> Plan {
+    private static func prepare(_ targets: [Target], home: String, personal: Bool, permitsDescendantLinks: Bool) throws -> Plan {
         guard !targets.isEmpty, targets.count <= maxTargets, Set(targets.map(\.path)).count == targets.count else {
             throw Failure(home, "Invalid or excessive directory selection")
         }
@@ -180,7 +181,7 @@ public enum ReviewedDirectoryRemoval {
         }
         var prepared: [Prepared] = [], entries = 0
         for target in targets {
-            let item = try Prepared(target, home: home, permitsSymbolicLinks: personal)
+            let item = try Prepared(target, home: home, permitsSymbolicLinks: permitsDescendantLinks)
             try item.preflight(entries: &entries)
             prepared.append(item)
         }
@@ -195,10 +196,10 @@ public enum ReviewedDirectoryRemoval {
         private var attempted: Set<Int> = []
         fileprivate init(_ items: [Prepared]) { self.items = items }
         public var bytes: UInt64 { items.reduce(0) { $0 + $1.bytes } }
-        public func trash(at index: Int) throws {
+        public func trash(at index: Int, fileManager: FileManager = .default) throws {
             try validate(at: index)
             attempted.insert(index)
-            try items[index].trash()
+            try items[index].trash(fileManager: fileManager)
         }
         public func validate(at index: Int) throws {
             for root in cleanupRoots { try root.validate() }
@@ -336,6 +337,9 @@ public enum ReviewedDirectoryRemoval {
                 ancestors.append(next)
             }
             let original = try named(parent, leaf, path: target.path)
+            if authorizedUID == nil, original.st_mode & S_IFMT != S_IFDIR {
+                throw Failure(target.path, "Reviewed directory was replaced")
+            }
             let linkFlag = permitsSymbolicLinks && original.st_mode & S_IFMT == S_IFLNK ? O_SYMLINK : O_NOFOLLOW
             let directory = try Descriptor(openat(parent, leaf, O_RDONLY | linkFlag | O_CLOEXEC | O_NONBLOCK | (authorizedUID == nil ? O_DIRECTORY : 0)), path: target.path)
             try safe(directory.initial, device: ancestors.last!.initial.st_dev, path: target.path,
@@ -393,17 +397,17 @@ public enum ReviewedDirectoryRemoval {
             try manifest.write("", path: path)
         }
 
-        func trash() throws {
+        func trash(fileManager: FileManager) throws {
             try validate()
             var coordinationError: NSError?, removalError: Error?
             NSFileCoordinator().coordinate(writingItemAt: URL(fileURLWithPath: target.path), options: .forMoving, error: &coordinationError) { url in
                 do {
-                    guard url.path == target.path,
-                          URL(fileURLWithPath: target.path).resolvingSymlinksInPath().path == target.path else {
+                    guard canonicalCleanupPath(url.path) == canonicalCleanupPath(target.path),
+                          canonicalCleanupPath(url.resolvingSymlinksInPath().path) == canonicalCleanupPath(target.path) else {
                         throw Failure(target.path, "Directory location changed before Trash")
                     }
                     try validate()
-                    try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                    try fileManager.trashItem(at: url, resultingItemURL: nil)
                 } catch { removalError = error }
             }
             if let coordinationError { throw coordinationError }
@@ -455,7 +459,7 @@ public enum ReviewedDirectoryRemoval {
                     // Unexpected new children make rmdir fail; they are never enumerated/deleted here.
                     guard unlinkat(stage, slot, AT_REMOVEDIR) == 0 else { throw failure(path, "Cannot remove directory; remaining data preserved") }
                 } else {
-                    // Symlinks in an explicitly selected personal folder are directory entries only:
+                    // Permitted symlinks are directory entries only:
                     // rename/unlink never opens or follows their destinations, including links to / or outside the tree.
                     let final = try named(stage, slot, path: path)
                     try safe(final, device: expected.st_dev, path: path, permitsSymbolicLinks: permitsSymbolicLinks, authorizedUID: authorizedUID)

@@ -17,7 +17,7 @@ enum ScreenCommand {
         do {
             let module = try ModuleLoader.load(descriptor)
             let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker(),
-                                        privileged: LazyPrivilegedChannel())
+                                        privileged: LazyPrivilegedChannel(), prefersTrash: FileRemovalSettings.movesToTrash())
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let started = Date()

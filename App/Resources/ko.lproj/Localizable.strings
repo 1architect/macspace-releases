@@ -62,6 +62,7 @@
 "Developed by\n%@" = "개발자\n%@";
 "Does the few things that need an administrator." = "관리자 권한이 필요한 일부 작업을 수행합니다.";
 "Drag into the Full Disk Access list" = "전체 디스크 접근 목록으로 드래그";
+"Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "해당 항목은 휴지통을 비울 때까지 남아 있습니다. 다른 항목에는 일반 정리 규칙이 적용됩니다.";
 "Every 3 days" = "3일마다";
 "Every day" = "매일";
 "Every week" = "매주";
@@ -89,6 +90,7 @@
 "In use" = "사용 중";
 "Install helper" = "보조 프로그램 설치";
 "It does the few tasks that need an administrator." = "관리자 권한이 필요한 일부 작업을 수행합니다.";
+"Items stay in Trash until it is emptied." = "항목은 휴지통을 비울 때까지 남아 있습니다.";
 "Keep running in the background" = "백그라운드에서 계속 실행";
 "Keep running in the menu bar" = "메뉴 막대에서 계속 실행";
 "Kept while Apple Intelligence is on" = "Apple Intelligence가 켜져 있는 동안 유지";
@@ -110,7 +112,8 @@
 "Move MacSpace to the Applications folder, then reopen it." = "MacSpace를 응용 프로그램 폴더로 옮긴 후 다시 여세요.";
 "Move MacSpace to the Trash from Applications." = "응용 프로그램에서 MacSpace를 휴지통으로 옮기세요.";
 "Move MacSpace to your Applications folder first." = "먼저 MacSpace를 응용 프로그램 폴더로 옮기세요.";
-"Move files to Trash" = "파일을 휴지통으로 이동";
+"Move files and caches to Trash when possible" = "가능한 경우 파일과 캐시를 휴지통으로 이동";
+"Move to Trash" = "휴지통으로 이동";
 "Needed" = "필요함";
 "Needed to measure everything on the disk." = "전체 디스크를 측정하려면 필요합니다.";
 "Needs %@" = "%@ 필요";
@@ -129,7 +132,6 @@
 "Nothing to free" = "확보할 공간 없음";
 "Notifications" = "알림";
 "OK" = "확인";
-"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "기본적으로 꺼져 있습니다. 꺼져 있으면 앱 및 파일에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 각자의 제거 규칙을 따릅니다.";
 "Open Login Items" = "로그인 항목 열기";
 "Open MacSpace" = "MacSpace 열기";
 "Open Panel" = "패널 열기";
@@ -179,6 +181,7 @@
 "This build of MacSpace does not contain the helper." = "이 MacSpace 빌드에는 보조 프로그램이 없습니다.";
 "This copy of MacSpace is incomplete" = "이 MacSpace 사본이 불완전함";
 "This selection is unavailable. Refresh and try again." = "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요.";
+"Trash preference changed. Review your selection again." = "휴지통 설정이 변경되었습니다. 선택 항목을 다시 확인하세요.";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "목록에서 MacSpace를 켜세요. 없으면 이 아이콘을 목록으로 드래그하세요.";
 "Turn on MacSpace under Allow in the Background." = "백그라운드에서 허용 아래에서 MacSpace를 켜세요.";
 "Uninstall" = "제거";

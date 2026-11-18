@@ -74,7 +74,7 @@ final class CleanupPublicationTests: XCTestCase {
         let partial = CacheEntry(id: "partial", title: "Partial", bytes: 100, paths: ["/test/a", "/test/b"], source: .app)
         let complete = CacheEntry(id: "complete", title: "Complete", bytes: 100, paths: ["/test/c"], source: .app)
         let result = await SystemDataModule.freeCaches([partial, complete], in: snapshot(), quitApps: false, progress: updates.record,
-            cleanup: { entry, _ in
+            cleanup: { entry, _, _ in
                 if entry.id == "partial" {
                     return [.init(itemID: "a", deleted: true, detail: "Success without English deletion text"),
                             .init(itemID: "b", deleted: false, detail: "Deleted is merely a word in an error")]
@@ -87,6 +87,38 @@ final class CleanupPublicationTests: XCTestCase {
         let partialPath = SystemDataCleanupResult(itemID: "multi", deleted: false, detail: "second path failed", removedPaths: ["/test/first"])
         XCTAssertTrue(partialPath.changed)
         XCTAssertEqual(SystemDataCleanupReport(results: [partialPath], freeBytesBefore: nil, freeBytesAfter: nil).actionResult.outcome, .succeeded)
+    }
+
+    func testVanishedCachesCompleteAndBlockedCachesReportTheReason() async {
+        let entry = CacheEntry(id: "cache", title: "Cache", bytes: 100, paths: ["/test/cache"], source: .app)
+        let vanished = await SystemDataModule.freeCaches([entry], in: snapshot(), quitApps: false, progress: { _ in },
+            cleanup: { _, _, _ in [.init(itemID: "cache", deleted: false, detail: "Already gone", alreadyGone: true)] })
+        XCTAssertEqual(vanished.outcome, .succeeded)
+        XCTAssertNil(vanished.freedBytes)
+
+        let blocked = await SystemDataModule.freeCaches([entry], in: snapshot(), quitApps: false, progress: { _ in },
+            cleanup: { _, _, _ in [.init(itemID: "cache", deleted: false, detail: "An app is using this cache.")] })
+        XCTAssertEqual(blocked.outcome, .needsAttention)
+        XCTAssertEqual(blocked.message, "An app is using this cache.")
+        XCTAssertTrue(blocked.refresh)
+    }
+
+    func testCacheBatchOnlyMovesFolderBackedEntriesToTrash() async {
+        let folder = CacheEntry(id: "app", title: "App", bytes: 100, paths: ["/test/cache"], source: .app)
+        let managed = CacheEntry(id: "tool", title: "Tool", bytes: 100, paths: [], source: .developer, supportsTrash: false)
+        XCTAssertEqual(CachesPage.trashSupport([folder, managed]), .some)
+        XCTAssertNil(CachesPage.trashSupport([managed]))
+        _ = await SystemDataModule.freeCaches([folder, managed], in: snapshot(), quitApps: false, moveToTrash: true, progress: { _ in },
+            cleanup: { entry, _, moveToTrash in
+                XCTAssertEqual(moveToTrash, entry.id == folder.id)
+                return [.init(itemID: entry.id, deleted: true, detail: "Completed", movedToTrash: moveToTrash)]
+            })
+        let result = await SystemDataModule.freeCaches([folder], in: snapshot(), quitApps: false, moveToTrash: true, progress: { _ in },
+            cleanup: { entry, _, moveToTrash in
+                [.init(itemID: entry.id, deleted: true, detail: "Completed", movedToTrash: moveToTrash)]
+            })
+        XCTAssertEqual(result.message, "Moved to Trash")
+        XCTAssertEqual(result.freedBytes, 0)
     }
 
     func testMeasuredDeveloperRemainderUpdatesParentAndRemovesOnlyEmptyEntries() {

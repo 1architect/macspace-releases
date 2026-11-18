@@ -258,6 +258,10 @@ final class SystemDataScreenBuilderTests: XCTestCase {
         XCTAssertTrue(SystemDataScreenBuilder.blocks(snap).allSatisfy(\.items.isEmpty))
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).hero?.segments.map(\.id), blocks.map(\.id))
         XCTAssertEqual(SystemDataScreenBuilder.screen(snap).cleanupTargets.first?.action.id, "freeCaches")
+        snap.choices.chosen = []
+        let cacheChoice = SystemDataScreenBuilder.screen(snap).cleanupTargets.first { $0.id == CachesPage.groupID }
+        XCTAssertEqual(cacheChoice?.available, false, "the parent keeps a disabled checkbox when the detail selection is empty")
+        XCTAssertEqual(cacheChoice?.defaultSelected, false)
     }
 
     /// With System Settings' reading, the total is its System Data, and what no listed folder accounts for is a block of its own, so

@@ -280,7 +280,8 @@ public enum DeveloperCaches {
 
     /// Frees the caches: the folders through the cleaner's checks (no owner running, nothing open in them), the simulators and Go's
     /// modules through their tools' own commands. Returns a typed outcome for each cache.
-    static func free(_ caches: [DeveloperCache], home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [SystemDataCleanupResult] {
+    static func free(_ caches: [DeveloperCache], home: String = FileManager.default.homeDirectoryForCurrentUser.path,
+                     moveToTrash: Bool = false) -> [SystemDataCleanupResult] {
         var results: [SystemDataCleanupResult] = []
         let outputs = caches.filter { $0.id.hasPrefix("dev:project:") }.flatMap { cache in
             cache.paths.filter { verifiedProjectOutput($0, home: home) }
@@ -301,7 +302,7 @@ public enum DeveloperCaches {
                                owners: cache.owners, inUse: false, cleanup: SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil),
                                notes: [])
             }
-            let report = SystemDataCleaner().clean(items, allowedRoots: allowedRoots(home: home), allowedPaths: outputPaths)
+            let report = SystemDataCleaner().clean(items, allowedRoots: allowedRoots(home: home), allowedPaths: outputPaths, moveToTrash: moveToTrash)
             results += report.results
         }
         for cache in caches where cache.method != .delete {

@@ -17,7 +17,7 @@ enum DiskDirectoryRemoval {
             parameters: ["path": path, "reviewed": String(decoding: evidence, as: UTF8.self), "trash": trash ? "1" : "0"],
             confirmation: Confirmation(title: trash ? loc("Move folder to Trash?") : loc("Delete this folder?"),
                 message: trash ? loc("Includes everything inside.") : loc("Permanently deletes everything inside."),
-                confirmTitle: trash ? loc("Move to Trash") : loc("Delete")), requires: [.fullDiskAccess], workingTitle: loc("Freeing space"))
+                confirmTitle: trash ? loc("Move to Trash") : loc("Delete")), requires: [.fullDiskAccess], workingTitle: loc("Freeing space"), trashSupport: .all)
     }
 
     static func remove(_ path: String, expected: ReviewedDirectoryRemoval.Identity, moveToTrash: Bool,

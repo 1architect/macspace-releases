@@ -15,13 +15,15 @@ extension SystemDataScreenBuilder {
         let nonRecoverable: Set<String> = ["emptyTrash", "eraseUnifiedLog", "deleteVersions"]
         return screen.mappingCleanup { original in
             var row = original
-            if row.id == CachesPage.groupID, row.selection != nil {
+            if row.id == CachesPage.groupID, let selection = row.selection {
                 let chosen = CachesPage.chosen(snapshot)
-                guard !chosen.isEmpty else { return row }
-                var action = row.selection!.action
+                var action = selection.action
                 action.parameters["ids"] = Selection.parameter(chosen.map(\.id))
                 action.confirmation?.message = CachesPage.quitNote(chosen) ?? ""
-                return row.selectingCleanup(action, bytes: chosen.reduce(0) { $0 + $1.bytes }, defaultSelected: true)
+                action.trashSupport = CachesPage.trashSupport(chosen)
+                row = row.selectingCleanup(action, bytes: chosen.reduce(0) { $0 + $1.bytes }, defaultSelected: !chosen.isEmpty)
+                row.cleanup?.available = !chosen.isEmpty
+                return row
             }
             guard let action = row.actions.first(where: { operations.contains($0.id) }) else { return row }
             let bytes = sizes[row.id] ?? snapshot.cloudSources.first { $0.path == action.parameters["path"] }?.bytes

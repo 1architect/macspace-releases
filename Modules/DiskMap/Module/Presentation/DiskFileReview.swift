@@ -12,26 +12,26 @@ enum DiskFileReview {
             confirmation: Confirmation(title: trash ? loc("Move files to Trash?") : loc("Delete selected files?"),
                 message: trash ? "" : loc("This cannot be undone."),
                 confirmTitle: trash ? loc("Move to Trash") : loc("Delete")),
-            requires: [.fullDiskAccess], workingTitle: loc("Freeing space"))
+            requires: [.fullDiskAccess], workingTitle: loc("Freeing space"), trashSupport: .all)
     }
 
-    static func screen(files: [DiskFile], bulk: SelectionBulk, next: String?) -> Screen {
+    static func screen(files: [DiskFile], bulk: SelectionBulk, next: String?, moveToTrash: Bool = FileRemovalSettings.movesToTrash()) -> Screen {
         var selection = DiskMapScreenBuilder.fileSelection(files, open: [:])
-        selection.action = removalAction()
+        selection.action = removalAction(parameters: ["trash": moveToTrash ? "1" : "0"])
         selection.bulk = bulk
         var widgets: [ScreenWidget] = [.list(ListWidget(id: "review-files", title: loc("Selected files"),
             emptyMessage: loc("No files are selected."), rows: rows(files), cascadesOnAppear: true))]
         if let next {
             widgets.append(.list(ListWidget(id: "review-next", rows: [Row(id: next, title: loc("More items"), pageID: next, replacesPage: true)])))
         }
-        return Screen(title: loc("Review selected files"), subtitle: message, layout: .singleColumn,
+        return Screen(title: loc("Review selected files"), subtitle: message(selection.action), layout: .singleColumn,
             widgets: widgets, selection: selection)
     }
 
     static func single(_ file: DiskFile, parameters: [String: String]) -> Screen {
         let action = removalAction(id: "deleteGraphFile", parameters: parameters)
         let id = DiskFileRemoval.id(file.path)
-        return Screen(title: loc("Review selected files"), subtitle: message, layout: .singleColumn,
+        return Screen(title: loc("Review selected files"), subtitle: message(action), layout: .singleColumn,
             widgets: [.list(ListWidget(id: "review-files", title: loc("Selected files"), rows: rows([file]), cascadesOnAppear: true))],
             selection: Selection(action: action, choices: [id: file.bytes], checked: [id], scope: "file-review:" + id))
     }
@@ -41,8 +41,8 @@ enum DiskFileReview {
             widgets: [.list(ListWidget(id: "review-unavailable", emptyMessage: reason, rows: []))])
     }
 
-    private static var message: String {
-        FileRemovalSettings.movesToTrash() ? loc("The selected files will be moved to Trash.") : loc("This permanently deletes the selected files.")
+    private static func message(_ action: Action) -> String {
+        action.parameters["trash"] == "1" ? loc("The selected files will be moved to Trash.") : loc("This permanently deletes the selected files.")
     }
 
     private static func rows(_ files: [DiskFile]) -> [Row] {

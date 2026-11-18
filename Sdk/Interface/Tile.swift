@@ -11,6 +11,16 @@ public struct Tile: Codable, Equatable, Sendable {
         case wide
     }
 
+    public struct GridSize: Codable, Equatable, Sendable {
+        public var width: Int
+        public var height: Int
+
+        public init(width: Int, height: Int) {
+            self.width = width
+            self.height = height
+        }
+    }
+
     /// Short and lowercase by convention ("system data", "debloat").
     public var title: String
     /// A figure that goes with the title, such as what the module measured ("43.14 GB"). The app draws it after the title, or on a

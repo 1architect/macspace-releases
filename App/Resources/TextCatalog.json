@@ -158,7 +158,7 @@
     "key" : "%@ used",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/StorageOverview.swift:30"
+      "App\/Shell\/StorageOverview.swift:37"
     ],
     "table" : "App",
     "translations" : {
@@ -598,7 +598,7 @@
     "places" : [
       "App\/Shell\/MainView.swift:262",
       "App\/Shell\/MainView.swift:263",
-      "App\/Shell\/StorageOverview.swift:24"
+      "App\/Shell\/StorageOverview.swift:31"
     ],
     "table" : "App",
     "translations" : {
@@ -1190,6 +1190,26 @@
     }
   },
   {
+    "id" : "App|Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.",
+    "key" : "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.",
+    "kind" : "Message",
+    "places" : [
+      "App\/Settings\/GeneralSettings.swift:70",
+      "App\/Registry\/ModuleHandle.swift:1149"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Geeignete Elemente bleiben im Papierkorb, bis er geleert wird. Für andere Elemente gelten die üblichen Bereinigungsregeln.",
+      "en" : "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.",
+      "es" : "Los elementos compatibles permanecen en la papelera hasta que se vacía. Los demás siguen sus reglas habituales de limpieza.",
+      "fr" : "Les éléments admissibles restent dans la corbeille tant qu’elle n’est pas vidée. Les autres suivent les règles de nettoyage habituelles.",
+      "ja" : "対象の項目はゴミ箱を空にするまで残ります。その他の項目は通常のルールに従ってクリーンアップされます。",
+      "ko" : "해당 항목은 휴지통을 비울 때까지 남아 있습니다. 다른 항목에는 일반 정리 규칙이 적용됩니다.",
+      "pt-BR" : "Os itens elegíveis ficam no Lixo até ele ser esvaziado. Os demais seguem as regras de limpeza habituais.",
+      "zh-Hans" : "符合条件的项目会留在废纸篓中，直到清空废纸篓。其他项目按通常的规则清理。"
+    }
+  },
+  {
     "id" : "App|Every 3 days",
     "key" : "Every 3 days",
     "kind" : "Title",
@@ -1706,6 +1726,25 @@
     }
   },
   {
+    "id" : "App|Items stay in Trash until it is emptied.",
+    "key" : "Items stay in Trash until it is emptied.",
+    "kind" : "Text",
+    "places" : [
+      "App\/Registry\/ModuleHandle.swift:1148"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Die Elemente bleiben im Papierkorb, bis er geleert wird.",
+      "en" : "Items stay in Trash until it is emptied.",
+      "es" : "Los elementos permanecen en la papelera hasta que se vacía.",
+      "fr" : "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.",
+      "ja" : "項目はゴミ箱を空にするまで残ります。",
+      "ko" : "항목은 휴지통을 비울 때까지 남아 있습니다.",
+      "pt-BR" : "Os itens ficam no Lixo até ele ser esvaziado.",
+      "zh-Hans" : "这些项目会留在废纸篓中，直到清空废纸篓。"
+    }
+  },
+  {
     "id" : "App|Keep running in the background",
     "key" : "Keep running in the background",
     "kind" : "Title",
@@ -1787,8 +1826,8 @@
     "kind" : "Tooltip",
     "places" : [
       "App\/Renderer\/ScreenView.swift:264",
-      "App\/Renderer\/ScreenView.swift:810",
-      "App\/Renderer\/ScreenView.swift:811"
+      "App\/Renderer\/ScreenView.swift:821",
+      "App\/Renderer\/ScreenView.swift:822"
     ],
     "table" : "App",
     "translations" : {
@@ -2111,22 +2150,42 @@
     }
   },
   {
-    "id" : "App|Move files to Trash",
-    "key" : "Move files to Trash",
+    "id" : "App|Move files and caches to Trash when possible",
+    "key" : "Move files and caches to Trash when possible",
     "kind" : "Title",
     "places" : [
       "App\/Settings\/GeneralSettings.swift:69"
     ],
     "table" : "App",
     "translations" : {
-      "de" : "Dateien in den Papierkorb legen",
-      "en" : "Move files to Trash",
-      "es" : "Mover archivos a la Papelera",
-      "fr" : "Placer les fichiers dans la corbeille",
-      "ja" : "ファイルをゴミ箱に入れる",
-      "ko" : "파일을 휴지통으로 이동",
-      "pt-BR" : "Mover arquivos para o Lixo",
-      "zh-Hans" : "将文件移到废纸篓"
+      "de" : "Dateien und Caches nach Möglichkeit in den Papierkorb legen",
+      "en" : "Move files and caches to Trash when possible",
+      "es" : "Mover los archivos y las cachés a la papelera cuando sea posible",
+      "fr" : "Placer les fichiers et les caches dans la corbeille si possible",
+      "ja" : "可能な場合はファイルとキャッシュをゴミ箱に入れる",
+      "ko" : "가능한 경우 파일과 캐시를 휴지통으로 이동",
+      "pt-BR" : "Mover arquivos e caches para o lixo quando possível",
+      "zh-Hans" : "尽可能将文件和缓存移到废纸篓"
+    }
+  },
+  {
+    "id" : "App|Move to Trash",
+    "key" : "Move to Trash",
+    "kind" : "Title",
+    "places" : [
+      "App\/Registry\/ModuleHandle.swift:1151",
+      "App\/Registry\/LiveActionContract.swift:21"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "In den Papierkorb legen",
+      "en" : "Move to Trash",
+      "es" : "Mover a la Papelera",
+      "fr" : "Placer dans la corbeille",
+      "ja" : "ゴミ箱に入れる",
+      "ko" : "휴지통으로 이동",
+      "pt-BR" : "Mover para o Lixo",
+      "zh-Hans" : "移到废纸篓"
     }
   },
   {
@@ -2172,7 +2231,7 @@
     "key" : "Needs %@",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:1155"
+      "App\/Registry\/ModuleHandle.swift:1353"
     ],
     "table" : "App",
     "translations" : {
@@ -2471,25 +2530,6 @@
       "ko" : "확인",
       "pt-BR" : "OK",
       "zh-Hans" : "好"
-    }
-  },
-  {
-    "id" : "App|Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
-    "key" : "Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
-    "kind" : "Message",
-    "places" : [
-      "App\/Settings\/GeneralSettings.swift:69"
-    ],
-    "table" : "App",
-    "translations" : {
-      "de" : "Standardmäßig deaktiviert. Ausgewählte Dateien in Apps und Dateien werden dann endgültig gelöscht. Für App-Deinstallation und Cache-Bereinigung gelten eigene Regeln.",
-      "en" : "Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.",
-      "es" : "Desactivado por defecto. Los archivos seleccionados en Apps y archivos se eliminan permanentemente cuando está desactivado. La desinstalación y las cachés siguen sus propias reglas.",
-      "fr" : "Désactivé par défaut. Les fichiers sélectionnés dans Apps et fichiers sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
-      "ja" : "初期設定ではオフです。オフの場合、「アプリとファイル」で選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュのクリーンアップには、それぞれの削除ルールが適用されます。",
-      "ko" : "기본적으로 꺼져 있습니다. 꺼져 있으면 앱 및 파일에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 각자의 제거 규칙을 따릅니다.",
-      "pt-BR" : "Desativado por padrão. Quando desativado, os arquivos selecionados em Apps e arquivos são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
-      "zh-Hans" : "默认关闭。关闭时，“应用与文件”中选定的文件将被永久删除。应用卸载和缓存清理遵循各自的规则。"
     }
   },
   {
@@ -2957,7 +2997,7 @@
     "key" : "Restart to finish",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:812",
+      "App\/Renderer\/ScreenView.swift:823",
       "Sdk\/Interface\/Widgets.swift:242"
     ],
     "table" : "App",
@@ -2977,7 +3017,7 @@
     "key" : "Restart your Mac from the Apple menu.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:1145"
+      "App\/Registry\/ModuleHandle.swift:1343"
     ],
     "table" : "App",
     "translations" : {
@@ -3110,8 +3150,8 @@
     "key" : "Selected cleanup items changed. Review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:987",
-      "App\/Registry\/ModuleHandle.swift:1201",
+      "App\/Registry\/ModuleHandle.swift:1125",
+      "App\/Registry\/ModuleHandle.swift:1400",
       "Sdk\/Contract\/CleanupTarget.swift:110"
     ],
     "table" : "App",
@@ -3131,7 +3171,7 @@
     "key" : "Selected files need review",
     "kind" : "Title",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:259"
+      "App\/Registry\/ModuleHandle.swift:291"
     ],
     "table" : "App",
     "translations" : {
@@ -3249,8 +3289,8 @@
     "kind" : "Button",
     "places" : [
       "App\/Settings\/ScreenshotToolView.swift:27",
-      "App\/Renderer\/WidgetView.swift:862",
-      "App\/Renderer\/WidgetView.swift:863"
+      "App\/Renderer\/WidgetView.swift:875",
+      "App\/Renderer\/WidgetView.swift:876"
     ],
     "table" : "App",
     "translations" : {
@@ -3421,9 +3461,9 @@
     "key" : "This selection is unavailable. Refresh and try again.",
     "kind" : "Result message",
     "places" : [
-      "App\/Registry\/ModuleHandle.swift:505",
-      "App\/Registry\/ModuleHandle.swift:567",
-      "App\/Registry\/ModuleHandle.swift:613"
+      "App\/Registry\/ModuleHandle.swift:537",
+      "App\/Registry\/ModuleHandle.swift:599",
+      "App\/Registry\/ModuleHandle.swift:645"
     ],
     "table" : "App",
     "translations" : {
@@ -3435,6 +3475,25 @@
       "ko" : "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요.",
       "pt-BR" : "Esta seleção está indisponível. Atualize e tente novamente.",
       "zh-Hans" : "此选择不可用。请刷新后重试。"
+    }
+  },
+  {
+    "id" : "App|Trash preference changed. Review your selection again.",
+    "key" : "Trash preference changed. Review your selection again.",
+    "kind" : "Result message",
+    "places" : [
+      "App\/Registry\/ModuleHandle.swift:1417"
+    ],
+    "table" : "App",
+    "translations" : {
+      "de" : "Die Papierkorbeinstellung wurde geändert. Überprüfe deine Auswahl erneut.",
+      "en" : "Trash preference changed. Review your selection again.",
+      "es" : "Cambió el ajuste de la papelera. Revisa de nuevo tu selección.",
+      "fr" : "Le réglage de la corbeille a changé. Vérifiez à nouveau votre sélection.",
+      "ja" : "ゴミ箱の設定が変更されました。選択内容を再確認してください。",
+      "ko" : "휴지통 설정이 변경되었습니다. 선택 항목을 다시 확인하세요.",
+      "pt-BR" : "A opção de mover para o Lixo mudou. Revise sua seleção novamente.",
+      "zh-Hans" : "废纸篓设置已更改。请重新检查所选项目。"
     }
   },
   {
@@ -3767,10 +3826,10 @@
     "key" : "Working",
     "kind" : "Text",
     "places" : [
-      "App\/Renderer\/ScreenView.swift:808",
+      "App\/Renderer\/ScreenView.swift:819",
       "App\/Renderer\/RowActionFlag.swift:106",
       "App\/Renderer\/RowActionFlag.swift:113",
-      "App\/Registry\/ModuleHandle.swift:1274"
+      "App\/Registry\/ModuleHandle.swift:1473"
     ],
     "table" : "App",
     "translations" : {
@@ -3982,7 +4041,7 @@
     "kind" : "Text",
     "places" : [
       "App\/Shell\/HomeView.swift:77",
-      "App\/Shell\/StorageOverview.swift:27"
+      "App\/Shell\/StorageOverview.swift:34"
     ],
     "table" : "App",
     "translations" : {
@@ -4001,7 +4060,7 @@
     "key" : "reading",
     "kind" : "Text",
     "places" : [
-      "App\/Shell\/StorageOverview.swift:24"
+      "App\/Shell\/StorageOverview.swift:31"
     ],
     "table" : "App",
     "translations" : {
@@ -4326,7 +4385,7 @@
     "key" : "Already disabled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:275"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:280"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4345,7 +4404,7 @@
     "key" : "Already enabled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:275"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:280"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4459,7 +4518,7 @@
     "key" : "Approve the profile in System Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:277"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:282"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4612,8 +4671,8 @@
     "key" : "Couldn't change it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:33",
-      "Modules\/Debloat\/Module\/DebloatModule.swift:274"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:38",
+      "Modules\/Debloat\/Module\/DebloatModule.swift:279"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4632,7 +4691,7 @@
     "key" : "Couldn't open the profile",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:136"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:141"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4651,9 +4710,9 @@
     "key" : "Couldn't remove a profile",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:37",
-      "Modules\/Debloat\/Module\/DebloatModule.swift:44",
-      "Modules\/Debloat\/Module\/DebloatModule.swift:225"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:42",
+      "Modules\/Debloat\/Module\/DebloatModule.swift:49",
+      "Modules\/Debloat\/Module\/DebloatModule.swift:230"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4672,7 +4731,7 @@
     "key" : "Couldn't remove the profile",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:227"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:232"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4959,7 +5018,7 @@
     "key" : "Disabled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:280"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:285"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -4978,7 +5037,7 @@
     "key" : "Disabling",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:182"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:187"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5111,7 +5170,7 @@
     "key" : "Enabled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:280"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:285"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5130,7 +5189,7 @@
     "key" : "Enabling",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:182"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:187"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5283,7 +5342,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:219"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:224"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5321,7 +5380,7 @@
     "key" : "Its profile was removed.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:249"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:254"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5416,7 +5475,7 @@
     "key" : "No control was named.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:111"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:116"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5435,7 +5494,7 @@
     "key" : "No controls were selected.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:181"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:186"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5531,7 +5590,7 @@
     "key" : "Nothing to approve",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:132"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:137"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -5550,7 +5609,7 @@
     "key" : "Nothing to remove",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:125"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:130"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -6121,7 +6180,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Debloat\/Module\/DebloatModule.swift:139"
+      "Modules\/Debloat\/Module\/DebloatModule.swift:144"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -6233,11 +6292,14 @@
   {
     "id" : "Debloat|debloat",
     "key" : "debloat",
-    "kind" : "Tile title",
+    "kind" : "Text",
     "places" : [
+      "Modules\/Debloat\/Module\/Support\/DebloatSnapshot.swift:73",
+      "Modules\/Debloat\/Module\/Support\/DebloatSnapshot.swift:79",
+      "Modules\/Debloat\/Module\/Support\/DebloatSnapshot.swift:81",
+      "Modules\/Debloat\/Module\/Support\/DebloatSnapshot.swift:90",
       "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:190",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:191",
-      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:192"
+      "Modules\/Debloat\/Module\/Presentation\/DebloatScreenBuilder.swift:191"
     ],
     "table" : "Debloat",
     "translations" : {
@@ -6409,7 +6471,7 @@
     "key" : "%lld files could not be removed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:375"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:394"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6467,7 +6529,7 @@
     "key" : "1 file could not be removed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:375"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:394"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6601,9 +6663,9 @@
     "key" : "App data changed. Reopen the list and review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:464",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:495",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:516"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:483",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:514",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:535"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6622,10 +6684,10 @@
     "key" : "App ownership changed. Reopen the app list and review it again.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:190",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:478",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:487",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:504"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:209",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:497",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:506",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:523"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6745,7 +6807,7 @@
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:77",
       "App\/Shell\/MainView.swift:262",
       "App\/Shell\/MainView.swift:263",
-      "App\/Shell\/StorageOverview.swift:24"
+      "App\/Shell\/StorageOverview.swift:31"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -6879,7 +6941,7 @@
     "key" : "Caches",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskApplications.swift:97",
+      "Modules\/DiskMap\/Module\/Engine\/DiskApplications.swift:144",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:13",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:31"
     ],
@@ -7090,7 +7152,7 @@
     "key" : "Contents could not be read. Refresh to retry.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskStore.swift:290"
+      "Modules\/DiskMap\/Module\/Engine\/DiskStore.swift:324"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7167,7 +7229,7 @@
     "key" : "Couldn’t delete the folder",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:432"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:451"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7186,7 +7248,7 @@
     "key" : "Couldn’t remove the selected files",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:380"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:399"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7381,7 +7443,7 @@
     "key" : "Deleted folder",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:429"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:448"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7653,7 +7715,7 @@
     "key" : "File removal settings changed. Reopen the list and confirm again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:408"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:427"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7691,7 +7753,7 @@
     "key" : "Files changed. Reopen the list and review your selection again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:332"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:351"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7710,7 +7772,7 @@
     "key" : "Files of 100 MB or larger",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:81"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7865,9 +7927,9 @@
     "key" : "Freed selected files",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:377",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:454",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:468"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:396",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:473",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:487"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -7889,8 +7951,8 @@
       "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:63",
       "Modules\/DiskMap\/Module\/Engine\/DiskUnmatchedRemoval.swift:64",
       "Modules\/DiskMap\/Module\/Engine\/DiskDirectoryRemoval.swift:20",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:425",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:428",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:444",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:447",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:268"
     ],
     "table" : "DiskMap",
@@ -8024,7 +8086,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:488"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:507"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8082,7 +8144,7 @@
     "key" : "Inventory incomplete",
     "kind" : "Notice",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:73"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:74"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8102,8 +8164,8 @@
     "kind" : "Title",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskCategories.swift:15",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:204",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:208",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:223",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:227",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:62",
       "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:9",
       "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:13"
@@ -8202,7 +8264,7 @@
     "key" : "Logs",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Engine\/DiskApplications.swift:97",
+      "Modules\/DiskMap\/Module\/Engine\/DiskApplications.swift:144",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:20",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:38"
     ],
@@ -8261,7 +8323,7 @@
     "key" : "Managed by Photos; browse or reveal in Finder.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:61"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:62"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8340,7 +8402,7 @@
     "kind" : "Row title",
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:25",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:75"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:76"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8411,6 +8473,25 @@
       "ko" : "휴지통으로 이동",
       "pt-BR" : "Mover para o Lixo",
       "zh-Hans" : "移到废纸篓"
+    }
+  },
+  {
+    "id" : "DiskMap|Moved to Trash",
+    "key" : "Moved to Trash",
+    "kind" : "Message",
+    "places" : [
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:570"
+    ],
+    "table" : "DiskMap",
+    "translations" : {
+      "de" : "In den Papierkorb gelegt",
+      "en" : "Moved to Trash",
+      "es" : "Movido a la papelera",
+      "fr" : "Placé dans la corbeille",
+      "ja" : "ゴミ箱に入れました",
+      "ko" : "휴지통으로 이동함",
+      "pt-BR" : "Movido para o Lixo",
+      "zh-Hans" : "已移到废纸篓"
     }
   },
   {
@@ -8516,8 +8597,8 @@
     "key" : "No files are selected.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:279",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:322",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:298",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:341",
       "Modules\/DiskMap\/Module\/Presentation\/DiskFileReview.swift:23"
     ],
     "table" : "DiskMap",
@@ -8556,7 +8637,7 @@
     "key" : "No files match this size and type scope.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:70"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8651,7 +8732,7 @@
     "key" : "No verified duplicate copies yet",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:70"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -8823,7 +8904,7 @@
     "kind" : "Row detail",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:119",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:87"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:88"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9307,7 +9388,7 @@
     "places" : [
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:37",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:63",
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:69"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:70"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9364,7 +9445,7 @@
     "key" : "Reopen the list and confirm deletion again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:460"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:479"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9383,9 +9464,9 @@
     "key" : "Reopen the list and review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:419",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:436",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:457"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:438",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:455",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:476"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9423,7 +9504,7 @@
     "key" : "Review app data",
     "kind" : "Title",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:190",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:209",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:56",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:160"
     ],
@@ -9523,7 +9604,7 @@
     "key" : "Reviewing selected files",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:343"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:362"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9580,7 +9661,7 @@
     "key" : "Select an app to uninstall.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:480"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:499"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9713,9 +9794,9 @@
     "key" : "Selected cleanup items changed. Review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:403",
-      "App\/Registry\/ModuleHandle.swift:987",
-      "App\/Registry\/ModuleHandle.swift:1201",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:422",
+      "App\/Registry\/ModuleHandle.swift:1125",
+      "App\/Registry\/ModuleHandle.swift:1400",
       "Sdk\/Contract\/CleanupTarget.swift:110"
     ],
     "table" : "DiskMap",
@@ -9774,7 +9855,7 @@
     "key" : "Selected files changed or are open. Review them again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:340"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:359"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9794,10 +9875,10 @@
     "kind" : "Row detail",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskSelectionStorage.swift:125",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:268",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:355",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:441",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:445"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:287",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:374",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:460",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:464"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9835,7 +9916,7 @@
     "key" : "Show files smaller than 100 MB",
     "kind" : "Row title",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:78"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:79"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9873,7 +9954,7 @@
     "key" : "Sizes show allocated space.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:81"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9911,8 +9992,8 @@
     "key" : "Some app data could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:468",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:519"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:487",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:538"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9931,7 +10012,7 @@
     "key" : "Some apps could not be uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:540"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:559"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -9950,9 +10031,9 @@
     "key" : "Some files could not be removed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:377",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:380",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:454"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:396",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:399",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:473"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10237,7 +10318,7 @@
     "key" : "The selected apps are still in use. Finish saving or close them, then try again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:498"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:517"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10275,7 +10356,7 @@
     "key" : "The selection changed. Review the files again.",
     "kind" : "Message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:345"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:364"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10371,8 +10452,8 @@
     "kind" : "Text",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskFileRemoval.swift:44",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:362",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:450",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:381",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:469",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:295"
     ],
     "table" : "DiskMap",
@@ -10411,7 +10492,7 @@
     "key" : "This folder cannot be deleted here.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:423"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:442"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10643,7 +10724,7 @@
     "key" : "Uninstalled",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:540"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:559"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10663,7 +10744,7 @@
     "kind" : "Message",
     "places" : [
       "Modules\/DiskMap\/Module\/Engine\/DiskAppDataRemoval.swift:156",
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:533",
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:552",
       "Modules\/DiskMap\/Module\/Presentation\/DiskMapScreenBuilder.swift:205",
       "Modules\/DiskMap\/Module\/Presentation\/DiskUninstallReview.swift:62"
     ],
@@ -10684,7 +10765,7 @@
     "key" : "Unknown action",
     "kind" : "Result message",
     "places" : [
-      "Modules\/DiskMap\/Module\/DiskMapModule.swift:541"
+      "Modules\/DiskMap\/Module\/DiskMapModule.swift:560"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -10724,7 +10805,7 @@
     "key" : "Up to %@ can be removed while keeping one copy of each set.",
     "kind" : "Text",
     "places" : [
-      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:80"
+      "Modules\/DiskMap\/Module\/Presentation\/DiskBrowseScreenBuilder.swift:81"
     ],
     "table" : "DiskMap",
     "translations" : {
@@ -11086,10 +11167,10 @@
     "key" : "Already gone",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:88",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:94",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:145",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:165"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:100",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:151",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:171"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11165,7 +11246,7 @@
     "key" : "Automatic cleanup is off for items that cannot be recovered.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:58"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:64"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11204,7 +11285,7 @@
     "key" : "Backup disks require manual selection.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:56"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:62"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11356,10 +11437,10 @@
     "key" : "Couldn't free it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:143",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:156",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:171",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:176",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:149",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:162",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:177",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:182",
       "App\/Shell\/MainView.swift:201"
     ],
     "table" : "OtherSystemFiles",
@@ -11728,7 +11809,7 @@
     "key" : "Freed %@ on %@",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:180"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:186"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11747,10 +11828,10 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:80",
       "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:86",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:198",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:199",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:92",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:204",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:205",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:103",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:154"
     ],
@@ -11771,7 +11852,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:164"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:170"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -11923,8 +12004,8 @@
     "key" : "Other System Files",
     "kind" : "Text",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:78",
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:127",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:84",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:133",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:77",
       "Modules\/OtherSystemFiles\/Module\/Presentation\/OtherSystemFilesScreenBuilder.swift:90",
       "App\/Settings\/ScreenshotToolView.swift:90"
@@ -11984,7 +12065,7 @@
     "key" : "Purgeable app files",
     "kind" : "Message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:128",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:134",
       "Modules\/OtherSystemFiles\/Module\/Support\/PurgeableSnapshot.swift:83"
     ],
     "table" : "OtherSystemFiles",
@@ -12099,9 +12180,9 @@
     "key" : "Selected cleanup items changed. Review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:53",
-      "App\/Registry\/ModuleHandle.swift:987",
-      "App\/Registry\/ModuleHandle.swift:1201",
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:59",
+      "App\/Registry\/ModuleHandle.swift:1125",
+      "App\/Registry\/ModuleHandle.swift:1400",
       "Sdk\/Contract\/CleanupTarget.swift:110"
     ],
     "table" : "OtherSystemFiles",
@@ -12159,7 +12240,7 @@
     "key" : "That cloud folder is no longer on this Mac",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:77"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:83"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -12235,7 +12316,7 @@
     "key" : "Time Machine is backing up. Try again when it's done.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:147"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:153"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -12273,7 +12354,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:97"
+      "Modules\/OtherSystemFiles\/Module\/OtherSystemFilesModule.swift:103"
     ],
     "table" : "OtherSystemFiles",
     "translations" : {
@@ -12579,7 +12660,7 @@
     "key" : "%lld features",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:482"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:485"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12598,7 +12679,7 @@
     "key" : "1 feature",
     "kind" : "Row subtitle",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:482"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:485"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12617,8 +12698,8 @@
     "key" : "A feature change is still running.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:18",
-      "Modules\/Siri\/Module\/SiriModule.swift:175"
+      "Modules\/Siri\/Module\/SiriModule.swift:23",
+      "Modules\/Siri\/Module\/SiriModule.swift:183"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12752,7 +12833,7 @@
     "key" : "Already off",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:344"
+      "Modules\/Siri\/Module\/SiriModule.swift:357"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12771,7 +12852,7 @@
     "key" : "Already on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:344"
+      "Modules\/Siri\/Module\/SiriModule.swift:357"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12790,7 +12871,7 @@
     "key" : "Another change affects these settings. MacSpace keeps it and does not free the call transcription models by itself.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:438"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:441"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12811,7 +12892,7 @@
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:276",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:326",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:455"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:458"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12849,7 +12930,7 @@
     "key" : "Apple Intelligence is not switched off in this account (Siri language %@ matches the system language); switch it off in MacSpace first.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:71"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:74"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12869,7 +12950,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceWatcher.swift:81",
-      "Modules\/Siri\/Module\/SiriModule.swift:348"
+      "Modules\/Siri\/Module\/SiriModule.swift:361"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12888,7 +12969,7 @@
     "key" : "Apple Intelligence is on",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:346"
+      "Modules\/Siri\/Module\/SiriModule.swift:359"
     ],
     "table" : "Siri",
     "translations" : {
@@ -12984,8 +13065,8 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:151",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:446",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:451"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:449",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:454"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13023,7 +13104,7 @@
     "key" : "Can't free it yet",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:367"
+      "Modules\/Siri\/Module\/SiriModule.swift:380"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13042,8 +13123,8 @@
     "key" : "Changed outside MacSpace",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:412",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:437"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:415",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:440"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13062,7 +13143,7 @@
     "key" : "Changing settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:224"
+      "Modules\/Siri\/Module\/SiriModule.swift:233"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13100,7 +13181,7 @@
     "key" : "Couldn't change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:274"
+      "Modules\/Siri\/Module\/SiriModule.swift:283"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13119,7 +13200,7 @@
     "key" : "Couldn't change feature settings.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:249"
+      "Modules\/Siri\/Module\/SiriModule.swift:258"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13153,11 +13234,31 @@
     }
   },
   {
+    "id" : "Siri|Couldn't free models.",
+    "key" : "Couldn't free models.",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/Siri\/Module\/SiriModule.swift:311",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:390"
+    ],
+    "table" : "Siri",
+    "translations" : {
+      "de" : "Die Modelle konnten nicht freigegeben werden.",
+      "en" : "Couldn't free models.",
+      "es" : "No se pudieron liberar los modelos.",
+      "fr" : "Impossible de libérer les modèles.",
+      "ja" : "モデルを解放できませんでした。",
+      "ko" : "모델을 정리할 수 없습니다.",
+      "pt-BR" : "Não foi possível liberar os modelos.",
+      "zh-Hans" : "无法释放模型。"
+    }
+  },
+  {
     "id" : "Siri|Couldn't restore Call transcription.",
     "key" : "Couldn't restore Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:39"
+      "Modules\/Siri\/Module\/SiriModule.swift:44"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13176,7 +13277,7 @@
     "key" : "Couldn't restore feature settings.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:34"
+      "Modules\/Siri\/Module\/SiriModule.swift:39"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13195,9 +13296,9 @@
     "key" : "Couldn't restore model requests.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:29",
-      "Modules\/Siri\/Module\/SiriModule.swift:244",
-      "Modules\/Siri\/Module\/SiriModule.swift:258"
+      "Modules\/Siri\/Module\/SiriModule.swift:34",
+      "Modules\/Siri\/Module\/SiriModule.swift:253",
+      "Modules\/Siri\/Module\/SiriModule.swift:267"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13216,7 +13317,7 @@
     "key" : "Couldn't verify the Call transcription change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:267"
+      "Modules\/Siri\/Module\/SiriModule.swift:276"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13235,7 +13336,7 @@
     "key" : "Deleted accounts still subscribe to the models. Remove their leftovers in MacSpace (Siri & Apple Intelligence), restart, then try again.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:79"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:82"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13541,9 +13642,9 @@
     "key" : "Feature settings updated.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:237",
-      "Modules\/Siri\/Module\/SiriModule.swift:247",
-      "Modules\/Siri\/Module\/SiriModule.swift:270"
+      "Modules\/Siri\/Module\/SiriModule.swift:246",
+      "Modules\/Siri\/Module\/SiriModule.swift:256",
+      "Modules\/Siri\/Module\/SiriModule.swift:279"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13735,8 +13836,8 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:288",
-      "Modules\/Siri\/Module\/SiriModule.swift:304",
+      "Modules\/Siri\/Module\/SiriModule.swift:297",
+      "Modules\/Siri\/Module\/SiriModule.swift:317",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:113",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:246",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:314",
@@ -13816,7 +13917,7 @@
     "key" : "Keeps the models",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:483"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:486"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13875,7 +13976,7 @@
     "key" : "Leftover Apple Intelligence models",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:106"
+      "Modules\/Siri\/Module\/SiriModule.swift:113"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13894,7 +13995,7 @@
     "key" : "Log in as %@ and turn Apple Intelligence off there.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:477"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:480"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13932,7 +14033,7 @@
     "key" : "MacSpace could not read every Call transcription setting.",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:440"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:443"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13970,7 +14071,7 @@
     "key" : "MacSpace needs its helper to change Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:253"
+      "Modules\/Siri\/Module\/SiriModule.swift:262"
     ],
     "table" : "Siri",
     "translations" : {
@@ -13989,7 +14090,7 @@
     "key" : "MacSpace needs its helper to restore Call transcription.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:37"
+      "Modules\/Siri\/Module\/SiriModule.swift:42"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14065,7 +14166,7 @@
     "key" : "Not available in a virtual machine",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:212"
+      "Modules\/Siri\/Module\/SiriModule.swift:221"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14084,8 +14185,8 @@
     "key" : "Not verified on this macOS version",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:414",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:442"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:417",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:445"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14142,7 +14243,7 @@
     "key" : "One account with Apple Intelligence on keeps the models on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:486"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:489"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14161,7 +14262,7 @@
     "key" : "Open",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:470"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:473"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14237,7 +14338,7 @@
     "key" : "Or delete the account in System Settings > Users & Groups.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:478"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:481"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14256,7 +14357,7 @@
     "key" : "Other accounts",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:485"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:488"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14334,8 +14435,8 @@
     "key" : "Restart to finish",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:136",
-      "App\/Renderer\/ScreenView.swift:812",
+      "Modules\/Siri\/Module\/SiriModule.swift:144",
+      "App\/Renderer\/ScreenView.swift:823",
       "Sdk\/Interface\/Widgets.swift:242"
     ],
     "table" : "Siri",
@@ -14355,7 +14456,7 @@
     "key" : "Restart to free %@",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:136",
+      "Modules\/Siri\/Module\/SiriModule.swift:144",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:267"
     ],
     "table" : "Siri",
@@ -14375,8 +14476,8 @@
     "key" : "Restart your Mac to apply this change.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:236",
-      "Modules\/Siri\/Module\/SiriModule.swift:264",
+      "Modules\/Siri\/Module\/SiriModule.swift:245",
+      "Modules\/Siri\/Module\/SiriModule.swift:273",
       "Sdk\/Interface\/Widgets.swift:62"
     ],
     "table" : "Siri",
@@ -14396,7 +14497,7 @@
     "key" : "Restart. MacSpace then deletes the models.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:481"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:484"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14416,7 +14517,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:149",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:406",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:409",
       "App\/Settings\/ScreenshotToolView.swift:91"
     ],
     "table" : "Siri",
@@ -14436,7 +14537,7 @@
     "key" : "Siri & Apple Intelligence",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:153",
+      "Modules\/Siri\/Module\/SiriModule.swift:161",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:188",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:204",
       "App\/Settings\/ScreenshotToolView.swift:91"
@@ -14458,7 +14559,7 @@
     "key" : "Siri's iCloud sync",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:464"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:467"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14477,7 +14578,7 @@
     "key" : "Siri's iCloud sync is currently off",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:463"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:466"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14496,7 +14597,7 @@
     "key" : "Siri's iCloud sync is currently on",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:462"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:465"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14516,7 +14617,7 @@
     "kind" : "Title",
     "places" : [
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:150",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:406"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:409"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14535,8 +14636,8 @@
     "key" : "State unknown",
     "kind" : "Pill",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:413",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:440"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:416",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:443"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14688,7 +14789,7 @@
     "key" : "The system or Siri language could not be read.",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:68"
+      "Modules\/Siri\/Module\/Engine\/AppleIntelligenceModelRelease.swift:71"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14726,7 +14827,7 @@
     "key" : "This account was deleted, but macOS still keeps its models. In Terminal, run:",
     "kind" : "Text",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:479"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:482"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14783,7 +14884,7 @@
     "key" : "Turns Siri off and frees its unused models. MacSpace checks again while it stays off. Your Siri language is kept.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:408"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:411"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14802,7 +14903,7 @@
     "key" : "Turns off call recording, transcription, captions and translation, Live Voicemail and Call Screening. Needs a restart.",
     "kind" : "Row title",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:450"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:453"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14821,7 +14922,7 @@
     "key" : "Turns off spatial photo effects and frees their downloaded models.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:409"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:412"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14859,7 +14960,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:313"
+      "Modules\/Siri\/Module\/SiriModule.swift:326"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14878,7 +14979,7 @@
     "key" : "Unknown feature.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:240"
+      "Modules\/Siri\/Module\/SiriModule.swift:249"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14897,7 +14998,7 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:307",
+      "Modules\/Siri\/Module\/SiriModule.swift:320",
       "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:199"
     ],
     "table" : "Siri",
@@ -14917,7 +15018,7 @@
     "key" : "Unused system models",
     "kind" : "Message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:143"
+      "Modules\/Siri\/Module\/SiriModule.swift:151"
     ],
     "table" : "Siri",
     "translations" : {
@@ -14993,7 +15094,7 @@
     "key" : "While it is on, Siri's language change reaches your iPhone and iPad too. Turn it off to keep the change on this Mac.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:468"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:471"
     ],
     "table" : "Siri",
     "translations" : {
@@ -15032,7 +15133,7 @@
     "kind" : "Text",
     "places" : [
       "Modules\/Siri\/Module\/Engine\/AppleIntelligenceLanguageGuard.swift:149",
-      "Modules\/Siri\/Module\/SiriModule.swift:47"
+      "Modules\/Siri\/Module\/SiriModule.swift:52"
     ],
     "table" : "Siri",
     "translations" : {
@@ -15241,8 +15342,8 @@
     "key" : "macOS kept these models for ten minutes. After a restart, MacSpace deletes them.",
     "kind" : "Title",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:137",
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:391"
+      "Modules\/Siri\/Module\/SiriModule.swift:145",
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:394"
     ],
     "table" : "Siri",
     "translations" : {
@@ -15261,7 +15362,7 @@
     "key" : "macOS still keeps these models.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/Siri\/Module\/SiriModule.swift:301"
+      "Modules\/Siri\/Module\/SiriModule.swift:314"
     ],
     "table" : "Siri",
     "translations" : {
@@ -15280,7 +15381,7 @@
     "key" : "macOS's own services still have these models open. They usually let go within minutes, and MacSpace then deletes them.",
     "kind" : "Tooltip",
     "places" : [
-      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:397"
+      "Modules\/Siri\/Module\/Presentation\/SiriScreenBuilder.swift:400"
     ],
     "table" : "Siri",
     "translations" : {
@@ -15533,7 +15634,7 @@
     "key" : "%@ is outside the cleanable locations.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1027"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1051"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15552,8 +15653,8 @@
     "key" : "%@ is running; quit it first.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1051",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1056"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1075",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1080"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15688,7 +15789,7 @@
     "key" : "\/System\/Library\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:763"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:768"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15823,7 +15924,7 @@
     "key" : "A copy of the app macOS made when it checked it. It shares space with the app, so only what an older version left is freed.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:516"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:518"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15842,7 +15943,7 @@
     "key" : "A macOS restore image. Once the Mac, device or virtual machine it was downloaded for is set up, it can be deleted.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:660"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:665"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15861,7 +15962,7 @@
     "key" : "A virtual machine's disk and state. Delete machines you no longer use from the virtualization app.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:670"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:675"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15880,7 +15981,7 @@
     "key" : "All done",
     "kind" : "Message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:439",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:445",
       "App\/Renderer\/ScreenView.swift:585"
     ],
     "table" : "SystemData",
@@ -15957,10 +16058,10 @@
     "key" : "Already gone",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:80",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:84",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:192",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:390"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:86",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:90",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:198",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:396"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -15998,7 +16099,7 @@
     "key" : "An app is using these files. Try again later.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1061"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1085"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16017,7 +16118,7 @@
     "key" : "An unfinished download by %@. If %@ is no longer downloading it, delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:655"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:660"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16075,8 +16176,8 @@
     "key" : "App cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:532",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:552"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:535",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:555"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16114,7 +16215,7 @@
     "key" : "App container: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:624"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16171,7 +16272,7 @@
     "key" : "App group data: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:619"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:624"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16266,7 +16367,7 @@
     "key" : "Apple system cache used by background services; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:498"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:500"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16304,7 +16405,7 @@
     "key" : "Apps' support files for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:957"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:981"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16323,7 +16424,7 @@
     "key" : "Apps' temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:716"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:721"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16361,7 +16462,7 @@
     "key" : "Audio plug-ins and sounds",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:960"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:984"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16380,7 +16481,7 @@
     "key" : "Automatic cleanup is off for items that cannot be recovered.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:65"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:71"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16399,7 +16500,7 @@
     "key" : "Battery and energy history used by System Settings > Battery.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:612"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:615"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16437,7 +16538,7 @@
     "key" : "Caches for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:961"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:985"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16554,7 +16655,7 @@
     "key" : "Check Software Update in System Settings.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:602"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:605"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16630,7 +16731,7 @@
     "key" : "Cloud storage: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:632"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:637"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16706,7 +16807,7 @@
     "key" : "CoreSpotlight indexes for apps' searchable content.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:628"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:633"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16725,12 +16826,12 @@
     "key" : "Couldn't free it",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:232",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:353",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:365",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:366",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:389",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:404"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:238",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:359",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:371",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:372",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:395",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:410"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16749,7 +16850,7 @@
     "key" : "Daemon containers",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:625"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:630"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16787,7 +16888,7 @@
     "key" : "Data of Apple background services.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:626"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:631"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16806,7 +16907,7 @@
     "key" : "Data of an Apple app or service.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:620"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:625"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16908,7 +17009,7 @@
     "key" : "Diagnostic and crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:576"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:579"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -16946,7 +17047,7 @@
     "key" : "Document version history",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:592",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:617"
     ],
     "table" : "SystemData",
@@ -17099,7 +17200,7 @@
     "key" : "Empty the Trash in Finder.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:692"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:697"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17232,7 +17333,7 @@
     "key" : "Files of an earlier macOS update that is already installed; no update is waiting. macOS has not removed them and they sit in a protected folder, so MacSpace leaves them alone.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:599"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:602"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17677,12 +17778,12 @@
     "key" : "Freeing space",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:86",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:89",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:92",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:95",
       "Modules\/SystemData\/Module\/SystemDataModule.swift:98",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:101"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:101",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:104",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:107"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17720,7 +17821,7 @@
     "key" : "From a deleted account. Copy what you need, then delete it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:677"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:682"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17796,7 +17897,7 @@
     "key" : "Home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:682"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:687"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17815,8 +17916,8 @@
     "key" : "Homebrew",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:567",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:879",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:570",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:904",
       "Modules\/SystemData\/Module\/Presentation\/CachesPage.swift:22"
     ],
     "table" : "SystemData",
@@ -17874,7 +17975,7 @@
     "key" : "Homebrew is busy. Try again when it's done.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:336"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:342"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17912,7 +18013,7 @@
     "key" : "Homebrew's cleanup failed",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:344"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:350"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -17950,7 +18051,7 @@
     "key" : "In Finder, select files and choose Remove Download. They stay in the cloud.",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:633"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:638"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18046,7 +18147,7 @@
     "key" : "Install the helper in Settings",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:361"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:367"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18065,7 +18166,7 @@
     "key" : "Installed fonts",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:958"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:982"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18084,7 +18185,7 @@
     "key" : "Kept by macOS for its own services; it manages the size.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:697"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:702"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18103,7 +18204,7 @@
     "key" : "Kept by revisiond for File > Revert To > Browse All Versions; old versions of a document can be deleted from that browser. Deleting the store removes all version history.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:590"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:593"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18161,7 +18262,7 @@
     "key" : "Leftover macOS update files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:598",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:601",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:582"
     ],
     "table" : "SystemData",
@@ -18219,7 +18320,7 @@
     "key" : "Log files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:712"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:717"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18238,7 +18339,7 @@
     "key" : "Logs for all users",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:962"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:986"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18276,7 +18377,7 @@
     "key" : "Managed by the kernel; shrinks after a restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:610"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:613"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18314,7 +18415,7 @@
     "key" : "Mostly media. Clean it up from inside the app.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:621"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:626"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18329,11 +18430,33 @@
     }
   },
   {
+    "id" : "SystemData|Moved to Trash",
+    "key" : "Moved to Trash",
+    "kind" : "Result message",
+    "places" : [
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:256",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:384",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:536",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1116"
+    ],
+    "table" : "SystemData",
+    "translations" : {
+      "de" : "In den Papierkorb gelegt",
+      "en" : "Moved to Trash",
+      "es" : "Movido a la papelera",
+      "fr" : "Placé dans la corbeille",
+      "ja" : "ゴミ箱に入れました",
+      "ko" : "휴지통으로 이동함",
+      "pt-BR" : "Movido para o Lixo",
+      "zh-Hans" : "已移到废纸篓"
+    }
+  },
+  {
     "id" : "SystemData|Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.",
     "key" : "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:562"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:565"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18352,7 +18475,7 @@
     "key" : "Not a cleanable item (%@).",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1013"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1037"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18409,8 +18532,8 @@
     "key" : "Nothing was freed: MacSpace couldn't check which apps are open.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:335",
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1045"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:341",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1069"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18429,7 +18552,7 @@
     "key" : "Nothing was freed: MacSpace couldn't check which files are in use.",
     "kind" : "Row detail",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1063"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:1087"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18524,7 +18647,7 @@
     "key" : "Old reports are deleted from Free now.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:578"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18536,25 +18659,6 @@
       "ko" : "지금 확보에서 오래된 보고서를 삭제합니다.",
       "pt-BR" : "Os relatórios antigos são apagados em Liberar agora.",
       "zh-Hans" : "旧报告可在“立即释放”中删除。"
-    }
-  },
-  {
-    "id" : "SystemData|Old reports are permanently deleted.",
-    "key" : "Old reports are permanently deleted.",
-    "kind" : "Confirmation message",
-    "places" : [
-      "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:349"
-    ],
-    "table" : "SystemData",
-    "translations" : {
-      "de" : "Alte Berichte werden dauerhaft gelöscht.",
-      "en" : "Old reports are permanently deleted.",
-      "es" : "Los informes antiguos se eliminan para siempre.",
-      "fr" : "Les anciens rapports sont effacés définitivement.",
-      "ja" : "古いレポートは完全に削除されます。",
-      "ko" : "오래된 리포트는 영구 삭제됩니다.",
-      "pt-BR" : "Os relatórios antigos são apagados de vez.",
-      "zh-Hans" : "旧报告会被永久删除。"
     }
   },
   {
@@ -18696,7 +18800,7 @@
     "key" : "Per-user Spotlight metadata",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:627"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:632"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18734,7 +18838,7 @@
     "key" : "Power log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:611"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:614"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18829,7 +18933,7 @@
     "key" : "Rebuilt by Spotlight; macOS manages it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:586"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:589"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18867,7 +18971,7 @@
     "key" : "Remove it with the tool that made it.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:738"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:743"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18944,7 +19048,7 @@
     "key" : "Rotated by logd; deleting it removes the logs needed for troubleshooting.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:574"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:577"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -18982,7 +19086,7 @@
     "key" : "Safe to delete while %@ is closed. It's rebuilt when needed.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:495"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:497"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19039,7 +19143,7 @@
     "key" : "Saved home folder of a deleted account: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:687"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:692"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19077,11 +19181,11 @@
     "key" : "Selected cleanup items changed. Review your selection again.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:61",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:111",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:175",
-      "App\/Registry\/ModuleHandle.swift:987",
-      "App\/Registry\/ModuleHandle.swift:1201",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:67",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:117",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:181",
+      "App\/Registry\/ModuleHandle.swift:1125",
+      "App\/Registry\/ModuleHandle.swift:1400",
       "Sdk\/Contract\/CleanupTarget.swift:110"
     ],
     "table" : "SystemData",
@@ -19120,7 +19224,7 @@
     "key" : "Shared frameworks",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:959"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:983"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19139,7 +19243,7 @@
     "key" : "Shared temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:752"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:757"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19253,7 +19357,7 @@
     "key" : "Smaller items",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:814",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:856",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:254"
     ],
     "table" : "SystemData",
@@ -19292,7 +19396,7 @@
     "key" : "Spotlight index",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:588"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19311,7 +19415,7 @@
     "key" : "Staged macOS update",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:601"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:604"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19330,7 +19434,7 @@
     "key" : "Swap and sleep files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:609"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:612"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19387,7 +19491,7 @@
     "key" : "Symbols for crash reports",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:606",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:609",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:432"
     ],
     "table" : "SystemData",
@@ -19407,7 +19511,7 @@
     "key" : "Symbols for crash reports and debugging; rebuilt on demand. Root-owned.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:607"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:610"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19426,9 +19530,9 @@
     "key" : "System Data",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:81",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:413",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:422",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:87",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:419",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:428",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:302",
       "App\/Settings\/ScreenshotToolView.swift:89"
     ],
@@ -19449,7 +19553,7 @@
     "key" : "System assets",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:581"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:584"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19488,7 +19592,7 @@
     "key" : "System cache: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:522"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:524"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19507,7 +19611,7 @@
     "key" : "System databases",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:709",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:714",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:127"
     ],
     "table" : "SystemData",
@@ -19527,7 +19631,7 @@
     "key" : "System extensions",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:963"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:987"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19584,7 +19688,7 @@
     "key" : "Temporary files",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:715"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:720"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19603,7 +19707,7 @@
     "key" : "Temporary files of macOS and of other users on this Mac.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:731"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:736"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19622,7 +19726,7 @@
     "key" : "Temporary files of macOS and other users",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:729"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:734"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19641,7 +19745,7 @@
     "key" : "Temporary files; macOS clears them at restart.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:753"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:758"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19812,7 +19916,7 @@
     "key" : "Tool cache: ~\/.cache\/%@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:538"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:541"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19831,7 +19935,7 @@
     "key" : "Tools and libraries installed by Homebrew. Removable old versions and downloads are listed under Caches that can be freed. Installed packages are kept.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:568"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:571"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19850,7 +19954,7 @@
     "key" : "Tools installed outside Homebrew, such as Node.js and Python. Remove each one with its own installer: deleting the folder can break them.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:571"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:574"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19869,7 +19973,7 @@
     "key" : "Trash",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:691",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:696",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:390"
     ],
     "table" : "SystemData",
@@ -19929,7 +20033,7 @@
     "key" : "Unfinished download: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:654"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:659"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19948,7 +20052,7 @@
     "key" : "Unified system log",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:573"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:576"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19967,7 +20071,7 @@
     "key" : "Unknown action %@.",
     "kind" : "Result message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:138"
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:144"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -19986,7 +20090,7 @@
     "key" : "Unused assets are removed from Free now when macOS reports any; the rest is in use.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:582"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:585"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -20005,8 +20109,8 @@
     "key" : "Unused system assets",
     "kind" : "Message",
     "places" : [
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:414",
-      "Modules\/SystemData\/Module\/SystemDataModule.swift:423",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:420",
+      "Modules\/SystemData\/Module\/SystemDataModule.swift:429",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:359"
     ],
     "table" : "SystemData",
@@ -20045,7 +20149,7 @@
     "key" : "Virtual machine: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:669"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:674"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -20064,7 +20168,7 @@
     "key" : "Wallpaper and screen saver downloads",
     "kind" : "Title",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:913",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:937",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:602"
     ],
     "table" : "SystemData",
@@ -20084,7 +20188,7 @@
     "key" : "Wallpapers and screen savers macOS is downloading. A large size means stuck downloads.",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:916",
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:940",
       "Modules\/SystemData\/Module\/Presentation\/SystemDataScreenBuilder.swift:603"
     ],
     "table" : "SystemData",
@@ -20201,7 +20305,7 @@
     "key" : "Xcode Command Line Tools",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:561"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:564"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -20527,7 +20631,7 @@
     "key" : "macOS restore image: %@",
     "kind" : "Item name",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:659"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:664"
     ],
     "table" : "SystemData",
     "translations" : {
@@ -20622,7 +20726,7 @@
     "key" : "the downloading app",
     "kind" : "Text",
     "places" : [
-      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:653"
+      "Modules\/SystemData\/Module\/Engine\/SystemDataInspector.swift:658"
     ],
     "table" : "SystemData",
     "translations" : {

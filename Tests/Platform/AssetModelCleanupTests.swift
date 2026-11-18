@@ -3,6 +3,27 @@ import XCTest
 @testable import MacSpacePlatform
 
 final class AssetModelCleanupTests: XCTestCase {
+    func testCleanupFailureDoesNotRemainWaitingOrAskForRestart() async {
+        let cleanup = ManagedModelCleanup()
+        let pending = AssetModelCleanup.Result(scope: .siri, owners: .init(pending: true))
+        await cleanup.record(pending)
+        let before = await cleanup.waiting
+        XCTAssertTrue(before.contains(.siri))
+        await cleanup.record(.init(scope: .siri, owners: .init(pending: true, error: "Recovery unavailable")))
+        let failures = await cleanup.failures, waiting = await cleanup.waiting, stalled = await cleanup.stalled
+        XCTAssertEqual(failures[.siri], "Recovery unavailable")
+        XCTAssertFalse(waiting.contains(.siri))
+        XCTAssertFalse(stalled.contains(.siri))
+        let restarts = await cleanup.takeRestartsAsked()
+        XCTAssertTrue(restarts.isEmpty)
+        var held = pending
+        held.held = true
+        held.owners.error = "Downloading"
+        await cleanup.record(held)
+        let recovered = await cleanup.failures, resumed = await cleanup.waiting
+        XCTAssertTrue(recovered.isEmpty)
+        XCTAssertTrue(resumed.contains(.siri), "A deliberate hold can still wait for macOS")
+    }
     func testSpeechRequestsAreScopedByClientAndConfiguration() {
         XCTAssertEqual(AssetOwners.speechAssetType(scope: .siri, client: "com.apple.siri.embeddedspeech", name: "transcription.pt"), 7)
         XCTAssertEqual(AssetOwners.speechAssetType(scope: .siri, client: "com.apple.siri.embeddedspeech", name: "assistant.en_US"), 3)
@@ -186,8 +207,8 @@ final class AssetModelCleanupTests: XCTestCase {
         XCTAssertFalse(AssetModelCleanup.needsReclaim([empty]))
     }
 
-    /// Journals saved by the earlier Objective-C bridge (NSNumber values, absent optional keys) must keep their rollback records.
-    func testJournalsFromTheEarlierBridgeStillLoad() throws {
+    /// Legacy native archives must never be accepted as authenticated rollback payloads.
+    func testJournalsFromTheEarlierBridgeCannotAuthorizeNativeReplay() throws {
         let saved: [String: Any] = ["version": 1, "scope": "phone", "uid": NSNumber(value: getuid()), "cycleRemoved": 2, "entries": [
             ["kind": "uaf", "client": "com.apple.TelephonyUtilities", "name": "transcription.pt", "archive": Data([1]), "phase": "removed",
              "user": "2A106008-EC1C-41AD-B02F-950839090C0A", "expiry": NSNumber(value: 0.0)],

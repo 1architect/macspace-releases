@@ -998,7 +998,10 @@ public struct SystemDataCleanupResult: Codable, Equatable, Sendable {
     public let detail: String
     /// A multi-path item can be partly removed even when its final path failed.
     public var removedPaths: [String]? = nil
+    public var alreadyGone: Bool? = nil
+    public var movedToTrash: Bool? = nil
     public var changed: Bool { deleted || !(removedPaths ?? []).isEmpty }
+    var completed: Bool { deleted || alreadyGone == true }
 }
 
 public struct SystemDataCleanupReport: Codable, Equatable, Sendable {
@@ -1030,7 +1033,8 @@ public struct SystemDataCleaner {
 
     /// `ownersAreBundleIdentifiers`: the items are what is in sandboxed apps' containers, whose owners are bundle identifiers matched
     /// exactly (`ProcessCheck.runningApp`), so the Finder, always open, does not keep `com.example.FinderSync`'s caches.
-    public func clean(_ items: [SystemDataItem], allowedRoots: [String], allowedPaths: Set<String> = [], ownersAreBundleIdentifiers: Bool = false) -> SystemDataCleanupReport {
+    public func clean(_ items: [SystemDataItem], allowedRoots: [String], allowedPaths: Set<String> = [], ownersAreBundleIdentifiers: Bool = false,
+                      moveToTrash: Bool = false) -> SystemDataCleanupReport {
         let before = freeSpace()
         let results = items.map { item -> SystemDataCleanupResult in
             guard item.cleanup.kind == .deleteWhenNotRunning, !item.paths.isEmpty else {
@@ -1050,12 +1054,18 @@ public struct SystemDataCleaner {
                         || SystemDataInspector.chromiumCacheNames.contains((standardized as NSString).lastPathComponent) else {
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("\(path) is outside the cleanable locations."))
                 }
-                guard let attributes = try? fileManager.attributesOfItem(atPath: standardized),
-                      attributes[.type] as? FileAttributeType != .typeSymbolicLink,
-                      (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == geteuid() else {
+                if let attributes = try? fileManager.attributesOfItem(atPath: standardized),
+                   attributes[.type] as? FileAttributeType != .typeSymbolicLink,
+                   (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == geteuid() {
+                    paths.append(standardized)
+                } else {
+                    var info = stat()
+                    if lstat(standardized, &info) != 0, errno == ENOENT { continue }
                     return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: "The path is linked, unreadable or owned by another account.")
                 }
-                paths.append(standardized)
+            }
+            guard !paths.isEmpty else {
+                return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: loc("Already gone"), alreadyGone: true)
             }
             let targets: [ReviewedDirectoryRemoval.Target]
             do {
@@ -1094,11 +1104,17 @@ public struct SystemDataCleaner {
             } catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription) }
             var removed: [String] = []
             for (index, path) in paths.enumerated() {
-                do { try plan.remove(at: index) }
-                catch { return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription, removedPaths: removed) }
+                do {
+                    if moveToTrash { try plan.trash(at: index, fileManager: fileManager) }
+                    else { try plan.remove(at: index) }
+                } catch {
+                    return SystemDataCleanupResult(itemID: item.id, deleted: false, detail: error.localizedDescription,
+                                                   removedPaths: removed, movedToTrash: moveToTrash && !removed.isEmpty ? true : nil)
+                }
                 removed.append(path)
             }
-            return SystemDataCleanupResult(itemID: item.id, deleted: true, detail: loc("Deleted \(item.paths.joined(separator: ", "))."), removedPaths: removed)
+            let detail = moveToTrash ? loc("Moved to Trash") : loc("Deleted \(item.paths.joined(separator: ", ")).")
+            return SystemDataCleanupResult(itemID: item.id, deleted: true, detail: detail, removedPaths: removed, movedToTrash: moveToTrash ? true : nil)
         }
         return SystemDataCleanupReport(results: results, freeBytesBefore: before, freeBytesAfter: freeSpace())
     }

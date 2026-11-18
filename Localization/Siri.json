@@ -242,6 +242,15 @@
   "機能の設定を復元できませんでした。",
   "기능 설정을 복원할 수 없습니다."
  ],
+ "Couldn't free models.": [
+  "Não foi possível liberar os modelos.",
+  "Impossible de libérer les modèles.",
+  "No se pudieron liberar los modelos.",
+  "Die Modelle konnten nicht freigegeben werden.",
+  "无法释放模型。",
+  "モデルを解放できませんでした。",
+  "모델을 정리할 수 없습니다."
+ ],
  "Couldn't restore model requests.": [
   "Não foi possível restaurar as solicitações de modelos.",
   "Impossible de restaurer les demandes de modèles.",

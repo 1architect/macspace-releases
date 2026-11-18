@@ -62,6 +62,7 @@
 "Developed by\n%@" = "开发者\n%@";
 "Does the few things that need an administrator." = "执行少量需要管理员权限的操作。";
 "Drag into the Full Disk Access list" = "拖入完全磁盘访问列表";
+"Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "符合条件的项目会留在废纸篓中，直到清空废纸篓。其他项目按通常的规则清理。";
 "Every 3 days" = "每 3 天";
 "Every day" = "每天";
 "Every week" = "每周";
@@ -89,6 +90,7 @@
 "In use" = "使用中";
 "Install helper" = "安装辅助程序";
 "It does the few tasks that need an administrator." = "它负责少量需要管理员权限的任务。";
+"Items stay in Trash until it is emptied." = "这些项目会留在废纸篓中，直到清空废纸篓。";
 "Keep running in the background" = "在后台继续运行";
 "Keep running in the menu bar" = "在菜单栏中继续运行";
 "Kept while Apple Intelligence is on" = "Apple 智能开启时保留";
@@ -110,7 +112,8 @@
 "Move MacSpace to the Applications folder, then reopen it." = "将 MacSpace 移到“应用程序”文件夹，然后重新打开。";
 "Move MacSpace to the Trash from Applications." = "从“应用程序”将 MacSpace 移到废纸篓。";
 "Move MacSpace to your Applications folder first." = "请先将 MacSpace 移到“应用程序”文件夹。";
-"Move files to Trash" = "将文件移到废纸篓";
+"Move files and caches to Trash when possible" = "尽可能将文件和缓存移到废纸篓";
+"Move to Trash" = "移到废纸篓";
 "Needed" = "需要";
 "Needed to measure everything on the disk." = "需要此权限才能测量整个磁盘。";
 "Needs %@" = "需要 %@";
@@ -129,7 +132,6 @@
 "Nothing to free" = "没有可释放的内容";
 "Notifications" = "通知";
 "OK" = "好";
-"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "默认关闭。关闭时，“应用与文件”中选定的文件将被永久删除。应用卸载和缓存清理遵循各自的规则。";
 "Open Login Items" = "打开登录项";
 "Open MacSpace" = "打开 MacSpace";
 "Open Panel" = "打开面板";
@@ -179,6 +181,7 @@
 "This build of MacSpace does not contain the helper." = "此 MacSpace 构建不包含辅助程序。";
 "This copy of MacSpace is incomplete" = "此 MacSpace 副本不完整";
 "This selection is unavailable. Refresh and try again." = "此选择不可用。请刷新后重试。";
+"Trash preference changed. Review your selection again." = "废纸篓设置已更改。请重新检查所选项目。";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "在列表中开启 MacSpace。没有找到？将此图标拖入列表。";
 "Turn on MacSpace under Allow in the Background." = "在“允许在后台”下开启 MacSpace。";
 "Uninstall" = "卸载";

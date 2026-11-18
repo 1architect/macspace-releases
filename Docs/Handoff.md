@@ -72,6 +72,10 @@ release), `DEV=0` without them (a release); `OUT_DIR` builds somewhere else than
 build apart from the app that gets installed); notarization is on by default with a Developer ID identity, and `NOTARY_PROFILE=`
 turns it off.
 
+For normal local use and performance comparisons, keep `CONFIG=release` even with `DEV=1`. The development tools and
+the `-dev` version suffix are independent of compiler optimization; `CONFIG=debug` materially changes scan performance
+and bundle size and should be reserved for debugger work.
+
 Provisioned signing profiles now live outside the repository at
 `~/Library/Application Support/MacSpace/Signing/Profiles`. Run `Scripts/StoreMetadataProfiles.py` once with the two downloaded
 profiles; subsequent assembly/release builds discover them automatically and choose an authorized signing certificate.
@@ -322,3 +326,17 @@ rollback journal, gated by Siri managed off and Siri/Dictation inactive. The sha
 row but must also be checked for reclaim after Siri withdraws an owner. See Research.md for the evidence and live
 validation limit. `MACSPACE_VERIFY_SPEECH_CONFIG=1 swift test --filter AssetModelCleanupTests` additionally runs an
 opt-in read-only comparison with an existing current-user Siri transcription subscription; it never removes one.
+
+### Legacy model-owner recovery
+
+`AssetOwnerRecovery` preserves recognized version-1 plaintext owner files and starts fresh protected records in
+separate files. It never imports or replays native archives from legacy storage. Existing encrypted records at the
+older filenames continue to use their original provenance checks. Siri, Phone, and temporary-owner operations share
+the same recovery-key bootstrap policy, including other scopes' files and retained checkpoints. Interrupted legacy
+operations and conflicting or unauthenticated modern state remain deferred. Feature enablement can restore its
+saved preferences while macOS recreates requests previously withdrawn by the older app.
+
+`ManagedModelCleanup.failures` is distinct from `waiting`; the screen shows “Couldn't free models.” with the reason
+and permits explicit retry. Errors do not become background progress or restart requests. Ordinary automatic retries
+use the normal interval once no features are genuinely waiting. Live UI and model-reclaim verification remain with
+the maintainer; automated fixtures do not claim that the models have been removed.

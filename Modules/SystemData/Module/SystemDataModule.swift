@@ -71,6 +71,8 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
             return .failed(loc("Automatic cleanup is off for items that cannot be recovered."))
         }
         if Self.choiceActions.contains(request.actionID) { return Self.choose(request) }
+        var request = request
+        if request.moveToTrash == nil { request.moveToTrash = context.prefersTrash }
         let original = await snapshot(maxAge: 600, context: context)
         await store.beginMutation()
         var result = await handle(request, snapshot: original, context: context, progress: progress)
@@ -81,6 +83,7 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
     }
 
     private func handle(_ request: ActionRequest, snapshot: SystemDataSnapshot, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
+        let moveToTrash = request.moveToTrash == true
         switch request.actionID {
         case "removeDownloads":
             guard let source = snapshot.cloudSources.first(where: { $0.path == request.parameters["path"] }) else { return .failed(loc("Already gone")) }
@@ -90,10 +93,10 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
                 return .failed(loc("Already gone"))
             }
             progress(ActionProgress(message: loc("Freeing space")))
-            return Self.clean([item]).actionResult
+            return Self.clean([item], moveToTrash: moveToTrash).actionResult
         case "cleanReports":
             progress(ActionProgress(message: loc("Freeing space")))
-            return Self.cleanReports(snapshot.reports)
+            return Self.cleanReports(snapshot.reports, moveToTrash: moveToTrash)
         case "deleteStagedUpdate":
             progress(ActionProgress(message: loc("Freeing space")))
             return await Self.viaHelper(SystemDataPrivilegedOperations.deleteStagedUpdate, context.privileged, as: StagedUpdateResult.self)
@@ -111,11 +114,16 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
             return Self.purgeAssets(store: store)
         case "freeCaches":
             // Confirmed with the open apps named (`CachesPage.quitNote`): they quit.
+            guard snapshot.cleaner == .macSpace else { return .failed(loc("Already gone")) }
             let ids = Set(Selection.ids(request.parameters["ids"]))
+            guard !ids.isEmpty else { return .failed(loc("Already gone")) }
             let available = CachesPage.entries(snapshot)
             let selected = available.filter { ids.contains($0.id) }
-            guard selected.count == ids.count, Set(selected.map(\.id)) == ids else { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
-            return await Self.freeCaches(selected, in: snapshot, quitApps: request.parameters["automatic"] != "1", progress: progress)
+            guard Set(selected.map(\.id)).count == selected.count else {
+                return .init(outcome: .needsAttention, message: loc("Selected cleanup items changed. Review your selection again."), refresh: true)
+            }
+            guard !selected.isEmpty else { return .succeeded(loc("Already gone")) }
+            return await Self.freeCaches(selected, in: snapshot, quitApps: request.parameters["automatic"] != "1", moveToTrash: moveToTrash, progress: progress)
         case "openCleaner":
             if case let .app(_, url) = snapshot.cleaner { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) }
             return ActionResult(outcome: .succeeded, message: "", refresh: false)
@@ -130,7 +138,7 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
             return await Self.viaHelper(SystemDataPrivilegedOperations.deleteSymbolicationCache, context.privileged, as: SymbolicationCacheResult.self)
         case "cleanAll":
             let log = SystemDataScreenBuilder.unifiedLogRow(snapshot) != nil
-            var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, progress: progress, span: log ? 0...0.8 : 0...1)
+            var cleaned = await Self.cleanSafe(snapshot, store: store, quitApps: true, moveToTrash: moveToTrash, progress: progress, span: log ? 0...0.8 : 0...1)
             // The legacy manual aggregate also erases the log. Scheduled log cleanup requires the explicit nonrecoverable opt-in.
             if log {
                 progress(ActionProgress(fraction: 0.85, message: loc("Freeing space")))
@@ -153,16 +161,18 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
 
     /// Everything Free frees, measured on the volume over the whole run. The chosen caches of open apps go only when `quitApps` (the
     /// user confirmed, with those apps named).
-    static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, quitApps: Bool, progress: @escaping ProgressSink,
+    static func cleanSafe(_ snapshot: SystemDataSnapshot, store: SystemDataStore, quitApps: Bool, moveToTrash: Bool, progress: @escaping ProgressSink,
                           span: ClosedRange<Double> = 0...1) async -> (freed: UInt64, details: [String]) {
         func at(_ share: Double) -> Double { span.lowerBound + (span.upperBound - span.lowerBound) * share }
         var details: [String] = []
         let before = DataVolume.freeBytes()
         let caches = CachesPage.chosen(snapshot)
         progress(ActionProgress(fraction: at(0.03), message: loc("Freeing space")))
-        if !caches.isEmpty { details += await freeCaches(caches, in: snapshot, quitApps: quitApps, progress: progress, span: at(0.03)...at(0.6)).details }
+        if !caches.isEmpty {
+            details += await freeCaches(caches, in: snapshot, quitApps: quitApps, moveToTrash: moveToTrash, progress: progress, span: at(0.03)...at(0.6)).details
+        }
         progress(ActionProgress(fraction: at(0.6), message: loc("Freeing space")))
-        if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports).details }
+        if snapshot.reports.totalBytes > 0 { details += cleanReports(snapshot.reports, moveToTrash: moveToTrash).details }
         progress(ActionProgress(fraction: at(0.75), message: loc("Freeing space")))
         if quitApps, SystemDataScreenBuilder.hasUnusedLanguageModels(snapshot), !snapshot.assetsRetrying, !snapshot.assetsHeld {
             details += await Task.detached(priority: .userInitiated) { releaseUnusedModels(store: store) }.value.details
@@ -191,9 +201,9 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
     /// first, all of them before any cache, and are not opened again: the user opens them when they want. One that does not quit (it
     /// asked to save and the user kept it open) keeps its cache. Without it (automatic cleaning), the open apps' caches stay.
     /// `span` is the part of the action's progress bar this takes.
-    static func freeCaches(_ entries: [CacheEntry], in snapshot: SystemDataSnapshot, quitApps: Bool, progress: @escaping ProgressSink,
+    static func freeCaches(_ entries: [CacheEntry], in snapshot: SystemDataSnapshot, quitApps: Bool, moveToTrash: Bool = false, progress: @escaping ProgressSink,
                            span: ClosedRange<Double> = 0...1,
-                           cleanup: @escaping @Sendable (CacheEntry, SystemDataSnapshot) -> [SystemDataCleanupResult] = freeOne) async -> ActionResult {
+                           cleanup: @escaping @Sendable (CacheEntry, SystemDataSnapshot, Bool) -> [SystemDataCleanupResult] = freeOne) async -> ActionResult {
         var entries = entries
         guard !entries.isEmpty else { return .failed(loc("Already gone")) }
         let working = loc("Freeing space")
@@ -210,22 +220,26 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         var details: [String] = []
         var finished: [String] = []
         var completed = 0
-        var changed = false
+        var trashed = false
+        var permanentlyRemoved = false
+        var firstBlocker: String?
         let hasDownloads = entries.contains { $0.id == CachesPage.homebrewDownloads }
         for batch in cacheCleanupBatches(entries) {
             await withTaskGroup(of: (String, [SystemDataCleanupResult]).self) { group in
                 for entry in batch {
                     group.addTask {
-                        if entry.open { return (entry.id, [SystemDataCleanupResult(itemID: entry.id, deleted: false, detail: "Its app is open.")]) }
+                        if entry.open { return (entry.id, [SystemDataCleanupResult(itemID: entry.id, deleted: false, detail: loc("An app is using these files. Try again later."))]) }
                         if entry.id == CachesPage.homebrewOld && hasDownloads { return (entry.id, []) }
-                        let result = await Task.detached(priority: .userInitiated) { cleanup(entry, snapshot) }.value
+                        let result = await Task.detached(priority: .userInitiated) { cleanup(entry, snapshot, moveToTrash && entry.supportsTrash) }.value
                         return (entry.id, result)
                     }
                 }
                 for await (id, results) in group {
                     details += results.map(\.summary); completed += 1
-                    changed = changed || results.contains(where: \.changed)
-                    if !results.isEmpty && results.allSatisfy(\.deleted) {
+                    trashed = trashed || results.contains { $0.movedToTrash == true }
+                    permanentlyRemoved = permanentlyRemoved || results.contains { $0.changed && $0.movedToTrash != true }
+                    if firstBlocker == nil { firstBlocker = results.first { !$0.completed }?.detail }
+                    if !results.isEmpty && results.allSatisfy(\.completed) {
                         finished.append(id)
                         if id == CachesPage.homebrewDownloads, entries.contains(where: { $0.id == CachesPage.homebrewOld }) { finished.append(CachesPage.homebrewOld) }
                     }
@@ -234,8 +248,13 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
             }
         }
         progress(ActionProgress(fraction: span.upperBound, message: working, finished: finished))
+        if !trashed && !permanentlyRemoved {
+            if finished.count == entries.count { return .succeeded(loc("Already gone"), details: details) }
+            return ActionResult(outcome: .needsAttention, message: firstBlocker.flatMap { $0.isEmpty ? nil : $0 } ?? loc("Couldn't free it"),
+                                details: details, refresh: true)
+        }
+        if !permanentlyRemoved { return .succeeded(loc("Moved to Trash"), details: details, freedBytes: 0) }
         let freed = measuredFreed(before, DataVolume.freeBytes())
-        guard changed else { return ActionResult(outcome: .failed, message: loc("Couldn't free it"), details: details, refresh: true) }
         return .succeeded(freedMessage(freed), details: details, freedBytes: freed)
     }
 
@@ -258,14 +277,14 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         return batches
     }
 
-    static func freeOne(_ entry: CacheEntry, in snapshot: SystemDataSnapshot) -> [SystemDataCleanupResult] {
+    static func freeOne(_ entry: CacheEntry, in snapshot: SystemDataSnapshot, moveToTrash: Bool) -> [SystemDataCleanupResult] {
         switch entry.source {
         case .app:
-            return cleanAppCaches(entry.parts.map(\.id), in: snapshot).results
+            return cleanAppCaches(entry.parts.map(\.id), in: snapshot, moveToTrash: moveToTrash).results
         case .web, .system, .appCopy:
-            return clean(snapshot.report.items.filter { $0.id == entry.id }).results
+            return clean(snapshot.report.items.filter { $0.id == entry.id }, moveToTrash: moveToTrash).results
         case .developer:
-            return DeveloperCaches.free(snapshot.developerCaches.filter { $0.id == entry.id })
+            return DeveloperCaches.free(snapshot.developerCaches.filter { $0.id == entry.id }, moveToTrash: moveToTrash)
         case .homebrew:
             guard let plan = snapshot.homebrew else { return [] }
             let result = cleanHomebrew(plan.brew, allDownloads: entry.id == CachesPage.homebrewDownloads)
@@ -274,15 +293,16 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         }
     }
 
-    static func clean(_ items: [SystemDataItem]) -> SystemDataCleanupReport {
-        SystemDataCleaner().clean(items, allowedRoots: SystemDataCleaner.allowedRoots(SystemDataInspector().locations))
+    static func clean(_ items: [SystemDataItem], moveToTrash: Bool) -> SystemDataCleanupReport {
+        SystemDataCleaner().clean(items, allowedRoots: SystemDataCleaner.allowedRoots(SystemDataInspector().locations), moveToTrash: moveToTrash)
     }
 
     /// Deletes the chosen app caches. Each is read again first (`AppCaches.measure`): one that looks like data now stays. Then the cleaner's own checks, as for every cache: its app or tool not running, nothing open in
     /// it, renamed then deleted. A container's caches folder stays, emptied of all but macOS's own (`AppCaches.containerContents`):
     /// the cleaner may delete only inside the chosen containers' caches folders, and checks their apps by bundle identifier alone.
     static func cleanAppCaches(_ ids: [String], in snapshot: SystemDataSnapshot, now: Date = Date(),
-                               home: String = FileManager.default.homeDirectoryForCurrentUser.path, cleaner: SystemDataCleaner = SystemDataCleaner()) -> SystemDataCleanupReport {
+                               home: String = FileManager.default.homeDirectoryForCurrentUser.path, cleaner: SystemDataCleaner = SystemDataCleaner(),
+                               moveToTrash: Bool = false) -> SystemDataCleanupReport {
         let chosen = snapshot.report.appCaches.filter { ids.contains($0.id) }
         var skipped: [SystemDataCleanupResult] = []
         var items: [SystemDataItem] = []
@@ -291,7 +311,10 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         let cleanup = SystemDataCleanup(kind: .deleteWhenNotRunning, description: "", command: nil)
         for var cache in chosen {
             guard let dates = AppCaches.measure(cache.path, now: now, skippingApple: cache.container != nil) else {
-                skipped.append(SystemDataCleanupResult(itemID: cache.id, deleted: false, detail: "The cache could not be read again."))
+                var info = stat()
+                let gone = lstat(cache.path, &info) != 0 && errno == ENOENT
+                skipped.append(SystemDataCleanupResult(itemID: cache.id, deleted: false,
+                    detail: gone ? loc("Already gone") : "The cache could not be read again.", alreadyGone: gone ? true : nil))
                 continue
             }
             cache.lastChange = dates.lastChange
@@ -327,10 +350,11 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         }
         var reports: [SystemDataCleanupReport] = []
         if !items.isEmpty {
-            reports.append(cleaner.clean(items, allowedRoots: [URL(fileURLWithPath: home).appendingPathComponent("Library/Caches").standardizedFileURL.path]))
+            reports.append(cleaner.clean(items, allowedRoots: [URL(fileURLWithPath: home).appendingPathComponent("Library/Caches").standardizedFileURL.path],
+                                         moveToTrash: moveToTrash))
         }
         if !containerItems.isEmpty {
-            reports.append(cleaner.clean(containerItems, allowedRoots: containerFolders, ownersAreBundleIdentifiers: true))
+            reports.append(cleaner.clean(containerItems, allowedRoots: containerFolders, ownersAreBundleIdentifiers: true, moveToTrash: moveToTrash))
         }
         return SystemDataCleanupReport(results: skipped + reports.flatMap(\.results),
                                        freeBytesBefore: reports.first?.freeBytesBefore, freeBytesAfter: reports.last?.freeBytesAfter)
@@ -352,11 +376,14 @@ public struct SystemDataModule: MacSpaceModule, ModulePresentationReading {
         return .succeeded(freedMessage(freed ?? run.freed), details: details, freedBytes: freed)
     }
 
-    static func cleanReports(_ plan: CleanupPlan) -> ActionResult {
-        let result = DiagnosticReportCleaner(directories: []).execute(plan)
-        let details = result.failed.map { "Could not delete \($0.key): \($0.value)" }
-        return ActionResult(outcome: result.deleted.isEmpty && !result.failed.isEmpty ? .failed : .succeeded,
-                            message: result.deleted.isEmpty && !result.failed.isEmpty ? loc("Couldn't free it") : freedMessage(result.freedBytes),
+    static func cleanReports(_ plan: CleanupPlan, moveToTrash: Bool) -> ActionResult {
+        let directories = DiagnosticReportCleaner.standardDirectories(home: FileManager.default.homeDirectoryForCurrentUser)
+        let result = DiagnosticReportCleaner(directories: directories).execute(plan, moveToTrash: moveToTrash)
+        let details = result.failed.map { "\($0.key): \($0.value)" }
+        let failed = result.deleted.isEmpty && !result.failed.isEmpty
+        let message = moveToTrash && !result.deleted.isEmpty ? loc("Moved to Trash") : freedMessage(result.freedBytes)
+        return ActionResult(outcome: failed ? .failed : .succeeded,
+                            message: failed ? loc("Couldn't free it") : message,
                             details: details, freedBytes: result.freedBytes)
     }
 
@@ -497,11 +524,17 @@ extension SymbolicationCacheResult: HelperCleanup {
 }
 
 extension SystemDataCleanupResult {
-    var summary: String { "\(deleted ? "Deleted" : "Skipped"): \(itemID). \(detail)" }
+    var summary: String {
+        if movedToTrash == true { return "\(itemID): \(detail)" }
+        return "\(deleted ? "Deleted" : "Skipped"): \(itemID). \(detail)"
+    }
 }
 
 extension SystemDataCleanupReport {
     var actionResult: ActionResult {
+        if results.contains(where: \.changed), results.filter(\.changed).allSatisfy({ $0.movedToTrash == true }) {
+            return .succeeded(loc("Moved to Trash"), details: results.map(\.summary), freedBytes: 0)
+        }
         let freed = SystemDataModule.measuredFreed(freeBytesBefore, freeBytesAfter)
         return ActionResult(outcome: results.contains(where: \.changed) ? .succeeded : .failed,
                             message: results.contains(where: \.changed) ? SystemDataModule.freedMessage(freed) : loc("Couldn't free it"),

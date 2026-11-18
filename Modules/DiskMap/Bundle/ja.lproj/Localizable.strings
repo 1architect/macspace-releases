@@ -105,6 +105,7 @@
 "Move files to Trash?" = "ファイルをゴミ箱に移動しますか？";
 "Move folder to Trash?" = "フォルダをゴミ箱に移動しますか？";
 "Move to Trash" = "ゴミ箱に入れる";
+"Moved to Trash" = "ゴミ箱に入れました";
 "Movies" = "ムービー";
 "Music" = "ミュージック";
 "No app data to remove" = "削除するアプリデータはありません";

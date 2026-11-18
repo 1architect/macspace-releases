@@ -328,7 +328,8 @@ enum SystemDataScreenBuilder {
         let message = unifiedLogBytes(snapshot) > 0 ? loc("Save your work first. The system log is erased.")
             : CachesPage.quitNote(CachesPage.chosen(snapshot)) ?? ""
         return Action(id: "cleanAll", title: loc("Free \(ByteFormat.string(total))"), symbol: "sparkles", role: .prominent,
-                      confirmation: Confirmation(title: loc("Free system data?"), message: message, confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))
+                      confirmation: Confirmation(title: loc("Free system data?"), message: message, confirmTitle: loc("Free")), workingTitle: loc("Freeing space"),
+                      trashSupport: CachesPage.trashSupport(CachesPage.chosen(snapshot)) != nil || snapshot.reports.totalBytes > 0 ? .some : nil)
     }
 
     // MARK: Sections
@@ -346,7 +347,7 @@ enum SystemDataScreenBuilder {
                              trailing: ByteFormat.string(snapshot.reports.totalBytes), symbol: "doc.text",
                              detail: loc("Reports older than \(snapshot.reports.olderThanDays) days. macOS writes new ones as needed."),
                              actions: [Action(id: "cleanReports", title: loc("Free"), confirmation: Confirmation(
-                                title: loc("Free old reports?"), message: loc("Old reports are permanently deleted."), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
+                                title: loc("Free old reports?"), confirmTitle: loc("Free")), workingTitle: loc("Freeing space"), trashSupport: .all)],
                              paths: paths(of: "reports:diagnostic", snapshot)), snapshot.reports.totalBytes))
         }
         let assets = snapshot.purgeableAssetsBytes ?? 0
@@ -393,7 +394,7 @@ enum SystemDataScreenBuilder {
                     actions: [Action(id: "emptyTrash", title: loc("Free"), role: .destructive,
                                      confirmation: Confirmation(title: loc("Empty the Trash?"),
                                                                 message: loc("Everything inside is permanently deleted."),
-                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space"))],
+                                                                confirmTitle: loc("Free")), workingTitle: loc("Freeing space"), emptiesTrash: true)],
                     paths: [Self.trashPath]), bytes)
     }
 

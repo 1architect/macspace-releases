@@ -52,6 +52,8 @@ struct CacheEntry: Equatable {
     /// It stands for the whole of that item, not only its own size: Homebrew's downloads are its cache folder, whose rest (its
     /// package list) nothing frees, so the folder is not listed again for what is left.
     var wholeItem = false
+    /// Folder-backed caches support Trash. Tool-managed cleanups use the owning tool.
+    var supportsTrash = true
     /// For one row standing for several folders of the same app (`merged`): each folder as the scan and the cleaner know it. Empty
     /// for any other cache.
     var members: [CacheEntry] = []
@@ -124,7 +126,8 @@ enum CachesPage {
         // Developer tools' caches; those in ~/Library/Developer are System Settings' Developer, in no System Data item.
         for cache in snapshot.developerCaches where cache.bytes >= SystemDataScreenBuilder.worthARow {
             var entry = CacheEntry(id: cache.id, title: cache.title, bytes: cache.bytes, paths: cache.paths, source: .developer,
-                                   recommended: cache.recommended, reason: cache.reason, within: containingItem(cache.paths.first, report))
+                                   recommended: cache.recommended, reason: cache.reason, within: containingItem(cache.paths.first, report),
+                                   supportsTrash: cache.method == .delete)
             entry.owners = cache.owners
             if cache.runningOwner != nil { inUse(&entry) }
             entries.append(entry)
@@ -135,13 +138,13 @@ enum CachesPage {
             let old = plan.standard.bytes.flatMap { $0 >= SystemDataScreenBuilder.worthARow ? $0 : nil }
             if let old {
                 entries.append(CacheEntry(id: homebrewOld, title: loc("Old Homebrew versions"), bytes: old, paths: [], source: .homebrew,
-                                          recommended: true, within: "packages:homebrew"))
+                                          recommended: true, within: "packages:homebrew", supportsTrash: false))
             }
             if let all = plan.allDownloads.bytes, all > (old ?? 0), all - (old ?? 0) >= SystemDataScreenBuilder.worthARow {
                 let downloads = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/Homebrew").path
                 entries.append(CacheEntry(id: homebrewDownloads, title: loc("Homebrew downloads"), bytes: all - (old ?? 0), paths: [downloads],
                                           source: .homebrew, recommended: true, reason: loc("Downloads again when needed"),
-                                          within: "appcache:Homebrew", wholeItem: true))
+                                          within: "appcache:Homebrew", wholeItem: true, supportsTrash: false))
             }
         }
         // A cache too small to be an item of its own is part of its kind's "Smaller items" (`SmallKey`).
@@ -237,6 +240,11 @@ enum CachesPage {
         chosen(snapshot, now: now).map(\.bytes).reduce(0, +)
     }
 
+    static func trashSupport(_ entries: [CacheEntry]) -> Action.TrashSupport? {
+        guard entries.contains(where: \.supportsTrash) else { return nil }
+        return entries.allSatisfy(\.supportsTrash) ? .all : .some
+    }
+
     // MARK: Page
 
     /// The caches page, as a group row of Free now: Recommended, then the apps' caches, then the developer caches, each largest
@@ -263,7 +271,7 @@ enum CachesPage {
         let choosable = all.filter(self.choosable)
         group.selection = Selection(
             action: Action(id: "freeCaches", title: loc("Free selected"), confirmation: Confirmation(title: loc("Free the selected caches?"), confirmTitle: loc("Free")),
-                           workingTitle: loc("Freeing space")),
+                           workingTitle: loc("Freeing space"), trashSupport: trashSupport(choosable)),
             choices: Dictionary(choosable.map { ($0.id, $0.bytes) }, uniquingKeysWith: { first, _ in first }),
             checked: checked(all, choices).sorted(),
             suggested: choosable.filter(\.recommended).map(\.id),
@@ -271,7 +279,7 @@ enum CachesPage {
             sections: sections,
             save: Action(id: "saveCacheChoice", title: loc("Free selected")),
             noteChoiceIDs: Set(choosable.filter(\.open).map(\.id)),
-            note: quitMessage, persistenceKey: "app-caches")
+            note: quitMessage, persistenceKey: "app-caches", trashChoiceIDs: Set(choosable.filter(\.supportsTrash).map(\.id)))
         return group
     }
 

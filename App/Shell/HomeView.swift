@@ -299,11 +299,10 @@ struct DashboardTile: Identifiable {
     let destination: Destination
     let size: Bento.Size
     let tint: TileTint
+    var maximumSize: Bento.Size?
 
     var id: Destination { destination }
     var opens: Bool { true }
-    /// The featured tile, two cells by two.
-    var large: Bool { size.height > 1 }
 }
 
 /// The dashboard: the startup disk, one tile per active module and Settings, packed into a bento grid that fills the glass. Tiles
@@ -339,12 +338,13 @@ struct HomeView: View {
     struct Arrangement: Equatable {
         var columns: Int
         var scrolls: Bool
+        var placements: [Bento.Placement]
     }
 
-    static func arrangement(for size: CGSize, sizes: [Bento.Size]) -> Arrangement {
+    static func arrangement(for size: CGSize, sizes: [Bento.Size], maximumSizes: [Bento.Size?]? = nil) -> Arrangement {
         let columns = Bento.columns(for: size.width)
-        let rows = Bento.rows(Bento.pack(sizes: sizes, columns: columns))
-        return Arrangement(columns: columns, scrolls: needed(rows: rows) > size.height)
+        let placements = Bento.pack(sizes: sizes, columns: columns, maximumSizes: maximumSizes)
+        return Arrangement(columns: columns, scrolls: needed(rows: Bento.rows(placements)) > size.height, placements: placements)
     }
 
     static func needed(rows: Int) -> CGFloat {
@@ -352,13 +352,21 @@ struct HomeView: View {
     }
 
     /// The disk is rose and Settings slate; each module brings its own color, else takes the next free one. The disk and Settings
-    /// are always one cell; the featured module comes right after the disk and takes two by two, every other module one cell.
+    /// start at one cell; the featured module comes right after the disk and starts at two by two.
     @MainActor
     static func tiles(for handles: [ModuleHandle]) -> [DashboardTile] {
-        let diskEnabled = handles.contains { $0.id == "com.macspace.disk-map" && $0.isEnabled }
+        let disk = handles.first { $0.id == "com.macspace.disk-map" && $0.isEnabled }
         let handles = handles.filter { $0.id != "com.macspace.disk-map" }
-        let large = featured(handles.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
-        var tiles: [DashboardTile] = diskEnabled ? [DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose)] : []
+        let eligible = handles.filter { handle in
+            guard let maximum = handle.manifest.preferredMaximumTileSize else { return true }
+            return maximum.width >= 2 && maximum.height >= 2
+        }
+        let large = featured(eligible.map { (id: $0.id, reclaimable: $0.tile?.reclaimableBytes, wide: $0.manifest.tileSize == .wide) })
+        var tiles: [DashboardTile] = []
+        if let disk {
+            tiles.append(DashboardTile(destination: .storage, size: Bento.Size(width: 1, height: 1), tint: .rose,
+                                       maximumSize: disk.manifest.preferredMaximumTileSize))
+        }
         let spare: [TileTint] = [.blue, .teal, .graphite]
         var next = 0
         let ordered = handles.filter { $0.id == large && $0.id != "com.macspace.disk-map" } + handles.filter { $0.id != large && $0.id != "com.macspace.disk-map" }
@@ -366,9 +374,11 @@ struct HomeView: View {
             var tint = handle.manifest.tileTint
             if tint == nil { tint = spare[next % spare.count]; next += 1 }
             let size = handle.id == large ? Bento.Size(width: 2, height: 2) : Bento.Size(width: 1, height: 1)
-            tiles.append(DashboardTile(destination: .module(handle.id), size: size, tint: tint ?? .blue))
+            tiles.append(DashboardTile(destination: .module(handle.id), size: size, tint: tint ?? .blue,
+                                       maximumSize: handle.manifest.preferredMaximumTileSize))
         }
-        tiles.append(DashboardTile(destination: .settings, size: Bento.Size(width: 1, height: 1), tint: .slate))
+        let settingsSize = Bento.Size(width: 1, height: 1)
+        tiles.append(DashboardTile(destination: .settings, size: settingsSize, tint: .slate, maximumSize: settingsSize))
         return tiles
     }
 
@@ -393,7 +403,7 @@ struct HomeView: View {
                 }
                 ForEach(Array(tiles.enumerated()), id: \.element.id) { index, tile in
                     let frame = Bento.frame(placements[index], columns: columns, rows: rows, in: size)
-                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height, large: tile.large), restingSize: frame.size,
+                    DashboardTileView(tile: tile, host: host, storage: storage, captionSize: CaptionSize.tile(height: frame.height, large: placements[index].height > 1), restingSize: frame.size,
                                       isHidden: hiddenTile == tile.destination, hovering: pointerTile == tile.destination,
                                       onPointer: { lean in pointer(tile.destination, lean) }) {
                         open(tile.destination)
@@ -406,7 +416,7 @@ struct HomeView: View {
         // The gaps between tiles are glass too: dragging there moves the window.
         .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).allowsWindowActivationEvents(true) }
         .animation(Theme.layout, value: tiles.map(\.id))
-        .animation(Theme.layout, value: tiles.map(\.size))
+        .animation(Theme.layout, value: placements)
     }
 
     /// Everything that moves a tile, the same for its ground and its face so the two stay one: coming in and leaving with the window,
@@ -441,18 +451,19 @@ struct HomeView: View {
     var body: some View {
         let tiles = host.hasScanned ? Self.tiles(for: host.dashboardHandles) : []
         let sizes = tiles.map(\.size)
+        let maximumSizes = tiles.map(\.maximumSize)
         GeometryReader { proxy in
             // A new size takes its arrangement at once, every tile following the window: the tiles used to leave and come back
             // whenever the number of columns changed, which flashed the dashboard empty in the middle of a resize (2026-10-13).
-            let arrangement = Self.arrangement(for: proxy.size, sizes: sizes)
+            let arrangement = Self.arrangement(for: proxy.size, sizes: sizes, maximumSizes: maximumSizes)
             let columns = arrangement.columns
-            let placements = Bento.pack(sizes: sizes, columns: columns)
+            let placements = arrangement.placements
             let rows = Bento.rows(placements)
             let size = CGSize(width: proxy.size.width, height: max(proxy.size.height, Self.needed(rows: rows)))
             // The zoom needs each tile's place. It is taken from the layout, not measured on screen: measured frames include the hover
             // lift, the press and the dashboard receding behind an open page, and a card closing onto them landed beside its tile.
             let _ = frames.record(zip(tiles, placements).map { ($0.destination, Bento.frame($1, columns: columns, rows: rows, in: size)) },
-                                  large: Set(tiles.filter(\.large).map(\.destination)))
+                                  large: Set(zip(tiles, placements).filter { $0.1.height > 1 }.map { $0.0.destination }))
             Group {
                 if !arrangement.scrolls {
                     // Everything fits: no scroll view. One wrapped the tiles even when it could not scroll, and added its own layers to

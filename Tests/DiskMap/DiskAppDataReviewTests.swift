@@ -258,13 +258,32 @@ final class DiskAppDataReviewTests: DiskSecurityFixtureCase {
             let refreshed = try DiskAppDataRemoval.refreshedAfterQuitting([cache], home: home)
             XCTAssertEqual(refreshed[0].identity.inode, cache.identity.inode)
             XCTAssertEqual(refreshed[0].path, cache.path)
+            XCTAssertEqual(refreshed[0].id, cache.id)
+            XCTAssertEqual(try DiskAppDataRemoval.resolveReviewedIDs([cache.id], candidates: refreshed), refreshed)
             // Retain the original inode elsewhere to ensure a replacement cannot reuse it.
             try FileManager.default.moveItem(atPath: cache.path, toPath: cache.path + ".old")
             try FileManager.default.createDirectory(atPath: cache.path, withIntermediateDirectories: true)
             XCTAssertThrowsError(try DiskAppDataRemoval.refreshedAfterQuitting([cache], home: home))
+            XCTAssertThrowsError(try DiskAppDataRemoval.resolveReviewedIDs([cache.id], candidates: DiskAppDataRemoval.candidates(app, apps: [app], home: home)))
             let settings = try XCTUnwrap(candidates.first { $0.fileIdentity != nil })
             try Data(repeating: 3, count: 16384).write(to: URL(fileURLWithPath: settings.path))
             XCTAssertThrowsError(try DiskAppDataRemoval.refreshedAfterQuitting([settings], home: home))
+        }
+    }
+
+    func testExplicitlyReviewedAppContainerUnlinksSandboxAliasesWithoutFollowingThem() throws {
+        try fixture { home, _ in
+            let outside = home + "/outside"
+            try Data("keep".utf8).write(to: URL(fileURLWithPath: outside))
+            let container = home + "/Library/Containers/org.example.sandbox"
+            try FileManager.default.createDirectory(atPath: container + "/Data", withIntermediateDirectories: true)
+            try FileManager.default.createSymbolicLink(atPath: container + "/Data/alias", withDestinationPath: outside)
+            let target = try XCTUnwrap(DiskAppDataRemoval.target(container, home: home))
+            let result = try DiskAppDataRemoval.remove(ids: [target.id], candidates: [target], moveToTrash: false, home: home)
+            XCTAssertEqual(result.removed, [container])
+            XCTAssertTrue(result.failures.isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: container))
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: outside)), Data("keep".utf8))
         }
     }
     func testInstalledAppNamesVendorPathsIdentifiersAndUnreadableScopesAreNotUnmatched() throws {

@@ -36,6 +36,7 @@
 "Couldn't change Call transcription." = "无法更改通话转录。";
 "Couldn't change feature settings." = "无法更改功能设置。";
 "Couldn't check Apple Intelligence" = "无法检查 Apple 智能";
+"Couldn't free models." = "无法释放模型。";
 "Couldn't restore Call transcription." = "无法恢复通话转录。";
 "Couldn't restore feature settings." = "无法恢复功能设置。";
 "Couldn't restore model requests." = "无法恢复模型请求。";

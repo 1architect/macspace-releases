@@ -36,6 +36,7 @@
 "Couldn't change Call transcription." = "통화 전사를 변경할 수 없습니다.";
 "Couldn't change feature settings." = "기능 설정을 변경할 수 없습니다.";
 "Couldn't check Apple Intelligence" = "Apple Intelligence를 확인하지 못함";
+"Couldn't free models." = "모델을 정리할 수 없습니다.";
 "Couldn't restore Call transcription." = "통화 전사를 복원할 수 없습니다.";
 "Couldn't restore feature settings." = "기능 설정을 복원할 수 없습니다.";
 "Couldn't restore model requests." = "모델 요청을 복원할 수 없습니다.";

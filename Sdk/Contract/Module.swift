@@ -5,11 +5,15 @@ public struct ActionRequest: Codable, Equatable, Sendable {
     public var parameters: [String: String]
     /// A row action updates inline; nil identifies a page action. Switches remain quiet even when they identify their row.
     public var rowID: String?
+    /// The host sets this only from the confirmed preference and the action's declared Trash support.
+    /// If moving an eligible item fails, keep it in place and report the failure.
+    public var moveToTrash: Bool?
 
-    public init(actionID: String, parameters: [String: String] = [:], rowID: String? = nil) {
+    public init(actionID: String, parameters: [String: String] = [:], rowID: String? = nil, moveToTrash: Bool? = nil) {
         self.actionID = actionID
         self.parameters = parameters
         self.rowID = rowID
+        self.moveToTrash = moveToTrash
     }
 }
 
@@ -70,6 +74,7 @@ public final class LoadProgressRelay: @unchecked Sendable {
 
     /// Reports the reading's progress; never backwards.
     public func report(_ fraction: Double) {
+        guard fraction.isFinite else { return }
         let value = min(max(fraction, 0), 1)
         let targets = lock.withLock { () -> [LoadProgressSink] in
             guard reported == nil || value >= reported! + 0.01 || (value == 1 && reported! < 1) else { return [] }
@@ -81,7 +86,10 @@ public final class LoadProgressRelay: @unchecked Sendable {
 
     /// Progress over `span` of this reading: a step of it that reports 0...1 of its own.
     public func part(_ span: ClosedRange<Double>) -> LoadProgressSink {
-        { [self] fraction in report(span.lowerBound + (span.upperBound - span.lowerBound) * min(max(fraction, 0), 1)) }
+        { [self] fraction in
+            guard fraction.isFinite else { return }
+            report(span.lowerBound + (span.upperBound - span.lowerBound) * min(max(fraction, 0), 1))
+        }
     }
 
     /// Independent work running together contributes its own share. A fast part finishing cannot hide progress from a slower one.
@@ -212,6 +220,7 @@ public struct NoModuleServices: ModuleServices {
 
 public struct ModuleContext: Sendable {
     public var cleanupChoices: [String: Bool]
+    public var prefersTrash: Bool
 
     public var manifest: ModuleManifest
     public var options: any OptionStore
@@ -222,13 +231,15 @@ public struct ModuleContext: Sendable {
     public var services: any ModuleServices
 
     public init(manifest: ModuleManifest, options: any OptionStore, permissions: any PermissionChecker,
-                privileged: (any PrivilegedChannel)? = nil, services: any ModuleServices = NoModuleServices(), cleanupChoices: [String: Bool] = [:]) {
+                privileged: (any PrivilegedChannel)? = nil, services: any ModuleServices = NoModuleServices(), cleanupChoices: [String: Bool] = [:],
+                prefersTrash: Bool = false) {
         self.manifest = manifest
         self.options = options
         self.permissions = permissions
         self.privileged = privileged
         self.services = services
         self.cleanupChoices = cleanupChoices
+        self.prefersTrash = prefersTrash
     }
 }
 

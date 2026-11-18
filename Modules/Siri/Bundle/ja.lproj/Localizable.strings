@@ -36,6 +36,7 @@
 "Couldn't change Call transcription." = "通話の文字起こしを変更できませんでした。";
 "Couldn't change feature settings." = "機能の設定を変更できませんでした。";
 "Couldn't check Apple Intelligence" = "Apple Intelligenceを確認できませんでした";
+"Couldn't free models." = "モデルを解放できませんでした。";
 "Couldn't restore Call transcription." = "通話の文字起こしを元に戻せませんでした。";
 "Couldn't restore feature settings." = "機能の設定を復元できませんでした。";
 "Couldn't restore model requests." = "モデルのリクエストを復元できませんでした。";

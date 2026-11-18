@@ -85,10 +85,12 @@ public struct SiriModule: MacSpaceModule, ModulePresentationReading {
         await checkFeatureModels()
         guard var snapshot = await store.reconcileModels(), snapshot.status.state != .releasing else { return nil }
         let moving = cleaning || !waiting.subtracting(stalled).isEmpty || !snapshot.featureDownloading.isEmpty || snapshot.downloadingModelBytes > 0
-        guard moving else { return nil }
+        let failures = await cleanup.failures
+        guard moving || !failures.isEmpty else { return nil }
         snapshot.cleaningFeatures = await cleanup.isFreeingVisibly
         snapshot.featureCleanupWaiting = await cleanup.waiting
         snapshot.featureCleanupStalled = await cleanup.stalled
+        snapshot.featureCleanupFailures = failures
         await Self.announceRestarts(snapshot, context: context)
         let presented = Self.presented(snapshot, context)
         return (SiriScreenBuilder.tile(presented), SiriScreenBuilder.screen(presented))
@@ -122,6 +124,7 @@ public struct SiriModule: MacSpaceModule, ModulePresentationReading {
         snapshot.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
         snapshot.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
         snapshot.featureCleanupStalled = await ManagedModelCleanup.shared.stalled
+        snapshot.featureCleanupFailures = await ManagedModelCleanup.shared.failures
         // Once per feature and restart: the restart is only worth asking for once macOS has kept the models for ten minutes, and the
         // user may not be looking at the page then.
         await Self.announceRestarts(snapshot, context: context)
@@ -206,6 +209,7 @@ public struct SiriModule: MacSpaceModule, ModulePresentationReading {
                 updated.cleaningFeatures = await ManagedModelCleanup.shared.isFreeingVisibly
                 updated.featureCleanupWaiting = await ManagedModelCleanup.shared.waiting
                 updated.featureCleanupStalled = await ManagedModelCleanup.shared.stalled
+                updated.featureCleanupFailures = await ManagedModelCleanup.shared.failures
                 updated = Self.presented(updated, context)
                 result.presentation = ModulePresentation(tile: SiriScreenBuilder.tile(updated), screen: SiriScreenBuilder.screen(updated))
             } else { await store.invalidate() }
@@ -302,6 +306,10 @@ public struct SiriModule: MacSpaceModule, ModulePresentationReading {
             }
             await ManagedModelCleanup.shared.waitForCurrent()
             let bytes = await freed.total
+            let errors = (await ManagedModelCleanup.shared.failures).values.sorted()
+            if !errors.isEmpty {
+                return ActionResult(outcome: .failed, message: loc("Couldn't free models."), details: errors, refresh: true, freedBytes: bytes)
+            }
             // Nothing went: macOS still keeps them. Said so, never All done.
             if bytes < PurgeRun.noise { return ActionResult(outcome: .needsAttention, message: loc("macOS still keeps these models."), refresh: true) }
             return .succeeded(PurgeRun.freedMessage(bytes), freedBytes: bytes)

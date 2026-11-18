@@ -34,6 +34,9 @@ enum AssetOwners {
                 let operationLock = try PrivateFile(folder.appendingPathComponent("operation.lock"), createDirectories: true).exclusiveLock()
                 defer { withExtendedLifetime(operationLock) {} }
                 let journal = try Journal(scope)
+                if journal.preservesLegacy {
+                    details.append("Older model recovery records were preserved without replay. macOS recreates those requests when the feature is enabled.")
+                }
                 let user = try userGUID()
                 let owner = try manager()
                 try reconcileTemporary(owner: owner, user: user)
@@ -51,7 +54,8 @@ enum AssetOwners {
                 result["releasedOwners"] = journal.removed
             }
         } catch {
-            result["error"] = (error as? Refusal)?.message ?? "Model owner operation failed"
+            result["error"] = (error as? Refusal)?.message
+                ?? (error is MetadataUnavailable ? "Protected model recovery is unavailable. Unlock your Mac and try again; existing recovery records were preserved." : "Model owner operation failed")
             result["pending"] = true
         }
         result["details"] = details
@@ -187,15 +191,18 @@ enum AssetOwners {
         struct Stored: Codable { var version = 2; var scope: String; var uid: UInt32; var entries: [Entry]; var cycleRemoved: Int? }
         let scope: AssetModelCleanup.Scope
         private let protected: ProtectedJournal
+        let preservesLegacy: Bool
         var entries: [Entry] = []
         /// Owners removed in this run only, not every earlier journal entry.
         private(set) var removed = 0
-        var url: URL { AssetModelCleanup.journal(scope) }
+        let url: URL
 
         init(_ scope: AssetModelCleanup.Scope) throws {
             self.scope = scope
-            let existing = AssetModelCleanup.hasRecoveryRecords
-            protected = try ProtectedJournal(url: AssetModelCleanup.journal(scope), purpose: "owners." + scope.rawValue, allowKeyCreation: !existing)
+            let (file, location) = try AssetOwnerRecovery().open(scope)
+            protected = file
+            url = location.url
+            preservesLegacy = location.preservesLegacy
             if let data = try protected.read() { entries = try Self.entries(data, scope: scope) }
         }
         /// This decoder accepts already-authenticated payloads only. Legacy files are never replayed.
@@ -487,8 +494,7 @@ enum AssetOwners {
         var requests: [TemporaryRequest]
         init() throws {
             let url = AssetModelCleanup.journal(.siri).deletingLastPathComponent().appendingPathComponent("temporary-v2.sealed")
-            let existing = AssetModelCleanup.hasRecoveryRecords
-            file = try ProtectedJournal(url: url, purpose: "temporary-owners", allowKeyCreation: !existing)
+            file = try ProtectedJournal(url: url, purpose: "temporary-owners", allowKeyCreation: AssetOwnerRecovery().canCreateKey())
             requests = try file.read().map { try JSONDecoder().decode([TemporaryRequest].self, from: $0) } ?? []
             try require(requests.count <= 128, "Too many temporary owner records")
         }

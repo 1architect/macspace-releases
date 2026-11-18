@@ -146,6 +146,7 @@
 "Managed by the kernel; shrinks after a restart." = "커널이 관리하며 재시동 후 줄어듭니다.";
 "Models and system assets" = "모델 및 시스템 에셋";
 "Mostly media. Clean it up from inside the app." = "대부분 미디어입니다. 앱 내에서 정리하세요.";
+"Moved to Trash" = "휴지통으로 이동함";
 "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select." = "xcode-select로 전체 Xcode를 선택하지 않은 경우 git, clang 및 Homebrew에 필요합니다.";
 "Not a cleanable item (%@)." = "정리할 수 없는 항목입니다(%@).";
 "Not identified" = "식별되지 않음";
@@ -157,7 +158,6 @@
 "Old diagnostic and crash reports" = "오래된 진단 및 충돌 보고서";
 "Old reports and unused system assets" = "오래된 보고서 및 미사용 시스템 에셋";
 "Old reports are deleted from Free now." = "지금 확보에서 오래된 보고서를 삭제합니다.";
-"Old reports are permanently deleted." = "오래된 리포트는 영구 삭제됩니다.";
 "Older version" = "이전 버전";
 "Open %@" = "%@ 열기";
 "Open now" = "열려 있음";

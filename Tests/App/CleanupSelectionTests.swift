@@ -1,4 +1,5 @@
 import XCTest
+import MacSpacePlatform
 import MacSpaceSdk
 @testable import MacSpaceApp
 
@@ -11,7 +12,8 @@ private struct CleanupSelectionModule: MacSpaceModule {
         let optedIn = context.options.bool(CleanupBatch.nonRecoverableOptionID)
         let rows = ["safe", "optional", "irreversible"].map { id in
             Row(id: id, title: id).selectingCleanup(Action(id: "clean", title: "Free", parameters: ["id": id, "variant": context.options.bool("flag") ? "one" : "two"],
-                confirmation: Confirmation(title: "Free " + id + "?", message: "Details for " + id, confirmTitle: "Free")),
+                confirmation: Confirmation(title: "Free " + id + "?", message: "Details for " + id, confirmTitle: "Free"),
+                trashSupport: id == "safe" ? .all : nil),
                 bytes: 100, automatic: id != "irreversible" || optedIn,
                 defaultSelected: id == "safe" || (id == "irreversible" && optedIn), remembersSelection: id != "irreversible")
         }
@@ -19,7 +21,8 @@ private struct CleanupSelectionModule: MacSpaceModule {
             widgets: [.list(ListWidget(id: "cleanups", rows: rows))])
     }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult {
-        calls.add((request.parameters["automatic"] == "1" ? "auto:" : "manual:") + (request.parameters["id"] ?? ""))
+        let prefix = request.moveToTrash == true ? "trash:" : (request.parameters["automatic"] == "1" ? "auto:" : "manual:")
+        calls.add(prefix + (request.parameters["id"] ?? ""))
         progress(.init(fraction: 1, message: "Done"))
         return ActionResult(outcome: .succeeded, message: "Done", refresh: false, freedBytes: 100)
     }
@@ -30,20 +33,34 @@ private struct CleanupSelectionModule: MacSpaceModule {
 
 @MainActor
 final class CleanupSelectionTests: XCTestCase {
-    private func handle(_ settings: SettingsStore, _ calls: Calls) async throws -> ModuleHandle {
+    private func handle(_ settings: SettingsStore, _ calls: Calls, confirm: @escaping @MainActor (Action) -> Bool = { _ in true }) async throws -> ModuleHandle {
         let directory = try Fixtures.temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         var manifest = Fixtures.manifest(); manifest.autoClean = true
         manifest.options.append(OptionDefinition(id: CleanupBatch.nonRecoverableOptionID, title: "Non recoverable", kind: .toggle(defaultValue: false)))
         try Fixtures.writeBundle(manifest, name: "Cleanup", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: settings, permissions: FakePermissions(), loader: { _ in CleanupSelectionModule(calls: calls) })
+        let handle = ModuleHandle(confirm: confirm, descriptor: descriptor, settings: settings, permissions: FakePermissions(), loader: { _ in CleanupSelectionModule(calls: calls) })
         await handle.activate()
         return handle
     }
     private func action(_ handle: ModuleHandle) throws -> Action {
         guard case let .idle(action)? = ActionDock(handle: handle, isVisible: .constant(false)).phase else { throw NSError(domain: "Missing cleanup action", code: 1) }
         return action
+    }
+
+    func testExistingTrashSettingDrivesTheLabelConfirmationAndModuleRequest() async throws {
+        let defaults = Fixtures.defaults(), calls = Calls()
+        defaults.set(true, forKey: FileRemovalSettings.moveToTrashKey)
+        var approved: Action?
+        let handle = try await handle(SettingsStore(defaults: defaults), calls, confirm: { approved = $0; return true })
+        defer { handle.deactivate() }
+        let action = try action(handle)
+        XCTAssertTrue(action.title.hasPrefix("Move to Trash"))
+        _ = await handle.perform(action)
+        XCTAssertEqual(approved?.confirmation?.confirmTitle, "Move to Trash")
+        XCTAssertTrue(approved?.confirmation?.message.contains("Items stay in Trash until it is emptied.") == true)
+        XCTAssertEqual(calls.all, ["trash:safe"])
     }
     func testChoicesPersistAcrossHandleRestartAndAutomaticCleanupUsesOnlyTheSavedSelection() async throws {
         let defaults = Fixtures.defaults(), calls = Calls()

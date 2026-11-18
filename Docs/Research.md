@@ -542,6 +542,34 @@ The physical purge stays in CacheDeleteClient/PurgeRun. Reported bytes and volum
 - The combined app flow (switches, inline flag animations, owner cleanup) has not been run live against real models. Do not claim
   permanent suppression, or that a Mac has been cleaned, on this evidence.
 
+### Legacy model recovery after upgrading (2026-11-13)
+
+**Measured — macOS 27.2 (26B123).** Earlier Siri and Phone owner journals were version-1 plaintext property lists.
+The newer owner engine required authenticated encrypted records at the same filenames. Read-only native inspection
+passed, but those legacy files could not satisfy the recovery reader. Active Siri and transcription requests and
+MobileAsset locks were still present. **Inferred from the measured files and code:** enablement stopped before
+restoring feature preferences, and cleanup stopped before withdrawing current owners. The cleanup error was added
+to the waiting set, so the screen incorrectly reported “Freeing in the background” indefinitely.
+
+The upgrade path now preserves recognized legacy files without decoding or replaying their native archives.
+Fresh operations record only currently observed, reviewed owners in separate protected journals; enablement restores
+the independently saved feature preferences and lets macOS recreate older requests. Existing authenticated records
+retain their original provenance checks. Interrupted legacy requests, conflicting modern records, missing protected
+keys, and tampered records still stop native operations. An authenticated record cannot be bypassed by replacing it
+with a legacy-looking file. Cleanup errors are shown separately from progress and can be retried explicitly.
+
+Fixture checks cover the storage transition, preservation of legacy bytes, and refusal cases; UI state is checked
+at the screen-builder level. **Unverified:** live enablement and model deletion with the repaired application.
+This does not establish permanent suppression or a guaranteed amount of reclaimed storage.
+
+**Measured — same macOS build.** The initial repair artifact was accidentally compiled with the debug configuration:
+79.3 MB of regular-file contents versus 50.7 MB for the preceding optimized build. Most growth was in the executables.
+The maintainer reported that modules did not finish loading. Captured logs showed a disk scan advancing slowly; they
+did not establish a deadlock or confirm a completed scan. Rebuilds for normal use must retain release optimization,
+independently of whether development tools are included. The corrected optimized artifact measured 50.8 MB, about
+71 KB more than the preceding optimized build. **Unverified:** whether the configuration change alone
+fully explains the live loading report; passing fixture tests does not establish that.
+
 ### CacheDelete
 
 **Measured.** `CacheDelete` is macOS's own purge, the one that runs when the disk is nearly full.

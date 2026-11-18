@@ -62,6 +62,7 @@
 "Developed by\n%@" = "開発者\n%@";
 "Does the few things that need an administrator." = "管理者権限が必要な一部の処理を行います。";
 "Drag into the Full Disk Access list" = "フルディスクアクセスのリストにドラッグ";
+"Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "対象の項目はゴミ箱を空にするまで残ります。その他の項目は通常のルールに従ってクリーンアップされます。";
 "Every 3 days" = "3日ごと";
 "Every day" = "毎日";
 "Every week" = "毎週";
@@ -89,6 +90,7 @@
 "In use" = "使用中";
 "Install helper" = "ヘルパーをインストール";
 "It does the few tasks that need an administrator." = "管理者権限が必要な一部の処理を行います。";
+"Items stay in Trash until it is emptied." = "項目はゴミ箱を空にするまで残ります。";
 "Keep running in the background" = "バックグラウンドで実行を続ける";
 "Keep running in the menu bar" = "メニューバーで実行を続ける";
 "Kept while Apple Intelligence is on" = "Apple Intelligenceがオンの間は保持";
@@ -110,7 +112,8 @@
 "Move MacSpace to the Applications folder, then reopen it." = "MacSpaceを「アプリケーション」に移動し、開き直してください。";
 "Move MacSpace to the Trash from Applications." = "「アプリケーション」からMacSpaceをゴミ箱に移動してください。";
 "Move MacSpace to your Applications folder first." = "先にMacSpaceを「アプリケーション」に移動してください。";
-"Move files to Trash" = "ファイルをゴミ箱に入れる";
+"Move files and caches to Trash when possible" = "可能な場合はファイルとキャッシュをゴミ箱に入れる";
+"Move to Trash" = "ゴミ箱に入れる";
 "Needed" = "必要";
 "Needed to measure everything on the disk." = "ディスク全体の測定に必要です。";
 "Needs %@" = "%@が必要";
@@ -129,7 +132,6 @@
 "Nothing to free" = "解放できるものはありません";
 "Notifications" = "通知";
 "OK" = "OK";
-"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "初期設定ではオフです。オフの場合、「アプリとファイル」で選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュのクリーンアップには、それぞれの削除ルールが適用されます。";
 "Open Login Items" = "ログイン項目を開く";
 "Open MacSpace" = "MacSpaceを開く";
 "Open Panel" = "パネルを開く";
@@ -179,6 +181,7 @@
 "This build of MacSpace does not contain the helper." = "このMacSpaceにはヘルパーが含まれていません。";
 "This copy of MacSpace is incomplete" = "このMacSpaceのコピーは不完全です";
 "This selection is unavailable. Refresh and try again." = "この選択は利用できません。更新して再試行してください。";
+"Trash preference changed. Review your selection again." = "ゴミ箱の設定が変更されました。選択内容を再確認してください。";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "リストのMacSpaceをオンにしてください。なければ、このアイコンをドラッグしてください。";
 "Turn on MacSpace under Allow in the Background." = "「バックグラウンドでの実行を許可」でMacSpaceをオンにしてください。";
 "Uninstall" = "アンインストール";

@@ -1313,6 +1313,15 @@
   "主にメディアです。アプリ内で整理してください。",
   "대부분 미디어입니다. 앱 내에서 정리하세요."
  ],
+ "Moved to Trash": [
+  "Movido para o Lixo",
+  "Placé dans la corbeille",
+  "Movido a la papelera",
+  "In den Papierkorb gelegt",
+  "已移到废纸篓",
+  "ゴミ箱に入れました",
+  "휴지통으로 이동함"
+ ],
  "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select.": [
   "Necessárias para git, clang e Homebrew, a menos que um Xcode completo esteja selecionado com xcode-select.",
   "Nécessaires à git, clang et Homebrew, sauf si un Xcode complet est sélectionné avec xcode-select.",
@@ -1411,15 +1420,6 @@
   "旧报告可在“立即释放”中删除。",
   "古いレポートは「今すぐ解放」で削除できます。",
   "지금 확보에서 오래된 보고서를 삭제합니다."
- ],
- "Old reports are permanently deleted.": [
-  "Os relatórios antigos são apagados de vez.",
-  "Les anciens rapports sont effacés définitivement.",
-  "Los informes antiguos se eliminan para siempre.",
-  "Alte Berichte werden dauerhaft gelöscht.",
-  "旧报告会被永久删除。",
-  "古いレポートは完全に削除されます。",
-  "오래된 리포트는 영구 삭제됩니다."
  ],
  "Older version": [
   "Versão antiga",

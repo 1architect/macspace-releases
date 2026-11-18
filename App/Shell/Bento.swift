@@ -1,7 +1,8 @@
 import CoreGraphics
+import MacSpaceSdk
 
 /// Packs tiles into a grid: each tile takes a number of columns and of rows, goes into the first place with room for it (row by row,
-/// left to right), and a tile one row high with empty cells after it stretches over them, so the grid stays a clean rectangle.
+/// left to right), and tiles stretch into adjoining empty cells within their preferred maximum.
 enum Bento {
     struct Placement: Equatable {
         var row: Int
@@ -12,10 +13,7 @@ enum Bento {
         var height = 1
     }
 
-    struct Size: Equatable {
-        var width: Int
-        var height: Int
-    }
+    typealias Size = Tile.GridSize
 
     /// Three columns once tiles can be at least ~190 points wide, else two.
     static func columns(for width: CGFloat) -> Int {
@@ -28,12 +26,15 @@ enum Bento {
     }
 
     /// One placement per size, in the same order.
-    static func pack(sizes: [Size], columns: Int) -> [Placement] {
+    static func pack(sizes: [Size], columns: Int, maximumSizes: [Size?]? = nil) -> [Placement] {
+        precondition(maximumSizes == nil || maximumSizes?.count == sizes.count)
         var grid: [[Int?]] = []
         var placements: [Placement] = []
         func isFree(_ row: Int, _ column: Int) -> Bool { row >= grid.count || grid[row][column] == nil }
-        for size in sizes {
-            let width = min(max(size.width, 1), columns), height = max(size.height, 1)
+        for (index, size) in sizes.enumerated() {
+            let maximum = maximumSizes?[index]
+            let width = max(1, min(size.width, columns, maximum?.width ?? columns))
+            let height = max(1, min(size.height, maximum?.height ?? size.height))
             var row = 0
             var column: Int?
             while column == nil {
@@ -50,9 +51,25 @@ enum Bento {
         // Empty cells: the one-row tile on their left takes them.
         for r in grid.indices {
             for c in 1..<max(columns, 1) where grid[r][c] == nil {
-                if let left = grid[r][c - 1], placements[left].height == 1 {
+                if let left = grid[r][c - 1], placements[left].height == 1,
+                   placements[left].span < (maximumSizes?[left]?.width ?? columns) {
                     placements[left].span += 1
                     grid[r][c] = left
+                }
+            }
+        }
+        if let maximumSizes {
+            // A capped tile can leave space along the bottom edge. Give it to tiles above it
+            // when the whole width can grow without moving another tile.
+            for index in placements.indices.reversed() {
+                let placement = placements[index]
+                let columns = placement.column..<(placement.column + placement.span)
+                let maximumHeight = maximumSizes[index]?.height ?? grid.count
+                while placements[index].height < maximumHeight {
+                    let nextRow = placement.row + placements[index].height
+                    guard nextRow < grid.count, columns.allSatisfy({ grid[nextRow][$0] == nil }) else { break }
+                    for column in columns { grid[nextRow][column] = index }
+                    placements[index].height += 1
                 }
             }
         }

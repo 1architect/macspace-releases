@@ -258,6 +258,12 @@ public final class ModuleHost: ObservableObject {
         if handle.isWatched { Task { await handle.refreshAfterChange() } }
     }
 
+    func refreshRemovalPreference() {
+        for handle in activeHandles where handle.isWatched {
+            Task { await handle.refreshAfterChange() }
+        }
+    }
+
     public func setBackgroundTask(_ enabled: Bool, _ taskID: String, module id: String) {
         settings.setBackgroundTask(enabled, taskID, module: id)
         applySchedule()

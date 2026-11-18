@@ -23,7 +23,7 @@ enum ActionCommand {
         do {
             let module = try ModuleLoader.load(descriptor)
             let context = ModuleContext(manifest: descriptor.manifest, options: EmptyOptions(), permissions: LivePermissionChecker(),
-                                        privileged: LazyPrivilegedChannel())
+                                        privileged: LazyPrivilegedChannel(), prefersTrash: FileRemovalSettings.movesToTrash())
             let result = await module.perform(ActionRequest(actionID: positional[1], parameters: parameters), context: context) { update in
                 FileHandle.standardError.write(Data("… \(update.message)\n".utf8))
             }

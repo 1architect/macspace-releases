@@ -14,7 +14,7 @@ enum DiskUnmatchedRemoval {
         return DiskAppDataRemoval.target(path, home: home)
     }
 
-    static func execute(ids: Set<String>, candidates: [AppLeftover],
+    static func execute(ids: Set<String>, candidates: [AppLeftover], moveToTrash: Bool = false,
                         home: String = FileManager.default.homeDirectoryForCurrentUser.path,
                         remove: ((String) throws -> Void)? = nil,
                         progress: ProgressSink = { _ in }) -> DiskFileRemoval.Result? {
@@ -41,7 +41,7 @@ enum DiskUnmatchedRemoval {
                     guard OpenFileUse.inspect([target.path])[target.path]?.isEmpty != false else { throw DiskAppDataRemoval.Failure.openFiles }
                     result.targets.append(target.path)
                     if let remove { try remove(target.path) }
-                    else { try ReviewedFileRemoval.removeAppData(target.path, expected: identity, moveToTrash: false, home: home) }
+                    else { try ReviewedFileRemoval.removeAppData(target.path, expected: identity, moveToTrash: moveToTrash, home: home) }
                 } else {
                     let identity = target.identity
                     let plan = try ReviewedDirectoryRemoval.prepare([.init(path: target.path, expected: .init(device: identity.device,
@@ -50,6 +50,8 @@ enum DiskUnmatchedRemoval {
                     if let remove {
                         try plan.validate(at: 0)
                         try remove(target.path)
+                    } else if moveToTrash {
+                        try plan.trash(at: 0)
                     } else {
                         try plan.remove(at: 0)
                     }

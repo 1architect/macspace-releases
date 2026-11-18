@@ -386,6 +386,9 @@ enum SiriScreenBuilder {
         // Nothing worth a size is left (`modelsSize`): the switch says no more, whatever macOS keeps of its catalog. Checked first:
         // the run in view said Freeing space on every switch it covered, models or not (2026-10-19).
         guard modelsSize(feature, snapshot) != nil else { return nil }
+        if let error = snapshot.featureCleanupFailures[feature] {
+            return Badge(loc("Couldn't free models."), .action, help: error)
+        }
         if snapshot.cleaningFeatures { return .freeingInBackground() }
         if needsRestart(feature, snapshot) {
             return .restartRequired(help: loc("macOS kept these models for ten minutes. After a restart, MacSpace deletes them."))

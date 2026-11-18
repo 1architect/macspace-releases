@@ -47,19 +47,13 @@ public enum AssetModelCleanup {
                        settings: Dictionary(uniqueKeysWithValues: ModelFeatureSettings.Feature.allCases.map { ($0, features.status($0)) }),
                        phone: PhoneFeatureFlags().status())
     }
-    public static func hasSavedOwners(_ scope: Scope) -> Bool { recoveryArtifactExists(journal(scope)) }
-    private static func recoveryArtifactExists(_ url: URL) -> Bool {
-        var info = stat()
-        return lstat(url.path, &info) == 0 || errno != ENOENT
-    }
-    static var hasRecoveryRecords: Bool {
-        Scope.allCases.contains(where: hasSavedOwners) || recoveryArtifactExists(journal(.siri).deletingLastPathComponent().appendingPathComponent("temporary-v2.sealed"))
-    }
+    public static func hasSavedOwners(_ scope: Scope) -> Bool { AssetOwnerRecovery().hasSavedOwners(scope) }
     /// MacSpace's withdrawal of the scope's owners is in effect: its journal has owners removed and not given back. The feature's
     /// shared families (speech recognition, voices) count while it is, not only in the run that withdrew them (`families`): counted
     /// only then, every recheck after the first found nothing to delete, said it was freeing, and never purged again (2026-10-19).
     static func hasWithdrawnOwners(_ scope: Scope) -> Bool {
-        guard let protected = try? ProtectedJournal(url: journal(scope), purpose: "owners." + scope.rawValue, allowKeyCreation: false),
+        guard let location = try? AssetOwnerRecovery().location(scope),
+              let protected = try? ProtectedJournal(url: location.url, purpose: location.purpose, allowKeyCreation: false),
               let data = try? protected.read(), let entries = try? AssetOwners.Journal.entries(data, scope: scope) else { return false }
         return entries.contains { $0.phase == .removed }
 
@@ -234,6 +228,8 @@ public actor ManagedModelCleanup {
     private var lastAttempt = Date.distantPast
     private var visible = false
     public private(set) var waiting: Set<ModelFeatureSettings.Feature> = []
+    /// A failed operation is not background progress. Retried at the normal interval or explicitly by the user.
+    public private(set) var failures: [ModelFeatureSettings.Feature: String] = [:]
     /// Features whose cleanup kept waiting while none of their models went for `stallTime`: macOS holds them, and only a restart
     /// lets them go. Siri sat on Waiting for macOS with 498 MB left, recheck after recheck, and never asked for the restart that freed
     /// it (2026-10-19, issue 32). A lock alone never makes one: macOS's services usually let go within minutes.
@@ -282,6 +278,7 @@ public actor ManagedModelCleanup {
         waiting.formIntersection(managed)
         stalled.formIntersection(managed)
         kept.formIntersection(managed)
+        failures = failures.filter { managed.contains($0.key) }
         stalls = stalls.filter { managed.contains($0.key) }
         let scopes = permitted.filter { scope in ModelFeatureSettings.Feature(rawValue: scope.rawValue).map { !kept.contains($0) } ?? true }
         guard !scopes.isEmpty else { return }
@@ -310,9 +307,19 @@ public actor ManagedModelCleanup {
     private var heldBack = false
     static let heldRecheck: TimeInterval = 30
 
-    private func record(_ result: AssetModelCleanup.Result) {
+    func record(_ result: AssetModelCleanup.Result) {
         heldBack = result.held
         guard let feature = ModelFeatureSettings.Feature(rawValue: result.scope.rawValue) else { return }
+        if let error = result.error, !result.held {
+            failures[feature] = error
+            waiting.remove(feature)
+            stalled.remove(feature)
+            kept.remove(feature)
+            stalls[feature] = nil
+            restartsAsked.remove(feature)
+            return
+        }
+        failures[feature] = nil
         if result.error != nil || result.owners.pending { waiting.insert(feature) } else { waiting.remove(feature) }
         stall(feature, result)
     }

@@ -37,6 +37,9 @@ enum TargetedSystemDataMeasurements {
             entries = CachesPage.entries(snapshot).filter { selected.contains($0.id) }.flatMap(\.parts)
         } else { entries = ["cleanAll", "autoClean"].contains(request.actionID) ? CachesPage.chosen(snapshot).filter { request.actionID != "autoClean" || !$0.open }.flatMap(\.parts) : [] }
         var ids = itemIDs(request, snapshot: snapshot)
+        if request.moveToTrash == true, ["clean", "cleanReports", "freeCaches", "cleanAll"].contains(request.actionID) {
+            ids.insert("trash:user")
+        }
         ids.formUnion(entries.filter { $0.within == $0.id }.map(\.id))
         if entries.contains(where: { $0.source == .homebrew }) {
             ids.formUnion(["packages:homebrew", "appcache:Homebrew"])

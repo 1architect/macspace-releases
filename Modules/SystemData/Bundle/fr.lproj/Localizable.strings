@@ -146,6 +146,7 @@
 "Managed by the kernel; shrinks after a restart." = "Géré par le noyau ; diminue après un redémarrage.";
 "Models and system assets" = "Modèles et ressources système";
 "Mostly media. Clean it up from inside the app." = "Surtout des médias. Faites le ménage depuis l’app.";
+"Moved to Trash" = "Placé dans la corbeille";
 "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select." = "Nécessaires à git, clang et Homebrew, sauf si un Xcode complet est sélectionné avec xcode-select.";
 "Not a cleanable item (%@)." = "Élément non nettoyable (%@).";
 "Not identified" = "Non identifié";
@@ -157,7 +158,6 @@
 "Old diagnostic and crash reports" = "Anciens rapports de diagnostic et de plantage";
 "Old reports and unused system assets" = "Anciens rapports et ressources système inutilisées";
 "Old reports are deleted from Free now." = "Les anciens rapports sont supprimés depuis À libérer.";
-"Old reports are permanently deleted." = "Les anciens rapports sont effacés définitivement.";
 "Older version" = "Ancienne version";
 "Open %@" = "Ouvrir %@";
 "Open now" = "Ouvert";

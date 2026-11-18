@@ -165,10 +165,14 @@ public struct ProcessCheck: Sendable {
     /// seen; deleting one is harmless to the process that maps it, and a tool that maps caches is found by its name instead.
     @Sendable static func liveHoldsOpen(_ paths: [String]) -> Bool? {
         // The kernel reports real paths (`/private/var/folders/…`), so the paths are compared in that form.
-        let roots = paths.compactMap { path -> String? in
-            guard let real = realpath(path, nil) else { return nil }
-            defer { free(real) }
-            return String(cString: real)
+        var roots: [String] = []
+        for path in paths {
+            guard let real = realpath(path, nil) else {
+                if errno == ENOENT { continue }
+                return nil
+            }
+            roots.append(String(cString: real))
+            free(real)
         }
         guard !roots.isEmpty else { return false }
         func isUnder(_ path: String) -> Bool { roots.contains { path == $0 || path.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") } }
@@ -180,15 +184,17 @@ public struct ProcessCheck: Sendable {
                 let cwd = withUnsafePointer(to: folders.pvi_cdir.vip_path) { $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) } }
                 if isUnder(cwd) { return true }
             }
+            errno = 0
             let size = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
             guard size > 0 else {
-                if errno == ESRCH || isAppleSystemProgram(program) { continue }
+                if errno == 0 || errno == ESRCH || isAppleSystemProgram(program) { continue }
                 return nil
             }
             var fds = [proc_fdinfo](repeating: proc_fdinfo(), count: Int(size) / MemoryLayout<proc_fdinfo>.size + 16)
+            errno = 0
             let listed = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, &fds, Int32(fds.count * MemoryLayout<proc_fdinfo>.size))
             guard listed > 0 else {
-                if errno == ESRCH || isAppleSystemProgram(program) { continue }
+                if errno == 0 || errno == ESRCH || isAppleSystemProgram(program) { continue }
                 return nil
             }
             for fd in fds.prefix(Int(listed) / MemoryLayout<proc_fdinfo>.size) where fd.proc_fdtype == UInt32(PROX_FDTYPE_VNODE) {

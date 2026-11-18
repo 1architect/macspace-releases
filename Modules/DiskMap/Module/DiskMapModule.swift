@@ -196,7 +196,7 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
     public func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
         if let request = ActionPageRequest(pageID: id) {
             if request.destination == DiskFileReview.destination {
-                let page = await fileReview(parameters: request.parameters)
+                let page = await fileReview(parameters: request.parameters, moveToTrash: context.prefersTrash)
                 progress(1)
                 return page
             }
@@ -205,10 +205,9 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
             // Review is navigation over the already presented catalog. Destructive execution below
             // still forces a fresh inventory and validates every original app/data identity.
             let apps = await inventory.passive()
-            guard let plans = DiskUninstallBatch.plans(parameters: request.parameters, apps: apps), let selected = DiskUninstallBatch.resolve(plans, apps: apps) else {
-                return Screen(title: loc("Review app data"), layout: .singleColumn, widgets: [.list(ListWidget(id: "uninstall-changed", emptyMessage: loc("App ownership changed. Reopen the app list and review it again."), rows: []))])
-            }
-            let page = DiskMapScreenBuilder.uninstallReview(index, selected: selected, apps: apps)
+            guard let plans = DiskUninstallBatch.reviewedPlans(request.parameters),
+                  let selected = DiskUninstallBatch.reviewApps(plans, apps: apps) else { return nil }
+            let page = DiskMapScreenBuilder.uninstallReview(index, selected: selected, apps: apps, moveToTrash: context.prefersTrash)
             progress(1)
             return page
         }
@@ -267,18 +266,18 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
         if id.hasPrefix("uninstall-review:"), let data = Data(base64Encoded: String(id.dropFirst("uninstall-review:".count))), let path = String(data: data, encoding: .utf8) {
             let apps = await inventory.navigation(index)
             guard let app = apps.apps.first(where: { $0.owner.path == path && $0.classification == .installedUser && $0.removable }) else { return nil }
-            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps)
+            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, moveToTrash: context.prefersTrash)
         }
         if id.hasPrefix("app:"), let data = Data(base64Encoded: String(id.dropFirst(4))), let path = String(data: data, encoding: .utf8) {
             let apps = await browsing(index)
             guard let app = apps.apps.first(where: { $0.owner.path == path && $0.classification == .installedUser && $0.removable }) else { return nil }
-            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps)
+            return DiskMapScreenBuilder.uninstallReview(index, app: app, apps: apps, moveToTrash: context.prefersTrash)
         }
-        if id == "app-data-review" { return DiskMapScreenBuilder.leftoversPage(await inventory.navigation(index)) }
+        if id == "app-data-review" { return DiskMapScreenBuilder.leftoversPage(await inventory.navigation(index), moveToTrash: context.prefersTrash) }
         return nil
     }
 
-    private func fileReview(parameters: [String: String]) async -> Screen {
+    private func fileReview(parameters: [String: String], moveToTrash: Bool) async -> Screen {
         do {
             if let id = parameters["id"], let reviewed = parameters["reviewed"] {
                 let index = await store.navigation().index
@@ -286,7 +285,7 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
                     origins: parameters["origin"].map { [id: $0] } ?? [:]), let file = files.first, files.count == 1 else {
                     return DiskFileReview.unavailable(loc("Selected files changed or are unavailable. Review your selection again."))
                 }
-                return DiskFileReview.single(file, parameters: parameters)
+                return DiskFileReview.single(file, parameters: parameters.merging(["trash": moveToTrash ? "1" : "0"]) { _, updated in updated })
             }
             let token: String
             if let existing = parameters["selectionToken"] { token = existing }
@@ -308,7 +307,7 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
                 next = ActionPageRequest(destination: DiskFileReview.destination,
                     parameters: ["selectionToken": token, "after": last.path]).pageID
             }
-            return DiskFileReview.screen(files: files, bulk: bulk, next: next)
+            return DiskFileReview.screen(files: files, bulk: bulk, next: next, moveToTrash: moveToTrash)
         } catch { return DiskFileReview.unavailable(error.localizedDescription) }
     }
     /// Fresh metadata establishes eligibility; every removal keeps the frozen selection's original identity and proof.
@@ -421,10 +420,11 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
         do { for key in ["ids", "all"] { _ = try Selection.decodeIDs(request.parameters[key]) } }
         catch { return .failed(loc("Selected cleanup items changed. Review your selection again.")) }
 
-        let moveToTrash = request.parameters["trash"] == "1"
-        if ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "uninstall", "uninstallSelected"].contains(request.actionID),
-           (!["0", "1"].contains(request.parameters["trash"] ?? "") || moveToTrash != FileRemovalSettings.movesToTrash()) {
-            return .failed(loc("File removal settings changed. Reopen the list and confirm again."))
+        let moveToTrash = request.moveToTrash ?? context.prefersTrash
+        let fileRemoval = ["freeFiles", "freeDuplicates", "deleteGraphFile", "deleteFolder", "freeUnmatchedData"].contains(request.actionID)
+        if fileRemoval || ["uninstall", "uninstallSelected"].contains(request.actionID),
+           (request.parameters["trash"] != (moveToTrash ? "1" : "0") || moveToTrash != context.prefersTrash) {
+            return .init(outcome: .needsAttention, message: loc("Selected cleanup items changed. Review your selection again."), refresh: true)
         }
         let index = await store.snapshot()
         let before = DataVolume.freeBytes()
@@ -476,11 +476,10 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
             guard let token = request.parameters["selectionToken"] else { return .failed(loc("Reopen the list and review your selection again.")) }
             (result, remainingSelection) = await removeSelection(token: token, index: index, moveToTrash: moveToTrash, progress: progress)
         case "freeUnmatchedData":
-            guard request.parameters["trash"] == "0" else { return .failed(loc("Reopen the list and confirm deletion again.")) }
             let apps = await inventory.read(index, force: true)
             guard let ids = try? Selection.decodeIDs(request.parameters["ids"]),
-                  let removal = DiskUnmatchedRemoval.execute(ids: Set(ids), candidates: apps.reviewableLeftovers, progress: progress) else {
-                return .failed(loc("App data changed. Reopen the list and review your selection again."))
+                  let removal = DiskUnmatchedRemoval.execute(ids: Set(ids), candidates: apps.reviewableLeftovers, moveToTrash: moveToTrash, progress: progress) else {
+                return .init(outcome: .needsAttention, message: loc("Selected cleanup items changed. Review your selection again."), refresh: true)
             }
             await store.mark(removal.targets.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             result = ActionResult(outcome: removal.failures.isEmpty ? .succeeded : .needsAttention,
@@ -503,15 +502,20 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
                 selectedApps = try DiskUninstallBatch.validate(plans, apps: apps, home: FileManager.default.homeDirectoryForCurrentUser.path,
                     running: [])
             }
-            catch { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
+            catch {
+                return .init(outcome: .needsAttention, message: loc("Selected cleanup items changed. Review your selection again."), refresh: true)
+            }
             guard let helper = context.privileged else { return .failed(loc("Install the helper in Settings")) }
             var selected = Set(Selection.ids(request.parameters["ids"]))
             if request.parameters["selectApps"] == "1" { selected.subtract(reviewedPlans.map { $0.owner.path }) }
             guard selected.count <= 32 else { return .failed(DiskAppDataRemoval.Failure.tooMany.localizedDescription) }
             let dataShare = selected.isEmpty ? 0.0 : 0.7
             let candidates = DiskUninstallBatch.dataCandidates(selectedApps, apps: apps)
-            guard selected.isSubset(of: Set(candidates.map(\.id))) else {
-                return .failed(loc("App data changed. Reopen the list and review your selection again."))
+            let original: [DiskAppDataRemoval.Target]
+            do { original = try DiskAppDataRemoval.resolveReviewedIDs(selected, candidates: candidates) }
+            catch {
+                return .init(outcome: .needsAttention, message: loc("Some app data could not be removed"),
+                             details: [error.localizedDescription], refresh: true)
             }
             guard await DiskAppLifecycle.quit(selectedApps.map { $0.owner.path }) else {
                 return .failed(loc("The selected apps are still in use. Finish saving or close them, then try again."))
@@ -520,25 +524,27 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
             // bundle/lifecycle plans before any optional user data is touched.
             do {
                 _ = try DiskUninstallBatch.validate(plans, apps: apps, home: FileManager.default.homeDirectoryForCurrentUser.path, running: [])
-            } catch { return .failed(loc("App ownership changed. Reopen the app list and review it again.")) }
+            } catch {
+                return .init(outcome: .needsAttention, message: loc("Selected cleanup items changed. Review your selection again."), refresh: true)
+            }
             let dataRemoval: DiskAppDataRemoval.Result
             do {
-                let original = candidates.filter { selected.contains($0.id) }
                 let current = try DiskAppDataRemoval.refreshedAfterQuitting(original, home: FileManager.default.homeDirectoryForCurrentUser.path)
-                let originalIDs = Dictionary(uniqueKeysWithValues: zip(current, original).map { ($0.id, $1.id) })
                 dataRemoval = try DiskAppDataRemoval.remove(ids: Set(current.map(\.id)), candidates: current, moveToTrash: moveToTrash,
                     progress: { update in
                         var mapped = update; mapped.fraction = (update.fraction ?? 0) * dataShare
-                        mapped.finished = update.finished.compactMap { originalIDs[$0] }
                         progress(mapped)
                     })
-            } catch { return .failed(loc("App data changed. Reopen the list and review your selection again."), details: [error.localizedDescription]) }
+            } catch {
+                return .init(outcome: .needsAttention, message: loc("Some app data could not be removed"),
+                             details: [error.localizedDescription], refresh: true)
+            }
             await store.mark(dataRemoval.removed.map { DiskApplications.measuredPath($0, index: index) }, recursive: true)
             if !dataRemoval.failures.isEmpty {
                 result = ActionResult(outcome: .needsAttention, message: loc("Some app data could not be removed"), details: dataRemoval.failures)
                 break
             }
-            var failures: [String] = [], finished = candidates.filter { selected.contains($0.id) }.map(\.id)
+            var failures: [String] = [], finished = original.map(\.id)
             for (offset, plan) in plans.enumerated() {
                 do {
                     try await DiskLoginItems.remove(for: plan.owner)
@@ -559,7 +565,10 @@ public struct DiskMapModule: MacSpaceModule, ModulePresentationReading {
                 message: failures.isEmpty ? loc("Uninstalled") : loc("Some apps could not be uninstalled"), details: failures)
         default: return .failed(loc("Unknown action"))
         }
-        if let before, let after = DataVolume.freeBytes() { result.freedBytes = after > before ? after - before : 0 }
+        if moveToTrash && fileRemoval {
+            result.freedBytes = 0
+            if result.outcome == .succeeded { result.message = loc("Moved to Trash") }
+        } else if let before, let after = DataVolume.freeBytes() { result.freedBytes = after > before ? after - before : 0 }
         let updated = await store.view()
         let apps = await inventory.read(updated.index)
         await store.recordOwnership(apps)

@@ -146,6 +146,7 @@
 "Managed by the kernel; shrinks after a restart." = "カーネルが管理し、再起動後に縮小します。";
 "Models and system assets" = "モデルとシステムアセット";
 "Mostly media. Clean it up from inside the app." = "主にメディアです。アプリ内で整理してください。";
+"Moved to Trash" = "ゴミ箱に入れました";
 "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select." = "xcode-selectで完全なXcodeを選択していなければ、git、clang、Homebrewに必要です。";
 "Not a cleanable item (%@)." = "クリーンアップできない項目です（%@）。";
 "Not identified" = "未識別";
@@ -157,7 +158,6 @@
 "Old diagnostic and crash reports" = "古い診断・クラッシュレポート";
 "Old reports and unused system assets" = "古いレポートと未使用のシステムアセット";
 "Old reports are deleted from Free now." = "古いレポートは「今すぐ解放」で削除できます。";
-"Old reports are permanently deleted." = "古いレポートは完全に削除されます。";
 "Older version" = "古いバージョン";
 "Open %@" = "%@を開く";
 "Open now" = "起動中";

@@ -190,6 +190,10 @@ public enum ActionRole: String, Codable, Sendable {
 /// The app asks for confirmation first when `confirmation` is set, and for any missing
 /// `requires` permission before it calls the module.
 public struct Action: Codable, Equatable, Sendable {
+    public enum TrashSupport: String, Codable, Sendable {
+        case all, some
+    }
+
     public var id: String
     public var title: String
     public var symbol: String?
@@ -206,9 +210,15 @@ public struct Action: Codable, Equatable, Sendable {
     public var labelSamples: [String]?
     /// Opens a module-owned review page instead of executing a mutation.
     public var pageID: String?
+    /// Modules declare which removal actions can honor the user's Trash preference.
+    /// For a mixed action, the module still decides which individual targets can be moved.
+    public var trashSupport: TrashSupport?
+    /// An action that empties Trash runs before a batch moves more items there.
+    public var emptiesTrash: Bool?
 
     public init(id: String, title: String, symbol: String? = nil, role: ActionRole = .normal, parameters: [String: String] = [:],
-                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil, labelSamples: [String]? = nil, pageID: String? = nil) {
+                confirmation: Confirmation? = nil, requires: [Permission] = [], workingTitle: String? = nil, labelSamples: [String]? = nil, pageID: String? = nil,
+                trashSupport: TrashSupport? = nil, emptiesTrash: Bool? = nil) {
         self.id = id
         self.title = title
         self.symbol = symbol
@@ -219,6 +229,13 @@ public struct Action: Codable, Equatable, Sendable {
         self.workingTitle = workingTitle
         self.labelSamples = labelSamples
         self.pageID = pageID
+        self.trashSupport = trashSupport
+        self.emptiesTrash = emptiesTrash
+    }
+
+    public func request(prefersTrash: Bool, extraParameters: [String: String] = [:], rowID: String? = nil) -> ActionRequest {
+        ActionRequest(actionID: id, parameters: parameters.merging(extraParameters) { _, extra in extra },
+                      rowID: rowID, moveToTrash: prefersTrash && trashSupport != nil)
     }
 }
 
@@ -733,9 +750,12 @@ public struct Selection: Codable, Equatable, Sendable {
     public var noteChoiceIDs: Set<String>
     /// A short, localized confirmation message when any of `noteChoiceIDs` is checked.
     public var note: String?
+    /// When supplied, only these choice IDs support Trash. The host resolves their support for the current selection.
+    public var trashChoiceIDs: Set<String>?
 
     public init(action: Action, choices: [String: UInt64], checked: [String] = [], suggested: [String]? = nil, suggestedTitle: String? = nil,
-                sections: [SelectionSection] = [], save: Action? = nil, noteChoiceIDs: Set<String> = [], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:], persistenceKey: String? = nil) {
+                sections: [SelectionSection] = [], save: Action? = nil, noteChoiceIDs: Set<String> = [], note: String? = nil, scope: String? = nil, partial: Bool = false, session: Bool = false, reviewed: [String: String] = [:], origins: [String: String] = [:], bulk: SelectionBulk? = nil, bulkResolver: String? = nil, includedBytes: UInt64? = nil, parents: [String: String] = [:], persistenceKey: String? = nil,
+                trashChoiceIDs: Set<String>? = nil) {
         self.scope = scope
         self.partial = partial
         self.session = session
@@ -755,9 +775,10 @@ public struct Selection: Codable, Equatable, Sendable {
         self.save = save
         self.noteChoiceIDs = noteChoiceIDs
         self.note = note
+        self.trashChoiceIDs = trashChoiceIDs
     }
 
-    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteChoiceIDs, note, persistenceKey }
+    private enum CodingKeys: String, CodingKey { case scope, partial, session, reviewed, origins, bulk, bulkResolver, action, choices, includedBytes, parents, checked, suggested, suggestedTitle, sections, save, noteChoiceIDs, note, persistenceKey, trashChoiceIDs }
 
     /// The fields after `checked` may be missing (a screen written before they existed).
     public init(from decoder: Decoder) throws {
@@ -781,6 +802,7 @@ public struct Selection: Codable, Equatable, Sendable {
         save = try container.decodeIfPresent(Action.self, forKey: .save)
         noteChoiceIDs = try container.decodeIfPresent(Set<String>.self, forKey: .noteChoiceIDs) ?? []
         note = try container.decodeIfPresent(String.self, forKey: .note)
+        trashChoiceIDs = try container.decodeIfPresent(Set<String>.self, forKey: .trashChoiceIDs)
     }
 
     /// Opaque IDs have no separator semantics. Legacy delimiter payloads never authorize work.

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import MacSpacePlatform
 import MacSpaceSdk
 
 /// Everything the user chooses in Settings: which modules are on, each module's options and background tasks.
@@ -10,6 +11,8 @@ public final class SettingsStore: @unchecked Sendable {
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
+
+    var prefersTrash: Bool { FileRemovalSettings.movesToTrash(defaults) }
 
     /// Store explicit true and false decisions. Temporarily missing rows retain their preferences.
     public func cleanupChoices(module id: String) -> [String: Bool] {

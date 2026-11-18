@@ -39,9 +39,11 @@ extension ModuleHandle {
         let batch = Confirmation(title: String(localized: "Free the selected items?"),
             message: String(localized: "Save your work first. Some changes may be permanent."), confirmTitle: String(localized: "Free"))
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let trashSupport: Action.TrashSupport? = targets.contains { $0.action.trashSupport != nil }
+            ? (targets.allSatisfy { $0.action.trashSupport == .all } ? .all : .some) : nil
         return Action(id: CleanupBatch.actionID, title: String(localized: "Free selected"), role: .prominent,
             parameters: ["targets": String(decoding: (try? encoder.encode(targets)) ?? Data(), as: UTF8.self)],
             confirmation: confirmation ?? batch,
-            requires: required, workingTitle: String(localized: "Freeing space"))
+            requires: required, workingTitle: String(localized: "Freeing space"), trashSupport: trashSupport)
     }
 }

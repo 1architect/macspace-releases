@@ -42,7 +42,7 @@ final class DiskUninstallBatchTests: DiskSecurityFixtureCase {
             if case let .list(list) = first.widgets[0] {
                 XCTAssertTrue(list.rows.allSatisfy { $0.actions.isEmpty && $0.pageID == nil && $0.detail == nil })
             } else { XCTFail("Expected app list") }
-            let plans = try XCTUnwrap(DiskUninstallBatch.plans(parameters: parameters(apps.apps), apps: apps))
+            let plans = try XCTUnwrap(DiskUninstallBatch.reviewedPlans(parameters(apps.apps)))
             let selected = try XCTUnwrap(DiskUninstallBatch.resolve(plans, apps: apps))
             var index = DiskIndex(root: home)
             let pending = home + "/Library/Application Support/One"
@@ -116,14 +116,16 @@ final class DiskUninstallBatchTests: DiskSecurityFixtureCase {
     func testStaleDuplicateAndForgedAppSelectionsRejectTheWholeBatchBeforeRemoval() throws {
         try fixture { home, apps in
             let frozen = try parameters(apps.apps)
-            let plans = try XCTUnwrap(DiskUninstallBatch.plans(parameters: frozen, apps: apps))
+            let plans = try XCTUnwrap(DiskUninstallBatch.reviewedPlans(frozen))
             var bad = frozen; bad["ids"] = frozen["ids"]! + "\nforged"
-            XCTAssertNil(DiskUninstallBatch.plans(parameters: bad, apps: apps))
+            XCTAssertNil(DiskUninstallBatch.reviewedPlans(bad))
             bad["ids"] = Selection.parameter([apps.apps[0].owner.path, apps.apps[0].owner.path])
-            XCTAssertNil(DiskUninstallBatch.plans(parameters: bad, apps: apps))
+            XCTAssertNil(DiskUninstallBatch.reviewedPlans(bad))
             XCTAssertThrowsError(try DiskUninstallBatch.validate(plans, apps: apps, home: home, running: [apps.apps[1].owner.identifier]))
             try Data("changed".utf8).write(to: URL(fileURLWithPath: apps.apps[1].owner.path + "/new-file"))
             XCTAssertThrowsError(try DiskUninstallBatch.validate(plans, apps: apps, home: home, running: []))
+            XCTAssertEqual(DiskUninstallBatch.reviewApps(plans, apps: apps)?.map(\.owner.path), plans.map(\.owner.path),
+                           "an expired execution plan can still locate the same apps for a fresh review")
             XCTAssertTrue(apps.apps.allSatisfy { FileManager.default.fileExists(atPath: $0.owner.path) })
             XCTAssertTrue(FileManager.default.fileExists(atPath: home + "/Library/Application Support/One/data"))
         }

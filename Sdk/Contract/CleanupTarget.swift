@@ -111,11 +111,15 @@ public enum CleanupBatch {
         }
         let missing = targets.flatMap(\.action.requires).contains { context.permissions.status(of: $0) != .granted }
         if !automatic && missing { return .failed(String(localized: "Needs permission for the selected cleanup.")) }
+        let ordered = context.prefersTrash
+            ? targets.filter { $0.action.emptiesTrash == true } + targets.filter { $0.action.emptiesTrash != true }
+            : targets
         var details: [String] = [], finished: [String] = []
         var freed: UInt64 = 0, measured = false, failed = false, restart = false
         var presentation: ModulePresentation?
         var pending = false, completedAny = false
-        for (index, target) in targets.enumerated() {
+        var failureMessage: String?
+        for (index, target) in ordered.enumerated() {
             if Task.isCancelled { failed = true; break }
             if automatic && (!target.available || !target.automatic) { continue }
             if automatic && target.action.requires.contains(where: { context.permissions.status(of: $0) != .granted }) {
@@ -123,15 +127,14 @@ public enum CleanupBatch {
                 details.append(target.title + ": " + String(localized: "Needs permission for the selected cleanup."))
                 continue
             }
-            var parameters = target.action.parameters
-            if automatic { parameters["automatic"] = "1" }
             let completed = finished
-            let request = ActionRequest(actionID: target.action.id, parameters: parameters)
+            let request = target.action.request(prefersTrash: context.prefersTrash, extraParameters: automatic ? ["automatic": "1"] : [:])
             let result = await perform(request, context) { update in
                 progress(.init(fraction: (Double(index) + (update.fraction ?? 0)) / Double(targets.count), message: update.message, finished: completed))
             }
             if let value = result.freedBytes { measured = true; freed += value }
             failed = failed || result.outcome != .succeeded
+            if targets.count == 1, result.outcome != .succeeded, !result.message.isEmpty { failureMessage = result.message }
             restart = restart || result.restartRequired
             details += [target.title + ": " + result.message] + result.details
             let inBackground = result.presentation?.screen.activeCleanupRow(for: request) == true
@@ -141,7 +144,7 @@ public enum CleanupBatch {
             progress(.init(fraction: Double(index + 1) / Double(targets.count), message: target.action.workingTitle ?? "", finished: finished))
         }
         return .init(outcome: failed ? .needsAttention : .succeeded,
-            message: failed ? String(localized: "Some selected items could not be cleaned.") : pending && !completedAny ? "" : String(localized: "Cleaned selected items"),
+            message: failed ? failureMessage ?? String(localized: "Some selected items could not be cleaned.") : pending && !completedAny ? "" : String(localized: "Cleaned selected items"),
             details: details, restartRequired: restart, freedBytes: measured ? freed : nil, presentation: presentation)
     }
 

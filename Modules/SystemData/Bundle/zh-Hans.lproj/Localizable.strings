@@ -146,6 +146,7 @@
 "Managed by the kernel; shrinks after a restart." = "由内核管理，重新启动后会缩小。";
 "Models and system assets" = "模型与系统资源";
 "Mostly media. Clean it up from inside the app." = "主要是媒体，请在应用内清理。";
+"Moved to Trash" = "已移到废纸篓";
 "Needed by git, clang and Homebrew unless a full Xcode is selected with xcode-select." = "除非已通过 xcode-select 选择完整 Xcode，否则 git、clang 和 Homebrew 需要它。";
 "Not a cleanable item (%@)." = "不可清理的项目（%@）。";
 "Not identified" = "未识别";
@@ -157,7 +158,6 @@
 "Old diagnostic and crash reports" = "旧诊断与崩溃报告";
 "Old reports and unused system assets" = "旧报告和未使用的系统资源";
 "Old reports are deleted from Free now." = "旧报告可在“立即释放”中删除。";
-"Old reports are permanently deleted." = "旧报告会被永久删除。";
 "Older version" = "旧版本";
 "Open %@" = "打开 %@";
 "Open now" = "正在运行";

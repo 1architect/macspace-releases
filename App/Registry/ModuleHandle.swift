@@ -209,11 +209,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
     private func openRequestedPage() async {
         guard let id = requestedPage, let module, screenIsVisible, state == .ready else { return }
         let generation = requestedPageGeneration, parent = groupPath, action = actionGeneration, reading = refreshGeneration
-        guard let page = await preparedPage(await loadPage(id)), requestedPage == id,
+        let loaded = await preparedPage(await loadPage(id))
+        guard requestedPage == id,
               generation == requestedPageGeneration, parent == groupPath, state == .ready, screenIsVisible,
               action == actionGeneration, reading == refreshGeneration else { return }
+        requestedPage = nil
+        guard let page = loaded else { return }
         reconcileSelection(page)
-        requestedPage = nil; pages[id] = page; pageIDs[id] = id; retainPage(id)
+        pages[id] = page; pageIDs[id] = id; retainPage(id)
         withAnimation(Theme.push) { groupPath.append(id) }
         scheduleAutoRefresh()
     }
@@ -294,12 +297,13 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         return page
     }
 
-    private func refreshPages(all: Bool = false) async {
+    private func refreshPages(all: Bool = false, progress: @escaping LoadProgressSink = { _ in }) async {
         guard let module else { return }
         let reading = refreshGeneration, action = actionGeneration, navigation = requestedPageGeneration
-        for id in (all ? groupPath : Array(groupPath.suffix(1))) where pages[id] != nil {
+        let openPages = groupPath.filter { pages[$0] != nil }
+        for id in (all ? openPages : Array(openPages.suffix(1))) {
             let destination = pageIDs[id] ?? id
-            let page = await preparedPage(await module.page(id: destination, context: context()))
+            let page = await preparedPage(await module.page(id: destination, context: context(), progress: progress))
             guard state == .ready, reading == refreshGeneration, action == actionGeneration,
                   navigation == requestedPageGeneration, (pageIDs[id] ?? id) == destination else { return }
             if let position = groupPath.firstIndex(of: id), page == nil {
@@ -844,7 +848,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
 
     public func context() -> ModuleContext {
         ModuleContext(manifest: manifest, options: settings.optionStore(for: manifest), permissions: permissions, privileged: privileged,
-                      services: AppModuleServices(module: id, openPane: openPane), cleanupChoices: settings.cleanupChoices(module: id))
+                      services: AppModuleServices(module: id, openPane: openPane), cleanupChoices: settings.cleanupChoices(module: id),
+                      prefersTrash: settings.prefersTrash)
     }
 
     public func missingPermissions() -> [Permission] {
@@ -1021,10 +1026,14 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 for segment in forest.hero?.segments ?? [] {
                     if let pageID = segment.pageID { await module.invalidate(pageID: pageID, context: context) }
                 }
-            } else { await module.invalidate(pageID: groupPath.last.map { pageIDs[$0] ?? $0 }, context: context) }
+            } else {
+                let page = groupPath.last { pages[$0] != nil } ?? groupPath.last
+                await module.invalidate(pageID: page.map { pageIDs[$0] ?? $0 }, context: context)
+            }
         }
         // What the module says of its progress fills the Loading button (`LoadFill.reported`).
         let delivery = LoadProgressRelay()
+        let readsLazyPage = reload && !quiet && groupPath.contains { pages[$0] != nil }
         delivery.attach { [weak self, weak flight] fraction in
             Task { @MainActor in
                 guard let self, let flight, !flight.silent, generation == self.refreshGeneration,
@@ -1038,7 +1047,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             }
         }
         defer { flight.startScreen = nil }
-        let reports: LoadProgressSink = { if $0.isFinite { delivery.report($0) } }
+        let reports = delivery.part(0...(readsLazyPage ? 0.75 : 1))
         let newTile: Tile
         let newScreen: Screen?
         if quiet, !reload, let status = await module.status(context: context) {
@@ -1077,7 +1086,12 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             lastScreenRefreshed = refreshClock()
         }
         if reload { invalidateClosedPages() }
-        await refreshPages()
+        if readsLazyPage {
+            delivery.report(0.75)
+            await refreshPages(progress: delivery.part(0.75...1))
+        } else {
+            await refreshPages()
+        }
         await openRequestedPage()
         scheduleAutoRefresh()
     }
@@ -1109,6 +1123,8 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         blockingRefreshes.removeAll()
         if loading != nil { loading = nil }
         loadingGeneration = nil
+        rereadGeneration = nil
+        if isRereading { isRereading = false }
         updateBusy()
     }
 
@@ -1124,10 +1140,21 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         guard let live = trustedAction(action) else {
             return .failed(String(localized: "Selected cleanup items changed. Review your selection again."))
         }
-        let revision = contractRevision
         let instance = moduleEpoch
-        guard extrasAreTrusted(extraParameters, for: live), confirm(live),
-              contractRevision == revision, moduleEpoch == instance, trustedAction(live) != nil else { return nil }
+        let prefersTrash = settings.prefersTrash
+        var prompt = live
+        if prefersTrash, let support = live.trashSupport, var confirmation = live.confirmation {
+            let note = support == .all
+                ? String(localized: "Items stay in Trash until it is emptied.")
+                : String(localized: "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.")
+            confirmation.message = [confirmation.message, note].filter { !$0.isEmpty }.joined(separator: "\n\n")
+            if support == .all { confirmation.confirmTitle = String(localized: "Move to Trash") }
+            prompt.confirmation = confirmation
+        }
+        guard extrasAreTrusted(extraParameters, for: live), confirm(prompt),
+              !preparingForUninstall, moduleEpoch == instance,
+              trustedAction(live) != nil, extrasAreTrusted(extraParameters, for: live) else { return nil }
+        let revision = contractRevision
         if let pageID = live.pageID {
             guard state == .ready, !preparingForUninstall, !performing else { return nil }
             let parameters = action.parameters.merging(extraParameters) { _, extra in extra }
@@ -1150,7 +1177,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                   self.moduleEpoch == instance,
                   let current = self.trustedAction(live) else { return nil }
             self.clearQueuedRequest(rowID, requestID: requestID)
-            return await self.performNow(current, extraParameters: extraParameters, quiet: quiet, rowID: rowID)
+            return await self.performNow(current, extraParameters: extraParameters, quiet: quiet, rowID: rowID, prefersTrash: prefersTrash)
         }
         lastAction = task
         return await task.value
@@ -1324,9 +1351,9 @@ public final class ModuleHandle: ObservableObject, Identifiable {
         }
     }
 
-    private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?) async -> ActionResult? {
+    private func performNow(_ action: Action, extraParameters: [String: String], quiet: Bool, rowID: String?, prefersTrash: Bool) async -> ActionResult? {
         guard !preparingForUninstall, state == .ready, let module else { return nil }
-        let performingContract = contractRevision
+        let instance = moduleEpoch
         // The app's own actions (`Action.allowFullDiskAccess`, `openSettings`, `restart`): the module is not called.
         if action.id == Action.fullDiskAccessID {
             openPane(LivePermissionChecker.fullDiskAccessSettingsURL)
@@ -1371,22 +1398,31 @@ public final class ModuleHandle: ObservableObject, Identifiable {
             progress = nil
         }
         defer {
+            performing = false
             if !quiet {
                 isCleaning = false
                 runningAction = nil
                 runningRowID = nil
             }
             actionNeedsModuleActivity = false
+            updateBusy()
             requestModuleActivityUpdate()
             scheduleAutoRefresh()
         }
         await syncModuleActivity()
-        guard contractRevision == performingContract, trustedAction(action) != nil, extrasAreTrusted(extraParameters, for: action) else { return nil }
+        guard !preparingForUninstall, moduleEpoch == instance,
+              trustedAction(action) != nil, extrasAreTrusted(extraParameters, for: action) else { return nil }
+        let context = context()
+        guard action.trashSupport == nil || prefersTrash == context.prefersTrash else {
+            let result = ActionResult.failed(String(localized: "Trash preference changed. Review your selection again."))
+            if let rowID, !quiet { setRowResult(result, for: rowID) } else { lastResult = result }
+            return result
+        }
         lastResult = nil
         invalidatePendingSelections()
         actionGeneration += 1
         let generation = actionGeneration
-        let request = ActionRequest(actionID: action.id, parameters: action.parameters.merging(extraParameters) { _, new in new }, rowID: rowID)
+        let request = action.request(prefersTrash: prefersTrash, extraParameters: extraParameters, rowID: rowID)
         let visibleIDs = activeSelection.map { Set($0.selection?.choices.keys.map { $0 } ?? []) } ?? []
         let completed = FinishedChoiceProgress(allowed: request.parameters["selectionToken"] == nil ? nil : visibleIDs)
         let operation: @Sendable (ActionRequest, ModuleContext, @escaping ProgressSink) async -> ActionResult
@@ -1402,7 +1438,7 @@ public final class ModuleHandle: ObservableObject, Identifiable {
                 return await CleanupBatch.run(targets, automatic: false, context: context, progress: progress, perform: module.perform)
             }
         } else { operation = module.perform }
-        let result = await operation(request, context()) { [weak self] update in
+        let result = await operation(request, context) { [weak self] update in
             guard !quiet else { return }
             completed.record(update.finished)
             Task { @MainActor in

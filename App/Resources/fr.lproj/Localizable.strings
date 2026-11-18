@@ -62,6 +62,7 @@
 "Developed by\n%@" = "Développé par\n%@";
 "Does the few things that need an administrator." = "Effectue les quelques tâches qui demandent un administrateur.";
 "Drag into the Full Disk Access list" = "Faites glisser dans la liste Accès complet au disque";
+"Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules." = "Les éléments admissibles restent dans la corbeille tant qu’elle n’est pas vidée. Les autres suivent les règles de nettoyage habituelles.";
 "Every 3 days" = "Tous les 3 jours";
 "Every day" = "Tous les jours";
 "Every week" = "Toutes les semaines";
@@ -89,6 +90,7 @@
 "In use" = "En cours d’utilisation";
 "Install helper" = "Installer l’assistant";
 "It does the few tasks that need an administrator." = "Il effectue les quelques tâches qui demandent un administrateur.";
+"Items stay in Trash until it is emptied." = "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.";
 "Keep running in the background" = "Rester actif en arrière-plan";
 "Keep running in the menu bar" = "Rester dans la barre des menus";
 "Kept while Apple Intelligence is on" = "Conservé tant qu’Apple Intelligence est activé";
@@ -110,7 +112,8 @@
 "Move MacSpace to the Applications folder, then reopen it." = "Placez MacSpace dans le dossier Applications, puis rouvrez-le.";
 "Move MacSpace to the Trash from Applications." = "Placez MacSpace dans la Corbeille depuis Applications.";
 "Move MacSpace to your Applications folder first." = "Placez d’abord MacSpace dans le dossier Applications.";
-"Move files to Trash" = "Placer les fichiers dans la corbeille";
+"Move files and caches to Trash when possible" = "Placer les fichiers et les caches dans la corbeille si possible";
+"Move to Trash" = "Placer dans la corbeille";
 "Needed" = "Requis";
 "Needed to measure everything on the disk." = "Nécessaire pour mesurer tout le disque.";
 "Needs %@" = "Requiert %@";
@@ -129,7 +132,6 @@
 "Nothing to free" = "Rien à libérer";
 "Notifications" = "Notifications";
 "OK" = "OK";
-"Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules." = "Désactivé par défaut. Les fichiers sélectionnés dans Apps et fichiers sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.";
 "Open Login Items" = "Ouvrir Ouverture";
 "Open MacSpace" = "Ouvrir MacSpace";
 "Open Panel" = "Ouvrir le panneau";
@@ -179,6 +181,7 @@
 "This build of MacSpace does not contain the helper." = "Cette version de MacSpace ne contient pas l’assistant.";
 "This copy of MacSpace is incomplete" = "Cette copie de MacSpace est incomplète";
 "This selection is unavailable. Refresh and try again." = "Cette sélection est indisponible. Actualisez et réessayez.";
+"Trash preference changed. Review your selection again." = "Le réglage de la corbeille a changé. Vérifiez à nouveau votre sélection.";
 "Turn on MacSpace in the list. Not there? Drag this icon into it." = "Activez MacSpace dans la liste. Absent ? Faites-y glisser cette icône.";
 "Turn on MacSpace under Allow in the Background." = "Activez MacSpace sous Autoriser en arrière-plan.";
 "Uninstall" = "Désinstaller";

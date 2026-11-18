@@ -83,6 +83,16 @@ final class BentoTests: XCTestCase {
         XCTAssertEqual(placements[3], .init(row: 1, column: 1, span: 2))
     }
 
+    func testCompactSettingsGivesTheFeaturedTileTheEmptySpace() {
+        let one = Bento.Size(width: 1, height: 1), large = Bento.Size(width: 2, height: 2)
+        for columns in [2, 3] {
+            let placements = Bento.pack(sizes: [one, large, one, one], columns: columns, maximumSizes: [nil, nil, nil, one])
+            XCTAssertEqual(placements.last?.span, 1)
+            XCTAssertEqual(placements.last?.height, 1)
+            if columns == 3 { XCTAssertEqual(placements[1].height, 3) }
+        }
+    }
+
     func testFramesShareTheSpaceWithTheSpacingBetween() {
         let size = CGSize(width: 314, height: 214)
         XCTAssertEqual(Bento.frame(.init(row: 0, column: 0, span: 1), columns: 3, rows: 2, in: size, spacing: 7), CGRect(x: 0, y: 0, width: 100, height: 103.5))

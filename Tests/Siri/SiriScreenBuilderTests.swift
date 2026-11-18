@@ -5,6 +5,20 @@ import MacSpaceSiriPrivileged
 @testable import MacSpaceSiri
 
 final class SiriScreenBuilderTests: XCTestCase {
+    func testFailedCleanupShowsTheReasonAndAllowsExplicitRetry() {
+        var snap = snapshot(.protected)
+        snap.featureSettings[.siri] = .init(state: .off, managedOff: true)
+        snap.featureModelBytes[.siri] = 1_000_000_000
+        snap.featureCleanupFailures[.siri] = "Protected model recovery is unavailable"
+        let badge = SiriScreenBuilder.cleanupBadge(.siri, snap)
+        XCTAssertEqual(badge?.text, "Couldn't free models.")
+        XCTAssertEqual(badge?.help, snap.featureCleanupFailures[.siri])
+        XCTAssertNotEqual(badge?.role, .freeingInBackground)
+        XCTAssertTrue(SiriScreenBuilder.featuresToFree(snap).contains(.siri))
+        // A batched cleanup still running for a different feature must not hide this feature's failure.
+        snap.cleaningFeatures = true
+        XCTAssertEqual(SiriScreenBuilder.cleanupBadge(.siri, snap)?.text, "Couldn't free models.")
+    }
     func testPhoneSwitchUsesRequestedStateDuringRestartAndCanRestoreOnAnUnreviewedRelease() {
         let offPending = PhoneFeatureFlags.Status(state: .restartRequired, managedOff: false, effective: [:], requestedOff: true)
         let off = SiriScreenBuilder.phoneFeatureRow(offPending)

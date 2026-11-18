@@ -27,9 +27,8 @@ public struct CleanupResult: Codable, Equatable, Sendable {
     public let freedBytes: UInt64
 }
 
-/// Deletes old diagnostic reports (spindump `.spin`/`.hang`, `.diag`, crash `.ips`, …). Reports are write-once
-/// records of past events that nothing on the system reads back, so this is cleanup, not a control: it is not
-/// journaled and cannot be undone.
+/// Removes old diagnostic reports (`.spin`, `.hang`, `.diag`, `.ips`, etc.) with the same reviewed
+/// path and identity checks whether they are deleted or moved to Trash.
 public struct DiagnosticReportCleaner {
     public static let reportExtensions: Set<String> = [
         "spin", "hang", "diag", "ips", "cpu_resource", "shutdownStall", "crash", "panic", "core_analytics", "anon_system_stats",
@@ -76,8 +75,8 @@ public struct DiagnosticReportCleaner {
                            totalBytes: candidates.reduce(0) { $0 + $1.bytes }, unreadableDirectories: unreadable)
     }
 
-    /// Deletes the planned files, re-checking each one is still an old regular report file.
-    public func execute(_ plan: CleanupPlan) -> CleanupResult {
+    /// Removes the planned files, re-checking each one is still an old regular report file.
+    public func execute(_ plan: CleanupPlan, moveToTrash: Bool = false) -> CleanupResult {
         var deleted: [String] = []
         var failed: [String: String] = [:]
         var freed: UInt64 = 0
@@ -91,9 +90,9 @@ public struct DiagnosticReportCleaner {
             do {
                 guard let identity = candidate.identity else { throw PrivateFile.Refusal() }
                 let removal = try ReviewedDirectoryRemoval.prepareCleanup([.init(path: candidate.path, expected: identity)], within: directories)
-                try removal.remove(at: 0)
+                if moveToTrash { try removal.trash(at: 0, fileManager: fileManager) }
+                else { try removal.remove(at: 0); freed += candidate.bytes }
                 deleted.append(candidate.path)
-                freed += candidate.bytes
             } catch {
                 failed[candidate.path] = (error as NSError).localizedDescription
             }

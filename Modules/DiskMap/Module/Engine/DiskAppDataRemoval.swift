@@ -7,11 +7,12 @@ import MacSpaceSdk
 /// Optional data is explicitly reviewed; inferred associations never enter the privileged uninstall plan.
 enum DiskAppDataRemoval {
     enum Failure: LocalizedError {
-        case tooMany, openFiles
+        case tooMany, openFiles, changed
         var errorDescription: String? {
             switch self {
             case .tooMany: loc("Select at most 32 app-data locations at a time.")
             case .openFiles: loc("Selected app data is in use. Quit the app and try again.")
+            case .changed: loc("Some app data could not be removed")
             }
         }
     }
@@ -19,9 +20,16 @@ enum DiskAppDataRemoval {
         var path: String
         var identity: AppFileIdentity
         var fileIdentity: FileReviewIdentity?
+        var birthSeconds: Int64? = nil
+        var birthNanos: Int64? = nil
         var id: String {
+            var key = self
+            if fileIdentity == nil {
+                key.identity.modifiedSeconds = 0
+                key.identity.modifiedNanos = 0
+            }
             let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-            return "reviewed-app-data:" + ((try? encoder.encode(self)) ?? Data()).base64EncodedString()
+            return "reviewed-app-data:" + ((try? encoder.encode(key)) ?? Data()).base64EncodedString()
         }
     }
     struct Result { var removed: [String] = []; var failures: [String] = [] }
@@ -29,9 +37,10 @@ enum DiskAppDataRemoval {
         var info = stat()
         guard AppOwnership.safeExisting(path), lstat(path, &info) == 0, info.st_uid == getuid(),
               info.st_flags & UInt32(SF_DATALESS | SF_RESTRICTED | SF_IMMUTABLE | UF_IMMUTABLE | SF_APPEND | UF_APPEND | SF_NOUNLINK | UF_DATAVAULT) == 0,
-              let identity = AppFileIdentity(path: path) else { return nil }
+              let identity = AppFileIdentity(path: path), identity.device == info.st_dev, identity.inode == info.st_ino,
+              identity.uid == info.st_uid else { return nil }
         if info.st_mode & S_IFMT == S_IFDIR, AppDataReviewPolicy.includesDirectory(path, home: home) {
-            return Target(path: path, identity: identity)
+            return Target(path: path, identity: identity, birthSeconds: Int64(info.st_birthtimespec.tv_sec), birthNanos: Int64(info.st_birthtimespec.tv_nsec))
         }
         if info.st_mode & S_IFMT == S_IFREG, AppDataReviewPolicy.includesFile(path, home: home), let file = FileReviewIdentity(path) {
             return Target(path: path, identity: identity, fileIdentity: file)
@@ -107,20 +116,18 @@ enum DiskAppDataRemoval {
         }
         return AppOwnership.normalizedPaths(paths).compactMap { target($0, home: home) }
     }
-    /// The pre-quit choices already matched the frozen review. A normal quit can write
-    /// inside a chosen directory; keep that same directory identity and freeze its latest
-    /// contents for removal. Replaced roots and changed individual settings files need review.
+    /// Reconcile the reviewed choices with fresh ownership. A directory choice authorizes the same
+    /// owned directory even when app activity updates its contents. Files require an exact match.
+    static func resolveReviewedIDs(_ ids: Set<String>, candidates: [Target]) throws -> [Target] {
+        let reviewed = candidates.filter { ids.contains($0.id) }
+        guard reviewed.count == ids.count, Set(reviewed.map(\.id)) == ids else { throw Failure.changed }
+        return reviewed
+    }
+
+    /// Recheck the approved roots after quitting and freeze their latest contents for removal.
     static func refreshedAfterQuitting(_ selected: [Target], home: String) throws -> [Target] {
         try selected.map { original in
-            guard let current = target(original.path, home: home) else { throw CocoaError(.fileReadUnknown) }
-            if original.fileIdentity != nil {
-                guard current == original else { throw CocoaError(.fileReadUnknown) }
-            } else {
-                guard current.fileIdentity == nil, current.identity.device == original.identity.device,
-                      current.identity.inode == original.identity.inode, current.identity.uid == original.identity.uid else {
-                    throw CocoaError(.fileReadUnknown)
-                }
-            }
+            guard let current = target(original.path, home: home), current.id == original.id else { throw Failure.changed }
             return current
         }
     }
@@ -139,7 +146,7 @@ enum DiskAppDataRemoval {
         let plan = try folders.isEmpty ? nil : ReviewedDirectoryRemoval.prepare(folders.map {
             .init(path: $0.path, expected: .init(device: $0.identity.device, inode: $0.identity.inode, uid: $0.identity.uid,
                 modifiedSeconds: $0.identity.modifiedSeconds, modifiedNanos: $0.identity.modifiedNanos))
-        }, home: home)
+        }, home: home, permitsDescendantLinks: true)
         var result = Result(), finished: [String] = []
         for item in selected {
             do {

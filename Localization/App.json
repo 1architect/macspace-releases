@@ -557,6 +557,15 @@
   "フルディスクアクセスのリストにドラッグ",
   "전체 디스크 접근 목록으로 드래그"
  ],
+ "Eligible items stay in Trash until it is emptied. Other items follow their usual cleanup rules.": [
+  "Os itens elegíveis ficam no Lixo até ele ser esvaziado. Os demais seguem as regras de limpeza habituais.",
+  "Les éléments admissibles restent dans la corbeille tant qu’elle n’est pas vidée. Les autres suivent les règles de nettoyage habituelles.",
+  "Los elementos compatibles permanecen en la papelera hasta que se vacía. Los demás siguen sus reglas habituales de limpieza.",
+  "Geeignete Elemente bleiben im Papierkorb, bis er geleert wird. Für andere Elemente gelten die üblichen Bereinigungsregeln.",
+  "符合条件的项目会留在废纸篓中，直到清空废纸篓。其他项目按通常的规则清理。",
+  "対象の項目はゴミ箱を空にするまで残ります。その他の項目は通常のルールに従ってクリーンアップされます。",
+  "해당 항목은 휴지통을 비울 때까지 남아 있습니다. 다른 항목에는 일반 정리 규칙이 적용됩니다."
+ ],
  "Every 3 days": [
   "A cada 3 dias",
   "Tous les 3 jours",
@@ -800,6 +809,15 @@
   "管理者権限が必要な一部の処理を行います。",
   "관리자 권한이 필요한 일부 작업을 수행합니다."
  ],
+ "Items stay in Trash until it is emptied.": [
+  "Os itens ficam no Lixo até ele ser esvaziado.",
+  "Les éléments restent dans la corbeille tant qu’elle n’est pas vidée.",
+  "Los elementos permanecen en la papelera hasta que se vacía.",
+  "Die Elemente bleiben im Papierkorb, bis er geleert wird.",
+  "这些项目会留在废纸篓中，直到清空废纸篓。",
+  "項目はゴミ箱を空にするまで残ります。",
+  "항목은 휴지통을 비울 때까지 남아 있습니다."
+ ],
  "Keep running in the background": [
   "Continuar em segundo plano",
   "Rester actif en arrière-plan",
@@ -989,14 +1007,23 @@
   "先にMacSpaceを「アプリケーション」に移動してください。",
   "먼저 MacSpace를 응용 프로그램 폴더로 옮기세요."
  ],
- "Move files to Trash": [
-  "Mover arquivos para o Lixo",
-  "Placer les fichiers dans la corbeille",
-  "Mover archivos a la Papelera",
-  "Dateien in den Papierkorb legen",
-  "将文件移到废纸篓",
-  "ファイルをゴミ箱に入れる",
-  "파일을 휴지통으로 이동"
+ "Move files and caches to Trash when possible": [
+  "Mover arquivos e caches para o lixo quando possível",
+  "Placer les fichiers et les caches dans la corbeille si possible",
+  "Mover los archivos y las cachés a la papelera cuando sea posible",
+  "Dateien und Caches nach Möglichkeit in den Papierkorb legen",
+  "尽可能将文件和缓存移到废纸篓",
+  "可能な場合はファイルとキャッシュをゴミ箱に入れる",
+  "가능한 경우 파일과 캐시를 휴지통으로 이동"
+ ],
+ "Move to Trash": [
+  "Mover para o Lixo",
+  "Placer dans la corbeille",
+  "Mover a la Papelera",
+  "In den Papierkorb legen",
+  "移到废纸篓",
+  "ゴミ箱に入れる",
+  "휴지통으로 이동"
  ],
  "Needed": [
   "Necessário",
@@ -1159,15 +1186,6 @@
   "好",
   "OK",
   "확인"
- ],
- "Off by default. Selected files in Apps and files are permanently deleted when this is off. App uninstall and cache cleanup follow their own removal rules.": [
-  "Desativado por padrão. Quando desativado, os arquivos selecionados em Apps e arquivos são excluídos permanentemente. A desinstalação e a limpeza de caches seguem regras próprias.",
-  "Désactivé par défaut. Les fichiers sélectionnés dans Apps et fichiers sont alors supprimés définitivement. La désinstallation et les caches suivent leurs propres règles.",
-  "Desactivado por defecto. Los archivos seleccionados en Apps y archivos se eliminan permanentemente cuando está desactivado. La desinstalación y las cachés siguen sus propias reglas.",
-  "Standardmäßig deaktiviert. Ausgewählte Dateien in Apps und Dateien werden dann endgültig gelöscht. Für App-Deinstallation und Cache-Bereinigung gelten eigene Regeln.",
-  "默认关闭。关闭时，“应用与文件”中选定的文件将被永久删除。应用卸载和缓存清理遵循各自的规则。",
-  "初期設定ではオフです。オフの場合、「アプリとファイル」で選択したファイルは完全に削除されます。アプリのアンインストールとキャッシュのクリーンアップには、それぞれの削除ルールが適用されます。",
-  "기본적으로 꺼져 있습니다. 꺼져 있으면 앱 및 파일에서 선택한 파일이 영구 삭제됩니다. 앱 제거와 캐시 정리는 각자의 제거 규칙을 따릅니다."
  ],
  "Open Login Items": [
   "Abrir Itens de Início",
@@ -1609,6 +1627,15 @@
   "此选择不可用。请刷新后重试。",
   "この選択は利用できません。更新して再試行してください。",
   "이 선택을 사용할 수 없습니다. 새로고침 후 다시 시도하세요."
+ ],
+ "Trash preference changed. Review your selection again.": [
+  "A opção de mover para o Lixo mudou. Revise sua seleção novamente.",
+  "Le réglage de la corbeille a changé. Vérifiez à nouveau votre sélection.",
+  "Cambió el ajuste de la papelera. Revisa de nuevo tu selección.",
+  "Die Papierkorbeinstellung wurde geändert. Überprüfe deine Auswahl erneut.",
+  "废纸篓设置已更改。请重新检查所选项目。",
+  "ゴミ箱の設定が変更されました。選択内容を再確認してください。",
+  "휴지통 설정이 변경되었습니다. 선택 항목을 다시 확인하세요."
  ],
  "Turn on MacSpace in the list. Not there? Drag this icon into it.": [
   "Ative o MacSpace na lista. Não está lá? Arraste este ícone para ela.",

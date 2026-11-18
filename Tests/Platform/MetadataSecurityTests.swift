@@ -13,6 +13,99 @@ private final class MemoryMetadataStore: MetadataKeyStore, @unchecked Sendable {
     func delete(_ account: String) throws { _ = lock.withLock { data.removeValue(forKey: account) } }
 }
 final class MetadataSecurityTests: XCTestCase {
+    private func ownerRecoveryFixture(_ test: (AssetOwnerRecovery, MemoryMetadataStore) throws -> Void) throws {
+        let memory = MemoryMetadataStore()
+        MetadataKeys.useStore(memory); defer { MetadataKeys.useStore(SilentMetadataKeyStore()) }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try test(AssetOwnerRecovery(directory: folder), memory)
+    }
+    @discardableResult
+    private func legacy(_ recovery: AssetOwnerRecovery, _ scope: AssetModelCleanup.Scope, phase: String = "removed", uid: UInt32 = getuid()) throws -> Data {
+        // Deliberately invalid native archive: recognizing legacy evidence must never unarchive or replay it.
+        let data = try PropertyListSerialization.data(fromPropertyList: ["version": 1, "scope": scope.rawValue, "uid": uid,
+            "entries": [["phase": phase, "archive": Data([0xff])]]], format: .binary, options: 0)
+        try PrivateFile(recovery.legacyURL(scope)).write(data)
+        return data
+    }
+    func testLegacySiriAndPhoneRecordsArePreservedWhileFreshProtectedRecordsWork() throws {
+        try ownerRecoveryFixture { recovery, _ in
+            let originals = try [AssetModelCleanup.Scope.siri, .phone].map { try legacy(recovery, $0) }
+            XCTAssertTrue(try recovery.canCreateKey())
+            for (scope, original) in zip([AssetModelCleanup.Scope.siri, .phone], originals) {
+                let (journal, location) = try recovery.open(scope)
+                XCTAssertTrue(location.preservesLegacy)
+                XCTAssertEqual(location.url, recovery.sealedURL(scope))
+                XCTAssertNil(try journal.read(), "Old request objects are never imported")
+                let encoder = PropertyListEncoder(); encoder.outputFormat = .binary
+                let payload = try encoder.encode(AssetOwners.Journal.Stored(scope: scope.rawValue, uid: getuid(), entries: []))
+                try journal.write(payload)
+                let (reopened, _) = try recovery.open(scope)
+                XCTAssertEqual(try reopened.read(), payload)
+                XCTAssertEqual(try AssetOwners.Journal.entries(payload, scope: scope).count, 0)
+                XCTAssertEqual(try Data(contentsOf: recovery.legacyURL(scope)), original)
+            }
+            XCTAssertFalse(try recovery.canCreateKey())
+        }
+    }
+    func testAuthenticatedOldFilenameKeepsItsCheckpointAndCannotBeDisguisedAsLegacy() throws {
+        try ownerRecoveryFixture { recovery, _ in
+            let old = try ProtectedJournal(url: recovery.legacyURL(.siri), purpose: "owners.siri", allowKeyCreation: true)
+            try old.write(Data("authenticated".utf8))
+            let (opened, location) = try recovery.open(.siri)
+            XCTAssertFalse(location.preservesLegacy)
+            XCTAssertEqual(location.url, recovery.legacyURL(.siri))
+            XCTAssertEqual(try opened.read(), Data("authenticated".utf8))
+            let replacement = try legacy(recovery, .siri)
+            XCTAssertThrowsError(try recovery.open(.siri))
+            XCTAssertEqual(try Data(contentsOf: recovery.legacyURL(.siri)), replacement)
+            XCTAssertFalse(AssetOwnerRecovery.exists(recovery.sealedURL(.siri)))
+        }
+    }
+    func testLegacyRecoveryNeverReplacesAnotherScopesLostKeyOrMissingFile() throws {
+        for removeFile in [false, true] {
+            try ownerRecoveryFixture { recovery, memory in
+                let original = try legacy(recovery, .siri)
+                let (phone, _) = try recovery.open(.phone)
+                try phone.write(Data("protected phone state".utf8))
+                if removeFile { try FileManager.default.removeItem(at: recovery.sealedURL(.phone)) }
+                try memory.delete("key.recovery." + String(getuid()))
+                XCTAssertFalse(try recovery.canCreateKey(), "Other scopes' files and checkpoints both prevent key replacement")
+                XCTAssertThrowsError(try recovery.open(.siri))
+                XCTAssertNil(try memory.read("key.recovery." + String(getuid())))
+                XCTAssertEqual(try Data(contentsOf: recovery.legacyURL(.siri)), original)
+            }
+        }
+    }
+    func testLegacyRecoveryRefusesInterruptedOrForeignRecordsWithoutChangingThem() throws {
+        for (phase, uid) in [("submitted", getuid()), ("restoring", getuid()), ("removed", getuid() + 1)] {
+            try ownerRecoveryFixture { recovery, _ in
+                let original = try legacy(recovery, .siri, phase: phase, uid: uid)
+                XCTAssertThrowsError(try recovery.open(.siri))
+                XCTAssertEqual(try Data(contentsOf: recovery.legacyURL(.siri)), original)
+                XCTAssertFalse(AssetOwnerRecovery.exists(recovery.sealedURL(.siri)))
+            }
+        }
+    }
+    func testLegacyRecoveryDoesNotBypassCorruptModernOrTemporaryRecords() throws {
+        try ownerRecoveryFixture { recovery, _ in
+            try legacy(recovery, .siri)
+            let (journal, _) = try recovery.open(.siri)
+            try journal.write(Data("trusted".utf8))
+            try PrivateFile(recovery.sealedURL(.siri)).write(Data("corrupt".utf8))
+            let (reopened, _) = try recovery.open(.siri)
+            XCTAssertThrowsError(try reopened.read())
+            XCTAssertEqual(try Data(contentsOf: recovery.sealedURL(.siri)), Data("corrupt".utf8))
+        }
+        try ownerRecoveryFixture { recovery, memory in
+            try legacy(recovery, .siri)
+            try PrivateFile(recovery.directory.appendingPathComponent("temporary-v2.sealed")).write(Data("unreadable".utf8))
+            XCTAssertFalse(try recovery.canCreateKey())
+            XCTAssertThrowsError(try recovery.open(.siri))
+            XCTAssertNil(try memory.read("key.recovery." + String(getuid())))
+        }
+    }
     func testEveryKeychainLifecycleCallIsExplicitlyNoninteractive() throws {
         let store = SilentMetadataKeyStore(accessGroup: { "TEST.com.macspace.metadata" }) { operation, query, values in
             XCTAssertEqual((query[kSecUseAuthenticationContext as String] as? LAContext)?.interactionNotAllowed, true)

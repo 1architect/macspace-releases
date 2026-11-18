@@ -36,6 +36,7 @@
 "Couldn't change Call transcription." = "Impossible de modifier Transcription des appels.";
 "Couldn't change feature settings." = "Impossible de modifier les réglages de la fonction.";
 "Couldn't check Apple Intelligence" = "Impossible de vérifier Apple Intelligence";
+"Couldn't free models." = "Impossible de libérer les modèles.";
 "Couldn't restore Call transcription." = "Impossible de rétablir Transcription des appels.";
 "Couldn't restore feature settings." = "Impossible de restaurer les réglages de la fonction.";
 "Couldn't restore model requests." = "Impossible de restaurer les demandes de modèles.";

@@ -2,6 +2,21 @@ import XCTest
 @testable import MacSpaceSystemData
 import MacSpacePlatform
 
+private final class FixtureTrashFileManager: FileManager, @unchecked Sendable {
+    let trash: URL
+
+    init(trash: URL) {
+        self.trash = trash
+        super.init()
+    }
+
+    override func trashItem(at url: URL, resultingItemURL: AutoreleasingUnsafeMutablePointer<NSURL?>?) throws {
+        let destination = trash.appendingPathComponent(url.lastPathComponent)
+        try moveItem(at: url, to: destination)
+        resultingItemURL?.pointee = destination as NSURL
+    }
+}
+
 final class SystemDataTests: XCTestCase {
     private var root: URL!
     private let fm = FileManager.default
@@ -333,6 +348,52 @@ final class SystemDataTests: XCTestCase {
         let result = cleaner.clean([item], allowedRoots: [folder.deletingLastPathComponent().path])
         XCTAssertTrue(try XCTUnwrap(result.results.first).deleted, "\(result.results.map(\.detail))")
         XCTAssertFalse(fm.fileExists(atPath: folder.path))
+    }
+
+    func testCleanerTreatsACacheRemovedAfterScanningAsAlreadyGone() throws {
+        try file("folders/C/clang/ModuleCache/a.pcm", mb: 60)
+        let clang = try XCTUnwrap(inspector().inspect().items.first { $0.id == "usercache:clang" })
+        try fm.removeItem(atPath: clang.paths[0])
+        let result = SystemDataCleaner(runningApps: { [] }, processCheck: .none)
+            .clean([clang], allowedRoots: SystemDataCleaner.allowedRoots(locations))
+        XCTAssertEqual(result.results.first?.completed, true)
+        XCTAssertEqual(result.results.first?.changed, false)
+    }
+
+    func testCleanerMovesCacheToTrashAndPreservesItIfTrashFails() throws {
+        let trash = root.appendingPathComponent("Trash")
+        try fm.createDirectory(at: trash, withIntermediateDirectories: false)
+        let manager = FixtureTrashFileManager(trash: trash)
+        let cleaner = SystemDataCleaner(fileManager: manager, runningApps: { [] }, processCheck: .none, freeSpace: { 42 })
+        let roots = SystemDataCleaner.allowedRoots(locations)
+
+        try file("folders/C/clang/ModuleCache/a.pcm", mb: 60)
+        let clang = try XCTUnwrap(inspector().inspect().items.first { $0.id == "usercache:clang" })
+        let moved = cleaner.clean([clang], allowedRoots: roots, moveToTrash: true)
+        XCTAssertEqual(moved.results.first?.movedToTrash, true, moved.results.first?.detail ?? "")
+        XCTAssertFalse(fm.fileExists(atPath: clang.paths[0]))
+        XCTAssertTrue(fm.fileExists(atPath: trash.appendingPathComponent("clang/ModuleCache/a.pcm").path))
+        XCTAssertEqual(moved.actionResult.freedBytes, 0)
+
+        try file("folders/C/clang/ModuleCache/b.pcm", mb: 60)
+        let updated = try XCTUnwrap(inspector().inspect().items.first { $0.id == clang.id })
+        let blocked = cleaner.clean([updated], allowedRoots: roots, moveToTrash: true)
+        XCTAssertEqual(blocked.results.first?.changed, false)
+        XCTAssertTrue(fm.fileExists(atPath: updated.paths[0] + "/ModuleCache/b.pcm"))
+    }
+
+    func testDiagnosticReportsCanMoveToTrashWithoutCreditingFreedBytes() throws {
+        let reports = root.appendingPathComponent("reports")
+        let trash = root.appendingPathComponent("Trash")
+        try fm.createDirectory(at: trash, withIntermediateDirectories: false)
+        try file("reports/old.ips", mb: 1)
+        let report = reports.appendingPathComponent("old.ips")
+        try fm.setAttributes([.modificationDate: Date().addingTimeInterval(-864_000)], ofItemAtPath: report.path)
+        let cleaner = DiagnosticReportCleaner(directories: [reports.path], fileManager: FixtureTrashFileManager(trash: trash))
+        let result = cleaner.execute(cleaner.plan(olderThanDays: 7), moveToTrash: true)
+        XCTAssertEqual(result.deleted, [report.path], "\(result.failed)")
+        XCTAssertEqual(result.freedBytes, 0)
+        XCTAssertTrue(fm.fileExists(atPath: trash.appendingPathComponent("old.ips").path))
     }
 
     func testCleanerPreservesTargetReplacedDuringOpenFileCheck() throws {

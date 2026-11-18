@@ -10,10 +10,15 @@ extension ModuleHandle {
               selection.includedBytes != nil || (selection.bulk.map({ $0.count > 0 }) ?? !ids.isEmpty) else { return nil }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         var action = selection.action.id == CleanupBatch.actionID ? cleanupAction(ids: ids) : selection.action
+        if let trashable = selection.trashChoiceIDs {
+            if ids.isDisjoint(with: trashable) { action.trashSupport = nil }
+            else { action.trashSupport = selection.includedBytes == nil && ids.isSubset(of: trashable) ? .all : .some }
+        }
         let total = (selection.includedBytes ?? 0) + (selection.bulk?.bytes ?? ids.compactMap { selection.choices[$0] }.reduce(0, +))
-        // While the boxes are what the module suggests, the button says so ("Free recommended").
+        // Keep the module's suggested label unless every selected item will move to Trash.
         let suggested = Set(selection.suggested).intersection(selection.choices.keys)
-        let title = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title
+        let selectionTitle = ids == suggested ? selection.suggestedTitle ?? selection.action.title : selection.action.title
+        let title = settings.prefersTrash && action.trashSupport == .all ? String(localized: "Move to Trash") : selectionTitle
         // Rows with no size of their own (`Selection.choices`) put none on the button.
         action.title = total > 0 ? title + " " + ByteFormat.string(total) : title
         if let bulk = selection.bulk {

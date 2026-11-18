@@ -25,26 +25,64 @@ private struct ScanningModule: MacSpaceModule {
     let control: ScanControl
     let refreshAfter: TimeInterval?
     let offersCleanup: Bool
+    var pageControl: ScanControl? = nil
     init() { control = ScanControl(); refreshAfter = nil; offersCleanup = false }
-    init(control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false) { self.control = control; self.refreshAfter = refreshAfter; self.offersCleanup = offersCleanup }
+    init(control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false, pageControl: ScanControl? = nil) {
+        self.control = control; self.refreshAfter = refreshAfter; self.offersCleanup = offersCleanup; self.pageControl = pageControl
+    }
     func tile(context: ModuleContext) async -> Tile { Tile(title: "test", status: "ready", refreshAfter: refreshAfter) }
     func screen(context: ModuleContext) async -> Screen { Screen(title: "Test", primary: offersCleanup ? Action(id: "clean", title: "Free") : nil, widgets: []) }
     func screen(context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen {
         await control.scan(progress)
         return await screen(context: context)
     }
+    func page(id: String, context: ModuleContext, progress: @escaping LoadProgressSink) async -> Screen? {
+        guard id == "details", let pageControl else { return nil }
+        await pageControl.scan(progress)
+        return Screen(title: "Details", widgets: [], selection: Selection(action: Action(id: "clean", title: "Free"), choices: ["cache": 1], checked: ["cache"]))
+    }
     func perform(_ request: ActionRequest, context: ModuleContext, progress: @escaping ProgressSink) async -> ActionResult { .succeeded("Done") }
 }
 
 @MainActor
 final class ScanProgressTests: XCTestCase {
-    private func handle(_ directory: URL, control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false) async throws -> ModuleHandle {
+    private func handle(_ directory: URL, control: ScanControl, refreshAfter: TimeInterval? = nil, offersCleanup: Bool = false,
+                        pageControl: ScanControl? = nil) async throws -> ModuleHandle {
         try Fixtures.writeBundle(Fixtures.manifest(), name: "Test", into: directory)
         let descriptor = try XCTUnwrap(ModuleScanner.scan(directory: directory).modules.first)
-        let module = ScanningModule(control: control, refreshAfter: refreshAfter, offersCleanup: offersCleanup)
+        let module = ScanningModule(control: control, refreshAfter: refreshAfter, offersCleanup: offersCleanup, pageControl: pageControl)
         let handle = ModuleHandle(confirm: { _ in true }, descriptor: descriptor, settings: SettingsStore(defaults: Fixtures.defaults()), permissions: FakePermissions(), loader: { _ in module })
         await handle.activate()
         return handle
+    }
+
+    func testReloadShowsProgressOverASelectedLazyPageAndItsPreviousResult() async throws {
+        let directory = try Fixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let pageControl = ScanControl()
+        let handle = try await handle(directory, control: ScanControl(), pageControl: pageControl)
+        defer { handle.deactivate() }
+        handle.requestPage("details")
+        for _ in 0..<100 where handle.groupPath.last != "details" { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertNotNil(handle.selectedAction)
+        handle.previewPill(cleaning: false, progress: nil, result: .failed("Previous result"))
+        await pageControl.arm()
+        let reload = Task { await handle.refresh(reload: true) }
+        for _ in 0..<100 {
+            if await pageControl.started { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        await pageControl.advance(0.4)
+        for _ in 0..<100 where handle.loading?.reported != 0.85 { try await Task.sleep(for: .milliseconds(5)) }
+        if case let .loading(fill)? = ActionDock(handle: handle, isVisible: .constant(false)).phase {
+            XCTAssertEqual(fill?.reported, 0.85)
+        } else {
+            XCTFail("Reload progress must own the dock until the lazy page is ready")
+        }
+        await pageControl.finish()
+        await reload.value
+        XCTAssertFalse(handle.isRereading)
+        XCTAssertNil(handle.loading)
     }
 
     func testFullAndQuietScansBothPublishProgressAndClearLoadingWhenDone() async throws {

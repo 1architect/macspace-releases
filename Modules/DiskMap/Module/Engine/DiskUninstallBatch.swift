@@ -26,17 +26,27 @@ enum DiskUninstallBatch {
         }
         return result
     }
-    static func plans(parameters: [String: String], apps: DiskApplications) -> [AppRemovalPlan]? {
+    static func reviewedPlans(_ parameters: [String: String]) -> [AppRemovalPlan]? {
         guard let ids = try? Selection.decodeIDs(parameters["ids"]) else { return nil }
         guard !ids.isEmpty, ids.count <= 512, Set(ids).count == ids.count,
               let text = parameters["reviewed"], text.utf8.count <= 1_048_576,
               let metadata = try? JSONDecoder().decode([String: String].self, from: Data(text.utf8)) else { return nil }
         let plans = ids.sorted().compactMap { id -> AppRemovalPlan? in
-            guard let encoded = metadata[id], let plan = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)), plan.owner.path == id else { return nil }
+            guard let encoded = metadata[id], let plan = try? JSONDecoder().decode(AppRemovalPlan.self, from: Data(encoded.utf8)),
+                  plan.version == 1, plan.owner.path == id else { return nil }
             return plan
         }
-        guard plans.count == ids.count, resolve(plans, apps: apps) != nil else { return nil }
-        return plans
+        return plans.count == ids.count ? plans : nil
+    }
+    /// Rebuild an on-screen review from current plans for the same owners. Execution
+    /// always validates the exact plans from the new confirmation.
+    static func reviewApps(_ reviewed: [AppRemovalPlan], apps: DiskApplications) -> [DiskApplication]? {
+        let byPath = Dictionary(apps.apps.map { ($0.owner.path, $0) }, uniquingKeysWith: { first, _ in first })
+        let selected = reviewed.compactMap { previous -> DiskApplication? in
+            guard let app = byPath[previous.owner.path], app.owner == previous.owner, plan(app) != nil else { return nil }
+            return app
+        }
+        return selected.count == reviewed.count ? selected : nil
     }
     static func dataCandidates(_ selected: [DiskApplication], apps: DiskApplications, home: String = FileManager.default.homeDirectoryForCurrentUser.path) -> [DiskAppDataRemoval.Target] {
         let coverage = DiskAppDataRemoval.Coverage(apps: apps.apps)

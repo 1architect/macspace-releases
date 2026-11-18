@@ -717,18 +717,19 @@ struct ActionDock: View {
     /// The outcome of an action, then its progress; then a notice: one with a fix stays until it is fixed (the fix comes before
     /// anything else), one without shows for a moment, or for good on a page with no action; then the page's main action.
     var phase: ActionPill.Phase? {
-        if handle.isReloading { return .loading(handle.loading) }
+        if handle.isReloading || handle.isRereading { return .loading(handle.loading) }
+        if let loading = handle.pageLoading { return .loading(loading) }
         if let result = handle.lastResult, !result.message.isEmpty { return .done(result) }
         if handle.isCleaning && handle.isBusy { return .working(handle.runningAction?.workingTitle, handle.progress?.fraction) }
+        if handle.isRefreshing { return .loading(handle.loading) }
         if choosingGroup != nil, let primary = choiceAction { return .idle(primary) }
         if let reason = choosingGroup?.selection?.bulk?.unavailableReason { return .done(.failed(reason)) }
         // Reading the Mac, the first time or again: the button says so and breathes, on every page, with a main action or not
         // (`Screen.primary`).
         if handle.isSelectingFiles { return .loading(nil) }
-        if let loading = handle.pageLoading { return .loading(loading) }
         let page = handle.groupPath.last.flatMap { handle.pages[$0] } ?? handle.screen
         if page?.hero == nil, let fraction = page?.loadingFraction { return .loading(LoadFill(started: Date(), expected: LoadFill.firstGuess, reported: fraction)) }
-        if handle.screen == nil || handle.isRefreshing { return .loading(handle.loading) }
+        if handle.screen == nil { return .loading(handle.loading) }
         if let notice, notice.action != nil || mainAction == nil || showsPassingNotice { return .notice(notice) }
         if let primary = mainAction { return .idle(primary) }
         return nil

@@ -56,6 +56,22 @@ final class CleanupContractTests: XCTestCase {
         XCTAssertEqual(result.outcome, .needsAttention)
         XCTAssertEqual(result.freedBytes, 10)
     }
+
+    func testManualAndAutomaticBatchesPassTrashOnlyToSupportedActions() async {
+        let targets = [CleanupTarget(id: "cache", title: "Cache", bytes: 10, action: Action(id: "cache", title: "Free", trashSupport: .some)),
+                       CleanupTarget(id: "log", title: "Log", bytes: 10, action: Action(id: "log", title: "Erase")),
+                       CleanupTarget(id: "trash", title: "Trash", bytes: 10, action: Action(id: "empty", title: "Empty", emptiesTrash: true))]
+        for automatic in [false, true] {
+            for prefersTrash in [false, true] {
+                let calls = CleanupCalls()
+                var context = context(); context.prefersTrash = prefersTrash
+                _ = await CleanupBatch.run(targets, automatic: automatic, context: context, progress: { _ in }, perform: calls.perform)
+                let requests = await calls.requests
+                XCTAssertEqual(requests.map(\.actionID), prefersTrash ? ["empty", "cache", "log"] : ["cache", "log", "empty"])
+                XCTAssertEqual(requests.map(\.moveToTrash), prefersTrash ? [false, true, false] : [false, false, false])
+            }
+        }
+    }
     func testCleanupMetadataAndPersistenceRoundTripAndOldRowsRemainCompatible() throws {
         let row = Row(id: "choice", title: "Choice").selectingCleanup(Action(id: "clean", title: "Free"), bytes: 123)
         XCTAssertTrue(row.actions.isEmpty)

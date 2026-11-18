@@ -49,17 +49,16 @@ enum DiskUninstallReview {
         var selectable: Bool
     }
 
-    static func screen(_ index: DiskIndex, selected: [DiskApplication], apps: DiskApplications, home: String) -> Screen {
+    static func screen(_ index: DiskIndex, selected: [DiskApplication], apps: DiskApplications, home: String, moveToTrash: Bool) -> Screen {
         let selected = selected.sorted { $0.bytes == $1.bytes ? $0.owner.path < $1.owner.path : $0.bytes > $1.bytes }
         let plans = selected.compactMap(DiskUninstallBatch.plan)
         guard plans.count == selected.count, !plans.isEmpty, let encoded = try? JSONEncoder().encode(plans) else {
             return Screen(title: loc("Review app data"), widgets: [])
         }
-        let trash = FileRemovalSettings.movesToTrash()
         let action = Action(id: "uninstallSelected", title: loc("Uninstall"), role: .destructive,
-            parameters: ["plans": String(decoding: encoded, as: UTF8.self), "trash": trash ? "1" : "0"],
-            confirmation: confirmation(trash: trash),
-            requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"))
+            parameters: ["plans": String(decoding: encoded, as: UTF8.self), "trash": moveToTrash ? "1" : "0"],
+            confirmation: confirmation(trash: moveToTrash),
+            requires: [.fullDiskAccess, .privilegedHelper], workingTitle: loc("Uninstalling"), trashSupport: .some)
         let candidates = DiskUninstallBatch.dataCandidates(selected, apps: apps, home: home)
         let byPath = Dictionary(uniqueKeysWithValues: candidates.map { ($0.path, $0) })
         var measured: [String: UInt64] = [:]

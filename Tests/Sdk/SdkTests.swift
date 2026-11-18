@@ -127,14 +127,15 @@ final class SdkTests: XCTestCase {
         let result = ActionResult(outcome: .succeeded, message: "", presentation: ModulePresentation(tile: Tile(title: "Tile", status: "measured"), screen: screen))
         let roundTrip = try JSONDecoder().decode(ActionResult.self, from: JSONEncoder().encode(result))
         XCTAssertEqual(roundTrip, result)
-        let request = ActionRequest(actionID: "free", rowID: "cloud")
+        let request = ActionRequest(actionID: "free", rowID: "cloud", moveToTrash: true)
         XCTAssertEqual(try JSONDecoder().decode(ActionRequest.self, from: JSONEncoder().encode(request)), request)
         let legacy = try JSONDecoder().decode(ActionRequest.self, from: Data(#"{"actionID":"free","parameters":{}}"#.utf8))
         XCTAssertNil(legacy.rowID)
+        XCTAssertNil(legacy.moveToTrash)
     }
 
     func testManifestDecodesFromJSONWithDefaultsInTheModel() throws {
-        let manifest = ModuleManifest(id: "com.example.m", name: "M", summary: "s", version: "1.0", symbol: "star",
+        var manifest = ModuleManifest(id: "com.example.m", name: "M", summary: "s", version: "1.0", symbol: "star",
                                       permissions: [.fullDiskAccess],
                                       options: [OptionDefinition(id: "o", title: "O", kind: .toggle(defaultValue: true)),
                                                 OptionDefinition(id: "p", title: "P", kind: .choice(options: [OptionChoice(id: "a", title: "A"),
@@ -144,6 +145,9 @@ final class SdkTests: XCTestCase {
         let decoded = try JSONDecoder().decode(ModuleManifest.self, from: JSONEncoder().encode(manifest))
         XCTAssertEqual(decoded, manifest)
         XCTAssertEqual(decoded.sdkVersion, SdkVersion.current)
+        XCTAssertNil(decoded.preferredMaximumTileSize)
+        manifest.preferredMaximumTileSize = .init(width: 1, height: 1)
+        XCTAssertEqual(try JSONDecoder().decode(ModuleManifest.self, from: JSONEncoder().encode(manifest)), manifest)
         // A manifest written before an option could sit under a toggle or name an app still reads.
         let old = try JSONDecoder().decode(OptionDefinition.self, from: Data(#"{"id":"c","title":"C","kind":{"choice":{"options":[{"id":"a","title":"A"}],"defaultValue":"a"}}}"#.utf8))
         XCTAssertNil(old.under)
